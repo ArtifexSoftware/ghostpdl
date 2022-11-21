@@ -59,7 +59,7 @@ int codepoint_to_utf8(char *cstr, int rune)
     return idx;
 }
 
-static int get_codepoint_utf8(gp_file *file, const char **astr)
+static int get_codepoint_utf8(stream *s, const char **astr)
 {
     int c;
     int rune;
@@ -72,7 +72,7 @@ static int get_codepoint_utf8(gp_file *file, const char **astr)
      * what they get. */
 
     do {
-        c = (file ? gp_fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
+        c = (s ? spgetc(s) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
         if (c == EOF)
             return EOF;
         if (c < 0x80)
@@ -93,7 +93,7 @@ lead: /* We've just read a byte >= 0x80, presumably a leading byte */
         else
             continue; /* Illegal - skip it */
         do {
-            c = (file ? gp_fgetc(file) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
+            c = (s ? spgetc(s) : (**astr ? (int)(unsigned char)*(*astr)++ : EOF));
             if (c == EOF)
                 return EOF;
             rune = (rune<<6) | (c & 0x3f);
@@ -120,9 +120,9 @@ int
 arg_init(arg_list     * pal,
          const char  **argv,
          int           argc,
-         gp_file      *(*arg_fopen)(const char *fname, void *fopen_data),
+         stream      *(*arg_fopen)(const char *fname, void *fopen_data),
          void         *fopen_data,
-         int           (*get_codepoint)(gp_file *file, const char **astr),
+         int           (*get_codepoint)(stream *s, const char **astr),
          gs_memory_t  *memory)
 {
     int code;
@@ -183,7 +183,7 @@ arg_finit(arg_list * pal)
         arg_source *pas = &pal->sources[pal->depth--];
 
         if (pas->is_file)
-            gp_fclose(pas->u.file);
+            sclose(pas->u.strm);
         else if (pas->u.s.memory)
             gs_free_object(pas->u.s.memory, pas->u.s.chars, "arg_finit");
     }
@@ -191,10 +191,10 @@ arg_finit(arg_list * pal)
 
 static int get_codepoint(arg_list *pal, arg_source *pas)
 {
-    int (*fn)(gp_file *file, const char **str);
+    int (*fn)(stream *s, const char **str);
 
     fn = (!pas->is_file && pas->u.s.decoded ? get_codepoint_utf8 : pal->get_codepoint);
-    return fn(pas->is_file ? pas->u.file : NULL, &pas->u.s.str);
+    return fn(pas->is_file ? pas->u.strm : NULL, &pas->u.s.str);
 }
 
 /* Get the next arg from a list. */
@@ -251,7 +251,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
             if (c == EOF) {
                 /* EOF before any argument characters. */
                 if (pas->is_file)
-                    gp_fclose(pas->u.file);
+                    sclose(pas->u.strm);
                 else if (pas->u.s.memory)
                     gs_free_object(pas->u.s.memory, pas->u.s.chars,
                                    "arg_next");
@@ -391,7 +391,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
          * it to the caller. */
         if (pal->expand_ats && **argstr == '@') {
             char *fname;
-            gp_file *f;
+            stream *s;
             if (pal->depth+1 == arg_depth_max) {
                 errprintf(errmem, "Too much nesting of @-files.\n");
                 return_error(gs_error_Fatal);
@@ -401,15 +401,15 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
             if (gs_add_control_path(pal->memory, gs_permit_file_reading, fname) < 0)
                 return_error(gs_error_Fatal);
 
-            f = (*pal->arg_fopen) (fname, pal->fopen_data);
+            s = (*pal->arg_fopen) (fname, pal->fopen_data);
             DISCARD(gs_remove_control_path(pal->memory, gs_permit_file_reading, fname));
-            if (f == NULL) {
+            if (s == NULL) {
                 errprintf(errmem, "Unable to open command line file %s\n", *argstr);
                 return_error(gs_error_Fatal);
             }
             pas = &pal->sources[++pal->depth];
             pas->is_file = true;
-            pas->u.file = f;
+            pas->u.strm = s;
             *argstr = NULL; /* Empty the argument string so we don't return it. */
             continue; /* Loop back to parse the first arg from the file. */
         }

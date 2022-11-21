@@ -4078,6 +4078,7 @@ $(GLSRC)gsalloc.h:$(GLGEN)arch.h
 $(GLSRC)gsargs.h:$(GLSRC)std.h
 $(GLSRC)gsargs.h:$(GLSRC)stdpre.h
 $(GLSRC)gsargs.h:$(GLGEN)arch.h
+$(GLSRC)gsargs.h:$(GLSRC)stream.h
 $(GLSRC)gsexit.h:$(GLSRC)std.h
 $(GLSRC)gsexit.h:$(GLSRC)stdpre.h
 $(GLSRC)gsexit.h:$(GLGEN)arch.h

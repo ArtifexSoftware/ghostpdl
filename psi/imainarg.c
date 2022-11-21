@@ -114,11 +114,11 @@ static void print_help_trailer(const gs_main_instance *);
 /* ------ Main program ------ */
 
 /* Process the command line with a given instance. */
-static gp_file *
-gs_main_arg_fopen(const char *fname, void *vminst)
+static stream *
+gs_main_arg_sopen(const char *fname, void *vminst)
 {
     gs_main_set_lib_paths((gs_main_instance *) vminst);
-    return lib_fopen(&((gs_main_instance *)vminst)->lib_path,
+    return lib_sopen(&((gs_main_instance *)vminst)->lib_path,
                      ((gs_main_instance *)vminst)->heap, fname);
 }
 static void
@@ -140,7 +140,7 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
 
     /* Now we actually process them */
     code = arg_init(&args, (const char **)argv, argc,
-                    gs_main_arg_fopen, (void *)minst,
+                    gs_main_arg_sopen, (void *)minst,
                     minst->get_codepoint,
                     minst->heap);
     if (code < 0)

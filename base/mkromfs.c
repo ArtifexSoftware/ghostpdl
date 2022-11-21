@@ -147,6 +147,19 @@ static inline int isbigendian(void)
     return u.c[0] != 1;
 }
 
+/* The gp_local_arg_encoding_get_codepoint() function presnet in (some) OS-specific
+ * files (gp_unix.c, gp_win32.c) now uses streams, so it won't compile unless there
+ * is an implementation of spgetcc(). We don't actually use the function for mkromfs
+ * so we just need to make sure it compiles.
+ */
+int spgetcc(stream *s, bool b)
+{
+    (void) s; /* avoid 'unused' warning from compilers */
+    (void) b;
+
+    return 0;
+}
+
 /* mkromfs doesn't use gp_stat, but it does link gp_misc.c which includes
    call to gp_stat_impl(). Rather than major build upheaval for something not
    used, just define a dummy here for Windows.

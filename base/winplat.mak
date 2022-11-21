@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -50,12 +50,12 @@ $(AUX)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
 
 $(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
  $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h) $(WINPLAT_MAK)
+ $(gp_h) $(gsmemory_h) $(gstypes_h) $(stream_h) $(WINPLAT_MAK)
 	$(GLCCWIN) $(GLO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
 
 $(AUX)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
  $(dos__h) $(malloc__h) $(stdio__h) $(string__h) $(windows__h)\
- $(gp_h) $(gsmemory_h) $(gstypes_h) $(WINPLAT_MAK)
+ $(gp_h) $(gsmemory_h) $(gstypes_h) $(stream_h) $(WINPLAT_MAK)
 	$(GLCCAUX) $(AUXO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
 
 # Define the Windows thread / synchronization module.

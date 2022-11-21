@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2022 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -37,7 +37,7 @@ $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev $(GLD)smd5.dev $(UNIX_AUX_MAK) $(M
 	$(ADDMOD) $(GLGEN)unix_ -include $(GLD)smd5
 
 $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
- $(pipe__h) $(string__h) $(time__h) $(gx_h) $(gsexit_h) $(gp_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
+ $(pipe__h) $(string__h) $(time__h) $(gx_h) $(gsexit_h) $(gp_h) $(stream_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(GLCC) $(FONTCONFIG_CFLAGS) $(GLO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
 
 $(AUX)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\

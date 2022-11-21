@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -20,6 +20,7 @@
 #  define gsargs_INCLUDED
 
 #include "std.h"
+#include "stream.h"
 
 /*
  * We need to handle recursion into @-files.
@@ -39,14 +40,14 @@ typedef struct arg_source_s {
             gs_memory_t *memory;/* if non-0, free chars when done with it */
             const char *str;    /* string being read */
         } s;
-        gp_file *file;
+        stream *strm;
     } u;
 } arg_source;
 typedef struct arg_list_s {
     bool expand_ats;            /* if true, expand @-files */
-    gp_file *(*arg_fopen) (const char *fname, void *fopen_data);
+    stream *(*arg_fopen) (const char *fname, void *fopen_data);
     void *fopen_data;
-    int (*get_codepoint)(gp_file *file, const char **astr);
+    int (*get_codepoint)(stream *s, const char **astr);
     gs_memory_t *memory;
     const char **argp;
     int argn;
@@ -61,9 +62,9 @@ int codepoint_to_utf8(char *cstr, int rune);
 int arg_init(arg_list    *pal,
              const char **argv,
              int          argc,
-             gp_file     *(*arg_fopen)(const char *fname, void *fopen_data),
+             stream      *(*arg_fopen)(const char *fname, void *fopen_data),
              void        *fopen_data,
-             int          (*get_codepoint)(gp_file *file, const char **astr),
+             int          (*get_codepoint)(stream *s, const char **astr),
              gs_memory_t *mem);
 
 /*

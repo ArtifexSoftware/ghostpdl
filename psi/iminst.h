@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -77,7 +77,7 @@ struct gs_main_instance_s {
     long base_time[2];		/* starting usertime */
     void *readline_data;	/* data for gp_readline */
     ref error_object;		/* Use by gsapi_*() */
-    int (*get_codepoint)(gp_file *file, const char **astr);
+    int (*get_codepoint)(stream *s, const char **astr);
                                 /* Get next 'unicode' codepoint */
     display_callback *display;	/* callback structure for display device */
     /* The following are updated dynamically. */

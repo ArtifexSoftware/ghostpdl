@@ -1283,8 +1283,8 @@ lib_file_open(gs_file_path_ptr  lib_path, const gs_memory_t *mem, i_ctx_t *i_ctx
 }
 
 /* The startup code calls this to open @-files. */
-gp_file *
-lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fname)
+stream *
+lib_sopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fname)
 {
     /* We need a buffer to hold the expanded file name. */
     char filename_found[DEFAULT_BUFFER_SIZE];
@@ -1301,19 +1301,7 @@ lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fna
     if (code < 0)
         return NULL;
 
-    /* This all seems a bit grotty. The above code has generated us a stream
-     * that wraps a file. We actually want the file. So we reach in, and steal
-     * the file pointer. Nasty. */
-    s = ((stream *)(obj.value.pfile));
-    file = s->file;
-    /* Historically we've then just abandoned the stream, resulting in blocks
-     * leaking. Let's free the leaked blocks (in rather hacky style). First,
-     * we clear the file reference, and then drop the stream. */
-    s->file = NULL;
-    sclose(s);
-    /* Then free the stream block itself. */
-    gs_free_object(s->memory, s, "lib_fopen");
-    return file;
+    return((stream *)(obj.value.pfile));
 }
 
 /* Open a file stream that reads a string. */

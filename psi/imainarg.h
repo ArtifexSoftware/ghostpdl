@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -49,7 +49,7 @@ int gs_main_run_start(gs_main_instance * minst);
  * Allocation should be done with the standard gs allocation functions, as
  * the returned string may be freed using the same.
  */
-typedef int (gs_arg_get_codepoint)(gp_file *, const char **);
+typedef int (gs_arg_get_codepoint)(stream *, const char **);
 
 void gs_main_inst_arg_decode(gs_main_instance * minst,
                              gs_arg_get_codepoint *get_codepoint);

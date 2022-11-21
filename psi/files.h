@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -103,7 +103,7 @@ typedef struct gs_file_path_s *gs_file_path_ptr;
 
 /* Procedures exported by zfile.c. */
         /* for imainarg.c */
-gp_file *lib_fopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *);
+stream *lib_sopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *);
 
         /* for imain.c */
 int

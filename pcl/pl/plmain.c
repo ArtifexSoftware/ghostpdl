@@ -201,7 +201,7 @@ static pl_interp_implementation_t
                               int len);
 
 /* Process the options on the command line. */
-static gp_file *pl_main_arg_fopen(const char *fname, void *mem);
+static stream *pl_main_arg_fopen(const char *fname, void *mem);
 
 /* Process the options on the command line, including making the
    initial device and setting its parameters.  */
@@ -1451,11 +1451,11 @@ pl_top_create_device(pl_main_instance_t * pti)
 }
 
 /* Process the options on the command line. */
-static gp_file *
+static stream *
 pl_main_arg_fopen(const char *fname, void *data)
 {
-    const gs_memory_t *mem = (const gs_memory_t *)data;
-    return gp_fopen(mem, fname, "r");
+    gs_memory_t *mem = (gs_memory_t *)data;
+    return sfopen(fname, "r", mem);
 }
 
 static void
