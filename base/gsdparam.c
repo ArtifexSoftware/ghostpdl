@@ -79,6 +79,47 @@ gs_get_device_or_hw_params(gx_device * orig_dev, gs_param_list * plist,
     return code;
 }
 
+static int
+get_dev_icccolorants_utf8(gs_memory_t *mem, cmm_dev_profile_t *dev_profile, char **putf8)
+{
+    char *colorants = gsicc_get_dev_icccolorants(dev_profile);
+    char *utf8 ,*s;
+    unsigned short *unicode, *u;
+    size_t len;
+
+    if (colorants == NULL)
+    {
+        *putf8 = NULL;
+        return 0;
+    }
+
+    len = strlen(colorants);
+
+    /* Convert our 8 bit raw bytes into 16 bit raw. */
+    unicode = (unsigned short *)gs_alloc_bytes(mem, (len+1)*sizeof(unsigned short), "get_dev_icccolorants_utf8");
+    if (unicode == NULL)
+        return_error(gs_error_VMerror);
+
+    u = unicode;
+    s = colorants;
+    while ((*u++ = *s++) != 0);
+
+    /* Now utf-8 encode that. */
+    len = gp_uint16_to_utf8(NULL, unicode);
+    utf8 = (char *)gs_alloc_bytes(mem, len, "get_dev_icccolorants_utf8");
+    if (utf8 == NULL) {
+        gs_free_object(mem, unicode, "get_dev_icccolorants_utf8");
+        return_error(gs_error_VMerror);
+    }
+    gp_uint16_to_utf8(utf8, unicode);
+
+    gs_free_object(mem, unicode, "get_dev_icccolorants_utf8");
+    *putf8 = utf8;
+
+    return 0;
+}
+
+
 int gx_default_get_param(gx_device *dev, char *Param, void *list)
 {
     gs_param_list * plist = (gs_param_list *)list;
@@ -373,10 +414,12 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
         } else {
             char *colorant_names;
 
-            colorant_names =
-                gsicc_get_dev_icccolorants(dev_profile);
+            code = get_dev_icccolorants_utf8(dev->memory, dev_profile, &colorant_names);
+            if (code < 0)
+                return code;
             if (colorant_names != NULL) {
                 param_string_from_transient_string(icc_colorants, colorant_names);
+                gs_free_object(dev->memory, colorant_names, "gx_default_get_param");
             } else {
                 param_string_from_string(icc_colorants, null_str);
             }
@@ -688,10 +731,12 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         } else {
             char *colorant_names;
 
-            colorant_names =
-                gsicc_get_dev_icccolorants(dev_profile);
+            code = get_dev_icccolorants_utf8(dev->memory, dev_profile, &colorant_names);
+            if (code < 0)
+                return code;
             if (colorant_names != NULL) {
                 param_string_from_transient_string(icc_colorants, colorant_names);
+                gs_free_object(dev->memory, colorant_names, "gx_default_get_param");
             } else {
                 param_string_from_string(icc_colorants, null_str);
             }
@@ -1481,6 +1526,10 @@ gx_default_put_icc_colorants(gs_param_string *colorants, gx_device * dev)
 {
     char *tempstr;
     int code;
+    int len;
+    unsigned short *tempstr2;
+    unsigned short *s;
+    char *d;
 
     if (colorants->size == 0) return 0;
 
@@ -1488,11 +1537,44 @@ gx_default_put_icc_colorants(gs_param_string *colorants, gx_device * dev)
     fill_dev_proc(dev, get_profile, gx_default_get_profile);
     tempstr = (char *) gs_alloc_bytes(dev->memory, colorants->size+1,
                                       "gx_default_put_icc_colorants");
+    if (tempstr == NULL)
+        return_error(gs_error_VMerror);
+
     memcpy(tempstr, colorants->data, colorants->size);
     /* Set last position to NULL. */
     tempstr[colorants->size] = 0;
-    code = gsicc_set_device_profile_colorants(dev, tempstr);
+
+    /* The input colorants string is UTF-8 encoded. We want it to be put into the
+     * device as 8-bit 'raw' values. We therefore need to decode it here. Any
+     * UTF-8 chars that do not decode to 8 bits will be flagged up as a rangecheck.
+     */
+    len = gp_utf8_to_uint16(NULL, tempstr);
+    tempstr2 = (unsigned short *)gs_alloc_bytes(dev->memory, len * sizeof(unsigned short),
+                                                "gx_default_put_icc_colorants");
+    if (tempstr2 == NULL)
+    {
+        gs_free_object(dev->memory, tempstr, "gx_default_put_icc_colorants");
+        return_error(gs_error_VMerror);
+    }
+    len = gp_utf8_to_uint16(tempstr2, tempstr);
+
+    /* Now convert down to 8 bits. Reuse tempstr here, because we know it will
+     * be large enough. */
+    code = 0;
+    for (s = tempstr2, d = tempstr; *s; s++, d++)
+    {
+        unsigned short v = *s;
+        if (v & 0xff00)
+            code = gs_note_error(gs_error_rangecheck);
+        *d = v & 0xff;
+    }
+
+    if (code < 0)
+        emprintf(dev->memory, "ICCColorants must fit (unencoded) in 8 bits");
+    else
+        code = gsicc_set_device_profile_colorants(dev, tempstr);
     gs_free_object(dev->memory, tempstr, "gx_default_put_icc_colorants");
+    gs_free_object(dev->memory, tempstr2, "gx_default_put_icc_colorants");
     return code;
 }
 
