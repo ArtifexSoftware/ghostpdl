@@ -14,7 +14,7 @@
 */
 
 
-#include "windows_.h"
+#include "gp_utf8.h"
 
 static int
 decode_utf8(const char **inp, unsigned int i)
@@ -66,7 +66,7 @@ fail:
     return i;
 }
 
-int utf8_to_wchar(wchar_t *out, const char *in)
+int gp_utf8_to_uint16(unsigned short *out, const char *in)
 {
     unsigned int i;
     unsigned int len = 1;
@@ -90,7 +90,7 @@ int utf8_to_wchar(wchar_t *out, const char *in)
                 return -1;
             }
             else
-                *out++ = (wchar_t)i;
+                *out++ = (unsigned short)i;
             len++;
         }
         *out = 0;
@@ -110,7 +110,7 @@ int utf8_to_wchar(wchar_t *out, const char *in)
     return len;
 }
 
-int wchar_to_utf8(char *out, const wchar_t *in)
+int gp_uint16_to_utf8(char *out, const unsigned short *in)
 {
     unsigned int i;
     unsigned int len = 1;

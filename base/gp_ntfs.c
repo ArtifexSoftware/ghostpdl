@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -242,12 +242,12 @@ gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uin
     for(;;) {
         if (pden->first_time) {
             wchar_t *pat;
-            pat = malloc(utf8_to_wchar(NULL, pden->pattern)*sizeof(wchar_t));
+            pat = malloc(gp_utf8_to_uint16(NULL, pden->pattern)*sizeof(wchar_t));
             if (pat == NULL) {
                 code = -1;
                 break;
             }
-            utf8_to_wchar(pat, pden->pattern);
+            gp_utf8_to_uint16(pat, pden->pattern);
 #ifdef METRO
             pden->find_handle = FindFirstFileExW(pat, FindExInfoStandard, &(pden->find_data), FindExSearchNameMatch, NULL, 0);
 #else
@@ -293,11 +293,11 @@ gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uin
                     new_denum = gs_alloc_struct(pden->memory, directory_enum, &st_directory_enum, "gp_enumerate_files");
                     if (new_denum != 0) {
                         char *fname;
-                        fname = gs_alloc_bytes(pden->memory, wchar_to_utf8(NULL, pden->find_data.cFileName)*sizeof(wchar_t), "temporary wchar buffer");
+                        fname = gs_alloc_bytes(pden->memory, gp_uint16_to_utf8(NULL, pden->find_data.cFileName)*sizeof(wchar_t), "temporary wchar buffer");
                         if (fname == NULL) {
                             gs_free_object(pden->memory, new_denum, "free directory enumerator on error");
                         } else {
-                            wchar_to_utf8(fname, pden->find_data.cFileName);
+                            gp_uint16_to_utf8(fname, pden->find_data.cFileName);
                             if (enumerate_directory_init(pden->memory, new_denum, pden->pattern, pden->head_size,
                                 fname, "*", 1) < 0)
                             {
@@ -319,7 +319,7 @@ gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uin
         gp_enumerate_files_close(mem, pfen);
         return ~(uint) 0;
     }
-    wchar_to_utf8(outfname, pden->find_data.cFileName);
+    gp_uint16_to_utf8(outfname, pden->find_data.cFileName);
     len = strlen(outfname);
 
     if (pden->head_size + len < maxlen) {

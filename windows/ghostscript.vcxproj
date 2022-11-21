@@ -1043,6 +1043,7 @@
     <ClCompile Include="..\base\gp_unix.c" />
     <ClCompile Include="..\base\gp_unix_cache.c" />
     <ClCompile Include="..\base\gp_upapr.c" />
+    <ClCompile Include="..\base\gp_utf8.c" />
     <ClCompile Include="..\base\gp_vms.c" />
     <ClCompile Include="..\base\gp_wgetv.c" />
     <ClCompile Include="..\base\gp_win32.c" />
@@ -1050,7 +1051,6 @@
     <ClCompile Include="..\base\gp_winfs2.c" />
     <ClCompile Include="..\base\gp_wpapr.c" />
     <ClCompile Include="..\base\gp_wsync.c" />
-    <ClCompile Include="..\base\gp_wutf8.c" />
     <ClCompile Include="..\base\gsagl.c" />
     <ClCompile Include="..\base\gsalloc.c" />
     <ClCompile Include="..\base\gsargs.c" />
@@ -2717,6 +2717,7 @@
     <ClInclude Include="..\base\gpsync.h" />
     <ClInclude Include="..\base\gp_mswin.h" />
     <ClInclude Include="..\base\gp_os2.h" />
+    <ClInclude Include="..\base\gp_utf8.h" />
     <ClInclude Include="..\base\gsagl.h" />
     <ClInclude Include="..\base\gsalloc.h" />
     <ClInclude Include="..\base\gsargs.h" />

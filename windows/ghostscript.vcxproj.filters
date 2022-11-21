@@ -1661,6 +1661,9 @@
     <ClCompile Include="..\base\gp_upapr.c">
       <Filter>base</Filter>
     </ClCompile>
+    <ClCompile Include="..\base\gp_utf8.c">
+      <Filter>base</Filter>
+    </ClCompile>
     <ClCompile Include="..\base\gp_vms.c">
       <Filter>base</Filter>
     </ClCompile>
@@ -1680,9 +1683,6 @@
       <Filter>base</Filter>
     </ClCompile>
     <ClCompile Include="..\base\gp_wsync.c">
-      <Filter>base</Filter>
-    </ClCompile>
-    <ClCompile Include="..\base\gp_wutf8.c">
       <Filter>base</Filter>
     </ClCompile>
     <ClCompile Include="..\base\gpmisc.c">
@@ -6731,6 +6731,9 @@
       <Filter>base %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\base\gp_os2.h">
+      <Filter>base %28.h%29</Filter>
+    </ClInclude>
+    <ClInclude Include="..\base\gp_utf8.h">
       <Filter>base %28.h%29</Filter>
     </ClInclude>
     <ClInclude Include="..\base\gpcheck.h">

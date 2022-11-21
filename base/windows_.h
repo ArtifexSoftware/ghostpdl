@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -27,6 +27,7 @@
 #endif
 #include <windows.h>
 #include <process.h>
+#include "gp_utf8.h"
 
 /* After including windows.h, we have to undef bool for VS 2014 and later */
 #if defined(_MSC_VER) && _MSC_VER>=1900
@@ -36,8 +37,6 @@
 
 /* Unicode/UTF-8 wrappers that we provide */
 BOOL gp_OpenPrinter(char *device, LPHANDLE printer);
-int utf8_to_wchar(wchar_t *out, const char *in);
-int wchar_to_utf8(char *out, const wchar_t *in);
 
 #ifdef __WATCOMC__
 typedef RGBQUAD FAR * LPRGBQUAD;

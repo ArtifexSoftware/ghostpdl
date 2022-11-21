@@ -3662,6 +3662,13 @@ $(GLOBJ)gsiodisk.$(OBJ) : $(GLSRC)gsiodisk.c $(AK) $(gx_h)\
 # Platform-specific code doesn't really belong here: this is code that is
 # shared among multiple platforms.
 
+# UTF8 conversion functions
+$(GLOBJ)gp_utf8.$(OBJ): $(GLSRC)gp_utf8.c $(gp_utf8_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gp_utf8.$(OBJ) $(C_) $(GLSRC)gp_utf8.c
+
+$(AUX)gp_utf8.$(OBJ): $(GLSRC)gp_utf8.c $(gp_utf8_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCCAUX) $(AUXO_)gp_utf8.$(OBJ) $(C_) $(GLSRC)gp_utf8.c
+
 # Standard implementation of gp_getenv.
 $(GLOBJ)gp_getnv.$(OBJ) : $(GLSRC)gp_getnv.c $(AK) $(stdio__h)\
  $(string__h) $(gp_h) $(gsmemory_h) $(gstypes_h) $(LIB_MAK) $(MAKEDIRS)

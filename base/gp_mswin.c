@@ -254,10 +254,10 @@ gp_printfile(const gs_memory_t *mem, const char *filename, const char *pmport)
         int l;
 
         GetProfileStringW(L"windows", L"device", L"",  wbuf, sizeof(wbuf));
-        l = wchar_to_utf8(NULL, wbuf);
+        l = gp_uint16_to_utf8(NULL, wbuf);
         if (l < 0 || l > sizeof(buf))
             return_error(gs_error_undefinedfilename);
-        wchar_to_utf8(buf, wbuf);
+        gp_uint16_to_utf8(buf, wbuf);
         if ((p = strchr(buf, ',')) != NULL)
             *p = '\0';
         return gp_printfile_win32(mem, filename, buf);
@@ -366,9 +366,9 @@ BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
     return FALSE;
 #else
     BOOL opened;
-    wchar_t *uni = malloc(utf8_to_wchar(NULL, port) * sizeof(wchar_t));
+    wchar_t *uni = malloc(gp_utf8_to_uint16(NULL, port) * sizeof(wchar_t));
     if (uni)
-        utf8_to_wchar(uni, port);
+        gp_utf8_to_uint16(uni, port);
     opened = OpenPrinterW(uni, printer, NULL);
     free(uni);
     return opened;
@@ -515,9 +515,9 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     siStartInfo.hStdError = hChildStderrWr;
 
     if (handle == 0) {
-        command = (wchar_t *)malloc(sizeof(wchar_t)*utf8_to_wchar(NULL, cmd));
+        command = (wchar_t *)malloc(sizeof(wchar_t)*gp_utf8_to_uint16(NULL, cmd));
         if (command)
-            utf8_to_wchar(command, cmd);
+            gp_utf8_to_uint16(command, cmd);
         else
             handle = -1;
     }
@@ -601,7 +601,7 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
 #else
             GetTempPathW(_MAX_PATH, wTempDir);
 #endif
-            l = wchar_to_utf8(sTempDir, wTempDir);
+            l = gp_uint16_to_utf8(sTempDir, wTempDir);
         } else
             l = strlen(sTempDir);
     } else {
@@ -614,14 +614,14 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
         sTempDir[l-1] = '\\';		/* What Windoze prefers */
 
     if (l <= _MAX_PATH) {
-        utf8_to_wchar(wTempDir, sTempDir);
-        utf8_to_wchar(wPrefix, prefix);
+        gp_utf8_to_uint16(wTempDir, sTempDir);
+        gp_utf8_to_uint16(wPrefix, prefix);
 #ifdef METRO
         n = GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
 #else
         GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
 #endif
-        n = wchar_to_utf8(sTempFileName, wTempFileName);
+        n = gp_uint16_to_utf8(sTempFileName, wTempFileName);
         if (n == 0) {
             /* If 'prefix' is not a directory, it is a path prefix. */
             int l = strlen(sTempDir), i;
@@ -636,22 +636,22 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
                 }
             }
             if (i > 0) {
-                utf8_to_wchar(wPrefix, sTempDir + i);
+                gp_utf8_to_uint16(wPrefix, sTempDir + i);
 #ifdef METRO
                 GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
 #else
                 GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
 #endif
-                n = wchar_to_utf8(sTempFileName, wTempFileName);
+                n = gp_uint16_to_utf8(sTempFileName, wTempFileName);
             }
         }
         if (n != 0) {
-            int len = utf8_to_wchar(NULL, sTempFileName);
+            int len = gp_utf8_to_uint16(NULL, sTempFileName);
             wchar_t *uni = (len > 0 ? malloc(sizeof(wchar_t)*len) : NULL);
             if (uni == NULL)
                 hfile = INVALID_HANDLE_VALUE;
             else {
-                utf8_to_wchar(uni, sTempFileName);
+                gp_utf8_to_uint16(uni, sTempFileName);
 #ifdef METRO
                 hfile = CreateFile2(uni,
                                     GENERIC_READ | GENERIC_WRITE | DELETE,
@@ -696,7 +696,7 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
 
 int gp_stat_impl(const gs_memory_t *mem, const char *path, struct _stat64 *buf)
 {
-    int len = utf8_to_wchar(NULL, path);
+    int len = gp_utf8_to_uint16(NULL, path);
     wchar_t *uni;
     int ret;
 
@@ -705,7 +705,7 @@ int gp_stat_impl(const gs_memory_t *mem, const char *path, struct _stat64 *buf)
     uni = malloc(len*sizeof(wchar_t));
     if (uni == NULL)
         return -1;
-    utf8_to_wchar(uni, path);
+    gp_utf8_to_uint16(uni, path);
     ret = _wstat64(uni, buf);
     free(uni);
     return ret;

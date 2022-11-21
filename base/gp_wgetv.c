@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -49,13 +49,13 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
     }
     wptr = wp;
 
-    wname = malloc(utf8_to_wchar(NULL, name)*sizeof(wchar_t));
+    wname = malloc(gp_utf8_to_uint16(NULL, name)*sizeof(wchar_t));
     if (wname == NULL) {
         if (wp)
             free(wp);
         return 1;
     }
-    utf8_to_wchar(wname, name);
+    gp_utf8_to_uint16(wname, name);
 
     if (RegOpenKeyExW(hkeyroot, key, 0, KEY_READ, &hkey) != ERROR_SUCCESS) {
         free(wname);
@@ -74,9 +74,9 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
         switch (rc) {
             case ERROR_SUCCESS:
                 if (wp) {
-                    l = wchar_to_utf8(NULL, wp);
+                    l = gp_uint16_to_utf8(NULL, wp);
                     if (l <= *plen) {
-                        *plen = wchar_to_utf8(ptr, wp);
+                        *plen = gp_uint16_to_utf8(ptr, wp);
                         free(wp);
                         free(wname);
                         return 0;       /* found environment variable and copied it */
@@ -116,23 +116,23 @@ gp_getenv(const char *name, char *ptr, int *plen)
     wchar_t *wname;
     wchar_t *str;
 
-    wname = malloc(utf8_to_wchar(NULL, name)*sizeof(wchar_t));
+    wname = malloc(gp_utf8_to_uint16(NULL, name)*sizeof(wchar_t));
     if (wname == NULL) {
         return -1;
     }
-    utf8_to_wchar(wname, name);
+    gp_utf8_to_uint16(wname, name);
 
     str = _wgetenv(wname);
 
     free(wname);
 
     if (str) {
-        /* wchar_to_utf8 returns INCLUDING terminator */
-        int len = wchar_to_utf8(NULL, str);
+        /* gp_uint16_to_utf8 returns INCLUDING terminator */
+        int len = gp_uint16_to_utf8(NULL, str);
 
         if (len <= *plen) {
             /* string fits */
-            *plen = wchar_to_utf8(ptr, str);
+            *plen = gp_uint16_to_utf8(ptr, str);
             return 0;
         }
         /* string doesn't fit */

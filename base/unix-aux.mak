@@ -30,7 +30,7 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak $(TOP_MAKEFILES)
 # (SVR4) platforms.
 unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_upapr.$(OBJ) $(GLOBJ)gp_unix.$(OBJ)\
        $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)\
-       $(GLOBJ)gp_nxpsprn.$(OBJ)
+       $(GLOBJ)gp_nxpsprn.$(OBJ) $(GLOBJ)gp_utf8.$(OBJ)
 
 $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev $(GLD)smd5.dev $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(SETMOD) $(GLGEN)unix_ $(unix__) -include $(GLD)nosync

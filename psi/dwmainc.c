@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -759,10 +759,10 @@ int wmain(int argc, wchar_t *argv[], wchar_t *envp[]) {
     if (nargv == NULL)
         goto err;
     for (i=0; i < argc; i++) {
-        nargv[i] = malloc(wchar_to_utf8(NULL, argv[i]));
+        nargv[i] = malloc(gp_uint16_to_utf8(NULL, argv[i]));
         if (nargv[i] == NULL)
             goto err;
-        (void)wchar_to_utf8(nargv[i], argv[i]);
+        (void)gp_uint16_to_utf8(nargv[i], argv[i]);
     }
     code = main_utf8(argc, nargv);
 

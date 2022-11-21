@@ -192,7 +192,7 @@ $(gconfig__h): $(TOP_MAKEFILES)
 # The Windows Win32 platform
 
 mswin32__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_wpapr.$(OBJ) \
- $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_wutf8.$(OBJ) $(GLOBJ)gp_winfs.$(OBJ)
+ $(GLOBJ)gp_stdia.$(OBJ) $(GLOBJ)gp_utf8.$(OBJ) $(GLOBJ)gp_winfs.$(OBJ)
 mswin32_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 
 $(GLGEN)mswin32_.dev:  $(mswin32__) $(ECHOGS_XE) $(mswin32_inc) $(WINLIB_MAK)
@@ -221,12 +221,6 @@ $(AUX)gp_winfs2.$(OBJ): $(GLSRC)gp_winfs2.c $(AK) $(gp_mswin_h) \
  $(WINLIB_MAK)
 	$(GLCCAUX) $(AUXO_)gp_winfs2.$(OBJ) $(C_) $(GLSRC)gp_winfs2.c
 
-$(GLOBJ)gp_wutf8.$(OBJ): $(GLSRC)gp_wutf8.c $(windows__h) $(WINLIB_MAK)
-	$(GLCCWIN) $(GLO_)gp_wutf8.$(OBJ) $(C_) $(GLSRC)gp_wutf8.c
-
-$(AUX)gp_wutf8.$(OBJ): $(GLSRC)gp_wutf8.c $(windows__h) $(WINLIB_MAK)
-	$(GLCCAUX) $(AUXO_)gp_wutf8.$(OBJ) $(C_) $(GLSRC)gp_wutf8.c
-
 $(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h) $(WINLIB_MAK)
 	$(GLCCWIN) $(GLO_)gp_wgetv.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c
 
@@ -239,7 +233,7 @@ $(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
 
 # The Metro platform
 !ifdef METRO
-METRO_OBJS=$(GLOBJ)winrtsup.$(OBJ) $(GLOBJ)gp_wutf8.$(OBJ)
+METRO_OBJS=$(GLOBJ)winrtsup.$(OBJ)
 
 $(GLOBJ)winrtsup.$(OBJ): $(GLSRCDIR)/winrtsup.cpp $(WINLIB_MAK)
 	$(GLCCWIN) /EHsc $(GLO_)winrtsup.$(OBJ) $(C_) $(GLSRCDIR)/winrtsup.cpp
@@ -250,7 +244,6 @@ METRO_OBJS=
 
 metro__=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ) $(GLOBJ)gp_wpapr.$(OBJ)\
   $(GLOBJ)gp_stdia.$(OBJ) $(METRO_OBJS)
-#$(GLOBJ)gp_wutf8.$(OBJ)
 metro_inc=$(GLD)nosync.dev $(GLD)winplat.dev
 
 $(GLGEN)metro_.dev:  $(metro__) $(ECHOGS_XE) $(metro_inc) $(WINLIB_MAK)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -103,9 +103,9 @@ int dwmain_add_file_control_path(const TCHAR *pathfile)
 {
     LPSTR p;
     int code, i;
-    p = malloc(wchar_to_utf8(NULL, (wchar_t *)pathfile));
+    p = malloc(gp_uint16_to_utf8(NULL, (wchar_t *)pathfile));
     if (p) {
-        wchar_to_utf8(p, (wchar_t *)pathfile);
+        gp_uint16_to_utf8(p, (wchar_t *)pathfile);
         for (i = 0; i < strlen(p); i++) {
             if (p[i] == '\\') {
                 p[i] = '/';
@@ -123,9 +123,9 @@ void dwmain_remove_file_control_path(const TCHAR *pathfile)
 {
     LPSTR p;
     int i;
-    p = malloc(wchar_to_utf8(NULL, (wchar_t *)pathfile));
+    p = malloc(gp_uint16_to_utf8(NULL, (wchar_t *)pathfile));
     if (p) {
-        wchar_to_utf8(p, (wchar_t *)pathfile);
+        gp_uint16_to_utf8(p, (wchar_t *)pathfile);
         for (i = 0; i < strlen(p); i++) {
             if (p[i] == '\\') {
                 p[i] = '/';
@@ -486,9 +486,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
      */
     {
         wchar_t *uni = GetCommandLineW();
-        pstart = p = malloc(wchar_to_utf8(NULL, uni));
+        pstart = p = malloc(gp_uint16_to_utf8(NULL, uni));
         if (p != NULL)
-            wchar_to_utf8(p, uni);
+            gp_uint16_to_utf8(p, uni);
     }
 
     argc = 0;

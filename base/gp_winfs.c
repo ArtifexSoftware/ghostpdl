@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -32,7 +32,7 @@ extern intptr_t _get_osfhandle(int fd);
 FILE *
 gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
 {
-    int len = utf8_to_wchar(NULL, fname);
+    int len = gp_utf8_to_uint16(NULL, fname);
     wchar_t *uni;
     wchar_t wmode[4];
     FILE *file;
@@ -43,8 +43,8 @@ gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
     uni = (wchar_t *)gs_alloc_bytes(mem, len*sizeof(wchar_t), "gp_fopen_impl");
     if (uni == NULL)
         return NULL;
-    utf8_to_wchar(uni, fname);
-    utf8_to_wchar(wmode, mode);
+    gp_utf8_to_uint16(uni, fname);
+    gp_utf8_to_uint16(wmode, mode);
     file = _wfopen(uni, wmode);
     gs_free_object(mem, uni, "gs_fopen_impl");
 
@@ -54,7 +54,7 @@ gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
 int
 gp_unlink_impl(gs_memory_t *mem, const char *fname)
 {
-    int len = utf8_to_wchar(NULL, fname);
+    int len = gp_utf8_to_uint16(NULL, fname);
     wchar_t *uni;
     int ret;
 
@@ -64,7 +64,7 @@ gp_unlink_impl(gs_memory_t *mem, const char *fname)
     uni = (wchar_t *)gs_alloc_bytes(mem, len*sizeof(wchar_t), "gp_unlink_impl");
     if (uni == NULL)
         return gs_error_VMerror;
-    utf8_to_wchar(uni, fname);
+    gp_utf8_to_uint16(uni, fname);
     ret = _wunlink(uni);
     gs_free_object(mem, uni, "gs_unlink_impl");
 
@@ -74,8 +74,8 @@ gp_unlink_impl(gs_memory_t *mem, const char *fname)
 int
 gp_rename_impl(gs_memory_t *mem, const char *from, const char *to)
 {
-    int lenf = utf8_to_wchar(NULL, from);
-    int lent = utf8_to_wchar(NULL, to);
+    int lenf = gp_utf8_to_uint16(NULL, from);
+    int lent = gp_utf8_to_uint16(NULL, to);
     wchar_t *unif, *unit;
     int ret;
 
@@ -90,8 +90,8 @@ gp_rename_impl(gs_memory_t *mem, const char *from, const char *to)
         gs_free_object(mem, unif, "gs_unlink_impl");
         return gs_error_VMerror;
     }
-    utf8_to_wchar(unif, from);
-    utf8_to_wchar(unit, to);
+    gp_utf8_to_uint16(unif, from);
+    gp_utf8_to_uint16(unit, to);
     ret = _wrename(unif, unit);
     gs_free_object(mem, unif, "gs_rename_impl");
     gs_free_object(mem, unit, "gs_rename_impl");

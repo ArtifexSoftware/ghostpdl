@@ -1988,7 +1988,7 @@ $(GPDLGEN)gpdllib.rsp: $(TOP_MAKEFILES)
 $(GS_XE): $(GSDLL_DLL)
 
 !else
-$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_MAKEFILES)
+$(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_utf8.$(OBJ) $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:WINDOWS$(SUBSUBSYS) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gswin.rsp
@@ -2002,12 +2002,12 @@ $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE) $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_M
 !else
 	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) >> $(PSGEN)gswin.rsp
 !endif
-	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(DWOBJ) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_wutf8.$(OBJ)
+	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(DWOBJ) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_utf8.$(OBJ)
 	del $(PSGEN)gswin.rsp
 !endif
 
 # The console mode small EXE loader
-$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def $(GLOBJ)gp_wutf8.$(OBJ) $(TOP_MAKEFILES)
+$(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.def $(GLOBJ)gp_utf8.$(OBJ) $(TOP_MAKEFILES)
 	echo /SUBSYSTEM:CONSOLE$(SUBSUBSYS) > $(PSGEN)gswin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(PSGEN)gswin.rsp
@@ -2021,7 +2021,7 @@ $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw64c.def $(PSSRCDIR)\dw32c.d
 !else
 	echo  /DEF:$(PSSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin.rsp
 !endif
-	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(OBJC) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_wutf8.$(OBJ)
+	$(LINK) $(LCT) @$(PSGEN)gswin.rsp $(OBJC) $(LINKLIBPATH) @$(LIBCTR) $(GS_OBJ).res $(GLOBJ)gp_utf8.$(OBJ)
 
 # The big DLL
 $(GSDLL_DLL): $(ECHOGS_XE) $(gs_tr) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(GSDLL_OBJ).res $(PSGEN)lib.rsp \

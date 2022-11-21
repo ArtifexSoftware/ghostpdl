@@ -1020,10 +1020,10 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         wchar_t *devices;
         wchar_t *p;
         int devices_size = 128, returned_length = 0;
-        wchar_t *unidev = malloc(utf8_to_wchar(NULL, device)*sizeof(wchar_t));
+        wchar_t *unidev = malloc(gp_utf8_to_uint16(NULL, device)*sizeof(wchar_t));
         if (unidev == NULL)
             return FALSE;
-        utf8_to_wchar(unidev, device);
+        gp_utf8_to_uint16(unidev, device);
         do {
             devices = gs_malloc(wdev->memory, devices_size, 1, "win_pr2_getdc");
             if (devices == (wchar_t *)NULL) {
@@ -1056,10 +1056,10 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         /* the printer exists, get the remaining information from win.ini */
         GetProfileStringW(L"Devices", unidev, L"", unidrvbuf, sizeof(unidrvbuf));
         free(unidev);
-        i = wchar_to_utf8(NULL, unidrvbuf);
+        i = gp_uint16_to_utf8(NULL, unidrvbuf);
         if (i < 0 || i > sizeof(driverbuf))
             return FALSE;
-        wchar_to_utf8(driverbuf, unidrvbuf);
+        gp_uint16_to_utf8(driverbuf, unidrvbuf);
     }
     driver = gs_strtok(driverbuf, ",", &dbuflast);
     output = gs_strtok(NULL, ",", &dbuflast);
