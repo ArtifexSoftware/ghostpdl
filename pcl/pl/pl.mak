@@ -375,7 +375,7 @@ $(PLOBJ)plwreg.$(OBJ): $(PLSRC)plwreg.c $(PL_MAK) $(MAKEDIRS)
 WINPLOBJS=$(PLOBJ)plwimg.$(OBJ) $(PLOBJ)plwreg.$(OBJ)
 WINMAINOBJ=$(PLOBJ)plwmainc.$(OBJ)
 WINMAINOBJS=$(WINMAINOBJ) $(WINPLOBJS)
-DWMAINOBJS=$(WINMAINOBJS) $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)gp_wutf8.obj
+DWMAINOBJS=$(WINMAINOBJS) $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj $(GLOBJ)gp_utf8.obj
 
 $(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \
                         $(AK)                       \
