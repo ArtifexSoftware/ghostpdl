@@ -136,7 +136,13 @@ dynamic_save(da_ptr pda)
 
         if (len > sizeof(pda->buf))
             len = sizeof(pda->buf);
-        memcpy(pda->buf, pda->base, len);
+        /* This can happen if we get a /<CR> at the end of a buffer, and the file is
+         * not at EOF. In this case 'len' will be zero so we don't actually copy any
+         * bytes. So this is safe on current C run-time libraries, but it's probably
+         * best to avoid it. Coverity ID C382008
+         */
+        if (pda->base != NULL)
+            memcpy(pda->buf, pda->base, len);
         pda->next = pda->buf + len;
         pda->base = pda->buf;
     }
