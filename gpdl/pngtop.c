@@ -678,11 +678,20 @@ do_impl_process(png_interp_instance_t *png, stream_cursor_read * pr, bool eof)
         }
         default:
         case ii_state_flush:
+            if (png->png)
+            {
+                png_destroy_read_struct(&png->png, &png->png_info, NULL);
+                png->png = NULL;
+                png->png_info = NULL;
+            }
+
             if (png->penum) {
                 (void)gs_image_cleanup_and_free_enum(png->penum, png->pgs);
                 png->penum = NULL;
             }
 
+            gs_free_object(png->memory, png->buffer, "png_impl_process(buffer)");
+            png->buffer = NULL;
             gs_free_object(png->memory, png->samples, "png_impl_process(samples)");
             png->samples = NULL;
             /* We want to bin any data we get up to, but not including
