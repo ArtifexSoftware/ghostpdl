@@ -695,10 +695,14 @@ pdfi_report_errors(pdf_context *ctx)
             char *cs;
 
             cs = (char *)gs_alloc_bytes(ctx->memory, s->length + 1, "temporary string for error report");
-            memcpy(cs, s->data, s->length);
-            cs[s->length] = 0x00;
-            dmprintf1(ctx->memory, "   **** The file was produced by: \n   **** >>>> %s <<<<\n", cs);
-            gs_free_object(ctx->memory, cs, "temporary string for error report");
+            if (cs == NULL) {
+                dmprintf(ctx->memory, "   **** Out of memory while trying to display Producer ****\n");
+            } else {
+                memcpy(cs, s->data, s->length);
+                cs[s->length] = 0x00;
+                dmprintf1(ctx->memory, "   **** The file was produced by: \n   **** >>>> %s <<<<\n", cs);
+                gs_free_object(ctx->memory, cs, "temporary string for error report");
+            }
         }
         pdfi_countdown(s);
     }
