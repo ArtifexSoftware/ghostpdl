@@ -295,7 +295,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         Buffer[index] = (byte)c;
 
         if (c >= '0' && c <= '9') {
-            if  (!(malformed && recovered) && !overflowed) {
+            if  (!(malformed && recovered) && !overflowed && !real) {
                 if (int_val < tenth_max_int)
                     int_val = int_val*10 + c - '0';
                 else {
