@@ -1516,12 +1516,18 @@ void pdfi_close_file(pdf_context *ctx, pdf_c_stream *s)
 
 int pdfi_seek(pdf_context *ctx, pdf_c_stream *s, gs_offset_t offset, uint32_t origin)
 {
+    int code = 0;
+
     if (origin == SEEK_CUR && s->unread_size != 0)
         offset -= s->unread_size;
 
     s->unread_size = 0;;
 
-    return (sfseek(s->s, offset, origin));
+    code = sfseek(s->s, offset, origin);
+    if (s->eof && code >= 0)
+        s->eof = 0;
+
+    return code;
 }
 
 /* We use 'stell' sometimes to save the position of the underlying file

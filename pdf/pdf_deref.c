@@ -217,8 +217,12 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
      * not be used for compressed object streams, but those don't need checking anyway
      * they have a different mechanism altogether and should never get here.
      */
-    offset = stell(s->s) - s->unread_size + stream_offset;
-    code = pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
+    if (s != ctx->main_stream) {
+        offset = stell(s->s) - s->unread_size + stream_offset;
+        code = pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
+    } else {
+        offset = stell(s->s) - s->unread_size;
+    }
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
@@ -962,18 +966,12 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
             if (code < 0)
                 goto error;
 
-            code = pdfi_apply_SubFileDecode_filter(ctx, 0, "trailer", ctx->main_stream, &SubFile_stream, false);
-            if (code < 0)
-                goto error;
-
-            code = pdfi_read_object(ctx, SubFile_stream, entry->u.uncompressed.offset);
+            code = pdfi_read_object(ctx, ctx->main_stream, entry->u.uncompressed.offset);
 
             /* pdfi_read_object() could do a repair, which would invalidate the xref and rebuild it.
              * reload the xref entry to be certain it is valid.
              */
             entry = &ctx->xref_table->xref[obj];
-
-            pdfi_close_file(ctx, SubFile_stream);
             if (code < 0) {
                 int code1 = 0;
                 if (entry->free) {
