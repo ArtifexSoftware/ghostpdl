@@ -123,7 +123,7 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
                           sizeof(gx_code_space_range_t), "cmap_endcodespacerange_func(ranges)");
         if (code_space->ranges != NULL) {
             if (nr > 0) {
-                memcpy(code_space->ranges, gcsr, nr);
+                memcpy(code_space->ranges, gcsr, nr * sizeof(gx_code_space_range_t));
                 gs_free_object(mem, gcsr, "cmap_endcodespacerange_func(gcsr");
             }
 
