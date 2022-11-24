@@ -1890,6 +1890,7 @@ int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, size_t
     int code;
     gs_font *pgsfont = NULL;
     const char *fs = "Font";
+    pdf_name *Type1Name = NULL;
 
     code = pdfi_name_alloc(ctx, (byte *)fontname, length, &fname);
     if (code < 0)
@@ -1914,6 +1915,14 @@ int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, size_t
     if (code < 0)
         goto exit;
 
+    code = pdfi_obj_charstr_to_name(ctx, "Type1", &Type1Name);
+    if (code < 0)
+        goto exit;
+
+    code = pdfi_dict_put(ctx, fdict, "Subtype", (pdf_obj *)Type1Name);
+    if (code < 0)
+        goto exit;
+
     code = pdfi_load_font(ctx, NULL, NULL, fdict, &pgsfont, false);
     if (code < 0)
         goto exit;
@@ -1921,6 +1930,7 @@ int pdfi_load_font_by_name_string(pdf_context *ctx, const byte *fontname, size_t
     *ppdffont = (pdf_obj *)pgsfont->client_data;
 
  exit:
+    pdfi_countdown(Type1Name);
     pdfi_countdown(fontobjtype);
     pdfi_countdown(fname);
     pdfi_countdown(fdict);
@@ -2007,8 +2017,8 @@ void pdfi_font_set_first_last_char(pdf_context *ctx, pdf_dict *fontdict, pdf_fon
             l = (double)255;
     }
     if (f <= l) {
-        font->FirstChar = f;
-        font->LastChar = l;
+        font->FirstChar = (int)f;
+        font->LastChar = (int)l;
     }
     else {
         font->FirstChar = 0;
