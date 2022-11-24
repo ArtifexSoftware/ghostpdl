@@ -138,7 +138,7 @@ if test x"$host" != x"$build" ; then
   echo $AUXFLAGS_MAK_LINE07 >> $AUXFLAGS_MAK.in
 
   AC_MSG_NOTICE([Begin recursive call to configure script (for auxiliary tools)])
-  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" CPPFLAGS="$CPPFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-fapi --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-jbig2dec --without-x --with-drivers=""
+  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" CPPFLAGS="$CPPFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-jbig2dec --without-x --with-drivers=""
   status=$?
   cp config.log "$olddir/configaux.log"
   if test $status -eq 0 ; then
@@ -2530,7 +2530,7 @@ PDF=
 PDF_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 PDFROMFS_MAK="\$(GLSRCDIR)\$(D)stub.mak"
 
-if test x"$with_pdf" != x"no" ; then
+if test x"$with_pdf" != x"no" -a x"$enable_auxtools_only" != x"yes" ; then
 
   if test x"$JBIG2_DECODER" = x""; then
       AC_MSG_ERROR([No JBIG2 decoder available, required for PDF support])
