@@ -376,6 +376,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
             */
             if (reallocate) {
                 gs_free_object(buffer_memory, the_memory, "printer_buffer");
+                the_memory = NULL;
             }
             base = gs_alloc_bytes(buffer_memory, (uint)mem_space, "printer_buffer");
             if (base == 0)
