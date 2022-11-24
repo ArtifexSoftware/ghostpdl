@@ -279,7 +279,8 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         compress = cmd_compress_const;
     } else {
         uint copy_bytes = (width_bits + 7) >> 3;
-        bytes_copy_rectangle_zero_padding(dp + op_size, short_raster, data, raster,
+        bytes_copy_rectangle_zero_padding_last_short(
+                             dp + op_size, short_raster, data, raster,
                              copy_bytes, height);
     }
 out:

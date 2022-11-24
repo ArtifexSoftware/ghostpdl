@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -500,6 +500,12 @@ int bytes_rectangle_is_const(const byte * src, uint src_raster, int width_bytes,
 /* Copy a rectangle of bytes, ensuring that any padding bits at the end
  * of each dest_raster line are zeroed. */
 void bytes_copy_rectangle_zero_padding(byte * dest, uint dest_raster,
+    const byte * src, uint src_raster, int width_bytes, int height);
+
+/* Copy a rectangle of bytes, ensuring that any padding bits at the end
+ * of each dest_raster line are zeroed. The last row is copied without
+ * any padding. */
+void bytes_copy_rectangle_zero_padding_last_short(byte * dest, uint dest_raster,
     const byte * src, uint src_raster, int width_bytes, int height);
 
 #endif /* gsbitops_INCLUDED */
