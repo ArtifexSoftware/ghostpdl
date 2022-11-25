@@ -1909,6 +1909,7 @@ all_error:
                 code = gs_error_VMerror;
                 goto pdfi_devicen_error;
             }
+            memset(pcs->params.device_n.process_names, 0x00, pdfi_array_size(Components) * sizeof(char *));
 
             for (ix = 0; ix < pcs->params.device_n.num_process_names; ix++) {
                 code = pdfi_array_get(ctx, Components, ix, &name);
