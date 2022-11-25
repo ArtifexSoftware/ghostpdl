@@ -83,7 +83,8 @@ static int
 get_dev_icccolorants_utf8(gs_memory_t *mem, cmm_dev_profile_t *dev_profile, char **putf8)
 {
     char *colorants = gsicc_get_dev_icccolorants(dev_profile);
-    char *utf8 ,*s;
+    char *utf8;
+    unsigned char *s;
     unsigned short *unicode, *u;
     size_t len;
 
@@ -101,7 +102,7 @@ get_dev_icccolorants_utf8(gs_memory_t *mem, cmm_dev_profile_t *dev_profile, char
         return_error(gs_error_VMerror);
 
     u = unicode;
-    s = colorants;
+    s = (unsigned char *)colorants;
     while ((*u++ = *s++) != 0);
 
     /* Now utf-8 encode that. */
