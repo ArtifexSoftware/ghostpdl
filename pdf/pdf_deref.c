@@ -220,6 +220,8 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
     if (s != ctx->main_stream) {
         offset = stell(s->s) - s->unread_size + stream_offset;
         code = pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
+        if (code < 0)
+            return_error(gs_error_ioerror);
     } else {
         offset = stell(s->s) - s->unread_size;
     }
