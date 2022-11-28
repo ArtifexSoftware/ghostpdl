@@ -164,10 +164,10 @@ static int pdfi_process_one_page(pdf_context *ctx, pdf_dict *page_dict)
     local_restore_stream_state(ctx, &local_entry_save);
 
     code1 = pdfi_do_annotations(ctx, page_dict);
-    if (code > 0) code = code1;
+    if (code >= 0) code = code1;
 
     code1 = pdfi_do_acroform(ctx, page_dict);
-    if (code > 0) code = code1;
+    if (code >= 0) code = code1;
 
     return code;
 }
