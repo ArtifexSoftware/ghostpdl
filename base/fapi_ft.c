@@ -191,8 +191,10 @@ static void
 FF_stream_close(FT_Stream str)
 {
     stream *ps = (stream *) str->descriptor.pointer;
+    gs_memory_t *mem = ps->memory;
 
     (void)sclose(ps);
+    gs_free_object(mem, ps, "FF_stream_close");
 }
 
 extern const uint file_default_buffer_size;
