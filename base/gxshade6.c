@@ -4213,7 +4213,7 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
         if (code < 0)
             goto out;
     }
-    /* How many subdividions of the patch in the u and v direction? */
+    /* How many subdivisions of the patch in the u and v direction? */
     kv[0] = curve_samples(pfs, &p.pole[0][0], 4, pfs->fixed_flat);
     kv[1] = curve_samples(pfs, &p.pole[0][1], 4, pfs->fixed_flat);
     kv[2] = curve_samples(pfs, &p.pole[0][2], 4, pfs->fixed_flat);

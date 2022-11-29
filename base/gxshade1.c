@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2022 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -199,30 +199,399 @@ typedef struct
 #define MIN_CLIP_LIMIT ((int)(fixed2int(min_fixed)/2))
 #define MAX_CLIP_LIMIT ((int)(fixed2int(max_fixed)/2))
 
-static int not_clipped_away(const gs_point *p)
+static int not_clipped_away(const gs_point *p, const gs_fixed_rect *rect)
 {
-    if (p[0].x < MIN_CLIP_LIMIT &&
-        p[1].x < MIN_CLIP_LIMIT &&
-        p[2].x < MIN_CLIP_LIMIT &&
-        p[3].x < MIN_CLIP_LIMIT)
+    if (p[0].x < rect->p.x &&
+        p[1].x < rect->p.x &&
+        p[2].x < rect->p.x &&
+        p[3].x < rect->p.x)
         return 0; /* Clipped away! */
-    if (p[0].x > MAX_CLIP_LIMIT &&
-        p[1].x > MAX_CLIP_LIMIT &&
-        p[2].x > MAX_CLIP_LIMIT &&
-        p[3].x > MAX_CLIP_LIMIT)
+    if (p[0].x > rect->q.x &&
+        p[1].x > rect->q.x &&
+        p[2].x > rect->q.x &&
+        p[3].x > rect->q.x)
         return 0; /* Clipped away! */
-    if (p[0].y < MIN_CLIP_LIMIT &&
-        p[1].y < MIN_CLIP_LIMIT &&
-        p[2].y < MIN_CLIP_LIMIT &&
-        p[3].y < MIN_CLIP_LIMIT)
+    if (p[0].y < rect->p.y &&
+        p[1].y < rect->p.y &&
+        p[2].y < rect->p.y &&
+        p[3].y < rect->p.y)
         return 0; /* Clipped away! */
-    if (p[0].y > MAX_CLIP_LIMIT &&
-        p[1].y > MAX_CLIP_LIMIT &&
-        p[2].y > MAX_CLIP_LIMIT &&
-        p[3].y > MAX_CLIP_LIMIT)
+    if (p[0].y > rect->q.y &&
+        p[1].y > rect->q.y &&
+        p[2].y > rect->q.y &&
+        p[3].y > rect->q.y)
         return 0; /* Clipped away! */
     return 1;
 }
+
+#define midpoint(a,b)\
+  (arith_rshift_1(a) + arith_rshift_1(b) + (((a) | (b)) & 1))
+
+static int
+subdivide_patch_fill(patch_fill_state_t *pfs, patch_curve_t c[4])
+{
+    fixed m0, m1;
+    int v0, v1;
+
+    /* On entry we have a patch:
+     *   c[0].vertex  c[1].vertex
+     *
+     *   c[3].vertex  c[2].vertex
+     *
+     * Only the corners are set. The control points are not!
+     *
+     * BUT... in terms of spacial coords, it might be different...
+     * They might be flipped on X, Y or both, giving:
+     *  01 or 10 or 32 or 23
+     *  32    23    01    10
+     * or they might be rotated, and then flipped on X, Y or both, giving:
+     *  03 or 30 or 12 or 21
+     *  12    21    03    30
+     */
+
+    /* First, let's try to see if we can cull the patch horizontally with the clipping
+     * rectangle. */
+    /* Non rotated cases first. Can we cull the left hand half? */
+    if (c[0].vertex.p.x < pfs->rect.p.x && c[3].vertex.p.x < pfs->rect.p.x)
+    {
+        /* Is the whole patch off to the left? */
+        if (c[1].vertex.p.x < pfs->rect.p.x && c[2].vertex.p.x < pfs->rect.p.x)
+            return 0;
+        /* Check 0+3 off left. */
+        v0 = 0;
+        v1 = 3;
+        goto check_left;
+    }
+    else if (c[1].vertex.p.x < pfs->rect.p.x && c[2].vertex.p.x < pfs->rect.p.x)
+    {
+        /* Check 1+2 off left. */
+        v0 = 1;
+        v1 = 2;
+check_left:
+        /* At this point we know that the condition for the following loop is true, so it
+         * can be a do...while rather than a while. */
+        do
+        {
+            /* Let's form (X coords only):
+             *
+             * c[v0].vertex    m0  c[v0^1].vertex
+             * c[v1^1].vertex  m1  c[v1].vertex
+             */
+            m0 = midpoint(c[0].vertex.p.x, c[1].vertex.p.x);
+            if (m0 >= pfs->rect.p.x)
+                break;
+            m1 = midpoint(c[3].vertex.p.x, c[2].vertex.p.x);
+            if (m1 >= pfs->rect.p.x)
+                break;
+            /* So, we can completely discard the left hand half of the patch. */
+            c[v0].vertex.p.x = m0;
+            c[v0].vertex.p.y = midpoint(c[0].vertex.p.y, c[1].vertex.p.y);
+            c[v1].vertex.p.x = m1;
+            c[v1].vertex.p.y = midpoint(c[3].vertex.p.y, c[2].vertex.p.y);
+            c[v0].vertex.cc[0] = (c[0].vertex.cc[0] + c[1].vertex.cc[0])/2;
+            c[v1].vertex.cc[0] = (c[3].vertex.cc[0] + c[2].vertex.cc[0])/2;
+        }
+        while (c[v0].vertex.p.x < pfs->rect.p.x && c[v1].vertex.p.x < pfs->rect.p.x);
+    }
+    /* or the right hand half? */
+    else if (c[0].vertex.p.x > pfs->rect.q.x && c[3].vertex.p.x > pfs->rect.q.x)
+    {
+        /* Is the whole patch off to the right? */
+        if (c[1].vertex.p.x > pfs->rect.q.x && c[2].vertex.p.x > pfs->rect.q.x)
+            return 0;
+        /* Check 0+3 off right. */
+        v0 = 0;
+        v1 = 3;
+        goto check_right;
+    }
+    else if (c[1].vertex.p.x > pfs->rect.q.x && c[2].vertex.p.x > pfs->rect.q.x)
+    {
+        /* Check 1+2 off right. */
+        v0 = 1;
+        v1 = 2;
+check_right:
+        /* At this point we know that the condition for the following loop is true, so it
+         * can be a do...while rather than a while. */
+        do
+        {
+            /* Let's form (X coords only):
+             *
+             * c[v0].vertex    m0  c[v0^1].vertex
+             * c[v1^1].vertex  m1  c[v1].vertex
+             */
+            m0 = midpoint(c[0].vertex.p.x, c[1].vertex.p.x);
+            if (m0 <= pfs->rect.q.x)
+                break;
+            m1 = midpoint(c[3].vertex.p.x, c[2].vertex.p.x);
+            if (m1 <= pfs->rect.q.x)
+                break;
+            /* So, we can completely discard the left hand half of the patch. */
+            c[v0].vertex.p.x = m0;
+            c[v0].vertex.p.y = midpoint(c[0].vertex.p.y, c[1].vertex.p.y);
+            c[v1].vertex.p.x = m1;
+            c[v1].vertex.p.y = midpoint(c[3].vertex.p.y, c[2].vertex.p.y);
+            c[v0].vertex.cc[0] = (c[0].vertex.cc[0] + c[1].vertex.cc[0])/2;
+            c[v1].vertex.cc[0] = (c[3].vertex.cc[0] + c[2].vertex.cc[0])/2;
+        }
+        while (c[v0].vertex.p.x > pfs->rect.q.x && c[v1].vertex.p.x > pfs->rect.q.x);
+    }
+
+    /* Now, rotated cases: Can we cull the left hand half? */
+    if (c[0].vertex.p.x < pfs->rect.p.x && c[1].vertex.p.x < pfs->rect.p.x)
+    {
+        /* Check 0+1 off left. */
+        v0 = 0;
+        v1 = 1;
+        goto check_rot_left;
+    }
+    else if (c[3].vertex.p.x < pfs->rect.p.x && c[2].vertex.p.x < pfs->rect.p.x)
+    {
+        /* Check 3+2 off left. */
+        v0 = 3;
+        v1 = 2;
+check_rot_left:
+        /* At this point we know that the condition for the following loop is true, so it
+         * can be a do...while rather than a while. */
+        do
+        {
+            /* Let's form (X coords only):
+             *
+             * c[v0].vertex    m0  c[v0^3].vertex
+             * c[v1^3].vertex  m1  c[v1].vertex
+             */
+            m0 = midpoint(c[0].vertex.p.x, c[3].vertex.p.x);
+            if (m0 >= pfs->rect.p.x)
+                break;
+            m1 = midpoint(c[1].vertex.p.x, c[2].vertex.p.x);
+            if (m1 >= pfs->rect.p.x)
+                break;
+            /* So, we can completely discard the left hand half of the patch. */
+            c[v0].vertex.p.x = m0;
+            c[v0].vertex.p.y = midpoint(c[0].vertex.p.y, c[3].vertex.p.y);
+            c[v1].vertex.p.x = m1;
+            c[v1].vertex.p.y = midpoint(c[1].vertex.p.y, c[2].vertex.p.y);
+            c[v0].vertex.cc[0] = (c[0].vertex.cc[0] + c[3].vertex.cc[0])/2;
+            c[v1].vertex.cc[0] = (c[1].vertex.cc[0] + c[2].vertex.cc[0])/2;
+        }
+        while (c[v0].vertex.p.x < pfs->rect.p.x && c[v1].vertex.p.x < pfs->rect.p.x);
+    }
+    /* or the right hand half? */
+    else if (c[0].vertex.p.x > pfs->rect.q.x && c[1].vertex.p.x > pfs->rect.q.x)
+    {
+        /* Check 0+1 off right. */
+        v0 = 0;
+        v1 = 1;
+        goto check_rot_right;
+    }
+    else if (c[3].vertex.p.x > pfs->rect.q.x && c[2].vertex.p.x > pfs->rect.q.x)
+    {
+        /* Check 3+2 off right. */
+        v0 = 3;
+        v1 = 2;
+check_rot_right:
+        /* At this point we know that the condition for the following loop is true, so it
+         * can be a do...while rather than a while. */
+        do
+        {
+            /* Let's form (X coords only):
+             *
+             * c[v0].vertex    m0  c[v0^3].vertex
+             * c[v1^3].vertex  m1  c[v1].vertex
+             */
+            m0 = midpoint(c[0].vertex.p.x, c[3].vertex.p.x);
+            if (m0 <= pfs->rect.q.x)
+                break;
+            m1 = midpoint(c[1].vertex.p.x, c[2].vertex.p.x);
+            if (m1 <= pfs->rect.q.x)
+                break;
+            /* So, we can completely discard the left hand half of the patch. */
+            c[v0].vertex.p.x = m0;
+            c[v0].vertex.p.y = midpoint(c[0].vertex.p.y, c[3].vertex.p.y);
+            c[v1].vertex.p.x = m1;
+            c[v1].vertex.p.y = midpoint(c[1].vertex.p.y, c[2].vertex.p.y);
+            c[v0].vertex.cc[0] = (c[0].vertex.cc[0] + c[3].vertex.cc[0])/2;
+            c[v1].vertex.cc[0] = (c[1].vertex.cc[0] + c[2].vertex.cc[0])/2;
+        }
+        while (c[v0].vertex.p.x > pfs->rect.q.x && c[v1].vertex.p.x > pfs->rect.q.x);
+    }
+
+    /* Now, let's try to see if we can cull the patch vertically with the clipping
+     * rectangle. */
+    /* Non rotated cases first. Can we cull the top half? */
+    if (c[0].vertex.p.y < pfs->rect.p.y && c[1].vertex.p.y < pfs->rect.p.y)
+    {
+        /* Is the whole patch off to the left? */
+        if (c[3].vertex.p.y < pfs->rect.p.y && c[2].vertex.p.y < pfs->rect.p.y)
+            return 0;
+        /* Check 0+1 off above. */
+        v0 = 0;
+        v1 = 1;
+        goto check_above;
+    }
+    else if (c[3].vertex.p.y < pfs->rect.p.y && c[2].vertex.p.y < pfs->rect.p.y)
+    {
+        /* Check 3+2 off above. */
+        v0 = 3;
+        v1 = 2;
+check_above:
+        /* At this point we know that the condition for the following loop is true, so it
+         * can be a do...while rather than a while. */
+        do
+        {
+            /* Let's form (Y coords only):
+             *
+             * c[v0].vertex     c[v1].vertex
+             * m0               m1
+             * c[v0^3].vertex   c[v1^3].vertex
+             */
+            m0 = midpoint(c[0].vertex.p.y, c[3].vertex.p.y);
+            if (m0 >= pfs->rect.p.y)
+                break;
+            m1 = midpoint(c[1].vertex.p.y, c[2].vertex.p.y);
+            if (m1 >= pfs->rect.p.y)
+                break;
+            /* So, we can completely discard the top half of the patch. */
+            c[v0].vertex.p.x = midpoint(c[0].vertex.p.x, c[3].vertex.p.x);
+            c[v0].vertex.p.y = m0;
+            c[v1].vertex.p.x = midpoint(c[1].vertex.p.x, c[2].vertex.p.x);
+            c[v1].vertex.p.y = m1;
+            c[v0].vertex.cc[0] = (c[0].vertex.cc[0] + c[3].vertex.cc[0])/2;
+            c[v1].vertex.cc[0] = (c[1].vertex.cc[0] + c[2].vertex.cc[0])/2;
+        }
+        while (c[v0].vertex.p.y < pfs->rect.p.y && c[v1].vertex.p.y < pfs->rect.p.y);
+    }
+    /* or the bottom half? */
+    else if (c[0].vertex.p.y > pfs->rect.q.y && c[1].vertex.p.y > pfs->rect.q.y)
+    {
+        /* Is the whole patch off the bottom? */
+        if (c[3].vertex.p.y > pfs->rect.q.y && c[2].vertex.p.y > pfs->rect.q.y)
+            return 0;
+        /* Check 0+1 off bottom. */
+        v0 = 0;
+        v1 = 1;
+        goto check_bottom;
+    }
+    else if (c[1].vertex.p.y > pfs->rect.q.y && c[2].vertex.p.y > pfs->rect.q.y)
+    {
+        /* Check 3+2 off bottom. */
+        v0 = 3;
+        v1 = 2;
+check_bottom:
+        /* At this point we know that the condition for the following loop is true, so it
+         * can be a do...while rather than a while. */
+        do
+        {
+            /* Let's form (Y coords only):
+             *
+             * c[v0].vertex     c[v1].vertex
+             * m0               m1
+             * c[v0^3].vertex   c[v1^3].vertex
+             */
+            m0 = midpoint(c[0].vertex.p.y, c[3].vertex.p.y);
+            if (m0 <= pfs->rect.q.y)
+                break;
+            m1 = midpoint(c[1].vertex.p.y, c[2].vertex.p.y);
+            if (m1 <= pfs->rect.q.y)
+                break;
+            /* So, we can completely discard the bottom half of the patch. */
+            c[v0].vertex.p.x = midpoint(c[0].vertex.p.x, c[3].vertex.p.x);
+            c[v0].vertex.p.y = m0;
+            c[v1].vertex.p.x = midpoint(c[1].vertex.p.x, c[2].vertex.p.x);
+            c[v1].vertex.p.y = m1;
+            c[v0].vertex.cc[0] = (c[0].vertex.cc[0] + c[3].vertex.cc[0])/2;
+            c[v1].vertex.cc[0] = (c[1].vertex.cc[0] + c[2].vertex.cc[0])/2;
+        }
+        while (c[v0].vertex.p.y > pfs->rect.q.y && c[v1].vertex.p.y > pfs->rect.q.y);
+    }
+
+    /* Now, rotated cases: Can we cull the top half? */
+    if (c[0].vertex.p.y < pfs->rect.p.y && c[3].vertex.p.y < pfs->rect.p.y)
+    {
+        /* Check 0+3 off above. */
+        v0 = 0;
+        v1 = 3;
+        goto check_rot_above;
+    }
+    else if (c[1].vertex.p.y < pfs->rect.p.y && c[2].vertex.p.y < pfs->rect.p.y)
+    {
+        /* Check 1+2 off above. */
+        v0 = 1;
+        v1 = 2;
+check_rot_above:
+        /* At this point we know that the condition for the following loop is true, so it
+         * can be a do...while rather than a while. */
+        do
+        {
+            /* Let's form (Y coords only):
+             *
+             * c[v0].vertex     c[v1].vertex
+             * m0               m1
+             * c[v0^1].vertex   c[v1^1].vertex
+             */
+            m0 = midpoint(c[0].vertex.p.y, c[1].vertex.p.y);
+            if (m0 >= pfs->rect.p.y)
+                break;
+            m1 = midpoint(c[3].vertex.p.y, c[2].vertex.p.y);
+            if (m1 >= pfs->rect.p.y)
+                break;
+            /* So, we can completely discard the top half of the patch. */
+            c[v0].vertex.p.x = midpoint(c[0].vertex.p.x, c[1].vertex.p.x);
+            c[v0].vertex.p.y = m0;
+            c[v1].vertex.p.x = midpoint(c[3].vertex.p.x, c[2].vertex.p.x);
+            c[v1].vertex.p.y = m1;
+            c[v0].vertex.cc[0] = (c[0].vertex.cc[0] + c[1].vertex.cc[0])/2;
+            c[v1].vertex.cc[0] = (c[3].vertex.cc[0] + c[2].vertex.cc[0])/2;
+        }
+        while (c[v0].vertex.p.y < pfs->rect.p.y && c[v1].vertex.p.y < pfs->rect.p.y);
+    }
+    /* or the bottom half? */
+    else if (c[0].vertex.p.y > pfs->rect.q.y && c[3].vertex.p.y > pfs->rect.q.y)
+    {
+        /* Check 0+3 off the bottom. */
+        v0 = 0;
+        v1 = 3;
+        goto check_rot_bottom;
+    }
+    else if (c[3].vertex.p.y > pfs->rect.q.y && c[2].vertex.p.y > pfs->rect.q.y)
+    {
+        /* Check 1+2 off the bottom. */
+        v0 = 1;
+        v1 = 2;
+check_rot_bottom:
+        /* At this point we know that the condition for the following loop is true, so it
+         * can be a do...while rather than a while. */
+        do
+        {
+            /* Let's form (Y coords only):
+             *
+             * c[v0].vertex     c[v1].vertex
+             * m0               m1
+             * c[v0^1].vertex   c[v1^1].vertex
+             */
+            m0 = midpoint(c[0].vertex.p.y, c[1].vertex.p.y);
+            if (m0 <= pfs->rect.q.y)
+                break;
+            m1 = midpoint(c[3].vertex.p.y, c[2].vertex.p.y);
+            if (m1 <= pfs->rect.q.y)
+                break;
+            /* So, we can completely discard the left hand half of the patch. */
+            c[v0].vertex.p.x = midpoint(c[0].vertex.p.x, c[1].vertex.p.x);
+            c[v0].vertex.p.y = m0;
+            c[v1].vertex.p.x = midpoint(c[3].vertex.p.x, c[2].vertex.p.x);
+            c[v1].vertex.p.y = m1;
+            c[v0].vertex.cc[0] = (c[0].vertex.cc[0] + c[1].vertex.cc[0])/2;
+            c[v1].vertex.cc[0] = (c[3].vertex.cc[0] + c[2].vertex.cc[0])/2;
+        }
+        while (c[v0].vertex.p.y > pfs->rect.q.y && c[v1].vertex.p.y > pfs->rect.q.y);
+    }
+
+    c[0].vertex.cc[1] = c[1].vertex.cc[1] =
+                        c[2].vertex.cc[1] =
+                        c[3].vertex.cc[1] = 0;
+    make_other_poles(c);
+    return patch_fill(pfs, c, NULL, NULL);
+}
+#undef midpoint
 
 #define f_fits_in_fixed(f) f_fits_in_bits(f, fixed_int_bits)
 
@@ -253,11 +622,7 @@ A_fill_region_floats(patch_fill_state_t *pfs1, corners_and_curves *cc, int depth
         cc->curve[2].vertex.p.y = float2fixed(cc->corners[2].y);
         cc->curve[3].vertex.p.x = float2fixed(cc->corners[3].x);
         cc->curve[3].vertex.p.y = float2fixed(cc->corners[3].y);
-        cc->curve[0].vertex.cc[1] = cc->curve[1].vertex.cc[1] =
-                                    cc->curve[2].vertex.cc[1] =
-                                    cc->curve[3].vertex.cc[1] = 0;
-        make_other_poles(cc->curve);
-        return patch_fill(pfs1, cc->curve, NULL, NULL);
+        return subdivide_patch_fill(pfs1, cc->curve);
     }
 
     /* We have patches with corners:
@@ -310,22 +675,22 @@ A_fill_region_floats(patch_fill_state_t *pfs1, corners_and_curves *cc, int depth
                                    sub[3].curve[2].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[1].vertex.cc[0])/2;
 
     depth++;
-    if (not_clipped_away(sub[0].corners)) {
+    if (not_clipped_away(sub[0].corners, &pfs1->rect)) {
         code = A_fill_region_floats(pfs1, &sub[0], depth);
         if (code < 0)
             return code;
     }
-    if (not_clipped_away(sub[1].corners)) {
+    if (not_clipped_away(sub[1].corners, &pfs1->rect)) {
         code = A_fill_region_floats(pfs1, &sub[1], depth);
         if (code < 0)
             return code;
     }
-    if (not_clipped_away(sub[2].corners)) {
+    if (not_clipped_away(sub[2].corners, &pfs1->rect)) {
         code = A_fill_region_floats(pfs1, &sub[2], depth);
         if (code < 0)
             return code;
     }
-    if (not_clipped_away(sub[3].corners)) {
+    if (not_clipped_away(sub[3].corners, &pfs1->rect)) {
         code = A_fill_region_floats(pfs1, &sub[3], depth);
         if (code < 0)
             return code;
@@ -352,13 +717,9 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     double dy1 = pfs->delta.y * h1;
 
     cc.curve[0].vertex.cc[0] = pfs->t0; /* The element cc[1] is set to a dummy value against */
-    cc.curve[1].vertex.cc[0] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
+    cc.curve[1].vertex.cc[0] = pfs->t1; /* interrupts while an idle processing in gxshade6.c .  */
     cc.curve[2].vertex.cc[0] = pfs->t1;
     cc.curve[3].vertex.cc[0] = pfs->t0;
-    cc.curve[0].vertex.cc[1] = 0; /* The element cc[1] is set to a dummy value against */
-    cc.curve[1].vertex.cc[1] = 0; /* interrupts while an idle priocessing in gxshade.6.c .  */
-    cc.curve[2].vertex.cc[1] = 0;
-    cc.curve[3].vertex.cc[1] = 0;
     cc.corners[0].x = x0 + dy0;
     cc.corners[0].y = y0 - dx0;
     cc.corners[1].x = x1 + dy0;
@@ -379,8 +740,7 @@ A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
     code = gs_point_transform2fixed(&pfs1->pgs->ctm, cc.corners[3].x, cc.corners[3].y, &cc.curve[3].vertex.p);
     if (code < 0)
         goto fail;
-    make_other_poles(cc.curve);
-    return patch_fill(pfs1, cc.curve, NULL, NULL);
+    return subdivide_patch_fill(pfs1, cc.curve);
 fail:
     if (code != gs_error_limitcheck)
         return code;
