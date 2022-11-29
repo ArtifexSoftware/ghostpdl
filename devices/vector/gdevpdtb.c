@@ -316,8 +316,10 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
             complete = copied;
         else {
             code = gs_copy_font((gs_font *)font, &font->FontMatrix, mem, &complete, -1);
-            if (code < 0)
+            if (code < 0) {
+                gs_free_copied_font(copied);
                 goto fail;
+            }
         }
         code = gs_copy_font_complete((gs_font *)font, complete);
         if (code < 0 && pbfont->do_subset == DO_SUBSET_NO) {
