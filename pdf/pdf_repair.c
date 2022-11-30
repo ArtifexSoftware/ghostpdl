@@ -97,6 +97,7 @@ int pdfi_repair_file(pdf_context *ctx)
     saved_offset = pdfi_unread_tell(ctx);
 
     ctx->repaired = true;
+    ctx->repairing = true;
     pdfi_set_error(ctx, 0, NULL, E_PDF_REPAIRED, "pdfi_repair_file", NULL);
 
     pdfi_clearstack(ctx);
@@ -474,5 +475,6 @@ exit:
         code = 0;
     pdfi_seek(ctx, ctx->main_stream, saved_offset, SEEK_SET);
     ctx->main_stream->eof = false;
+    ctx->repairing = false;
     return code;
 }

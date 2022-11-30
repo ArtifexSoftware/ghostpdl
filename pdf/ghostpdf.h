@@ -407,6 +407,8 @@ typedef struct pdf_context_s
     bool is_hybrid;
     /* If we've already repaired the file once, and it still fails, don't try to repair it again */
     bool repaired;
+    /* Repairing is true while the repair code is running, during this we ignore errors and warnings */
+    bool repairing;
 
     /* The HeaderVersion is the declared version from the PDF header, but this
      * can be overridden by later trailer dictionaries, so the FinalVersion is
@@ -525,17 +527,23 @@ void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info
 
 static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info)
 {
-    if (pdfi_error != 0)
-        ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
-    if (ctx->args.verbose_errors)
-        pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
+    /* ignore problems while repairing a file */
+    if (!ctx->repairing) {
+        if (pdfi_error != 0)
+            ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
+        if (ctx->args.verbose_errors)
+            pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
+    }
 }
 
 static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info)
 {
-    ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
-    if (ctx->args.verbose_warnings)
-        pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
+    /* ignore problems while repairing a file */
+    if (!ctx->repairing) {
+        ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
+        if (ctx->args.verbose_warnings)
+            pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
+    }
 }
 
 /* Variants of the above that work in a printf style. */
