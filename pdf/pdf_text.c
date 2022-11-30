@@ -970,7 +970,11 @@ int pdfi_string_bbox(pdf_context *ctx, pdf_string *s, gs_rect *bboxout, gs_point
     if (code < 0)
         goto out;
 
+    /* Pretend to have at least one BT or pdfi_show will generate a spurious warning */
+    ctx->text.BlockDepth++;
     code = pdfi_show(ctx, s);
+    /* And an ET */
+    ctx->text.BlockDepth--;
     if (code < 0)
         goto out;
 
