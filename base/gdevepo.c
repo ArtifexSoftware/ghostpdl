@@ -318,7 +318,7 @@ epo_handle_erase_page(gx_device *dev)
     DPRINTF1(dev->memory, "Do fillpage, Uninstall erasepage, device %s\n", dev->dname);
 
     /* Just do a fill_rectangle (using saved color) */
-    if (dev->child && dev->child->is_open && data->queued) {
+    if (dev->child && dev->child->is_open && data->queued && dev_proc(dev->child, fill_rectangle) != NULL) {
         code = dev_proc(dev->child, fill_rectangle)(dev->child,
                                                     0, 0,
                                                     dev->child->width,
@@ -371,7 +371,10 @@ int epo_fill_rectangle(gx_device *dev, int x, int y, int width, int height, gx_c
     if (code != 0)
         return code;
     dev = dev->child;
-    return dev_proc(dev, fill_rectangle)(dev, x, y, width, height, color);
+    if (dev_proc(dev, fill_rectangle) != NULL)
+        return dev_proc(dev, fill_rectangle)(dev, x, y, width, height, color);
+    else
+        return 0;
 }
 
 int epo_fill_path(gx_device *dev, const gs_gstate *pgs, gx_path *ppath,
