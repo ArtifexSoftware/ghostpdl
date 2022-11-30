@@ -75,4 +75,5 @@ PARAM(W_PDF_BAD_EMBEDDEDFILES,      "File has Embedded files which could not be 
 PARAM(W_PDF_BAD_ACROFORM,           "Bad AcroForm detected"),
 PARAM(W_PDF_BAD_OUTPUTINTENTS,      "Bad OutputIntents detected"),
 PARAM(W_PDF_BAD_PAGELABELS,         "A problem was encountered trying to preserve the page Labels"),
+PARAM(W_PDF_XREF_OBJECT0_NOT_FREE,  "Xref entry for object 0 not a free entry."),
 #undef PARAM

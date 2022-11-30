@@ -785,6 +785,11 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
             entry->free = true;
         if(free == 'n')
             entry->free = false;
+        if (entry->object_num == 0) {
+            if (!entry->free) {
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_XREF_OBJECT0_NOT_FREE, "read_xref_section", NULL);
+            }
+        }
     }
 
     return 0;
