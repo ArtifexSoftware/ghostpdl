@@ -1972,6 +1972,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             gs_image_t_init_adjust(&t1image, pcs, true);
         }
     } else if (smask_stream) { /* Type 3x */
+        /* In the event where we have both /SMask and /Mask, favour /SMask
+           See tests_private/pdf/sumatra/1901_-_tiling_inconsistencies.pdf
+         */
+        mask_stream = NULL;
         code = pdfi_image_setup_type3x(ctx, &image_info, &t3ximage, &smask_info, comps);
         if (code < 0) {
             /* If this got an error, setup as a Type 1 image */
@@ -2022,20 +2026,19 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
      * Doing it this way because I don't want to muck with reading from
      * two streams simultaneously -- not even sure that is feasible?
      */
-    if (mask_stream) {
-        /* Calculate expected mask size */
-        mask_size = ((((t3image.MaskDict.BitsPerComponent * (int64_t)t3image.MaskDict.Width) + 7) / 8) * (int64_t)t3image.MaskDict.Height);
-        code = pdfi_stream_to_buffer(ctx, mask_stream, &mask_buffer, (int64_t *)&mask_size);
-        if (code < 0)
-            goto cleanupExit;
-    } else if (smask_stream) {
+    if (smask_stream) {
         mask_size = ((((smask_info.Width * smask_info.BPC) + 7) / 8) * smask_info.Height);
         /* This will happen only in case of PreserveSMask (Type 3x) */
         code = pdfi_stream_to_buffer(ctx, smask_stream, &mask_buffer, (int64_t *)&mask_size);
         if (code < 0)
             goto cleanupExit;
+    } else if (mask_stream) {
+        /* Calculate expected mask size */
+        mask_size = ((((t3image.MaskDict.BitsPerComponent * (int64_t)t3image.MaskDict.Width) + 7) / 8) * (int64_t)t3image.MaskDict.Height);
+        code = pdfi_stream_to_buffer(ctx, mask_stream, &mask_buffer, (int64_t *)&mask_size);
+        if (code < 0)
+            goto cleanupExit;
     }
-
     /* Setup the data stream for the image data */
     if (!inline_image) {
         pdfi_seek(ctx, source, stream_offset, SEEK_SET);
