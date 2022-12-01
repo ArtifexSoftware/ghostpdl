@@ -198,9 +198,16 @@ pdfi_dict_get2(pdf_context *ctx, pdf_dict *d, const char *Key1,
 {
     int code;
 
-    code = pdfi_dict_get(ctx, d, Key1, o);
-    if (code == gs_error_undefined)
+    /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. Assume abbreviated names are shorter :-) */
+    if (strlen(Key1) < strlen(Key2)) {
+        code = pdfi_dict_get(ctx, d, Key1, o);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get(ctx, d, Key2, o);
+    } else {
         code = pdfi_dict_get(ctx, d, Key2, o);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get(ctx, d, Key1, o);
+    }
     return code;
 }
 
@@ -489,9 +496,16 @@ pdfi_dict_get_type2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char 
 {
     int code;
 
-    code = pdfi_dict_get_type(ctx, d, Key1, type, o);
-    if (code == gs_error_undefined)
+    /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. Assume abbreviated names are shorter :-) */
+    if (strlen(Key1) < strlen(Key2)) {
+        code = pdfi_dict_get_type(ctx, d, Key1, type, o);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get_type(ctx, d, Key2, type, o);
+    } else {
         code = pdfi_dict_get_type(ctx, d, Key2, type, o);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get_type(ctx, d, Key1, type, o);
+    }
     return code;
 }
 
@@ -518,9 +532,16 @@ pdfi_dict_get_int2(pdf_context *ctx, pdf_dict *d, const char *Key1,
 {
     int code;
 
-    code = pdfi_dict_get_int(ctx, d, Key1, i);
-    if (code == gs_error_undefined)
+    /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. Assume abbreviated names are shorter :-) */
+    if (strlen(Key1) < strlen(Key2)) {
+        code = pdfi_dict_get_int(ctx, d, Key1, i);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get_int(ctx, d, Key2, i);
+    } else {
         code = pdfi_dict_get_int(ctx, d, Key2, i);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get_int(ctx, d, Key1, i);
+    }
     return code;
 }
 
@@ -559,9 +580,16 @@ pdfi_dict_get_bool2(pdf_context *ctx, pdf_dict *d, const char *Key1,
 {
     int code;
 
-    code = pdfi_dict_get_bool(ctx, d, Key1, val);
-    if (code == gs_error_undefined)
+    /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. Assume abbreviated names are shorter :-) */
+    if (strlen(Key1) < strlen(Key2)) {
+        code = pdfi_dict_get_bool(ctx, d, Key1, val);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get_bool(ctx, d, Key2, val);
+    } else {
         code = pdfi_dict_get_bool(ctx, d, Key2, val);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get_bool(ctx, d, Key1, val);
+    }
     return code;
 }
 
@@ -592,9 +620,16 @@ int pdfi_dict_get_number2(pdf_context *ctx, pdf_dict *d, const char *Key1, const
 {
     int code;
 
-    code = pdfi_dict_get_number(ctx, d, Key1, f);
-    if (code == gs_error_undefined)
+    /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. Assume abbreviated names are shorter :-) */
+    if (strlen(Key1) < strlen(Key2)) {
+        code = pdfi_dict_get_number(ctx, d, Key1, f);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get_number(ctx, d, Key2, f);
+    } else {
         code = pdfi_dict_get_number(ctx, d, Key2, f);
+        if (code == gs_error_undefined)
+            code = pdfi_dict_get_number(ctx, d, Key1, f);
+    }
     return code;
 }
 

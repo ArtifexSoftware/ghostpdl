@@ -915,9 +915,14 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
     if (code < 0)
         goto exit;
 
-    code = pdfi_dict_knownget(ctx, stream_dict, "Filter", &Filter);
-    if (code == 0 && inline_image)
+    /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. */
+    if (inline_image) {
         code = pdfi_dict_knownget(ctx, stream_dict, "F", &Filter);
+        if (code == 0)
+            code = pdfi_dict_knownget(ctx, stream_dict, "Filter", &Filter);
+    } else
+        code = pdfi_dict_knownget(ctx, stream_dict, "Filter", &Filter);
+
     if (code < 0)
         goto exit;
     if (code == 0) {
@@ -931,9 +936,16 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
         code = gs_note_error(gs_error_typecheck);
         goto exit;
     case PDF_NAME:
-        code = pdfi_dict_knownget(ctx, stream_dict, "DecodeParms", &decode);
-        if (code == 0 && inline_image)
+        /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. */
+        if (inline_image) {
             code = pdfi_dict_knownget(ctx, stream_dict, "DP", &decode);
+            if (code == 0)
+                code = pdfi_dict_knownget(ctx, stream_dict, "DecodeParms", &decode);
+        } else {
+            code = pdfi_dict_knownget(ctx, stream_dict, "DecodeParms", &decode);
+            if (code == 0)
+                code = pdfi_dict_knownget(ctx, stream_dict, "DP", &decode);
+        }
         if (code < 0)
             goto exit;
 
@@ -948,9 +960,16 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
     {
         pdf_array *filter_array = (pdf_array *)Filter;
 
-        code = pdfi_dict_knownget_type(ctx, stream_dict, "DecodeParms", PDF_ARRAY, (pdf_obj **)&DecodeParams);
-        if (code == 0 && inline_image)
-            code = pdfi_dict_knownget_type(ctx, stream_dict, "DP", PDF_ARRAY, (pdf_obj **)&DecodeParams);
+        /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. */
+        if (inline_image) {
+            code = pdfi_dict_knownget(ctx, stream_dict, "DP", &DecodeParams);
+            if (code == 0)
+                code = pdfi_dict_knownget(ctx, stream_dict, "DecodeParms", (pdf_obj **)&DecodeParams);
+        } else {
+            code = pdfi_dict_knownget(ctx, stream_dict, "DecodeParms", (pdf_obj **)&DecodeParams);
+            if (code == 0)
+                code = pdfi_dict_knownget(ctx, stream_dict, "DP", &decode);
+        }
         if (code < 0)
             goto exit;
 
