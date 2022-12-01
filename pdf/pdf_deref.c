@@ -341,6 +341,7 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
 
             gs_snprintf(extra_info, sizeof(extra_info), "Stream object %u has an incorrect /Length of %"PRIu64"\n", objnum, i);
             pdfi_log_info(ctx, "pdfi_read_stream_object", extra_info);
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BAD_LENGTH, "pdfi_read_stream_object", extra_info);
         } else {
             /* Cache the Length in the stream object and mark it valid */
             stream_obj->Length = i;

@@ -65,5 +65,6 @@ PARAM(E_PDF_UNMATCHEDMARK,             "A closing mark (] or >>) had no matching
 PARAM(E_PDF_BADPAGECOUNT,              "page tree root node /Count did not match the actual number of pages in the tree."),
 PARAM(E_PDF_NO_ROOT,                   "Can't find the document Catalog"),
 PARAM(E_PDF_BAD_ROOT_TYPE,             "Document Catalog has incorrect /Type"),
-PARAM(E_PDF_BAD_NAMED_DEST,                  "An annotation has an invalid named destination"),
+PARAM(E_PDF_BAD_NAMED_DEST,            "An annotation has an invalid named destination"),
+PARAM(E_PDF_BAD_LENGTH,                "Incorrect /Length for stream object"),
 #undef PARAM
