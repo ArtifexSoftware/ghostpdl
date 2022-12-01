@@ -128,7 +128,7 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
         } else {
             pdfi_countdown(o);
             ctx->encryption.decrypt_strings = true;
-            return_error(gs_error_typecheck);
+            code = gs_note_error(gs_error_typecheck);
         }
     }
 page_error:
