@@ -1730,7 +1730,7 @@ rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, in
             if (code != 1)
 	      return_error(gs_error_ioerror);
             gp_fwrite(Scratch, ScratchSize, 1, linear_params->Lin_File.file);
-            Size -= 16384;
+            Size -= ScratchSize;
         } else {
             code = gp_fread(Scratch, Size, 1, linear_params->sfile);
             if (code != 1)
@@ -1817,6 +1817,10 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     sflush(pdev->strm);
     linear_params->sfile = pdev->file;
     linear_params->MainFileEnd = gp_ftell(pdev->file);
+
+    linear_params->PageHints = NULL;
+    linear_params->SharedHints = NULL;
+
 #ifdef LINEAR_DEBUGGING
     code = gx_device_open_output_file((gx_device *)pdev, "/temp/linear.pdf",
                                    true, true, &linear_params->Lin_File.file);
@@ -2502,11 +2506,13 @@ error:
 #endif
         /* FIXME free all the linearisation records */
 
-    for (i=0;i<pdev->next_page;i++) {
-        page_hint_stream_t *pagehint = &linear_params->PageHints[i];
+    if (linear_params->PageHints != NULL) {
+        for (i=0;i<pdev->next_page;i++) {
+            page_hint_stream_t *pagehint = &linear_params->PageHints[i];
 
-        if (pagehint && pagehint->SharedObjectRef)
-            gs_free_object(pdev->pdf_memory, pagehint->SharedObjectRef, "Free Shared object references");
+            if (pagehint && pagehint->SharedObjectRef)
+                gs_free_object(pdev->pdf_memory, pagehint->SharedObjectRef, "Free Shared object references");
+        }
     }
 
     gs_free_object(pdev->pdf_memory, linear_params->PageHints, "Free Page Hint data");
