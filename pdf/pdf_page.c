@@ -125,11 +125,8 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
     } else {
         if (pdfi_type_of(o) == PDF_STREAM) {
             code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)o, page_dict);
-        } else {
-            pdfi_countdown(o);
-            ctx->encryption.decrypt_strings = true;
+        } else
             code = gs_note_error(gs_error_typecheck);
-        }
     }
 page_error:
     ctx->encryption.decrypt_strings = true;

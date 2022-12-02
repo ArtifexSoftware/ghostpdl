@@ -67,4 +67,5 @@ PARAM(E_PDF_NO_ROOT,                   "Can't find the document Catalog"),
 PARAM(E_PDF_BAD_ROOT_TYPE,             "Document Catalog has incorrect /Type"),
 PARAM(E_PDF_BAD_NAMED_DEST,            "An annotation has an invalid named destination"),
 PARAM(E_PDF_BAD_LENGTH,                "Incorrect /Length for stream object"),
+PARAM(E_PDF_DICT_IS_STREAM,            "Expected a dictionary but encountered a stream"),
 #undef PARAM

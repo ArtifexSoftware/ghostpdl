@@ -349,6 +349,22 @@ int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **strea
     return code;
 }
 
+int pdfi_stream_to_dict(pdf_context *ctx, pdf_stream *stream, pdf_dict **dict)
+{
+    *dict = stream->stream_dict;
+
+    /* Make sure the dictionary won't go away */
+    pdfi_countup(*dict);
+    if ((*dict)->object_num == 0) {
+        (*dict)->object_num = stream->object_num;
+        (*dict)->generation_num = stream->generation_num;
+    }
+
+    /* This will countdown the dictionary */
+    pdfi_countdown(stream);
+    return 0;
+}
+
 /* Create a pdf_string from a c char * */
 int pdfi_obj_charstr_to_string(pdf_context *ctx, const char *charstr, pdf_string **string)
 {

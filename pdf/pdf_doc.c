@@ -614,9 +614,25 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
             if (code < 0)
                 goto errorExit;
         }
+        /* It makes no sense for the Page dictionary to be a stream, but safedocs/DialectDictIsStream.pdf
+         * has this (stream length is 0, not that it matters) and Acrobat happily opens it....
+         */
         if (pdfi_type_of(child) != PDF_DICT) {
-            code = gs_note_error(gs_error_typecheck);
-            goto errorExit;
+            pdf_dict *d1 = NULL;
+
+            if (pdfi_type_of(child) != PDF_STREAM) {
+                code = gs_note_error(gs_error_typecheck);
+                goto errorExit;
+            }
+            pdfi_set_error(ctx, 0, NULL, E_PDF_DICT_IS_STREAM, "pdfi_get_child", NULL);
+            code = pdfi_stream_to_dict(ctx, (pdf_stream *)child, &d1);
+            if (code < 0)
+                goto errorExit;
+            pdfi_countdown(child);
+            child = d1;
+            code = replace_cache_entry(ctx, (pdf_obj *)d1);
+            if (code < 0)
+                goto errorExit;
         }
         /* If its an intermediate node, store it in the page_table, if its a leaf node
          * then don't store it. Instead we create a special dictionary of our own which
