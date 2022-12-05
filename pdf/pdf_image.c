@@ -2584,10 +2584,30 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     int code;
     pdf_name *n = NULL;
     pdf_dict *xobject_dict;
+    bool known = false;
 
     code = pdfi_dict_from_obj(ctx, xobject_obj, &xobject_dict);
     if (code < 0)
         return code;
+
+    /* Check Optional Content status */
+    code = pdfi_dict_known(ctx, xobject_dict, "OC", &known);
+    if (code < 0)
+        return code;
+
+    if (known) {
+        pdf_dict *OCDict = NULL;
+        bool visible = false;
+
+        code = pdfi_dict_get(ctx, xobject_dict, "OC", (pdf_obj **)&OCDict);
+        if (code < 0)
+            return code;
+
+        visible = pdfi_oc_is_ocg_visible(ctx, OCDict);
+        pdfi_countdown(OCDict);
+        if (!visible)
+            return 0;
+    }
 
 #if DEBUG_IMAGES
     dbgmprintf1(ctx->memory, "pdfi_do_image_or_form BEGIN (OBJ = %d)\n", xobject_obj->object_num);

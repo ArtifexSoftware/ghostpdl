@@ -224,6 +224,8 @@ pdfi_oc_check_OCMD(pdf_context *ctx, pdf_dict *ocdict)
     pdf_obj *Pname = NULL;
     pdf_dict *OCGs_dict = NULL; /* alias, don't need to free */
     pdf_array *OCGs_array = NULL; /* alias, don't need to free */
+    pdf_dict *UsageDict = NULL, *StateDict = NULL;
+    pdf_obj *State = NULL;
     ocmd_p_type Ptype = P_AnyOn;
 
     /* TODO: We don't support this, so log a warning and ignore */
@@ -273,7 +275,47 @@ pdfi_oc_check_OCMD(pdf_context *ctx, pdf_dict *ocdict)
         is_visible = pdfi_oc_check_OCMD_array(ctx, OCGs_array, Ptype);
     }
 
+    if (OCGs_dict) {
+        code = pdfi_dict_knownget_type(ctx, OCGs_dict, "Usage", PDF_DICT, (pdf_obj **)&UsageDict);
+        if (code < 0)
+            goto cleanup;
+
+        if (UsageDict != NULL) {
+            if (ctx->args.printed) {
+                code = pdfi_dict_knownget_type(ctx, UsageDict, "Print", PDF_DICT, (pdf_obj **)&StateDict);
+                if (code < 0)
+                    goto cleanup;
+                if (StateDict) {
+                    code = pdfi_dict_knownget_type(ctx, StateDict, "PrintState", PDF_NAME, &State);
+                    if (code < 0)
+                        goto cleanup;
+                }
+            } else {
+                code = pdfi_dict_knownget_type(ctx, UsageDict, "View", PDF_DICT, (pdf_obj **)&StateDict);
+                if (code < 0)
+                    goto cleanup;
+                if (StateDict) {
+                    code = pdfi_dict_knownget_type(ctx, StateDict, "ViewState", PDF_NAME, &State);
+                    if (code < 0)
+                        goto cleanup;
+                }
+            }
+            if (State) {
+                if (pdfi_name_is((const pdf_name *)State, "ON"))
+                    is_visible = true;
+                else
+                    if (pdfi_name_is((const pdf_name *)State, "OFF"))
+                        is_visible = false;
+                    else
+                        pdfi_set_error(ctx, 0, NULL, E_PDF_BAD_VALUE, "pdfi_oc_check_OCMD", "Usage Dictionary State is neither ON nor OFF");
+            }
+        }
+    }
+
  cleanup:
+    pdfi_countdown(State);
+    pdfi_countdown(StateDict);
+    pdfi_countdown(UsageDict);
     pdfi_countdown(VE);
     pdfi_countdown(obj);
     pdfi_countdown(Pname);
