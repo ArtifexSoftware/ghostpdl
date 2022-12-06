@@ -829,6 +829,8 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
     }
+    pdfi_countup(d);
+    pdfi_pop(ctx, 1);
 
     if (ctx->Trailer == NULL) {
         ctx->Trailer = d;
@@ -836,10 +838,8 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     } else {
         code = pdfi_merge_dicts(ctx, ctx->Trailer, d);
         if (code < 0) {
-            if (code == gs_error_VMerror || ctx->args.pdfstoponerror) {
-                pdfi_pop(ctx, 1);
-                return code;
-            }
+            if (code == gs_error_VMerror || ctx->args.pdfstoponerror)
+                goto error;
         }
     }
 
@@ -847,10 +847,9 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
      * trailer dictionary and set a warning flag if it does
      */
     code = pdfi_dict_get_int(ctx, d, "Size", &num);
-    if (code < 0) {
-        pdfi_pop(ctx, 1);
-        return code;
-    }
+    if (code < 0)
+        goto error;
+
     if (max_obj > num)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_SIZE, "read_xref", NULL);
 
@@ -860,55 +859,61 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     code = pdfi_dict_known(ctx, d, "Prev", &known);
     if (known) {
         code = pdfi_dict_get_int(ctx, d, "Prev", &num);
-        if (code < 0) {
-            pdfi_pop(ctx, 1);
-            return code;
+        if (code < 0)
+            goto error;
+
+        if (num < 0 || num > ctx->main_stream_length) {
+            code = gs_note_error(gs_error_rangecheck);
+            goto error;
         }
-        pdfi_pop(ctx, 1);
 
-        if (num < 0 || num > ctx->main_stream_length)
-            return_error(gs_error_rangecheck);
-
-        if (pdfi_loop_detector_check_object(ctx, num) == true)
-            return_error(gs_error_circular_reference);
+        if (pdfi_loop_detector_check_object(ctx, num) == true) {
+            code = gs_note_error(gs_error_circular_reference);
+            goto error;
+        }
         else {
             code = pdfi_loop_detector_add_object(ctx, num);
             if (code < 0)
-                return code;
+                goto error;
         }
 
         code = pdfi_seek(ctx, s, num, SEEK_SET);
         if (code < 0)
-            return code;
+            goto error;
 
         if (!ctx->repaired) {
             code = pdfi_read_token(ctx, ctx->main_stream, 0, 0);
             if (code < 0)
-                return(code);
-            if (code == 0)
-                return_error(gs_error_syntaxerror);
-        } else
-            return 0;
+                goto error;
+
+            if (code == 0) {
+                code = gs_note_error(gs_error_syntaxerror);
+                goto error;
+            }
+        } else {
+            code = 0;
+            goto error;
+        }
 
         if ((intptr_t)(ctx->stack_top[-1]) == (intptr_t)TOKEN_XREF) {
             /* Read old-style xref table */
             pdfi_pop(ctx, 1);
             code = read_xref(ctx, ctx->main_stream);
             if (code < 0)
-                return code;
+                goto error;
         } else {
             pdfi_pop(ctx, 1);
-            return_error(gs_error_typecheck);
+            code = gs_note_error(gs_error_typecheck);
+            goto error;
         }
     }
 
     /* Now check if this is a hybrid file. */
     if (ctx->Trailer == d) {
         code = pdfi_dict_get_int(ctx, d, "XRefStm", &num);
-        if (code < 0 && code != gs_error_undefined) {
-            pdfi_pop(ctx, 1);
-            return code;
-        }
+        if (code < 0 && code != gs_error_undefined)
+            goto error;
+
         if (code == 0) {
             ctx->is_hybrid = true;
 
@@ -917,22 +922,19 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
 
 
             if (pdfi_loop_detector_check_object(ctx, num) == true) {
-                pdfi_pop(ctx, 1);
-                return_error(gs_error_circular_reference);
+                code = gs_note_error(gs_error_circular_reference);
+                goto error;
             }
             else {
                 code = pdfi_loop_detector_add_object(ctx, num);
-                if (code < 0) {
-                    pdfi_pop(ctx, 1);
-                    return code;
-                }
+                if (code < 0)
+                    goto error;
             }
 
             code = pdfi_loop_detector_mark(ctx);
-            if (code < 0) {
-                pdfi_pop(ctx, 1);
-                return code;
-            }
+            if (code < 0)
+                goto error;
+
             /* Because of the way the code works when we read a file which is a pure
              * xref stream file, we need to read the first integer of 'x y obj'
              * because the xref stream decoding code expects that to be on the stack.
@@ -942,26 +944,24 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
             code = pdfi_read_bare_int(ctx, ctx->main_stream, &obj_num);
             if (code < 0) {
                 pdfi_loop_detector_cleartomark(ctx);
-                pdfi_pop(ctx, 1);
-                return code;
+                goto error;
             }
 
             code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream, obj_num);
+            /* We could just fall through to the exit here, but choose not to in order to avoid possible mistakes in future */
             if (code < 0) {
                 pdfi_loop_detector_cleartomark(ctx);
-                pdfi_pop(ctx, 1);
-                return code;
+                goto error;
             }
 
-            /* This can happen if pdfi_read_xref_stream tries to repair a broken PDF file */
-            if (d != ctx->Trailer)
-                d = ctx->Trailer;
-
             pdfi_loop_detector_cleartomark(ctx);
-        }
+        } else
+            code = 0;
     }
 
-    return 0;
+error:
+    pdfi_countdown(d);
+    return code;
 }
 
 int pdfi_read_xref(pdf_context *ctx)
