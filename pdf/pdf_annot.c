@@ -1684,7 +1684,7 @@ static int pdfi_annot_draw_Link(pdf_context *ctx, pdf_dict *annot, pdf_obj *Norm
 
  exit:
     code1 = pdfi_annot_end_transparency(ctx, annot);
-    if (code < 0) code = code1;
+    if (code == 0) code = code1;
 
     *render_done = true;
     return code;
@@ -4485,6 +4485,12 @@ static int pdfi_annot_handle(pdf_context *ctx, pdf_dict *annot)
 
  exit:
     pdfi_countdown(Subtype);
+    if (code < 0) {
+        dbgmprintf(ctx->memory, "WARNING: Error handling annotation\n");
+        pdfi_set_error(ctx, code, NULL, E_PDF_BAD_ANNOTATION, "pdfi_annot_handle", "");
+        if (!ctx->args.pdfstoponerror)
+            code = 0;
+    }
     return code;
 }
 

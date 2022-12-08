@@ -69,5 +69,6 @@ PARAM(E_PDF_BAD_NAMED_DEST,            "An annotation has an invalid named desti
 PARAM(E_PDF_BAD_LENGTH,                "Incorrect /Length for stream object"),
 PARAM(E_PDF_DICT_IS_STREAM,            "Expected a dictionary but encountered a stream"),
 PARAM(E_PDF_BAD_TYPE,                  "An object is of the wrong type"),
-PARAM(E_PDF_BAD_VALUE,                  "An object has an unexpected value"),
+PARAM(E_PDF_BAD_VALUE,                 "An object has an unexpected value"),
+PARAM(E_PDF_BAD_ANNOTATION,            "There was an error in an annotation"),
 #undef PARAM
