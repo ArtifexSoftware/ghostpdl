@@ -243,7 +243,11 @@ static int pdfi_annot_position_AP(pdf_context *ctx, pdf_dict *annot, pdf_stream 
 
         if (xscale * yscale <= 0) {
             dbgmprintf(ctx->memory, "ANNOT: Ignoring annotation with scale factor of 0\n");
-            code = 0;
+            if (ctx->args.pdfstoponerror)
+                code = gs_note_error(gs_error_rangecheck);
+            else
+                code = 0;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_ZEROSCALE_ANNOT, "pdfi_annot_position_AP", "");
             goto exit;
         }
 
