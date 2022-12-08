@@ -144,7 +144,11 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code <= 0) {
             dmprintf(ctx->memory, "WARNING: Missing 'G' in SMask, ignoring.\n");
             pdfi_trans_end_smask_notify(ctx);
-            code = 0;
+            if (ctx->args.pdfstoponerror)
+                code = gs_note_error(gs_error_undefined);
+            else
+                code = 0;
+            pdfi_set_error(ctx, 0, NULL, E_PDF_SMASK_MISSING_G, "pdfi_trans_set_mask", "");
             goto exit;
         }
 
@@ -157,6 +161,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code <= 0) {
             dmprintf(ctx->memory, "WARNING: Missing 'S' in SMask (defaulting to Luminosity)\n");
             subtype = TRANSPARENCY_MASK_Luminosity;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_SMASK_MISSING_S, "pdfi_trans_set_mask", "");
         }
         else if (pdfi_name_is(S, "Luminosity")) {
             subtype = TRANSPARENCY_MASK_Luminosity;
@@ -165,6 +170,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         } else {
             dmprintf(ctx->memory, "WARNING: Unknown subtype 'S' in SMask (defaulting to Luminosity)\n");
             subtype = TRANSPARENCY_MASK_Luminosity;
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_SMASK_UNKNOWN_S, "pdfi_trans_set_mask", "");
         }
 
         /* TR is transfer function (Optional) */

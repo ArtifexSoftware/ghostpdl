@@ -77,4 +77,6 @@ PARAM(W_PDF_BAD_OUTPUTINTENTS,      "Bad OutputIntents detected"),
 PARAM(W_PDF_BAD_PAGELABELS,         "A problem was encountered trying to preserve the page Labels"),
 PARAM(W_PDF_XREF_OBJECT0_NOT_FREE,  "Xref entry for object 0 not a free entry."),
 PARAM(W_PDF_ZEROSCALE_ANNOT,        "Annotation has a scale factor of zero and was ignored"),
+PARAM(W_PDF_SMASK_MISSING_S,        "An SMask is missing the Subtype (/S) key, assuming Luminosity"),
+PARAM(W_PDF_SMASK_UNKNOWN_S,        "An SMask has an unknown value for the Subtype (/S) key, assuming Luminosity"),
 #undef PARAM

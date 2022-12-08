@@ -72,4 +72,6 @@ PARAM(E_PDF_BAD_TYPE,                  "An object is of the wrong type"),
 PARAM(E_PDF_BAD_VALUE,                 "An object has an unexpected value"),
 PARAM(E_PDF_BAD_ANNOTATION,            "There was an error in an annotation"),
 PARAM(E_PDF_BAD_XREFSTMOFFSET,         "An XRefStm value did not point to a cross reference stream"),
+PARAM(E_PDF_SMASK_MISSING_G,           "An SMask is missing the required Group (/G) key, SMask was ignored"),
+PARAM(E_PDF_PS_XOBJECT_IGNORED,        "An XObject had the Subtype /PS which is deprecated, the XObject was ignored"),
 #undef PARAM

@@ -2658,8 +2658,11 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
          */
         code = pdfi_do_form(ctx, page_dict, (pdf_stream *)xobject_obj);
     } else if (pdfi_name_is(n, "PS")) {
-        dmprintf(ctx->memory, "*** WARNING: PostScript XObjects are deprecated (SubType 'PS')\n");
-        code = 0; /* Swallow silently */
+        pdfi_set_error(ctx, 0, NULL, E_PDF_PS_XOBJECT_IGNORED, "pdfi_do_image_or_form", "");
+        if (ctx->args.pdfstoponerror)
+            code = gs_note_error(gs_error_typecheck);
+        else
+            code = 0; /* Swallow silently */
     } else {
         code = gs_error_typecheck;
     }
