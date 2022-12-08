@@ -79,4 +79,8 @@ PARAM(W_PDF_XREF_OBJECT0_NOT_FREE,  "Xref entry for object 0 not a free entry.")
 PARAM(W_PDF_ZEROSCALE_ANNOT,        "Annotation has a scale factor of zero and was ignored"),
 PARAM(W_PDF_SMASK_MISSING_S,        "An SMask is missing the Subtype (/S) key, assuming Luminosity"),
 PARAM(W_PDF_SMASK_UNKNOWN_S,        "An SMask has an unknown value for the Subtype (/S) key, assuming Luminosity"),
+PARAM(W_PDF_SMASK_INVALID_TR,       "SMask had a transfer function (/TR) with number of inputs or outputs not 1"),
+PARAM(W_PDF_SMASK_UNKNOWN_TR,       "SMask had a named transfer function (/TR) with an unknown name (not /Identity)"),
+PARAM(W_PDF_SMASK_UNKNOWN_TR_TYPE,  "SMask had a transfer function (/TR) of the wrong object type"),
+PARAM(W_PDF_SMASK_UNKNOWN_TYPE,     "SMask had an unknwon Type (not /Mask)"),
 #undef PARAM

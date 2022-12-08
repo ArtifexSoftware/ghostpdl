@@ -142,7 +142,6 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         /* G is transparency group XObject (required) */
         code = pdfi_dict_knownget_type(ctx, SMask, "G", PDF_STREAM, (pdf_obj **)&G_stream);
         if (code <= 0) {
-            dmprintf(ctx->memory, "WARNING: Missing 'G' in SMask, ignoring.\n");
             pdfi_trans_end_smask_notify(ctx);
             if (ctx->args.pdfstoponerror)
                 code = gs_note_error(gs_error_undefined);
@@ -159,7 +158,6 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         /* S is a subtype name (required) */
         code = pdfi_dict_knownget_type(ctx, SMask, "S", PDF_NAME, (pdf_obj **)&S);
         if (code <= 0) {
-            dmprintf(ctx->memory, "WARNING: Missing 'S' in SMask (defaulting to Luminosity)\n");
             subtype = TRANSPARENCY_MASK_Luminosity;
             pdfi_set_warning(ctx, 0, NULL, W_PDF_SMASK_MISSING_S, "pdfi_trans_set_mask", "");
         }
@@ -168,7 +166,6 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         } else if (pdfi_name_is(S, "Alpha")) {
             subtype = TRANSPARENCY_MASK_Alpha;
         } else {
-            dmprintf(ctx->memory, "WARNING: Unknown subtype 'S' in SMask (defaulting to Luminosity)\n");
             subtype = TRANSPARENCY_MASK_Luminosity;
             pdfi_set_warning(ctx, 0, NULL, W_PDF_SMASK_UNKNOWN_S, "pdfi_trans_set_mask", "");
         }
@@ -185,16 +182,16 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
                     if (gsfunc->params.m != 1 || gsfunc->params.n != 1) {
                         pdfi_free_function(ctx, gsfunc);
                         gsfunc = NULL;
-                        dmprintf(ctx->memory, "WARNING: Ignoring invalid TR (number of inpuits or outputs not 1) in SMask\n");
+                        pdfi_set_warning(ctx, 0, NULL, W_PDF_SMASK_INVALID_TR, "pdfi_trans_set_mask", "");
                     }
                     break;
                 case PDF_NAME:
                     if (!pdfi_name_is((pdf_name *)TR, "Identity")) {
-                        dmprintf(ctx->memory, "WARNING: Unknown TR in SMask\n");
+                        pdfi_set_warning(ctx, 0, NULL, W_PDF_SMASK_UNKNOWN_TR, "pdfi_trans_set_mask", "");
                     }
                     break;
                 default:
-                    dmprintf(ctx->memory, "WARNING: Ignoring invalid TR in SMask\n");
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_SMASK_UNKNOWN_TR_TYPE, "pdfi_trans_set_mask", "");
             }
         }
 
@@ -334,7 +331,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         }
     } else {
         /* take action on a non-/Mask entry. What does this mean ? What do we need to do */
-        dmprintf(ctx->memory, "Warning: Type is not /Mask, entry ignored in pdfi_set_trans_mask\n");
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_SMASK_UNKNOWN_TYPE, "pdfi_trans_set_mask", "");
     }
 
  exit:
