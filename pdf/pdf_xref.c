@@ -436,6 +436,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
 
     /* Third element must be obj, or it's not a valid xref */
     if (code != TOKEN_OBJ) {
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BAD_XREFSTMOFFSET, "pdfi_read_xref_stream_dict", "");
         if (ctx->args.pdfstoponerror)
             return code;
         return(pdfi_repair_file(ctx));
@@ -850,7 +851,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     if (code < 0)
         goto error;
 
-    if (max_obj > num)
+    if (max_obj >= num)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_SIZE, "read_xref", NULL);
 
     /* Check if this is a modified file and has any
