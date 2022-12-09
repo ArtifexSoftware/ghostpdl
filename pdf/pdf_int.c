@@ -1007,9 +1007,6 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     keyword->indirect_num = indirect_num;
     keyword->indirect_gen = indirect_gen;
 
-    if (ctx->args.pdfdebug)
-        dmprintf1(ctx->memory, " %s\n", Buffer);
-
     code = pdfi_push(ctx, (pdf_obj *)keyword);
     if (code < 0)
         pdfi_free_object((pdf_obj *)keyword);
@@ -1405,6 +1402,7 @@ static int split_bogus_operator(pdf_context *ctx, pdf_c_stream *source, pdf_dict
         goto error_exit;
 
 match:
+    pdfi_set_warning(ctx, 0, NULL, W_PDF_MISSING_WHITE_OPS, "split_bogus_operator", NULL);
     /* If we get here, we have two PDF_KEYWORD objects. We push them on the stack
      * one at a time, and execute them.
      */
@@ -1415,6 +1413,11 @@ match:
 
     pdfi_push(ctx, (pdf_obj *)key2);
     code = pdfi_interpret_stream_operator(ctx, source, stream_dict, page_dict);
+
+    pdfi_countdown(key1);
+    pdfi_countdown(key2);
+    pdfi_clearstack(ctx);
+    return code;
 
 error_exit:
     pdfi_set_error(ctx, 0, NULL, E_PDF_TOKENERROR, "split_bogus_operator", NULL);
@@ -1740,26 +1743,11 @@ static int pdfi_interpret_stream_operator(pdf_context *ctx, pdf_c_stream *source
         if (code > 0)
             code = 0;
         return code;
-    } else if (((pdf_keyword *)keyword)->length > 3) {
-        if (ctx->args.pdfdebug) {
-            char Buffer[1024];
-            int length;
-
-            if (((pdf_keyword *)keyword)->length > 1023)
-                length = 1023;
-            else
-                length = ((pdf_keyword *)keyword)->length;
-
-            memcpy(Buffer, ((pdf_keyword *)keyword)->data, length);
-            Buffer[length] = 0x00;
-            dmprintf1(ctx->memory, " %s\n", Buffer);
-        }
-
+    } else {
         /* This means we either have a corrupted or illegal operator. The most
          * usual corruption is two concatented operators (eg QBT instead of Q BT)
          * I plan to tackle this by trying to see if I can make two or more operators
-         * out of the mangled one. Note this will also be done below in the 'default'
-         * case where we don't recognise a keyword with 3 or fewer characters.
+         * out of the mangled one.
          */
         code = split_bogus_operator(ctx, source, stream_dict, page_dict);
         if (code < 0)
