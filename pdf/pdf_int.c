@@ -1969,6 +1969,9 @@ pdfi_interpret_inner_content_buffer(pdf_context *ctx, byte *content_data,
     pdf_c_stream *stream = NULL;
     pdf_stream *stream_obj = NULL;
 
+    if (content_length == 0)
+        return 0;
+
     code = pdfi_open_memory_stream_from_memory(ctx, content_length,
                                                content_data, &stream, true);
     if (code < 0)
@@ -1996,6 +1999,8 @@ pdfi_interpret_inner_content_c_string(pdf_context *ctx, char *content_string,
     bool decrypt_strings;
     int code;
 
+    if (length == 0)
+        return 0;
 
     /* Underlying buffer limit is uint32, so handle the extremely unlikely case that
      * our string is too big.
@@ -2084,8 +2089,11 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
         if (code < 0)
             return code;
 
-        if (stream_obj->length_valid)
+        if (stream_obj->length_valid) {
+            if (stream_obj->Length == 0)
+                return 0;
             code = pdfi_apply_SubFileDecode_filter(ctx, stream_obj->Length, NULL, ctx->main_stream, &SubFile_stream, false);
+        }
         else
             code = pdfi_apply_SubFileDecode_filter(ctx, 0, EODString, ctx->main_stream, &SubFile_stream, false);
         if (code < 0)

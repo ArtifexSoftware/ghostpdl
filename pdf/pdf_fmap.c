@@ -148,7 +148,11 @@ pdf_make_fontmap(pdf_context *ctx, const char *default_fmapname, int cidfmap)
                     ctx->main_stream = &fakemainstream;
                 }
 
-                code = pdfi_interpret_content_stream(ctx, fmapstr, &fakedict, NULL);
+                if (fmapbuflen > 0)
+                    code = pdfi_interpret_content_stream(ctx, fmapstr, &fakedict, NULL);
+                else
+                    code = 0;
+
                 if (ctx->main_stream == &fakemainstream) {
                     ctx->main_stream = NULL;
                 }
