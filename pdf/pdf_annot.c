@@ -685,19 +685,6 @@ static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const ch
                 goto exit;
             }
         }
-        if (Parent->object_num != 0) {
-            /* It is possible that we might have ended up with an object which has already
-             * been stored in the /Parent, but contains circular references (if we were careless
-             * about storing the dereferenced object). See OSS-fuzz 51034.
-             */
-            if(pdfi_loop_detector_check_object(ctx, Parent->object_num)){
-                code = gs_note_error(gs_error_circular_reference);
-                goto exit;
-            }
-            code = pdfi_loop_detector_add_object(ctx, Parent->object_num);
-            if (code < 0)
-                goto exit;
-        }
         code = pdfi_form_get_inheritable(ctx, Parent, Key, type, o);
         if (code <= 0) {
             if (ctx->AcroForm)
@@ -708,20 +695,6 @@ static int pdfi_form_get_inheritable(pdf_context *ctx, pdf_dict *field, const ch
         if (ctx->AcroForm)
             code = pdfi_dict_knownget_type(ctx, ctx->AcroForm, Key, type, o);
     }
-
-#if 0
-    /* If not found, recursively check Parent, if any */
-    code = pdfi_dict_knownget_type(ctx, field, "Parent", PDF_DICT, (pdf_obj **)&Parent);
-    if (code < 0) goto exit;
-    if (code > 0) {
-        /* Check Parent */
-        code = pdfi_form_get_inheritable(ctx, Parent, Key, type, o);
-    } else {
-        /* No Parent, so check AcroForm, if any */
-        if (ctx->AcroForm)
-            code = pdfi_dict_knownget_type(ctx, ctx->AcroForm, Key, type, o);
-    }
-#endif
 
 exit:
     (void)pdfi_loop_detector_cleartomark(ctx);
