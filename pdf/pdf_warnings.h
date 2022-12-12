@@ -86,4 +86,6 @@ PARAM(W_PDF_SMASK_UNKNOWN_TYPE,     "SMask had an unknwon Type (not /Mask)"),
 PARAM(W_PDF_MISSING_WHITE_OPS,      "Possible missing white space between operators"),
 PARAM(W_PDF_ANNOT_BAD_TYPE,         "Annotation is not a dictionary, ignoring"),
 PARAM(W_PDF_VERSION_NO_EOL,         "PDF version number not immediately followed with EOL"),
+PARAM(W_PDF_D1_COLOUR_OP,           "A type 3 glyph description, beginning with d1, tried to set a colour"),
+PARAM(W_PDF_FORM_CLIPPEDOUT,        "A Form XObject had a BBox with a width or height of 0"),
 #undef PARAM

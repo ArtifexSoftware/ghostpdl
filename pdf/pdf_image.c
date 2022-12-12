@@ -2501,6 +2501,12 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
     if (code < 0) goto exit1;
 
+    if (bbox.q.x - bbox.p.x == 0.0 || bbox.q.y - bbox.p.y == 0.0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_FORM_CLIPPEDOUT, "pdfi_do_form", "");
+        code = 0;
+        goto exit1;
+    }
+
     code = gs_concat(ctx->pgs, &formmatrix);
     if (code < 0) goto exit1;
 

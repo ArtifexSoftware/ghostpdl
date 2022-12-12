@@ -351,8 +351,10 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
     gs_color_space *pcs = ctx->pgs->color[0].color_space;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setgray", "");
         return 0;
+    }
 
     if (ctx->page.DefaultGray_cs != NULL) {
         gs_client_color cc;
@@ -387,8 +389,10 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
     gs_color_space *pcs = ctx->pgs->color[0].color_space;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setrgbcolor", "");
         return 0;
+    }
 
     if (ctx->page.DefaultRGB_cs != NULL) {
         gs_client_color cc;
@@ -425,8 +429,10 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
     gs_color_space *pcs = ctx->pgs->color[0].color_space;
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setcmykcolor", "");
         return 0;
+    }
 
     if (ctx->page.DefaultCMYK_cs != NULL) {
         gs_client_color cc;
@@ -467,8 +473,10 @@ int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
      */
     if (ctx->pgs->color[0].color_space->id != pcs->id) {
         /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
-        if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0)
+        if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setcolorspace", "");
             return 0;
+        }
 
         code = gs_setcolorspace(ctx->pgs, pcs);
         if (code < 0)
