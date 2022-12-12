@@ -1339,6 +1339,18 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
         }
         else {
             ctx->HeaderVersion = version;
+            s += 5;
+            while (((*s >= '0' && *s <= '9') || *s == '.') && *s != 0x00)
+                s++;
+            while (*s != 0x00) {
+                if (*s == 0x09 || *s== 0x0c || *s == 0x20) {
+                    s++;
+                    continue;
+                }
+                if (*s != 0x0A && *s != 0x0D)
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_VERSION_NO_EOL, "pdfi_set_input_stream", (char *)"%% PDF version not immediately followed with EOL\n");
+                break;
+            }
         }
         if (ctx->args.pdfdebug)
             dmprintf1(ctx->memory, "%% Found header, PDF version is %f\n", ctx->HeaderVersion);

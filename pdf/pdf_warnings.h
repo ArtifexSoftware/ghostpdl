@@ -84,4 +84,6 @@ PARAM(W_PDF_SMASK_UNKNOWN_TR,       "SMask had a named transfer function (/TR) w
 PARAM(W_PDF_SMASK_UNKNOWN_TR_TYPE,  "SMask had a transfer function (/TR) of the wrong object type"),
 PARAM(W_PDF_SMASK_UNKNOWN_TYPE,     "SMask had an unknwon Type (not /Mask)"),
 PARAM(W_PDF_MISSING_WHITE_OPS,      "Possible missing white space between operators"),
+PARAM(W_PDF_ANNOT_BAD_TYPE,         "Annotation is not a dictionary, ignoring"),
+PARAM(W_PDF_VERSION_NO_EOL,         "PDF version number not immediately followed with EOL"),
 #undef PARAM

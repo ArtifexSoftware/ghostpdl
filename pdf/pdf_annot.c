@@ -4487,8 +4487,11 @@ int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict)
 
     for (i = 0; i < pdfi_array_size(Annots); i++) {
         code = pdfi_array_get_type(ctx, Annots, i, PDF_DICT, (pdf_obj **)&annot);
-        if (code < 0)
+        if (code < 0) {
+            if (code == gs_error_typecheck)
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_BAD_TYPE, "pdfi_do_annotations", "");
             continue;
+        }
         code = pdfi_annot_handle(ctx, annot);
         if (code < 0 && ctx->args.pdfstoponerror)
             goto exit;
