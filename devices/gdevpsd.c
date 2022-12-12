@@ -152,8 +152,8 @@ psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
 
 #if ENABLE_COLOR_REPLACE
     /* Demo of doing color replacement in the device in place of
-       standard ICC color management */
-    if (op == gxdso_replacecolor) {
+       standard ICC color management. Only works for CMYK psd devices */
+    if (op == gxdso_replacecolor && dev_->color_info.num_components >= 4) {
 
         color_replace_t *replace_data = (color_replace_t *)data;
         gx_device_color *pdc = replace_data->pdc;
