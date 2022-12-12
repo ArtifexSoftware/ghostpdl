@@ -1096,6 +1096,8 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
      */
     if (tracker->spot_dict != NULL) {
         code = pdfi_dict_knownget_type(ctx, Resources_dict, "ColorSpace", PDF_DICT, &d);
+        if (code == gs_error_typecheck)
+            pdfi_set_error(ctx, 0, NULL, E_PDF_SPOT_CHK_BADTYPE, "pdfi_check_Resources", "");
         if (code > 0)
             (void)pdfi_check_ColorSpace_dict(ctx, (pdf_dict *)d, page_dict, tracker);
 
@@ -1103,6 +1105,8 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
         d = NULL;
 
         code = pdfi_dict_knownget_type(ctx, Resources_dict, "Shading", PDF_DICT, &d);
+        if (code == gs_error_typecheck)
+            pdfi_set_error(ctx, 0, NULL, E_PDF_SPOT_CHK_BADTYPE, "pdfi_check_Resources", "");
         if (code > 0)
             (void)pdfi_check_Shading_dict(ctx, (pdf_dict *)d, page_dict, tracker);
         pdfi_countdown(d);
@@ -1110,18 +1114,24 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
     }
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "XObject", PDF_DICT, &d);
+    if (code == gs_error_typecheck)
+        pdfi_set_error(ctx, 0, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "");
     if (code > 0)
         (void)pdfi_check_XObject_dict(ctx, (pdf_dict *)d, page_dict, tracker);
     pdfi_countdown(d);
     d = NULL;
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "Pattern", PDF_DICT, &d);
+    if (code == gs_error_typecheck)
+        pdfi_set_error(ctx, 0, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "");
     if (code > 0)
         (void)pdfi_check_Pattern_dict(ctx, (pdf_dict *)d, page_dict, tracker);
     pdfi_countdown(d);
     d = NULL;
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "Font", PDF_DICT, &d);
+    if (code == gs_error_typecheck)
+        pdfi_set_error(ctx, 0, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "");
     if (code > 0)
         (void)pdfi_check_Font_dict(ctx, (pdf_dict *)d, page_dict, tracker);
     /* From this point onwards, if we detect transparency (or have already detected it) we
@@ -1131,6 +1141,8 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
     d = NULL;
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "ExtGState", PDF_DICT, &d);
+    if (code == gs_error_typecheck)
+        pdfi_set_error(ctx, 0, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "");
     if (code > 0)
         (void)pdfi_check_ExtGState_dict(ctx, (pdf_dict *)d, page_dict, tracker);
     pdfi_countdown(d);

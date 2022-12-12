@@ -74,4 +74,6 @@ PARAM(E_PDF_BAD_ANNOTATION,            "There was an error in an annotation"),
 PARAM(E_PDF_BAD_XREFSTMOFFSET,         "An XRefStm value did not point to a cross reference stream"),
 PARAM(E_PDF_SMASK_MISSING_G,           "An SMask is missing the required Group (/G) key, SMask was ignored"),
 PARAM(E_PDF_PS_XOBJECT_IGNORED,        "An XObject had the Subtype /PS which is deprecated, the XObject was ignored"),
+PARAM(E_PDF_TRANS_CHK_BADTYPE,         "An object (eg XObject, Pattern) being checked for transparency had the wrong type and was not checked"),
+PARAM(E_PDF_SPOT_CHK_BADTYPE,          "An object (eg Shading) being checked for spot colours had the wrong type and was not checked"),
 #undef PARAM
