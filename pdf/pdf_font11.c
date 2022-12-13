@@ -84,16 +84,21 @@ pdfi_cidtype2_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 {
     int code;
     pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)font->client_data;
-    code = (*pdffont11->orig_glyph_info)(font, glyph, pmat, members, info);
-    if (code < 0)
-        return code;
+    int submembers = members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_VVECTOR0 | GLYPH_INFO_VVECTOR1 | GLYPH_INFO_CDEVPROC);
 
-    if ((members & GLYPH_INFO_WIDTHS) != 0
+    /* Call with the values we should get below removed from the "members" request */
+    code = (*pdffont11->orig_glyph_info)(font, glyph, pmat, submembers, info);
+
+    if (code >= 0 && (members & GLYPH_INFO_WIDTHS) != 0
       && glyph > GS_MIN_CID_GLYPH
       && glyph < GS_MIN_GLYPH_INDEX) {
         double widths[6] = {0};
         code = pdfi_get_cidfont_glyph_metrics(font, (glyph - GS_MIN_CID_GLYPH), widths, true);
-        if (code >= 0) {
+        if (code < 0) {
+             /* If we couldn't get values back from W/W2, give up, and fill everything in from glyph_info */
+             code = (*pdffont11->orig_glyph_info)(font, glyph, pmat, members, info);
+        }
+        else {
             if (pmat == NULL) {
                 info->width[0].x = widths[GLYPH_W0_WIDTH_INDEX] / 1000.0;
                 info->width[0].y = widths[GLYPH_W0_HEIGHT_INDEX] / 1000.0;
@@ -133,6 +138,7 @@ pdfi_cidtype2_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
             }
         }
     }
+
     return code;
 }
 
