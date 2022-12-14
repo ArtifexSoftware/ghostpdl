@@ -1270,10 +1270,10 @@ exit:
 int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
 {
     byte *Buffer = NULL;
-    char *s = NULL;
+    char *s = NULL, *test = NULL;
     float version = 0.0;
     gs_offset_t Offset = 0;
-    int64_t bytes = 0, leftover = 0;
+    int64_t bytes = 0, leftover = 0, bytes_left = 0;
     bool found = false;
     int code;
 
@@ -1321,7 +1321,22 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     Buffer[Offset] = 0x00;
 
     /* First check for existence of header */
-    s = strstr((char *)Buffer, "%PDF");
+    test = (char *)Buffer;
+    bytes_left = bytes;
+    s = strstr((char *)test, "%PDF");
+    if (s == NULL)
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_GARBAGE_B4HDR, "pdfi_set_input_stream", "");
+    /* Garbage before the header can be anything, including binary and NULL (0x00) characters
+     * which can defeat using strstr, so if we fail to find a header, try moving on by the length
+     * of the C string + 1 and try again.
+     */
+    while (s == NULL) {
+        bytes_left -= (strlen(test) + 1);
+        if (bytes_left < 4)
+            break;
+        test += strlen(test) + 1;
+        s = strstr((char *)test, "%PDF");
+    };
     if (s == NULL) {
         char extra_info[gp_file_name_sizeof];
 
