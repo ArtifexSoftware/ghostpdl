@@ -944,6 +944,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
 
             code = pdfi_read_bare_int(ctx, ctx->main_stream, &obj_num);
             if (code < 0) {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "read_xref", "");
                 pdfi_loop_detector_cleartomark(ctx);
                 goto error;
             }
