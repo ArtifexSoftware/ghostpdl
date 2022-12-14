@@ -896,6 +896,14 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
          */
         code = pdfi_dict_get_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj**)&fontdesc);
         if (fontdesc != NULL && pdfi_type_of(fontdesc) == PDF_DICT) {
+            pdf_obj *Name = NULL;
+
+            code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontName", PDF_NAME, (pdf_obj**)&Name);
+            if (code < 0)
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_FDESC_BAD_FONTNAME, "pdfi_load_font", "");
+            pdfi_countdown(Name);
+            Name = NULL;
+
             code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile", PDF_STREAM, (pdf_obj**)&fontfile);
             if (code >= 0)
                 fftype = type1_font;

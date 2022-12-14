@@ -198,6 +198,15 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     /* We're supposed to have a FontDescriptor, it can be missing, and we have to carry on */
     (void)pdfi_dict_get(ctx, font_dict, "FontDescriptor", (pdf_obj **)&fontdesc);
 
+    if (fontdesc != NULL) {
+        pdf_obj *Name = NULL;
+
+        code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontName", PDF_NAME, (pdf_obj**)&Name);
+        if (code < 0)
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_FDESC_BAD_FONTNAME, "pdfi_load_font", "");
+        pdfi_countdown(Name);
+    }
+
     code = pdfi_dict_get(ctx, font_dict, "Encoding", &cmap);
     if (code < 0) goto error;
 

@@ -258,6 +258,15 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto font3_error;
 
+    if (font->FontDescriptor != NULL) {
+        pdf_obj *Name = NULL;
+
+        code = pdfi_dict_get_type(ctx, (pdf_dict *) font->FontDescriptor, "FontName", PDF_NAME, (pdf_obj**)&Name);
+        if (code < 0)
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_FDESC_BAD_FONTNAME, "pdfi_load_font", "");
+        pdfi_countdown(Name);
+    }
+
     pdfi_font_set_first_last_char(ctx, font_dict, (pdf_font *)font);
     /* ignore errors with widths... for now */
     (void)pdfi_font_create_widths(ctx, font_dict, (pdf_font*)font, 1.0);
