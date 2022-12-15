@@ -412,6 +412,11 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
 
                 code = pdfi_dict_knownget_type(ctx, xobject, "Resources", PDF_DICT, (pdf_obj **)&resource_dict);
                 if (code > 0) {
+                    if (ctx->loop_detection && pdf_object_num(resource_dict) != 0) {
+                        code = pdfi_loop_detector_add_object(ctx, resource_dict->object_num);
+                        if (code < 0)
+                            goto transparency_exit;
+                    }
                     code = pdfi_check_Resources(ctx, resource_dict, page_dict, tracker);
                     pdfi_countdown(resource_dict);
                     if (code < 0)
