@@ -586,13 +586,21 @@ static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *pa
 
     switch (pdfi_type_of(obj)) {
         case PDF_NAME:
-            if (pdfi_name_is((const pdf_name *)obj, "Identity"))
-                code = gs_setblackgeneration_remap(ctx->pgs, gs_identity_transfer, false);
-            else if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
-                code = gs_setblackgeneration_remap(ctx->pgs, ctx->page.DefaultBG.proc, false);
-                memcpy(ctx->pgs->black_generation->values, ctx->page.DefaultBG.values, transfer_map_size * sizeof(frac));
-            } else
-                code = gs_note_error(gs_error_rangecheck);
+            if (is_BG) {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BG_ISNAME, "pdfi_set_blackgeneration", "");
+                if (ctx->args.pdfstoponerror)
+                    code = gs_note_error(gs_error_typecheck);
+                else
+                    code = 0;
+            } else {
+                if (pdfi_name_is((const pdf_name *)obj, "Identity"))
+                    code = gs_setblackgeneration_remap(ctx->pgs, gs_identity_transfer, false);
+                else if (pdfi_name_is((const pdf_name *)obj, "Default")) {
+                    code = gs_setblackgeneration_remap(ctx->pgs, ctx->page.DefaultBG.proc, false);
+                    memcpy(ctx->pgs->black_generation->values, ctx->page.DefaultBG.values, transfer_map_size * sizeof(frac));
+                } else
+                    code = gs_note_error(gs_error_rangecheck);
+            }
             goto exit;
 
         case PDF_DICT:
@@ -667,20 +675,28 @@ static int GS_BG2(pdf_context *ctx, pdf_dict *GS, pdf_dict *stream_dict, pdf_dic
     return code;
 }
 
-static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict, bool is_BG)
+static int pdfi_set_undercolorremoval(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict, bool is_UCR)
 {
     int code = 0, i;
     gs_function_t *pfn;
 
     switch (pdfi_type_of(obj)) {
         case PDF_NAME:
-            if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
-                code = gs_setundercolorremoval_remap(ctx->pgs, gs_identity_transfer, false);
-            } else if (!is_BG && pdfi_name_is((const pdf_name *)obj, "Default")) {
-                code = gs_setundercolorremoval_remap(ctx->pgs, ctx->page.DefaultUCR.proc, false);
-                memcpy(ctx->pgs->undercolor_removal->values, ctx->page.DefaultUCR.values, transfer_map_size * sizeof(frac));
+            if (is_UCR) {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_UCR_ISNAME, "pdfi_set_undercolorremoval", "");
+                if (ctx->args.pdfstoponerror)
+                    code = gs_note_error(gs_error_typecheck);
+                else
+                    code = 0;
             } else {
-                code = gs_note_error(gs_error_rangecheck);
+                if (pdfi_name_is((const pdf_name *)obj, "Identity")) {
+                    code = gs_setundercolorremoval_remap(ctx->pgs, gs_identity_transfer, false);
+                } else if (pdfi_name_is((const pdf_name *)obj, "Default")) {
+                    code = gs_setundercolorremoval_remap(ctx->pgs, ctx->page.DefaultUCR.proc, false);
+                    memcpy(ctx->pgs->undercolor_removal->values, ctx->page.DefaultUCR.values, transfer_map_size * sizeof(frac));
+                } else {
+                    code = gs_note_error(gs_error_rangecheck);
+                }
             }
             goto exit;
 
@@ -932,13 +948,22 @@ static int pdfi_set_transfer(pdf_context *ctx, pdf_obj *obj, pdf_dict *page_dict
             code = gs_settransfer_remap(ctx->pgs, gs_identity_transfer, false);
             goto exit;
         } else {
-            if (!is_TR && pdfi_name_is((const pdf_name *)obj, "Default")) {
-                code = gs_settransfer_remap(ctx->pgs, ctx->page.DefaultTransfers[3].proc, false);
-                memcpy(ctx->pgs->set_transfer.gray->values, ctx->page.DefaultTransfers[3].values, transfer_map_size * sizeof(frac));
+            if (is_TR) {
+                pdfi_set_error(ctx, 0, NULL, E_PDF_TR_NAME_NOT_IDENTITY, "pdfi_set_transfer", "");
+                if (ctx->args.pdfstoponerror)
+                    code = gs_note_error(gs_error_rangecheck);
+                else
+                    code = 0;
                 goto exit;
             } else {
-                code = gs_note_error(gs_error_rangecheck);
-                goto exit;
+                if (pdfi_name_is((const pdf_name *)obj, "Default")) {
+                    code = gs_settransfer_remap(ctx->pgs, ctx->page.DefaultTransfers[3].proc, false);
+                    memcpy(ctx->pgs->set_transfer.gray->values, ctx->page.DefaultTransfers[3].values, transfer_map_size * sizeof(frac));
+                    goto exit;
+                } else {
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto exit;
+                }
             }
         }
     }

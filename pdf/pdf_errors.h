@@ -76,4 +76,7 @@ PARAM(E_PDF_SMASK_MISSING_G,           "An SMask is missing the required Group (
 PARAM(E_PDF_PS_XOBJECT_IGNORED,        "An XObject had the Subtype /PS which is deprecated, the XObject was ignored"),
 PARAM(E_PDF_TRANS_CHK_BADTYPE,         "An object (eg XObject, Pattern) being checked for transparency had the wrong type and was not checked"),
 PARAM(E_PDF_SPOT_CHK_BADTYPE,          "An object (eg Shading) being checked for spot colours had the wrong type and was not checked"),
+PARAM(E_PDF_BG_ISNAME,                 "An ExtGState dictionary has a /BG key with a value which is a name, not a function"),
+PARAM(E_PDF_UCR_ISNAME,                "An ExtGState dictionary has a /UCR key with a value which is a name, not a function"),
+PARAM(E_PDF_TR_NAME_NOT_IDENTITY,      "An ExtGState dictionary has a /TR key with a value which is a name other than /Identity"),
 #undef PARAM
