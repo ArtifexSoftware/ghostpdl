@@ -645,7 +645,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (info->Name != NULL && pdfi_type_of(info->Name) != PDF_NAME) {
         pdfi_countdown(info->Name);
         info->Name = NULL;
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGENAME, "pdfi_get_image_info", NULL);
         if (ctx->args.pdfstoponwarning)
             goto errorExit;
     }
