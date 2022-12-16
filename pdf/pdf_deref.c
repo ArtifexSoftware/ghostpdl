@@ -923,8 +923,10 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
 
     entry = &ctx->xref_table->xref[obj];
 
-    if(entry->object_num == 0)
+    if(entry->object_num == 0) {
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BADOBJNUMBER, "pdfi_dereference_main", "Attempt to dereference object 0");
         return_error(gs_error_undefined);
+    }
 
     if (entry->free) {
         char extra_info[gp_file_name_sizeof];
