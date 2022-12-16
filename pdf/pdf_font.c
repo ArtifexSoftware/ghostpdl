@@ -891,6 +891,8 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
             goto exit;
     }
     else {
+        if (!pdfi_name_is(Subtype, "Type1") && !pdfi_name_is(Subtype, "TrueType") && !pdfi_name_is(Subtype, "CIDFont"))
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BAD_SUBTYPE, "pdfi_load_font", NULL);
         /* We should always have a font descriptor here, but we have to carry on
            even if we don't
          */
