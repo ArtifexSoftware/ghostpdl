@@ -937,6 +937,11 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
             code = pdfi_stream_to_buffer(ctx, (pdf_stream *) fontfile, &fbuf, &fbuflen);
             pdfi_countdown(fontfile);
             if (fbuflen == 0) {
+                char obj[129];
+                pdfi_print_cstring(ctx, "**** Warning: cannot process embedded stream for font object ");
+                gs_snprintf(obj, 128, "%d %d\n", (int)font_dict->object_num, (int)font_dict->generation_num);
+                pdfi_print_cstring(ctx, obj);
+                pdfi_print_cstring(ctx, "**** Attempting to load a substitute font.\n");
                 gs_free_object(ctx->memory, fbuf, "pdfi_load_font(fbuf)");
                 fbuf = NULL;
                 code = gs_note_error(gs_error_invalidfont);
@@ -962,11 +967,6 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                 }
             }
             else {
-                char obj[129];
-                pdfi_print_cstring(ctx, "**** Warning: cannot process embedded stream for font object ");
-                gs_snprintf(obj, 128, "%d %d\n", (int)font_dict->object_num, (int)font_dict->generation_num);
-                pdfi_print_cstring(ctx, obj);
-                pdfi_print_cstring(ctx, "**** Attempting to load a substitute font.\n");
                 code = gs_error_invalidfont;
             }
 
