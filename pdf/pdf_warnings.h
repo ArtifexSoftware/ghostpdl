@@ -91,4 +91,5 @@ PARAM(W_PDF_D1_COLOUR_OP,           "A type 3 glyph description, beginning with 
 PARAM(W_PDF_FORM_CLIPPEDOUT,        "A Form XObject had a BBox with a width or height of 0"),
 PARAM(W_PDF_FDESC_BAD_FONTNAME,     "A FontDescriptor has a missing or bad /FontName"),
 PARAM(W_PDF_GARBAGE_B4HDR,          "File has some garbage before %PDF-"),
+PARAM(W_PDF_FONTRESOURCE_TYPE,      "A Font key in a Resources dictionary has a value of the wrong type"),
 #undef PARAM

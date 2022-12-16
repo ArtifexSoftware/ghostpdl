@@ -1043,7 +1043,17 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
 
         i = 1;
         do {
-            code = pdfi_check_Font(ctx, (pdf_dict *)Value, page_dict, tracker);
+            if (pdfi_type_of(Value) == PDF_DICT)
+                code = pdfi_check_Font(ctx, (pdf_dict *)Value, page_dict, tracker);
+            else if (pdfi_type_of(Value) == PDF_FONT) {
+                pdf_dict *d = ((pdf_font *)Value)->PDF_font;
+
+                code = pdfi_check_Font(ctx, d, page_dict, tracker);
+            } else {
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_FONTRESOURCE_TYPE, "pdfi_check_Font_dict", "");
+            }
+            if (code < 0)
+                break;
 
             pdfi_countdown(Key);
             Key = NULL;
@@ -1056,30 +1066,23 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
             if (code < 0)
                 goto error1;
 
-            do {
-                if (i++ >= pdfi_dict_entries(font_dict)) {
-                    code = 0;
-                    goto transparency_exit;
-                }
+            if (i++ >= pdfi_dict_entries(font_dict)) {
+                code = 0;
+                break;
+            }
 
-                code = pdfi_dict_next(ctx, font_dict, &Key, &Value, &index);
-                if (code == 0 && pdfi_type_of(Value) == PDF_DICT)
-                    break;
-                pdfi_countdown(Key);
-                Key = NULL;
-                pdfi_countdown(Value);
-                Value = NULL;
-            } while(1);
+            code = pdfi_dict_next(ctx, font_dict, &Key, &Value, &index);
+            if (code < 0)
+                break;
+
         }while (1);
     }
-    return 0;
 
-transparency_exit:
+    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current resource loop */
     pdfi_countdown(Key);
     pdfi_countdown(Value);
 
 error1:
-    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current resource loop */
     return code;
 }
 
