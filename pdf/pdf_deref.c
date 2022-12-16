@@ -378,11 +378,15 @@ static int pdfi_read_stream_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_
         total = bytes;
         do {
             if (memcmp(Buffer, "endstream", 9) == 0) {
+                if (Buffer[9] != 0x00)
+                    total--;
                 stream_obj->Length = total - 9;
                 stream_obj->length_valid = true;
                 break;
             }
             if (memcmp(Buffer, "endobj", 6) == 0) {
+                if (Buffer[9] != 0x00)
+                    total--;
                 stream_obj->Length = total - 6;
                 stream_obj->length_valid = true;
                 break;
