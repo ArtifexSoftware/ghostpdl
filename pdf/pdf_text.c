@@ -795,7 +795,7 @@ static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
 
 static int pdfi_show(pdf_context *ctx, pdf_string *s)
 {
-    int code = 0;
+    int code = 0, SavedTextDepth = 0;
     int code1 = 0;
     gs_text_params_t text;
     pdf_font *current_font = NULL;
@@ -824,7 +824,18 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     if (code < 0)
         goto show_error;
 
+    /* <sigh> Ugliness......
+     * It seems that transparency can require that we set a transparency Group
+     * during the course of a text operation, and that Group can, of course,
+     * execute operations which are barred during text operations (because
+     * the Group doesn't affect the text as such). So we need to not throw
+     * errors if that happens. Do that by just setting the BlockDepth to 0.
+     */
+    SavedTextDepth = ctx->text.BlockDepth;
+    ctx->text.BlockDepth = 0;
     code = pdfi_trans_setup_text(ctx, &state, true);
+    ctx->text.BlockDepth = SavedTextDepth;
+
     if (code >= 0) {
         if (ctx->device_state.preserve_tr_mode) {
         code = pdfi_show_Tr_preserve(ctx, &text);
