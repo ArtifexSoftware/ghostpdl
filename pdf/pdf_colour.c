@@ -914,16 +914,10 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
     }
     /* Return the number of components the ICC profile has */
     *icc_N = expected;
-    if (expected != ncomps)
+    if (expected != ncomps) {
+        pdfi_set_error(ctx, 0, NULL, E_PDF_ICC_BAD_N, "pdfi_create_icc", "");
         ncomps = expected;
-
-#if 0
-    if (!expected || ncomps != expected) {
-        rc_decrement(picc_profile,"pdfi_create_icc");
-        rc_decrement(pcs,"pdfi_create_icc");
-        return_error(gs_error_rangecheck);
     }
-#endif
 
     picc_profile->num_comps = ncomps;
     /* Lets go ahead and get the hash code and check if we match one of the default spaces */
