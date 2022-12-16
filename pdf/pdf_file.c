@@ -962,7 +962,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
 
         /* ISO 32000-2:2020 (PDF 2.0) - abbreviated names take precendence. */
         if (inline_image) {
-            code = pdfi_dict_knownget(ctx, stream_dict, "DP", &DecodeParams);
+            code = pdfi_dict_knownget(ctx, stream_dict, "DP", (pdf_obj **)&DecodeParams);
             if (code == 0)
                 code = pdfi_dict_knownget(ctx, stream_dict, "DecodeParms", (pdf_obj **)&DecodeParams);
         } else {
