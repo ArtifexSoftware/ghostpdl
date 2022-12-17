@@ -1022,7 +1022,7 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
 static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *page_dict,
                                 pdfi_check_tracker_t *tracker)
 {
-    int code;
+    int code = 0;
     uint64_t i, index;
     pdf_obj *Key = NULL, *Value = NULL;
 
