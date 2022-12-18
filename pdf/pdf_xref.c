@@ -50,7 +50,7 @@ static int resize_xref(pdf_context *ctx, uint64_t new_size)
     return 0;
 }
 
-static int read_xref_stream_entries(pdf_context *ctx, pdf_c_stream *s, uint64_t first, uint64_t last, uint64_t *W)
+static int read_xref_stream_entries(pdf_context *ctx, pdf_c_stream *s, int64_t first, int64_t last, int64_t *W)
 {
     uint i, j;
     uint field_width = 0;
@@ -300,7 +300,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
 
     code = pdfi_dict_get_type(ctx, sdict, "Index", PDF_ARRAY, (pdf_obj **)&a);
     if (code == gs_error_undefined) {
-        code = read_xref_stream_entries(ctx, XRefStrm, 0, size - 1, (uint64_t *)W);
+        code = read_xref_stream_entries(ctx, XRefStrm, 0, size - 1, W);
         if (code < 0) {
             pdfi_close_file(ctx, XRefStrm);
             pdfi_countdown(ctx->xref_table);
@@ -358,7 +358,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
                 }
             }
 
-            code = read_xref_stream_entries(ctx, XRefStrm, start, start + size - 1, (uint64_t *)W);
+            code = read_xref_stream_entries(ctx, XRefStrm, start, start + size - 1, W);
             if (code < 0) {
                 pdfi_countdown(a);
                 pdfi_close_file(ctx, XRefStrm);
