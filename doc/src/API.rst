@@ -719,7 +719,7 @@ Return Codes from ``gsapi_*()``
    * - 0
      - No errors
    * - gs_error_Quit
-     - "quit" has been executed. This is not an error. ```gsapi_exit()`` must be called next.
+     - "quit" has been executed. This is not an error. ``gsapi_exit()`` must be called next.
    * - gs_error_interrupt
      - The polling callback function returned a negative value, requesting Ghostscript to abort.
    * - gs_error_NeedInput
@@ -1364,13 +1364,13 @@ On exit, the values should be updated appropriately. The implementor is expected
 
 ``memory`` should be updated to point to a block of memory to use for the rendered output. Pixel (``*ox``, ``*oy``) is the first pixel represented in that block.
 
-``*raster`` is the number of bytes difference between the address of component 0 of Pixel(``*ox``, ``*oy``) and the address of component 0 of Pixel(``*ox``, 1+``*oy``).
+``*raster`` is the number of bytes difference between the address of component 0 of Pixel(``*ox``, ``*oy``) and the address of component 0 of Pixel(``*ox``, 1 + ``*oy``).
 
 ``*plane_raster`` is the number of bytes difference between the address of component 0 of Pixel(``*ox``, ``*oy``) and the address of component 1 of Pixel(``*ox``, ``*oy``), if in planar mode, 0 otherwise. ``*x``, ``*y``, ``*w`` and ``*h`` give the rectangle requested within that memory block.
 
 Any set of rectangles can be rendered with this method, so this can be used to drive Ghostscript in various ways. Firstly, it is simple to request a set of non-overlapping "bands" that cover the page, to drive a printer. Alternatively, rectangles can be chosen to fill a given block of memory to implement a window panning around a larger page. Either the whole image could be redrawn each time, or smaller rectangles around the edge of the panned area could be requested. The choice is down to the caller.
 
-Some examples of driving this code in full page mode are in ```dwmain.c``(Windows), ``dpmain.c`` (OS/2) and ``dxmain.c`` (X11/Linux), and ``dmmain.c`` (MacOS Classic or Carbon).
+Some examples of driving this code in full page mode are in ``dwmain.c`` (Windows), ``dpmain.c`` (OS/2) and ``dxmain.c`` (X11/Linux), and ``dmmain.c`` (MacOS Classic or Carbon).
 
 Alternatively an example that drives this code in both full page and rectangle request mode can be found in ``api_test.c``.
 

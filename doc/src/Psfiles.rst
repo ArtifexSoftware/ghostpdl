@@ -324,7 +324,7 @@ These files are found in the ``lib`` subdirectory of the Ghostscript source dist
 ``caption.ps``
    A file for putting a caption in a box at the bottom of each page, useful for trade show demos.
 
-``cat.ps```
+``cat.ps``
    Appends one file to another. Primarily used to overcome the 'copy' limitation of Windows command shell for ``ps2epsi``.
 
 ``cid2code.ps``

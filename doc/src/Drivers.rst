@@ -988,13 +988,13 @@ The ``fill_*`` drawing operations all use the center-of-pixel rule: a pixel is c
    Fill a trapezoid. The bottom and top edges are parallel to the x axis, and are defined by ``ybot`` and ``ytop``, respectively. The left and right edges are defined by ``left`` and ``right``. Both of these represent lines (``gs_fixed_edge`` is defined in ``gxdevcli.h`` and consists of ``gs_fixed_point`` start and end points). The y coordinates of these lines need not have any specific relation to ``ybot`` and ``ytop``. The routine is defined this way so that the filling algorithm can subdivide edges and still guarantee that the exact same pixels will be filled. If ``swap_axes`` is set, the meanings of X and Y are interchanged.
 
 ``int (*fill_parallelogram)(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by, const gx_drawing_color *pdcolor, gs_logical_operation_t lop) [OPTIONAL]``
-   Fill a parallelogram whose corners are (``px``,``py``), (``px+ax``,``py+ay``), (``px+bx``,``py+by``), and (``px+ax+bx``,``py+ay+by``). There are no constraints on the values of any of the parameters, so the parallelogram may have any orientation relative to the coordinate axes.
+   Fill a parallelogram whose corners are (``px``, ``py``), (``px+ax``, ``py+ay``), (``px+bx``, ``py+by``), and (``px+ax+bx``, ``py+ay+by``). There are no constraints on the values of any of the parameters, so the parallelogram may have any orientation relative to the coordinate axes.
 
 ``int (*fill_triangle)(gx_device *dev, fixed px, fixed py, fixed ax, fixed ay, fixed bx, fixed by, const gx_drawing_color *pdcolor, gs_logical_operation_t lop) [OPTIONAL]``
-   Fill a triangle whose corners are (``px``,``py``), (``px+ax``,``py+ay``), and (``px+bx``,``py+by``).
+   Fill a triangle whose corners are (``px``, ``py``), (``px+ax``, ``py+ay``), and (``px+bx``, ``py+by``).
 
 ``int (*draw_thin_line)(gx_device *dev, fixed fx0, fixed fy0, fixed fx1, fixed fy1, const gx_drawing_color *pdcolor, gs_logical_operation_t lop) [OPTIONAL]``
-   Draw a one-pixel-wide line from (``fx0``,``fy0``) to (``fx1``,``fy1``).
+   Draw a one-pixel-wide line from (``fx0``, ``fy0``) to (``fx1``, ``fy1``).
 
 
 Linear color drawing

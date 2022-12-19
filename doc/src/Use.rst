@@ -1581,36 +1581,36 @@ whereas ``-sXYZ=35`` is equivalent to:
 
    -pFoo="<< /Bar[1 2 3]/Baz 0.1 /Whizz (string) /Bang <0123> >>"
 
-   This means that ``-p`` can do the job of both ``-d`` and ``-s``. For example:
+This means that ``-p`` can do the job of both ``-d`` and ``-s``. For example:
 
 .. code-block:: bash
 
    -dDownScaleFactor=3
 
-   can be equivalently performed by:
+can be equivalently performed by:
 
 .. code-block:: bash
 
    -pDownScaleFactor=3
 
-   and:
+and:
 
 .. code-block:: bash
 
    -sPAPERSIZE=letter
 
-   can be equivalently performed by:
+can be equivalently performed by:
 
 .. code-block:: bash
 
    -pPAPERSIZE="(letter)"
 
 
-   .. note ::
+.. note ::
 
-     There are some 'special' values that should be set using ``-s``, not ``-p``, such as ``DEVICE`` and ``DefaultGrayProfile``. Broadly, only use ``-p`` if you cannot set what you want using ``-s`` or ``-d``.
+  There are some 'special' values that should be set using ``-s``, not ``-p``, such as ``DEVICE`` and ``DefaultGrayProfile``. Broadly, only use ``-p`` if you cannot set what you want using ``-s`` or ``-d``.
 
-   Also, internally, after setting an parameter with ``-p`` we perform an ``initgraphics`` operation. This is required to allow changes in parameters such as ``HWResolution`` to take effect. This means that attempting to use ``-p`` other than at the start of a page is liable to give unexpected results.
+Also, internally, after setting an parameter with ``-p`` we perform an ``initgraphics`` operation. This is required to allow changes in parameters such as ``HWResolution`` to take effect. This means that attempting to use ``-p`` other than at the start of a page is liable to give unexpected results.
 
 
 **-u** *name*
@@ -1788,16 +1788,14 @@ Page parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
    There are three possible values for this; even, odd or a list of pages to be processed. A list can include single pages or ranges of pages. Ranges of pages use the minus sign '-', individual pages and ranges of pages are separated by commas ','. A trailing minus '-' means process all remaining pages. For example:
 
-.. code-block:: bash
-
-   -sPageList=1,3,5 indicates that pages 1, 3 and 5 should be processed.
-   -sPageList=5-10 indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
-   -sPageList=1, 5-10, 12- indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
+   - ``-sPageList=1,3,5`` indicates that pages 1, 3 and 5 should be processed.
+   - ``-sPageList=5-10`` indicates that pages 5, 6, 7, 8, 9 and 10 should be processed.
+   - ``-sPageList=1, 5-10, 12`` indicates that pages 1, 5, 6, 7, 8, 9, 10 and 12 onwards should be processed.
 
 
-   The PDF interpreter and the other language interpreters handle these in slightly different ways. Because PDF files enable random access to pages in the document the PDF inerpreter only interprets and renders the required pages. PCL and PostScript cannot be handled in ths way, and so all the pages must be interpreted. However only the requested pages are rendered, which can still lead to savings in time. Be aware that using the '``%d``' syntax for ``OutputFile`` does not reflect the page number in the original document. If you chose (for example) to process even pages by using ``-sPageList=even``, then the output of ``-sOutputFile=out%d.png`` would still be ``out0.png``, ``out1.png``, ``out2.png`` etc.
+The PDF interpreter and the other language interpreters handle these in slightly different ways. Because PDF files enable random access to pages in the document the PDF inerpreter only interprets and renders the required pages. PCL and PostScript cannot be handled in ths way, and so all the pages must be interpreted. However only the requested pages are rendered, which can still lead to savings in time. Be aware that using the '``%d``' syntax for ``OutputFile`` does not reflect the page number in the original document. If you chose (for example) to process even pages by using ``-sPageList=even``, then the output of ``-sOutputFile=out%d.png`` would still be ``out0.png``, ``out1.png``, ``out2.png`` etc.
 
-   Because the PostScript and PCL interpreters cannot determine when a document terminates, sending multple files as input on the command line does not reset the ``PageList`` between each document, each page in the second and subsequent documents is treated as following on directly from the last page in the first document. The PDF interpreter, however, does not work this way. Since it knows about individual PDF files the ``PageList`` is applied to each PDF file separately. So if you were to set ``-sPageList=1,2`` and then send two PDF files, the result would be pages 1 and 2 from the first file, and then pages 1 and 2 from the second file. The PostScript interpreter, by contrast, would only render pages 1 and 2 from the first file. This means you must exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript and PDF files on the same command line.
+Because the PostScript and PCL interpreters cannot determine when a document terminates, sending multple files as input on the command line does not reset the ``PageList`` between each document, each page in the second and subsequent documents is treated as following on directly from the last page in the first document. The PDF interpreter, however, does not work this way. Since it knows about individual PDF files the ``PageList`` is applied to each PDF file separately. So if you were to set ``-sPageList=1,2`` and then send two PDF files, the result would be pages 1 and 2 from the first file, and then pages 1 and 2 from the second file. The PostScript interpreter, by contrast, would only render pages 1 and 2 from the first file. This means you must exercise caution when using this switch, and probably should not use it at all when processing a mixture of PostScript and PDF files on the same command line.
 
 .. _FIXEDMEDIA:
 
