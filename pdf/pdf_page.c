@@ -166,6 +166,10 @@ static int pdfi_process_one_page(pdf_context *ctx, pdf_dict *page_dict)
     code1 = pdfi_do_acroform(ctx, page_dict);
     if (code >= 0) code = code1;
 
+    if (ctx->text.BlockDepth != 0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_UNBLANACED_BT, "pdfi_process_one_page", "");
+        ctx->text.BlockDepth = 0;
+    }
     return code;
 }
 
