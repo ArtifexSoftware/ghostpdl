@@ -93,4 +93,5 @@ PARAM(W_PDF_FDESC_BAD_FONTNAME,     "A FontDescriptor has a missing or bad /Font
 PARAM(W_PDF_GARBAGE_B4HDR,          "File has some garbage before %PDF-"),
 PARAM(W_PDF_FONTRESOURCE_TYPE,      "A Font key in a Resources dictionary has a value of the wrong type"),
 PARAM(W_PDF_UNBLANACED_BT,          "A page ended after a BT had been executed and without a mtching ET"),
+PARAM(W_PDF_MISMATCH_GENERATION,    "The generation number of an indirectly referenced object did not match the xref"),
 #undef PARAM
