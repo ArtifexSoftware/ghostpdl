@@ -142,7 +142,11 @@ int pdfi_setrenderingintent(pdf_context *ctx, pdf_name *n)
     } else if (pdfi_name_is(n, "AbsoluteColorimetric")) {
         code = gs_setrenderingintent(ctx->pgs, 3);
     } else {
-        code = gs_error_undefined;
+        /* PDF 1.7 Reference, bottom of page 260 if a PDF uses an unknown rendering intent
+         * then use RelativeColoimetric. But flag a warning.
+         */
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_RENDERINGINTENT, "pdfi_setrenderingintent", "");
+        code = gs_setrenderingintent(ctx->pgs, 1);
     }
     return code;
 }
