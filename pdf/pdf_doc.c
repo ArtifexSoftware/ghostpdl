@@ -952,7 +952,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
 
     /* Check the provided dict, stream_dict can be NULL if we are trying to find a Default* ColorSpace */
     if (dict != NULL) {
-        bool deref_parent = true;
+        bool deref_parent = true, dict_is_XObject = false;
 
         code = pdfi_resource_knownget_typedict(ctx, Type, dict, &typedict);
         if (code < 0)
@@ -970,6 +970,8 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
         if (pdfi_dict_knownget_type(ctx, dict, "Type", PDF_NAME, (pdf_obj **)&n) > 0) {
             if (pdfi_name_is(n, "Page"))
                 deref_parent = false;
+            if (pdfi_name_is(n, "XObject"))
+                dict_is_XObject = true;
             pdfi_countdown(n);
         }
 
@@ -1017,8 +1019,11 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
                     }
                     code = pdfi_find_resource(ctx, Type, name, Parent, page_dict, o);
                     (void)pdfi_loop_detector_cleartomark(ctx);
-                    if (code != gs_error_undefined)
+                    if (code != gs_error_undefined) {
+                        if (dict_is_XObject)
+                            pdfi_set_error(ctx, 0, NULL, E_PDF_INHERITED_STREAM_RESOURCE, "pdfi_find_resource", (char *)"Couldn't find named resource in supplied dictionary, or Parents, or Pages, matching name located in earlier stream Resource");
                         goto exit;
+                    }
                 }
             }
             code = 0;
