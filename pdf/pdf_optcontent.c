@@ -484,8 +484,10 @@ int pdfi_op_MP(pdf_context *ctx)
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent)
+    if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent) {
+        pdfi_pop(ctx, 1);
         goto exit;
+    }
 
     o = ctx->stack_top[-1];
     pdfi_countup(o);
