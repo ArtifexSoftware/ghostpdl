@@ -442,11 +442,14 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
      */
     code = pdfi_dict_get_type(ctx, pdict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
     if (code < 0) {
+        if (code == gs_error_undefined && !ctx->args.pdfstoponwarning) {
 #if DEBUG_PATTERN
         dbgmprintf(ctx->memory, "PATTERN: Missing Resources in Pattern dict\n");
 #endif
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BADPATTERN, "pdfi_setpattern_type1", NULL);
-        code = 0;
+            pdfi_set_warning(ctx, code, NULL, W_PDF_BADPATTERN, "pdfi_setpattern_type1", "Pattern has no Resources dictionary");
+            code = 0;
+        } else
+            goto exit;
     }
 
     /* (optional Matrix) */
