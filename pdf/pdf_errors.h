@@ -81,4 +81,5 @@ PARAM(E_PDF_BG_ISNAME,                 "An ExtGState dictionary has a /BG key wi
 PARAM(E_PDF_UCR_ISNAME,                "An ExtGState dictionary has a /UCR key with a value which is a name, not a function"),
 PARAM(E_PDF_TR_NAME_NOT_IDENTITY,      "An ExtGState dictionary has a /TR key with a value which is a name other than /Identity"),
 PARAM(E_PDF_ICC_BAD_N,                 "ICCbased space /N value does not match the number of components in the ICC profile"),
+PARAM(E_PDF_MISSING_BBOX,              "A form is missing the required /BBox key"),
 #undef PARAM

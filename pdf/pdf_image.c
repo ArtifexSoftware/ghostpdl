@@ -2448,7 +2448,7 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
 static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_obj)
 {
     int code, code1 = 0;
-    bool group_known = false;
+    bool group_known = false, known = false;
     bool do_group = false;
     pdf_array *FormMatrix = NULL;
     gs_matrix formmatrix, CTM;
@@ -2495,8 +2495,17 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     code = pdfi_array_to_gs_matrix(ctx, FormMatrix, &formmatrix);
     if (code < 0) goto exit1;
 
-    code = pdfi_dict_knownget_type(ctx, form_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
-    if (code < 0) goto exit1;
+    code = pdfi_dict_known(ctx, form_dict, "BBox", &known);
+    if (known) {
+        code = pdfi_dict_get_type(ctx, form_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
+        if (code < 0) goto exit1;
+    } else {
+        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSING_BBOX, "pdfi_do_form", "");
+        if (ctx->args.pdfstoponerror) {
+            code = gs_note_error(gs_error_undefined);
+            goto exit;
+        }
+    }
 
     code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
     if (code < 0) goto exit1;
@@ -2633,7 +2642,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code1 = pdfi_name_alloc(ctx, (byte *)"Form", 4, (pdf_obj **)&n);
             if (code1 == 0) {
                 pdfi_countup(n);
-                pdfi_set_error(ctx, 0, NULL, E_PDF_NO_SUBTYPE, "pdfi_do_image_or_form", NULL);
+                pdfi_set_error(ctx, 0, NULL, E_PDF_NO_SUBTYPE, "pdfi_do_image_or_form", "Assuming a Form XObject");
             }
             if (ctx->args.pdfstoponerror)
                 goto exit;
