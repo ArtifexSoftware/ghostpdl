@@ -68,6 +68,9 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_c_stream *s, int64_t f
         field_width = W[2];
 
     Buffer = gs_alloc_bytes(ctx->memory, field_width, "read_xref_stream_entry working buffer");
+    if (Buffer == NULL)
+        return_error(gs_error_VMerror);
+
     for (i=first;i<=last; i++){
         /* Defaults if W[n] = 0 */
         type = 1;
