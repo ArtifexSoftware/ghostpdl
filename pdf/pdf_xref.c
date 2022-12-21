@@ -143,6 +143,7 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_c_stream *s, int64_t f
 
 /* Forward definition */
 static int read_xref(pdf_context *ctx, pdf_c_stream *s);
+static int pdfi_check_xref_stream(pdf_context *ctx);
 /* These two routines are recursive.... */
 static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj_num);
 
@@ -399,8 +400,10 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     pdfi_seek(ctx, s, num, SEEK_SET);
 
     code = pdfi_read_bare_int(ctx, ctx->main_stream, &objnum);
-    if (code == 1)
-        return pdfi_read_xref_stream_dict(ctx, s, objnum);
+    if (code == 1) {
+        if (pdfi_check_xref_stream(ctx))
+            return pdfi_read_xref_stream_dict(ctx, s, objnum);
+    }
 
     code = pdfi_read_bare_keyword(ctx, ctx->main_stream);
     if (code < 0)
@@ -412,6 +415,37 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
             return(read_xref(ctx, ctx->main_stream));
     }
     return_error(gs_error_syntaxerror);
+}
+
+static int pdfi_check_xref_stream(pdf_context *ctx)
+{
+    gs_offset_t offset;
+    int gen_num, code = 0;
+
+    offset = pdfi_unread_tell(ctx);
+
+    code = pdfi_read_bare_int(ctx, ctx->main_stream, &gen_num);
+    if (code <= 0) {
+        code = 0;
+        goto exit;
+    }
+
+    /* Try to read 'obj' */
+    code = pdfi_read_bare_keyword(ctx, ctx->main_stream);
+    if (code <= 0) {
+        code = 0;
+        goto exit;
+    }
+
+    /* Third element must be obj, or it's not a valid xref */
+    if (code != TOKEN_OBJ)
+        code = 0;
+    else
+        code = 1;
+
+exit:
+    pdfi_seek(ctx, ctx->main_stream, offset, SEEK_SET);
+    return code;
 }
 
 static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj_num)
@@ -1003,8 +1037,11 @@ int pdfi_read_xref(pdf_context *ctx)
     /* If it starts with an int, it's an xref stream dict */
     code = pdfi_read_bare_int(ctx, ctx->main_stream, &obj_num);
     if (code == 1) {
-        code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream, obj_num);
-        if (code < 0)
+        if (pdfi_check_xref_stream(ctx)) {
+            code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream, obj_num);
+            if (code < 0)
+                goto repair;
+        } else
             goto repair;
     } else {
         /* If not, it had better start 'xref', and be an old-style xref table */
