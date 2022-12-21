@@ -676,6 +676,16 @@ int pdfi_setstrokecolor(pdf_context *ctx)
     int ncomps, code;
     gs_client_color cc;
 
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+        /* There will have been a preceding operator to set the colour space, which we
+         * will have ignored, so now we don't know how many components to expect!
+         * Just clear the stack and hope for the best.
+         */
+        pdfi_clearstack(ctx);
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setrgbcolor", "");
+        return 0;
+    }
+
     cc.pattern = 0;
     gs_swapcolors_quick(ctx->pgs);
     pcs = gs_currentcolorspace(ctx->pgs);
@@ -697,6 +707,16 @@ int pdfi_setfillcolor(pdf_context *ctx)
     const gs_color_space *  pcs = gs_currentcolorspace(ctx->pgs);
     int ncomps, code;
     gs_client_color cc;
+
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+        /* There will have been a preceding operator to set the colour space, which we
+         * will have ignored, so now we don't know how many components to expect!
+         * Just clear the stack and hope for the best.
+         */
+        pdfi_clearstack(ctx);
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setrgbcolor", "");
+        return 0;
+    }
 
     cc.pattern = 0;
     ncomps = cs_num_components(pcs);
@@ -727,6 +747,16 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
     int ncomps=0, code = 0;
     gs_client_color cc;
     bool is_pattern = false;
+
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+        /* There will have been a preceding operator to set the colour space, which we
+         * will have ignored, so now we don't know how many components to expect!
+         * Just clear the stack and hope for the best.
+         */
+        pdfi_clearstack(ctx);
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setrgbcolor", "");
+        return 0;
+    }
 
     if (!is_fill) {
         gs_swapcolors_quick(ctx->pgs);
@@ -2530,6 +2560,12 @@ int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+        pdfi_pop(ctx, 1);
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setrgbcolor", "");
+        return 0;
+    }
+
     if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
         pdfi_pop(ctx, 1);
         return_error(gs_error_typecheck);
@@ -2553,6 +2589,12 @@ int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *p
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
+
+    if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
+        pdfi_pop(ctx, 1);
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_D1_COLOUR_OP, "pdfi_gs_setrgbcolor", "");
+        return 0;
+    }
 
     if (pdfi_type_of(ctx->stack_top[-1]) != PDF_NAME) {
         pdfi_pop(ctx, 1);
