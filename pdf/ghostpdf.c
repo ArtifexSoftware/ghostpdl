@@ -1323,7 +1323,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     /* First check for existence of header */
     test = (char *)Buffer;
     bytes_left = bytes;
-    s = strstr((char *)test, "%PDF");
+    s = strstr((char *)test, "%PDF-");
     if (s == NULL)
         pdfi_set_warning(ctx, 0, NULL, W_PDF_GARBAGE_B4HDR, "pdfi_set_input_stream", "");
     /* Garbage before the header can be anything, including binary and NULL (0x00) characters
@@ -1332,10 +1332,10 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
      */
     while (s == NULL) {
         bytes_left -= (strlen(test) + 1);
-        if (bytes_left < 4)
+        if (bytes_left < 5)
             break;
         test += strlen(test) + 1;
-        s = strstr((char *)test, "%PDF");
+        s = strstr((char *)test, "%PDF-");
     };
     if (s == NULL) {
         char extra_info[gp_file_name_sizeof];
