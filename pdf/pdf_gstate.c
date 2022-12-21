@@ -1119,7 +1119,7 @@ error:
 
 static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_dict *page_dict, gx_ht_order *porder, gs_halftone_component *phtc, char *name, int len, int comp_num)
 {
-    int code, i;
+    int code, i, j;
     pdf_obj *obj = NULL, *transfer = NULL;
     double f, a;
     float values[2] = {0, 0}, domain[4] = {-1, 1, -1, 1}, out;
@@ -1164,8 +1164,10 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                     if (pdfi_name_is((pdf_name *)obj, spot_table[i]))
                         break;
                 }
-                if (i >= (sizeof(spot_table) / sizeof (char *)))
-                    return gs_note_error(gs_error_rangecheck);
+                if (i >= (sizeof(spot_table) / sizeof (char *))) {
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto error;
+                }
             }
             code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
             if (code < 0)
@@ -1176,6 +1178,39 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
             code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, obj, page_dict);
             if (code < 0)
                 goto error;
+            break;
+        case PDF_ARRAY:
+            for (j = 0; j < pdfi_array_size((pdf_array *)obj); j++) {
+                pdf_name *n = NULL;
+
+                code = pdfi_array_get(ctx, (pdf_array *)obj, j, (pdf_obj **)&n);
+                if (code < 0)
+                    goto error;
+                if (pdfi_type_of(n) != PDF_NAME)
+                    pdfi_set_error(ctx, 0, NULL, E_PDF_BAD_TYPE, "build_type1_halftone", "Halftone array element is not a name");
+                else {
+                    for (i = 0; i < (sizeof(spot_table) / sizeof (char *)); i++) {
+                        if (pdfi_name_is((pdf_name *)n, spot_table[i])) {
+                            pdfi_countdown(n);
+                            n = NULL;
+                            code = pdfi_build_halftone_function(ctx, &pfn, (byte *)spot_functions[i], strlen(spot_functions[i]));
+                            if (code < 0)
+                                goto error;
+                            break;
+                        }
+                    }
+                    if (i >= (sizeof(spot_table) / sizeof (char *))) {
+                        pdfi_countdown(n);
+                        n = NULL;
+                    } else
+                        break;
+                }
+                pdfi_countdown(n);
+            }
+            if (j >= pdfi_array_size((pdf_array *)obj)) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto error;
+            }
             break;
         default:
             code = gs_note_error(gs_error_typecheck);
