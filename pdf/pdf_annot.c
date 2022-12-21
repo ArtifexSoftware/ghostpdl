@@ -3069,57 +3069,170 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_obj *
 {
     int code = 0;
     int code1 = 0;
-    pdf_array *Vertices = NULL;
+    pdf_array *Vertices = NULL, *Path = NULL, *Line = NULL;
     bool drawit;
     int size;
-    double x1, y1, x2, y2;
+    double x1, y1, x2, y2, x3, y3, ends[8];
+    bool Vertices_known = false, Path_known = false;
 
     code = pdfi_annot_start_transparency(ctx, annot);
     if (code < 0) goto exit1;
 
-    code = pdfi_dict_knownget_type(ctx, annot, "Vertices", PDF_ARRAY, (pdf_obj **)&Vertices);
-    if (code < 0) goto exit;
+    code = pdfi_dict_known(ctx, annot, "Vertices", &Vertices_known);
+    if (code < 0) goto exit1;
+    code = pdfi_dict_known(ctx, annot, "Path", &Path_known);
+    if (code < 0) goto exit1;
 
-    if (code == 0) {
+    code = pdfi_gsave(ctx);
+    if (code < 0) goto exit1;
+
+    /* If both are known, or neither are known, then there is a problem */
+    if (Vertices_known == Path_known) {
         code = gs_note_error(gs_error_undefined);
         goto exit;
     }
 
-    size = pdfi_array_size(Vertices);
-    if (size == 0) {
-        code = 0;
-        goto exit;
-    }
-    code = pdfi_annot_path_array(ctx, annot, Vertices);
-    if (code < 0) goto exit1;
-
-    code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
-    if (code < 0) goto exit;
-
-    code = pdfi_annot_draw_border(ctx, annot, true);
-    if (code < 0) goto exit;
-
-    if (size >= 4) {
-        code = pdfi_array_get_number(ctx, Vertices, 0, &x1);
-        if (code < 0) goto exit;
-        code = pdfi_array_get_number(ctx, Vertices, 1, &y1);
-        if (code < 0) goto exit;
-        code = pdfi_array_get_number(ctx, Vertices, 2, &x2);
-        if (code < 0) goto exit;
-        code = pdfi_array_get_number(ctx, Vertices, 3, &y2);
-        if (code < 0) goto exit;
-        code = pdfi_annot_draw_LE(ctx, annot, x1, y1, x2, y2, 1);
+    if (Vertices_known) {
+        code = pdfi_dict_get_type(ctx, annot, "Vertices", PDF_ARRAY, (pdf_obj **)&Vertices);
         if (code < 0) goto exit;
 
-        code = pdfi_array_get_number(ctx, Vertices, size-4, &x1);
+        size = pdfi_array_size(Vertices);
+        if (size == 0) {
+            code = 0;
+            goto exit;
+        }
+        code = pdfi_annot_path_array(ctx, annot, Vertices);
+        if (code < 0) goto exit1;
+
+        code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
         if (code < 0) goto exit;
-        code = pdfi_array_get_number(ctx, Vertices, size-3, &y1);
+
+        code = pdfi_annot_draw_border(ctx, annot, true);
         if (code < 0) goto exit;
-        code = pdfi_array_get_number(ctx, Vertices, size-2, &x2);
+
+        if (size >= 4) {
+            code = pdfi_array_get_number(ctx, Vertices, 0, &x1);
+            if (code < 0) goto exit;
+            code = pdfi_array_get_number(ctx, Vertices, 1, &y1);
+            if (code < 0) goto exit;
+            code = pdfi_array_get_number(ctx, Vertices, 2, &x2);
+            if (code < 0) goto exit;
+            code = pdfi_array_get_number(ctx, Vertices, 3, &y2);
+            if (code < 0) goto exit;
+            code = pdfi_annot_draw_LE(ctx, annot, x1, y1, x2, y2, 1);
+            if (code < 0) goto exit;
+
+            code = pdfi_array_get_number(ctx, Vertices, size-4, &x1);
+            if (code < 0) goto exit;
+            code = pdfi_array_get_number(ctx, Vertices, size-3, &y1);
+            if (code < 0) goto exit;
+            code = pdfi_array_get_number(ctx, Vertices, size-2, &x2);
+            if (code < 0) goto exit;
+            code = pdfi_array_get_number(ctx, Vertices, size-1, &y2);
+            if (code < 0) goto exit;
+            code = pdfi_annot_draw_LE(ctx, annot, x1, y1, x2, y2, 2);
+            if (code < 0) goto exit;
+        }
+    } else {
+        int i = 0;
+        int state = 0;
+
+        code = pdfi_dict_get_type(ctx, annot, "Path", PDF_ARRAY, (pdf_obj **)&Path);
         if (code < 0) goto exit;
-        code = pdfi_array_get_number(ctx, Vertices, size-1, &y2);
+
+        if (pdfi_array_size(Path) < 2)
+            goto exit;
+
+        code = pdfi_annot_setcolor(ctx, annot, false, &drawit);
         if (code < 0) goto exit;
-        code = pdfi_annot_draw_LE(ctx, annot, x1, y1, x2, y2, 2);
+
+        code = pdfi_annot_draw_border(ctx, annot, true);
+        if (code < 0) goto exit;
+
+        for (i = 0; i < pdfi_array_size(Path); i++) {
+            code = pdfi_array_get_type(ctx, Path, i, PDF_ARRAY, (pdf_obj **)&Line);
+            if (code < 0)
+                goto exit;
+            switch(pdfi_array_size(Line)) {
+                case 2:
+                    code = pdfi_array_get_number(ctx, Line, 0, &x1);
+                    if (code < 0)
+                        goto exit;
+                    code = pdfi_array_get_number(ctx, Line, 1, &y1);
+                    if (code < 0)
+                        goto exit;
+                    if (state == 0) {
+                        state = 1;
+                        code = gs_moveto(ctx->pgs, x1, y1);
+                        ends[0] = ends[4] = x1;
+                        ends[1] = ends[5] = y1;
+                    } else {
+                        if (state == 1) {
+                            ends[2] = ends[6] = x1;
+                            ends[3] = ends[7] = y1;
+                            state = 2;
+                        } else {
+                            ends[4] = ends[6];
+                            ends[5] = ends[7];
+                            ends[6] = x1;
+                            ends[7] = y1;
+                        }
+                        code = gs_lineto(ctx->pgs, x1, y1);
+                    }
+                    pdfi_countdown(Line);
+                    Line = NULL;
+                    break;
+                case 6:
+                    code = pdfi_array_get_number(ctx, Line, 0, &x1);
+                    if (code < 0)
+                        goto exit;
+                    code = pdfi_array_get_number(ctx, Line, 1, &y1);
+                    if (code < 0)
+                        goto exit;
+                    code = pdfi_array_get_number(ctx, Line, 2, &x2);
+                    if (code < 0)
+                        goto exit;
+                    code = pdfi_array_get_number(ctx, Line, 3, &y2);
+                    if (code < 0)
+                        goto exit;
+                    code = pdfi_array_get_number(ctx, Line, 4, &x3);
+                    if (code < 0)
+                        goto exit;
+                    code = pdfi_array_get_number(ctx, Line, 5, &y3);
+                    if (code < 0)
+                        goto exit;
+                    if (state == 1) {
+                        ends[2] = x1;
+                        ends[3] = y1;
+                        ends[4] = x2;
+                        ends[5] = y2;
+                        ends[6] = x3;
+                        ends[7] = y3;
+                        state = 2;
+                    }
+                    ends[4] = x2;
+                    ends[5] = y2;
+                    ends[6] = x3;
+                    ends[7] = y3;
+                    code = gs_curveto(ctx->pgs, x1, y1, x2, y2, x3, y3);
+                    pdfi_countdown(Line);
+                    Line = NULL;
+                    break;
+                default:
+                    pdfi_countdown(Line);
+                    Line = NULL;
+                    code = gs_note_error(gs_error_rangecheck);
+                    break;
+            }
+            if (code < 0)
+                break;
+        }
+        code = gs_stroke(ctx->pgs);
+        if (code < 0)
+            goto exit;
+
+        code = pdfi_annot_draw_LE(ctx, annot, ends[0], ends[1], ends[2], ends[3], 1);
+        code = pdfi_annot_draw_LE(ctx, annot, ends[4], ends[5], ends[6], ends[7], 2);
         if (code < 0) goto exit;
     }
 
@@ -3127,10 +3240,14 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_obj *
     code1 = pdfi_annot_end_transparency(ctx, annot);
     if (code >= 0)
         code = code1;
+    code1 = pdfi_grestore(ctx);
+    if (code >= 0) code = code1;
 
  exit1:
     *render_done = true;
+    pdfi_countdown(Line);
     pdfi_countdown(Vertices);
+    pdfi_countdown(Path);
     return code;
 }
 
