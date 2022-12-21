@@ -108,7 +108,9 @@ int pdfi_ET(pdf_context *ctx)
 
     if (ctx->text.BlockDepth == 0) {
         pdfi_set_warning(ctx, 0, NULL, W_PDF_ETNOTEXTBLOCK, "pdfi_ET", NULL);
-        return_error(gs_error_syntaxerror);
+        if (ctx->args.pdfstoponwarning)
+            return_error(gs_error_syntaxerror);
+        return 0;
     }
 
     ctx->text.BlockDepth--;
