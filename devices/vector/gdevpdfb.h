@@ -240,7 +240,9 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,                     /* initial_pattern_state */
  false,                 /* OmitInfoDate */
  false,                 /* OmitXMP */
- false                  /* OmitID */
+ false,                 /* OmitID */
+ false,                 /* ModifiesPageSize */
+ false                  /* ModifiesPageOrder */
 };
 
 #else

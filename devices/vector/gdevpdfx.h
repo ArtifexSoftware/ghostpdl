@@ -954,9 +954,11 @@ struct gx_device_pdf_s {
     gs_glyph OCR_glyph;             /* Passes the current glyph code from text processing to the image processing code when rendering glyph bitmaps for OCR */
     ocr_glyph_t *ocr_glyphs;        /* Records bitmaps and other data from text processing when doing OCR */
     gs_gstate **initial_pattern_states;
-    bool OmitInfoDate;              /* If true, do not emit CreationDate and ModDate in the Infor dictionary and XMP Metadata (must not be true for PDF/X support) */
+    bool OmitInfoDate;              /* If true, do not emit CreationDate and ModDate in the Info dictionary and XMP Metadata (must not be true for PDF/X support) */
     bool OmitXMP;                   /* If true, do not emit an XMP /Metadata block and do not reference it from the Catalog (must not be true for PDF/A output) */
     bool OmitID;                    /* If true, do not emit a /ID array in the trailer dicionary (must not be true for encrypted files or PDF 2.0) */
+    bool ModifiesPageSize;          /* If true, the new PDF interpreter will not preserve *Box values (the media size has been modified, they will be incorrect) */
+    bool ModifiesPageOrder;         /* If true, the new PDF interpreter will not preserve Outlines or Dests, because they will refer to the wrong page number */
 };
 
 #define is_in_page(pdev)\

@@ -132,6 +132,8 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("OmitInfoDate", gs_param_type_bool, OmitInfoDate),
     pi("OmitID", gs_param_type_bool, OmitID),
     pi("OmitXMP", gs_param_type_bool, OmitXMP),
+    pi("ModifiesPageSize", gs_param_type_bool, ModifiesPageSize),
+    pi("ModifiesPageOrder", gs_param_type_bool, ModifiesPageOrder),
 #undef pi
     gs_param_item_end
 };
