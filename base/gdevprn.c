@@ -1674,10 +1674,13 @@ int
 gdev_prn_copy_scan_lines(gx_device_printer * pdev, int y, byte * str, uint size)
 {
     uint line_size = gdev_prn_raster(pdev);
-    int requested_count = size / line_size;
+    int requested_count = 0;
     int i, count;
     int code = 0;
     byte *dest = str;
+
+    if (line_size != 0)
+        requested_count = size / line_size;
 
     /* Clamp count between 0 and remaining lines on page so we don't return < 0 */
     /* unless gdev_prn_get_bits returns an error */
