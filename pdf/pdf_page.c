@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -160,11 +160,23 @@ static int pdfi_process_one_page(pdf_context *ctx, pdf_dict *page_dict)
     cleanup_context_interpretation(ctx, &local_entry_save);
     local_restore_stream_state(ctx, &local_entry_save);
 
+    local_save_stream_state(ctx, &local_entry_save);
+    initialise_stream_save(ctx);
+
     code1 = pdfi_do_annotations(ctx, page_dict);
     if (code >= 0) code = code1;
 
+    cleanup_context_interpretation(ctx, &local_entry_save);
+    local_restore_stream_state(ctx, &local_entry_save);
+
+    local_save_stream_state(ctx, &local_entry_save);
+    initialise_stream_save(ctx);
+
     code1 = pdfi_do_acroform(ctx, page_dict);
     if (code >= 0) code = code1;
+
+    cleanup_context_interpretation(ctx, &local_entry_save);
+    local_restore_stream_state(ctx, &local_entry_save);
 
     if (ctx->text.BlockDepth != 0) {
         pdfi_set_warning(ctx, 0, NULL, W_PDF_UNBLANACED_BT, "pdfi_process_one_page", "");
