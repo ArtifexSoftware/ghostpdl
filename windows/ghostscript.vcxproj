@@ -431,8 +431,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug-contrib|x64'">
     <OutDir>$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CUPS=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CUPS=1 debugbsc</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CONTRIB=1 debugbsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= WITH_CONTRIB=1 debugclean &amp;&amp; nmake -f psi\msvc32.mak WIN64= SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gsdebug &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugbsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak WIN64= DEVSTUDIO= debugclean</NMakeCleanCommandLine>
     <NMakeOutput>$(ProjectDir)\..\debugbin\gswin64c.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN64;_DEBUG;DEBUG=1;TDEBUG=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -440,8 +440,8 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-contrib|Win32'">
     <OutDir>$(Configuration)\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= WITH_CONTRIB=1 clean &amp;&amp; nmake -f psi\msvc32.mak SBR=1 DEVSTUDIO= WITH_CONTRIB=1 gs &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= bsc</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>cd .. &amp;&amp; nmake -f psi\msvc32.mak DEVSTUDIO= clean</NMakeCleanCommandLine>
     <NMakeOutput>$(ProjectDir)\..\bin\gswin32c.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;HAVE_SSE2=1;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
