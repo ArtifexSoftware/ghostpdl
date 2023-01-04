@@ -4986,7 +4986,7 @@ cups_print_chunked(gx_device_printer *pdev,
 #endif
                 ystart, yend, ystep;    /* Loop control for scanline order */
   ppd_attr_t    *backside = NULL;
-  char          *backside_str = "Normal";
+  const char    *backside_str = "Normal";
   int           flip_duplex = 0;
 
 #ifdef CUPS_DEBUG
@@ -5225,8 +5225,9 @@ cups_print_banded(gx_device_printer *pdev,
 #endif
                 ystart, yend, ystep;    /* Loop control for scanline order */
   ppd_attr_t    *backside = NULL;
-  char          *backside_str = "Normal";
+  const char     *backside_str = "Normal";
   int           flip_duplex = 0;
+
 
 #ifdef CUPS_DEBUG
   dmprintf1(pdev->memory, "DEBUG2: cups->header.Duplex = %d\n", cups->header.Duplex);
