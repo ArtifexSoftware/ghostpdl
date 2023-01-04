@@ -401,7 +401,7 @@ gx_color_index eprn_map_rgb_color_for_CMY_or_K_max(gx_device *device,
 ******************************************************************************/
 
 int eprn_map_color_rgb(gx_device *device, gx_color_index color,
-  gx_color_value rgb[])
+  gx_color_value rgb[3])
 {
 #ifdef EPRN_TRACE
   if_debug1(EPRN_TRACE_CHAR,

@@ -780,9 +780,12 @@ do_floyd_steinberg(int scan, int cscan, int plane_size,
                    struct error_val_field *error_values);
 
 static int
-do_gcr(int bytecount, byte * inbyte, const byte * kvalues,
-       const byte * cvalues, const byte * mvalues,
-       const byte * yvalues, const int *kcorrect);
+do_gcr(int bytecount,
+       byte * inbyte,
+       const byte kvalues[256],
+       const byte cvalues[256],
+       const byte mvalues[256],
+       const byte yvalues[256], const int kcorrect[256]);
 
 static void
 send_scan_lines(gx_device_printer * pdev,
@@ -791,9 +794,11 @@ send_scan_lines(gx_device_printer * pdev,
                 struct error_val_field *error_values,
                 const Gamma * gamma, gp_file * prn_stream);
 
-static void do_gamma(float mastergamma, float gammaval, byte * values);
+static void
+do_gamma(float mastergamma, float gammaval, byte values[256]);
 
-static void do_black_correction(float kvalue, int *kcorrect);
+static void
+do_black_correction(float kvalue, int kcorrect[256]);
 
 static void
 init_data_structure(gx_device_printer * pdev,

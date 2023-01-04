@@ -1180,10 +1180,10 @@ static void
                         gx_device_printer * pdev,
                         struct error_val_field *error_values);
 static int
-    do_gcr(int bytecount, byte * inbyte, const byte * kvalues,
-           const byte * cvalues, const byte * mvalues,
-           const byte * yvalues, const int *kcorrect,
-           word * inword);
+do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
+       const byte cvalues[256], const byte mvalues[256],
+       const byte yvalues[256], const int kcorrect[256],
+       word * inword);
 
 /* UNUSED
  *static int
@@ -1209,7 +1209,7 @@ static void
      do_gamma(float mastergamma, float gammaval, byte * values);
 #endif
 static void
-     do_black_correction(float kvalue, int *kcorrect);
+do_black_correction(float kvalue, int kcorrect[256]);
 
 static void
      init_data_structure(gx_device_printer * pdev,

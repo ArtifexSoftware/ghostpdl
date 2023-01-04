@@ -220,7 +220,7 @@ static  void opvp_get_initial_matrix(gx_device *, gs_matrix *);
 static  int opvp_output_page(gx_device *, int, int);
 static  int opvp_close(gx_device *);
 static  gx_color_index opvp_map_rgb_color(gx_device *, const gx_color_value *); /* modified for gs 8.15 */
-static  int opvp_map_color_rgb(gx_device *, gx_color_index, gx_color_value *);
+static  int opvp_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value prgb[3]);
 static  int opvp_copy_mono(gx_device *, const byte *, int, int,
                            gx_bitmap_id, int, int, int, int,
                            gx_color_index, gx_color_index);
