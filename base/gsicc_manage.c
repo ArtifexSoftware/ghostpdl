@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1469,6 +1469,8 @@ gsicc_new_device_profile_array(gx_device *dev)
     result->usefastcolor = false;  /* Default is to not use fast color */
     result->blacktext = false;
     result->blackvector = false;
+    result->blackthresholdL = 90.0F;
+    result->blackthresholdC = 0.0F;
     result->prebandthreshold = true;
     result->supports_devn = false;
     result->overprint_control = gs_overprint_control_enable;  /* Default overprint if the device can */
