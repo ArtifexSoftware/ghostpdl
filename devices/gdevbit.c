@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -336,7 +336,7 @@ bittag_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 }
 
 static int
-bittag_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
+bittag_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[3])
 {
     int depth = 24;
     int ncomp = 3;
@@ -426,7 +426,7 @@ bitrgb_rgb_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 /* Map color to RGB.  This has 3 separate cases, but since it is rarely */
 /* used, we do a case test rather than providing 3 separate routines. */
 static int
-bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[4])
+bit_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value cv[3])
 {
     int depth = dev->color_info.depth;
     int ncomp = REAL_NUM_COMPONENTS(dev);

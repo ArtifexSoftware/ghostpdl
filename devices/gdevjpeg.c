@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -172,7 +172,7 @@ jpegcmyk_map_cmyk_color(gx_device * dev, const gx_color_value cv[])
 
 static int
 jpegcmyk_decode_color(gx_device * dev, gx_color_index color,
-                      gx_color_value cv[4])
+                      gx_color_value cv[])
 {
     color = ~color;
     cv[0] = gx_color_value_from_byte(0xff & (color>>24));

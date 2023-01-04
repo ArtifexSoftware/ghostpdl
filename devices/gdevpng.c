@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -944,7 +944,7 @@ pngalpha_encode_color(gx_device * dev, const gx_color_value cv[])
 /* Map a color index to a r-g-b color. */
 static int
 pngalpha_decode_color(gx_device * dev, gx_color_index color,
-                             gx_color_value prgb[3])
+                             gx_color_value prgb[])
 {
     prgb[0] = gx_color_value_from_byte((color >> 24) & 0xff);
     prgb[1] = gx_color_value_from_byte((color >> 16) & 0xff);

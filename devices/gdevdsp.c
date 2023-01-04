@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -472,7 +472,7 @@ display_encode_color_device8(gx_device * dev, const gx_color_value cv[])
 /* Map a color code to r-g-b-k. */
 static int
 display_decode_color_device8(gx_device * dev, gx_color_index color,
-                 gx_color_value prgb[4])
+                 gx_color_value prgb[])
 {
     gx_color_value one;
     /* palette of 96 colors */

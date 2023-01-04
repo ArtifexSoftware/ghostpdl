@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2096,7 +2096,7 @@ stc_gray_map_color_rgb(gx_device *pdev, gx_color_index color,gx_color_value prgb
 }
 
 static int
-stc_gray_decode_color(gx_device *pdev, gx_color_index color,gx_color_value prgb[1])
+stc_gray_decode_color(gx_device *pdev, gx_color_index color,gx_color_value prgb[])
 {
    stcolor_device *sd = (stcolor_device *) pdev;
    gx_color_index l = ((gx_color_index)1<<sd->stc.bits)-1;
@@ -2271,7 +2271,7 @@ stc_cmyk_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
 
 /* Modified to be a "decode_color" routine */
 static int
-stc_cmyk_decode_color(gx_device *pdev, gx_color_index color, gx_color_value cv[4])
+stc_cmyk_decode_color(gx_device *pdev, gx_color_index color, gx_color_value cv[])
 {
 
    stcolor_device *sd = (stcolor_device *) pdev;
@@ -2456,7 +2456,7 @@ stc_cmyk10_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
 
 static int
 stc_cmyk10_decode_color(gx_device *pdev, gx_color_index color,
-                        gx_color_value cv[4])
+                        gx_color_value cv[])
 {
 
    stcolor_device *sd = (stcolor_device *) pdev;

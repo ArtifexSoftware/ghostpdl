@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -456,7 +456,7 @@ pnm_encode_color(gx_device * pdev, const gx_color_value cv[])
 /* Map a PPM color tuple back to an RGB color. */
 static int
 ppm_decode_color(gx_device * dev, gx_color_index color,
-                 gx_color_value prgb[3])
+                 gx_color_value prgb[])
 {
     uint bitspercolor = dev->color_info.depth / 3;
     uint colormask = (1 << bitspercolor) - 1;

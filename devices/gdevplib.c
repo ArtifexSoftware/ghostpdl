@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -734,7 +734,7 @@ plibg_encode_color(gx_device * pdev, const gx_color_value cv[])
 /* Map a gray value back to an RGB color. */
 static int
 plibg_decode_color(gx_device * dev, gx_color_index color,
-                   gx_color_value prgb[3])
+                   gx_color_value prgb[])
 {
     gx_color_value gray =
     color * gx_max_color_value / dev->color_info.max_gray;
@@ -748,7 +748,7 @@ plibg_decode_color(gx_device * dev, gx_color_index color,
 /* Map an rgb color tuple back to an RGB color. */
 static int
 plib_decode_color(gx_device * dev, gx_color_index color,
-                  gx_color_value prgb[3])
+                  gx_color_value prgb[])
 {
     uint bitspercolor = dev->color_info.depth / 3;
     uint colormask = (1 << bitspercolor) - 1;
@@ -766,7 +766,7 @@ plib_decode_color(gx_device * dev, gx_color_index color,
 /* Map a cmyk color tuple back to CMYK colorants. */
 static int
 plibc_decode_color(gx_device * dev, gx_color_index color,
-                   gx_color_value prgb[4])
+                   gx_color_value prgb[])
 {
     uint bitspercolor = dev->color_info.depth / 4;
     uint colormask = (1 << bitspercolor) - 1;

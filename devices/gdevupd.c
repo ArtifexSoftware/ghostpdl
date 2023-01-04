@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2220,7 +2220,7 @@ in the W- or K-Component.
 /* ------------------------------------------------------------------- */
 
 static int
-upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
+upd_icolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_value c,m,y,k;
@@ -2303,7 +2303,7 @@ upd_rgb_1color(gx_device *pdev, const gx_color_value cv[])
 /* ------------------------------------------------------------------- */
 
 static int
-upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value cv[1])
+upd_1color_rgb(gx_device *pdev, gx_color_index color, gx_color_value cv[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
 /*
@@ -2362,7 +2362,7 @@ upd_rgb_3color(gx_device *pdev, const gx_color_value cv[])
 /* ------------------------------------------------------------------- */
 
 static int
-upd_3color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
+upd_3color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
 
@@ -2443,7 +2443,7 @@ upd_rgb_4color(gx_device *pdev, const gx_color_value cv[])
 /* ------------------------------------------------------------------- */
 
 static int
-upd_4color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
+upd_4color_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
 
@@ -2540,7 +2540,7 @@ upd_cmyk_kcolor(gx_device *pdev, const gx_color_value cv[])
 /* ------------------------------------------------------------------- */
 
 static int
-upd_kcolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[3])
+upd_kcolor_rgb(gx_device *pdev, gx_color_index color, gx_color_value prgb[])
 {
    const upd_p     upd = ((upd_device *)pdev)->upd;
    gx_color_value c,m,y,k;
@@ -3559,7 +3559,7 @@ upd_close_fscomp(upd_device *udev)
  *                            3/16  5/16  1/16 Y+1
  */
 #define FS_DIST(I)                                                    \
-   if(!first) rowerr[I-dir] += ((3*pixel[I]+8)>>4); /* 3/16 */        \
+   if(!first) { rowerr[I-dir] += ((3*pixel[I]+8)>>4);} /* 3/16 */        \
               rowerr[I    ]  = ((5*pixel[I]  )>>4)  /* 5/16 */        \
                              + (( colerr[I]+4)>>3); /* 1/16 (rest) */ \
               colerr[I    ]  = pixel[I]             /* 8/16 (neu) */  \
