@@ -4,10 +4,7 @@
 .. title:: Unsupported devices
 
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
-
+.. include:: header.rst
 
 .. _UnsupportedDevices.htm:
 

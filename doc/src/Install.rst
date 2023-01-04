@@ -3,10 +3,8 @@
 
 .. title:: How to Install Ghostscript
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _Install.htm:
 .. _HowToInstallGhostscript:

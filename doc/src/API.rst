@@ -3,11 +3,7 @@
 
 .. title:: API
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
-
-
+.. include:: header.rst
 
 .. _API.htm:
 

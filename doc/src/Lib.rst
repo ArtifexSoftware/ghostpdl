@@ -3,10 +3,9 @@
 
 .. title:: The Ghostscript Library
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+
+.. include:: header.rst
 
 .. _Lib.htm:
 

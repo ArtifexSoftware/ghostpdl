@@ -3,10 +3,8 @@
 
 .. title:: Ghostscript C Coding Guidelines
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _C-style.htm:
 

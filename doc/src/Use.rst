@@ -3,10 +3,8 @@
 
 .. title:: Using Ghostscript
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _Use.htm:
 
@@ -440,11 +438,6 @@ Switches for PDF files
 
 Here are some command line options specific to PDF:
 
-``-dNEWPDF``
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-From release 9.55.0 Ghostscript incorporates two complete PDF interpreters; the original long-standing interpreter is written in PostScript but there is now a new interpreter written in C.
-At present the old PostScript-based interpreter remains the default, in future releases the new C-based interpreter will become the default, though we would encourage people to experiment with the new interpreter and send us feedback. While there are two interpreters the command-line switch NEWPDF will allow selection of the existing interpreter when false and the new interpreter when true.
 
 ``-dPDFINFO``
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""

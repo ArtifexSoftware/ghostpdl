@@ -3,10 +3,8 @@
 
 .. title:: Sample CMYK 32-bit Device that Supports Post Rendering Processing
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _SampleDownscaleDevice.htm:
 

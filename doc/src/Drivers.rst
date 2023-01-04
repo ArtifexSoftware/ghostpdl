@@ -3,10 +3,7 @@
 
 .. title:: The Interface between Ghostscript and Device Drivers
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
-
+.. include:: header.rst
 
 .. _Drivers.htm:
 .. _Drivers:

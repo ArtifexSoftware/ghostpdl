@@ -3,12 +3,9 @@
 
 .. title:: Language Bindings
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
 
-
+.. include:: header.rst
 
 
 Language Bindings

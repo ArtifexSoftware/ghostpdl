@@ -3,10 +3,8 @@
 
 .. title:: High Level Devices
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _VectorDevices.htm:
 
@@ -933,7 +931,7 @@ Example using DISTILLERPARAMS to set the quality of JPEG compression
 
 
 
-PDF file output
+PDF file output - ``pdfwrite``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``-dMaxInlineImageSize=integer``
@@ -1085,7 +1083,25 @@ The following switches are used for generating metadata according to the Adobe X
 
    Obviously this is all heuristic and undoubtedly there is more we can do to improve the functionality here, but we need concrete examples to work from.
 
+----
 
+
+:title:`pdfwrite` for the new interpreter
+"""""""""""""""""""""""""""""""""""""""""""""""
+
+Using the new interpreter (the default from version 10.0.0 of :title:`Ghostscript`) these can be set from the command line using ``-d`` or from :title:`PostScript` using the :ref:`setpagedevice<Language_DeviceParameters>` operator:
+
+
+``-dModifiesPageSize=boolean``
+  When this device parameter is *true* the new :title:`PDF` interpreter will not pass the various Box values (:title:`ArtBox`, :title:`BleedBox`, :title:`CropBox`, :title:`TrimBox`) to the output device. This is used when scripting the interpreter and using a media size other than the :title:`MediaBox` in the :title:`PDF` file. If the media size has changed and we preserve the :title:`Boxes` in the output they would be incorrect.
+
+``-dModifiesPageOrder=boolean``
+  When this device parameter is *true* the new :title:`PDF` interpreter will not pass :title:`Outlines` (what :title:`Acrobat` calls :title:`Bookmarks`) and :title:`Dests` (the destination of document-local hyperlinks for example). This is because these rely on specifying the page by number, and if we alter the page order the destination would be incorrect. Again this is intended for use when scripting the interpreter.
+
+
+.. note::
+
+  The :title:`Nup` device already sets these parameters internally (and they cannot be changed in that device) as it modifies both the media size and the order of pages, the ``pdfwrite`` device now supports both these parameters and they can be altered as required.
 
 PostScript file output
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

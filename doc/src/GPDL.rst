@@ -3,10 +3,8 @@
 
 .. title:: The GhostPDL Interpreter Framework
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _GPDL.htm:
 

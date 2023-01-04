@@ -3,10 +3,8 @@
 
 .. title:: Details of Ghostscript Output Devices
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _Devices.htm:
 

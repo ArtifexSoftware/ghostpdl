@@ -3,10 +3,7 @@
 
 .. title:: Information for Ghostscript Developers
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
-
+.. include:: header.rst
 
 .. _Develop.htm:
 .. _Ghostscript Developers:

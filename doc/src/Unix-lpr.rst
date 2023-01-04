@@ -3,10 +3,8 @@
 
 .. title:: Setting Up a Unix lpr Filter for Ghostscript
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _Unix-lpr.htm:
 

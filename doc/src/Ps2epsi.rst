@@ -3,10 +3,8 @@
 
 .. title:: Convert PostScript to Encapsulated PostScript Interchange Format
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _Ps2epsi.htm:
 

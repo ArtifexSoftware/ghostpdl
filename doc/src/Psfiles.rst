@@ -3,10 +3,7 @@
 
 .. title:: PostScript Files Distributed with Ghostscript
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
-
+.. include:: header.rst
 
 .. _Psfiles.htm:
 

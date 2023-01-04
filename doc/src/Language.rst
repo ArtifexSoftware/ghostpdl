@@ -3,10 +3,8 @@
 
 .. title:: Ghostscript and the PostScript Language
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _Language.htm:
 .. _Language:
@@ -778,6 +776,10 @@ Some versions of Ghostscript may also support other non-standard filters for exp
 
       BlockSize <integer> (default=16384)
 
+
+
+
+.. _Language_DeviceParameters:
 
 
 Device parameters

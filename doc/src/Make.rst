@@ -3,11 +3,7 @@
 
 .. title:: How to Build Ghostscript from Source Code
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
-
-
+.. include:: header.rst
 
 .. _Make.htm:
 
@@ -456,13 +452,13 @@ Invoking "make"
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ``make``
-   Builds Ghostscript without debugging options.
+   Builds :title:`Ghostscript` without debugging options.
 
 
 .. _Make_Debugging:
 
 ``make debug``
-   Builds Ghostscript with debugging options and additional internal error checks. The program will be somewhat larger and slower, but it will behave no differently unless you actually turn on debugging options at execution time with the ``-DDEBUG`` or :ref:`-Z command line switches<Use_Debugging>` described in the usage documentation.
+   Builds :title:`Ghostscript` with debugging options and additional internal error checks. The program will be somewhat larger and slower, but it will behave no differently unless you actually turn on debugging options at execution time with the ``-DDEBUG`` or :ref:`-Z command line switches<Use_Debugging>` described in the usage documentation.
 
 ``make pg``
    On Unix platforms, builds with the ``-pg`` compiler switch, creating an executable for time profiling.
@@ -477,16 +473,28 @@ Invoking "make"
 .. _Make_SharedObject:
 
 ``make so``
-   On some platforms (Linux, \*BSD, Darwin/Mac OS X, SunOS), it is possible to build Ghostscript as a shared object library. There is a corresponding ``make soclean`` for cleaning up.
+  On some platforms (Linux, \*BSD, Darwin/Mac OS X, SunOS), it is possible to build :title:`Ghostscript` as a shared object library. There is a corresponding ``make soclean`` for cleaning up.
 
 ``make sanitize``
-   Builds Ghostscript with ``AddressSanitizer``. Output is placed in ``./sanbin``.
+  Builds :title:`Ghostscript` with ``AddressSanitizer``. Output is placed in ``./sanbin``.
+
+``make libgs``
+  Builds static library for :title:`Ghostscript`.
+
+``make libgpcl6``
+  Builds static library for :title:`GhostPCL`. Requires the full ghostpdl_ source release.
+
+``make libgxps``
+  Builds static library for :title:`GhostXPS`. Requires the full ghostpdl_ source release.
+
+``make libgpdl``
+  Builds static library for :title:`GhostPDL`. Requires the full ghostpdl_ source release.
 
 
 
 .. note::
 
-   - On most platforms some of these simple instructions don't quite work in one way or another. Read the section on your specific platform.
+   - On some platforms aspects of these simple instructions don’t quite work in one way or another. Read the section on your specific platform.
 
    - If you are attempting to build a statically linked executable, you will probably need to add libraries to the linker options (libraries that are normally pulled-in automatically by the dynamic linker). These can be added at the make command line using the ``EXTRALIBS=`` option. Unfortunately, the set of libraries that may be required varies greatly depending on platform and configuration, so it is not practical to offer a list here.
 
@@ -1016,6 +1024,7 @@ For Windows/MSVC you need only specify ``UFST_ROOT``. ``msvc.mak`` sets the othe
 
 
 .. _git: http://git-scm.com/
+.. _ghostpdl:
 .. _ghostpdl.git: http://git.ghostscript.com/?p=ghostpdl.git;a=summary
 
 .. _WinZip: http://www.winzip.com/

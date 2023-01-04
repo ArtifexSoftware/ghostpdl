@@ -3,10 +3,7 @@
 
 .. title:: Ghostscript Color Management
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
-
+.. include:: header.rst
 
 .. _GhostscriptColorManagement.htm:
 

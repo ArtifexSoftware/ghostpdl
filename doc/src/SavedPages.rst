@@ -3,10 +3,8 @@
 
 .. title:: Using Saved Pages
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
 
+.. include:: header.rst
 
 .. _SavedPages.htm:
 

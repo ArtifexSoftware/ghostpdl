@@ -3,10 +3,7 @@
 
 .. title:: Fonts and Font Facilities Supplied with Ghostscript
 
-.. meta::
-   :description: The Ghostscript documentation
-   :keywords: Ghostscript, documentation, ghostpdl
-
+.. include:: header.rst
 
 .. _Fonts.htm:
 
