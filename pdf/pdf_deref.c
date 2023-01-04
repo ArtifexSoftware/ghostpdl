@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2022 Artifex Software, Inc.
+/* Copyright (C) 2020-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -969,7 +969,6 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
             if (code < 0 || *object == NULL)
                 goto error;
         } else {
-            pdf_c_stream *SubFile_stream = NULL;
 #if CACHE_STATISTICS
             ctx->misses++;
 #endif

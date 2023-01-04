@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -29,14 +29,6 @@
 #include "gsccode.h"        /* For the Encoding indices */
 #include "gsuid.h"          /* For no_UniqueID */
 #include "gsutil.h"        /* For gs_next_ids() */
-
-static void pdfi_type3_copy_color(gs_gstate_color *src, gs_gstate_color *dest)
-{
-    *dest->ccolor = *src->ccolor;
-    *dest->dev_color = *src->dev_color;
-    dest->color_space = src->color_space;
-    dest->effective_opm = src->effective_opm;
-}
 
 static int
 pdfi_type3_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,

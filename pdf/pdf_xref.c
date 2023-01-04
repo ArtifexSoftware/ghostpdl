@@ -839,7 +839,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
 {
     int code = 0;
     pdf_dict *d = NULL;
-    uint64_t size = 0, max_obj = 0;
+    uint64_t max_obj = 0;
     int64_t num;
     int obj_num;
     bool known = false;
