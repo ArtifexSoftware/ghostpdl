@@ -156,7 +156,7 @@ def gsapi_new_instance(caller_handle=None):
 
     caller_handle:
         Typically unused, but is passed to callbacks e.g. via
-        gsapi_set_stdio(). Must be convertable to a C void*, so None or an
+        gsapi_set_stdio(). Must be convertible to a C void*, so None or an
         integer is ok but other types such as strings will fail.
     '''
     instance = ctypes.c_void_p()
