@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -70,10 +70,9 @@ int gp_utf8_to_uint16(unsigned short *out, const char *in)
 {
     unsigned int i;
     unsigned int len = 1;
-    unsigned char c;
 
     if (out) {
-        while (i = *(unsigned char *)in++) {
+        while ((i = *(unsigned char *)in++) != 0) {
             /* Decode UTF-8 */
             i = decode_utf8(&in, i);
 
@@ -95,7 +94,7 @@ int gp_utf8_to_uint16(unsigned short *out, const char *in)
         }
         *out = 0;
     } else {
-        while (i = *(unsigned char *)in++) {
+        while ((i = *(unsigned char *)in++) != 0) {
             /* Decode UTF-8 */
             i = decode_utf8(&in, i);
 
@@ -114,10 +113,9 @@ int gp_uint16_to_utf8(char *out, const unsigned short *in)
 {
     unsigned int i;
     unsigned int len = 1;
-    int hi = -1;
 
     if (out) {
-        while (i = (unsigned int)*in++) {
+        while ((i = (unsigned int)*in++) != 0) {
             /* Decode surrogates */
             if (i >= 0xD800 && i <= 0xDBFF)
             {
@@ -162,7 +160,7 @@ int gp_uint16_to_utf8(char *out, const unsigned short *in)
         }
         *out = 0;
     } else {
-        while (i = (unsigned int)*in++) {
+        while ((i = (unsigned int)*in++) != 0) {
             /* Decode surrogates */
             if (i >= 0xD800 && i <= 0xDBFF)
             {
