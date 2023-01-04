@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1197,8 +1197,7 @@ static int zpdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph)
 
 static int param_value_get_namelist(gs_memory_t *ps_mem, pdf_context *ctx, ref *pvalueref, char ***pstrlist)
 {
-    char *data;
-    uint size, count;
+    uint count;
     char **strlist = NULL;
     ref lval, sref;
     int code;

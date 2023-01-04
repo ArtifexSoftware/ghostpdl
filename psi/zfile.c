@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1288,11 +1288,9 @@ lib_sopen(const gs_file_path_ptr pfpath, const gs_memory_t *mem, const char *fna
 {
     /* We need a buffer to hold the expanded file name. */
     char filename_found[DEFAULT_BUFFER_SIZE];
-    gp_file *file = NULL;
     uint fnamelen;
     ref obj;
     int code;
-    stream *s;
 
     /* open the usual 'stream', then if successful, return the file */
     code = lib_file_open(pfpath, mem, NULL, fname, strlen(fname),
