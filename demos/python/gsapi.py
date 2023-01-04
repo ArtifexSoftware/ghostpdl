@@ -3,6 +3,8 @@
 '''
 Python version of the C API in psi/iapi.h.
 
+Copyright (C) 2001-2023 Artifex Software, Inc.
+
 Overview:
 
     Implemented using Python's ctypes module.
