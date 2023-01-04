@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -538,9 +538,9 @@ static SET_HT_COLORS_PROC(set_ht_colors_gt_4);
                 gx_color_index plane_mask,	/* which planes are halftoned */\
                 gx_device *dev,		/* in case we are mapping lazily */\
                 const color_values_pair_t *pvp,	/* color values ditto */\
-                gx_color_index colors[MAX_DCC],	/* the actual colors for the tile, */\
+                gx_color_index colors[MAX_DCC_16],	/* the actual colors for the tile, */\
                                 /* actually [nplanes] */\
-                const gx_const_strip_bitmap * sbits[MAX_DCC]	/* the bitmaps for the planes, */\
+                const gx_const_strip_bitmap * sbits[MAX_DCC_16]	/* the bitmaps for the planes, */\
                                 /* actually [nplanes] */\
                 )
 
@@ -1153,7 +1153,7 @@ set_color_ht_le_4(byte *dest_data, uint dest_raster, int px, int py,
                   gx_color_index plane_mask, gx_device *ignore_dev,
                   const color_values_pair_t *ignore_pvp,
                   gx_color_index colors[MAX_DCC_16],
-                  const gx_const_strip_bitmap * sbits[MAX_DCC])
+                  const gx_const_strip_bitmap * sbits[MAX_DCC_16])
 {
     /*
      * Note that the planes are specified in the order RGB or CMYK, but
@@ -1344,7 +1344,7 @@ set_color_ht_gt_4(byte *dest_data, uint dest_raster, int px, int py,
                   gx_color_index plane_mask, gx_device *dev,
                   const color_values_pair_t *pvp,
                   gx_color_index colors[MAX_DCC_16],
-                  const gx_const_strip_bitmap * sbits[MAX_DCC])
+                  const gx_const_strip_bitmap * sbits[MAX_DCC_16])
 {
     int x, y;
     tile_cursor_t cursor[MAX_DCC];

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -328,18 +328,19 @@ static int free_aux(ttfMemory *mem, void *ptr)
 
         ALLOC_ARRAY( exec->pts.contours, exec->n_contours, face->maxContours, UShort )
         /* reserve contours array */
-      )
-     goto Fail_Memory;
+      ) {
+       goto Fail_Memory;
+   }
 
-     SETMAX(exec->callSize, callSize);
-     SETMAX(exec->stackSize, stackSize);
-     SETMAX(exec->twilight.n_points, n_twilight);
-     SETMAX(exec->maxGlyphSize, maxp->maxSizeOfInstructions);
-     SETMAX(exec->n_contours, face->maxContours);
-     SETMAX(exec->n_points, n_points);
-     exec->lock++;
+   SETMAX(exec->callSize, callSize);
+   SETMAX(exec->stackSize, stackSize);
+   SETMAX(exec->twilight.n_points, n_twilight);
+   SETMAX(exec->maxGlyphSize, maxp->maxSizeOfInstructions);
+   SETMAX(exec->n_contours, face->maxContours);
+   SETMAX(exec->n_points, n_points);
+   exec->lock++;
 
-     return TT_Err_Ok;
+   return TT_Err_Ok;
 
   Fail_Memory:
     /* Context_Destroy( exec ); Don't release buffers because the context is shared. */

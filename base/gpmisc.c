@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -839,7 +839,7 @@ do_open_scratch_file(const gs_memory_t *mem,
 gp_file *
 gp_open_scratch_file(const gs_memory_t *mem,
                      const char        *prefix,
-                     char              *fname,
+                     char              fname[gp_file_name_sizeof],
                      const char        *mode)
 {
     return do_open_scratch_file(mem, prefix, fname, mode, 0);
@@ -848,7 +848,7 @@ gp_open_scratch_file(const gs_memory_t *mem,
 gp_file *
 gp_open_scratch_file_rm(const gs_memory_t *mem,
                         const char        *prefix,
-                        char              *fname,
+                        char              fname[gp_file_name_sizeof],
                         const char        *mode)
 {
     return do_open_scratch_file(mem, prefix, fname, mode, 1);

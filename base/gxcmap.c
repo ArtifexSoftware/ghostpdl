@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1803,7 +1803,7 @@ gx_default_w_b_mono_encode_color(gx_device *dev, const gx_color_value cv[])
 
 int
 gx_default_w_b_mono_decode_color(gx_device * dev, gx_color_index color,
-                                 gx_color_value pgray[1])
+                                 gx_color_value pgray[])
 {				/* Map 0 to max_value, 1 to 0. */
     pgray[0] = -(gx_color_value) color;
     return 0;
@@ -1839,7 +1839,7 @@ gx_default_b_w_mono_encode_color(gx_device *dev, const gx_color_value cv[])
 
 int
 gx_default_b_w_mono_decode_color(gx_device * dev, gx_color_index color,
-                                 gx_color_value pgray[1])
+                                 gx_color_value pgray[])
 {				/* Map 0 to max_value, 1 to 0. */
     pgray[0] = -((gx_color_value) color ^ 1);
     return 0;
@@ -1904,7 +1904,7 @@ gx_default_8bit_map_gray_color(gx_device * dev, const gx_color_value cv[])
 
 int
 gx_default_8bit_map_color_gray(gx_device * dev, gx_color_index color,
-                              gx_color_value pgray[1])
+                              gx_color_value pgray[])
 {
     pgray[0] = (gx_color_value)(color * gx_max_color_value / 255);
     return 0;
@@ -1996,7 +1996,7 @@ cmyk_1bit_map_color_rgb(gx_device * dev, gx_color_index color,
 
 int
 cmyk_1bit_map_color_cmyk(gx_device * dev, gx_color_index color,
-                        gx_color_value pcv[4])
+                        gx_color_value pcv[])
 {
     pcv[0] = (color & 8 ? 0 : gx_max_color_value);
     pcv[1] = (color & 4 ? 0 : gx_max_color_value);
@@ -2052,7 +2052,7 @@ cmyk_8bit_map_color_rgb(gx_device * dev, gx_color_index color,
 
 int
 cmyk_8bit_map_color_cmyk(gx_device * dev, gx_color_index color,
-                        gx_color_value pcv[4])
+                        gx_color_value pcv[])
 {
     pcv[0] = gx_color_value_from_byte((color >> 24) & 0xff);
     pcv[1] = gx_color_value_from_byte((color >> 16) & 0xff);
@@ -2063,7 +2063,7 @@ cmyk_8bit_map_color_cmyk(gx_device * dev, gx_color_index color,
 
 int
 cmyk_16bit_map_color_cmyk(gx_device * dev, gx_color_index color,
-                          gx_color_value pcv[4])
+                          gx_color_value pcv[])
 {
     pcv[0] = ((color >> 24) >> 24) & 0xffff;
     pcv[1] = ((color >> 16) >> 16) & 0xffff;

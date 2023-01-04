@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -26,6 +26,8 @@
 #include "gxfixed.h"
 #include "gsicc_manage.h"
 #include "gdevnup.h"		/* to install N-up subclass device */
+#include "gp_utf8.h"
+
 extern gx_device_nup gs_nup_device;
 
 /* Define whether we accept PageSize as a synonym for MediaSize. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -87,7 +87,8 @@
 #include <zlib.h>
 
 int gs_log_error(int err, const char *file, int line);
-
+/* Prototype to placate compiler */
+int spgetcc(stream *s, bool b);
 /*
  * The rom file system is an array of pointers to nodes, terminated by a NULL
  */

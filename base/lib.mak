@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2022 Artifex Software, Inc.
+# Copyright (C) 2001-2023 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -649,6 +649,8 @@ gdevoflt_h=$(GLSRC)gdevoflt.h
 
 gdevnup_h=$(GLSRC)gdevnup.h
 
+gp_utf8_h=$(GLSRC)gp_utf8.h
+
 png__h=$(GLSRC)png_.h $(MAKEFILE)
 x__h=$(GLSRC)x_.h
 
@@ -990,7 +992,7 @@ $(GLOBJ)gsdevmem.$(OBJ) : $(GLSRC)gsdevmem.c $(AK) $(gx_h)\
 $(GLOBJ)gsdparam.$(OBJ) : $(GLSRC)gsdparam.c $(AK) $(gx_h)\
  $(gserrors_h) $(memory__h) $(string__h)\
  $(gsdevice_h) $(gsparam_h) $(gsparamx_h) $(gxdevice_h) $(gxfixed_h)\
- $(gsicc_manage_h) $(LIB_MAK) $(MAKEDIRS)
+ $(gsicc_manage_h) $(gdevnup_h) $(gp_utf8_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsdparam.$(OBJ) $(C_) $(GLSRC)gsdparam.c
 
 $(GLOBJ)gsfname.$(OBJ) : $(GLSRC)gsfname.c $(AK) $(memory__h)\
