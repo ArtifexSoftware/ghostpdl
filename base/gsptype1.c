@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1961,7 +1961,7 @@ gx_dc_pattern_write(
            Just write the tile id. */
         gs_id id = ptile->id; /* Ensure sizeof(gs_id). */
         if_debug2m('v', dev->memory,
-                   "[v*] Writing trans tile ID into clist, uid = %ld id = %u \n",
+                   "[v*] Writing trans tile ID into clist, uid = %ld id = %ld \n",
                    ptile->uid.id, ptile->id);
         memcpy(dp, &ptile->id, sizeof(id));
         *psize = sizeof(gs_id);
@@ -1973,7 +1973,7 @@ gx_dc_pattern_write(
        the clist */
         if (ptile->ttrans != NULL) {
             if_debug2m('v', dev->memory,
-                       "[v*] Writing trans tile into clist, uid = %ld id = %u \n",
+                       "[v*] Writing trans tile into clist, uid = %ld id = %ld \n",
                        ptile->uid.id, ptile->id);
             return gx_dc_pattern_trans_write_raster(ptile, offset, data, psize);
         }
@@ -2287,7 +2287,7 @@ gx_dc_pattern_read(
                 ptile->ttrans->deep = deep;
                 pdevc->type = &gx_dc_pattern_trans;
                 if_debug2m('v', pgs->memory,
-                           "[v*] Reading trans tile from clist into cache, uid = %ld id = %u \n",
+                           "[v*] Reading trans tile from clist into cache, uid = %ld id = %ld \n",
                            ptile->uid.id, ptile->id);
 
                 code = gx_dc_pattern_read_trans_buff(ptile, offset1, dp, left, mem);

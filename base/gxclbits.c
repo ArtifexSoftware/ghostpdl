@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -825,7 +825,7 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
             *dp++ = loc.tile->num_planes;
         dp = cmd_put_w(loc.index, dp);
         cmd_put_w(offset, dp);
-        if_debug7m('L', cldev->memory, " compress=%d depth=%d size=(%d,%d) planes=%d index=%d offset=%d\n",
+        if_debug7m('L', cldev->memory, " compress=%d depth=%d size=(%d,%d) planes=%d index=%d offset=%ld\n",
                    code, depth, loc.tile->width, loc.tile->height, loc.tile->num_planes, loc.index, offset);
         if (bit_pcls == NULL) {
             memset(ts_mask(loc.tile), 0xff,
