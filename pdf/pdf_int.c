@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -822,7 +822,7 @@ int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s)
             break;
 
         if (ctx->args.pdfdebug)
-            dmprintf1 (ctx->memory, " %c", (char)c);
+            dmprintf1 (ctx->memory, "%c", (char)c);
 
     } while (c != 0x0a && c != 0x0d);
 
