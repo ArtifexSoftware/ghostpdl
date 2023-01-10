@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -147,16 +147,29 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
             return -1;
         }
         offset = u32(font->data + 12 + font->subfontid * 4);
+        if (offset < 0)
+        {
+            gs_warn("subfont table offset negative");
+            return -1;
+        }
     }
     else
     {
         offset = 0;
     }
 
-    ntables = u16(font->data + offset + 4);
-    if (font->length < offset + 12 + ntables * 16)
+    if (font->length < offset + 6)
+    {
+        gs_warn("subfont length insufficient for ntables read");
         return -1;
 
+    }
+    ntables = u16(font->data + offset + 4);
+    if (font->length < offset + 12 + ntables * 16)
+    {
+        gs_warn("subfont length insufficient for entry reads");
+        return -1;
+    }
     for (i = 0; i < ntables; i++)
     {
         byte *entry = font->data + offset + 12 + i * 16;
