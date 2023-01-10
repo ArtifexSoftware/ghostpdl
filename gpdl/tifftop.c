@@ -765,15 +765,20 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
+                if (tiff->bpc > 8) {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
                 if (!TIFFGetField(tiff->handle, TIFFTAG_COLORMAP, &rmap, &gmap, &bmap)) {
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
-                tiff->palette = gs_alloc_bytes(tiff->memory, 3*n, "palette");
+                tiff->palette = gs_alloc_bytes(tiff->memory, 3*256, "palette");
                 if (tiff->palette == NULL) {
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
+                memset(tiff->palette, 0, 3 * 256);
                 if (guess_pal_depth(n, rmap, gmap, bmap) == 8) {
                     for (i=0; i < n; i++) {
                         tiff->palette[3*i+0] = rmap[i];
