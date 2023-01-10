@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -540,6 +540,9 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
 
     if (code >= 0) {
         fpriv.gsu.gst1.data.lenIV = 4;
+        fpriv.gsu.gst1.data.ExpansionFactor = 0.06;
+        fpriv.gsu.gst1.data.BlueShift = 7;
+        fpriv.gsu.gst1.data.BlueFuzz = 1;
         code = pdfi_read_ps_font(ctx, font_dict, fbuf, fbuflen, &fpriv);
         gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
 
