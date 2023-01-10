@@ -681,12 +681,14 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
                 continue;
             code = sgets(sf, magic, 4, &nread);
             if (code < 0 || nread < 4) {
+                code = 0;
                 sfclose(sf);
                 continue;
             }
 
             code = sfseek(sf, 0, SEEK_SET);
             if (code < 0) {
+                code = 0;
                 sfclose(sf);
                 continue;
             }
