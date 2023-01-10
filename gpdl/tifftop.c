@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -30,6 +30,8 @@
 #include "jmemcust.h"
 #endif
 #include "gsmchunk.h"
+
+#include <limits.h>
 
 /* Forward decls */
 
@@ -486,7 +488,7 @@ guess_pal_depth(int n, uint16_t *rmap, uint16_t *gmap, uint16_t *bmap)
 }
 
 static void
-blend_alpha(tiff_interp_instance_t *tiff, int n)
+blend_alpha(tiff_interp_instance_t *tiff, size_t n)
 {
     byte *p = tiff->samples;
     const byte *q = (const byte *)tiff->samples;
@@ -502,6 +504,48 @@ blend_alpha(tiff_interp_instance_t *tiff, int n)
         }
         q++;
     }
+}
+
+/* Calulate (a*b*c+d) safely */
+static uint32_t
+safe_mla(const gs_memory_t *mem, int *code, uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
+    if (UINT_MAX/b > a)
+        goto fail;
+    a *= b;
+    if (UINT_MAX/c > a)
+        goto fail;
+    a *= c;
+    if (UINT_MAX-c < d)
+        goto fail;
+
+    return c+d;
+
+fail:
+    emprintf(mem, "Numeric overflow!\n");
+    *code = gs_error_rangecheck;
+
+    return 0;
+}
+
+static size_t
+size_mla(const gs_memory_t *mem, int *code, size_t a, size_t b, size_t c, size_t d)
+{
+    if (SIZE_MAX/b > a)
+        goto fail;
+    a *= b;
+    if (SIZE_MAX/c > a)
+        goto fail;
+    a *= c;
+    if (SIZE_MAX-c < d)
+        goto fail;
+
+    return c+d;
+
+fail:
+    emprintf(mem, "Numeric overflow!\n");
+    *code = gs_error_rangecheck;
+    return 0;
 }
 
 static int
@@ -658,21 +702,28 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             }
 
             if (tiff->tiled || planar == PLANARCONFIG_CONTIG) {
-                tiff->byte_width = ((tiff->bpc * tiff->num_comps * tiff->tile_width + 7)>>3);
+                tiff->byte_width = safe_mla(tiff->memory, &code, tiff->bpc, tiff->num_comps, tiff->tile_width, 7)>>3;
             } else {
-                tiff->byte_width = ((tiff->bpc * tiff->tile_width + 7)>>3) * tiff->num_comps;
+                tiff->byte_width = safe_mla(tiff->memory, &code, tiff->bpc, 1, tiff->tile_width, 7)>>3;
             }
+            if (code < 0)
+                goto fail_decode;
 
             /* Allocate 'samples' to hold the raw samples values read from libtiff.
              * The exact size of this buffer depends on which of the multifarious
              * read routines we are using. (Tiled/RGBAImage/Scanlines) */
             if (tiff->compression == COMPRESSION_OJPEG ||
                 tiff->photometric == PHOTOMETRIC_YCBCR) {
+                size_t z = size_mla(tiff->memory, &code, sizeof(uint32_t), tiff->width, tiff->height, 0);
+                if (code < 0)
+                    goto fail_decode;
                 tiff->is_rgba = 1;
-                tiff->samples = gs_alloc_bytes(tiff->memory, sizeof(uint32_t) * tiff->width * tiff->height, "tiff_image");
+                tiff->samples = gs_alloc_bytes(tiff->memory, z, "tiff_image");
                 tiff->tile_width = tiff->width;
                 tiff->tile_height = tiff->height;
-                tiff->byte_width = ((tiff->bpc * tiff->num_comps * tiff->tile_width + 7)>>3);
+                tiff->byte_width = safe_mla(tiff->memory, &code, tiff->bpc, tiff->num_comps, tiff->tile_width, 7)>>3;
+                if (code < 0)
+                    goto fail_decode;
             } else if (tiff->tiled) {
                 tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
             } else {
@@ -746,9 +797,14 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 } else if (tiff->tiled) {
-		  tiff->proc_samples = gs_alloc_bytes(tiff->memory, (size_t)tiff->tile_width * tiff->tile_height * 3, "tiff_tile");
+                    size_t z = size_mla(tiff->memory, &code, tiff->tile_width, tiff->tile_height, 3, 0);
+                    if (code < 0) {
+                        goto fail_decode;
+                    }
+                    tiff->proc_samples = gs_alloc_bytes(tiff->memory, z, "tiff_tile");
                 } else {
-		  tiff->proc_samples = gs_alloc_bytes(tiff->memory, (size_t)tiff->width * 3, "tiff_scan");
+                    size_t z = size_mla(tiff->memory, &code, tiff->tile_width, 1, 3, 0);
+                    tiff->proc_samples = gs_alloc_bytes(tiff->memory, z, "tiff_scan");
                 }
                 break;
             }
@@ -867,12 +923,15 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     }
 
                     if (tiff->is_rgba) {
+                        size_t z = size_mla(tiff->memory, &code, tiff->tile_width, tiff->tile_height, 1, 0);
+                        if (code < 0)
+                            goto fail_decode;
                         if (TIFFReadRGBAImage(tiff->handle, tiff->width, tiff->height,
                                               (uint32_t *)tiff->samples, 0) == 0) {
                             code = gs_error_unknownerror;
                             goto fail_decode;
                         }
-                        blend_alpha(tiff, tiff->tile_width * tiff->tile_height);
+                        blend_alpha(tiff, z);
                     } else if (tiff->tiled) {
                         if (TIFFReadTile(tiff->handle, tiff->samples, tx, ty, 0, 0) == 0) {
                             code = gs_error_unknownerror;
@@ -884,9 +943,11 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
 
                     if (!tiff->is_rgba && tiff->tiled) {
                         if (tiff->palette) {
-                            int n = tiff->tile_width * tiff->tile_height;
+                            size_t n = size_mla(tiff->memory, &code, tiff->tile_width, tiff->tile_height, 1, 0);
                             byte *q = tiff->samples;
                             byte *p = tiff->proc_samples;
+                            if (code < 0)
+                                goto fail_decode;
                             while (n--) {
                                 byte *v = &tiff->palette[3 * *q++];
                                 p[0] = *v++;
@@ -916,11 +977,17 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     tremy = tiff->height - ty;
                     if (tremy > tiff->tile_height)
                         tremy = tiff->tile_height;
+                    {
+                        /* Make sure we won't overflow in the loop. */
+                        (void)size_mla(tiff->memory, &code, tiff->byte_width, tiff->tile_height, 1, 0);
+                        if (code < 0)
+                            goto fail_decode;
+                    }
                     for (y = 0; y < tremy; y++) {
                         if (tiff->is_rgba) {
-                            row = tiff->proc_samples + tiff->byte_width * (tiff->tile_height-1-y);
+                            row = tiff->proc_samples + (size_t)tiff->byte_width * (tiff->tile_height-1-y);
                         } else if (tiff->tiled) {
-                            row = tiff->proc_samples + tiff->byte_width * y;
+                            row = tiff->proc_samples + (size_t)tiff->byte_width * y;
                         } else if (planar == PLANARCONFIG_CONTIG) {
                             row = tiff->proc_samples;
                             if (TIFFReadScanline(tiff->handle, tiff->samples, ty+y, 0) == 0) {
