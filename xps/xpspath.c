@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -16,6 +16,9 @@
 /* XPS interpreter - path (vector drawing) support */
 
 #include "ghostxps.h"
+
+#define INITIAL_DASH_SIZE 32
+#define ADDITIVE_DASH_SIZE 1024
 
 char *
 xps_get_real_params(char *s, int num, float *x)
@@ -993,9 +996,21 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     if (stroke_dash_array_att)
     {
         char *s = stroke_dash_array_att;
-        float dash_array[100];
+        float *dash_array;
         float dash_offset = 0.0;
         int dash_count = 0;
+        int dash_mem_count = 0;
+
+        /* Do an initial reasonable allocation. If that
+           runs out, double until we get to a max size
+           and then just add that max each overrun. */
+        dash_array = xps_alloc(ctx, sizeof(float) * INITIAL_DASH_SIZE);
+        if (dash_array == NULL)
+        {
+            gs_throw(gs_error_VMerror, "out of memory: dash_array.\n");
+            return gs_error_VMerror;
+        }
+        dash_mem_count = INITIAL_DASH_SIZE;
 
         if (stroke_dash_offset_att)
             dash_offset = atof(stroke_dash_offset_att) * linewidth;
@@ -1005,7 +1020,24 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
             while (*s == ' ')
                 s++;
             if (*s) /* needed in case of a space before the last quote */
+            {
+                /* Double up to a max size of ADDITIVE_DASH_SIZE and then add
+                   that amount each time */
+                if (dash_count > (dash_mem_count - 1))
+                {
+                    if (dash_mem_count < ADDITIVE_DASH_SIZE)
+                        dash_mem_count = dash_mem_count * 2;
+                    else
+                        dash_mem_count = dash_mem_count + ADDITIVE_DASH_SIZE;
+                    dash_array = (float*) xps_realloc(ctx, dash_array, sizeof(float) * dash_mem_count);
+                    if (dash_array == NULL)
+                    {
+                        gs_throw(gs_error_VMerror, "out of memory: dash_array realloc.\n");
+                        return gs_error_VMerror;
+                    }
+                }
                 dash_array[dash_count++] = atof(s) * linewidth;
+            }
             while (*s && *s != ' ')
                 s++;
         }
@@ -1019,8 +1051,8 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
             if (phase_len == 0)
                 dash_count = 0;
         }
-
         gs_setdash(ctx->pgs, dash_array, dash_count, dash_offset);
+        xps_free(ctx, dash_array);
     }
     else
     {
