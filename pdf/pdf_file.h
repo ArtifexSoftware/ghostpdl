@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -109,6 +109,8 @@ int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_c_stream *source, pdf_c_strea
 #endif
 
 int pdfi_open_resource_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s);
+bool pdfi_resource_file_exists(pdf_context *ctx, const char *fname, const int fnamelen);
 int pdfi_open_font_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s);
+bool pdfi_font_file_exists(pdf_context *ctx, const char *fname, const int fnamelen);
 
 #endif /* PDF_FILES */

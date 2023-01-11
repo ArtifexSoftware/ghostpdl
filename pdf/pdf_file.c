@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1779,10 +1779,10 @@ retry:
     return code;
 }
 
-int pdfi_open_resource_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
+static int pdfi_open_resource_file_inner(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
 {
     int code = 0;
-    if (fname == NULL || fnamelen == 0)
+    if (fname == NULL || fnamelen == 0 || fnamelen >= gp_file_name_sizeof)
         *s = NULL;
     else if (gp_file_name_is_absolute(fname, fnamelen) || fname[0] == '%') {
         /* If it's an absolute path or an explicit PS style device, just try to open it */
@@ -1846,13 +1846,28 @@ retry:
     return 0;
 }
 
-int pdfi_open_font_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
+int pdfi_open_resource_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
+{
+    return pdfi_open_resource_file_inner(ctx, fname, fnamelen, s);
+}
+
+bool pdfi_resource_file_exists(pdf_context *ctx, const char *fname, const int fnamelen)
+{
+    stream *s = NULL;
+    int code = pdfi_open_resource_file_inner(ctx, fname, fnamelen, &s);
+    if (s)
+        sclose(s);
+
+    return (code >= 0);
+}
+
+static int pdfi_open_font_file_inner(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
 {
     int code = 0;
     const char *fontdirstr = "Font/";
     const int fontdirstrlen = strlen(fontdirstr);
 
-    if (fname == NULL || fnamelen == 0)
+    if (fname == NULL || fnamelen == 0 || fnamelen >= gp_file_name_sizeof)
         *s = NULL;
     else if (gp_file_name_is_absolute(fname, fnamelen) || fname[0] == '%') {
         /* If it's an absolute path or an explicit PS style device, just try to open it */
@@ -1910,7 +1925,22 @@ int pdfi_open_font_file(pdf_context *ctx, const char *fname, const int fnamelen,
         }
     }
     if (*s == NULL)
-        return pdfi_open_resource_file(ctx, fname, fnamelen, s);
+        return pdfi_open_resource_file_inner(ctx, fname, fnamelen, s);
 
     return 0;
+}
+
+int pdfi_open_font_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
+{
+    return pdfi_open_font_file_inner(ctx, fname, fnamelen, s);
+}
+
+bool pdfi_font_file_exists(pdf_context *ctx, const char *fname, const int fnamelen)
+{
+    stream *s = NULL;
+    int code = pdfi_open_font_file_inner(ctx, fname, fnamelen, &s);
+    if (s)
+        sclose(s);
+
+    return (code >= 0);
 }

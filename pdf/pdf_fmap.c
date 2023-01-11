@@ -41,16 +41,7 @@ pdfi_custom_fmap_entry pdfi_custom_fmap_entries[] =
 
 static inline bool pdfi_fmap_file_exists(pdf_context *ctx, pdf_string *fname)
 {
-    char nm[gp_file_name_sizeof];
-    struct stat buf;
-    int code = gs_error_invalidfileaccess;
-
-    if (fname->length < gp_file_name_sizeof) {
-        memcpy(nm, fname->data, fname->length);
-        nm[fname->length] = '\0';
-        code = gp_stat(ctx->memory, (const char *)nm, &buf);
-    }
-    return code >= 0;
+    return pdfi_font_file_exists(ctx, (const char *)fname->data, fname->length);
 }
 
 static int
