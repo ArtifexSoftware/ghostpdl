@@ -204,17 +204,23 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 
             if (b0 == 17)
             {
+                if (args[0].ival < 0)
+                    return gs_throw(-1, "corrupt cff file offset");
                 font->charstrings = font->cffdata + args[0].ival;
             }
 
             if (b0 == 18)
             {
+                if (args[0].ival < 0 || args[1].ival < 0)
+                    return gs_throw(-1, "corrupt cff file offset");
                 privatelen = args[0].ival;
                 privateofs = args[1].ival;
             }
 
             if (b0 == 19)
             {
+                if (args[0].ival < 0)
+                    return gs_throw(-1, "corrupt cff file offset");
                 font->subrs = font->cffdata + offset + args[0].ival;
             }
 
