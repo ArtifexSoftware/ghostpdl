@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,6 +17,8 @@
 /* XPS interpreter - cff font support */
 
 #include "ghostxps.h"
+
+#define CFF_ARGS_SIZE 48
 
 /*
  * Big-endian memory accessor functions
@@ -171,7 +173,7 @@ xps_read_cff_integer(byte *p, byte *e, int b0, int *val)
 static int
 xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 {
-    struct { int ival; float fval; } args[48];
+    struct { int ival; float fval; } args[CFF_ARGS_SIZE];
     int offset;
     int b0, n;
 
@@ -342,6 +344,8 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
         {
             if (b0 == 30)
             {
+                if (n >= CFF_ARGS_SIZE)
+                    return gs_throw(-1, "overflow in cff dict");
                 p = xps_read_cff_real(p, e, &args[n].fval);
                 if (!p)
                     return gs_throw(-1, "corrupt dictionary operand");
@@ -350,6 +354,8 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
             }
             else if (b0 == 28 || b0 == 29 || (b0 >= 32 && b0 <= 254))
             {
+                if (n >= CFF_ARGS_SIZE)
+                    return gs_throw(-1, "overflow in cff dict");
                 p = xps_read_cff_integer(p, e, b0, &args[n].ival);
                 if (!p)
                     return gs_throw(-1, "corrupt dictionary operand");
