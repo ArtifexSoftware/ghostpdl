@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+    <DefineConstants>TRACE;WIN64</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+    <DefineConstants>TRACE;WIN64</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="if $(ConfigurationName) == Debug (&#xD;&#xA;   if exist $(SolutionDir)..\..\..\debugbin\gsdll64.dll  copy $(SolutionDir)..\..\..\debugbin\gsdll64.dll $(ProjectDir)$(OutDir)&#xD;&#xA;   if exist $(SolutionDir)..\..\..\debugbin\gpdldll64.dll copy $(SolutionDir)..\..\..\debugbin\gpdldll64.dll $(ProjectDir)$(OutDir)&#xD;&#xA;   if exist $(SolutionDir)..\..\..\debugbin\gsdll32.dll  copy $(SolutionDir)..\..\..\debugbin\gsdll32.dll $(ProjectDir)$(OutDir)&#xD;&#xA;   if exist $(SolutionDir)..\..\..\debugbin\gpdldll32.dll copy $(SolutionDir)..\..\..\debugbin\gpdldll32.dll $(ProjectDir)$(OutDir)&#xD;&#xA; )&#xD;&#xA;&#xD;&#xA;if $(ConfigurationName) == Release ( &#xD;&#xA;   if exist $(SolutionDir)..\..\..\bin\gsdll64.dll  copy $(SolutionDir)..\..\..\bin\gsdll64.dll $(ProjectDir)$(OutDir)&#xD;&#xA;   if exist $(SolutionDir)..\..\..\bin\gpdldll64.dll copy $(SolutionDir)..\..\..\bin\gpdldll64.dll $(ProjectDir)$(OutDir)&#xD;&#xA;   if exist $(SolutionDir)..\..\..\bin\gsdll32.dll  copy $(SolutionDir)..\..\..\bin\gsdll32.dll $(ProjectDir)$(OutDir)&#xD;&#xA;   if exist $(SolutionDir)..\..\..\bin\gpdldll32.dll copy $(SolutionDir)..\..\..\bin\gpdldll32.dll $(ProjectDir)$(OutDir)&#xD;&#xA;)" />
+  </Target>
+
+  <ItemGroup>
+    <Compile Include="..\..\api\ghostapi.cs" Link="ghostapi.cs" />
+  </ItemGroup>
+
+</Project>

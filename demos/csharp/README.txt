@@ -5,13 +5,13 @@ application is contained in the Linux folder.
 
 The applications share the same API file to Ghostscript or GhostPDL
 which is in api/ghostapi.cs.  In this file, lib_dll is set to the appropriate
-dll or so file that is create by the the compilation of Ghostscript. Note
+dll or so file that is created by the compilation of Ghostscript. Note
 that to build libgpdl.so on Linux you use "make so".  On windows gpdldll64.dll
 and variants are built depending upon the VS solution configurations.
 
 The applications each have another level of interface which is api/ghostnet.cs
 for the Windows application and api/ghostmono.cs for the Linux application.
-These files assemble the commands that are to be executed, creates the working
+These files assemble the commands that are to be executed and create the working
 threads that GhostPDL/Ghostscript will run on as well as handling the call backs
 from GhostPDL/Ghostscript.  The Linux and Windows applications use different
 threading methods.
@@ -29,5 +29,10 @@ PCL and PS file formats are streamed and so cannot work in this manner without
 a severe performance penalty.
 
 The Linux application is built using the make.sh bash script.
+
+The windows project includes the viewer application as well as a simple
+console application that lets you type in gs command lines and provides
+timing information after running the command syncrounsly.  This application
+is configured to build only with x64 and ghostscript DLL.
 
 
