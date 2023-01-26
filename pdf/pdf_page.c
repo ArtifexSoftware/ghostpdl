@@ -246,6 +246,7 @@ static int pdfi_get_media_size(pdf_context *ctx, pdf_dict *page_dict)
     }
     if (a == NULL) {
         a = default_media;
+        pdfi_countup(a);
     }
 
     if (!ctx->args.nouserunit && !ctx->device_state.PassUserUnit) {
@@ -258,6 +259,7 @@ static int pdfi_get_media_size(pdf_context *ctx, pdf_dict *page_dict)
         d[i] *= userunit;
     }
     pdfi_countdown(a);
+    pdfi_countdown(default_media);
 
     normalize_rectangle(d);
     memcpy(ctx->page.Size, d, 4 * sizeof(double));
