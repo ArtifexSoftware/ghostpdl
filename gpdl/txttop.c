@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 Artifex Software, Inc.
+/* Copyright (C) 2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -285,8 +285,7 @@ send_bytes(txt_interp_instance_t *instance, const byte *p, int n)
     debug_as_pcl(p, n);
 #endif
 
-    cursor.ptr = p-1;
-    cursor.limit = cursor.ptr + n;
+    stream_cursor_read_init(&cursor, p, n);
 
     return instance->sub->proc_process(instance->sub, &cursor);
 }
