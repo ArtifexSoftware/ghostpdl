@@ -432,23 +432,33 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     }
 
     /* Can we restrict the amount of image we need? */
-    while (pcpath && !pim->imagematrices_are_untrustworthy) /* So we can break out of it */
+    while (!pim->imagematrices_are_untrustworthy) /* So we can break out of it */
     {
         gs_rect rect, rect_src;
         gs_matrix mi;
         const gs_matrix *m = pgs != NULL ? &ctm_only(pgs) : NULL;
-        gs_fixed_rect obox;
         gs_int_rect irect;
         if (m == NULL || (code = gs_matrix_invert(m, &mi)) < 0 ||
             (code = gs_matrix_multiply(&mi, &pic->ImageMatrix, &mi)) < 0) {
             /* Give up trying to shrink the render box, but continue processing */
             break;
         }
-        gx_cpath_outer_box(pcpath, &obox);
-        rect.p.x = fixed2float(obox.p.x);
-        rect.p.y = fixed2float(obox.p.y);
-        rect.q.x = fixed2float(obox.q.x);
-        rect.q.y = fixed2float(obox.q.y);
+        if (pcpath)
+        {
+            gs_fixed_rect obox;
+            gx_cpath_outer_box(pcpath, &obox);
+            rect.p.x = fixed2float(obox.p.x);
+            rect.p.y = fixed2float(obox.p.y);
+            rect.q.x = fixed2float(obox.q.x);
+            rect.q.y = fixed2float(obox.q.y);
+        }
+        else
+        {
+            rect.p.x = 0;
+            rect.p.y = 0;
+            rect.q.x = dev->width;
+            rect.q.y = dev->height;
+        }
         /* rect is in destination space. Calculate rect_src, in source space. */
         code = gs_bbox_transform(&rect, &mi, &rect_src);
         if (code < 0) {
@@ -460,6 +470,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         /* If mi.{xx,yy} > 1 then we are downscaling. During downscaling,
          * the support increases to ensure that we don't lose pixels contributions
          * entirely. */
+        if (pim->Interpolate)
         {
             float support = any_abs(mi.xx);
             int isupport;
@@ -479,7 +490,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
             rect_src.p.x -= isupport;
             rect_src.p.y -= isupport;
             rect_src.q.x += isupport;
-            rect_src.q.y += isupport;
+            rect_src.q.y += isupport+1; /* +1 is a fudge! */
         }
         irect.p.x = (int)floor(rect_src.p.x);
         irect.p.y = (int)floor(rect_src.p.y);
