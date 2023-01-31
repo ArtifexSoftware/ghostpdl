@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -281,8 +281,11 @@ pcl_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
     /* Return success */
     impl->interp_client_data = pcli;
     /* Initial reset for the PCL interpreter */
-    pcl_do_resets(&pcli->pcs, pcl_reset_initial);
-    return 0;
+    code = pcl_do_resets(&pcli->pcs, pcl_reset_initial);
+    if (code < 0) {
+        (void)impl->proc_deallocate_interp_instance(impl);
+    }
+    return code;
 }
 
 /* if the device option string PCL is not given, the default
