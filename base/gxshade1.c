@@ -863,6 +863,8 @@ check_rot_bottom_quarter:
 }
 #undef midpoint
 #undef quarterpoint
+#undef MIDPOINT_ACCURACY
+#undef QUARTERPOINT_ACCURACY
 
 #define f_fits_in_fixed(f) f_fits_in_bits(f, fixed_int_bits)
 
@@ -970,6 +972,642 @@ A_fill_region_floats(patch_fill_state_t *pfs1, corners_and_curves *cc, int depth
     return 0;
 }
 
+#define midpoint(a,b)      ((a+b)/2)
+
+#define quarterpoint(a,b)  ((a+3*b)/4)
+
+static int
+subdivide_patch_fill_floats(patch_fill_state_t *pfs, corners_and_curves *cc)
+{
+    double m0, m1;
+    int v0, v1;
+    int changed;
+
+    /* On entry we have a patch:
+     *   c[0].vertex  c[1].vertex
+     *
+     *   c[3].vertex  c[2].vertex
+     *
+     * Only the corners are set. The control points are not!
+     *
+     * BUT... in terms of spacial coords, it might be different...
+     * They might be flipped on X, Y or both, giving:
+     *  01 or 10 or 32 or 23
+     *  32    23    01    10
+     * or they might be rotated, and then flipped on X, Y or both, giving:
+     *  03 or 30 or 12 or 21
+     *  12    21    03    30
+     */
+
+    /* The +MIDPOINT_ACCURACY in the tests below is to allow for us finding the midpoint of [a] = z+1 and [b] = z, and getting z+1,
+     * and updating [a] to be z+1, hence never actually shrinking the gap. Just accept not culling the patch as
+     * much as we might. See bug 706378 for an example. */
+#define MIDPOINT_ACCURACY 0.0001
+#define QUARTERPOINT_ACCURACY 0.0003
+
+    do {
+        changed = 0;
+
+        /* First, let's try to see if we can cull the patch horizontally with the clipping
+         * rectangle. */
+        /* Non rotated cases first. Can we cull the left hand half? */
+        if (cc->corners[0].x < pfs->rect.p.x && cc->corners[3].x < pfs->rect.p.x)
+        {
+            /* Is the whole patch off to the left? */
+            if (cc->corners[1].x < pfs->rect.p.x && cc->corners[2].x < pfs->rect.p.x)
+                return 0;
+            /* Check 0+3 off left. */
+            v0 = 0;
+            v1 = 3;
+            goto check_left;
+        }
+        else if (cc->corners[1].x < pfs->rect.p.x && cc->corners[2].x < pfs->rect.p.x)
+        {
+            /* Check 1+2 off left. */
+            v0 = 1;
+            v1 = 2;
+check_left:
+            /* At this point we know that the condition for the following loop is true, so it
+             * can be a do...while rather than a while. */
+            do
+            {
+                /* Let's form (X coords only):
+                 *
+                 * c[v0].vertex  m0  c[v0^1].vertex
+                 * c[v1].vertex  m1  c[v1^1].vertex
+                 */
+                m0 = midpoint(cc->corners[0].x, cc->corners[1].x);
+                if (m0 >= pfs->rect.p.x)
+                    goto check_left_quarter;
+                m1 = midpoint(cc->corners[3].x, cc->corners[2].x);
+                if (m1 >= pfs->rect.p.x)
+                    goto check_left_quarter;
+                /* So, we can completely discard the left hand half of the patch. */
+                cc->corners[v0].x = m0;
+                cc->corners[v0].y = midpoint(cc->corners[0].y, cc->corners[1].y);
+                cc->corners[v1].x = m1;
+                cc->corners[v1].y = midpoint(cc->corners[3].y, cc->corners[2].y);
+                cc->curve[v0].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[1].vertex.cc[0])/2;
+                cc->curve[v1].vertex.cc[0] = (cc->curve[3].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
+                changed = 1;
+            }
+            while (cc->corners[v0].x < pfs->rect.p.x+MIDPOINT_ACCURACY && cc->corners[v1].x < pfs->rect.p.x+MIDPOINT_ACCURACY);
+            if (0)
+            {
+check_left_quarter:
+                /* At this point we know that the condition for the following loop is true, so it
+                 * can be a do...while rather than a while. */
+                do
+                {
+                    /* Let's form (X coords only):
+                     *
+                     * c[v0].vertex  m0  x  x  c[v0^1].vertex
+                     * c[v1].vertex  m1  x  x  c[v1^1].vertex
+                     */
+                    m0 = quarterpoint(cc->corners[v0].x, cc->corners[v0^1].x);
+                    if (m0 >= pfs->rect.p.x)
+                        break;
+                    m1 = quarterpoint(cc->corners[v1].x, cc->corners[v1^1].x);
+                    if (m1 >= pfs->rect.p.x)
+                        break;
+                    /* So, we can completely discard the left hand quarter of the patch. */
+                    cc->corners[v0].x = m0;
+                    cc->corners[v0].y = midpoint(cc->corners[v0].y, cc->corners[v0^1].y);
+                    cc->corners[v1].x = m1;
+                    cc->corners[v1].y = midpoint(cc->corners[v1].y, cc->corners[v1^1].y);
+                    cc->curve[v0].vertex.cc[0] = (cc->curve[v0].vertex.cc[0] + 3*cc->curve[v0^1].vertex.cc[0])/4;
+                    cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^1].vertex.cc[0])/4;
+                    changed = 1;
+                }
+                while (cc->corners[v0].x < pfs->rect.p.x+QUARTERPOINT_ACCURACY && cc->corners[v1].x < pfs->rect.p.x+QUARTERPOINT_ACCURACY);
+            }
+        }
+
+        /* or the right hand half? */
+        if (cc->corners[0].x > pfs->rect.q.x && cc->corners[3].x > pfs->rect.q.x)
+        {
+            /* Is the whole patch off to the right? */
+            if (cc->corners[1].x > pfs->rect.q.x && cc->corners[2].x > pfs->rect.q.x)
+                return 0;
+            /* Check 0+3 off right. */
+            v0 = 0;
+            v1 = 3;
+            goto check_right;
+        }
+        else if (cc->corners[1].x > pfs->rect.q.x && cc->corners[2].x > pfs->rect.q.x)
+        {
+            /* Check 1+2 off right. */
+            v0 = 1;
+            v1 = 2;
+check_right:
+            /* At this point we know that the condition for the following loop is true, so it
+             * can be a do...while rather than a while. */
+            do
+            {
+                /* Let's form (X coords only):
+                 *
+                 * c[v0].vertex  m0  c[v0^1].vertex
+                 * c[v1].vertex  m1  c[v1^1].vertex
+                 */
+                m0 = midpoint(cc->corners[0].x, cc->corners[1].x);
+                if (m0 <= pfs->rect.q.x)
+                    goto check_right_quarter;
+                m1 = midpoint(cc->corners[3].x, cc->corners[2].x);
+                if (m1 <= pfs->rect.q.x)
+                    goto check_right_quarter;
+                /* So, we can completely discard the left hand half of the patch. */
+                cc->corners[v0].x = m0;
+                cc->corners[v0].y = midpoint(cc->corners[0].y, cc->corners[1].y);
+                cc->corners[v1].x = m1;
+                cc->corners[v1].y = midpoint(cc->corners[3].y, cc->corners[2].y);
+                cc->curve[v0].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[1].vertex.cc[0])/2;
+                cc->curve[v1].vertex.cc[0] = (cc->curve[3].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
+                changed = 1;
+            }
+            while (cc->corners[v0].x > pfs->rect.q.x+MIDPOINT_ACCURACY && cc->corners[v1].x > pfs->rect.q.x+MIDPOINT_ACCURACY);
+            if (0)
+            {
+check_right_quarter:
+                /* At this point we know that the condition for the following loop is true, so it
+                 * can be a do...while rather than a while. */
+                do
+                {
+                    /* Let's form (X coords only):
+                     *
+                     * c[v0].vertex  m0  x  x  c[v0^1].vertex
+                     * c[v1].vertex  m1  x  x  c[v1^1].vertex
+                     */
+                    m0 = quarterpoint(cc->corners[v0].x, cc->corners[v0^1].x);
+                    if (m0 <= pfs->rect.q.x)
+                        break;
+                    m1 = quarterpoint(cc->corners[v1].x, cc->corners[v1^1].x);
+                    if (m1 <= pfs->rect.q.x)
+                        break;
+                    /* So, we can completely discard the left hand half of the patch. */
+                    cc->corners[v0].x = m0;
+                    cc->corners[v0].y = quarterpoint(cc->corners[v0].y, cc->corners[v0^1].y);
+                    cc->corners[v1].x = m1;
+                    cc->corners[v1].y = quarterpoint(cc->corners[v1].y, cc->corners[v1^1].y);
+                    cc->curve[v0].vertex.cc[0] = (cc->curve[v0].vertex.cc[0] + 3*cc->curve[v0^1].vertex.cc[0])/4;
+                    cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^1].vertex.cc[0])/4;
+                    changed = 1;
+                }
+                while (cc->corners[v0].x > pfs->rect.q.x+QUARTERPOINT_ACCURACY && cc->corners[v1].x > pfs->rect.q.x+QUARTERPOINT_ACCURACY);
+            }
+        }
+
+        /* Now, rotated cases: Can we cull the left hand half? */
+        if (cc->corners[0].x < pfs->rect.p.x && cc->corners[1].x < pfs->rect.p.x)
+        {
+            /* Check 0+1 off left. */
+            v0 = 0;
+            v1 = 1;
+            goto check_rot_left;
+        }
+        else if (cc->corners[3].x < pfs->rect.p.x && cc->corners[2].x < pfs->rect.p.x)
+        {
+            /* Check 3+2 off left. */
+            v0 = 3;
+            v1 = 2;
+check_rot_left:
+            /* At this point we know that the condition for the following loop is true, so it
+             * can be a do...while rather than a while. */
+            do
+            {
+                /* Let's form (X coords only):
+                 *
+                 * c[v0].vertex    m0  c[v0^3].vertex
+                 * c[v1^3].vertex  m1  c[v1].vertex
+                 */
+                m0 = midpoint(cc->corners[0].x, cc->corners[3].x);
+                if (m0 >= pfs->rect.p.x)
+                    goto check_rot_left_quarter;
+                m1 = midpoint(cc->corners[1].x, cc->corners[2].x);
+                if (m1 >= pfs->rect.p.x)
+                    goto check_rot_left_quarter;
+                /* So, we can completely discard the left hand half of the patch. */
+                cc->corners[v0].x = m0;
+                cc->corners[v0].y = midpoint(cc->corners[0].y, cc->corners[3].y);
+                cc->corners[v1].x = m1;
+                cc->corners[v1].y = midpoint(cc->corners[1].y, cc->corners[2].y);
+                cc->curve[v0].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[3].vertex.cc[0])/2;
+                cc->curve[v1].vertex.cc[0] = (cc->curve[1].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
+                changed = 1;
+            }
+            while (cc->corners[v0].x < pfs->rect.p.x+MIDPOINT_ACCURACY && cc->corners[v1].x < pfs->rect.p.x+MIDPOINT_ACCURACY);
+            if (0)
+            {
+check_rot_left_quarter:
+                /* At this point we know that the condition for the following loop is true, so it
+                 * can be a do...while rather than a while. */
+                do
+                {
+                    /* Let's form (X coords only):
+                     *
+                     * c[v0].vertex  m0  x  x  c[v0^3].vertex
+                     * c[v1].vertex  m1  x  x  c[v1^3].vertex
+                     */
+                    m0 = quarterpoint(cc->corners[v0].x, cc->corners[v0^3].x);
+                    if (m0 >= pfs->rect.p.x)
+                        break;
+                    m1 = quarterpoint(cc->corners[v1].x, cc->corners[v1^3].x);
+                    if (m1 >= pfs->rect.p.x)
+                        break;
+                    /* So, we can completely discard the left hand half of the patch. */
+                    cc->corners[v0].x = m0;
+                    cc->corners[v0].y = quarterpoint(cc->corners[v0].y, cc->corners[v0^3].y);
+                    cc->corners[v1].x = m1;
+                    cc->corners[v1].y = quarterpoint(cc->corners[v1].y, cc->corners[v1^3].y);
+                    cc->curve[v0].vertex.cc[0] = (cc->curve[v0].vertex.cc[0] + 3*cc->curve[v0^3].vertex.cc[0])/4;
+                    cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^3].vertex.cc[0])/4;
+                    changed = 1;
+                }
+                while (cc->corners[v0].x < pfs->rect.p.x+QUARTERPOINT_ACCURACY && cc->corners[v1].x < pfs->rect.p.x+QUARTERPOINT_ACCURACY);
+            }
+        }
+
+        /* or the right hand half? */
+        if (cc->corners[0].x > pfs->rect.q.x && cc->corners[1].x > pfs->rect.q.x)
+        {
+            /* Check 0+1 off right. */
+            v0 = 0;
+            v1 = 1;
+            goto check_rot_right;
+        }
+        else if (cc->corners[3].x > pfs->rect.q.x && cc->corners[2].x > pfs->rect.q.x)
+        {
+            /* Check 3+2 off right. */
+            v0 = 3;
+            v1 = 2;
+check_rot_right:
+            /* At this point we know that the condition for the following loop is true, so it
+             * can be a do...while rather than a while. */
+            do
+            {
+                /* Let's form (X coords only):
+                 *
+                 * c[v0].vertex  m0  c[v0^3].vertex
+                 * c[v1].vertex  m1  c[v1^3].vertex
+                 */
+                m0 = midpoint(cc->corners[0].x, cc->corners[3].x);
+                if (m0 <= pfs->rect.q.x)
+                    goto check_rot_right_quarter;
+                m1 = midpoint(cc->corners[1].x, cc->corners[2].x);
+                if (m1 <= pfs->rect.q.x)
+                    goto check_rot_right_quarter;
+                /* So, we can completely discard the left hand half of the patch. */
+                cc->corners[v0].x = m0;
+                cc->corners[v0].y = midpoint(cc->corners[0].y, cc->corners[3].y);
+                cc->corners[v1].x = m1;
+                cc->corners[v1].y = midpoint(cc->corners[1].y, cc->corners[2].y);
+                cc->curve[v0].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[3].vertex.cc[0])/2;
+                cc->curve[v1].vertex.cc[0] = (cc->curve[1].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
+                changed = 1;
+            }
+            while (cc->corners[v0].x > pfs->rect.q.x+MIDPOINT_ACCURACY && cc->corners[v1].x > pfs->rect.q.x+MIDPOINT_ACCURACY);
+            if (0)
+            {
+check_rot_right_quarter:
+                /* At this point we know that the condition for the following loop is true, so it
+                 * can be a do...while rather than a while. */
+                do
+                {
+                    /* Let's form (X coords only):
+                     *
+                     * c[v0].vertex  m0  c[v0^3].vertex
+                     * c[v1].vertex  m1  c[v1^3].vertex
+                     */
+                    m0 = quarterpoint(cc->corners[v0].x, cc->corners[v0^3].x);
+                    if (m0 <= pfs->rect.q.x)
+                        break;
+                    m1 = quarterpoint(cc->corners[v1].x, cc->corners[v1^3].x);
+                    if (m1 <= pfs->rect.q.x)
+                        break;
+                    /* So, we can completely discard the left hand half of the patch. */
+                    cc->corners[v0].x = m0;
+                    cc->corners[v0].y = quarterpoint(cc->corners[v0].y, cc->corners[v0^3].y);
+                    cc->corners[v1].x = m1;
+                    cc->corners[v1].y = quarterpoint(cc->corners[v1].y, cc->corners[v1^3].y);
+                    cc->curve[v0].vertex.cc[0] = (cc->curve[v0].vertex.cc[0] + 3*cc->curve[v0^3].vertex.cc[0])/4;
+                    cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^3].vertex.cc[0])/4;
+                    changed = 1;
+                }
+                while (cc->corners[v0].x > pfs->rect.q.x+QUARTERPOINT_ACCURACY && cc->corners[v1].x > pfs->rect.q.x+QUARTERPOINT_ACCURACY);
+            }
+        }
+
+        /* Now, let's try to see if we can cull the patch vertically with the clipping
+         * rectangle. */
+        /* Non rotated cases first. Can we cull the top half? */
+        if (cc->corners[0].y < pfs->rect.p.y && cc->corners[1].y < pfs->rect.p.y)
+        {
+            /* Is the whole patch off to the left? */
+            if (cc->corners[3].y < pfs->rect.p.y && cc->corners[2].y < pfs->rect.p.y)
+                return 0;
+            /* Check 0+1 off above. */
+            v0 = 0;
+            v1 = 1;
+            goto check_above;
+        }
+        else if (cc->corners[3].y < pfs->rect.p.y && cc->corners[2].y < pfs->rect.p.y)
+        {
+            /* Check 3+2 off above. */
+            v0 = 3;
+            v1 = 2;
+check_above:
+            /* At this point we know that the condition for the following loop is true, so it
+             * can be a do...while rather than a while. */
+            do
+            {
+                /* Let's form (Y coords only):
+                 *
+                 * c[v0].vertex     c[v1].vertex
+                 * m0               m1
+                 * c[v0^3].vertex   c[v1^3].vertex
+                 */
+                m0 = midpoint(cc->corners[0].y, cc->corners[3].y);
+                if (m0 >= pfs->rect.p.y)
+                    goto check_above_quarter;
+                m1 = midpoint(cc->corners[1].y, cc->corners[2].y);
+                if (m1 >= pfs->rect.p.y)
+                    goto check_above_quarter;
+                /* So, we can completely discard the top half of the patch. */
+                cc->corners[v0].x = midpoint(cc->corners[0].x, cc->corners[3].x);
+                cc->corners[v0].y = m0;
+                cc->corners[v1].x = midpoint(cc->corners[1].x, cc->corners[2].x);
+                cc->corners[v1].y = m1;
+                cc->curve[v0].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[3].vertex.cc[0])/2;
+                cc->curve[v1].vertex.cc[0] = (cc->curve[1].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
+                changed = 1;
+            }
+            while (cc->corners[v0].y < pfs->rect.p.y+MIDPOINT_ACCURACY && cc->corners[v1].y < pfs->rect.p.y+MIDPOINT_ACCURACY);
+            if (0)
+            {
+check_above_quarter:
+                /* At this point we know that the condition for the following loop is true, so it
+                 * can be a do...while rather than a while. */
+                do
+                {
+                    /* Let's form (Y coords only):
+                     *
+                     * c[v0].vertex     c[v1].vertex
+                     * m0               m1
+                     * x                x
+                     * x                x
+                     * c[v0^3].vertex   c[v1^3].vertex
+                     */
+                    m0 = quarterpoint(cc->corners[v0].y, cc->corners[v0^3].y);
+                    if (m0 >= pfs->rect.p.y)
+                        break;
+                    m1 = quarterpoint(cc->corners[v1].y, cc->corners[v1^3].y);
+                    if (m1 >= pfs->rect.p.y)
+                        break;
+                    /* So, we can completely discard the top half of the patch. */
+                    cc->corners[v0].x = quarterpoint(cc->corners[v0].x, cc->corners[v0^3].x);
+                    cc->corners[v0].y = m0;
+                    cc->corners[v1].x = quarterpoint(cc->corners[v1].x, cc->corners[v1^3].x);
+                    cc->corners[v1].y = m1;
+                    cc->curve[v0].vertex.cc[0] = (cc->curve[v0].vertex.cc[0] + 3*cc->curve[v0^3].vertex.cc[0])/4;
+                    cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^3].vertex.cc[0])/4;
+                    changed = 1;
+                }
+                while (cc->corners[v0].y < pfs->rect.p.y+QUARTERPOINT_ACCURACY && cc->corners[v1].y < pfs->rect.p.y+QUARTERPOINT_ACCURACY);
+            }
+        }
+
+        /* or the bottom half? */
+        if (cc->corners[0].y > pfs->rect.q.y && cc->corners[1].y > pfs->rect.q.y)
+        {
+            /* Is the whole patch off the bottom? */
+            if (cc->corners[3].y > pfs->rect.q.y && cc->corners[2].y > pfs->rect.q.y)
+                return 0;
+            /* Check 0+1 off bottom. */
+            v0 = 0;
+            v1 = 1;
+            goto check_bottom;
+        }
+        else if (cc->corners[1].y > pfs->rect.q.y && cc->corners[2].y > pfs->rect.q.y)
+        {
+            /* Check 3+2 off bottom. */
+            v0 = 3;
+            v1 = 2;
+check_bottom:
+            /* At this point we know that the condition for the following loop is true, so it
+             * can be a do...while rather than a while. */
+            do
+            {
+                /* Let's form (Y coords only):
+                 *
+                 * c[v0].vertex     c[v1].vertex
+                 * m0               m1
+                 * c[v0^3].vertex   c[v1^3].vertex
+                 */
+                m0 = midpoint(cc->corners[0].y, cc->corners[3].y);
+                if (m0 <= pfs->rect.q.y+1)
+                    goto check_bottom_quarter;
+                m1 = midpoint(cc->corners[1].y, cc->corners[2].y);
+                if (m1 <= pfs->rect.q.y+1)
+                    goto check_bottom_quarter;
+                /* So, we can completely discard the bottom half of the patch. */
+                cc->corners[v0].x = midpoint(cc->corners[0].x, cc->corners[3].x);
+                cc->corners[v0].y = m0;
+                cc->corners[v1].x = midpoint(cc->corners[1].x, cc->corners[2].x);
+                cc->corners[v1].y = m1;
+                cc->curve[v0].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[3].vertex.cc[0])/2;
+                cc->curve[v1].vertex.cc[0] = (cc->curve[1].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
+                changed = 1;
+            }
+            while (cc->corners[v0].y > pfs->rect.q.y+MIDPOINT_ACCURACY && cc->corners[v1].y > pfs->rect.q.y+MIDPOINT_ACCURACY);
+            if (0)
+            {
+check_bottom_quarter:
+                /* At this point we know that the condition for the following loop is true, so it
+                 * can be a do...while rather than a while. */
+                do
+                {
+                    /* Let's form (Y coords only):
+                     *
+                     * c[v0].vertex     c[v1].vertex
+                     * x                x
+                     * x                x
+                     * m0               m1
+                     * c[v0^3].vertex   c[v1^3].vertex
+                     */
+                    m0 = quarterpoint(cc->corners[v0].y, cc->corners[v0^3].y);
+                    if (m0 <= pfs->rect.q.y+1)
+                        break;
+                    m1 = quarterpoint(cc->corners[v1].y, cc->corners[v1^3].y);
+                    if (m1 <= pfs->rect.q.y+1)
+                        break;
+                    /* So, we can completely discard the bottom half of the patch. */
+                    cc->corners[v0].x = quarterpoint(cc->corners[v0].x, cc->corners[v0^3].x);
+                    cc->corners[v0].y = m0;
+                    cc->corners[v1].x = quarterpoint(cc->corners[v1].x, cc->corners[v1^3].x);
+                    cc->corners[v1].y = m1;
+                    cc->curve[v0].vertex.cc[0] = (cc->curve[v0].vertex.cc[0] + 3*cc->curve[v0^3].vertex.cc[0])/4;
+                    cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^3].vertex.cc[0])/4;
+                    changed = 1;
+                }
+                while (cc->corners[v0].y > pfs->rect.q.y+QUARTERPOINT_ACCURACY && cc->corners[v1].y > pfs->rect.q.y+QUARTERPOINT_ACCURACY);
+            }
+        }
+
+        /* Now, rotated cases: Can we cull the top half? */
+        if (cc->corners[0].y < pfs->rect.p.y && cc->corners[3].y < pfs->rect.p.y)
+        {
+            /* Check 0+3 off above. */
+            v0 = 0;
+            v1 = 3;
+            goto check_rot_above;
+        }
+        else if (cc->corners[1].y < pfs->rect.p.y && cc->corners[2].y < pfs->rect.p.y)
+        {
+            /* Check 1+2 off above. */
+            v0 = 1;
+            v1 = 2;
+check_rot_above:
+            /* At this point we know that the condition for the following loop is true, so it
+             * can be a do...while rather than a while. */
+            do
+            {
+                /* Let's form (Y coords only):
+                 *
+                 * c[v0].vertex     c[v1].vertex
+                 * m0               m1
+                 * c[v0^1].vertex   c[v1^1].vertex
+                 */
+                m0 = midpoint(cc->corners[0].y, cc->corners[1].y);
+                if (m0 >= pfs->rect.p.y)
+                    goto check_rot_above_quarter;
+                m1 = midpoint(cc->corners[3].y, cc->corners[2].y);
+                if (m1 >= pfs->rect.p.y)
+                    goto check_rot_above_quarter;
+                /* So, we can completely discard the top half of the patch. */
+                cc->corners[v0].x = midpoint(cc->corners[0].x, cc->corners[1].x);
+                cc->corners[v0].y = m0;
+                cc->corners[v1].x = midpoint(cc->corners[3].x, cc->corners[2].x);
+                cc->corners[v1].y = m1;
+                cc->curve[v0].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[1].vertex.cc[0])/2;
+                cc->curve[v1].vertex.cc[0] = (cc->curve[3].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
+                changed = 1;
+            }
+            while (cc->corners[v0].y < pfs->rect.p.y+MIDPOINT_ACCURACY && cc->corners[v1].y < pfs->rect.p.y+MIDPOINT_ACCURACY);
+            if (0)
+            {
+check_rot_above_quarter:
+                /* At this point we know that the condition for the following loop is true, so it
+                 * can be a do...while rather than a while. */
+                do
+                {
+                    /* Let's form (Y coords only):
+                     *
+                     * c[v0].vertex     c[v1].vertex
+                     * m0               m1
+                     * x                x
+                     * x                x
+                     * c[v0^1].vertex   c[v1^1].vertex
+                     */
+                    m0 = quarterpoint(cc->corners[v0].y, cc->corners[v0^1].y);
+                    if (m0 >= pfs->rect.p.y)
+                        break;
+                    m1 = quarterpoint(cc->corners[v1].y, cc->corners[v1^1].y);
+                    if (m1 >= pfs->rect.p.y)
+                        break;
+                    /* So, we can completely discard the top half of the patch. */
+                    cc->corners[v0].x = quarterpoint(cc->corners[v0].x, cc->corners[v0^1].x);
+                    cc->corners[v0].y = m0;
+                    cc->corners[v1].x = quarterpoint(cc->corners[v1].x, cc->corners[v1^1].x);
+                    cc->corners[v1].y = m1;
+                    cc->curve[v0].vertex.cc[0] = (cc->curve[v0].vertex.cc[0] + 3*cc->curve[v0^1].vertex.cc[0])/4;
+                    cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^1].vertex.cc[0])/4;
+                    changed = 1;
+                }
+                while (cc->corners[v0].y < pfs->rect.p.y+QUARTERPOINT_ACCURACY && cc->corners[v1].y < pfs->rect.p.y+QUARTERPOINT_ACCURACY);
+            }
+        }
+
+        /* or the bottom half? */
+        if (cc->corners[0].y > pfs->rect.q.y && cc->corners[3].y > pfs->rect.q.y)
+        {
+            /* Check 0+3 off the bottom. */
+            v0 = 0;
+            v1 = 3;
+            goto check_rot_bottom;
+        }
+        else if (cc->corners[3].y > pfs->rect.q.y && cc->corners[2].y > pfs->rect.q.y)
+        {
+            /* Check 1+2 off the bottom. */
+            v0 = 1;
+            v1 = 2;
+check_rot_bottom:
+            /* At this point we know that the condition for the following loop is true, so it
+             * can be a do...while rather than a while. */
+            do
+            {
+                /* Let's form (Y coords only):
+                 *
+                 * c[v0].vertex     c[v1].vertex
+                 * m0               m1
+                 * c[v0^1].vertex   c[v1^1].vertex
+                 */
+                m0 = midpoint(cc->corners[0].y, cc->corners[1].y);
+                if (m0 <= pfs->rect.q.y)
+                    goto check_rot_bottom_quarter;
+                m1 = midpoint(cc->corners[3].y, cc->corners[2].y);
+                if (m1 <= pfs->rect.q.y)
+                    goto check_rot_bottom_quarter;
+                /* So, we can completely discard the left hand half of the patch. */
+                cc->corners[v0].x = midpoint(cc->corners[0].x, cc->corners[1].x);
+                cc->corners[v0].y = m0;
+                cc->corners[v1].x = midpoint(cc->corners[3].x, cc->corners[2].x);
+                cc->corners[v1].y = m1;
+                cc->curve[v0].vertex.cc[0] = (cc->curve[0].vertex.cc[0] + cc->curve[1].vertex.cc[0])/2;
+                cc->curve[v1].vertex.cc[0] = (cc->curve[3].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
+                changed = 1;
+            }
+            while (cc->corners[v0].y > pfs->rect.q.y+MIDPOINT_ACCURACY && cc->corners[v1].y > pfs->rect.q.y+MIDPOINT_ACCURACY);
+            if (0)
+            {
+check_rot_bottom_quarter:
+                /* At this point we know that the condition for the following loop is true, so it
+                 * can be a do...while rather than a while. */
+                do
+                {
+                    /* Let's form (Y coords only):
+                     *
+                     * c[v0].vertex     c[v1].vertex
+                     * x                x
+                     * x                x
+                     * m0               m1
+                     * c[v0^1].vertex   c[v1^1].vertex
+                     */
+                    m0 = quarterpoint(cc->corners[v0].y, cc->corners[v0^1].y);
+                    if (m0 <= pfs->rect.q.y)
+                        break;
+                    m1 = quarterpoint(cc->corners[v1].y, cc->corners[v1^1].y);
+                    if (m1 <= pfs->rect.q.y)
+                        break;
+                    /* So, we can completely discard the left hand half of the patch. */
+                    cc->corners[v0].x = quarterpoint(cc->corners[v0].x, cc->corners[v0^1].x);
+                    cc->corners[v0].y = m0;
+                    cc->corners[v1].x = quarterpoint(cc->corners[v1].x, cc->corners[v1^1].x);
+                    cc->corners[v1].y = m1;
+                    cc->curve[v0].vertex.cc[0] = (cc->curve[v0].vertex.cc[0] + 3*cc->curve[v0^1].vertex.cc[0])/4;
+                    cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^1].vertex.cc[0])/4;
+                    changed = 1;
+                }
+                while (cc->corners[v0].y > pfs->rect.q.y+QUARTERPOINT_ACCURACY && cc->corners[v1].y > pfs->rect.q.y+QUARTERPOINT_ACCURACY);
+            }
+        }
+    } while (changed);
+
+    return A_fill_region_floats(pfs, cc, 0);
+}
+#undef midpoint
+#undef quarterpoint
+#undef MIDPOINT_ACCURACY
+#undef QUARTERPOINT_ACCURACY
+
 static int
 A_fill_region(A_fill_state_t * pfs, patch_fill_state_t *pfs1)
 {
@@ -1027,7 +1665,7 @@ fail:
     code = gs_point_transform(cc.corners[3].x, cc.corners[3].y, (const gs_matrix *)&pfs1->pgs->ctm, &cc.corners[3]);
     if (code < 0)
         return code;
-    return A_fill_region_floats(pfs1, &cc, 0);
+    return subdivide_patch_fill_floats(pfs1, &cc);
 }
 
 static inline int
