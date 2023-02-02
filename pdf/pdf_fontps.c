@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2022 Artifex Software, Inc.
+/* Copyright (C) 2020-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -115,30 +115,6 @@ static inline int
 pdf_ps_end_number_object(int c)
 {
     return (c != '.' && c != 'e' && c != '-' && (c < '0' || c > '9'));
-}
-
-static inline bool
-ishex(char c)
-{
-    if (c < 0x30)
-        return false;
-
-    if (c > 0x39) {
-        if (c > 'F') {
-            if (c < 'a')
-                return false;
-            if (c > 'f')
-                return false;
-            return true;
-        }
-        else {
-            if (c < 'A')
-                return false;
-            return true;
-        }
-    }
-    else
-        return true;
 }
 
 static inline int

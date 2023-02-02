@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,6 +19,40 @@
 #include "ghostpdf.h"
 #include "pdf_types.h"
 
+
+static inline bool ishex(char c)
+{
+    if (c < 0x30)
+        return false;
+
+    if (c > 0x39) {
+        if (c > 'F') {
+            if (c < 'a')
+                return false;
+            if (c > 'f')
+                return false;
+            return true;
+        } else {
+            if (c < 'A')
+                return false;
+            return true;
+        }
+    } else
+        return true;
+}
+
+/* You must ensure the character is a hex character before calling this, no error trapping here */
+static inline int fromhex(char c)
+{
+    if (c > 0x39) {
+        if (c > 'F') {
+            return c - 0x57;
+        } else {
+            return c - 0x37;
+        }
+    } else
+        return c - 0x30;
+}
 
 int pdfi_skip_white(pdf_context *ctx, pdf_c_stream *s);
 int pdfi_skip_eol(pdf_context *ctx, pdf_c_stream *s);

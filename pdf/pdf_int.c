@@ -68,40 +68,6 @@ static bool isdelimiter(char c)
         return false;
 }
 
-static bool ishex(char c)
-{
-    if (c < 0x30)
-        return false;
-
-    if (c > 0x39) {
-        if (c > 'F') {
-            if (c < 'a')
-                return false;
-            if (c > 'f')
-                return false;
-            return true;
-        } else {
-            if (c < 'A')
-                return false;
-            return true;
-        }
-    } else
-        return true;
-}
-
-/* You must ensure the character is a hex character before calling this, no error trapping here */
-static int fromhex(char c)
-{
-    if (c > 0x39) {
-        if (c > 'F') {
-            return c - 0x57;
-        } else {
-            return c - 0x37;
-        }
-    } else
-        return c - 0x30;
-}
-
 /* The 'read' functions all return the newly created object on the context's stack
  * which means these objects are created with a reference count of 0, and only when
  * pushed onto the stack does the reference count become 1, indicating the stack is
