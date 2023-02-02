@@ -5,7 +5,7 @@
 
 .. raw:: html
 
-   <div class="discordLink"><a href="https://discord.gg/TSpYGBW4eq" target=_blank>Find <b>#ghostscript</b> on <b>Discord</b><img src="_images/discord-mark-blue.svg" alt="Discord logo" /></a></div>
+   <div class="discordLink"><a href="https://discord.gg/H9GXKwyPvY" target=_blank>Find <b>#ghostscript</b> on <b>Discord</b><img src="_images/discord-mark-blue.svg" alt="Discord logo" /></a></div>
 
    <div class="feedbackLink"><a id="feedbackLinkTop" target=_blank>Do you have any feedback on this page?</b></a></div>
 
