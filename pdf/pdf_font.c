@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -777,12 +777,9 @@ static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, 
                     code = gs_note_error(gs_error_VMerror);
                 }
                 sfclose(s);
-                /* On success, the buffer owership moves to the font object */
+                /* Buffer owership moves to the font object */
                 code = pdfi_load_font_buffer(ctx, buf, buflen, no_type_font, NULL, findex, stream_dict, page_dict, NULL, &pdffont, false);
-                if (code < 0) {
-                    gs_free_object(ctx->memory, buf, "pdfi_load_font_file");
-                }
-                else {
+                if (code >= 0) {
                     pdffont->filename = NULL;
                     code = pdfi_object_alloc(ctx, PDF_STRING, strlen(fontfname) , (pdf_obj **)&pdffont->filename);
                     if (code >= 0) {
