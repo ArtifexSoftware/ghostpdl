@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3137,6 +3137,7 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_obj *
         int i = 0;
         int state = 0;
 
+        memset(ends, 0x00, 8 * sizeof(double));
         code = pdfi_dict_get_type(ctx, annot, "Path", PDF_ARRAY, (pdf_obj **)&Path);
         if (code < 0) goto exit;
 
@@ -3227,13 +3228,17 @@ static int pdfi_annot_draw_PolyLine(pdf_context *ctx, pdf_dict *annot, pdf_obj *
             if (code < 0)
                 break;
         }
+        if (code < 0)
+            goto exit;
+
         code = gs_stroke(ctx->pgs);
         if (code < 0)
             goto exit;
 
         code = pdfi_annot_draw_LE(ctx, annot, ends[0], ends[1], ends[2], ends[3], 1);
+        if (code < 0)
+            goto exit;
         code = pdfi_annot_draw_LE(ctx, annot, ends[4], ends[5], ends[6], ends[7], 2);
-        if (code < 0) goto exit;
     }
 
  exit:
