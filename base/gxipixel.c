@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -432,7 +432,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
     }
 
     /* Can we restrict the amount of image we need? */
-    while (pcpath) /* So we can break out of it */
+    while (pcpath && !pim->imagematrices_are_untrustworthy) /* So we can break out of it */
     {
         gs_rect rect, rect_src;
         gs_matrix mi;

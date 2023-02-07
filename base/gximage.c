@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -36,6 +36,7 @@ void
 gs_image_common_t_init(gs_image_common_t * pic)
 {
     gs_make_identity(&pic->ImageMatrix);
+    pic->imagematrices_are_untrustworthy = false;
 }
 void
 gs_data_image_t_init(gs_data_image_t * pim, int num_components)
@@ -53,6 +54,7 @@ gs_data_image_t_init(gs_data_image_t * pim, int num_components)
             pim->Decode[i] = 1, pim->Decode[i + 1] = 0;
     }
     pim->Interpolate = false;
+    pim->imagematrices_are_untrustworthy = false;
 }
 void
 gs_pixel_image_t_init(gs_pixel_image_t * pim,

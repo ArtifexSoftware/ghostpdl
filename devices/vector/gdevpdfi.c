@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -383,6 +383,7 @@ static int setup_type3_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             gs_matrix_scale(&pim3a.ImageMatrix, 1, 1.0 / sy, &pim3a.ImageMatrix);
         }
         gs_matrix_multiply(&mi, &pim3a.MaskDict.ImageMatrix, &pim3a.MaskDict.ImageMatrix);
+        pim3a.imagematrices_are_untrustworthy = 1;
         pic1 = (gs_image_common_t *)&pim3a;
         /* Setting pdev->converting_image_matrix to communicate with pdf_image3_make_mcde. */
         gs_matrix_multiply(&mi, &ctm_only(pgs), &pdev->converting_image_matrix);

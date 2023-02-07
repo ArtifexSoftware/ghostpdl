@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -59,6 +59,7 @@ gs_image_t_init_adjust(gs_image_t * pim, gs_color_space * color_space,
     pim->type = (pim->ImageMask ? &gs_image_type_mask1 : &gs_image_type_1);
     pim->Alpha = gs_image_alpha_none;
     pim->image_parent_type = gs_image_type1;
+    pim->imagematrices_are_untrustworthy = 0;
 }
 void
 gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s, bool adjust)

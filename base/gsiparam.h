@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -73,7 +73,6 @@ typedef enum {
  *      how the data are actually supplied.
  */
 #define gs_data_image_common\
-        const gx_image_type_t *type;\
                 /*\
                  * Define the transformation from user space to image space.\
                  */\
@@ -104,10 +103,106 @@ typedef enum {
                 /*\
                  * Define whether to smooth the image.\
                  */\
-        bool Interpolate
+        bool Interpolate;\
+                 /* If set, then the imagematrices have been changed (currently\
+                  * just by the pdfwrite device for the purposes of handling\
+                  * type3 masked images), so we can't trust them for mapping\
+                  * backwards for source clipping. */\
+        bool imagematrices_are_untrustworthy;\
+                 /* Put the type field last. See why below.*/\
+        const gx_image_type_t *type
 typedef struct gs_data_image_s {
     gs_data_image_common;
 } gs_data_image_t;
+
+/* Ghostscript uses macros to define 'extended' structures.
+ * Suppose we want to define a structure foo, that can be extended to
+ * bigger_foo (and then maybe even to even_bigger_foo). We first
+ * define a macro such as 'foo_common' that contains the fields for
+ * foo.
+ *
+ * #define foo_common \
+ *      void *a;\
+ *      int b
+ *
+ * Then we define foo in terms of this:
+ *
+ * typedef struct {
+ *     foo_common;
+ * } foo;
+ *
+ * Then we can extend this to other types as follows:
+ *
+ * typedef struct {
+ *     foo_common;
+ *     int c;
+ *     int d;
+ * } bigger_foo;
+ *
+ * Or we can use macros to use even further extension:
+ *
+ * #define bigger_foo_common \
+ *      foo_common;\
+ *      int c;\
+ *      int d
+ *
+ * typedef struct {
+ *     bigger_foo_common;
+ * } bigger_foo;
+ *
+ * and hence:
+ *
+ * typedef struct {
+ *     bigger_foo_common;
+ *     int e;
+ * } even_bigger_foo;
+ *
+ * On the whole, this works well, and avoids the extra layer of
+ * structure that would occur if we used the more usual structure
+ * definition way of working:
+ *
+ * typedef struct {
+ *     void *a;
+ *     int   b;
+ * } foo;
+ *
+ * typedef struct {
+ *     foo base;
+ *     int c;
+ *     int d;
+ * } bigger_foo;
+ *
+ * typedef struct {
+ *     bigger_foo base;
+ *     int e;
+ * } even_bigger_foo;
+ *
+ * In this formulation even_bigger_foo would need to access 'a' as
+ * base.base.a, whereas the ghostscript method can just use 'a'.
+ *
+ * Unfortunately, there is one drawback to this method, to do with
+ * structure packing in C. C likes structures to be easily used in
+ * arrays. Hence (in a 64bit build), foo will be 16 bytes, where
+ * the foo fields included at the start of bigger_foo will only
+ * take 12.
+ *
+ * This means that constructs such as:
+ *
+ * void simple(foo *a)
+ * {
+ *    bigger_foo b;
+ *    b.c = 1;
+ *    *(foo *)b = *a;
+ *    ...
+ * }
+ *
+ * where we attempt to initialise the 'foo' fields of a bigger_foo, b, by
+ * copying them from an existing 'foo', will corrupt b.c.
+ *
+ * To allow this idiom to work, we either need to ensure that the largest
+ * alignment object in the 'foo' fields comes last, or we need to introduce
+ * padding. The former is easier.
+ */
 
 #define public_st_gs_data_image() /* in gximage.c */\
   gs_public_st_simple(st_gs_data_image, gs_data_image_t,\
