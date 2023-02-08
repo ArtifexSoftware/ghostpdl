@@ -1313,11 +1313,11 @@ int pdfi_d0(pdf_context *ctx)
         goto d0_error;
     }
 
-    if (pdfi_type_of(ctx->stack_top[-1]) == PDF_INT)
-        width[0] = (double)((pdf_num *)ctx->stack_top[-1])->value.i;
-    else
-        width[0] = ((pdf_num *)ctx->stack_top[-1])->value.d;
     if (pdfi_type_of(ctx->stack_top[-2]) == PDF_INT)
+        width[0] = (double)((pdf_num *)ctx->stack_top[-2])->value.i;
+    else
+        width[0] = ((pdf_num *)ctx->stack_top[-2])->value.d;
+    if (pdfi_type_of(ctx->stack_top[-1]) == PDF_INT)
         width[1] = (double)((pdf_num *)ctx->stack_top[-1])->value.i;
     else
         width[1] = ((pdf_num *)ctx->stack_top[-1])->value.d;
