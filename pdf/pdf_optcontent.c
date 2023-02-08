@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -142,10 +142,35 @@ typedef enum {
     P_AnyOff
 } ocmd_p_type;
 
+static bool pdfi_oc_default_visibility(pdf_context *ctx)
+{
+    int code;
+    pdf_dict *D_dict = NULL;
+    pdf_name *B = NULL;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->OCProperties, "D", PDF_DICT, (pdf_obj **)&D_dict);
+    if (code < 0 || D_dict == NULL)
+        return true;
+
+    code = pdfi_dict_knownget_type(ctx, D_dict, "BaseState", PDF_NAME, (pdf_obj **)&B);
+    (void)pdfi_countdown(D_dict);
+    D_dict = NULL;
+    if (code < 0 || B == NULL)
+        return true;
+
+    if (pdfi_name_is(B, "OFF")) {
+        (void)pdfi_countdown(B);
+        return false;
+    }
+
+    (void)pdfi_countdown(B);
+    return true;
+}
+
 static bool
 pdfi_oc_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
 {
-    bool is_visible;
+    bool is_visible, hit = false;
     uint64_t i;
     int code;
     pdf_obj *val = NULL;
@@ -174,6 +199,7 @@ pdfi_oc_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
             continue;
         }
 
+        hit = true;
         vis = pdfi_get_default_OCG_val(ctx, (pdf_dict *)val);
         switch (type) {
         case P_AnyOn:
@@ -209,7 +235,17 @@ pdfi_oc_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
         val = NULL;
     }
 
- cleanup:
+    /* If the array was empty, or contained only null or deleted entries, then it has no effect
+     * PDF Reference 1.7 p366, table 4.49, OCGs entry. I'm interpreting this to mean that we should use
+     * the OCProperties 'D' dictionary, set the visibility state to the BaseState. Since this is an OCMD
+     * I'm assuming that the ON and OFF arrays (which apply to Optional Content Groups) shouold not be
+     * consulted. We need to cater for the fact that BaseState is optional (but default is ON). D is
+     * specified as 'Required' but it seems best not to take any chances on that!
+     */
+    if (!hit)
+        is_visible = pdfi_oc_default_visibility(ctx);
+
+cleanup:
     pdfi_countdown(val);
     return is_visible;
 }
@@ -242,6 +278,7 @@ pdfi_oc_check_OCMD(pdf_context *ctx, pdf_dict *ocdict)
     } else if (pdfi_type_of(obj) == PDF_DICT) {
         OCGs_dict = (pdf_dict *)obj;
     } else {
+        is_visible = pdfi_oc_default_visibility(ctx);
         goto cleanup;
     }
 
