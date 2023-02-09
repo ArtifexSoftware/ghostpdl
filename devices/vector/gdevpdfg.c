@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -224,7 +224,14 @@ pdf_viewer_state_from_gs_gstate_aux(pdf_viewer_state *pvs, const gs_gstate *pgs)
     pvs->text_knockout = pgs->text_knockout;
     pvs->fill_overprint = false;
     pvs->stroke_overprint = false;
-    pvs->stroke_adjust = false;
+    /* The PDF Reference says that the default is 'false' but experiments show (bug #706407)
+     * that Acrobat defaults to true. Also Ghostscript, at low resolution at least, defaults
+     * to true as well. By setting the initial value to neither true nor false we can ensure
+     * that any input file which sets it, whether true or false, will cause it not to match
+     * the initial value, so we will write it out, thus preserving the value, no matter what
+     * the default.
+     */
+    pvs->stroke_adjust = -1;
     pvs->line_params.half_width = 0.5;
     pvs->line_params.start_cap = 0;
     pvs->line_params.end_cap = 0;

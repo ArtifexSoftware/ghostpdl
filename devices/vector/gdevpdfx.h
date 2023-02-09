@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -503,7 +503,7 @@ typedef struct pdf_viewer_state_s {
     bool text_knockout; /* state.text_knockout */
     bool fill_overprint;
     bool stroke_overprint;
-    bool stroke_adjust; /* state.stroke_adjust */
+    int stroke_adjust; /* state.stroke_adjust */
     bool fill_used_process_color;
     bool stroke_used_process_color;
     gx_hl_saved_color saved_fill_color;
