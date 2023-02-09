@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1278,6 +1278,16 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int env_code)
         int code = 0;
 
         if (idmemory->reclaim != 0) {
+            /* In extreme error conditions, these references can persist, despite the
+             * arrays themselves having been restored away.
+             */
+            gs_main_run_string(minst,
+                "$error /dstack undef \
+                 $error /estack undef \
+                 $error /ostack undef",
+                 0 , &exit_code, &error_object);
+
+            ref_stack_clear(&o_stack);
             code = interp_reclaim(&minst->i_ctx_p, avm_global);
 
             /* We ignore gs_error_VMerror because it comes from gs_vmreclaim()
