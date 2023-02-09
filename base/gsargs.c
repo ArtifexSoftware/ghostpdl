@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -250,8 +250,11 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
             } while (c > 0 && c < 256 && isspace(c));
             if (c == EOF) {
                 /* EOF before any argument characters. */
-                if (pas->is_file)
+                if (pas->is_file) {
                     sclose(pas->u.strm);
+                    gs_free_object(pas->u.strm->memory, pas->u.strm, "arg stream");
+                    pas->u.strm = NULL;
+                }
                 else if (pas->u.s.memory)
                     gs_free_object(pas->u.s.memory, pas->u.s.chars,
                                    "arg_next");
@@ -380,7 +383,7 @@ arg_next(arg_list * pal, const char **argstr, const gs_memory_t *errmem)
                 else
                     i += codepoint_to_utf8(&cstr[i], c);
                 eol = is_eol(c);
-                prev_c_was_equals = (c == '=');
+                prev_c_was_equals = (c == '=') || (c == '#');
                 c = get_codepoint(pal, pas);
             }
             cstr[i] = 0;
