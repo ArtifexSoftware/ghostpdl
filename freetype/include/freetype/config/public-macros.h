@@ -4,7 +4,7 @@
  *
  *   Define a set of compiler macros used in public FreeType headers.
  *
- * Copyright (C) 2020-2022 by
+ * Copyright (C) 2020-2023 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -101,9 +101,8 @@ FT_BEGIN_HEADER
    * functions are exported with C linkage, even when the header is included
    * by a C++ source file.
    */
-#ifndef FT_EXPORT
 #define FT_EXPORT( x )  FT_PUBLIC_FUNCTION_ATTRIBUTE extern x
-#endif
+
 
   /*
    * `FT_UNUSED` indicates that a given parameter is not used -- this is
