@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -46,8 +46,6 @@
 private_st_pdf_base_font();
 gs_private_st_basic(st_pdf_base_font, pdf_base_font_t, "pdf_base_font_t",\
                     pdf_base_font_ptrs, pdf_base_font_data);
-
-#define SUBSET_PREFIX_SIZE 7	/* XXXXXX+ */
 
 typedef struct pdf_base14_font_info_s {
     const char *urwname;

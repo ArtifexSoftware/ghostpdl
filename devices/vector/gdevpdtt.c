@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -20,6 +20,7 @@
 #include <stdlib.h> /* abs() */
 #include "gx.h"
 #include "gserrors.h"
+#include "gsutil.h"                /* for bytes_compare */
 #include "gscencs.h"
 #include "gscedata.h"
 #include "gsmatrix.h"
@@ -543,6 +544,18 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
     return 0;
 }
 
+static bool
+outline_list_includes(const gs_param_string_array *psa, const byte *chars,
+                    uint size)
+{
+    uint i;
+
+    for (i = 0; i < psa->size; ++i)
+        if (!bytes_compare(psa->data[i].data, psa->data[i].size, chars, size))
+            return true;
+    return false;
+}
+
 int
 gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
                     const gs_text_params_t *text, gs_font * font,
@@ -557,8 +570,20 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
     int code, user_defined = 0;
     gs_memory_t * mem = pgs->memory;
 
+    const gs_font_name *fn = &font->font_name;
+    byte *chars_ptr = fn->chars;
+    uint size = fn->size;
+
+    while (pdf_has_subset_prefix(chars_ptr, size)) {
+        /* Strip off an existing subset prefix. */
+        chars_ptr += SUBSET_PREFIX_SIZE;
+        size -= SUBSET_PREFIX_SIZE;
+    }
+
     /* should we "flatten" the font to "normal" marking operations */
-    if (pdev->FlattenFonts) {
+    if (outline_list_includes(&pdev->params.AlwaysOutline, (const byte *)chars_ptr, size) ||
+        (pdev->FlattenFonts && !outline_list_includes(&pdev->params.NeverOutline, (const byte *)chars_ptr, size))
+        ) {
         font->dir->ccache.upper = 0;
         return gx_default_text_begin(dev, pgs, text, font,
                                      pcpath, ppte);

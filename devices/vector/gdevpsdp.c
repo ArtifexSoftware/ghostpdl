@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -499,6 +499,12 @@ gdev_psdf_get_param(gx_device *dev, char *Param, void *list)
         return(psdf_write_string_param(plist, "sRGBProfile",
                                         &pdev->params.sRGBProfile));
     }
+    if (strcmp(Param, ".AlwaysOutline") == 0) {
+        return(psdf_get_embed_param(plist, ".AlwaysOutline", &pdev->params.AlwaysOutline));
+    }
+    if (strcmp(Param, ".NeverOutline") == 0) {
+        return(psdf_get_embed_param(plist, ".NeverOutline", &pdev->params.NeverOutline));
+    }
     if (strcmp(Param, ".AlwaysEmbed") == 0) {
         return(psdf_get_embed_param(plist, ".AlwaysEmbed", &pdev->params.AlwaysEmbed));
     }
@@ -595,6 +601,16 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
     /* Mono sampled image parameters */
 
     code = psdf_get_image_params(plist, &Mono_names, &pdev->params.MonoImage);
+    if (code < 0)
+        return code;
+
+    /* Font outlining parameters */
+
+    code = psdf_get_embed_param(plist, ".AlwaysOutline", &pdev->params.AlwaysOutline);
+    if (code < 0)
+        return code;
+
+    code = psdf_get_embed_param(plist, ".NeverOutline", &pdev->params.NeverOutline);
     if (code < 0)
         return code;
 
@@ -1117,6 +1133,8 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
         params.ColorImage.ACSDict = params.ColorImage.Dict = 0;
         params.GrayImage.ACSDict = params.GrayImage.Dict = 0;
         params.MonoImage.ACSDict = params.MonoImage.Dict = 0;
+        params.AlwaysOutline.data = params.NeverOutline.data = NULL;
+        params.AlwaysOutline.size = params.NeverOutline.size = 0;
         params.AlwaysEmbed.data = params.NeverEmbed.data = 0;
         params.AlwaysEmbed.size = params.AlwaysEmbed.persistent = params.NeverEmbed.size = params.NeverEmbed.persistent = 0;
         params.PSPageOptions.data = NULL;
@@ -1217,6 +1235,18 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
 
     ecode = psdf_put_image_params(pdev, plist, &Mono_names,
                                   &params.MonoImage, ecode);
+
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
+    /* Font outlining parameters */
+
+    ecode = psdf_put_embed_param(plist, "~AlwaysOutline", ".AlwaysOutline",
+                                 &params.AlwaysOutline, mem, ecode);
+    ecode = psdf_put_embed_param(plist, "~NeverOutline", ".NeverOutline",
+                                 &params.NeverOutline, mem, ecode);
 
     if (ecode < 0) {
         code = ecode;

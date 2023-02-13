@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -159,6 +159,11 @@ typedef struct psdf_distiller_params_s {
 
     psdf_image_params MonoImage;
 
+    /* Font outlining parameters */
+
+    gs_param_string_array AlwaysOutline;
+    gs_param_string_array NeverOutline;
+
     /* Font embedding parameters */
 
     gs_param_string_array AlwaysEmbed;
@@ -259,6 +264,8 @@ extern const stream_template s_zlibE_template;
     }
 
 #define psdf_font_param_defaults\
+    {0},	    /* AlwaysOutline (array of names) */ \
+    {0},	    /* NeverOutline (array of names) */ \
     {0},	    /* AlwaysEmbed (array of names) */ \
     {0},	    /* NeverEmbed (array of names) */ \
     cefp_Warning,   /* CannotEmbedFontPolicy */ \
@@ -336,6 +343,8 @@ extern_st(st_device_psdf);
                 params.GrayImage.Dict),\
     GC_OBJ_ELT2(gx_device_psdf, params.MonoImage.ACSDict,\
                 params.MonoImage.Dict),\
+    GC_OBJ_ELT2(gx_device_psdf, params.AlwaysOutline.data,\
+                params.NeverOutline.data),\
     GC_OBJ_ELT2(gx_device_psdf, params.AlwaysEmbed.data,\
                 params.NeverEmbed.data),\
     GC_CONST_STRING_ELT(gx_device_psdf, params.PSDocOptions)\
