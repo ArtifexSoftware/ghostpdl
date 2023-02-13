@@ -105,8 +105,42 @@ The options in the command line may include any switches that may be used with t
 ``-dUNROLLFORMS``
    When converting from PostScript, :title:`pdfwrite` (and :title:`ps2write`) preserve the use of Form resources as Form XObjects in the output. Some badly written PostScript can cause this to produce incorrect output (the Quality Logic CET tests for example). By setting this flag, forms will be unrolled and stored in the output each time they are used, which avoids the problems. Note that the output file will of course be larger this way. We do not attempt to preserve Form XObjects from PDF files, unless they are associated with transparency groups.
 
+
+.. _VectorDevices_NoOutputFonts:
+
 ``-dNoOutputFonts``
    Ordinarily the :title:`pdfwrite` device family goes to considerable lengths to preserve fonts from the input as fonts in the output. However in some highly specific cases it can be useful to have the text emitted as linework/bitmaps instead. Setting this switch will prevent these devices from emitting any fonts, all text will be stored as vectors (or bitmaps in the case of bitmapped fonts) in the page content stream. Note that this will produce larger output which will process more slowly, render differently and particularly at lower resolution produce less consistent text rendering. Use with caution.
+
+  **PostScript device parameters**
+
+  These controls can only be set from PostScript as they require a PostScript array to contain the names of the fonts.
+
+
+  ``AlwaysOutline``
+    Similar to the :ref:`-dNoOutputFonts<VectorDevices_NoOutputFonts>` control, this can be used to control whether text is converted into linework or preserved as a font, based on the name. Text using a font which is listed in the ``AlwaysOutline`` array will always be converted into linework and the font will not be embedded in the output.
+
+    Example usage:
+
+    .. code-block:: c
+
+      gs -sDEVICE=pdfwrite -o out.pdf -c "<< /AlwaysOutline [/Calibri (Comic Sans) cvn] >> setdistillerparams" -f input.pdf
+
+
+  ``NeverOutline``
+    Associated with the :ref:`-dNoOutputFonts<VectorDevices_NoOutputFonts>` control, this can be used to control whether text is converted into linework or preserved as a font, based on the name. When :ref:`-dNoOutputFonts<VectorDevices_NoOutputFonts>` is set to `true`, text using a font which is listed in the ``NeverOutline`` array will not be converted into linework but will continue to use a font, which will be embedded in the output, subject to the embedding rules.
+
+    Example usage:
+
+    .. code-block:: c
+
+      gs -sDEVICE=pdfwrite -o out.pdf -dNoOutputFonts -c"<< /NeverOutline [/Calibri (Conic Sans) cvn] >> setdistillerparams" -f input.pdf
+
+
+    .. note::
+
+      When using ``NeverOutline``, if :ref:`-dNoOutputFonts<VectorDevices_NoOutputFonts>` is not set to `true` then this control will have no effect.
+
+
 
 ``-dCompressFonts=boolean``
    Defines whether :title:`pdfwrite` will compress embedded fonts in the output. The default value is true; the false setting is intended only for debugging as it will result in larger output.
