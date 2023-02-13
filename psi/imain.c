@@ -1284,7 +1284,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int env_code)
             gs_main_run_string(minst,
                 "$error /dstack undef \
                  $error /estack undef \
-                 $error /ostack undef",
+                 $error /ostack undef \
+                 serverdict /.jobsavelevel get 0 eq {/quit} {/stop} ifelse \
+                 .systemvar exec",
                  0 , &exit_code, &error_object);
 
             ref_stack_clear(&o_stack);
