@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -247,8 +247,8 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
 /********************************************************************************/
 
 static int win_pr2_getdc(gx_device_win_pr2 * dev);
-static int win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode);
-static int win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode);
+static int win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODEW pdevmode);
+static int win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODEW pdevmode);
 static int win_pr2_print_setup_interaction(gx_device_win_pr2 * dev, int mode);
 static int win_pr2_write_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
 static int win_pr2_read_user_settings(gx_device_win_pr2 * dev, gs_param_list * plist);
@@ -262,7 +262,7 @@ win_pr2_open(gx_device * dev)
 {
     int code, code1;
     int depth;
-    PRINTDLG pd;
+    PRINTDLGW pd;
     POINT offset;
     POINT size;
     float m[4];
@@ -279,14 +279,14 @@ win_pr2_open(gx_device * dev)
         /* The user has already had the opportunity to choose the output */
         /* file interactively. Just use the specified parameters. */
 
-        LPDEVMODE devmode = (LPDEVMODE) GlobalLock(wdev->win32_hdevmode);
+        LPDEVMODEW devmode = (LPDEVMODEW) GlobalLock(wdev->win32_hdevmode);
         LPDEVNAMES devnames = (LPDEVNAMES) GlobalLock(wdev->win32_hdevnames);
 
-        const char* driver = (char*)(devnames)+(devnames->wDriverOffset);
-        const char* device = (char*)(devnames)+(devnames->wDeviceOffset);
-        const char* output = (char*)(devnames)+(devnames->wOutputOffset);
+        const WCHAR* driver = (WCHAR*)(devnames)+(devnames->wDriverOffset);
+        const WCHAR* device = (WCHAR*)(devnames)+(devnames->wDeviceOffset);
+        const WCHAR* output = (WCHAR*)(devnames)+(devnames->wOutputOffset);
 
-        wdev->hdcprn = CreateDC(driver, device, output, devmode);
+        wdev->hdcprn = CreateDCW(driver, device, output, devmode);
 
         GlobalUnlock(wdev->win32_hdevmode);
         GlobalUnlock(wdev->win32_hdevnames);
@@ -299,7 +299,7 @@ win_pr2_open(gx_device * dev)
         /* couldn't get a printer from -sOutputFile= */
         /* Prompt with dialog box */
 
-        LPDEVMODE devmode = NULL;
+        LPDEVMODEW devmode = NULL;
         memset(&pd, 0, sizeof(pd));
 
         pd.lStructSize = sizeof(pd);
@@ -311,7 +311,7 @@ win_pr2_open(gx_device * dev)
         pd.nToPage = wdev->user_page_end;
         pd.nCopies = wdev->user_copies;
 
-        if (!PrintDlg(&pd)) {
+        if (!PrintDlgW(&pd)) {
             /* device not opened - exit ghostscript */
 	  return_error(gs_error_Fatal);	/* exit Ghostscript cleanly */
         }
@@ -965,11 +965,11 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
           || (old_paper  != wdev->user_paper)
           || (old_mx_dpi != wdev->max_dpi) ) {
 
-            LPDEVMODE pdevmode = GlobalLock(wdev->win32_hdevmode);
+            LPDEVMODEW pdevmode = GlobalLock(wdev->win32_hdevmode);
 
             if (pdevmode) {
                 win_pr2_update_win(wdev, pdevmode);
-                ResetDC(wdev->hdcprn, pdevmode);
+                ResetDCW(wdev->hdcprn, pdevmode);
                 GlobalUnlock(pdevmode);
             }
         }
@@ -988,7 +988,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     char driverbuf[512], *dbuflast = NULL;
     char *driver;
     char *output;
-    char *devcap;
+    LPWSTR devcap;
     int devcapsize;
     int devmode_size;
 
@@ -998,9 +998,16 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     int paperwidth, paperheight;
     int orientation;
     int papersize;
-    char papername[64];
-    LPDEVMODE podevmode, pidevmode;
-    HANDLE hprinter;
+    WCHAR papername[64];
+    LPDEVMODEW podevmode = NULL, pidevmode = NULL;
+    HANDLE hprinter = NULL;
+
+    /* fall back to prompting user */
+    int result = FALSE;
+
+    WCHAR* unidev = NULL;
+    WCHAR* unidriver = NULL;
+    WCHAR* unioutput = NULL;
 
     /* first try to derive the printer name from -sOutputFile= */
     /* is printer if name prefixed by \\spool\ or by %printer% */
@@ -1011,7 +1018,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         device = wdev->fname + 9;	/* skip over %printer% */
         wdev->use_old_spool_name = false;
     } else {
-        return FALSE;
+        goto cleanup;
     }
 
     /* now try to match the printer name against the [Devices] section */
@@ -1020,15 +1027,14 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         wchar_t *devices;
         wchar_t *p;
         int devices_size = 128, returned_length = 0;
-        wchar_t *unidev = malloc(gp_utf8_to_uint16(NULL, device)*sizeof(wchar_t));
+        unidev = malloc(gp_utf8_to_uint16(NULL, device)*sizeof(wchar_t));
         if (unidev == NULL)
-            return FALSE;
+            goto cleanup;
         gp_utf8_to_uint16(unidev, device);
         do {
             devices = gs_malloc(wdev->memory, devices_size, 1, "win_pr2_getdc");
             if (devices == (wchar_t *)NULL) {
-                free(unidev);
-                return FALSE;
+                goto cleanup;
             }
             returned_length = GetProfileStringW(L"Devices", NULL, L"", devices, devices_size / sizeof(wchar_t));
             returned_length *= sizeof(wchar_t);
@@ -1049,45 +1055,50 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
             p = NULL;
         gs_free(wdev->memory, devices, devices_size, 1, "win_pr2_getdc");
         if (p == NULL) {
-            free(unidev);
-            return FALSE;  /* doesn't match an available printer */
+            goto cleanup;  /* doesn't match an available printer */
         }
 
         /* the printer exists, get the remaining information from win.ini */
-        GetProfileStringW(L"Devices", unidev, L"", unidrvbuf, sizeof(unidrvbuf));
-        free(unidev);
+        GetProfileStringW(L"Devices", unidev, L"", unidrvbuf, sizeof(unidrvbuf) / sizeof(unidrvbuf[0]));
         i = gp_uint16_to_utf8(NULL, unidrvbuf);
         if (i < 0 || i > sizeof(driverbuf))
-            return FALSE;
+            goto cleanup;
         gp_uint16_to_utf8(driverbuf, unidrvbuf);
     }
     driver = gs_strtok(driverbuf, ",", &dbuflast);
     output = gs_strtok(NULL, ",", &dbuflast);
 
+    unidriver = malloc(gp_utf8_to_uint16(NULL, driver) * sizeof(wchar_t));
+    if (unidriver == NULL)
+        goto cleanup;
+    gp_utf8_to_uint16(unidriver, driver);
+
+    unioutput = malloc(gp_utf8_to_uint16(NULL, output) * sizeof(wchar_t));
+    if (unioutput == NULL)
+        goto cleanup;
+    gp_utf8_to_uint16(unioutput, output);
+
     if (!gp_OpenPrinter(device, &hprinter))
-        return FALSE;
-    devmode_size = DocumentProperties(NULL, hprinter, device, NULL, NULL, 0);
+        goto cleanup;
+    devmode_size = DocumentPropertiesW(NULL, hprinter, unidev, NULL, NULL, 0);
     if ((podevmode = gs_malloc(wdev->memory, devmode_size, 1, "win_pr2_getdc"))
-        == (LPDEVMODE) NULL) {
-        ClosePrinter(hprinter);
-        return FALSE;
+        == (LPDEVMODEW) NULL) {
+        goto cleanup;
     }
-    if ((pidevmode = gs_malloc(wdev->memory, devmode_size, 1, "win_pr2_getdc"))		== (LPDEVMODE) NULL) {
-        gs_free(wdev->memory, podevmode, devmode_size, 1, "win_pr2_getdc");
-        ClosePrinter(hprinter);
-        return FALSE;
+    if ((pidevmode = gs_malloc(wdev->memory, devmode_size, 1, "win_pr2_getdc"))		== (LPDEVMODEW) NULL) {
+        goto cleanup;
     }
-    DocumentProperties(NULL, hprinter, device, podevmode, NULL, DM_OUT_BUFFER);
+    DocumentPropertiesW(NULL, hprinter, unidev, podevmode, NULL, DM_OUT_BUFFER);
 
     /* now find out what paper sizes are available */
-    devcapsize = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERSIZE, NULL, NULL);
+    devcapsize = DeviceCapabilitiesW(unidev, unioutput, DC_PAPERSIZE, NULL, NULL);
     devcapsize *= sizeof(POINT);
-    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
-        return FALSE;
-    n = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERSIZE, devcap, NULL);
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPWSTR) NULL)
+        goto cleanup;
+    n = DeviceCapabilitiesW(unidev, unioutput, DC_PAPERSIZE, devcap, NULL);
     paperwidth = (int)(wdev->MediaSize[0] * 254 / 72);
     paperheight = (int)(wdev->MediaSize[1] * 254 / 72);
-    papername[0] = '\0';
+    papername[0] = L'\0';
     papersize = 0;
     paperindex = -1;
     orientation = 0;
@@ -1119,23 +1130,23 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     /* get the dmPaperSize */
-    devcapsize = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERS, NULL, NULL);
+    devcapsize = DeviceCapabilitiesW(unidev, unioutput, DC_PAPERS, NULL, NULL);
     devcapsize *= sizeof(WORD);
-    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
-        return FALSE;
-    n = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERS, devcap, NULL);
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPWSTR) NULL)
+        goto cleanup;
+    n = DeviceCapabilitiesW(unidev, unioutput, DC_PAPERS, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
         papersize = ((WORD *) devcap)[paperindex];
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     /* get the paper name */
-    devcapsize = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERNAMES, NULL, NULL);
-    devcapsize *= 64;
-    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPBYTE) NULL)
-        return FALSE;
-    n = DeviceCapabilities(podevmode->dmDeviceName, output, DC_PAPERNAMES, devcap, NULL);
+    devcapsize = DeviceCapabilitiesW(unidev, unioutput, DC_PAPERNAMES, NULL, NULL);
+    devcapsize *= 64 * sizeof(WCHAR);
+    if ((devcap = gs_malloc(wdev->memory, devcapsize, 1, "win_pr2_getdc")) == (LPWSTR) NULL)
+        goto cleanup;
+    n = DeviceCapabilitiesW(unidev, unioutput, DC_PAPERNAMES, devcap, NULL);
     if ((paperindex >= 0) && (paperindex < n))
-        strcpy(papername, devcap + paperindex * 64);
+        wcscpy(papername, devcap + paperindex * 64);
     gs_free(wdev->memory, devcap, devcapsize, 1, "win_pr2_getdc");
 
     memcpy(pidevmode, podevmode, devmode_size);
@@ -1164,7 +1175,10 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
     if (papersize) {
         wdev->user_paper = papersize;
-        strcpy (wdev->paper_name, papername);
+        i = gp_uint16_to_utf8(NULL, papername);
+        if (i < 0 || i > sizeof(wdev->paper_name))
+            goto cleanup;
+        gp_uint16_to_utf8(wdev->paper_name, papername);
     }
 
     if (paperheight && paperwidth) {
@@ -1175,38 +1189,44 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         wdev->user_media_size[1] = paperheight / 254.0 * 72.0;
     }
 
-    if (DeviceCapabilities(podevmode->dmDeviceName, output, DC_DUPLEX, NULL, NULL)) {
+    if (DeviceCapabilitiesW(unidev, unioutput, DC_DUPLEX, NULL, NULL) > 0) {
         wdev->Duplex_set = 1;
     }
 
     win_pr2_update_win(wdev, pidevmode);
 
     /* merge the entries */
-    DocumentProperties(NULL, hprinter, device, podevmode, pidevmode, DM_IN_BUFFER | DM_OUT_BUFFER);
+    DocumentPropertiesW(NULL, hprinter, unidev, podevmode, pidevmode, DM_IN_BUFFER | DM_OUT_BUFFER);
     ClosePrinter(hprinter);
+    hprinter = NULL;
 
     /* now get a DC */
-    wdev->hdcprn = CreateDC(driver, podevmode->dmDeviceName, NULL, podevmode);
+    wdev->hdcprn = CreateDCW(unidriver, unidev, NULL, podevmode);
 
     if (wdev->win32_hdevmode == NULL)
         wdev->win32_hdevmode = GlobalAlloc(0, devmode_size);
 
     if (wdev->win32_hdevmode) {
-        LPDEVMODE pdevmode = (LPDEVMODE) GlobalLock(wdev->win32_hdevmode);
+        LPDEVMODEW pdevmode = (LPDEVMODEW) GlobalLock(wdev->win32_hdevmode);
         if (pdevmode) {
             memcpy(pdevmode, podevmode, devmode_size);
             GlobalUnlock(wdev->win32_hdevmode);
         }
     }
 
-    gs_free(wdev->memory, pidevmode, devmode_size, 1, "win_pr2_getdc");
-    gs_free(wdev->memory, podevmode, devmode_size, 1, "win_pr2_getdc");
-
     if (wdev->hdcprn != (HDC) NULL)
-        return TRUE;		/* success */
+        result = TRUE;		/* success */
 
-    /* fall back to prompting user */
-    return FALSE;
+  cleanup:
+    if (pidevmode) gs_free(wdev->memory, pidevmode, devmode_size, 1, "win_pr2_getdc");
+    if (podevmode) gs_free(wdev->memory, podevmode, devmode_size, 1, "win_pr2_getdc");
+
+    if (unidev) free(unidev);
+    if (unidriver) free(unidriver);
+    if (unioutput) free(unioutput);
+
+    if (hprinter) ClosePrinter(hprinter);
+    return result;
 }
 
 /*
@@ -1215,7 +1235,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
  */
 
 static int
-win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
+win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODEW pdevmode)
 {
     if (pdevmode == 0)
         return FALSE;
@@ -1242,7 +1262,7 @@ win_pr2_update_dev(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
 }
 
 static int
-win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
+win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODEW pdevmode)
 {
     if (dev->Duplex_set > 0) {
         pdevmode->dmFields |= DM_DUPLEX;
@@ -1366,7 +1386,7 @@ win_pr2_read_user_settings(gx_device_win_pr2 * wdev, gs_param_list * plist)
                 wdev->print_copies = 1;
 
                 if (wdev->win32_hdevmode) {
-                    LPDEVMODE devmode = (LPDEVMODE) GlobalLock(wdev->win32_hdevmode);
+                    LPDEVMODEW devmode = (LPDEVMODEW) GlobalLock(wdev->win32_hdevmode);
                     if (devmode) {
                         devmode->dmCopies = wdev->user_copies;
                         devmode->dmPaperSize = wdev->user_paper;
@@ -1469,9 +1489,12 @@ error:
 static int
 win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
 {
-    PRINTDLG pd;
-    LPDEVMODE  devmode;
+    PRINTDLGW pd;
+    LPDEVMODEW  devmode;
     LPDEVNAMES devnames;
+    WCHAR* unidevname;
+    char* devname;
+    int devname_size;
 
     wdev->user_changed_settings = FALSE;
     wdev->query_user = mode;
@@ -1498,17 +1521,28 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
      * and a paper size/orientation.
      */
 
-    if (!PrintDlg(&pd)) return FALSE;
+    if (!PrintDlgW(&pd)) return FALSE;
 
-    devmode = (LPDEVMODE) GlobalLock(pd.hDevMode);
     devnames = (LPDEVNAMES) GlobalLock(pd.hDevNames);
+
+    unidevname = (WCHAR*)(devnames)+(devnames->wDeviceOffset);
+    devname_size = gp_uint16_to_utf8(NULL, unidevname);
+    devname = malloc(devname_size);
+    if (devname == NULL) {
+        GlobalUnlock(pd.hDevNames);
+        return FALSE;
+    }
+    gp_uint16_to_utf8(devname, unidevname);
+
+    devmode = (LPDEVMODEW)GlobalLock(pd.hDevMode);
 
     wdev->user_changed_settings = TRUE;
     if (wdev->use_old_spool_name) {
-        gs_snprintf(wdev->fname, prn_fname_sizeof, "\\\\spool\\%s", (char*)(devnames)+(devnames->wDeviceOffset));
+        gs_snprintf(wdev->fname, prn_fname_sizeof, "\\\\spool\\%s", devname);
     } else {
-        gs_snprintf(wdev->fname, prn_fname_sizeof, "%%printer%%%s", (char*)(devnames)+(devnames->wDeviceOffset));
+        gs_snprintf(wdev->fname, prn_fname_sizeof, "%%printer%%%s", devname);
     }
+    free(devname);
 
     if (mode == 3) {
         devmode->dmCopies = wdev->user_copies * wdev->print_copies;
@@ -1534,11 +1568,11 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
     {
         float xppinch = 0;
         float yppinch = 0;
-        const char* driver = (char*)(devnames)+(devnames->wDriverOffset);
-        const char* device = (char*)(devnames)+(devnames->wDeviceOffset);
-        const char* output = (char*)(devnames)+(devnames->wOutputOffset);
+        const WCHAR* driver = (WCHAR*)(devnames)+(devnames->wDriverOffset);
+        const WCHAR* device = (WCHAR*)(devnames)+(devnames->wDeviceOffset);
+        const WCHAR* output = (WCHAR*)(devnames)+(devnames->wOutputOffset);
 
-        HDC hic = CreateIC(driver, device, output, devmode);
+        HDC hic = CreateICW(driver, device, output, devmode);
 
         if (hic) {
             xppinch = (float)GetDeviceCaps(hic, LOGPIXELSX);
