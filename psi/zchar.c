@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -675,7 +675,8 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
     make_null(&essfont(ep));
     make_null(&esrfont(ep));
     make_op_estack(&eseproc(ep), endproc);
-    make_istruct(ep, 0, penum);
+    /* The text enumerators are always allocated in local VM */
+    make_struct(ep, iimemory_local->space, penum);
     esp = ep;
     return 0;
 }
