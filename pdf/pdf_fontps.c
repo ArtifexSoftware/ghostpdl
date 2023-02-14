@@ -206,10 +206,16 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                     for (i = 0; i < len; i += 2) {
                         hbuf[0] = s[i];
                         hbuf[1] = s[i + 1];
+                        if (!ishex(hbuf[0]) || !ishex(hbuf[1])) {
+                            code = gs_note_error(gs_error_typecheck);
+                            break;
+                        }
                         *s2++ = (decodehex(hbuf[0]) << 4) | decodehex(hbuf[1]);
                     }
-                    pdfpsbuf++; /* move past the trailing '>' */
-                    code = pdf_ps_stack_push_string(cs, s, len >> 1);
+                    if (i >= len) {
+                        pdfpsbuf++; /* move past the trailing '>' */
+                        code = pdf_ps_stack_push_string(cs, s, len >> 1);
+                    }
                 }
                 break;
             case '>': /* For hex strings, this should be handled above */
@@ -1212,6 +1218,12 @@ pdf_ps_put_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
     return code;
 }
 
+static int
+pdf_ps_closefile_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
+{
+    return bufend - buf;
+}
+
 static pdf_ps_oper_list_t ps_font_oper_list[] = {
     {PDF_PS_OPER_NAME_AND_LEN("RD"), pdf_ps_RD_oper_func},
     {PDF_PS_OPER_NAME_AND_LEN("-|"), pdf_ps_RD_oper_func},
@@ -1236,6 +1248,7 @@ static pdf_ps_oper_list_t ps_font_oper_list[] = {
     {PDF_PS_OPER_NAME_AND_LEN("for"), pdf_ps_pop4_oper_func},
     {PDF_PS_OPER_NAME_AND_LEN("put"), pdf_ps_put_oper_func},
     {PDF_PS_OPER_NAME_AND_LEN("StandardEncoding"), pdf_ps_standardencoding_oper_func},
+    {PDF_PS_OPER_NAME_AND_LEN("closefile"), pdf_ps_closefile_oper_func},
     {NULL, 0, NULL}
 };
 
