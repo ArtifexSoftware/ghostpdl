@@ -593,7 +593,6 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
                 pdfi_countup(basefont);
             }
 
-            t1f->descflags = 0;
             if (t1f->FontDescriptor != NULL) {
                 code = pdfi_dict_get_int(ctx, t1f->FontDescriptor, "Flags", &t1f->descflags);
                 if (code >= 0) {
@@ -646,18 +645,16 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             else
                 code = gs_error_undefined;
             if (code == 1) {
-                if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT) && (t1f->descflags & 4) == 0) {
-                    code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & t1f->Encoding);
-                    if (code >= 0)
-                        code = 1;
-                }
-                else if (pdfi_type_of(tmp) == PDF_DICT && (t1f->descflags & 4) != 0) {
+                if (pdfi_type_of(tmp) == PDF_DICT && (t1f->descflags & 4) != 0) {
                     code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)fpriv.u.t1.Encoding, (pdf_obj **) & t1f->Encoding);
                     if (code >= 0)
                         code = 1;
                 }
-                else
-                    code = gs_error_undefined;
+                else {
+                    code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & t1f->Encoding);
+                    if (code >= 0)
+                        code = 1;
+                }
                 pdfi_countdown(tmp);
                 tmp = NULL;
                 if (code == 1) {
