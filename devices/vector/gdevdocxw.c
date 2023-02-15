@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -253,6 +253,7 @@ docxwrite_open_device(gx_device * dev)
     dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     set_linear_color_bits_mask_shift(dev);
     dev->interpolate_control = 0;
+    dev->non_strict_bounds = 0;
 
     tdev->alloc = NULL;
     tdev->extract = NULL;
@@ -591,6 +592,7 @@ docxwrite_put_params(gx_device * dev, gs_param_list * plist)
     dev->is_open = open;
 
     dev->interpolate_control = 0;
+    dev->non_strict_bounds = 0;
 
     return 0;
 }

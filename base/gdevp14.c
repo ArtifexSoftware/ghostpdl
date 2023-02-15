@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3799,6 +3799,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
     COPY_PARAM(MaxPatternBitmap);
     COPY_PARAM(graphics_type_tag);
     COPY_PARAM(interpolate_control);
+    COPY_PARAM(non_strict_bounds);
     memcpy(&(dev->space_params), &(target->space_params), sizeof(gdev_space_params));
 
     if (dev->icc_struct == NULL) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -780,6 +780,7 @@ typedef struct gdev_pagelist_s {
         gs_graphics_type_tag_t   graphics_type_tag;   /* e.g. vector, image or text */\
         int interpolate_control;      /* default 1 (use image /Interpolate value), 0 is NOINTERPOLATE. */\
                                       /* > 1 limits interpolation, < 0 forces interpolation */\
+        int non_strict_bounds;        /* If set, callers cannot rely on clipping fills etc to declared device bounds. */\
         gx_page_device_procs page_procs;       /* must be last */\
                 /* end of std_device_body */\
         gx_device_procs procs	/* object procedures */

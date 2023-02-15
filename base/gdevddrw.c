@@ -422,7 +422,7 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
     bool fill_direct = color_writes_pure(pdevc, lop);
 
     if (swap_axes) {
-        if (dev->width != 0)
+        if (dev->width != 0 && dev->non_strict_bounds == 0)
         {
             /* Some devices init max->width to be int_max, which overflows when converted to fixed. */
             int dw = dev->width > max_int_in_fixed ? max_int_in_fixed : dev->width;
@@ -442,7 +442,7 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
         else
             return gx_fill_trapezoid_as_nd(dev, left, right, ybot, ytop, 0, pdevc, lop);
     } else {
-        if (dev->height != 0)
+        if (dev->height != 0 && dev->non_strict_bounds == 0)
         {
             /* Some devices init max->height to be int_max, which overflows when converted to fixed. */
             int dh = dev->height > max_int_in_fixed ? max_int_in_fixed : dev->height;

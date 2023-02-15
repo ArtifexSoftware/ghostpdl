@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -135,6 +135,7 @@
         0/*Profile Array*/,\
         0/* graphics_type_tag default GS_UNTOUCHED_TAG */,\
         1/* interpolate_control default 1, uses image /Interpolate flag, full device resolution */,\
+        0/*non_strict_bounds - default is to be strict*/,\
         { ins, bp, ep }
 #define std_device_part3_()\
         std_device_part3_sc(gx_default_install, gx_default_begin_page, gx_default_end_page)

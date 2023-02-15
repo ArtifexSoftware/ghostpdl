@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1390,6 +1390,7 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
         set_dev_proc(cwdev, set_graphics_type_tag, gx_forward_set_graphics_type_tag);
         cwdev->graphics_type_tag = target->graphics_type_tag;		/* initialize to same as target */
         cwdev->interpolate_control = target->interpolate_control;	/* initialize to same as target */
+        cwdev->non_strict_bounds = target->non_strict_bounds;	        /* initialize to same as target */
 
         /* to be set by caller: cwdev->finalize = finalize; */
 
