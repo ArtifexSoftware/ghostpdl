@@ -208,7 +208,6 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
     gs_fixed_rect bbox;
     gs_int_rect ibox;
     uint width, raster, band_space;
-    uint dev_width, dev_height;
     uint height, height2;
     gs_log2_scale_point log2_scale;
     gs_memory_t *mem;
@@ -224,7 +223,6 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
     if ((ibox.q.y <= ibox.p.y) || (ibox.q.x <= ibox.p.x))
         return 2;
     width = (ibox.q.x - ibox.p.x) << log2_scale.x;
-    dev_width = ibox.q.x << log2_scale.x;
     raster = bitmap_raster(width);
     band_space = raster << log2_scale.y;
     height2 = (ibox.q.y - ibox.p.y);
@@ -234,7 +232,6 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
     if (height > height2)
         height = height2;
     height <<= log2_scale.y;
-    dev_height = ibox.q.y << log2_scale.y;
     mem = pgs->memory;
     mdev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
                            "alpha_buffer_init");
@@ -247,9 +244,13 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
     }
     gs_make_mem_abuf_device(mdev, mem, dev, &log2_scale,
                             alpha_bits, ibox.p.x << log2_scale.x, devn);
-    mdev->width = dev_width;
-    mdev->height = dev_height;
+    mdev->width = width;
+    mdev->height = height;
     mdev->bitmap_memory = mem;
+    /* Set the horrible hacky flag that tells people that the width/height here
+     * have been set for *our* convenience, rather than accurately depicting the
+     * size of the device for callers. */
+    mdev->non_strict_bounds = 1;
     if ((*dev_proc(mdev, open_device)) ((gx_device *) mdev) < 0) {
         /* No room for bits, punt. */
         gs_free_object(mem, mdev, "alpha_buffer_init");

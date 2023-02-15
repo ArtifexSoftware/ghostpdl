@@ -427,7 +427,7 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
             /* Some devices init max->width to be int_max, which overflows when converted to fixed. */
             int dw = dev->width > max_int_in_fixed ? max_int_in_fixed : dev->width;
             if (ytop < 0)
-                 return 0;
+                return 0;
             if (ybot < 0)
                 ybot = 0;
             dw = int2fixed(dw);
