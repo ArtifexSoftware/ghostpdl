@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2022 Artifex Software, Inc.
+/* Copyright (C) 2020-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -397,21 +397,46 @@ static int pdfi_pdfmark_add_Page_View(pdf_context *ctx, pdf_dict *link_dict, pdf
         page_num = ((pdf_num *)page_dict)->value.i;
     } else {
         if (pdfi_type_of(page_dict) != PDF_DICT) {
-            code = gs_note_error(gs_error_typecheck);
-            goto exit;
+            if (pdfi_type_of(page_dict) != PDF_NULL) {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+            page_num = 0;
+        } else {
+            /* Find out which page number this is */
+            code = pdfi_page_get_number(ctx, page_dict, &page_num);
+            if (code < 0) goto exit;
         }
-
-        /* Find out which page number this is */
-        code = pdfi_page_get_number(ctx, page_dict, &page_num);
-        if (code < 0) goto exit;
     }
 
     page_num += ctx->Pdfmark_InitialPage;
 
-    /* Add /Page key to the link_dict
-     * Of course pdfwrite is numbering its pages starting at 1, because... of course :(
+    if (pdfi_type_of(page_dict) != PDF_NULL)
+        /* Add /Page key to the link_dict
+         * Of course pdfwrite is numbering its pages starting at 1, because... of course :(
+         */
+        code = pdfi_dict_put_int(ctx, link_dict, "Page", page_num+1);
+    else
+        code = pdfi_dict_put_int(ctx, link_dict, "Page", 0);
+
+    if (code < 0)
+        goto exit;
+
+    /* Get and check the destination type, again without storing the deref in the array.
+     * In this case a memory leak  can only happen if the destination
+     * is an invalid type, but lets take no chances.
      */
-    code = pdfi_dict_put_int(ctx, link_dict, "Page", page_num+1);
+    code = pdfi_array_get_no_store_R(ctx, dest_array, 1, &temp_obj);
+    if (code < 0) goto exit;
+
+    if (pdfi_type_of(temp_obj) != PDF_NAME) {
+        pdfi_countdown(temp_obj);
+        temp_obj = NULL;
+        code = gs_note_error(gs_error_typecheck);
+        goto exit;
+    }
+    pdfi_countdown(temp_obj);
+    temp_obj = NULL;
 
     /* Build an array for /View, out of the remainder of the Dest entry */
     array_size = pdfi_array_size(dest_array) - 1;
