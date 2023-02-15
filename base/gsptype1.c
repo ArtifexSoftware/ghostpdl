@@ -48,6 +48,9 @@
 #define ADJUST_SCALE_BY_GS_TRADITION 0  /* Old code = 1 */
 #define ADJUST_AS_ADOBE 1               /* Old code = 0 *//* This one is closer to Adobe. */
 
+#define fastfloor(x) (((int)(x)) - (((x)<0) && ((x) != (float)(int)(x))))
+#define fastfloord(x) (((int)(x)) - (((x)<0) && ((x) != (double)(int)(x))))
+
 /* GC descriptors */
 private_st_pattern1_template();
 public_st_pattern1_instance();
@@ -129,6 +132,72 @@ gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
 {
     return gs_pattern1_make_pattern(pcc, (const gs_pattern_template_t *)pcp,
                                     pmat, pgs, mem);
+}
+
+/* Limited accuracy due to Floating point implementation limits can
+ * cause us headaches due to values not being representable.
+ * This is particular bad when we start using matrix maths (and
+ * inverse matrixes in particular) to map bboxes into device space.
+ * We therefore have a set of functions to 'sanely' round stuff.
+ * Essentially, any device space location that is sufficiently
+ * close to an exact pixel boundary will be clamped to that boundary.
+ */
+#define SANE_THRESHOLD 0.001f
+
+static int
+sane_ceil(float f)
+{
+    int i = (int)f;
+
+    if (f - i < SANE_THRESHOLD)
+        return i;
+    return i+1;
+}
+static float
+sane_clamp_float(float f)
+{
+    int i = (int)fastfloor(f);
+
+    if (f - i < SANE_THRESHOLD)
+        return (float)i;
+    else if (f - i > (1-SANE_THRESHOLD))
+        return (float)(i+1);
+    return f;
+}
+static double
+sane_clamp_double(double d)
+{
+    int i = (int)fastfloord(d);
+
+    if (d - i < SANE_THRESHOLD)
+        return (double)i;
+    else if (d - i > (1-SANE_THRESHOLD))
+        return (double)(i+1);
+    return d;
+}
+static void
+sane_clamp_rect(gs_rect *r)
+{
+    double x0 = sane_clamp_double(r->p.x);
+    double y0 = sane_clamp_double(r->p.y);
+    double x1 = sane_clamp_double(r->q.x);
+    double y1 = sane_clamp_double(r->q.y);
+
+    /* Be careful not to round stuff to zero, because this breaks fts_15_1529.pdf */
+    if (x0 != x1)
+        r->p.x = x0, r->q.x = x1;
+    if (y0 != y1)
+        r->p.y = y0, r->q.y = y1;
+}
+static void
+sane_clamp_matrix(gs_matrix *m)
+{
+    m->xx = sane_clamp_float(m->xx);
+    m->xy = sane_clamp_float(m->xy);
+    m->yx = sane_clamp_float(m->yx);
+    m->yy = sane_clamp_float(m->yy);
+    m->tx = sane_clamp_float(m->tx);
+    m->ty = sane_clamp_float(m->ty);
 }
 static int
 gs_pattern1_make_pattern(gs_client_color * pcc,
@@ -219,8 +288,8 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     } else if (inst.templat.TilingType == 2) {
         /* Always round up for TilingType 2, as we don't want any
          * content to be lost. */
-        inst.size.x = (int)ceil(bbw);
-        inst.size.y = (int)ceil(bbh);
+        inst.size.x = sane_ceil(bbw);
+        inst.size.y = sane_ceil(bbh);
     } else {
         /* For TilingType's other than 2 allow us to round up or down
          * to whatever is nearer. The scale we do later prevents us
@@ -471,6 +540,9 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
     code = gs_bbox_transform_inverse(&dev_page, pmat, &pat_page);
     if (code < 0)
         return code;
+    /* So pat_page is the bbox for the region in pattern space that will
+     * be mapped forwards to cover the page. We want to find which tiles
+     * are required to cover this area. */
     /*
      * Determine the location of the pattern origin in device coordinates.
      */
@@ -479,6 +551,15 @@ clamp_pattern_bbox(gs_pattern1_instance_t * pinst, gs_rect * pbbox,
      * Determine our starting point.  We start with a postion that puts the
      * pattern below and to the left of the page (in pattern space) and scan
      * until the pattern is above and right of the page.
+     *
+     * So the right hand edge of each tile is:
+     *
+     *  xstep * n + pinst->templat.BBox.q.x
+     *
+     * and we want the largest n s.t. that is <= pat_page.p.x. i.e.
+     *
+     *  xstep * n <= pat_page.p.x - pinst->templat.BBox.q.x < xstep *n+1
+     *  n <= (pat_page.p.x - pinst->templat.BBox.q.x) / xstep < n+1
      */
     ixpat = (int) floor((pat_page.p.x - pinst->templat.BBox.q.x) / xstep);
     iystart = (int) floor((pat_page.p.y - pinst->templat.BBox.q.y) / ystep);
@@ -605,6 +686,8 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst,
     if (code < 0)
         return code;
 
+    sane_clamp_rect(pbbox);
+
     *pbbw = pbbox->q.x - pbbox->p.x;
     *pbbh = pbbox->q.y - pbbox->p.y;
 
@@ -661,6 +744,8 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst,
     pinst->step_matrix.xy = xy;
     pinst->step_matrix.yx = yx;
     pinst->step_matrix.yy = yy;
+
+    sane_clamp_matrix(&pinst->step_matrix);
 
     /*
      * Some applications produce patterns that are larger than the page.
