@@ -237,6 +237,9 @@ subdivide_patch_fill(patch_fill_state_t *pfs, patch_curve_t c[4])
     int v0, v1;
     int changed;
 
+    if (pfs->rect.p.x >= pfs->rect.q.x || pfs->rect.p.y >= pfs->rect.q.y)
+        return 0;
+
     /* On entry we have a patch:
      *   c[0].vertex  c[1].vertex
      *
@@ -982,6 +985,9 @@ subdivide_patch_fill_floats(patch_fill_state_t *pfs, corners_and_curves *cc)
     double m0, m1;
     int v0, v1;
     int changed;
+
+    if (pfs->rect.p.x >= pfs->rect.q.x || pfs->rect.p.y >= pfs->rect.q.y)
+        return 0;
 
     /* On entry we have a patch:
      *   c[0].vertex  c[1].vertex
