@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2964,6 +2964,7 @@ read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
     sread_string(&s, pcb->ptr, pcb->end - pcb->ptr);
     code = image_type->sget(pic, &s, pcs);
     pcb->ptr = sbufptr(&s);
+    pic->imagematrices_are_untrustworthy = 0;
     return code;
 }
 
