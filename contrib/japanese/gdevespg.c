@@ -305,9 +305,11 @@ escpage_paper_set(gx_device_printer * pdev, gp_file * fp)
         hp = (int)(width / 72.0 * pdev->x_pixels_per_inch);
     }
 
-    for (pt = epagPaperTable; pt->escpage > 0; pt++)
-        if (pt->width == w && pt->height == h)
+    for (pt = epagPaperTable; pt->escpage > 0; pt++) {
+        if (w >= pt->width - 5 && w <= pt->width + 5 &&
+            h >= pt->height - 5 && h <= pt->height + 5)
             break;
+    }
 
     gp_fprintf(fp, "%c%d", GS, pt->escpage);
     if (pt->escpage < 0)
