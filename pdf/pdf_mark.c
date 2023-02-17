@@ -753,9 +753,9 @@ error:
     return code;
 }
 
-static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, pdf_obj **Name, bool is_root)
+static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, int len, pdf_obj **Name, bool is_root)
 {
-    int i = 0, len = strlen(str), code = 0;
+    int i = 0, code = 0;
     pdf_string *StrKey = NULL;
     pdf_array *NamesArray = NULL;
     pdf_dict *Kid = NULL;
@@ -798,7 +798,7 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
             if (code < 0)
                 goto error;
 
-            if (StrKey->length == len && strncmp((const char *)StrKey->data, str, len) == 0) {
+            if (StrKey->length == len && memcmp((const char *)StrKey->data, str, len) == 0) {
                 code = pdfi_array_get(ctx, NamesArray, (i * 2) + 1, (pdf_obj **)Name);
                 goto error;
             }
@@ -819,7 +819,7 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
         if (code < 0)
             goto error;
 
-        code = pdfi_get_name_from_node(ctx, Kid, str, Name, false);
+        code = pdfi_get_name_from_node(ctx, Kid, str, len, Name, false);
         pdfi_countdown(Kid);
         Kid = NULL;
         if (code == 0)
@@ -873,7 +873,7 @@ static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
         str[len] = 0;
     }
 
-    code = pdfi_get_name_from_node(ctx, Dests, str, Dest, true);
+    code = pdfi_get_name_from_node(ctx, Dests, str, len, Dest, true);
 
 error:
     if (pdfi_type_of(Named) == PDF_NAME)
