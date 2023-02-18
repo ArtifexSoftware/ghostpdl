@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -524,7 +524,7 @@ smask_image_check(gx_device_pdf * pdev, pdf_resource_t *pres0, pdf_resource_t *p
                 if (p > v->contents.chars.data + v->contents.chars.size)
                     return 0;
                 ix *= 10;
-                ix += (*p) - 0x30;
+                ix += (*p++) - 0x30;
             }
             if (ix != pdev->image_mask_id)
                 return 0;
