@@ -1044,15 +1044,31 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     }
 
     if (ecode >= 0 &&
-            (ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION) {
-        /* Use utility routine to handle devn parameters */
-        ecode = devn_put_params(dev, plist, pdevn_params, pequiv_colors);
-        /*
-         * If we support_devn, setting MaxSeparations or PageSpotColors changed the
-         * color_info.depth in devn_put_params, but we always use 64bpp, so reset it
-         * to the correct value.
-         */
-        ddev->color_info.depth = ARCH_SIZEOF_COLOR_INDEX * 8;
+        (ddev->nFormat & DISPLAY_COLORS_MASK) == DISPLAY_COLORS_SEPARATION) {
+        if (ddev->nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED))
+        {
+            /* If we are in planar mode, then we only want to allocate as many
+             * separations as we need (which may be 'MAX' in the PS case where
+             * we don't know how many we need). This means that we might want to
+             * close the device in order to reopen it with the revised number
+             * later on. Use a utility function for this. */
+            int n;
+            ecode = devn_generic_put_params(dev, plist, pdevn_params, pequiv_colors, 0);
+            n = pdevn_params->num_std_colorant_names + pdevn_params->separations.num_separations;
+            if (n > ddev->color_info.max_components)
+                n = ddev->color_info.max_components;
+            ddev->color_info.num_components = n;
+            ddev->color_info.depth = n * 8;
+            is_open = ddev->is_open;
+        }
+        else
+        {
+            /* In the chunky case, we always just use ARCH_SIZEOF_COLOR_INDEX (8) spots.
+             * Setting MaxSeparations or PageSpotColors will change the color_info.depth
+             * in devn_put_params, so we need to put it back to 64bpp. */
+            ecode = devn_put_params(dev, plist, pdevn_params, pequiv_colors);
+            ddev->color_info.depth = ARCH_SIZEOF_COLOR_INDEX * 8;
+        }
     }
 
     if (ecode >= 0) {
@@ -1303,6 +1319,11 @@ display_spec_op(gx_device *dev, int op, void *data, int datasize)
     gx_device_display *ddev = (gx_device_display *)dev;
 
     if (op == gxdso_supports_devn || op == gxdso_skip_icc_component_validation) {
+        /* If we're SEPARATION, then we certainly support devn. */
+        if (ddev->nFormat & DISPLAY_COLORS_SEPARATION)
+            return 1;
+        /* Not sure about this test. Historically this is what we've done, but
+         * it fails for planar SEPARATIONS because we're using mem_planar_fill_rectangle_hl_color. */
         return (dev_proc(dev, fill_rectangle_hl_color) == display_fill_rectangle_hl_color);
     }
     if (op == gxdso_reopen_after_init) {
@@ -1449,6 +1470,7 @@ display_free_bitmap(gx_device_display * ddev)
         gx_device_clist_reader * const pcrdev = &pclist_dev->reader;
         /* Close cmd list device & point to the storage */
         clist_close( (gx_device *)pcldev );
+        gs_free_object(ddev->memory->non_gc_memory, ddev->buf, "clist cmd buffer");
         ddev->buf = NULL;
         ddev->buffer_space = 0;
 
@@ -1615,6 +1637,12 @@ display_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
 
     /* Planar case */
     mdev.color_info = target->color_info;
+    if (ddev->nFormat & DISPLAY_COLORS_SEPARATION)
+    {
+        /* For planar separations, we use the real number of comps
+         * with 8 bits per plane. */
+        mdev.color_info.depth = mdev.color_info.num_components * 8;
+    }
     mdev.pad = target->pad;
     mdev.log2_align_mod = target->log2_align_mod;
     mdev.is_planar = target->is_planar;
@@ -1885,9 +1913,10 @@ typedef enum DISPLAY_MODEL_e {
  */
 static void
 set_color_info(gx_device_color_info * pdci, DISPLAY_MODEL model,
-    int nc, int depth, int maxgray, int maxcolor)
+    int nc, int maxc, int depth, int maxgray, int maxcolor)
 {
-    pdci->num_components = pdci->max_components = nc;
+    pdci->num_components = nc;
+    pdci->max_components = maxc;
     pdci->depth = depth;
     pdci->gray_index = 0;
     pdci->max_gray = maxgray;
@@ -2084,26 +2113,36 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
             return_error(gs_error_rangecheck);
     }
 
+    switch (nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED))
+    {
+        case DISPLAY_CHUNKY:
+            ddev->is_planar = 0;
+            break;
+        default:
+            ddev->is_planar = 1;
+            break;
+    }
+
     switch (nFormat & DISPLAY_COLORS_MASK) {
         case DISPLAY_COLORS_NATIVE:
             switch (nFormat & DISPLAY_DEPTH_MASK) {
                 case DISPLAY_DEPTH_1:
                     /* 1bit/pixel, black is 1, white is 0 */
-                    set_color_info(&dci, DISPLAY_MODEL_GRAY, 1, 1, 1, 0);
+                    set_color_info(&dci, DISPLAY_MODEL_GRAY, 1, 1, 1, 1, 0);
                     dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
                     set_gray_color_procs(pdev, gx_b_w_gray_encode,
                                                 gx_default_b_w_map_color_rgb);
                     break;
                 case DISPLAY_DEPTH_4:
                     /* 4bit/pixel VGA color */
-                    set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 4, 3, 2);
+                    set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 3, 4, 3, 2);
                     dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
                     set_rgb_color_procs(pdev, display_map_rgb_color_device4,
                                                 display_map_color_rgb_device4);
                     break;
                 case DISPLAY_DEPTH_8:
                     /* 8bit/pixel 96 color palette */
-                    set_color_info(&dci, DISPLAY_MODEL_RGBK, 4, 8, 31, 3);
+                    set_color_info(&dci, DISPLAY_MODEL_RGBK, 4, 4, 8, 31, 3);
                     dci.separable_and_linear = GX_CINFO_SEP_LIN_NONE;
                     set_rgbk_color_procs(pdev, display_encode_color_device8,
                                                 display_decode_color_device8);
@@ -2113,9 +2152,9 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
                     /* Is maxgray = maxcolor = 63 correct? */
                     if ((ddev->nFormat & DISPLAY_555_MASK)
                         == DISPLAY_NATIVE_555)
-                        set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 16, 31, 31);
+                        set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 3, 16, 31, 31);
                     else
-                        set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 16, 63, 63);
+                        set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 3, 16, 63, 63);
                     set_rgb_color_procs(pdev, display_map_rgb_color_device16,
                                                 display_map_color_rgb_device16);
                     break;
@@ -2125,7 +2164,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
             dci.gray_index = GX_CINFO_COMP_NO_INDEX;
             break;
         case DISPLAY_COLORS_GRAY:
-            set_color_info(&dci, DISPLAY_MODEL_GRAY, 1, bpc, maxvalue, 0);
+            set_color_info(&dci, DISPLAY_MODEL_GRAY, 1, 1, bpc, maxvalue, 0);
             if (bpc == 1)
                 set_gray_color_procs(pdev, gx_default_gray_encode,
                                                 gx_default_w_b_map_color_rgb);
@@ -2138,7 +2177,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
                 bpp = bpc * 3;
             else
                 bpp = bpc * 4;
-            set_color_info(&dci, DISPLAY_MODEL_RGB, 3, bpp, maxvalue, maxvalue);
+            set_color_info(&dci, DISPLAY_MODEL_RGB, 3, 3, bpp, maxvalue, maxvalue);
             if (((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) &&
                 ((nFormat & DISPLAY_ALPHA_MASK) == DISPLAY_ALPHA_NONE)) {
                 if ((nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN)
@@ -2156,7 +2195,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
             break;
         case DISPLAY_COLORS_CMYK:
             bpp = bpc * 4;
-            set_color_info(&dci, DISPLAY_MODEL_CMYK, 4, bpp, maxvalue, maxvalue);
+            set_color_info(&dci, DISPLAY_MODEL_CMYK, 4, 4, bpp, maxvalue, maxvalue);
             if ((nFormat & DISPLAY_ALPHA_MASK) != DISPLAY_ALPHA_NONE)
                 return_error(gs_error_rangecheck);
             if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
@@ -2174,9 +2213,23 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
         case DISPLAY_COLORS_SEPARATION:
             if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
                 return_error(gs_error_rangecheck);
-            bpp = ARCH_SIZEOF_COLOR_INDEX * 8;
-            set_color_info(&dci, DISPLAY_MODEL_SEP, bpp/bpc, bpp,
-                maxvalue, maxvalue);
+            if (ddev->is_planar)
+            {
+                int n = ddev->devn_params.num_std_colorant_names + ddev->devn_params.separations.num_separations;
+                if (n == 0)
+                    n = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                if (n > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                    n = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                bpp = n * 8;
+                set_color_info(&dci, DISPLAY_MODEL_SEP, n, GS_CLIENT_COLOR_MAX_COMPONENTS, bpp,
+                    maxvalue, maxvalue);
+            }
+            else
+            {
+                bpp = ARCH_SIZEOF_COLOR_INDEX * 8;
+                set_color_info(&dci, DISPLAY_MODEL_SEP, bpp/bpc, bpp/bpc, bpp,
+                    maxvalue, maxvalue);
+            }
             if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
                 ddev->devn_params.bitspercomponent = bpc;
                 if (ddev->icc_struct == NULL) {
@@ -2197,16 +2250,6 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
             break;
         default:
             return_error(gs_error_rangecheck);
-    }
-
-    switch (nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED))
-    {
-        case DISPLAY_CHUNKY:
-            ddev->is_planar = 0;
-            break;
-        default:
-            ddev->is_planar = 1;
-            break;
     }
 
     /* restore old anti_alias info */

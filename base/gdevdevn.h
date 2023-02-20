@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -179,6 +179,12 @@ int devn_get_params(gx_device * pdev, gs_param_list * plist,
 int devn_printer_put_params(gx_device * pdev, gs_param_list * plist,
                         gs_devn_params * pdevn_params,
                         equivalent_cmyk_color_params * pequiv_colors);
+
+int
+devn_generic_put_params(gx_device *pdev, gs_param_list *plist,
+                        gs_devn_params *pdevn_params, equivalent_cmyk_color_params *pequiv_colors,
+                        int is_printer);
+
 
 /*
  * Utility routine for handling DeviceN related parameters.  This routine
