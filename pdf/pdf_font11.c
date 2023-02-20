@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2022 Artifex Software, Inc.
+/* Copyright (C) 2020-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -50,9 +50,30 @@ static int pdfi_cidtype2_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 {
     pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
     uint gid = glyph - GS_MIN_CID_GLYPH;
+    int code = 0;
 
-    if (pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > (gid << 1) + 1) {
-        gid = pdffont11->cidtogidmap->data[gid << 1] << 8 | pdffont11->cidtogidmap->data[(gid << 1) + 1];
+    if (pdffont11->substitute == true) {
+        unsigned int ucc = 0;
+        int code = pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, NULL, 0);
+        if (code == 2) {
+            ushort sccode = 0;
+            (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, &sccode, 2);
+            ucc = (uint)sccode;
+        }
+        else if (code == 4) {
+            uint iccode = 0;
+            (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, (ushort *)&iccode, 2);
+            ucc = iccode;
+        }
+        if (code == 2 || code == 4) {
+            code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (unsigned int)ucc, &gid);
+            if (code < 0)
+                gid = glyph - GS_MIN_CID_GLYPH;
+        }
+    }
+
+    if (code == 0 && pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > (gid << 1) + 1) {
+       gid = pdffont11->cidtogidmap->data[gid << 1] << 8 | pdffont11->cidtogidmap->data[(gid << 1) + 1];
     }
 
     return (int)gid;
@@ -61,16 +82,36 @@ static int pdfi_cidtype2_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 static uint pdfi_cidtype2_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
 {
     pdf_cidfont_type2 *pdffont11 = (pdf_cidfont_type2 *)pfont->client_data;
-    uint gid = 0;
+    uint gid = glyph - GS_MIN_CID_GLYPH;
+    int code = 0;
 
     if (glyph < GS_MIN_CID_GLYPH) {
         gid = 0;
     }
     else {
         if (glyph < GS_MIN_GLYPH_INDEX) {
-            gid = glyph - GS_MIN_CID_GLYPH;
-            if (pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > (gid << 1) + 1) {
-                gid = pdffont11->cidtogidmap->data[gid << 1] << 8 | pdffont11->cidtogidmap->data[(gid << 1) + 1];
+            if (pdffont11->substitute == true) {
+                unsigned int ucc = 0;
+                code = pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, NULL, 0);
+                if (code == 2) {
+                    ushort sccode = 0;
+                    (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, &sccode, 2);
+                    ucc = (uint)sccode;
+                }
+                else if (code == 4) {
+                    uint iccode = 0;
+                    (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, (ushort *)&iccode, 2);
+                    ucc = iccode;
+                }
+                if (code == 2 || code == 4) {
+                    code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (unsigned int)ucc, &gid);
+                    if (code < 0)
+                        gid = glyph - GS_MIN_CID_GLYPH;
+                }
+            }
+
+            if (code == 0 && pdffont11->cidtogidmap != NULL && pdffont11->cidtogidmap->length > (gid << 1) + 1) {
+               gid = pdffont11->cidtogidmap->data[gid << 1] << 8 | pdffont11->cidtogidmap->data[(gid << 1) + 1];
             }
         }
     }
@@ -254,7 +295,7 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
     pfont->procs.encode_char = pdfi_encode_char;
     pfont->data.string_proc = pdfi_cidtype2_string_proc;
     pfont->procs.glyph_name = ctx->get_glyph_name;
-    pfont->procs.decode_glyph = pdfi_decode_glyph;
+    pfont->procs.decode_glyph = pdfi_cidfont_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
     pfont->procs.font_info = gs_default_font_info;

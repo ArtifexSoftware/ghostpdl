@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -33,35 +33,6 @@
 #include "pdf_deref.h"
 
 #include "gsutil.h"        /* For gs_next_ids() */
-
-extern const pdfi_cid_decoding_t *pdfi_cid_decoding_list[];
-extern const pdfi_cid_subst_nwp_table_t *pdfi_cid_substnwp_list[];
-
-static void pdfi_font0_cid_subst_tables(const char *reg, const int reglen, const char *ord,
-                const int ordlen, pdfi_cid_decoding_t **decoding, pdfi_cid_subst_nwp_table_t **substnwp)
-{
-    int i;
-    *decoding = NULL;
-    *substnwp = NULL;
-    /* This only makes sense for Adobe orderings */
-    if (reglen == 5 && !memcmp(reg, "Adobe", 5)) {
-        for (i = 0; pdfi_cid_decoding_list[i] != NULL; i++) {
-            if (strlen(pdfi_cid_decoding_list[i]->s_order) == ordlen &&
-                !memcmp(pdfi_cid_decoding_list[i]->s_order, ord, ordlen)) {
-                *decoding = (pdfi_cid_decoding_t *)pdfi_cid_decoding_list[i];
-                break;
-            }
-        }
-        /* For now, also only for Adobe orderings */
-        for (i = 0; pdfi_cid_substnwp_list[i] != NULL; i++) {
-            if (strlen(pdfi_cid_substnwp_list[i]->ordering) == ordlen &&
-                !memcmp(pdfi_cid_substnwp_list[i]->ordering, ord, ordlen)) {
-                *substnwp = (pdfi_cid_subst_nwp_table_t *)pdfi_cid_substnwp_list[i];
-                break;
-            }
-        }
-    }
-}
 
 static int
 pdfi_font0_glyph_name(gs_font *pfont, gs_glyph index, gs_const_string *pstr)
@@ -134,17 +105,17 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
                 if (cc > 65535) {
                     code = 4;
                     if (unicode_return != NULL && length >= code) {
-                        unicode_return[0] = (cc & 0xFF000000)>> 24;
-                        unicode_return[1] = (cc & 0x00FF0000) >> 16;
-                        unicode_return[2] = (cc & 0x0000FF00) >> 8;
-                        unicode_return[3] = (cc & 0x000000FF);
+                        unicode_return[3] = (cc & 0xFF000000)>> 24;
+                        unicode_return[2] = (cc & 0x00FF0000) >> 16;
+                        unicode_return[1] = (cc & 0x0000FF00) >> 8;
+                        unicode_return[0] = (cc & 0x000000FF);
                     }
                 }
                 else {
                     code = 2;
                     if (unicode_return != NULL && length >= code) {
-                        unicode_return[0] = (cc & 0x0000FF00) >> 8;
-                        unicode_return[1] = (cc & 0x000000FF);
+                        unicode_return[1] = (cc & 0x0000FF00) >> 8;
+                        unicode_return[0] = (cc & 0x000000FF);
                     }
                 }
             }
@@ -335,11 +306,10 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
             olen = pcmap->csi_ord.size;
         }
         if (rlen > 0 && olen > 0)
-            pdfi_font0_cid_subst_tables(r, rlen, o, olen, &dec, &substnwp);
-        else {
-            dec = NULL;
-            substnwp = NULL;
-        }
+            pdfi_cidfont_cid_subst_tables(r, rlen, o, olen, &dec, &substnwp);
+
+        ((pdf_cidfont_t *)descpfont)->decoding = dec;
+        ((pdf_cidfont_t *)descpfont)->substnwp = substnwp;
     }
     /* reference is now owned by the descendent font created above */
     pdfi_countdown(decfontdict);

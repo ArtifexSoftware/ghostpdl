@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -86,6 +86,7 @@ typedef enum pdf_font_type_e {
     pdf_dict *FontDescriptor;       /* For PDF up to 1.4 this may be absent for the base 14 */ \
     int64_t descflags; \
     pdf_obj *ToUnicode;            /* Name or stream (technically should be a stream, but we've seen Identity names */ \
+    bool substitute; /* We need to know what a CIDFont is a substitute */ \
     pdf_string *filename           /* If we read this from disk, this is the file it came from */
 
 #define pdf_font_common \
@@ -113,7 +114,8 @@ typedef enum pdf_font_type_e {
     pdf_string *ordering; \
     int supplement; \
     pdf_buffer *cidtogidmap; \
-    bool substitute; /* We need to know what a CIDFont is a substitute */ \
+    pdfi_cid_decoding_t *decoding;  /* Used when substituting a non-Identity CIDFont */ \
+    pdfi_cid_subst_nwp_table_t *substnwp; /* Also used for CIDFont substitions */ \
     font_proc_glyph_info((*orig_glyph_info))
 
 typedef struct pdf_font_s {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -875,10 +875,10 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
             l = penum->orig_font->procs.decode_glyph((gs_font *)penum->orig_font, ccode, (gs_char)cc, (ushort *)uc, 4);
             if (l == 2) {
-                cc = uc[1] | uc[0] << 8;
+                cc = uc[0] | uc[1] << 8;
             }
             else if (l == 4) {
-                cc = uc[3] | uc[2] << 8 | uc[2] << 16 | uc[2] << 24;
+                cc = uc[0] | uc[1] << 8 | uc[2] << 16 | uc[3] << 24;
             }
             else
                 cc = ccode;

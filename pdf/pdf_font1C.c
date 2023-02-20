@@ -2051,7 +2051,7 @@ pdfi_alloc_cff_cidfont(pdf_context *ctx, pdf_cidfont_type0 ** font, uint32_t obj
        we won't worry about working without FAPI */
     pfont->procs.encode_char = pdfi_encode_char;
     pfont->procs.glyph_name = ctx->get_glyph_name;
-    pfont->procs.decode_glyph = pdfi_decode_glyph;
+    pfont->procs.decode_glyph = pdfi_cidfont_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
     pfont->procs.font_info = gs_default_font_info;
