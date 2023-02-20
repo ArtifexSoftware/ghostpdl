@@ -3276,13 +3276,32 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text)
         pdev->fill_overprint = pgs->stroke_overprint;
     }
     if (pdev->state.stroke_adjust != pgs->stroke_adjust) {
-        code = pdf_open_gstate(pdev, &pres);
-        if (code < 0)
-            return code;
-        code = cos_dict_put_c_key_bool(resource_dict(pres), "/SA", pgs->stroke_adjust);
-        if (code < 0)
-            return code;
-        pdev->state.stroke_adjust = pgs->stroke_adjust;
+        /* Frankly this is awfully hacky. There is a problem with ps2write and type 3 fonts, for
+         * reasons best known to itself it does not seem to collect all the /Resources required
+         * for CharProcs when we meddle with the stroke adjustment. This 'seems' to be because it
+         * only collects them when it runs the BuildChar, if we use the existing CharProc in a
+         * different font then it can miss the Resources needed for the ExtGState.
+         * This does not happen with pdfwrite!
+         * Since ps2write doesn't require us to store teh staroke adjustment in an ExtGState
+         * anyway, just emit it directly.
+         * File exhibiting this is tests_private/comparefiles/Bug688967.ps
+         */
+        if (!pdev->ForOPDFRead) {
+            code = pdf_open_gstate(pdev, &pres);
+            if (code < 0)
+                return code;
+            code = cos_dict_put_c_key_bool(resource_dict(pres), "/SA", pgs->stroke_adjust);
+            if (code < 0)
+                return code;
+            pdev->state.stroke_adjust = pgs->stroke_adjust;
+        } else {
+            if (pgs->stroke_adjust)
+                stream_puts(gdev_vector_stream((gx_device_vector *)pdev), "true setstrokeadjust\n");
+            else
+                stream_puts(gdev_vector_stream((gx_device_vector *)pdev), "false setstrokeadjust\n");
+            pdev->state.stroke_adjust = pgs->stroke_adjust;
+        }
+
     }
     return pdf_end_gstate(pdev, pres);
 }
