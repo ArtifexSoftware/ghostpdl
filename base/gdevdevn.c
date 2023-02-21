@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -483,7 +483,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
         return_error(gs_error_rangecheck);
     }
 
-    /* Separations are only valid with a subrtractive color model */
+    /* Separations are only valid with a subtractive color model */
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
         /*
          * Process the SeparationColorNames.  Remove any names that already
