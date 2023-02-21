@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2022 Artifex Software, Inc.
+/* Copyright (C) 2019-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -688,7 +688,7 @@ format3_fdselect_proc(const byte *p, const byte *pe, unsigned int i)
 static byte *
 pdfi_read_cff_real(byte *p, byte *e, float *val)
 {
-    char buf[64];
+    char buf[65];
     char *txt = buf;
 
     /* b0 was 30 */
