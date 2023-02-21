@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -60,7 +60,7 @@ extern const char gp_file_name_list_separator;
 static int
 pdf_detect_language(const char *s, int len)
 {
-    if (len >= 5 && memcmp(s, "%!PDF", 5) == 0)
+    if (len >= 5 && memcmp(s, "%PDF-", 5) == 0)
         return 100;
     return 0;
 }
