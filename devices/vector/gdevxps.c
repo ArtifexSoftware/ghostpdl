@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2635,7 +2635,7 @@ static void xps_tiff_cleanup(xps_image_enum_t *xpie)
         void *t = TIFFClientdata(xpie->tif);
         TIFFCleanup(xpie->tif);
         xpie->tif = NULL;
-        gs_free_object(xpie->memory->non_gc_memory, t, "xps_image_enum_finalize");
+        gs_free_object(xpie->dev->memory->non_gc_memory, t, "xps_image_enum_finalize");
     }
 }
 
