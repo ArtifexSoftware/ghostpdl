@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -126,6 +126,14 @@ gs_c_param_list *
 gs_c_param_list_alloc(gs_memory_t *mem, client_name_t cname)
 {
     return gs_alloc_struct(mem, gs_c_param_list, &st_c_param_list, cname);
+}
+
+void gs_c_param_list_free(gs_memory_t *mem, gs_c_param_list *plist, client_name_t cname)
+{
+    if (plist == NULL)
+        return;
+    gs_c_param_list_release(plist);
+    gs_free_object(mem, plist, cname);
 }
 
 static gs_c_param *

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -441,16 +441,17 @@ ps_impl_init_job(pl_interp_implementation_t *impl,
         gs_param_list_set_persistent_keys((gs_param_list*)params, false);
 
         code2 = param_write_int((gs_param_list*)params, "PageSpotColors", &(page_spot_colors));
-        if (code2 < 0)
+        if (code2 < 0) {
+            gs_c_param_list_free(psi->memory, params, "ps_impl_init_job");
             return code2;
+        }
 
         gs_c_param_list_read(params);
 
         code2 = psapi_set_device_param(psi->psapi_instance, (gs_param_list*)params);
+        gs_c_param_list_free(psi->memory, params, "ps_impl_init_job");
         if (code2 < 0)
             return code2;
-
-        gs_c_param_list_release(params);
     }
     return code;
 }

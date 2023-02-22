@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -570,6 +570,7 @@ void gs_c_param_list_write(gs_c_param_list *, gs_memory_t *);
 void gs_c_param_list_write_more(gs_c_param_list *); /* switch back to writing, no init */
 void gs_c_param_list_read(gs_c_param_list *);	/* switch to reading */
 void gs_c_param_list_release(gs_c_param_list *);
+void gs_c_param_list_free(gs_memory_t *, gs_c_param_list *, client_name_t);
 
 /* Given a string to parse (a list of key/value pairs), parse it and add
  * what we find to the supplied param list. Note that p is corrupted
