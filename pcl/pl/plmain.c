@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1205,6 +1205,7 @@ pl_main_delete_instance(pl_main_instance_t *minst)
 
     gs_free_object(mem, minst->buf_ptr, "minst_buffer");
 
+    gs_c_param_list_release(&minst->params);
     gs_c_param_list_release(&minst->enum_params);
     gs_free_object(mem, minst->enum_keybuf, "param enumerator keybuf");
 
