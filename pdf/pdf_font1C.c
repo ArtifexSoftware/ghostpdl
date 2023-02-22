@@ -3018,11 +3018,6 @@ pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pd
         uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
     uid_set_invalid(&font->pfont->UID);
 
-    code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
-    if (code < 0) {
-        goto error;
-    }
-
     if (ctx->args.ignoretounicode != true) {
         code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tmp);
         if (code >= 0 && pdfi_type_of(tmp) == PDF_STREAM) {
