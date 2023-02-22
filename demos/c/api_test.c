@@ -1,3 +1,18 @@
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
+   All Rights Reserved.
+
+   This software is provided AS-IS with no warranty, either express or
+   implied.
+
+   This software is distributed under license and may not be copied,
+   modified or distributed except as expressly authorized under the terms
+   of the license contained in the file LICENSE in this distribution.
+
+   Refer to licensing information at http://www.artifex.com or contact
+   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
+   CA 94945, U.S.A., +1(415)492-9861, for further information.
+*/
+
 #ifdef _WIN32
 /* Stop windows builds complaining about sprintf being insecure. */
 #define _CRT_SECURE_NO_WARNINGS
@@ -151,6 +166,7 @@ static FILE *save_header(teststate_t *ts)
             ts->legacy ? "_l" : "",
             align_str,
             suffix);
+    printf("Outputting %s\n", text);
     ts->file = fopen(text, "wb");
     if (ts->file == NULL) {
         fprintf(stderr, "Fatal error: couldn't open %s for writing.\n", text);
@@ -494,7 +510,7 @@ adjust_band_height(void *handle, void *device, int bandheight)
     teststate_t *ts = (teststate_t *)handle;
 
     SANITY_CHECK(ts);
-    printf("adjust_band_height: %d - >", bandheight);
+    printf("adjust_band_height: %d -> ", bandheight);
 
     if (bandheight > ts->h / 4)
         bandheight = ts->h / 4;
@@ -644,6 +660,7 @@ callout(void *instance,
 /* This is the function that actually runs a test. */
 static int do_ddtest(const char *title, int format,
                    int use_clist, int legacy,
+                   int ps,
                    const char *fname)
 {
     int code;
@@ -659,7 +676,7 @@ static int do_ddtest(const char *title, int format,
 
     /* Construct the argc/argv to pass to ghostscript. */
     int argc = 0;
-    char *argv[10];
+    char *argv[20];
 
     argv[argc++] = "gs";
     argv[argc++] = "-sDEVICE=display";
@@ -667,9 +684,19 @@ static int do_ddtest(const char *title, int format,
     argv[argc++] = format_arg;
     if (legacy)
         argv[argc++] = handle_arg;
-    if (format & DISPLAY_COLORS_SEPARATION)
-        argv[argc++] = "../../examples/spots.ps";
-    else
+    if (format & DISPLAY_COLORS_SEPARATION) {
+        /* Two different spots test files. The PS one
+         * uses 4 process colors + 4 spots, the
+         * PDF one uses 4 process colors + 3 spots.
+         * Chunky mode can't use more than 8 in total,
+         * and we want to test the behaviour of the
+         * system with an 'odd' number of spots.
+         */
+        if (ps)
+            argv[argc++] = "../../examples/spots.ps";
+        else
+            argv[argc++] = "../../examples/spots2.pdf";
+    } else
         argv[argc++] = "../../examples/tiger.eps";
 
     sprintf(format_arg, "-dDisplayFormat=16#%x", format);
@@ -777,7 +804,7 @@ failearly:
     return code;
 }
 
-static int displaydev_test(const char *title, int format, const char *fname)
+static int displaydev_test(const char *title, int format, int ps, const char *fname)
 {
     int use_clist, legacy, align, code;
 
@@ -789,7 +816,7 @@ static int displaydev_test(const char *title, int format, const char *fname)
                 if (align != 2) {
                     form |= align<<20;
                 }
-                code = do_ddtest(title, form, use_clist, legacy, fname);
+                code = do_ddtest(title, form, use_clist, legacy, ps, fname);
                 if (code < 0)
                     return code;
             }
@@ -1153,26 +1180,29 @@ int main(int argc, char *argv[])
                                      NULL));
 #endif
 
-#define DD(STR, FMT, FILE)\
-    RUNTEST(displaydev_test(STR, FMT, FILE))
+#define DD(STR, FMT, PS, FILE)\
+    RUNTEST(displaydev_test(STR, FMT, PS, FILE))
 
     /* Run a variety of tests for the display device. */
-    DD("Chunky Windows Gray", 0x030802, "apitest0");
-    DD("Chunky Windows RGB",  0x030804, "apitest1");
-    /* Display device does no support "little endian" CMYK */
-    DD("Chunky Windows CMYK", 0x020808, "apitest2");
+    DD("Chunky Windows Gray", 0x030802, 0, "apitest0");
+    DD("Chunky Windows RGB",  0x030804, 0, "apitest1");
+    /* Display device does not support "little endian" CMYK */
+    DD("Chunky Windows CMYK", 0x020808, 0, "apitest2");
 
-    DD("Planar Windows Gray", 0x830802, "apitest3");
-    DD("Planar Windows RGB",  0x830804, "apitest4");
-    DD("Planar Windows CMYK", 0x820808, "apitest5");
+    DD("Planar Windows Gray", 0x830802, 0, "apitest3");
+    DD("Planar Windows RGB",  0x830804, 0, "apitest4");
+    DD("Planar Windows CMYK", 0x820808, 0, "apitest5");
 
-    DD("Planar Interleaved Windows Gray", 0x1030802, "apitest6");
-    DD("Planar Interleaved Windows RGB",  0x1030804, "apitest7");
-    DD("Planar Interleaved Windows CMYK", 0x1020808, "apitest8");
+    DD("Planar Interleaved Windows Gray", 0x1030802, 0, "apitest6");
+    DD("Planar Interleaved Windows RGB",  0x1030804, 0, "apitest7");
+    DD("Planar Interleaved Windows CMYK", 0x1020808, 0, "apitest8");
 
-    DD("Chunky Spots", 0x0A0800, "apitest9");
-    DD("Planar Spots", 0x8A0800, "apitest10");
-    DD("Planar Interleaved Spots", 0x10A0800, "apitest11");
+    DD("Chunky Spots (PS)", 0x0A0800, 1, "apitest9");
+    DD("Planar Spots (PS)", 0x8A0800, 1, "apitest10");
+    DD("Planar Interleaved Spots (PS)", 0x10A0800, 1, "apitest11");
+    DD("Chunky Spots (PDF)", 0x0A0800, 0, "apitest12");
+    DD("Planar Spots (PDF)", 0x8A0800, 0, "apitest13");
+    DD("Planar Interleaved Spots", 0x10A0800, 0, "apitest14");
 
     return 0;
 }
