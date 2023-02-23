@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -255,6 +255,87 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
     return code;
 }
 
+#ifdef DEBUG
+static void
+dump_dl_font_header(const gs_memory_t * mem, const pcl_font_header_t *pfh)
+{
+    const char *header_format;
+    int i;
+
+    dmprintf1(mem, "FontDescriptorSize:%d\n", pl_get_uint16(pfh->FontDescriptorSize));
+
+    switch (pfh->HeaderFormat) {
+    case pcfh_bitmap:
+        header_format = "bitmap";
+        break;
+    case pcfh_resolution_bitmap:
+        header_format = "resolution bitmap";
+        break;
+    case pcfh_intellifont_bound:
+        header_format = "bound intellifont";
+        break;
+    case pcfh_intellifont_unbound:
+        header_format = "unbound intellifont";
+        break;
+    case pcfh_truetype:
+        header_format = "truetype";
+        break;
+    case pcfh_truetype_large:
+        header_format = "truetype large";
+        break;
+    default:
+        header_format = "unknown";
+    }
+    dmprintf1(mem, "Header Format:%s\n", header_format);
+    dmprintf1(mem, "Font Type:%d\n", (pl_font_type_t) pfh->FontType);
+    dmprintf1(mem, "Style:%d\n", (pfh->StyleMSB << 8) + pfh->StyleLSB);
+    dmprintf1(mem, "BaseLinePostion:%d\n", pl_get_uint16(pfh->BaselinePosition));
+    dmprintf1(mem, "Reserved (should be 0):%d\n", pfh->Reserved);
+    dmprintf1(mem, "CellWidth:%d\n", pl_get_uint16(pfh->CellWidth));
+    dmprintf1(mem, "CellHeight:%d\n", pl_get_uint16(pfh->CellHeight));
+    dmprintf1(mem, "Orientation:%d\n", pfh->Orientation);
+    dmprintf1(mem, "Spacing:%d\n", pfh->Spacing);
+    dmprintf1(mem, "SymbolSet:%d\n", pl_get_uint16(pfh->SymbolSet));
+    dmprintf1(mem, "Pitch:%d\n", pl_get_uint16(pfh->Pitch));
+    dmprintf1(mem, "Height:%d\n", pl_get_uint16(pfh->Height));
+    dmprintf1(mem, "xHeight:%d\n", pl_get_uint16(pfh->xHeight));
+    dmprintf1(mem, "WidthType:%d\n", pfh->WidthType);
+    dmprintf1(mem, "StrokeWeight:%d\n", pfh->StrokeWeight);
+    dmprintf1(mem, "TypeFace:%d\n", (pfh->TypefaceMSB << 8) + pfh->TypefaceLSB);
+    dmprintf1(mem, "SerifStyle:%d\n", pfh->SerifStyle);
+    dmprintf1(mem, "Quality:%d\n", pfh->Quality);
+    dmprintf1(mem, "Placement:%d\n", pfh->Placement);
+    dmprintf1(mem, "UnderlinePosition:%d\n", pfh->UnderlinePosition);
+    dmprintf1(mem, "UnderlineThickness:%d\n", pfh->UnderlineThickness);
+    dmprintf1(mem, "TextHeight:%d\n", pl_get_uint16(pfh->TextHeight));
+    dmprintf1(mem, "TextWidth:%d\n", pl_get_uint16(pfh->TextWidth));
+    dmprintf1(mem, "FirstCode:%d\n", pl_get_uint16(pfh->FirstCode));
+    dmprintf1(mem, "LastCode:%d\n", pl_get_uint16(pfh->LastCode));
+
+    dmprintf1(mem, "PitchExtended:%d\n", pfh->PitchExtended);
+    dmprintf1(mem, "HeightExtended:%d\n", pfh->HeightExtended);
+    dmprintf1(mem, "CapHeight:%d\n", pl_get_uint16(pfh->CapHeight));
+    dmprintf4(mem, "FontNumber:%d %d %d %d\n", pfh->FontNumber[0],
+              pfh->FontNumber[1], pfh->FontNumber[2], pfh->FontNumber[3]);
+    dmprintf(mem, "FontName:");
+    for (i = 0; i < sizeof(pfh->FontName); i++) {
+        unsigned char c = pfh->FontName[i];
+        if (c < 32 || c == 127)
+            dmprintf1(mem, "<%02x>", c);
+        else
+            dmprintf1(mem, "%c", c);
+    }
+    dmprintf(mem, "\n");
+    if (pfh->HeaderFormat == pcfh_resolution_bitmap) {
+#define pfhx ((const pcl_resolution_bitmap_header_t *)pfh)
+        dmprintf1(mem, "XResolution:%d\n", pl_get_uint16(pfhx->XResolution));
+        dmprintf1(mem, "YResolution:%d\n", pl_get_uint16(pfhx->YResolution));
+#undef pfhx
+    }
+
+    return;
+}
+#endif
 static int                      /* ESC ) s <count> W */
 pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
 {
@@ -277,6 +358,11 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
 
     if (count < 64 && pfh->HeaderFormat != pcfh_bitmap)
         return e_Range;         /* pcfh_bitmap defaults short headers to 0 except underline position = 5; */
+#ifdef DEBUG
+    if (gs_debug_c('=')) {
+        dump_dl_font_header(pcs->memory, pfh);
+    }
+#endif
     desc_size =
         (pfh->FontDescriptorSize[0] << 8) + pfh->FontDescriptorSize[1];
     /* Dispatch on the header format. */
@@ -335,6 +421,10 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
         return code;
     /* Create the generic font information. */
     plfont = pl_alloc_font(mem, "pcl_font_header(pl_font_t)");
+#ifdef DEBUG
+    for (int i = 0; i < sizeof(pfh->FontName); i++)
+        plfont->FontName[i] = pfh->FontName[i];
+#endif
     header = gs_alloc_bytes(mem, count, "pcl_font_header(header)");
     if (plfont == NULL || header == NULL) {
         gs_free_object(mem, header, "pcl_font_header(header)");

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -210,6 +210,9 @@ struct pl_font_s
     float pts_per_inch;         /* either 72 or 72.307 (for Intellifont) */
     pl_glyph_width_node_t *widths_cache;
     int widths_cache_nitems;
+#ifdef DEBUG
+    char FontName[16];
+#endif
 };
 
 #define private_st_pl_font()	/* in plfont.c */\

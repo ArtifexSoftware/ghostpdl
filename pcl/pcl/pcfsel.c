@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -118,7 +118,7 @@ dmprint_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
     int i;
     bool found = false;
 
-    for (i = 0; pl_built_in_resident_font_table[i].full_font_name[URWNAME]; i++) {
+    for (i = 0; *pl_built_in_resident_font_table[i].full_font_name[URWNAME]; i++) {
         if (!memcmp(&pl_built_in_resident_font_table[i].params,
                     &pfont->params, sizeof(pfont->params))) {
 
@@ -132,8 +132,17 @@ dmprint_font_name(const gs_memory_t * mem, const pl_font_t * pfont)
         if (pfont->storage == pcds_internal) {
             dmprintf(mem, "internal font not found in resident table");
             dmprintf1(mem, "%s\n", pfont->font_file);
+            return;
         }
-        dmprintf(mem, "external font ");
+        for (i = 0; i < sizeof(pfont->FontName); i++) {
+            unsigned char c = pfont->FontName[i];
+            if (c < 32 || c == 127)
+                dmprintf1(mem, "<%02x>", c);
+            else
+                dmprintf1(mem, "%c", c);
+        }
+        dmprintf(mem, " ");
+
     }
 }
 
