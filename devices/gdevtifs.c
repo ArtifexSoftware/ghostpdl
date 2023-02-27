@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -372,7 +372,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
 
         strncpy(softwareValue, gs_product, maxSoftware);
         softwareValue[maxSoftware - 1] = 0;
-        gs_snprintf(revs, sizeof(revs), " %d.%2d.%d", major, minor, patch);
+        gs_snprintf(revs, sizeof(revs), " %d.%02d.%d", major, minor, patch);
         strncat(softwareValue, revs,
                 maxSoftware - strlen(softwareValue) - 1);
 
