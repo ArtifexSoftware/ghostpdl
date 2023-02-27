@@ -76,9 +76,7 @@ extern_gs_lib_device_list();
 /* pcimpl.c (PCL only), or pximpl (XL only) depending on make configuration.*/
 extern pl_interp_implementation_t *pdl_implementations[];    /* zero-terminated list */
 
-#define _STRING_IT(s) #s
-#define STRING_IT(s) _STRING_IT(s)
-#define PJL_VERSION_STRING STRING_IT(PJLVERSION)
+#define PJL_VERSION_STRING GS_STRINGIZE(PJLVERSION)
 
 /* Define the usage message. */
 static const char *pl_usage = "\

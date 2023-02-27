@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2021 Artifex Software, Inc.
+# Copyright (C) 2001-2023 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -291,7 +291,7 @@ $(PSOBJ)iinit.$(OBJ) : $(PSSRC)iinit.c $(GH) $(string__h)\
  $(ipacked_h) $(iparray_h) $(iutil_h) $(ivmspace_h) \
  $(gxiodev_h) $(store_h)\
  $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)iinit.$(OBJ) $(C_) $(PSSRC)iinit.c
+	$(PSCC) $(D_)GS_DOT_VERSION=$(GS_DOT_VERSION)$(_D) $(PSO_)iinit.$(OBJ) $(C_) $(PSSRC)iinit.c
 
 $(PSOBJ)iscan.$(OBJ) : $(PSSRC)iscan.c $(GH) $(memory__h)\
  $(btoken_h) $(dstack_h) $(ierrors_h) $(files_h)\
