@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -285,6 +285,25 @@ typedef struct gs_pattern_params_s {
     bool has_base_space; /* {csrc} can't we just NULL-check the base_space? */
 } gs_pattern_params;
 
+typedef struct gs_calgray_params_s {
+    float WhitePoint[3];
+    float BlackPoint[3];
+    float Gamma;
+} gs_calgray_params;
+
+typedef struct gs_calrgb_params_s {
+    float WhitePoint[3];
+    float BlackPoint[3];
+    float Gamma[3];
+    float Matrix[9];
+} gs_calrgb_params;
+
+typedef struct gs_lab_params_s {
+    float WhitePoint[3];
+    float BlackPoint[3];
+    float Range[4];
+} gs_lab_params;
+
 /* id's 1 through 4 are reserved for static colorspaces; thus, dynamically
    assigned id's must begin at 5. */
 #define cs_DeviceGray_id 1
@@ -292,6 +311,16 @@ typedef struct gs_pattern_params_s {
 #define cs_DeviceCMYK_id 4
 
 typedef void (*gs_cspace_free_proc_t) (gs_memory_t * mem, void *pcs);
+
+typedef enum {
+    gs_ICC_Alternate_None,
+    gs_ICC_Alternate_DeviceGray,
+    gs_ICC_Alternate_DeviceRGB,
+    gs_ICC_Alternate_DeviceCMYK,
+    gs_ICC_Alternate_CalGray,
+    gs_ICC_Alternate_CalRGB,
+    gs_ICC_Alternate_Lab,
+} gs_ICC_Alternate_space;
 
 /*
  * The colorspace object. For pattern and indexed colorspaces, the
@@ -306,6 +335,7 @@ struct gs_color_space_s {
     gs_id                      id;
     gs_color_space             *base_space;
     gs_color_space             *icc_equivalent;
+    gs_ICC_Alternate_space     ICC_Alternate_space;
     client_color_space_data_t  *pclient_color_space_data;
     void                       *interpreter_data;
     gs_cspace_free_proc_t      interpreter_free_cspace_proc;
@@ -320,7 +350,13 @@ struct gs_color_space_s {
         gs_device_n_params       device_n;
         gs_indexed_params        indexed;
         gs_pattern_params        pattern;
-
+        /* These are only used for the Alternate space of an ICCBased
+         * space, for the benefit of pdfwrite. For rendering, these
+         * spaces are converted into ICCBased spaces.
+         */
+        gs_calgray_params        calgray;
+        gs_calrgb_params         calrgb;
+        gs_lab_params            lab;
     } params;
 };
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -238,6 +238,213 @@ pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
 
 /* ------ ICCBased space writing and synthesis ------ */
 
+/* Define standard and short color space names. */
+const pdf_color_space_names_t base_names = {
+    PDF_COLOR_SPACE_NAMES
+};
+
+int put_calgray_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
+{
+    int code, i;
+    cos_value_t v;
+    cos_dict_t *pcd;
+    cos_array_t *WP = NULL, *BP = NULL, *Gamma = NULL, *Matrix;
+
+    pcd = cos_dict_alloc(pdev, "write_calgray_color_space");
+    if (pcd == NULL)
+        return_error(gs_error_VMerror);
+
+    WP = cos_array_from_floats(pdev, pcs->params.calgray.WhitePoint, 3,
+                                             "write_calgray_color_space");
+    if (WP == NULL) {
+        cos_free((cos_object_t *)pcd, "write_calgray_color_space");
+        return_error(gs_error_VMerror);
+    }
+    BP = cos_array_from_floats(pdev, pcs->params.calgray.BlackPoint, 3,
+                                             "write_calgray_color_space");
+    if (BP == NULL) {
+        cos_free((cos_object_t *)pcd, "write_calgray_color_space");
+        cos_free((cos_object_t *)WP, "write_calgray_color_space");
+        return_error(gs_error_VMerror);
+    }
+
+    code = cos_dict_put_c_key(pcd, "/BlackPoint", COS_OBJECT_VALUE(&v, BP));
+    if (code < 0)
+        goto error;
+
+    code = cos_dict_put_c_key(pcd, "/WhitePoint",  COS_OBJECT_VALUE(&v, WP));
+    if (code < 0)
+        goto error;
+
+    code = cos_dict_put_c_key_real(pcd, "/Gamma", pcs->params.calgray.Gamma);
+
+    code = cos_array_add_c_string(pca, "/CalGray");
+    if (code < 0)
+        goto error;
+
+    code = cos_array_add(pca,  COS_OBJECT_VALUE(&v, pcd));
+    if (code < 0)
+        goto error;
+
+    return 0;
+
+error:
+    cos_free((cos_object_t *)pcd, "write_calgray_color_space");
+    cos_free((cos_object_t *)WP, "write_calgray_color_space");
+    cos_free((cos_object_t *)BP, "write_calgray_color_space");
+    return code;
+}
+
+int put_calrgb_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
+{
+    int code, i;
+    cos_value_t v;
+    cos_dict_t *pcd = NULL;
+    cos_array_t *WP = NULL, *BP = NULL, *Gamma = NULL, *Matrix;
+
+    pcd = cos_dict_alloc(pdev, "write_calrgb_color_space");
+    if (pcd == NULL)
+        return_error(gs_error_VMerror);
+
+    WP = cos_array_from_floats(pdev, pcs->params.calrgb.WhitePoint, 3,
+                                             "write_calrgb_color_space");
+    if (WP == NULL) {
+        cos_free((cos_object_t *)pcd, "write_calgray_color_space");
+        cos_free((cos_object_t *)pcd, "write_calrgb_color_space");
+        return_error(gs_error_VMerror);
+    }
+    BP = cos_array_from_floats(pdev, pcs->params.calrgb.BlackPoint, 3,
+                                             "write_calrgb_color_space");
+    if (BP == NULL) {
+        cos_free((cos_object_t *)pcd, "write_calrgb_color_space");
+        cos_free((cos_object_t *)WP, "write_calrgb_color_space");
+        return_error(gs_error_VMerror);
+    }
+
+    Gamma = cos_array_from_floats(pdev, pcs->params.calrgb.Gamma, 3,
+                                             "write_calrgb_color_space");
+    if (Gamma == NULL) {
+        cos_free((cos_object_t *)BP, "write_calrgb_color_space");
+        cos_free((cos_object_t *)pcd, "write_calrgb_color_space");
+        cos_free((cos_object_t *)WP, "write_calrgb_color_space");
+        return_error(gs_error_VMerror);
+    }
+
+    Matrix = cos_array_from_floats(pdev, pcs->params.calrgb.Matrix, 9,
+                                             "write_calrgb_color_space");
+    if (Matrix == NULL) {
+        cos_free((cos_object_t *)Gamma, "write_calrgb_color_space");
+        cos_free((cos_object_t *)BP, "write_calrgb_color_space");
+        cos_free((cos_object_t *)pcd, "write_calrgb_color_space");
+        cos_free((cos_object_t *)WP, "write_calrgb_color_space");
+        return_error(gs_error_VMerror);
+    }
+
+    code = cos_dict_put_c_key(pcd, "/BlackPoint", COS_OBJECT_VALUE(&v, BP));
+    if (code < 0)
+        goto error;
+
+    code = cos_dict_put_c_key(pcd, "/WhitePoint",  COS_OBJECT_VALUE(&v, WP));
+    if (code < 0)
+        goto error;
+
+    code = cos_dict_put_c_key(pcd, "/Gamma", COS_OBJECT_VALUE(&v, Gamma));
+    if (code < 0)
+        goto error;
+
+    code = cos_dict_put_c_key(pcd, "/Matrix", COS_OBJECT_VALUE(&v, Matrix));
+    if (code < 0)
+        goto error;
+
+    code = cos_array_add_c_string(pca, "/CalRGB");
+    if (code < 0)
+        goto error;
+
+    code = cos_array_add(pca,  COS_OBJECT_VALUE(&v, pcd));
+    if (code < 0)
+        goto error;
+
+
+    return 0;
+
+error:
+    cos_free((cos_object_t *)pcd, "write_calrgb_color_space");
+    cos_free((cos_object_t *)WP, "write_calrgb_color_space");
+    cos_free((cos_object_t *)BP, "write_calrgb_color_space");
+    cos_free((cos_object_t *)Gamma, "write_calrgb_color_space");
+    cos_free((cos_object_t *)Matrix, "write_calrgb_color_space");
+    return code;
+}
+
+int put_lab_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
+{
+    int code, i;
+    cos_value_t v;
+    cos_dict_t *pcd;
+    cos_array_t *WP = NULL, *BP = NULL, *range = NULL;
+
+    pcd = cos_dict_alloc(pdev, "write_lab_color_space");
+    if (pcd == NULL)
+        return_error(gs_error_VMerror);
+
+    range = cos_array_alloc(pdev, "write_lab_color_space");
+    if (range == NULL){
+        cos_free((cos_object_t *)pcd, "write_calgray_color_space");
+        return_error(gs_error_VMerror);
+    }
+
+    WP = cos_array_from_floats(pdev, pcs->params.lab.WhitePoint, 3,
+                                             "write_lab_color_space");
+    if (WP == NULL) {
+        cos_free((cos_object_t *)pcd, "write_calgray_color_space");
+        cos_free((cos_object_t *)range, "write_lab_color_space");
+        return_error(gs_error_VMerror);
+    }
+    BP = cos_array_from_floats(pdev, pcs->params.lab.BlackPoint, 3,
+                                             "write_lab_color_space");
+    if (BP == NULL) {
+        cos_free((cos_object_t *)pcd, "write_calgray_color_space");
+        cos_free((cos_object_t *)range, "write_lab_color_space");
+        cos_free((cos_object_t *)WP, "write_lab_color_space");
+        return_error(gs_error_VMerror);
+    }
+
+    for (i = 0;i < 4;i++) {
+        code = cos_array_add_real(range, pcs->params.lab.Range[i]);
+        if (code < 0)
+            goto error;
+    }
+
+    code = cos_dict_put_c_key(pcd, "/BlackPoint", COS_OBJECT_VALUE(&v, BP));
+    if (code < 0)
+        goto error;
+
+    code = cos_dict_put_c_key(pcd, "/WhitePoint",  COS_OBJECT_VALUE(&v, WP));
+    if (code < 0)
+        goto error;
+
+    code = cos_dict_put_c_key(pcd, "/Range",  COS_OBJECT_VALUE(&v, range));
+    if (code < 0)
+        goto error;
+
+    code = cos_array_add_c_string(pca, "/Lab");
+    if (code < 0)
+        goto error;
+
+    code = cos_array_add(pca,  COS_OBJECT_VALUE(&v, pcd));
+    if (code < 0)
+        goto error;
+
+    return 0;
+
+error:
+    cos_free((cos_object_t *)pcd, "write_calgray_color_space");
+    cos_free((cos_object_t *)range, "write_lab_color_space");
+    cos_free((cos_object_t *)WP, "write_lab_color_space");
+    cos_free((cos_object_t *)BP, "write_lab_color_space");
+    return code;
+}
+
 /*
  * Create an ICCBased color space object (internal).  The client must write
  * the profile data on *ppcstrm.
@@ -246,7 +453,7 @@ static int
 pdf_make_iccbased(gx_device_pdf *pdev, const gs_gstate * pgs,
                   cos_array_t *pca, int ncomps,
                   const gs_range *prange /*[4]*/,
-                  const gs_color_space *pcs_alt,
+                  const gs_color_space *pcs,
                   cos_stream_t **ppcstrm,
                   const gs_range_t **pprange /* if scaling is needed */)
 
@@ -280,16 +487,16 @@ pdf_make_iccbased(gx_device_pdf *pdev, const gs_gstate * pgs,
         goto fail;
 
     /* In the new design there may not be a specified alternate color space */
-    if (pcs_alt != NULL){
+    if (pcs->base_space != NULL){
 
         /* Output the alternate color space, if necessary. */
-        switch (gs_color_space_get_index(pcs_alt)) {
+        switch (gs_color_space_get_index(pcs->base_space)) {
         case gs_color_space_index_DeviceGray:
         case gs_color_space_index_DeviceRGB:
         case gs_color_space_index_DeviceCMYK:
             break;			/* implicit (default) */
         default:
-            if ((code = pdf_color_space_named(pdev, pgs, &v, NULL, pcs_alt,
+            if ((code = pdf_color_space_named(pdev, pgs, &v, NULL, pcs->base_space,
                                         &pdf_color_space_names, false, NULL, 0, true)) < 0 ||
                 (code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate",
                                            &v)) < 0
@@ -298,12 +505,101 @@ pdf_make_iccbased(gx_device_pdf *pdev, const gs_gstate * pgs,
         }
 
     } else {
-        if (ncomps != 1 && ncomps != 3 && ncomps != 4) {
-            /* We can only use a default for Gray, RGB or CMYK. For anything else we need
-             * to convert to the base space, we can't legally preserve the ICC profile.
-             */
-            code = gs_error_rangecheck;
-            goto fail;
+        cos_value_t alt_v;
+
+        if (pcs->ICC_Alternate_space != gs_ICC_Alternate_None) {
+            switch(pcs->ICC_Alternate_space) {
+                case gs_ICC_Alternate_DeviceGray:
+                    cos_c_string_value(&alt_v, base_names.DeviceGray);
+                    break;
+                case gs_ICC_Alternate_DeviceRGB:
+                    cos_c_string_value(&alt_v, base_names.DeviceRGB);
+                    break;
+                case gs_ICC_Alternate_DeviceCMYK:
+                    cos_c_string_value(&alt_v, base_names.DeviceCMYK);
+                    break;
+                case gs_ICC_Alternate_CalGray:
+                    {
+                        pdf_resource_t *pres;
+                        cos_array_t *pca1;
+
+                        code = pdf_alloc_resource(pdev, resourceColorSpace, gs_no_id, &pres, -1);
+                        if (code < 0)
+                            goto fail;
+                        cos_become(pres->object, cos_type_array);
+                        pca1 = (cos_array_t *)pres->object;
+
+                        code = put_calgray_color_space(pdev, pgs, pcs, pca1);
+                        if (code < 0)
+                            goto fail;
+
+                        code = pdf_substitute_resource(pdev, &pres, resourcePattern, NULL, false);
+                        if (code < 0)
+                            return code;
+                        pres->where_used |= pdev->used_mask;
+                        cos_object_value(&alt_v, pres->object);
+                    }
+                    break;
+                case gs_ICC_Alternate_CalRGB:
+                    {
+                        pdf_resource_t *pres;
+                        cos_array_t *pca1;
+
+                        code = pdf_alloc_resource(pdev, resourceColorSpace, gs_no_id, &pres, -1);
+                        if (code < 0)
+                            goto fail;
+                        cos_become(pres->object, cos_type_array);
+                        pca1 = (cos_array_t *)pres->object;
+
+                        code = put_calrgb_color_space(pdev, pgs, pcs, pca1);
+                        if (code < 0)
+                            goto fail;
+
+                        code = pdf_substitute_resource(pdev, &pres, resourceColorSpace, NULL, false);
+                        if (code < 0)
+                            return code;
+                        pres->where_used |= pdev->used_mask;
+                        cos_object_value(&alt_v, pres->object);
+                    }
+                    break;
+                case gs_ICC_Alternate_Lab:
+                    {
+                        pdf_resource_t *pres;
+                        cos_array_t *pca1;
+
+                        code = pdf_alloc_resource(pdev, resourceColorSpace, gs_no_id, &pres, -1);
+                        if (code < 0)
+                            goto fail;
+                        cos_become(pres->object, cos_type_array);
+                        pca1 = (cos_array_t *)pres->object;
+
+                        code = put_lab_color_space(pdev, pgs, pcs, pca1);
+                        if (code < 0)
+                            goto fail;
+
+                        code = pdf_substitute_resource(pdev, &pres, resourceColorSpace, NULL, false);
+                        if (code < 0)
+                            return code;
+                        pres->where_used |= pdev->used_mask;
+                        cos_object_value(&alt_v, pres->object);
+                    }
+                    break;
+                default:
+                    code = gs_error_rangecheck;
+                    goto fail;
+                    break;
+            }
+            code = cos_dict_put_c_key(cos_stream_dict(pcstrm), "/Alternate", &alt_v);
+            if (code < 0)
+                goto fail;
+        } else {
+            if (ncomps != 1 && ncomps != 3 && ncomps != 4) {
+                /* We can only use a default for Gray, RGB or CMYK. For anything else we need
+                 * to convert to the base space, we can't legally preserve the ICC profile.
+                 */
+                code = gs_error_rangecheck;
+                goto fail;
+            }
         }
     }
 
@@ -592,7 +888,7 @@ adjust_wp(const gs_vector3 *color_in, const gs_vector3 *wp_in,
 
 static int
 pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
-                            const gs_color_space *pcs, const char *dcsname,
+                            gs_color_space *pcs, const char *dcsname,
                             const gs_cie_common *pciec, const gs_range *prange,
                             cie_cache_one_step_t one_step,
                             const gs_matrix3 *pmat, const gs_range_t **pprange)
@@ -670,7 +966,8 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     white_d50.w = 0.8249f;
 
     pdf_cspace_init_Device(pdev->memory, &alt_space, ncomps);	/* can't fail */
-    code = pdf_make_iccbased(pdev, NULL, pca, ncomps, prange, alt_space,
+    pcs->base_space = alt_space;
+    code = pdf_make_iccbased(pdev, NULL, pca, ncomps, prange, pcs,
                              &pcstrm, pprange);
     rc_decrement_cs(alt_space, "pdf_convert_cie_to_iccbased");
     if (code < 0)
@@ -814,7 +1111,7 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t
     code =
         pdf_make_iccbased(pdev, pgs, pca, pcs->cmm_icc_profile_data->num_comps,
                           pcs->cmm_icc_profile_data->Range.ranges,
-                          pcs->base_space,
+                          pcs,
                           &pcstrm, NULL);
 
     if (code < 0)
@@ -896,7 +1193,7 @@ pdf_convert_cie_space(gx_device_pdf *pdev, cos_array_t *pca,
             /* PDF 1.2 or earlier, use a Lab space. */
             pdf_convert_cie_to_lab(pdev, pca, pcs, pciec, prange) :
             /* PDF 1.3 or later, use an ICCBased space. */
-            pdf_convert_cie_to_iccbased(pdev, pca, pcs, dcsname, pciec, prange,
+            pdf_convert_cie_to_iccbased(pdev, pca, (gs_color_space *)pcs, dcsname, pciec, prange,
                                         one_step, pmat, pprange)
             );
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -152,6 +152,8 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
     } else if (pdfi_name_is(space, "CalRGB")) {
         goto exit;
     } else if (pdfi_name_is(space, "CalGray")) {
+        goto exit;
+    } else if (pdfi_name_is(space, "CalCMYK")) {
         goto exit;
     } else if (pdfi_name_is(space, "ICCBased")) {
         goto exit;
@@ -1092,13 +1094,286 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
     return code;
 }
 
+static int pdfi_set_CalGray_params(pdf_context *ctx, gs_color_space *pcs, pdf_dict *ParamsDict)
+{
+    int code = 0, i;
+    double f;
+    /* The default values here are as per the PDF 1.7 specification, there is
+     * no default for the WhitePoint as it is a required entry.
+     */
+    float WhitePoint[3], BlackPoint[3] = {0.0f, 0.0f, 0.0f}, Gamma = 1.0f;
+    pdf_array *PDFArray = NULL;
+
+    code = pdfi_dict_get_type(ctx, ParamsDict, "WhitePoint", PDF_ARRAY, (pdf_obj **)&PDFArray);
+    if (code < 0) {
+        pdfi_countdown(PDFArray);
+        goto exit;
+    }
+    if (pdfi_array_size(PDFArray) != 3){
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i=0; i < 3; i++) {
+        code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+        if (code < 0)
+            goto exit;
+        WhitePoint[i] = (float)f;
+    }
+    pdfi_countdown(PDFArray);
+    PDFArray = NULL;
+
+    /* Check the WhitePoint values, the PDF 1.7 reference states that
+     * Xw ad Zw must be positive and Yw must be 1.0
+     */
+    if (WhitePoint[0] < 0 || WhitePoint[2] < 0 || WhitePoint[1] != 1.0f) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, ParamsDict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
+        if (pdfi_array_size(PDFArray) != 3){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 3; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            /* The PDF 1.7 reference states that all three components of the BlackPoint
+             * (if present) must be positive.
+             */
+            if (f < 0) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+            BlackPoint[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+
+    if (pdfi_dict_knownget_number(ctx, ParamsDict, "Gamma", &f) > 0)
+        Gamma = (float)f;
+    /* The PDF 1.7 reference states that Gamma
+     * (if present) must be positive.
+     */
+    if (Gamma < 0) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+    code = 0;
+
+    for (i = 0;i < 3; i++) {
+        pcs->params.calgray.WhitePoint[i] = WhitePoint[i];
+        pcs->params.calgray.BlackPoint[i] = BlackPoint[i];
+    }
+    pcs->params.calgray.Gamma = Gamma;
+
+exit:
+    pdfi_countdown(PDFArray);
+    return code;
+}
+
+static int pdfi_set_CalRGB_params(pdf_context *ctx, gs_color_space *pcs, pdf_dict *ParamsDict)
+{
+    int code = 0, i;
+    pdf_array *PDFArray = NULL;
+    /* The default values here are as per the PDF 1.7 specification, there is
+     * no default for the WhitePoint as it is a required entry
+     */
+    float WhitePoint[3], BlackPoint[3] = {0.0f, 0.0f, 0.0f}, Gamma[3] = {1.0f, 1.0f, 1.0f};
+    float Matrix[9] = {1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f};
+    double f;
+
+    code = pdfi_dict_get_type(ctx, ParamsDict, "WhitePoint", PDF_ARRAY, (pdf_obj **)&PDFArray);
+    if (code < 0) {
+        pdfi_countdown(PDFArray);
+        goto exit;
+    }
+    if (pdfi_array_size(PDFArray) != 3){
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i=0; i < 3; i++) {
+        code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+        if (code < 0)
+            goto exit;
+        WhitePoint[i] = (float)f;
+    }
+    pdfi_countdown(PDFArray);
+    PDFArray = NULL;
+
+    /* Check the WhitePoint values, the PDF 1.7 reference states that
+     * Xw ad Zw must be positive and Yw must be 1.0
+     */
+    if (WhitePoint[0] < 0 || WhitePoint[2] < 0 || WhitePoint[1] != 1.0f) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, ParamsDict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
+        if (pdfi_array_size(PDFArray) != 3){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 3; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            /* The PDF 1.7 reference states that all three components of the BlackPoint
+             * (if present) must be positive.
+             */
+            if (f < 0) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+            BlackPoint[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, ParamsDict, "Gamma", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
+        if (pdfi_array_size(PDFArray) != 3){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 3; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            Gamma[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, ParamsDict, "Matrix", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
+        if (pdfi_array_size(PDFArray) != 9){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 9; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            Matrix[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+    code = 0;
+
+    for (i = 0;i < 3; i++) {
+        pcs->params.calrgb.WhitePoint[i] = WhitePoint[i];
+        pcs->params.calrgb.BlackPoint[i] = BlackPoint[i];
+        pcs->params.calrgb.Gamma[i] = Gamma[i];
+    }
+    for (i = 0;i < 9; i++)
+        pcs->params.calrgb.Matrix[i] = Matrix[i];
+
+exit:
+    pdfi_countdown(PDFArray);
+    return code;
+}
+
+static int pdfi_set_Lab_params(pdf_context *ctx, gs_color_space *pcs, pdf_dict *ParamsDict)
+{
+    int code = 0, i;
+    pdf_array *PDFArray = NULL;
+    /* The default values here are as per the PDF 1.7 specification, there is
+     * no default for the WhitePoint as it is a required entry
+     */
+    float WhitePoint[3], BlackPoint[3] = {0.0f, 0.0f, 0.0f}, Range[4] = {-100.0, 100.0, -100.0, 100.0};
+    double f;
+
+    code = pdfi_dict_get_type(ctx, ParamsDict, "WhitePoint", PDF_ARRAY, (pdf_obj **)&PDFArray);
+    if (code < 0) {
+        pdfi_countdown(PDFArray);
+        goto exit;
+    }
+    if (pdfi_array_size(PDFArray) != 3){
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    for (i=0; i < 3; i++) {
+        code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+        if (code < 0)
+            goto exit;
+        WhitePoint[i] = (float)f;
+    }
+    pdfi_countdown(PDFArray);
+    PDFArray = NULL;
+
+    /* Check the WhitePoint values, the PDF 1.7 reference states that
+     * Xw ad Zw must be positive and Yw must be 1.0
+     */
+    if (WhitePoint[0] < 0 || WhitePoint[2] < 0 || WhitePoint[1] != 1.0f) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto exit;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, ParamsDict, "BlackPoint", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
+        if (pdfi_array_size(PDFArray) != 3){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+        for (i=0; i < 3; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            /* The PDF 1.7 reference states that all three components of the BlackPoint
+             * (if present) must be positive.
+             */
+            if (f < 0) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto exit;
+            }
+            BlackPoint[i] = (float)f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+
+    if (pdfi_dict_knownget_type(ctx, ParamsDict, "Range", PDF_ARRAY, (pdf_obj **)&PDFArray) > 0) {
+        if (pdfi_array_size(PDFArray) != 4){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+
+        for (i=0; i < 4; i++) {
+            code = pdfi_array_get_number(ctx, PDFArray, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            Range[i] = f;
+        }
+        pdfi_countdown(PDFArray);
+        PDFArray = NULL;
+    }
+    code = 0;
+
+    for (i = 0;i < 3; i++) {
+        pcs->params.lab.WhitePoint[i] = WhitePoint[i];
+        pcs->params.lab.BlackPoint[i] = BlackPoint[i];
+    }
+    for (i = 0;i < 4; i++)
+        pcs->params.lab.Range[i] = Range[i];
+
+exit:
+    pdfi_countdown(PDFArray);
+    return code;
+}
+
 static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int index, pdf_dict *stream_dict, pdf_dict *page_dict, gs_color_space **ppcs, bool inline_image)
 {
     pdf_stream *ICC_obj = NULL;
     pdf_dict *dict; /* Alias to avoid tons of casting */
     pdf_array *a;
     int64_t Length, N;
-    pdf_obj *Name = NULL;
+    pdf_obj *Name = NULL, *Alt = NULL;
     char *cname = NULL;
     int code;
     bool known = true;
@@ -1252,7 +1527,66 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
                 code = gs_note_error(gs_error_undefined);
                 break;
         }
+    } else {
+        if (pcs->ICC_Alternate_space == gs_ICC_Alternate_None) {
+            code = pdfi_dict_knownget(ctx, dict, "Alternate", (pdf_obj **)&Alt);
+            if (code >= 0) {
+                switch(pdfi_type_of(Alt)) {
+                    case PDF_NAME:
+                        /* Simple named spaces must be Gray, RGB or CMYK, we ignore /Indexed */
+                        if (pdfi_name_is((const pdf_name *)Alt, "DeviceGray"))
+                            pcs->ICC_Alternate_space = gs_ICC_Alternate_DeviceGray;
+                        else if (pdfi_name_is((const pdf_name *)Alt, "DeviceRGB"))
+                            pcs->ICC_Alternate_space = gs_ICC_Alternate_DeviceRGB;
+                        else if (pdfi_name_is((const pdf_name *)Alt, "DeviceCMYK"))
+                            pcs->ICC_Alternate_space = gs_ICC_Alternate_DeviceCMYK;
+                        break;
+                    case PDF_ARRAY:
+                        {
+                            pdf_obj *AltName = NULL, *ParamsDict = NULL;
+
+                            code = pdfi_array_get_type(ctx, (pdf_array *)Alt, 0, PDF_NAME, &AltName);
+                            if (code >= 0) {
+                                code = pdfi_array_get_type(ctx, (pdf_array *)Alt, 1, PDF_DICT, &ParamsDict);
+                                if (code >= 0) {
+                                    if (pdfi_name_is((const pdf_name *)AltName, "CalGray")) {
+                                        code = pdfi_set_CalGray_params(ctx, pcs, (pdf_dict *)ParamsDict);
+                                        if (code >= 0)
+                                            pcs->ICC_Alternate_space = gs_ICC_Alternate_CalGray;
+                                    } else {
+                                        if (pdfi_name_is((const pdf_name *)AltName, "CalRGB")) {
+                                            code = pdfi_set_CalRGB_params(ctx, pcs, (pdf_dict *)ParamsDict);
+                                            if (code >= 0)
+                                                pcs->ICC_Alternate_space = gs_ICC_Alternate_CalRGB;
+                                        } else {
+                                            if (pdfi_name_is((const pdf_name *)AltName, "CalCMYK")) {
+                                                pcs->ICC_Alternate_space = gs_ICC_Alternate_DeviceCMYK;
+                                            } else {
+                                                if (pdfi_name_is((const pdf_name *)AltName, "Lab")) {
+                                                    code = pdfi_set_Lab_params(ctx, pcs, (pdf_dict *)ParamsDict);
+                                                    if (code >= 0)
+                                                        pcs->ICC_Alternate_space = gs_ICC_Alternate_Lab;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            code = 0;
+                            pdfi_countdown(ParamsDict);
+                            pdfi_countdown(AltName);
+                        }
+                        break;
+                    default:
+                        /* Probably an error, but just ignore it */
+                        break;
+                }
+                pdfi_countdown(Alt);
+                Alt = NULL;
+            }
+        }
     }
+
     if (ppcs!= NULL) {
         *ppcs = pcs;
         if (pcs != NULL)
@@ -1270,6 +1604,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
 done:
     if (cname)
         gs_free_object(ctx->memory, cname, "pdfi_create_iccbased (profile name)");
+    pdfi_countdown(Alt);
     pdfi_countdown(Name);
     pdfi_countdown(ICC_obj);
     return code;
@@ -2353,7 +2688,7 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
-    } else if (pdfi_name_is(space, "CMYK") || pdfi_name_is(space, "DeviceCMYK")) {
+    } else if (pdfi_name_is(space, "CMYK") || pdfi_name_is(space, "DeviceCMYK") || pdfi_name_is(space, "CalCMYK")) {
         if (pdfi_name_is(space, "CMYK") && !inline_image) {
             pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_array", NULL);
             if (ctx->args.pdfstoponwarning)
@@ -2420,7 +2755,7 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
                 return_error(gs_error_syntaxerror);
         }
         code = pdfi_create_DeviceRGB(ctx, ppcs);
-    } else if (pdfi_name_is(name, "CMYK") || pdfi_name_is(name, "DeviceCMYK")) {
+    } else if (pdfi_name_is(name, "CMYK") || pdfi_name_is(name, "DeviceCMYK") || pdfi_name_is(name, "CalCMYK")) {
         if (pdfi_name_is(name, "CMYK") && !inline_image) {
             pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINECOLORSPACE, "pdfi_create_colorspace_by_name", NULL);
             if (ctx->args.pdfstoponwarning)
