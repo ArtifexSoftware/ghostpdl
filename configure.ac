@@ -3148,9 +3148,13 @@ AC_SUBST(FT_HIDDEN_CFLAGS)
 AC_SUBST(XML_HIDDEN_CFLAGS)
 
 AC_ARG_ENABLE([dynamic], AS_HELP_STRING([--enable-dynamic],
-    [Enable dynamically loaded drivers]),
+    [Enable dynamically loaded drivers (note: this option is deprecated because it is incompatible with hidden symbols - use --disable-hidden-visibility]),
 [
   if test "x$enable_dynamic" != xno; then
+    if test x"$hide_symbols" = x"yes" ; then
+       AC_MSG_ERROR([Sorry, (deprecated) dynamic driver support not compatible with hidden symbols - use --disable-hidden-visibility])
+    fi
+
     case $host in
       *-linux*|*-gnu)
         INSTALL_SHARED="install-shared"
