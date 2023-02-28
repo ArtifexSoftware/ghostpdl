@@ -473,6 +473,9 @@ static int plist_value_get_bool(gs_param_typed_value *pvalue, bool *pbool)
     return_error(gs_error_typecheck);
 }
 
+#define argis(P, S) \
+(!strncmp((P), (S), sizeof(S)-1) && ((P)[sizeof(S)-1] == 0 || (P)[sizeof(S)-1] == '=' || (P)[sizeof(S)-1] == '#'))
+
 static int
 pdf_impl_set_param(pl_interp_implementation_t *impl,
                    gs_param_list    *plist)
@@ -501,160 +504,160 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             goto exit;
         }
 
-        if (!strncmp(param, "QUIET", 5)) {
+        if (argis(param, "QUIET")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.QUIET);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "FirstPage", 9)) {
+        if (argis(param, "FirstPage")) {
             code = plist_value_get_int(&pvalue, &ctx->args.first_page);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "LastPage", 8)) {
+        if (argis(param, "LastPage")) {
             code = plist_value_get_int(&pvalue, &ctx->args.last_page);
             if (code < 0)
                 return code;
         }
         /* PDF interpreter flags */
-        if (!strncmp(param, "VerboseErrors", 13)) {
+        if (argis(param, "VerboseErrors")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.verbose_errors);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "VerboseWarnings", 15)) {
+        if (argis(param, "VerboseWarnings")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.verbose_warnings);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFDEBUG", 8)) {
+        if (argis(param, "PDFDEBUG")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.pdfdebug);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFSTOPONERROR", 14)) {
+        if (argis(param, "PDFSTOPONERROR")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.pdfstoponerror);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFSTOPONWARNING", 16)) {
+        if (argis(param, "PDFSTOPONWARNING")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.pdfstoponwarning);
             if (code < 0)
                 return code;
             if (ctx->args.pdfstoponwarning != 0)
                 ctx->args.pdfstoponerror = 1;
         }
-        if (!strncmp(param, "NOTRANSPARENCY", 14)) {
+        if (argis(param, "NOTRANSPARENCY")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.notransparency);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFNOCIDFALLBACK", 13)) {
+        if (argis(param, "PDFNOCIDFALLBACK")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.nocidfallback);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "NO_PDFMARK_OUTLINES", 19)) {
+        if (argis(param, "NO_PDFMARK_OUTLINES")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.no_pdfmark_outlines);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "NO_PDFMARK_DESTS", 16)) {
+        if (argis(param, "NO_PDFMARK_DESTS")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.no_pdfmark_dests);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFFitPage", 10)) {
+        if (argis(param, "PDFFitPage")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.pdffitpage);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "UseCropBox", 10)) {
+        if (argis(param, "UseCropBox")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.usecropbox);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "UseArtBox", 9)) {
+        if (argis(param, "UseArtBox")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.useartbox);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "UseBleedBox", 11)) {
+        if (argis(param, "UseBleedBox")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.usebleedbox);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "UseTrimBox", 10)) {
+        if (argis(param, "UseTrimBox")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.usetrimbox);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "Printed", 7)) {
+        if (argis(param, "Printed")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.printed);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "DITHERPPI", 9)) {
+        if (argis(param, "DITHERPPI")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.ditherppi);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "ShowAcroForm", 12)) {
+        if (argis(param, "ShowAcroForm")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.showacroform);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "ShowAnnots", 10)) {
+        if (argis(param, "ShowAnnots")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.showannots);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "SHOWANNOTTYPES", 14)) {
+        if (argis(param, "SHOWANNOTTYPES")) {
             code = plist_value_get_namelist(ctx, &pvalue, &ctx->args.showannottypes);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PreserveAnnots", 14)) {
+        if (argis(param, "PreserveAnnots")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.preserveannots);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PRESERVEANNOTTYPES", 18)) {
+        if (argis(param, "PRESERVEANNOTTYPES")) {
             code = plist_value_get_namelist(ctx, &pvalue, &ctx->args.preserveannottypes);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PreserveMarkedContent", 21)) {
+        if (argis(param, "PreserveMarkedContent")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.preservemarkedcontent);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "NoUserUnit", 10)) {
+        if (argis(param, "NoUserUnit")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.nouserunit);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "RENDERTTNOTDEF", 13)) {
+        if (argis(param, "RENDERTTNOTDEF")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.renderttnotdef);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFINFO", 7)) {
+        if (argis(param, "PDFINFO")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.pdfinfo);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "DOPDFMARKS", 10)) {
+        if (argis(param, "DOPDFMARKS")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.dopdfmarks);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "PDFPassword", 11)) {
+        if (argis(param, "PDFPassword")) {
             code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->encryption.Password , &ctx->encryption.PasswordLen, &discard_isname);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "UsePDFX3Profile", strlen("UsePDFX3Profile"))) {
+        if (argis(param, "UsePDFX3Profile")) {
             /* This is a weird one because it can be either a bool or an int.
              * If it's a bool=true, then it defaults to PDFX3Profile_num = 0
              * If it's an int, then we set the flag to true and use the
@@ -670,17 +673,17 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "NOSUBSTDEVICECOLORS", strlen("NOSUBSTDEVICECOLORS"))) {
+        if (argis(param, "NOSUBSTDEVICECOLORS")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.NOSUBSTDEVICECOLORS);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "UseOutputIntent", strlen("UseOutputIntent"))) {
+        if (argis(param, "UseOutputIntent")) {
             code = plist_value_get_string_or_name(ctx, &pvalue, &ctx->args.UseOutputIntent, &len, &discard_isname);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "FONTPATH", 11)) {
+        if (argis(param, "FONTPATH")) {
             char *s = NULL;
             int slen;
             code = plist_value_get_string_or_name(ctx, &pvalue, &s , &slen, &discard_isname);
@@ -689,7 +692,7 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             code = pdfi_add_paths_to_search_paths(ctx, (const char *)s, slen, true);
             gs_free_object(ctx->memory, s, "FONTPATH param string");
         }
-        if (!strncmp(param, "FONTMAP", 7)) {
+        if (argis(param, "FONTMAP")) {
             char *s = NULL;
             int slen;
             code = plist_value_get_string_or_name(ctx, &pvalue, &s, &slen, &discard_isname);
@@ -698,22 +701,22 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             code = pdfi_add_fontmapfiles(ctx, (const char *)s, slen);
             gs_free_object(ctx->memory, s, "FONTMAP param string");
         }
-        if (!strncmp(param, "CIDSubstPath", 12)) {
+        if (argis(param, "CIDSubstPath")) {
             code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidfsubstpath.data, (int *)&ctx->args.cidfsubstpath.size, &discard_isname);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "CIDSubstFont", 12)) {
+        if (argis(param, "CIDSubstFont")) {
             code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidfsubstfont.data, (int *)&ctx->args.cidfsubstfont.size, &discard_isname);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "SUBSTFONT", 12)) {
+        if (argis(param, "SUBSTFONT")) {
             code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.defaultfont.data, (int *)&ctx->args.defaultfont.size, &ctx->args.defaultfont_is_name);
             if (code < 0)
                 return code;
         }
-        if (!strncmp(param, "IgnoreToUnicode", 15)) {
+        if (argis(param, "IgnoreToUnicode")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.ignoretounicode);
             if (code < 0)
                 return code;

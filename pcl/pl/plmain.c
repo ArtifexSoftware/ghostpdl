@@ -1494,34 +1494,34 @@ parse_floats(gs_memory_t * mem, uint arg_count, const char *arg, float *f)
     return float_index;
 }
 
-#define argcmp(A, S, L) \
-    (!strncmp(A, S, L) && (A[L] == 0 || A[L] == '='))
+#define argis(A, S) \
+    (!strncmp((A), (S), sizeof(S)-1) && ((A)[sizeof(S)-1] == 0 || (A)[sizeof(S)-1] == '=' || (A)[sizeof(S)-1] == '#'))
 
 static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int64_t b)
 {
-    if (argcmp(arg, "BATCH", 5))
+    if (argis(arg, "BATCH"))
         return (b == 1) ? 0 : gs_note_error(gs_error_rangecheck);
-    if (argcmp(arg, "NOPAUSE", 7)) {
+    if (argis(arg, "NOPAUSE")) {
         pmi->pause = !b;
         return 1;
     }
-    if (argcmp(arg, "DOINTERPOLATE", 13)) {
+    if (argis(arg, "DOINTERPOLATE")) {
         pmi->interpolate = !!b;
         return 0;
     }
-    if (argcmp(arg, "NOCACHE", 7)) {
+    if (argis(arg, "NOCACHE")) {
         pmi->nocache = !!b;
         return 0;
     }
-    if (argcmp(arg, "SCANCONVERTERTYPE", 17)) {
+    if (argis(arg, "SCANCONVERTERTYPE")) {
         pmi->scanconverter = b;
         return 0;
     }
-    if (argcmp(arg, "RESETRESOURCES", 14)) {
+    if (argis(arg, "RESETRESOURCES")) {
         pmi->reset_resources = b;
         return 0;
     }
-    if (argcmp(arg, "NODISPLAY", 9)) {
+    if (argis(arg, "NODISPLAY")) {
         pmi->pause = !b;
         pmi->device_index = get_device_index(pmi->memory, "nullpage");
         if (pmi->device_index == -1)
@@ -1533,12 +1533,12 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int6
 
 static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, float f)
 {
-    if (argcmp(arg, "BATCH", 5) ||
-        argcmp(arg, "NOPAUSE", 7) ||
-        argcmp(arg, "DOINTERPOLATE", 13) ||
-        argcmp(arg, "NOCACHE", 7) ||
-        argcmp(arg, "SCANCONVERTERTYPE", 17) ||
-        argcmp(arg, "RESETRESOURCES", 14)) {
+    if (argis(arg, "BATCH") ||
+        argis(arg, "NOPAUSE") ||
+        argis(arg, "DOINTERPOLATE") ||
+        argis(arg, "NOCACHE") ||
+        argis(arg, "SCANCONVERTERTYPE") ||
+        argis(arg, "RESETRESOURCES")) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -1546,12 +1546,12 @@ static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, fl
 
 static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_param_string *f)
 {
-    if (argcmp(arg, "BATCH", 5) ||
-        argcmp(arg, "NOPAUSE", 7) ||
-        argcmp(arg, "DOINTERPOLATE", 13) ||
-        argcmp(arg, "NOCACHE", 7) ||
-        argcmp(arg, "SCANCONVERTERTYPE", 17) ||
-        argcmp(arg, "RESETRESOURCES", 14)) {
+    if (argis(arg, "BATCH") ||
+        argis(arg, "NOPAUSE") ||
+        argis(arg, "DOINTERPOLATE") ||
+        argis(arg, "NOCACHE") ||
+        argis(arg, "SCANCONVERTERTYPE") ||
+        argis(arg, "RESETRESOURCES")) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -1844,22 +1844,19 @@ pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
         return -1;
     }
     value = eqp + 1;
-    if (!strncmp(arg, "DEVICE", 6)) {
+    if (argis(arg, "DEVICE")) {
         dmprintf(pmi->memory, "DEVICE can only be set on the command line!\n");
         return -1;
-    } else if (!strncmp(arg, "DefaultGrayProfile",
-                        strlen("DefaultGrayProfile"))) {
+    } else if (argis(arg, "DefaultGrayProfile")) {
         dmprintf(pmi->memory, "DefaultGrayProfile can only be set on the command line!\n");
         return -1;
-    } else if (!strncmp(arg, "DefaultRGBProfile",
-                        strlen("DefaultRGBProfile"))) {
+    } else if (argis(arg, "DefaultRGBProfile")) {
         dmprintf(pmi->memory, "DefaultRGBProfile can only be set on the command line!\n");
         return -1;
-    } else if (!strncmp(arg, "DefaultCMYKProfile",
-                        strlen("DefaultCMYKProfile"))) {
+    } else if (argis(arg, "DefaultCMYKProfile")) {
         dmprintf(pmi->memory, "DefaultCMYKProfile can only be set on the command line!\n");
         return -1;
-    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
+    } else if (argis(arg, "ICCProfileDir")) {
         dmprintf(pmi->memory, "ICCProfileDir can only be set on the command line!\n");
         return -1;
     } else {
@@ -1905,22 +1902,19 @@ pl_main_set_parsed_param(pl_main_instance_t * pmi, const char *arg)
         return -1;
     }
     value = eqp + 1;
-    if (!strncmp(arg, "DEVICE", 6)) {
+    if (argis(arg, "DEVICE")) {
         dmprintf(pmi->memory, "DEVICE cannot be set by -p!\n");
         return -1;
-    } else if (!strncmp(arg, "DefaultGrayProfile",
-                        strlen("DefaultGrayProfile"))) {
+    } else if (argis(arg, "DefaultGrayProfile")) {
         dmprintf(pmi->memory, "DefaultGrayProfile cannot be set by -p!\n");
         return -1;
-    } else if (!strncmp(arg, "DefaultRGBProfile",
-                        strlen("DefaultRGBProfile"))) {
+    } else if (argis(arg, "DefaultRGBProfile")) {
         dmprintf(pmi->memory, "DefaultRGBProfile cannot be set by -p!\n");
         return -1;
-    } else if (!strncmp(arg, "DefaultCMYKProfile",
-                        strlen("DefaultCMYKProfile"))) {
+    } else if (argis(arg, "DefaultCMYKProfile")) {
         dmprintf(pmi->memory, "DefaultCMYKProfile cannot be set by -p!\n");
         return -1;
-    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
+    } else if (argis(arg, "ICCProfileDir")) {
         dmprintf(pmi->memory, "ICCProfileDir cannot be set by -p!\n");
         return -1;
     }
@@ -2298,7 +2292,7 @@ handle_dash_s(pl_main_instance_t *pmi, const char *arg)
         return -1;
     }
     value = eqp + 1;
-    if (!strncmp(arg, "DEVICE", 6)) {
+    if (argis(arg, "DEVICE")) {
         if (pmi->device_index != -1) {
             dmprintf(pmi->memory, "DEVICE already set!\n");
             return -1;
@@ -2306,18 +2300,15 @@ handle_dash_s(pl_main_instance_t *pmi, const char *arg)
         pmi->device_index = get_device_index(pmi->memory, value);
         if (pmi->device_index == -1)
             return -1;
-    } else if (!strncmp(arg, "DefaultGrayProfile",
-                        strlen("DefaultGrayProfile"))) {
+    } else if (argis(arg, "DefaultGrayProfile")) {
         pmi->pdefault_gray_icc = arg_copy(value, pmi->memory);
-    } else if (!strncmp(arg, "DefaultRGBProfile",
-                        strlen("DefaultRGBProfile"))) {
+    } else if (argis(arg, "DefaultRGBProfile")) {
         pmi->pdefault_rgb_icc = arg_copy(value, pmi->memory);
-    } else if (!strncmp(arg, "DefaultCMYKProfile",
-                        strlen("DefaultCMYKProfile"))) {
+    } else if (argis(arg, "DefaultCMYKProfile")) {
         pmi->pdefault_cmyk_icc = arg_copy(value, pmi->memory);
-    } else if (!strncmp(arg, "ICCProfileDir", strlen("ICCProfileDir"))) {
+    } else if (argis(arg, "ICCProfileDir")) {
         pmi->piccdir = arg_copy(value, pmi->memory);
-    } else if (!strncmp(arg, "OutputFile", 10) && strlen(eqp) > 0) {
+    } else if (argis(arg, "OutputFile") && strlen(eqp) > 0) {
         code = gs_add_outputfile_control_path(pmi->memory, eqp+1);
         if (code < 0)
             return code;
@@ -2382,7 +2373,8 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                 } else if (strcmp(arg, "debug") == 0) {
                     gs_debug_flags_list(pmi->memory);
                     break;
-                } else if (strncmp(arg, "debug=", 6) == 0) {
+                } else if (strncmp(arg, "debug=", 6) == 0 ||
+                           strncmp(arg, "debug#", 6) == 0) {
                     gs_debug_flags_parse(pmi->memory, arg + 6);
                     break;
 #ifndef OMIT_SAVED_PAGES	/* TBI */
