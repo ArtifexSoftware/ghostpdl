@@ -1566,7 +1566,7 @@ pass_param_to_languages(pl_main_instance_t *pmi,
 
     for (imp = pmi->implementations; *imp != NULL; imp++) {
         code = pl_set_param(*imp, plist);
-        if (code != 0)
+        if (code < 0)
             break;
     }
 
