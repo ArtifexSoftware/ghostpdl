@@ -53,9 +53,7 @@ typedef struct pdf_interp_instance_s
 
 extern const char gp_file_name_list_separator;
 
-#define _PDFI_STRING_IT(s) #s
-#define PDFI_STRING_IT(s) _PDFI_STRING_IT(s)
-#define GS_LIB_DEFAULT_STRING PDFI_STRING_IT(GS_LIB_DEFAULT)
+#define GS_LIB_DEFAULT_STRING GS_STRINGIZE(GS_LIB_DEFAULT)
 
 static int
 pdf_detect_language(const char *s, int len)
