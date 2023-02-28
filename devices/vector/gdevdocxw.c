@@ -38,7 +38,7 @@
 
 #include "doc_common.h"
 
-#include "../../extract/include/extract.h"
+#include "extract/extract.h"
 
 #include <errno.h>
 

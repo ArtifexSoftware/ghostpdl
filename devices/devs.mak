@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2022 Artifex Software, Inc.
+# Copyright (C) 2001-2023 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -685,7 +685,7 @@ $(DEVOBJ)gdevdocxw.$(OBJ) : $(DEVVECSRC)gdevdocxw.c $(GDEV) $(gdevkrnlsclass_h) 
   $(gsdevice_h) $(gxfont_h) $(gxfont0_h) $(gstext_h) $(gxfcid_h)\
   $(gxgstate_h) $(gxpath_h) $(gsagl_h) $(DEVS_MAK) \
   $(DEVVECSRC)doc_common.h  $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevdocxw.$(OBJ) $(C_) $(DEVVECSRC)gdevdocxw.c
+	$(DEVCC) $(DEVO_)gdevdocxw.$(OBJ) $(I_)$(EXTRACT_DIR)$(D)include$(_I) $(C_) $(DEVVECSRC)gdevdocxw.c
 
 # Shared code used by txtwrite and docxwrite.
 
