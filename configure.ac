@@ -2236,8 +2236,24 @@ if test x$with_so != xno; then
     ENABLESO="\$(D_)SO_INCLUDED\$(_D)"
     GPDL_SO_TOP_OBJ="\$(GPDLOBJ)/\$(GPDL_SO_TOP_OBJ_FILE)"
     # This will do for now, though clearly it's not ideal.
-    SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/linux/x64/smart-office-lib.a"
-fi
+    case $host in
+        i*86*-linux*|i*86*-gnu)
+            SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/linux/x86/smart-office-lib.a"
+        ;;
+        -linux*|-gnu)
+            SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/linux/x64/smart-office-lib.a"
+        ;;
+        *arm64*-darwin*)
+            SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/macos/arm64/smart-office-lib.a"
+        ;;
+        *i*86-darwin*)
+            SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/macos/x86/smart-office-lib.a"
+        ;;
+        *-darwin*)
+            SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/macos/x64/smart-office-lib.a"
+        ;;
+    esac
+  fi
 fi
 
 AC_SUBST(ENABLESO)
