@@ -422,8 +422,11 @@ pcl_font_header(pcl_args_t * pargs, pcl_state_t * pcs)
     /* Create the generic font information. */
     plfont = pl_alloc_font(mem, "pcl_font_header(pl_font_t)");
 #ifdef DEBUG
-    for (int i = 0; i < sizeof(pfh->FontName); i++)
-        plfont->FontName[i] = pfh->FontName[i];
+    {
+        int i;
+        for (i = 0; i < sizeof(pfh->FontName); i++)
+            plfont->FontName[i] = pfh->FontName[i];
+    }
 #endif
     header = gs_alloc_bytes(mem, count, "pcl_font_header(header)");
     if (plfont == NULL || header == NULL) {
