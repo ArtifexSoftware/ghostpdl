@@ -105,17 +105,17 @@ pdfi_font0_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u
                 if (cc > 65535) {
                     code = 4;
                     if (unicode_return != NULL && length >= code) {
-                        unicode_return[3] = (cc & 0xFF000000)>> 24;
-                        unicode_return[2] = (cc & 0x00FF0000) >> 16;
-                        unicode_return[1] = (cc & 0x0000FF00) >> 8;
-                        unicode_return[0] = (cc & 0x000000FF);
+                        unicode_return[0] = (cc & 0xFF000000)>> 24;
+                        unicode_return[1] = (cc & 0x00FF0000) >> 16;
+                        unicode_return[2] = (cc & 0x0000FF00) >> 8;
+                        unicode_return[3] = (cc & 0x000000FF);
                     }
                 }
                 else {
                     code = 2;
                     if (unicode_return != NULL && length >= code) {
-                        unicode_return[1] = (cc & 0x0000FF00) >> 8;
-                        unicode_return[0] = (cc & 0x000000FF);
+                        unicode_return[0] = (cc & 0x0000FF00) >> 8;
+                        unicode_return[1] = (cc & 0x000000FF);
                     }
                 }
             }

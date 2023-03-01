@@ -857,7 +857,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
         else { /* If the composite font has a decoding, then this is a subsituted CIDFont with a "known" ordering */
             unsigned int gc = 0, cc = (unsigned int)ccode;
             byte uc[4];
-            int l;
+            int l, i;
 
             if (penum->text.operation & TEXT_FROM_SINGLE_CHAR) {
                 cc = penum->text.data.d_char;
@@ -866,7 +866,6 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             }
             else {
                 byte *c = (byte *)&penum->text.data.bytes[penum->index - penum->bytes_decoded];
-                int i;
                 cc = 0;
                 for (i = 0; i < penum->bytes_decoded ; i++) {
                     cc |= c[i] << ((penum->bytes_decoded - 1) - i) * 8;
@@ -874,11 +873,11 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             }
 
             l = penum->orig_font->procs.decode_glyph((gs_font *)penum->orig_font, ccode, (gs_char)cc, (ushort *)uc, 4);
-            if (l == 2) {
-                cc = uc[0] | uc[1] << 8;
-            }
-            else if (l == 4) {
-                cc = uc[0] | uc[1] << 8 | uc[2] << 16 | uc[3] << 24;
+            if (l > 0 && l < sizeof(uc)) {
+                cc = 0;
+                for (i = 0; i < l; i++) {
+                    cc |= uc[l - 1 - i] << (i * 8);
+                }
             }
             else
                 cc = ccode;

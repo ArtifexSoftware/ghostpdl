@@ -56,18 +56,19 @@ static int pdfi_cidtype2_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
         unsigned int ucc = 0;
         int code = pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, NULL, 0);
         if (code == 2) {
-            ushort sccode = 0;
-            (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, &sccode, 2);
-            ucc = (uint)sccode;
+            uchar sccode[2] = {0};
+            (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, (ushort *)&sccode, 2);
+            ucc = (sccode[0] << 8) + sccode[1];
         }
         else if (code == 4) {
-            uint iccode = 0;
+            uchar iccode[4] = {0};
             (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, (ushort *)&iccode, 2);
-            ucc = iccode;
+            ucc = (iccode[0] << 24) + (iccode[1] << 16) + (iccode[2] << 8) + iccode[3];
+
         }
         if (code == 2 || code == 4) {
             code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (unsigned int)ucc, &gid);
-            if (code < 0)
+            if (code < 0 || gid == 0)
                 gid = glyph - GS_MIN_CID_GLYPH;
         }
     }
@@ -94,18 +95,19 @@ static uint pdfi_cidtype2_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
                 unsigned int ucc = 0;
                 code = pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, NULL, 0);
                 if (code == 2) {
-                    ushort sccode = 0;
-                    (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, &sccode, 2);
-                    ucc = (uint)sccode;
+                    uchar sccode[2] = {0};
+                    (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, (ushort *)&sccode, 2);
+                    ucc = (sccode[0] << 8) + sccode[1];
                 }
                 else if (code == 4) {
-                    uint iccode = 0;
+                    uchar iccode[4] = {0};
                     (void)pfont->procs.decode_glyph((gs_font *)pfont, glyph, -1, (ushort *)&iccode, 2);
-                    ucc = iccode;
+                    ucc = (iccode[0] << 24) + (iccode[1] << 16) + (iccode[2] << 8) + iccode[3];
+
                 }
                 if (code == 2 || code == 4) {
                     code = pdfi_fapi_check_cmap_for_GID((gs_font *)pfont, (unsigned int)ucc, &gid);
-                    if (code < 0)
+                    if (code < 0 || gid == 0)
                         gid = glyph - GS_MIN_CID_GLYPH;
                 }
             }

@@ -1754,33 +1754,33 @@ int pdfi_tounicode_char_to_unicode(pdf_context *ctx, pdf_cmap *tounicode, gs_gly
                         if (counter.entry.value.size == 1) {
                             l = 2;
                             if (ucode != NULL && length >= l) {
-                                ucode[1] = counter.entry.value.data[0];
-                                ucode[0] = counter.entry.value.data[1];
+                                ucode[0] = counter.entry.value.data[0];
+                                ucode[1] = counter.entry.value.data[1];
                             }
                         }
                         else if (counter.entry.value.size == 2) {
                             l = 2;
                             if (ucode != NULL && length >= l) {
-                                ucode[1] = counter.entry.value.data[0];
-                                ucode[0] = counter.entry.value.data[1];
+                                ucode[0] = counter.entry.value.data[0];
+                                ucode[1] = counter.entry.value.data[1];
                             }
                         }
                         else if (counter.entry.value.size == 3) {
                             l = 4;
                             if (ucode != NULL && length >= l) {
-                                ucode[3] = counter.entry.value.data[0];
-                                ucode[2] = counter.entry.value.data[1];
-                                ucode[1] = counter.entry.value.data[2];
-                                ucode[0] = 0;
+                                ucode[0] = counter.entry.value.data[0];
+                                ucode[1] = counter.entry.value.data[1];
+                                ucode[2] = counter.entry.value.data[2];
+                                ucode[3] = 0;
                             }
                         }
                         else {
                             l = 4;
                             if (ucode != NULL && length >= l) {
-                                ucode[3] = counter.entry.value.data[0];
-                                ucode[2] = counter.entry.value.data[1];
+                                ucode[0] = counter.entry.value.data[0];
                                 ucode[1] = counter.entry.value.data[1];
-                                ucode[0] = counter.entry.value.data[3];
+                                ucode[2] = counter.entry.value.data[1];
+                                ucode[3] = counter.entry.value.data[3];
                             }
                         }
                     }
@@ -1840,17 +1840,17 @@ pdfi_cidfont_decode_glyph(gs_font *font, gs_glyph glyph, int ch, ushort *u, unsi
                 if (cc > 65535) {
                     code = 4;
                     if (unicode_return != NULL && length >= code) {
-                        unicode_return[3] = (cc & 0xFF000000)>> 24;
-                        unicode_return[2] = (cc & 0x00FF0000) >> 16;
-                        unicode_return[1] = (cc & 0x0000FF00) >> 8;
-                        unicode_return[0] = (cc & 0x000000FF);
+                        unicode_return[0] = (cc & 0xFF000000)>> 24;
+                        unicode_return[1] = (cc & 0x00FF0000) >> 16;
+                        unicode_return[2] = (cc & 0x0000FF00) >> 8;
+                        unicode_return[3] = (cc & 0x000000FF);
                     }
                 }
                 else {
                     code = 2;
                     if (unicode_return != NULL && length >= code) {
-                        unicode_return[1] = (cc & 0x0000FF00) >> 8;
-                        unicode_return[0] = (cc & 0x000000FF);
+                        unicode_return[0] = (cc & 0x0000FF00) >> 8;
+                        unicode_return[1] = (cc & 0x000000FF);
                     }
                 }
             }
