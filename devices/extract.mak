@@ -13,7 +13,7 @@
 # CA 94945, U.S.A., +1(415)492-9861, for further information.
 #
 
-extract_cc = $(CC) $(CCFLAGS) -DEXTRACT_CV=0 $(I_)$(EXTRACT_DIR)/include$(_I) $(I_)$(ZSRCDIR)$(_I) $(O_)
+extract_cc = $(CC) $(CCFLAGS) -DEXTRACT_CV=0 $(I_)$(EXTRACT_DIR)$(D)include$(_I) $(I_)$(EXTRACT_DIR)$(D)src$(_I) $(I_)$(ZSRCDIR)$(_I) $(O_)
 extract_out_prefix = $(GLOBJDIR)$(D)extract_
 
 $(extract_out_prefix)alloc.$(OBJ):          $(EXTRACT_DIR)/src/alloc.c $(MAKEDIRS)
