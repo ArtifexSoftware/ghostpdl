@@ -1022,8 +1022,8 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
             return code;
 
         if (!prevFontName && penum->text_state->FontName) {
-            gs_rect *fbbox = &((gs_font_base *)subfont)->FontBBox;
-            gs_matrix fm = *&((gs_font_base *)subfont)->FontMatrix;
+            gs_rect *fbbox = &((gs_font_base *)font)->FontBBox;
+            gs_matrix fm = *&((gs_font_base *)font)->FontMatrix;
             gs_rect bbox;
 
             code = gs_bbox_transform(fbbox, &fm, &bbox);
