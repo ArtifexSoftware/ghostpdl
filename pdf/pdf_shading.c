@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -921,7 +921,7 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     code = gs_shfill(ctx->pgs, psh);
     if (code < 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BADSHADING, "pdfi_rectpath", (char *)"ERROR: ignoring invalid smooth shading object, output may be incorrect");
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BADSHADING, "pdfi_shading", (char *)"ERROR: ignoring invalid smooth shading object, output may be incorrect");
         code = 0;
     }
 
