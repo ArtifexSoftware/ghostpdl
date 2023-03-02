@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -29,6 +29,7 @@
 #include "gsparams.h"
 
 #include "valgrind.h"
+#include <limits.h>
 
 /* ---------------- Statistics ---------------- */
 
@@ -435,6 +436,7 @@ cmd_put_list_extended_op(gx_device_clist_writer *cldev, cmd_list *pcl, int op, u
 int
 cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint size)
 {
+    size_t z;
     CMD_CHECK_LAST_OP_BLOCK_DEFINED(cldev);
 
     if (size + cmd_headroom > cldev->cend - cldev->cnext) {
@@ -445,7 +447,14 @@ cmd_get_buffer_space(gx_device_clist_writer * cldev, gx_clist_state * pcls, uint
             return cldev->error_code;
         }
     }
-    return cldev->cend - cldev->cnext - cmd_headroom;
+    /* Calculate the available size as a size_t. If this won't fit in
+     * an int, clip the value. This is a bit crap, but it should be
+     * safe at least until we can change the clist to use size_t's
+     * where appropriate. */
+    z = cldev->cend - cldev->cnext - cmd_headroom;
+    if (z > INT_MAX)
+        z = INT_MAX;
+    return z;
 }
 
 #ifdef DEBUG
