@@ -813,7 +813,7 @@ docxwrite_process_cmap_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
     unsigned int rcode = 0;
     gs_text_enum_t scan = *(gs_text_enum_t *)pte;
     int i;
-    gs_matrix combined;
+    gs_point at = { 0, 0 };
 
     /* Composite font using a CMap */
 
@@ -883,23 +883,16 @@ docxwrite_process_cmap_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
             if (code < 0)
                 return code;
 
-            combined.xx = penum->pgs->ctm.xx;
-            combined.xy = penum->pgs->ctm.xy;
-            combined.yx = penum->pgs->ctm.yx;
-            combined.yy = penum->pgs->ctm.yy;
-            combined.tx = penum->pgs->ctm.tx;
-            combined.ty = penum->pgs->ctm.ty;
-
             if (extract_span_begin(
                     tdev->extract,
                     penum->text_state->FontName,
                     0 /*font_bold*/,
                     0 /*font_italic*/,
                     penum->text_state->wmode,
-                    combined.xx,
-                    combined.xy,
-                    combined.yx,
-                    combined.yy,
+                    penum->pgs->ctm.xx,
+                    penum->pgs->ctm.xy,
+                    penum->pgs->ctm.yx,
+                    penum->pgs->ctm.yy,
                     bbox.p.x,
                     bbox.p.y,
                     bbox.q.x,
@@ -954,7 +947,7 @@ docxwrite_process_cmap_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
             currently cause it to be used. */
             if (extract_add_char(
                     tdev->extract,
-                    combined.tx, combined.ty,
+                    penum->text_state->matrix.tx + at.x, penum->text_state->matrix.ty + at.y,
                     buffer[0] /*ucs*/,
                     glyph_width / penum->text_state->size /*adv*/,
                     0, 0, 0, 0 /* bbox*/
@@ -965,9 +958,9 @@ docxwrite_process_cmap_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
 
         gs_distance_transform(widths.real_width.xy.x,
                               widths.real_width.xy.y,
-                              &combined, &wanted);
-        combined.tx += dpt.x + wanted.x;
-        combined.ty += dpt.y + wanted.y;
+                              &ctm_only(pte->pgs), &wanted);
+        at.x += dpt.x + wanted.x;
+        at.y += dpt.y + wanted.y;
 
         if (rcode || pte->index >= pte->text.size)
             break;
@@ -989,14 +982,7 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
     uint operation = pte->text.operation;
     txt_glyph_widths_t widths;
     gs_point wanted;	/* user space */
-    gs_matrix combined;
-
-    combined.xx = penum->pgs->ctm.xx;
-    combined.xy = penum->pgs->ctm.xy;
-    combined.yx = penum->pgs->ctm.yx;
-    combined.yy = penum->pgs->ctm.yy;
-    combined.tx = penum->pgs->ctm.tx;
-    combined.ty = penum->pgs->ctm.ty;
+    gs_point at = { 0, 0 };
 
     for (i=pte->index;i<pte->text.size;i++) {
         const char* prevFontName;
@@ -1036,7 +1022,13 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
             return code;
 
         if (!prevFontName && penum->text_state->FontName) {
-            gs_rect *bbox = &((gs_font_base *)pte->orig_font)->FontBBox;
+            gs_rect *fbbox = &((gs_font_base *)subfont)->FontBBox;
+            gs_matrix fm = *&((gs_font_base *)subfont)->FontMatrix;
+            gs_rect bbox;
+
+            code = gs_bbox_transform(fbbox, &fm, &bbox);
+            if (code < 0)
+                return code;
 
             if (extract_span_begin(
                     tdev->extract,
@@ -1044,14 +1036,14 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
                     0 /*font_bold*/,
                     0 /*font_italic*/,
                     penum->text_state->wmode,
-                    combined.xx,
-                    combined.xy,
-                    combined.yx,
-                    combined.yy,
-                    bbox->p.x,
-                    bbox->p.y,
-                    bbox->q.x,
-                    bbox->q.y))
+                    penum->pgs->ctm.xx,
+                    penum->pgs->ctm.xy,
+                    penum->pgs->ctm.yx,
+                    penum->pgs->ctm.yy,
+                    bbox.p.x,
+                    bbox.p.y,
+                    bbox.q.x,
+                    bbox.q.y))
             {
                 return s_errno_to_gs();
             }
@@ -1114,7 +1106,7 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
         cause it to be used. */
         if (extract_add_char(
                 tdev->extract,
-                combined.tx, combined.ty,
+                penum->text_state->matrix.tx + at.x, penum->text_state->matrix.ty + at.y,
                 chr2[0] /*ucs*/,
                 glyph_width / penum->text_state->size /*adv*/,
                 0, 0, 0, 0 /*bbox*/
@@ -1124,9 +1116,9 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
 
         gs_distance_transform(widths.real_width.xy.x,
                               widths.real_width.xy.y,
-                              &combined, &wanted);
-        combined.tx += dpt.x + wanted.x;
-        combined.ty += dpt.y + wanted.y;
+                              &ctm_only(pte->pgs), &wanted);
+        at.x += dpt.x + wanted.x;
+        at.y += dpt.y + wanted.y;
 
         pte->index++;
     }
