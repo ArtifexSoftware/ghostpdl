@@ -991,6 +991,13 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
     gs_point wanted;	/* user space */
     gs_matrix combined;
 
+    combined.xx = penum->pgs->ctm.xx;
+    combined.xy = penum->pgs->ctm.xy;
+    combined.yx = penum->pgs->ctm.yx;
+    combined.yy = penum->pgs->ctm.yy;
+    combined.tx = penum->pgs->ctm.tx;
+    combined.ty = penum->pgs->ctm.ty;
+
     for (i=pte->index;i<pte->text.size;i++) {
         const char* prevFontName;
         float glyph_width;
@@ -1030,13 +1037,6 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
 
         if (!prevFontName && penum->text_state->FontName) {
             gs_rect *bbox = &((gs_font_base *)pte->orig_font)->FontBBox;
-
-            combined.xx = penum->pgs->ctm.xx;
-            combined.xy = penum->pgs->ctm.xy;
-            combined.yx = penum->pgs->ctm.yx;
-            combined.yy = penum->pgs->ctm.yy;
-            combined.tx = penum->pgs->ctm.tx;
-            combined.ty = penum->pgs->ctm.ty;
 
             if (extract_span_begin(
                     tdev->extract,
