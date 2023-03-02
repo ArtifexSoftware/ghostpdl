@@ -2240,7 +2240,7 @@ if test x$with_so != xno; then
         i*86*-linux*|i*86*-gnu)
             SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/linux/x86/smart-office-lib.a"
         ;;
-        -linux*|-gnu)
+        *-linux*|*-gnu)
             SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/linux/x64/smart-office-lib.a"
         ;;
         *arm64*-darwin*)
