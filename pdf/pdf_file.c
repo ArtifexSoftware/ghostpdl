@@ -1867,7 +1867,7 @@ static int pdfi_open_font_file_inner(pdf_context *ctx, const char *fname, const 
     const char *fontdirstr = "Font/";
     const int fontdirstrlen = strlen(fontdirstr);
 
-    if (fname == NULL || fnamelen == 0 || fnamelen >= gp_file_name_sizeof)
+    if (fname == NULL || fnamelen == 0 || fnamelen >= (gp_file_name_sizeof - fontdirstrlen))
         *s = NULL;
     else if (gp_file_name_is_absolute(fname, fnamelen) || fname[0] == '%') {
         /* If it's an absolute path or an explicit PS style device, just try to open it */
