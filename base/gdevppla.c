@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -122,7 +122,7 @@ gdev_prn_size_buf_planar(gx_device_buf_space_t *space, gx_device *target,
                          const gx_render_plane_t *render_plane,
                          int height, bool for_band)
 {
-    gx_device_memory mdev;
+    gx_device_memory mdev = { 0 };
     int code;
 
     if (render_plane && render_plane->index >= 0)
