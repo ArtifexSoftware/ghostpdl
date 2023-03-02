@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -354,8 +354,7 @@ gx_default_stroke_path_shading_or_pattern(gx_device        * pdev,
         return code;
     /* Now we make an accumulator device that will fill that out. */
     gx_cpath_accum_begin(&adev, stroke_as_clip_path.path.memory, false);
-    if (pdev != 0)
-        (*dev_proc(pdev, get_clipping_box))(pdev, &dev_clip_rect);
+    (*dev_proc(pdev, get_clipping_box))(pdev, &dev_clip_rect);
     gx_cpath_accum_set_cbox(&adev, &dev_clip_rect);
     set_nonclient_dev_color(&devc, 0);	/* arbitrary, but not transparent */
     gs_set_logical_op_inline(pgs, lop_default);
