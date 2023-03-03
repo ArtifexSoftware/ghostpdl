@@ -997,13 +997,13 @@ PDF file output - ``pdfwrite``
 
    This control also requires the PDF interpreter to pass the marked content to the :title:`pdfwrite` device, this is only done with the new (C-based) PDF interpreter. The old (PostScript-based) interpreter does not support this feature and will not pass marked content to the :title:`pdfwrite` device.
 
-``-dOmitInfoDateboolean``
+``-dOmitInfoDate=boolean``
    Under some conditions the ``CreationDate`` and ``ModDate`` in the ``/Info`` dictionary are optional and can be omitted. They are required when producing PDF/X output however. This control will allow the user to omit the ``/CreationDate`` and ``/ModDate`` entries in the ``Info`` dictionary (and the corresponding information in the XMP metadata, if present). If you try to set this control when writing PDF/X output, the device will give a warning and ignore this control.
 
-``-dOmitIDboolean``
+``-dOmitID=boolean``
    Under some conditions the ``/ID`` array trailer dictionary is optional and can be omitted. It is required when producing PDF 2.0, or encrypted PDFs however. This control will allow the user to omit the ``/ID`` entry in the trailer dictionary. If you try to set this control when writing PDF 2.0 or encrypted PDF output, the device will give a warning and ignore this control.
 
-``-dOmitXMPboolean``
+``-dOmitXMP=boolean``
    Under some conditions the XMP ``/Metadata`` entry in the ``Catalog`` dictionary is optional and can be omitted. It is required when producing PDF/A output however. This control will allow the user to omit the ``/Metadata`` entry in the ``Catalog`` dictionary. If you try to set this control when writing PDF/A output, the device will give a warning and ignore this control.
 
 ``-dNO_PDFMARK_OUTLINES``
