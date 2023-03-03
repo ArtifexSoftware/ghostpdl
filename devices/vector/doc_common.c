@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -444,7 +444,7 @@ int txt_get_unicode(gx_device *dev, gs_font *font, gs_glyph glyph, gs_char ch, u
                     }
                 }
             }
-            if (length == 0) {
+            if (code >= 0 && length == 0) {
                 single_glyph_list_t *sentry = SingleGlyphList;
                 double_glyph_list_t *dentry = DoubleGlyphList;
                 treble_glyph_list_t *tentry = TrebleGlyphList;
