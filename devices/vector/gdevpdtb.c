@@ -430,7 +430,8 @@ pdf_base_font_drop_complete(pdf_base_font_t *pbfont)
      * free the members which are common to both, so this cast is
      * (at the time of writing) safe.
      */
-    gs_free_copied_font((gs_font *)pbfont->complete);
+    if (pbfont->complete != pbfont->copied)
+        gs_free_copied_font((gs_font *)pbfont->complete);
     pbfont->complete = NULL;
 }
 
