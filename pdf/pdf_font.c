@@ -1779,7 +1779,7 @@ int pdfi_tounicode_char_to_unicode(pdf_context *ctx, pdf_cmap *tounicode, gs_gly
                             if (ucode != NULL && length >= l) {
                                 ucode[0] = counter.entry.value.data[0];
                                 ucode[1] = counter.entry.value.data[1];
-                                ucode[2] = counter.entry.value.data[1];
+                                ucode[2] = counter.entry.value.data[2];
                                 ucode[3] = counter.entry.value.data[3];
                             }
                         }
