@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2029,6 +2029,7 @@ hp_colour_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
 /*  int line_size = gdev_prn_rasterwidth(pdev, 0); */
   int line_size = gdev_prn_raster(pdev);
   int line_size_words = (line_size + W - 1) / W;
+  int line_size_padded;
   int paper_size = gdev_pcl_paper_size((gx_device *)pdev);
   int num_comps = pdev->color_info.num_components;
   int bits_per_pixel = pdev->color_info.depth;
@@ -2087,8 +2088,17 @@ hp_colour_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
           bits_per_pixel = expanded_bpp = 3;	/* Only 3 bits of each byte used */
   }
 
+  /* line_size = width * storage_bpp/8 (e.g. 9180) */
+  /* storage_bpp = number of bits to store a single pixel in the output (e.g. 24) */
+  /* plane_size = number of pixels we are going to process for each line (basically
+   * line_size/storage_bpp rounded up a bit to allow for padding the output buffer
+   * to word size). */
   plane_size = calc_buffsize(line_size, storage_bpp);
   eg.plane_size = plane_size;
+  /* line_size_padded = how many pixels we'd actually get in the padded storage. */
+  line_size_padded = plane_size * storage_bpp;
+  /* BUT, if we're going to process plane_size pixels rather than line_size/storage_bpp
+   * pixels, we ought to calculate future things based upon line_size_padded. */
 
   if (bits_per_pixel == 1) {		/* Data printed direct from i/p */
     databuff_size = 0;			/* so no data buffer required, */
@@ -2100,7 +2110,7 @@ hp_colour_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
       num_comps * 8;			/* 8, 24 or 32 bits */
 
     if (cprn_device->cmyk > 0) {	/* Use CMYK dithering algorithm. */
-        errbuff_size = 4 * (5 + 1 + 1 + line_size + 1 + 2) * I;
+        errbuff_size = 4 * (5 + 1 + 1 + line_size_padded + 1 + 2) * I;
     } else {			/* Use original (RGB) dithering. */
         errbuff_size =			/* 4n extra values for line ends */
             calc_buffsize((plane_size * expanded_bpp + num_comps * 4) * I, 1);
