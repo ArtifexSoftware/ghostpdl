@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -47,7 +47,7 @@ gs_parse_file_name(gs_parsed_file_name_t * pfn, const char *pname, uint len,
     if (pdelim == NULL)		/* %device */
         dlen = len;
     /* gs strings aren't necessarily null terminated */
-    else if (pdelim[1] == 0 || pdelim - pname == len - 1) {	/* %device% */
+    else if (pdelim - pname == len - 1 || pdelim[1] == 0) {	/* %device% */
         pdelim = NULL;
         dlen = len;
     } else {
