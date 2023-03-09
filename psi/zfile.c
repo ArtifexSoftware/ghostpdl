@@ -1174,6 +1174,10 @@ lib_file_open_search_with_combine(gs_file_path_ptr  lib_path, const gs_memory_t 
             	return_error(gs_error_limitcheck);
             memcpy(buffer, pname.fname, pname.len);
             memcpy(buffer+pname.len, fname, flen);
+            if (pname.iodev->procs.open_file == NULL) {
+                code = 1;
+                continue;
+            }
             code = pname.iodev->procs.open_file(pname.iodev, buffer, pname.len + flen, fmode,
                                           &s, (gs_memory_t *)mem);
             if (code < 0) {
