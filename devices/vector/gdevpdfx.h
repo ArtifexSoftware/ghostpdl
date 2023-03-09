@@ -1282,6 +1282,7 @@ typedef struct pdf_lcvd_s {
     bool mask_is_empty;
     bool path_is_empty;
     bool mask_is_clean;
+    bool filled_trap;
     bool write_matrix;
     bool has_background;
     gs_matrix m;

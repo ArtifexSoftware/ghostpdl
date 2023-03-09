@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1397,7 +1397,12 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
         stream_puts(pdev->strm, "q\n");
         code = write_image_with_clip(pdev, cvd, for_pattern);
         stream_puts(pdev->strm, "Q\n");
+    } else if (cvd->filled_trap){
+        stream_puts(pdev->strm, "q\n");
+        code = write_image_with_clip(pdev, cvd, for_pattern);
+        stream_puts(pdev->strm, "Q\n");
     }
+    cvd->filled_trap = false;
     cvd->mdev.width += cvd->mdev.mapped_x;
     cvd->mdev.height += cvd->mdev.mapped_y;
     if (code > 0)
@@ -1405,6 +1410,19 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
                 0, 0, cvd->mdev.width, cvd->mdev.height, (gx_color_index)0);
     return code;
 }
+static int
+lcvd_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
+    const gs_fixed_edge * right, fixed ybot, fixed ytop, bool swap_axes,
+    const gx_device_color * pdevc, gs_logical_operation_t lop)
+{
+    int code = 0;
+    pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
+
+    if (cvd->mask != NULL)
+        cvd->filled_trap = true;
+    return gx_default_fill_trapezoid(dev, left, right, ybot, ytop, swap_axes, pdevc, lop);
+}
+
 static int
 lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
     const gs_gstate *pgs, gx_path *ppath,
@@ -1539,6 +1557,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     cvd->path_is_empty = true;
     cvd->mask_is_empty = true;
     cvd->mask_is_clean = false;
+    cvd->filled_trap = false;
     cvd->has_background = false;
     cvd->mask = 0;
     cvd->write_matrix = true;
@@ -1588,6 +1607,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     dev_proc(&cvd->mdev, dev_spec_op) = lcvd_dev_spec_op;
     dev_proc(&cvd->mdev, fill_path) = lcvd_handle_fill_path_as_shading_coverage;
     dev_proc(&cvd->mdev, transform_pixel_region) = lcvd_transform_pixel_region;
+    dev_proc(&cvd->mdev, fill_trapezoid) = lcvd_fill_trapezoid;
     cvd->m = *m;
     if (write_on_close) {
         cvd->mdev.is_open = true;
