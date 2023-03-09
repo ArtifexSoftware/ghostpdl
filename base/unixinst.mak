@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2022 Artifex Software, Inc.
+# Copyright (C) 2001-2023 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -162,7 +162,7 @@ install-doc: $(PSDOCDIR)/News.htm
 	done'
 
 # install the man pages for each locale
-MAN_LCDIRS=. de
+MAN_LCDIRS=.
 MAN1_LINKS_PS2PS=eps2eps
 MAN1_LINKS_PS2PDF=ps2pdf12 ps2pdf13 ps2pdf14
 MAN1_LINKS_GSLP=gsbj gsdj gsdj500 gslj
