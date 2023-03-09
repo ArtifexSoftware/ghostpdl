@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -57,7 +57,7 @@ fs_file_open_pipe(const gs_memory_t *mem, void *secret, const char *fname, char 
         return_error(gs_fopen_errno_to_code(errno));
     }
 
-    if (rfname != NULL)
+    if (rfname != NULL && rfname != fname)
         strcpy(rfname, fname);
 
     return 0;
