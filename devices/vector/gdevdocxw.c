@@ -39,6 +39,7 @@
 #include "doc_common.h"
 
 #include "extract/extract.h"
+#include "extract/buffer.h"
 
 #include <errno.h>
 
