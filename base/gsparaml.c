@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -107,7 +107,12 @@ process_dict(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char *
 
     dict.size = 0;
     code = add_tokens(dict.list, NULL, p, &dict.size);
-    (*p) += 2;
+    if (code >= 0) {
+        if ((*p)[0] != '>' || (*p)[1] != '>')
+            code = gs_error_syntaxerror;
+        else
+           (*p) += 2;
+    }
     code2 = param_end_write_dict((gs_param_list *)plist, key, &dict);
     return code < 0 ? code : code2;
 }
@@ -682,6 +687,7 @@ add_tokens(gs_param_list *plist, gs_param_name key, char **pp, uint *dict_count)
             return code;
     }
 
+    *pp = p;
     return 0;
 }
 
