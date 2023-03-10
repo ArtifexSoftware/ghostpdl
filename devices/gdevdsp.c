@@ -207,7 +207,10 @@ display_open(gx_device * dev)
     /* Allow device to be opened "disabled" without a callback. */
     /* The callback will be set later and the device re-opened. */
     if (ddev->callback == NULL)
+    {
+        fill_dev_proc(ddev, fill_rectangle, display_fill_rectangle);
         return 0;
+    }
     ccode = install_internal_subclass_devices((gx_device **)&ddev, NULL);
     if (ccode < 0)
         return ccode;
