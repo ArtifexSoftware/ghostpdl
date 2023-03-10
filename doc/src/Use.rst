@@ -2281,7 +2281,7 @@ Other parameters
    Enables access controls on files. Access controls fall into three categories, files from which Ghostscript is permitted to read, ones to which it is permitted to write, and ones over which it has "control" (i.e. delete/rename). These access controls apply to all files accessed via Ghostscript's internal interface to the C library file handling. Whilst we have taken considerable pains to ensure that all the code we maintain (as well as the so called "contrib" devices, that are devices included in our release packages, but not strictly maintained by the Ghostscript development team) uses this interface, we have no control over thirdparty code.
 
 
-   This is an entirely new implementation of ``SAFER`` for Ghostscript versions 9.50 and later. Earlier versions (see :ref:`-dOLDSAFER<dOLDSAFER>`) relied on storing the file permission lists in Postscript VM (Virtual Memory), and only applied file access permissions to the Postscript file related operators. It relied on restricting the function of setpagedevice to avoid the device code from being manipulated into opening arbitrary files. The application of the file permissions was done within the internal context of the Postscript interpreter, and some other aspects of the Postscript restrictions were applied in the Postscript environment. With so many of the feature's capabilities relying on the Postscript context and environment, by using other (Ghostscript specific) features maliciously, the restrictions could be overridden.
+   This is an entirely new implementation of ``SAFER`` for Ghostscript versions 9.50 and later. Earlier versions relied on storing the file permission lists in Postscript VM (Virtual Memory), and only applied file access permissions to the Postscript file related operators. It relied on restricting the function of setpagedevice to avoid the device code from being manipulated into opening arbitrary files. The application of the file permissions was done within the internal context of the Postscript interpreter, and some other aspects of the Postscript restrictions were applied in the Postscript environment. With so many of the feature's capabilities relying on the Postscript context and environment, by using other (Ghostscript specific) features maliciously, the restrictions could be overridden.
 
    Whilst the path storage and application of the permissions is implemented entirely in C, it is still possible for Postscript to add and remove paths from the permissions lists (see .addcontrolpath) until such time as the access controls are enabled (see :ref:`.activatepathcontrol<Language_ActivateControlPath>`), any call to :ref:`.addcontrolpath<Language_AddControlPath>` after :ref:`.activatepathcontrol<Language_ActivateControlPath>` will result in a ``Fatal`` error causing the interpreter to immediately exit.
 
@@ -2356,25 +2356,6 @@ Other parameters
 
    Finally, paths supplied on the command line (such as those in ``-I``, ``-sFONTPATH`` parameters) are added to the permitted reading list. Similarly, paths read during initialisation from ``Fontmap``, ``cidfmap``, and the platform specific font file enumeration (e.g. ``fontconfig`` on Unix systems) are automatically added to the permit read lists.
 
-
-
-
-.. _dOLDSAFER:
-
-**-dOLDSAFER**
-^^^^^^^^^^^^^^^^^^
-
-   .. important :: This enables deprecated code which will shortly be removed.
-
-   Used in combination with ``-dSAFER`` (or ``.setsafe``) enables the pre-9.50 ``SAFER`` implementation. It is included (for now) in case any users find a case where the 9.50 and later ``SAFER`` does not work for them. It means such users can keep working until we have assessed the issue, and distributed a solution.
-
-   Disables the ``deletefile`` and ``renamefile`` operators, and the ability to open piped commands (``%pipe%cmd``) at all. Only ``%stdout`` and ``%stderr`` can be opened for writing. Disables reading of files other than ``%stdin``, those given as a command line argument, or those contained on one of the paths given by ``LIBPATH`` and ``FONTPATH`` and specified by the system params ``/FontResourceDir`` and ``/GenericResourceDir``.
-
-   This mode also sets the :ref:`.LockSafetyParams<Language_LockSafetyParams>` parameter of the default device, or the device specified with the ``-sDEVICE=`` switch to protect against programs that attempt to write to files using the ``OutputFile`` device parameter. Note that since the device parameters specified on the command line (including ``OutputFile``) are set prior to ``SAFER`` mode, the ``-sOutputFile=...`` on the command line is unrestricted.
-
-   ``SAFER`` mode also prevents changing the ``/GenericResourceDir``, ``/FontResourceDir`` and either the ``/SystemParamsPassword`` or the ``/StartJobPassword``.
-
-   When running ``-dNOSAFER`` it is possible to perform a save, followed by ``.setsafe``, execute a file or procedure in ``SAFER`` mode, then use restore to return to ``NOSAFER`` mode. It is possible that a crafted foreign file could restore back to a point when ``NOSAFER`` was in operation.
 
 **-dPreBandThreshold=** *true/false*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
