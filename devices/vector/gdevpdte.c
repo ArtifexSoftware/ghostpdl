@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -871,6 +871,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
                 if (rect.p.x > rect.q.x || rect.p.y > rect.q.y) {
                     penum->index += pstr->size;
                     text->operation &= ~TEXT_DO_DRAW;
+                    penum->text_clipped = true;
                 }
             }
         } else {

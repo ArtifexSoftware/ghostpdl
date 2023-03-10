@@ -327,6 +327,32 @@ pdf_text_release(gs_text_enum_t *pte, client_name_t cname)
     gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
     ocr_glyph_t *next;
 
+    /* Track the dominant text rotation. Ignore text outside the page (text_clipped) and
+     * any text that isn't drawn, unless it is drawn in text rendering mode 3 (invisible)
+     */
+    if (!penum->text_clipped && (penum->text.operation & TEXT_DO_DRAW || penum->pgs->text_rendering_mode == 3))
+    {
+        gs_matrix tmat;
+        gs_point p;
+        int i;
+        gs_font *font = (gs_font *)penum->current_font;
+        gs_text_params_t *const text = &pte->text;
+
+        gs_matrix_multiply(&font->FontMatrix, &ctm_only(penum->pgs), &tmat);
+        gs_distance_transform(1, 0, &tmat, &p);
+        if (p.x > fabs(p.y))
+            i = 0;
+        else if (p.x < -fabs(p.y))
+            i = 2;
+        else if (p.y > fabs(p.x))
+            i = 1;
+        else if (p.y < -fabs(p.x))
+            i = 3;
+        else
+            i = 4;
+        pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
+    }
+
     if (penum->pte_default) {
         gs_text_release(NULL, penum->pte_default, cname);
         penum->pte_default = 0;
@@ -569,10 +595,8 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
     pdf_text_enum_t *penum;
     int code, user_defined = 0;
     gs_memory_t * mem = pgs->memory;
-
-    const gs_font_name *fn = &font->font_name;
-    byte *chars_ptr = fn->chars;
-    uint size = fn->size;
+    byte *chars_ptr = font->font_name.chars;
+    uint size = font->font_name.size;
 
     while (pdf_has_subset_prefix(chars_ptr, size)) {
         /* Strip off an existing subset prefix. */
@@ -587,27 +611,6 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
         font->dir->ccache.upper = 0;
         return gx_default_text_begin(dev, pgs, text, font,
                                      pcpath, ppte);
-    }
-
-    /* Track the dominant text rotation. */
-    {
-        gs_matrix tmat;
-        gs_point p;
-        int i;
-
-        gs_matrix_multiply(&font->FontMatrix, &ctm_only(pgs), &tmat);
-        gs_distance_transform(1, 0, &tmat, &p);
-        if (p.x > fabs(p.y))
-            i = 0;
-        else if (p.x < -fabs(p.y))
-            i = 2;
-        else if (p.y > fabs(p.x))
-            i = 1;
-        else if (p.y < -fabs(p.x))
-            i = 3;
-        else
-            i = 4;
-        pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
     }
 
     pdev->last_charpath_op = 0;
@@ -703,6 +706,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_gstate * pgs,
     penum->charproc_accum = false;
     pdev->accumulating_charproc = false;
     penum->cdevproc_callout = false;
+    penum->text_clipped = false;
     penum->returned.total_width.x = penum->returned.total_width.y = 0;
     penum->cgp = NULL;
     penum->returned.current_glyph = GS_NO_GLYPH;
