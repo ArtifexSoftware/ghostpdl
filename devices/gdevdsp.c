@@ -1843,6 +1843,9 @@ display_set_separations(gx_device_display *dev)
         unsigned int c, m, y, k;
         gx_device_display *head = dev;
 
+        if (num_comp > GX_DEVICE_COLOR_MAX_COMPONENTS)
+            num_comp = GX_DEVICE_COLOR_MAX_COMPONENTS;
+
         while(head->parent)
             head = (gx_device_display *)head->parent;
 
@@ -2218,11 +2221,16 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
                 return_error(gs_error_rangecheck);
             if (ddev->is_planar)
             {
-                int n = ddev->devn_params.num_std_colorant_names + ddev->devn_params.separations.num_separations;
-                if (n == 0)
+                int n;
+                if (ddev->devn_params.separations.num_separations == 0)
                     n = GS_CLIENT_COLOR_MAX_COMPONENTS;
-                if (n > GS_CLIENT_COLOR_MAX_COMPONENTS)
-                    n = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                else {
+                    n = ddev->devn_params.num_std_colorant_names + ddev->devn_params.separations.num_separations;
+                    if (n == 0)
+                        n = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                    if (n > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                        n = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                }
                 bpp = n * 8;
                 set_color_info(&dci, DISPLAY_MODEL_SEP, n, GS_CLIENT_COLOR_MAX_COMPONENTS, bpp,
                     maxvalue, maxvalue);
