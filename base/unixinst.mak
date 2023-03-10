@@ -149,11 +149,10 @@ install-iccdata1 :
 DOC_PAGES=index.html News.htm COPYING Ghostscript.pdf \
           GS9_Color_Management.pdf
 
-DOC_PAGE_IMAGES=Artifex_logo.png  favicon.png  ghostscript_logo.png  hamburger-light.png  x-light.png
+DOC_PAGE_IMAGES=
 
 install-doc: $(PSDOCDIR)/News.htm
 	-mkdir -p $(DESTDIR)$(docdir)
-	-mkdir -p $(DESTDIR)$(docdir)/images
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(DESTDIR)$(docdir); fi;\
 	done'
