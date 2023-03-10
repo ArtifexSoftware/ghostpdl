@@ -23,7 +23,9 @@
 /* We can't have pointers displayed in the test output, as that will
  * change the output between runs. The following definition hides
  * them. */
+#ifdef CLUSTER
 #define HIDE_POINTERS
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
