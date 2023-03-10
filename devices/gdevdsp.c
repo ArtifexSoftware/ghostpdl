@@ -1593,9 +1593,9 @@ display_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     } else {
         gs_make_mem_device(mdev, mdproto, mem, (color_usage == NULL ? 1 : 0),
                            target);
-        if (ddev->nFormat & DISPLAY_COLORS_SEPARATION)
-            mdev->procs.fill_rectangle_hl_color = display_fill_rectangle_hl_color;
     }
+    if (ddev->nFormat & DISPLAY_COLORS_SEPARATION)
+        mdev->procs.fill_rectangle_hl_color = display_fill_rectangle_hl_color;
     mdev->width = target->width;
     mdev->band_y = y;
     mdev->log2_align_mod = target->log2_align_mod;
