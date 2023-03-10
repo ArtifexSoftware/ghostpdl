@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -102,6 +102,8 @@ do_call_operator_verbose(op_proc_t op_proc, i_ctx_t *i_ctx_p)
             op_get_name_string(op_proc));
 #endif
     code = do_call_operator(op_proc, i_ctx_p);
+    if (code < 0)
+        if_debug1m('!', imemory, "[!]   error: %d\n", code);
 #if defined(SHOW_STACK_DEPTHS)
     if_debug2m('!', imemory, "[!][es=%d os=%d]\n",
             esp-i_ctx_p->exec_stack.stack.bot,
