@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2022 Artifex Software, Inc.
+/* Copyright (C) 2018-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -707,11 +707,14 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
             goto errorExit;
     }
     if (info->DecodeParms != NULL && (pdfi_type_of(info->DecodeParms) != PDF_DICT && pdfi_type_of(info->DecodeParms) != PDF_ARRAY)) {
+        /* null is legal. Pointless but legal. */
+        if (pdfi_type_of(info->DecodeParms) != PDF_NULL) {
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
+            if (ctx->args.pdfstoponwarning)
+                goto errorExit;
+        }
         pdfi_countdown(info->DecodeParms);
         info->DecodeParms = NULL;
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning)
-            goto errorExit;
     }
 
     return 0;
