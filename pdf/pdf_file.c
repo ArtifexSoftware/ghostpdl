@@ -1229,7 +1229,7 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
 
         SubFile_stream->original = source->s;
 
-        switch(ctx->encryption.StrF) {
+        switch(ctx->encryption.StmF) {
             case CRYPT_IDENTITY:
                 /* Can't happen, handled above */
                 break;
