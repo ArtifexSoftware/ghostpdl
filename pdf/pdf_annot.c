@@ -273,6 +273,8 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP
 
     if (NormAP == NULL)
         return 0;
+    if (pdfi_type_of(NormAP) == PDF_NULL)
+        return 0;
     if (pdfi_type_of(NormAP) != PDF_STREAM)
         return_error(gs_error_typecheck);
 
@@ -1614,6 +1616,7 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
             code = pdfi_dict_get_by_key(ctx, (pdf_dict *)baseAP, AS, (pdf_obj **)&AP);
             if (code < 0) {
                 /* Apparently this is not an error, just silently don't have an AP */
+                *NormAP = (pdf_obj *)TOKEN_null;
                 code = 0;
                 goto exit;
             }
@@ -3944,8 +3947,8 @@ static bool pdfi_annot_visible(pdf_context *ctx, pdf_dict *annot, pdf_name *subt
         /* Even if Print flag (bit 3) is off, will print if 3D */
         is_visible = ((F & 0x4) != 0) || is_3D;
     } else {
-        /* Not NoView (bit 7) */
-        is_visible = (F & 0x80) == 0;
+        /* Not NoView (bit 6) */
+        is_visible = (F & 0x20) == 0;
     }
 
  exit:

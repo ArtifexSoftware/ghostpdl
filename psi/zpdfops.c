@@ -1381,6 +1381,11 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
             pdfctx->ctx->args.pdffitpage = pvalueref->value.boolval;
         }
 
+        if (dict_find_string(pdictref, "OutputFile", &pvalueref) > 0)
+            pdfctx->ctx->args.printed = true;
+        else
+            pdfctx->ctx->args.printed = false;
+
         if (dict_find_string(pdictref, "Printed", &pvalueref) > 0) {
             if (!r_has_type(pvalueref, t_boolean))
                 goto error;
