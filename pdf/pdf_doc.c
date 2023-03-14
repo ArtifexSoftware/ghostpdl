@@ -1703,7 +1703,11 @@ int pdfi_doc_trailer(pdf_context *ctx)
         code = pdfi_doc_Info(ctx);
         if (code < 0) {
             pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_INFO, "pdfi_doc_trailer", NULL);
-            if (ctx->args.pdfstoponerror)
+            /* pdfwrite will set a Fatal error when processing the DOCINFO if it has been
+             * told to create a PDF/A. the PDFA compatibility is 2, and the file info
+             * cannot be handled. In that case, abort immediately.
+             */
+            if (ctx->args.pdfstoponerror || code == gs_error_Fatal)
                 goto exit;
         }
 
