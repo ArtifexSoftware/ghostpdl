@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -77,37 +77,56 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
     int gdbytes = pfont->cidata.common.GDBytes;
     int gnum = 0;
     const byte *data;
-    int i, code;
+    int i, code = -1;
     ref rcid;
     ref *prgnum;
+    ref *p, *fdict = pfont_dict(pfont);
 
-    switch (r_type(pcidmap)) {
-    case t_string:
-        if (cid >= r_size(pcidmap) / gdbytes)
-            return_error(gs_error_rangecheck);
-        data = pcidmap->value.const_bytes + cid * gdbytes;
-        break;
-    case t_integer:
-        return cid + pcidmap->value.intval;
-    case t_dictionary:
-        make_int(&rcid, cid);
-        code = dict_find(pcidmap, &rcid, &prgnum);
-        if (code <= 0)
-            return (code < 0 ? code : gs_note_error(gs_error_undefined));
-        if (!r_has_type(prgnum, t_integer))
-            return_error(gs_error_typecheck);
-        return prgnum->value.intval;
-    default:			/* array type */
-        code = string_array_access_proc(pfont->memory, pcidmap, 1, cid * gdbytes,
-                                        gdbytes, NULL, NULL, &data);
+    if (r_has_type(fdict, t_dictionary) && dict_find_string(fdict, "Path", &p)) {
+        ref *Decoding = NULL, *TT_cmap = NULL, *SubstNWP = NULL, src_type, dst_type;
+        uint c;
 
-        if (code < 0)
-            return code;
-        if ( code > 0 )
-            return_error(gs_error_invalidfont);
+        code = dict_find_string(fdict, "Decoding", &Decoding);
+        if (code > 0)
+            code = dict_find_string(fdict, "TT_cmap", &TT_cmap);
+        if (code > 0)
+            code = dict_find_string(fdict, "SubstNWP", &SubstNWP);
+        if (code > 0) {
+            code = cid_to_TT_charcode(pfont->memory, Decoding, TT_cmap, SubstNWP, cid, &c, &src_type, &dst_type);
+            if (code >= 0)
+                gnum = c;
+        }
     }
-    for (i = 0; i < gdbytes; ++i)
-        gnum = (gnum << 8) + data[i];
+
+    if (code < 0) {
+        switch (r_type(pcidmap)) {
+        case t_string:
+            if (cid >= r_size(pcidmap) / gdbytes)
+                return_error(gs_error_rangecheck);
+            data = pcidmap->value.const_bytes + cid * gdbytes;
+            break;
+        case t_integer:
+            return cid + pcidmap->value.intval;
+        case t_dictionary:
+            make_int(&rcid, cid);
+            code = dict_find(pcidmap, &rcid, &prgnum);
+            if (code <= 0)
+                return (code < 0 ? code : gs_note_error(gs_error_undefined));
+            if (!r_has_type(prgnum, t_integer))
+                return_error(gs_error_typecheck);
+            return prgnum->value.intval;
+        default:			/* array type */
+            code = string_array_access_proc(pfont->memory, pcidmap, 1, cid * gdbytes,
+                                            gdbytes, NULL, NULL, &data);
+
+            if (code < 0)
+                return code;
+            if ( code > 0 )
+                return_error(gs_error_invalidfont);
+        }
+        for (i = 0; i < gdbytes; ++i)
+            gnum = (gnum << 8) + data[i];
+    }
     if (gnum >= pfont->data.trueNumGlyphs)
         return_error(gs_error_invalidfont);
     return gnum;
