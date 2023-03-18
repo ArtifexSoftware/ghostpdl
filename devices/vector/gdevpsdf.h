@@ -182,6 +182,7 @@ typedef struct psdf_distiller_params_s {
     bool PassThroughJPXImages;
     gs_param_string PSDocOptions;
     gs_param_string_array PSPageOptions;
+    bool PSPageOptionsWrap;
 } psdf_distiller_params;
 
 /* Declare templates for default image compression filters. */

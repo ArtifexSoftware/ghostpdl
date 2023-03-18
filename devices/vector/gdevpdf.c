@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3078,12 +3078,14 @@ pdf_close(gx_device * dev)
                     stream_puts(pdev->strm, "%%BeginPageSetup\n");
 
                     if (pdev->params.PSPageOptions.size) {
-                        int i, index = (pagecount - 1) % pdev->params.PSPageOptions.size;
-                        char *p = (char *)pdev->params.PSPageOptions.data[index].data;
+                        if (pdev->params.PSPageOptionsWrap || (pagecount - 1) < pdev->params.PSPageOptions.size) {
+                            int i, index = (pagecount - 1) % pdev->params.PSPageOptions.size;
+                            char *p = (char *)pdev->params.PSPageOptions.data[index].data;
 
-                        for (i=0;i<pdev->params.PSPageOptions.data[index].size;i++)
-                            stream_putc(s, *p++);
-                        stream_puts(pdev->strm, "\n");
+                            for (i=0;i<pdev->params.PSPageOptions.data[index].size;i++)
+                                stream_putc(s, *p++);
+                            stream_puts(pdev->strm, "\n");
+                        }
                     }
 
                     pdf_write_page(pdev, pagecount++);

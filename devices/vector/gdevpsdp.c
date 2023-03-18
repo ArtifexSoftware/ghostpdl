@@ -244,6 +244,7 @@ static const gs_param_item_t psdf_param_items[] = {
     pi("SubsetFonts", gs_param_type_bool, SubsetFonts),
     pi("PassThroughJPEGImages", gs_param_type_bool, PassThroughJPEGImages),
     pi("PassThroughJPXImages", gs_param_type_bool, PassThroughJPXImages),
+    pi("PSPageOptionsWrap", gs_param_type_bool, PSPageOptionsWrap),
 
 #undef pi
     gs_param_item_end
