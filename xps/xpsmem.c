@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -107,7 +107,8 @@ xps_clean_path(char *name)
         }
     }
 
-    if (q == name) /* empty string is really "." */
+    /* Guard against the 'blah:' case, where name == terminator. */
+    if (q == name && *q != 0) /* empty string is really "." */
         *q++ = '.';
     *q = '\0';
 
