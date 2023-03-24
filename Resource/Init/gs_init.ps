@@ -2407,6 +2407,15 @@ currentdict /.locksafeglobal .undef
 
 %% ---------------- SAFER stuff END -------------------%%
 
+/UndefinePostScriptFilters {
+  [
+   /BCPEncode /TBCPEncode /PNGPredictorEncode /PNGPredictorDecode /PixelDifferenceDecode /PixelDifferenceEncode
+   /zlibEncode /zlibDecode /PWGDecode /eexecEncode /ArcfourEncode /PSStringEncode /MD5Encode /BCPDecode
+   /OLDPDF where {/OLDPDF get not {/SHA256Encode /AESDecode /JPXDecode /JBIG2Decode /ArcfourDecode /.EOFDecode} if} if
+  ]
+  {filterdict exch undef} forall
+} .bind executeonly def
+
 /UndefinePostScriptOperators {
   % This list is of operators which no longer appear to be used, and which we do not believe
   % to have any real use. For now we will undefine the operstors so they cannot easily be used
@@ -2545,6 +2554,7 @@ currentdict /.locksafeglobal .undef
   ]
   {statusdict exch .forceundef} forall
 
+  //systemdict /UndefinePostScriptFilters .forceundef
   //systemdict /UndefinePostScriptOperators .forceundef
 } .bind executeonly def % must be bound and hidden for .forceundef
 
@@ -2565,6 +2575,7 @@ currentdict /.locksafeglobal .undef
   SAFER {
     //systemdict /SAFERUndefinePostScriptOperators get exec
   } if
+  //systemdict /UndefinePostScriptFilters get exec
   //systemdict /UndefinePostScriptOperators get exec
   //systemdict /.forcecopynew .forceundef	% remove temptation
   //systemdict /.forceput .forceundef		% ditto
@@ -2652,6 +2663,7 @@ FontDirectory readonly pop
 % If we are using DELAYBIND we have to defer the undefinition
 % until .bindnow.
 DELAYBIND not {
+  //systemdict /UndefinePostScriptFilters get exec
   //systemdict /UndefinePostScriptOperators get exec
 } if
 end
