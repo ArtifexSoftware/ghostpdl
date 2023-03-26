@@ -621,7 +621,10 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
                 {
                     for (i = 0; i < state->width; i++)
                     {
-                        int in_offset_scaled = (y_offset/state->image->comps[state->alpha_comp].dy*state->width + i)/state->image->comps[state->alpha_comp].dx;
+                        int dx = state->image->comps[state->alpha_comp].dx;
+                        int dy = state->image->comps[state->alpha_comp].dy;
+                        int w = state->image->comps[state->alpha_comp].w;
+                        int in_offset_scaled = (y_offset/dy * w) + i / dx;
                         for (b=0; b<bytepp1; b++)
                             *row++ = (((state->image->comps[state->alpha_comp].data[in_offset_scaled] << shift_bit) >> (8*(bytepp1-b-1))))
                                                                      + (b==0 ? state->sign_comps[state->alpha_comp] : 0);
@@ -633,7 +636,10 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
                     {
                         for (compno=0; compno<img_numcomps; compno++)
                         {
-                            int in_offset_scaled = (y_offset/state->image->comps[compno].dy*state->width + i)/state->image->comps[compno].dx;
+                            int dx = state->image->comps[compno].dx;
+                            int dy = state->image->comps[compno].dy;
+                            int w = state->image->comps[compno].w;
+                            int in_offset_scaled = (y_offset/dy * w) + i / dx;
                             for (b=0; b<bytepp1; b++)
                                 *row++ = (((state->image->comps[compno].data[in_offset_scaled] << shift_bit) >> (8*(bytepp1-b-1))))
                                                                                 + (b==0 ? state->sign_comps[compno] : 0);
@@ -652,7 +658,10 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
                 {
                     for (b=0; b<ppbyte1; b++)
                     {
-                        int in_offset_scaled = (y_offset/state->image->comps[compno].dy*state->width + i)/state->image->comps[compno].dx;
+                        int dx = state->image->comps[compno].dx;
+                        int dy = state->image->comps[compno].dy;
+                        int w = state->image->comps[compno].w;
+                        int in_offset_scaled = (y_offset/dy * w) + i / dx;
                         bt = bt<<state->bpp;
                         bt += state->image->comps[compno].data[in_offset_scaled] + state->sign_comps[compno];
                     }
