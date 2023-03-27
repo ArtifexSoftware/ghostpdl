@@ -1026,12 +1026,20 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                     }
                 }
             } else {
-                pdfi_pop(ctx, 1);
+                int code1 = 0;
+
+                if (pdfi_count_stack(ctx) > 0)
+                    pdfi_pop(ctx, 1);
+
                 if (entry->free) {
                     dmprintf1(ctx->memory, "Dereference of free object %"PRIu64", next object number as offset failed, returning NULL object.\n", entry->object_num);
                     *object = PDF_NULL_OBJ;
                     return 0;
                 }
+                code1 = pdfi_repair_file(ctx);
+                if (code1 == 0)
+                    return pdfi_dereference_main(ctx, obj, gen, object, cache);
+                /* Repair failed, just give up and return an error */
                 code = gs_note_error(gs_error_undefined);
                 goto error;
             }
