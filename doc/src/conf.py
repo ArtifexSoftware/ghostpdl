@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 #
+import re
 import sys
 import os
+import datetime
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -42,14 +44,34 @@ master_doc = "toc"
 
 # General information about the project.
 project = "Ghostscript"
-copyright = "1988-2022, Artifex"
+thisday = datetime.date.today()
+
+copyright = "1988-" + str(thisday.year) + ", Artifex"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
 # The full version, including alpha/beta/rc tags.
-release = "10.02.0"
+major = None
+minor = None
+patch = None
+
+_path = os.path.abspath(f'{__file__}/../../../base/version.mak')
+with open(_path) as f:
+    for line in f:
+        if not major:
+            major = re.search('GS_VERSION_MAJOR=([0-9]+$)', line)
+        if not minor:
+            minor = re.search('GS_VERSION_MINOR=([0-9]+$)', line)
+        if not patch:
+            patch = re.search('GS_VERSION_PATCH=([0-9]+$)', line)
+
+    if major and minor and patch:
+        release = major.group(1) + "." + minor.group(1) + "." + patch.group(1)
+        print(f'{__file__}: setting version from {_path}: {release}')
+    else:
+        raise Exception(f'Failed to find `Ghostscript version = ...` in {_path}')
 
 # The short X.Y version
 version = release
