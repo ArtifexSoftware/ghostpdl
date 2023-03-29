@@ -733,7 +733,8 @@ docx_update_text_state(docx_list_entry_t *ppts,
 
     ppts->size = size;
     ppts->matrix = tmat;
-    ppts->FontName = (char *)gs_malloc(pdev->memory->stable_memory, 1,
+    gs_free_object(pdev->memory->non_gc_memory, ppts->FontName, "txtwrite alloc font name");
+    ppts->FontName = (char *)gs_malloc(pdev->memory, 1,
         font->font_name.size + 1, "txtwrite alloc font name");
     if (!ppts->FontName)
         return gs_note_error(gs_error_VMerror);
@@ -1264,7 +1265,10 @@ textw_text_release(gs_text_enum_t *pte, client_name_t cname)
      * an error.
      */
     if (penum->text_state)
+    {
+        gs_free_object(tdev->memory->non_gc_memory, penum->text_state->FontName, "txtwrite free text state");
         gs_free(tdev->memory, penum->text_state, 1, sizeof(penum->text_state), "txtwrite free text state");
+    }
 
     gs_text_release(NULL, pte, cname);
 }
