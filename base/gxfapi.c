@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -36,6 +36,9 @@
 #include "gxdevsop.h"
 
 #include "gxfapi.h"
+
+#define FAPI_ROUND(v) (v >= 0 ? v + 0.5 : v - 0.5)
+#define FAPI_ROUND_TO_FRACINT(v) ((fracint)FAPI_ROUND(v))
 
 extern_gs_get_fapi_server_inits();
 
@@ -1396,12 +1399,12 @@ retry_scaling:
             goto retry_scaling;
         }
         else {
-            font_scale.matrix[0] = (fracint) (scale_mat.xx * FontMatrix_div * scale + 0.5);
-            font_scale.matrix[1] = -(fracint) (scale_mat.xy * FontMatrix_div * scale + 0.5);
-            font_scale.matrix[2] = (fracint) (scale_mat.yx * FontMatrix_div * scale + 0.5);
-            font_scale.matrix[3] = -(fracint) (scale_mat.yy * FontMatrix_div * scale + 0.5);
-            font_scale.matrix[4] = (fracint) (scale_mat.tx * FontMatrix_div * scale + 0.5);
-            font_scale.matrix[5] = (fracint) (scale_mat.ty * FontMatrix_div * scale + 0.5);
+            font_scale.matrix[0] =  FAPI_ROUND_TO_FRACINT(scale_mat.xx * FontMatrix_div * scale);
+            font_scale.matrix[1] = -FAPI_ROUND_TO_FRACINT(scale_mat.xy * FontMatrix_div * scale);
+            font_scale.matrix[2] =  FAPI_ROUND_TO_FRACINT(scale_mat.yx * FontMatrix_div * scale);
+            font_scale.matrix[3] = -FAPI_ROUND_TO_FRACINT(scale_mat.yy * FontMatrix_div * scale);
+            font_scale.matrix[4] =  FAPI_ROUND_TO_FRACINT(scale_mat.tx * FontMatrix_div * scale);
+            font_scale.matrix[5] =  FAPI_ROUND_TO_FRACINT(scale_mat.ty * FontMatrix_div * scale);
         }
 
         /* Note: the ctm mapping here is upside down. */
