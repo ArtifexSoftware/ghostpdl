@@ -685,20 +685,23 @@ static int
 pdf_put_clip_path_list_elem(gx_device_pdf * pdev, gx_cpath_path_list *e,
         gs_path_enum *cenum, gdev_vector_dopath_state_t *state,
         gs_fixed_point vs[3])
-{   /* This recursive function provides a reverse order of the list elements. */
+{
     int segments = 0;
 
-    if (e->next != NULL) {
-        int code = pdf_put_clip_path_list_elem(pdev, e->next, cenum, state, vs);
-
-        if (code != 0)
-            return code;
+    /* This function was previously recursive and reversed the order of subpaths. This
+     * could lead to a C exec stack overflow on sufficiently complex clipping paths
+     * (such as those produced by pdfwrite as a fallback for certain kinds of images).
+     * Writing the subpaths in the forward order avoids the problem, is probably
+     * slightly faster and uses less memory. Bug #706523.
+     */
+    while (e) {
+        segments = pdf_write_path(pdev, cenum, state, &e->path, 0, gx_path_type_clip | gx_path_type_optimize, NULL);
+        if (segments < 0)
+            return segments;
+        if (segments)
+            pprints1(pdev->strm, "%s n\n", (e->rule <= 0 ? "W" : "W*"));
+        e = e->next;
     }
-    segments = pdf_write_path(pdev, cenum, state, &e->path, 0, gx_path_type_clip | gx_path_type_optimize, NULL);
-    if (segments < 0)
-        return segments;
-    if (segments)
-        pprints1(pdev->strm, "%s n\n", (e->rule <= 0 ? "W" : "W*"));
     return 0;
 }
 
