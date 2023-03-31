@@ -265,14 +265,32 @@ subdivide_patch_fill(patch_fill_state_t *pfs, patch_curve_t c[4])
     do {
         changed = 0;
 
+        /* Is the whole of our patch outside the clipping rectangle? */
+        /* Tempting to try to roll this into the cases below, but that
+         * doesn't work because we want <= or >= here. */
+        if ((c[0].vertex.p.x <= pfs->rect.p.x &&
+             c[1].vertex.p.x <= pfs->rect.p.x &&
+             c[2].vertex.p.x <= pfs->rect.p.x &&
+             c[3].vertex.p.x <= pfs->rect.p.x) ||
+            (c[0].vertex.p.x >= pfs->rect.q.x &&
+             c[1].vertex.p.x >= pfs->rect.q.x &&
+             c[2].vertex.p.x >= pfs->rect.q.x &&
+             c[3].vertex.p.x >= pfs->rect.q.x) ||
+            (c[0].vertex.p.y <= pfs->rect.p.y &&
+             c[1].vertex.p.y <= pfs->rect.p.y &&
+             c[2].vertex.p.y <= pfs->rect.p.y &&
+             c[3].vertex.p.y <= pfs->rect.p.y) ||
+            (c[0].vertex.p.y >= pfs->rect.q.y &&
+             c[1].vertex.p.y >= pfs->rect.q.y &&
+             c[2].vertex.p.y >= pfs->rect.q.y &&
+             c[3].vertex.p.y >= pfs->rect.q.y))
+            return 0;
+
         /* First, let's try to see if we can cull the patch horizontally with the clipping
          * rectangle. */
         /* Non rotated cases first. Can we cull the left hand half? */
         if (c[0].vertex.p.x < pfs->rect.p.x && c[3].vertex.p.x < pfs->rect.p.x)
         {
-            /* Is the whole patch off to the left? */
-            if (c[1].vertex.p.x < pfs->rect.p.x && c[2].vertex.p.x < pfs->rect.p.x)
-                return 0;
             /* Check 0+3 off left. */
             v0 = 0;
             v1 = 3;
@@ -294,10 +312,10 @@ check_left:
                  * c[v1].vertex  m1  c[v1^1].vertex
                  */
                 m0 = midpoint(c[0].vertex.p.x, c[1].vertex.p.x);
-                if (m0 >= pfs->rect.p.x+MIDPOINT_ACCURACY)
+                if (m0 >= pfs->rect.p.x)
                     goto check_left_quarter;
                 m1 = midpoint(c[3].vertex.p.x, c[2].vertex.p.x);
-                if (m1 >= pfs->rect.p.x+MIDPOINT_ACCURACY)
+                if (m1 >= pfs->rect.p.x)
                     goto check_left_quarter;
                 /* So, we can completely discard the left hand half of the patch. */
                 c[v0].vertex.p.x = m0;
@@ -308,7 +326,7 @@ check_left:
                 c[v1].vertex.cc[0] = (c[3].vertex.cc[0] + c[2].vertex.cc[0])/2;
                 changed = 1;
             }
-            while (c[v0].vertex.p.x < pfs->rect.p.x+MIDPOINT_ACCURACY && c[v1].vertex.p.x < pfs->rect.p.x+MIDPOINT_ACCURACY);
+            while (c[v0].vertex.p.x < pfs->rect.p.x && c[v1].vertex.p.x < pfs->rect.p.x);
             if (0)
             {
 check_left_quarter:
@@ -322,10 +340,10 @@ check_left_quarter:
                      * c[v1].vertex  m1  x  x  c[v1^1].vertex
                      */
                     m0 = quarterpoint(c[v0].vertex.p.x, c[v0^1].vertex.p.x);
-                    if (m0 >= pfs->rect.p.x+QUARTERPOINT_ACCURACY)
+                    if (m0 >= pfs->rect.p.x)
                         break;
                     m1 = quarterpoint(c[v1].vertex.p.x, c[v1^1].vertex.p.x);
-                    if (m1 >= pfs->rect.p.x+QUARTERPOINT_ACCURACY)
+                    if (m1 >= pfs->rect.p.x)
                         break;
                     /* So, we can completely discard the left hand quarter of the patch. */
                     c[v0].vertex.p.x = m0;
@@ -336,16 +354,13 @@ check_left_quarter:
                     c[v1].vertex.cc[0] = (c[v1].vertex.cc[0] + 3*c[v1^1].vertex.cc[0])/4;
                     changed = 1;
                 }
-                while (c[v0].vertex.p.x < pfs->rect.p.x+QUARTERPOINT_ACCURACY && c[v1].vertex.p.x < pfs->rect.p.x+QUARTERPOINT_ACCURACY);
+                while (c[v0].vertex.p.x < pfs->rect.p.x && c[v1].vertex.p.x < pfs->rect.p.x);
             }
         }
 
         /* or the right hand half? */
         if (c[0].vertex.p.x > pfs->rect.q.x && c[3].vertex.p.x > pfs->rect.q.x)
         {
-            /* Is the whole patch off to the right? */
-            if (c[1].vertex.p.x > pfs->rect.q.x && c[2].vertex.p.x > pfs->rect.q.x)
-                return 0;
             /* Check 0+3 off right. */
             v0 = 0;
             v1 = 3;
@@ -437,10 +452,10 @@ check_rot_left:
                  * c[v1^3].vertex  m1  c[v1].vertex
                  */
                 m0 = midpoint(c[0].vertex.p.x, c[3].vertex.p.x);
-                if (m0 >= pfs->rect.p.x+MIDPOINT_ACCURACY)
+                if (m0 >= pfs->rect.p.x)
                     goto check_rot_left_quarter;
                 m1 = midpoint(c[1].vertex.p.x, c[2].vertex.p.x);
-                if (m1 >= pfs->rect.p.x+MIDPOINT_ACCURACY)
+                if (m1 >= pfs->rect.p.x)
                     goto check_rot_left_quarter;
                 /* So, we can completely discard the left hand half of the patch. */
                 c[v0].vertex.p.x = m0;
@@ -451,7 +466,7 @@ check_rot_left:
                 c[v1].vertex.cc[0] = (c[1].vertex.cc[0] + c[2].vertex.cc[0])/2;
                 changed = 1;
             }
-            while (c[v0].vertex.p.x < pfs->rect.p.x+MIDPOINT_ACCURACY && c[v1].vertex.p.x < pfs->rect.p.x+MIDPOINT_ACCURACY);
+            while (c[v0].vertex.p.x < pfs->rect.p.x && c[v1].vertex.p.x < pfs->rect.p.x);
             if (0)
             {
 check_rot_left_quarter:
@@ -465,10 +480,10 @@ check_rot_left_quarter:
                      * c[v1].vertex  m1  x  x  c[v1^3].vertex
                      */
                     m0 = quarterpoint(c[v0].vertex.p.x, c[v0^3].vertex.p.x);
-                    if (m0 >= pfs->rect.p.x+QUARTERPOINT_ACCURACY)
+                    if (m0 >= pfs->rect.p.x)
                         break;
                     m1 = quarterpoint(c[v1].vertex.p.x, c[v1^3].vertex.p.x);
-                    if (m1 >= pfs->rect.p.x+QUARTERPOINT_ACCURACY)
+                    if (m1 >= pfs->rect.p.x)
                         break;
                     /* So, we can completely discard the left hand half of the patch. */
                     c[v0].vertex.p.x = m0;
@@ -479,7 +494,7 @@ check_rot_left_quarter:
                     c[v1].vertex.cc[0] = (c[v1].vertex.cc[0] + 3*c[v1^3].vertex.cc[0])/4;
                     changed = 1;
                 }
-                while (c[v0].vertex.p.x < pfs->rect.p.x+QUARTERPOINT_ACCURACY && c[v1].vertex.p.x < pfs->rect.p.x+QUARTERPOINT_ACCURACY);
+                while (c[v0].vertex.p.x < pfs->rect.p.x && c[v1].vertex.p.x < pfs->rect.p.x);
             }
         }
 
@@ -558,9 +573,6 @@ check_rot_right_quarter:
         /* Non rotated cases first. Can we cull the top half? */
         if (c[0].vertex.p.y < pfs->rect.p.y && c[1].vertex.p.y < pfs->rect.p.y)
         {
-            /* Is the whole patch off to the left? */
-            if (c[3].vertex.p.y < pfs->rect.p.y && c[2].vertex.p.y < pfs->rect.p.y)
-                return 0;
             /* Check 0+1 off above. */
             v0 = 0;
             v1 = 1;
@@ -583,10 +595,10 @@ check_above:
                  * c[v0^3].vertex   c[v1^3].vertex
                  */
                 m0 = midpoint(c[0].vertex.p.y, c[3].vertex.p.y);
-                if (m0 >= pfs->rect.p.y+MIDPOINT_ACCURACY)
+                if (m0 >= pfs->rect.p.y)
                     goto check_above_quarter;
                 m1 = midpoint(c[1].vertex.p.y, c[2].vertex.p.y);
-                if (m1 >= pfs->rect.p.y+MIDPOINT_ACCURACY)
+                if (m1 >= pfs->rect.p.y)
                     goto check_above_quarter;
                 /* So, we can completely discard the top half of the patch. */
                 c[v0].vertex.p.x = midpoint(c[0].vertex.p.x, c[3].vertex.p.x);
@@ -597,7 +609,7 @@ check_above:
                 c[v1].vertex.cc[0] = (c[1].vertex.cc[0] + c[2].vertex.cc[0])/2;
                 changed = 1;
             }
-            while (c[v0].vertex.p.y < pfs->rect.p.y+MIDPOINT_ACCURACY && c[v1].vertex.p.y < pfs->rect.p.y+MIDPOINT_ACCURACY);
+            while (c[v0].vertex.p.y < pfs->rect.p.y && c[v1].vertex.p.y < pfs->rect.p.y);
             if (0)
             {
 check_above_quarter:
@@ -614,10 +626,10 @@ check_above_quarter:
                      * c[v0^3].vertex   c[v1^3].vertex
                      */
                     m0 = quarterpoint(c[v0].vertex.p.y, c[v0^3].vertex.p.y);
-                    if (m0 >= pfs->rect.p.y+QUARTERPOINT_ACCURACY)
+                    if (m0 >= pfs->rect.p.y)
                         break;
                     m1 = quarterpoint(c[v1].vertex.p.y, c[v1^3].vertex.p.y);
-                    if (m1 >= pfs->rect.p.y+QUARTERPOINT_ACCURACY)
+                    if (m1 >= pfs->rect.p.y)
                         break;
                     /* So, we can completely discard the top half of the patch. */
                     c[v0].vertex.p.x = quarterpoint(c[v0].vertex.p.x, c[v0^3].vertex.p.x);
@@ -628,16 +640,13 @@ check_above_quarter:
                     c[v1].vertex.cc[0] = (c[v1].vertex.cc[0] + 3*c[v1^3].vertex.cc[0])/4;
                     changed = 1;
                 }
-                while (c[v0].vertex.p.y < pfs->rect.p.y+QUARTERPOINT_ACCURACY && c[v1].vertex.p.y < pfs->rect.p.y+QUARTERPOINT_ACCURACY);
+                while (c[v0].vertex.p.y < pfs->rect.p.y && c[v1].vertex.p.y < pfs->rect.p.y);
             }
         }
 
         /* or the bottom half? */
         if (c[0].vertex.p.y > pfs->rect.q.y && c[1].vertex.p.y > pfs->rect.q.y)
         {
-            /* Is the whole patch off the bottom? */
-            if (c[3].vertex.p.y > pfs->rect.q.y && c[2].vertex.p.y > pfs->rect.q.y)
-                return 0;
             /* Check 0+1 off bottom. */
             v0 = 0;
             v1 = 1;
@@ -734,10 +743,10 @@ check_rot_above:
                  * c[v0^1].vertex   c[v1^1].vertex
                  */
                 m0 = midpoint(c[0].vertex.p.y, c[1].vertex.p.y);
-                if (m0 >= pfs->rect.p.y+MIDPOINT_ACCURACY)
+                if (m0 >= pfs->rect.p.y)
                     goto check_rot_above_quarter;
                 m1 = midpoint(c[3].vertex.p.y, c[2].vertex.p.y);
-                if (m1 >= pfs->rect.p.y+MIDPOINT_ACCURACY)
+                if (m1 >= pfs->rect.p.y)
                     goto check_rot_above_quarter;
                 /* So, we can completely discard the top half of the patch. */
                 c[v0].vertex.p.x = midpoint(c[0].vertex.p.x, c[1].vertex.p.x);
@@ -748,7 +757,7 @@ check_rot_above:
                 c[v1].vertex.cc[0] = (c[3].vertex.cc[0] + c[2].vertex.cc[0])/2;
                 changed = 1;
             }
-            while (c[v0].vertex.p.y < pfs->rect.p.y+MIDPOINT_ACCURACY && c[v1].vertex.p.y < pfs->rect.p.y+MIDPOINT_ACCURACY);
+            while (c[v0].vertex.p.y < pfs->rect.p.y && c[v1].vertex.p.y < pfs->rect.p.y);
             if (0)
             {
 check_rot_above_quarter:
@@ -765,10 +774,10 @@ check_rot_above_quarter:
                      * c[v0^1].vertex   c[v1^1].vertex
                      */
                     m0 = quarterpoint(c[v0].vertex.p.y, c[v0^1].vertex.p.y);
-                    if (m0 >= pfs->rect.p.y+QUARTERPOINT_ACCURACY)
+                    if (m0 >= pfs->rect.p.y)
                         break;
                     m1 = quarterpoint(c[v1].vertex.p.y, c[v1^1].vertex.p.y);
-                    if (m1 >= pfs->rect.p.y+QUARTERPOINT_ACCURACY)
+                    if (m1 >= pfs->rect.p.y)
                         break;
                     /* So, we can completely discard the top half of the patch. */
                     c[v0].vertex.p.x = quarterpoint(c[v0].vertex.p.x, c[v0^1].vertex.p.x);
@@ -779,7 +788,7 @@ check_rot_above_quarter:
                     c[v1].vertex.cc[0] = (c[v1].vertex.cc[0] + 3*c[v1^1].vertex.cc[0])/4;
                     changed = 1;
                 }
-                while (c[v0].vertex.p.y < pfs->rect.p.y+QUARTERPOINT_ACCURACY && c[v1].vertex.p.y < pfs->rect.p.y+QUARTERPOINT_ACCURACY);
+                while (c[v0].vertex.p.y < pfs->rect.p.y && c[v1].vertex.p.y < pfs->rect.p.y);
             }
         }
 
@@ -1014,14 +1023,32 @@ subdivide_patch_fill_floats(patch_fill_state_t *pfs, corners_and_curves *cc)
     do {
         changed = 0;
 
+        /* Is the whole of our patch outside the clipping rectangle? */
+        /* Tempting to try to roll this into the cases below, but that
+         * doesn't work because we want <= or >= here. */
+        if ((cc->corners[0].x <= pfs->rect.p.x &&
+             cc->corners[1].x <= pfs->rect.p.x &&
+             cc->corners[2].x <= pfs->rect.p.x &&
+             cc->corners[3].x <= pfs->rect.p.x) ||
+            (cc->corners[0].x >= pfs->rect.q.x &&
+             cc->corners[1].x >= pfs->rect.q.x &&
+             cc->corners[2].x >= pfs->rect.q.x &&
+             cc->corners[3].x >= pfs->rect.q.x) ||
+            (cc->corners[0].y <= pfs->rect.p.y &&
+             cc->corners[1].y <= pfs->rect.p.y &&
+             cc->corners[2].y <= pfs->rect.p.y &&
+             cc->corners[3].y <= pfs->rect.p.y) ||
+            (cc->corners[0].y >= pfs->rect.q.y &&
+             cc->corners[1].y >= pfs->rect.q.y &&
+             cc->corners[2].y >= pfs->rect.q.y &&
+             cc->corners[3].y >= pfs->rect.q.y))
+            return 0;
+
         /* First, let's try to see if we can cull the patch horizontally with the clipping
          * rectangle. */
         /* Non rotated cases first. Can we cull the left hand half? */
         if (cc->corners[0].x < pfs->rect.p.x && cc->corners[3].x < pfs->rect.p.x)
         {
-            /* Is the whole patch off to the left? */
-            if (cc->corners[1].x < pfs->rect.p.x && cc->corners[2].x < pfs->rect.p.x)
-                return 0;
             /* Check 0+3 off left. */
             v0 = 0;
             v1 = 3;
@@ -1043,10 +1070,10 @@ check_left:
                  * c[v1].vertex  m1  c[v1^1].vertex
                  */
                 m0 = midpoint(cc->corners[0].x, cc->corners[1].x);
-                if (m0 >= pfs->rect.p.x+MIDPOINT_ACCURACY)
+                if (m0 >= pfs->rect.p.x)
                     goto check_left_quarter;
                 m1 = midpoint(cc->corners[3].x, cc->corners[2].x);
-                if (m1 >= pfs->rect.p.x+MIDPOINT_ACCURACY)
+                if (m1 >= pfs->rect.p.x)
                     goto check_left_quarter;
                 /* So, we can completely discard the left hand half of the patch. */
                 cc->corners[v0].x = m0;
@@ -1057,7 +1084,7 @@ check_left:
                 cc->curve[v1].vertex.cc[0] = (cc->curve[3].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
                 changed = 1;
             }
-            while (cc->corners[v0].x < pfs->rect.p.x+MIDPOINT_ACCURACY && cc->corners[v1].x < pfs->rect.p.x+MIDPOINT_ACCURACY);
+            while (cc->corners[v0].x < pfs->rect.p.x && cc->corners[v1].x < pfs->rect.p.x);
             if (0)
             {
 check_left_quarter:
@@ -1071,10 +1098,10 @@ check_left_quarter:
                      * c[v1].vertex  m1  x  x  c[v1^1].vertex
                      */
                     m0 = quarterpoint(cc->corners[v0].x, cc->corners[v0^1].x);
-                    if (m0 >= pfs->rect.p.x+QUARTERPOINT_ACCURACY)
+                    if (m0 >= pfs->rect.p.x)
                         break;
                     m1 = quarterpoint(cc->corners[v1].x, cc->corners[v1^1].x);
-                    if (m1 >= pfs->rect.p.x+QUARTERPOINT_ACCURACY)
+                    if (m1 >= pfs->rect.p.x)
                         break;
                     /* So, we can completely discard the left hand quarter of the patch. */
                     cc->corners[v0].x = m0;
@@ -1085,16 +1112,13 @@ check_left_quarter:
                     cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^1].vertex.cc[0])/4;
                     changed = 1;
                 }
-                while (cc->corners[v0].x < pfs->rect.p.x+QUARTERPOINT_ACCURACY && cc->corners[v1].x < pfs->rect.p.x+QUARTERPOINT_ACCURACY);
+                while (cc->corners[v0].x < pfs->rect.p.x && cc->corners[v1].x < pfs->rect.p.x);
             }
         }
 
         /* or the right hand half? */
         if (cc->corners[0].x > pfs->rect.q.x && cc->corners[3].x > pfs->rect.q.x)
         {
-            /* Is the whole patch off to the right? */
-            if (cc->corners[1].x > pfs->rect.q.x && cc->corners[2].x > pfs->rect.q.x)
-                return 0;
             /* Check 0+3 off right. */
             v0 = 0;
             v1 = 3;
@@ -1186,10 +1210,10 @@ check_rot_left:
                  * c[v1^3].vertex  m1  c[v1].vertex
                  */
                 m0 = midpoint(cc->corners[0].x, cc->corners[3].x);
-                if (m0 >= pfs->rect.p.x+MIDPOINT_ACCURACY)
+                if (m0 >= pfs->rect.p.x)
                     goto check_rot_left_quarter;
                 m1 = midpoint(cc->corners[1].x, cc->corners[2].x);
-                if (m1 >= pfs->rect.p.x+MIDPOINT_ACCURACY)
+                if (m1 >= pfs->rect.p.x)
                     goto check_rot_left_quarter;
                 /* So, we can completely discard the left hand half of the patch. */
                 cc->corners[v0].x = m0;
@@ -1200,7 +1224,7 @@ check_rot_left:
                 cc->curve[v1].vertex.cc[0] = (cc->curve[1].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
                 changed = 1;
             }
-            while (cc->corners[v0].x < pfs->rect.p.x+MIDPOINT_ACCURACY && cc->corners[v1].x < pfs->rect.p.x+MIDPOINT_ACCURACY);
+            while (cc->corners[v0].x < pfs->rect.p.x && cc->corners[v1].x < pfs->rect.p.x);
             if (0)
             {
 check_rot_left_quarter:
@@ -1214,10 +1238,10 @@ check_rot_left_quarter:
                      * c[v1].vertex  m1  x  x  c[v1^3].vertex
                      */
                     m0 = quarterpoint(cc->corners[v0].x, cc->corners[v0^3].x);
-                    if (m0 >= pfs->rect.p.x+QUARTERPOINT_ACCURACY)
+                    if (m0 >= pfs->rect.p.x)
                         break;
                     m1 = quarterpoint(cc->corners[v1].x, cc->corners[v1^3].x);
-                    if (m1 >= pfs->rect.p.x+QUARTERPOINT_ACCURACY)
+                    if (m1 >= pfs->rect.p.x)
                         break;
                     /* So, we can completely discard the left hand half of the patch. */
                     cc->corners[v0].x = m0;
@@ -1228,7 +1252,7 @@ check_rot_left_quarter:
                     cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^3].vertex.cc[0])/4;
                     changed = 1;
                 }
-                while (cc->corners[v0].x < pfs->rect.p.x+QUARTERPOINT_ACCURACY && cc->corners[v1].x < pfs->rect.p.x+QUARTERPOINT_ACCURACY);
+                while (cc->corners[v0].x < pfs->rect.p.x && cc->corners[v1].x < pfs->rect.p.x);
             }
         }
 
@@ -1307,9 +1331,6 @@ check_rot_right_quarter:
         /* Non rotated cases first. Can we cull the top half? */
         if (cc->corners[0].y < pfs->rect.p.y && cc->corners[1].y < pfs->rect.p.y)
         {
-            /* Is the whole patch off to the left? */
-            if (cc->corners[3].y < pfs->rect.p.y && cc->corners[2].y < pfs->rect.p.y)
-                return 0;
             /* Check 0+1 off above. */
             v0 = 0;
             v1 = 1;
@@ -1332,10 +1353,10 @@ check_above:
                  * c[v0^3].vertex   c[v1^3].vertex
                  */
                 m0 = midpoint(cc->corners[0].y, cc->corners[3].y);
-                if (m0 >= pfs->rect.p.y+MIDPOINT_ACCURACY)
+                if (m0 >= pfs->rect.p.y)
                     goto check_above_quarter;
                 m1 = midpoint(cc->corners[1].y, cc->corners[2].y);
-                if (m1 >= pfs->rect.p.y+MIDPOINT_ACCURACY)
+                if (m1 >= pfs->rect.p.y)
                     goto check_above_quarter;
                 /* So, we can completely discard the top half of the patch. */
                 cc->corners[v0].x = midpoint(cc->corners[0].x, cc->corners[3].x);
@@ -1346,7 +1367,7 @@ check_above:
                 cc->curve[v1].vertex.cc[0] = (cc->curve[1].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
                 changed = 1;
             }
-            while (cc->corners[v0].y < pfs->rect.p.y+MIDPOINT_ACCURACY && cc->corners[v1].y < pfs->rect.p.y+MIDPOINT_ACCURACY);
+            while (cc->corners[v0].y < pfs->rect.p.y && cc->corners[v1].y < pfs->rect.p.y);
             if (0)
             {
 check_above_quarter:
@@ -1363,10 +1384,10 @@ check_above_quarter:
                      * c[v0^3].vertex   c[v1^3].vertex
                      */
                     m0 = quarterpoint(cc->corners[v0].y, cc->corners[v0^3].y);
-                    if (m0 >= pfs->rect.p.y+QUARTERPOINT_ACCURACY)
+                    if (m0 >= pfs->rect.p.y)
                         break;
                     m1 = quarterpoint(cc->corners[v1].y, cc->corners[v1^3].y);
-                    if (m1 >= pfs->rect.p.y+QUARTERPOINT_ACCURACY)
+                    if (m1 >= pfs->rect.p.y)
                         break;
                     /* So, we can completely discard the top half of the patch. */
                     cc->corners[v0].x = quarterpoint(cc->corners[v0].x, cc->corners[v0^3].x);
@@ -1377,16 +1398,13 @@ check_above_quarter:
                     cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^3].vertex.cc[0])/4;
                     changed = 1;
                 }
-                while (cc->corners[v0].y < pfs->rect.p.y+QUARTERPOINT_ACCURACY && cc->corners[v1].y < pfs->rect.p.y+QUARTERPOINT_ACCURACY);
+                while (cc->corners[v0].y < pfs->rect.p.y && cc->corners[v1].y < pfs->rect.p.y);
             }
         }
 
         /* or the bottom half? */
         if (cc->corners[0].y > pfs->rect.q.y && cc->corners[1].y > pfs->rect.q.y)
         {
-            /* Is the whole patch off the bottom? */
-            if (cc->corners[3].y > pfs->rect.q.y && cc->corners[2].y > pfs->rect.q.y)
-                return 0;
             /* Check 0+1 off bottom. */
             v0 = 0;
             v1 = 1;
@@ -1483,10 +1501,10 @@ check_rot_above:
                  * c[v0^1].vertex   c[v1^1].vertex
                  */
                 m0 = midpoint(cc->corners[0].y, cc->corners[1].y);
-                if (m0 >= pfs->rect.p.y+MIDPOINT_ACCURACY)
+                if (m0 >= pfs->rect.p.y)
                     goto check_rot_above_quarter;
                 m1 = midpoint(cc->corners[3].y, cc->corners[2].y);
-                if (m1 >= pfs->rect.p.y+MIDPOINT_ACCURACY)
+                if (m1 >= pfs->rect.p.y)
                     goto check_rot_above_quarter;
                 /* So, we can completely discard the top half of the patch. */
                 cc->corners[v0].x = midpoint(cc->corners[0].x, cc->corners[1].x);
@@ -1497,7 +1515,7 @@ check_rot_above:
                 cc->curve[v1].vertex.cc[0] = (cc->curve[3].vertex.cc[0] + cc->curve[2].vertex.cc[0])/2;
                 changed = 1;
             }
-            while (cc->corners[v0].y < pfs->rect.p.y+MIDPOINT_ACCURACY && cc->corners[v1].y < pfs->rect.p.y+MIDPOINT_ACCURACY);
+            while (cc->corners[v0].y < pfs->rect.p.y && cc->corners[v1].y < pfs->rect.p.y);
             if (0)
             {
 check_rot_above_quarter:
@@ -1514,10 +1532,10 @@ check_rot_above_quarter:
                      * c[v0^1].vertex   c[v1^1].vertex
                      */
                     m0 = quarterpoint(cc->corners[v0].y, cc->corners[v0^1].y);
-                    if (m0 >= pfs->rect.p.y+QUARTERPOINT_ACCURACY)
+                    if (m0 >= pfs->rect.p.y)
                         break;
                     m1 = quarterpoint(cc->corners[v1].y, cc->corners[v1^1].y);
-                    if (m1 >= pfs->rect.p.y+QUARTERPOINT_ACCURACY)
+                    if (m1 >= pfs->rect.p.y)
                         break;
                     /* So, we can completely discard the top half of the patch. */
                     cc->corners[v0].x = quarterpoint(cc->corners[v0].x, cc->corners[v0^1].x);
@@ -1528,7 +1546,7 @@ check_rot_above_quarter:
                     cc->curve[v1].vertex.cc[0] = (cc->curve[v1].vertex.cc[0] + 3*cc->curve[v1^1].vertex.cc[0])/4;
                     changed = 1;
                 }
-                while (cc->corners[v0].y < pfs->rect.p.y+QUARTERPOINT_ACCURACY && cc->corners[v1].y < pfs->rect.p.y+QUARTERPOINT_ACCURACY);
+                while (cc->corners[v0].y < pfs->rect.p.y && cc->corners[v1].y < pfs->rect.p.y);
             }
         }
 
