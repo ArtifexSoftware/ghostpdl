@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2022 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -9,8 +9,8 @@
    of the license contained in the file LICENSE in this distribution.
 
    Refer to licensing information at http://www.artifex.com or contact
-   Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
-   CA 94945, U.S.A., +1(415)492-9861, for further information.
+   Artifex Software, Inc.,  39 Mesa Street, Suite 108A, San Francisco,
+   CA 94129, USA, for further information.
 */
 
 
@@ -169,7 +169,7 @@ typedef struct cielab_s {
 } cielab_t;
 
 static const char desc_name[] = "Ghostscript Internal Profile";
-static const char copy_right[] = "Copyright Artifex Software 2009-2021";
+static const char copy_right[] = "Copyright Artifex Software 2009-2023";
 
 typedef struct {
     icTagSignature      sig;            /* The tag signature */

@@ -9,8 +9,8 @@
 # of the license contained in the file LICENSE in this distribution.
 #
 # Refer to licensing information at http://www.artifex.com or contact
-# Artifex Software, Inc.,  1305 Grant Avenue - Suite 200, Novato,
-# CA 94945, U.S.A., +1(415)492-9861, for further information.
+# Artifex Software, Inc.,  39 Mesa Street, Suite 108A, San Francisco,
+# CA 94129, USA, for further information.
 #
 
 extract_cc = $(CC) $(CCFLAGS) -DEXTRACT_CV=0 $(I_)$(EXTRACT_DIR)$(D)include$(_I) $(I_)$(EXTRACT_DIR)$(D)src$(_I) $(I_)$(ZSRCDIR)$(_I) $(O_)
