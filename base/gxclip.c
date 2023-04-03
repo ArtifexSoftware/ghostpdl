@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2023 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -130,6 +130,7 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     dev->log2_align_mod = target->log2_align_mod;
     dev->is_planar = target->is_planar;
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
+    dev->non_strict_bounds = target->non_strict_bounds;
     /* There is no finalization for device on stack so no rc increment */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
 }
@@ -174,6 +175,7 @@ gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path 
     dev->log2_align_mod = target->log2_align_mod;
     dev->is_planar = target->is_planar;
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
+    dev->non_strict_bounds = target->non_strict_bounds;
     /* There is no finalization for device on stack so no rc increment */
     (*dev_proc(dev, open_device)) ((gx_device *)dev);
     return (gx_device *)dev;
@@ -196,6 +198,7 @@ gx_make_clip_device_in_heap(gx_device_clip *dev,
     dev->pad = target->pad;
     dev->log2_align_mod = target->log2_align_mod;
     dev->is_planar = target->is_planar;
+    dev->non_strict_bounds = target->non_strict_bounds;
     gx_device_set_target((gx_device_forward *)dev, target);
     gx_device_retain((gx_device *)dev, true); /* will free explicitly */
     /* Can never fail */
