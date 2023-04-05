@@ -1067,8 +1067,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                                          false,
                                          tiff->pgs);
                     if (code < 0) {
-                        tiff->state = ii_state_flush;
-                        return code;
+                        goto fail_decode;
                     }
 
                     tremx = tiff->width - tx;
@@ -1152,7 +1151,12 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             (void)pl_finish_page(tiff->memory->gs_lib_ctx->top_of_system,
                                  tiff->pgs, 1, true);
             break;
-fail_decode:
+    fail_decode:
+            if (tiff->penum)
+            {
+                (void)gs_image_cleanup_and_free_enum(tiff->penum, tiff->pgs);
+                tiff->penum = NULL;
+            }
             tiff->state = ii_state_flush;
             break;
         }
