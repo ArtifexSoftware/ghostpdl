@@ -78,7 +78,9 @@ typedef struct tiff_interp_instance_s {
     uint32_t           photometric;
     uint8_t           *palette;
 
-    uint32_t           num_comps;
+    uint32_t           raw_num_comps; /* As specified in the file */
+    uint32_t           num_comps;     /* After processing */
+    uint32_t           raw_byte_width;
     uint32_t           byte_width;
 
     gs_image_t         image;
@@ -488,21 +490,87 @@ guess_pal_depth(int n, uint16_t *rmap, uint16_t *gmap, uint16_t *bmap)
 }
 
 static void
-blend_alpha(tiff_interp_instance_t *tiff, size_t n)
+blend_alpha(tiff_interp_instance_t *tiff, size_t n, int nc, int planar)
 {
+    int i = tiff->raw_byte_width * nc;
     byte *p = tiff->samples;
-    const byte *q = (const byte *)tiff->samples;
-    int nc = tiff->num_comps;
-    int i;
+    const byte *q = tiff->samples + i;
 
-    while (n--) {
-        byte a = q[nc];
-        for (i = nc; i > 0; i--) {
-            int c = *q++ * a + 255*(255-a);
-            c += (c>>7);
-            *p++ = c>>8;
+    switch (tiff->bpc)
+    {
+    case 1:
+        p += i*8;
+        do
+        {
+            byte a = *--q;
+            *--p = ( a     & 1)*255;
+            *--p = ((a>>1) & 1)*255;
+            *--p = ((a>>2) & 1)*255;
+            *--p = ((a>>3) & 1)*255;
+            *--p = ((a>>4) & 1)*255;
+            *--p = ((a>>5) & 1)*255;
+            *--p = ((a>>6) & 1)*255;
+            *--p = ((a>>7) & 1)*255;
         }
-        q++;
+        while (--i);
+        break;
+    case 2:
+        p += i*4;
+        do
+        {
+            byte a = *--q;
+            *--p = ( a     & 3)*0x55;
+            *--p = ((a>>1) & 3)*0x55;
+            *--p = ((a>>2) & 3)*0x55;
+            *--p = ((a>>3) & 3)*0x55;
+        }
+        while (--i);
+        break;
+    case 4:
+        p += i*2;
+        do
+        {
+            byte a = *--q;
+            *--p = ( a     & 15)*0x11;
+            *--p = ((a>>1) & 15)*0x11;
+            *--p = ((a>>2) & 15)*0x11;
+            *--p = ((a>>3) & 15)*0x11;
+        }
+        while (--i);
+        break;
+    default:
+        break;
+    }
+
+    p = tiff->samples;
+    if (planar == PLANARCONFIG_CONTIG)
+    {
+        q = (const byte *)tiff->samples;
+        while (n--) {
+            byte a = q[nc];
+            for (i = nc-1; i > 0; i--) {
+                int c = *q++ * a + 255*(255-a);
+                c += (c>>7);
+                *p++ = c>>8;
+            }
+            q++;
+        }
+    }
+    else
+    {
+        int next_comp = tiff->raw_byte_width;
+        int alpha_offset = (nc-1) * next_comp;
+        while (n--) {
+            byte a = p[alpha_offset];
+            for (i = nc-1; i > 0; i--) {
+                int c = *p * a + 255*(255-a);
+                c += (c>>7);
+                *p = c>>8;
+                p += next_comp;
+            }
+            p -= alpha_offset;
+            p++;
+        }
     }
 }
 
@@ -676,6 +744,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             TIFFGetField(tiff->handle, TIFFTAG_TILELENGTH, &tiff->tile_height);
             TIFFGetField(tiff->handle, TIFFTAG_BITSPERSAMPLE, &tiff->bpc);
             TIFFGetField(tiff->handle, TIFFTAG_SAMPLESPERPIXEL, &tiff->num_comps);
+            tiff->raw_num_comps = tiff->num_comps;
             TIFFGetField(tiff->handle, TIFFTAG_PLANARCONFIG, &planar);
             f = 0;
             TIFFGetField(tiff->handle, TIFFTAG_XRESOLUTION, &f);
@@ -710,6 +779,23 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             }
             if (code < 0)
                 goto fail_decode;
+
+            tiff->raw_byte_width = tiff->byte_width;
+            if (tiff->photometric == PHOTOMETRIC_RGB && tiff->num_comps == 4)
+            {
+                /* RGBA, so alpha data */
+                alpha = 1;
+            }
+            if (alpha && tiff->bpp < 8)
+            {
+                /* We need to expand the data to 8bpp to blend for alpha. */
+                if (tiff->bpc != 1 && tiff->bpc != 2 && tiff->bpc != 4)
+                {
+                    code = gs_error_unknownerror;
+                    goto fail_decode;
+                }
+                tiff->byte_width *= 8/tiff->bpc;
+            }
 
             /* Allocate 'samples' to hold the raw samples values read from libtiff.
              * The exact size of this buffer depends on which of the multifarious
@@ -798,8 +884,10 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 }
                 tiff->bpc = 8;
                 tiff->num_comps = 3;
+                tiff->raw_num_comps = 1;
                 tiff->bpp = 24;
                 tiff->byte_width = tiff->tile_width * 3;
+                tiff->raw_byte_width = tiff->byte_width;
                 /* Now we need to make a "proc_samples" area to store the
                  * processed samples in. */
                 if (tiff->is_rgba) {
@@ -915,6 +1003,8 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     memset(&tiff->image, 0, sizeof(tiff->image));
                     gs_image_t_init(&tiff->image, cs);
                     tiff->image.BitsPerComponent = tiff->bpp/tiff->num_comps;
+                    if (alpha)
+                        tiff->image.BitsPerComponent = 8;
                     tiff->image.Width = tiff->tile_width;
                     tiff->image.Height = tiff->tile_height;
 
@@ -940,7 +1030,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                             code = gs_error_unknownerror;
                             goto fail_decode;
                         }
-                        blend_alpha(tiff, z);
+                        blend_alpha(tiff, z, 4, planar);
                     } else if (tiff->tiled) {
                         if (TIFFReadTile(tiff->handle, tiff->samples, tx, ty, 0, 0) == 0) {
                             code = gs_error_unknownerror;
@@ -966,7 +1056,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                             }
                         }
                         if (alpha) {
-                            blend_alpha(tiff, tiff->tile_width);
+                            blend_alpha(tiff, tiff->tile_width, tiff->num_comps, planar);
                         }
                     }
 
@@ -1004,12 +1094,12 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                                 goto fail_decode;
                             }
                         } else {
-                            int span = tiff->byte_width;
+                            int span = tiff->raw_byte_width;
                             byte *in_row = tiff->samples;
                             if (planar != PLANARCONFIG_SEPARATE)
-                                span /= tiff->num_comps;
+                                span /= tiff->raw_num_comps;
                             row = tiff->proc_samples;
-                            for (s = 0; s < tiff->num_comps; s++) {
+                            for (s = 0; s < tiff->raw_num_comps; s++) {
                                 plane_data[s].data = row;
                                 plane_data[s].size = span;
                                 if (TIFFReadScanline(tiff->handle, in_row, ty+y, s) == 0) {
@@ -1035,7 +1125,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                                 }
                             }
                             if (alpha) {
-                                blend_alpha(tiff, tiff->tile_width);
+                                blend_alpha(tiff, tiff->tile_width, tiff->raw_num_comps, planar);
                             }
                         }
 
