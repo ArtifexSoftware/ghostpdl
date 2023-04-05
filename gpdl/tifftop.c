@@ -249,6 +249,7 @@ tiff_impl_init_job(pl_interp_implementation_t *impl,
 
     tiff->dev = device;
     tiff->state = ii_state_identifying;
+    tiff->buffer_full = 0;
 
     return 0;
 }
@@ -1187,6 +1188,8 @@ fail_decode:
             if (tiff->tiff_buffer) {
                 gs_free_object(tiff->memory, tiff->tiff_buffer, "tiff_impl_process(tiff_buffer)");
                 tiff->tiff_buffer = NULL;
+                tiff->buffer_max = 0;
+                tiff->buffer_full = 0;
             }
             /* We want to bin any data we get up to, but not including
              * a UEL. */
