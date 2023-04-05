@@ -255,7 +255,7 @@ zdefaultpapersize(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     byte *value;
-    int len = 0;
+    int len = 0, i;
 
     if (gp_defaultpapersize((char *)0, &len) > 0) {
         /* no default paper size */
@@ -269,6 +269,10 @@ zdefaultpapersize(i_ctx_t *i_ctx_p)
         return_error(gs_error_VMerror);
     }
     DISCARD(gp_defaultpapersize((char *)value, &len));	/* can't fail */
+    /* Note 'len' includes the NULL terminator, which we can ignore */
+    for (i = 0;i < (len - 1); i++)
+        value[i] = tolower(value[i]);
+
     /* Delete the stupid C string terminator. */
     value = iresize_string(value, len, len - 1,
                            "defaultpapersize value");	/* can't fail */
