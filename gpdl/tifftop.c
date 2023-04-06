@@ -543,13 +543,14 @@ blend_alpha(tiff_interp_instance_t *tiff, size_t n, int nc, int planar)
         break;
     }
 
+    nc--;
     p = tiff->samples;
     if (planar == PLANARCONFIG_CONTIG)
     {
         q = (const byte *)tiff->samples;
         while (n--) {
             byte a = q[nc];
-            for (i = nc-1; i > 0; i--) {
+            for (i = nc; i > 0; i--) {
                 int c = *q++ * a + 255*(255-a);
                 c += (c>>7);
                 *p++ = c>>8;
@@ -560,10 +561,10 @@ blend_alpha(tiff_interp_instance_t *tiff, size_t n, int nc, int planar)
     else
     {
         int next_comp = tiff->raw_byte_width;
-        int alpha_offset = (nc-1) * next_comp;
+        int alpha_offset = nc * next_comp;
         while (n--) {
             byte a = p[alpha_offset];
-            for (i = nc-1; i > 0; i--) {
+            for (i = nc; i > 0; i--) {
                 int c = *p * a + 255*(255-a);
                 c += (c>>7);
                 *p = c>>8;
@@ -762,6 +763,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 tiff->xresolution = tiff->yresolution = 72;
             if (tiff->width == 0 || tiff->height == 0 || tiff->bpc == 0 || tiff->num_comps == 0 ||
                 !(planar == PLANARCONFIG_CONTIG || planar == PLANARCONFIG_SEPARATE)) {
+                emprintf(tiff->memory, "Unsupported TIFF format\n");
                 tiff->state = ii_state_flush;
                 break;
             }
@@ -778,8 +780,10 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             } else {
                 tiff->byte_width = safe_mla(tiff->memory, &code, tiff->bpc, 1, tiff->tile_width, 7)>>3;
             }
-            if (code < 0)
+            if (code < 0) {
+                emprintf(tiff->memory, "Unsupported: TIFF size overflow\n");
                 goto fail_decode;
+            }
 
             tiff->raw_byte_width = tiff->byte_width;
             if (tiff->photometric == PHOTOMETRIC_RGB && tiff->num_comps == 4)
@@ -792,6 +796,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 /* We need to expand the data to 8bpp to blend for alpha. */
                 if (tiff->bpc != 1 && tiff->bpc != 2 && tiff->bpc != 4)
                 {
+                    emprintf1(tiff->memory, "Unsupported: TIFF with alpha and bpc=%d\n", tiff->bpc);
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
@@ -804,15 +809,19 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             if (tiff->compression == COMPRESSION_OJPEG ||
                 tiff->photometric == PHOTOMETRIC_YCBCR) {
                 size_t z = size_mla(tiff->memory, &code, sizeof(uint32_t), tiff->width, tiff->height, 0);
-                if (code < 0)
+                if (code < 0) {
+                    emprintf(tiff->memory, "Unsupported: TIFF size overflow\n");
                     goto fail_decode;
+                }
                 tiff->is_rgba = 1;
                 tiff->samples = gs_alloc_bytes(tiff->memory, z, "tiff_image");
                 tiff->tile_width = tiff->width;
                 tiff->tile_height = tiff->height;
                 tiff->byte_width = safe_mla(tiff->memory, &code, tiff->bpc, tiff->num_comps, tiff->tile_width, 7)>>3;
-                if (code < 0)
+                if (code < 0) {
+                    emprintf(tiff->memory, "Unsupported: TIFF size overflow\n");
                     goto fail_decode;
+                }
             } else if (tiff->tiled) {
                 tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
             } else if (planar == PLANARCONFIG_SEPARATE) {
@@ -821,8 +830,8 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 tiff->samples = gs_alloc_bytes(tiff->memory, tiff->byte_width, "tiff_scan");
             }
             if (tiff->samples == NULL) {
-                tiff->state = ii_state_flush;
-                break;
+                code = gs_error_VMerror;
+                goto fail_decode;
             }
             tiff->proc_samples = tiff->samples;
 
@@ -833,6 +842,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 /* Fall through */
             case PHOTOMETRIC_MINISBLACK:
                 if (tiff->num_comps != 1) {
+                    emprintf1(tiff->memory, "Unsupported: TIFF with MINISBLACK with nc=%d\n", tiff->num_comps);
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
@@ -844,6 +854,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                     tiff->bpp = tiff->bpp * 3/4;
                     tiff->byte_width = tiff->byte_width * 3/4;
                 } else if (tiff->num_comps != 3) {
+                    emprintf1(tiff->memory, "Unsupported: RGB TIFF nc=%d\n", tiff->num_comps);
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
@@ -853,20 +864,23 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 uint16_t *rmap, *gmap, *bmap;
                 int i, n = 1<<tiff->bpc;
                 if (tiff->num_comps != 1) {
+                    emprintf1(tiff->memory, "Unsupported: Paletted TIFF with nc=%d\n", tiff->num_comps);
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
                 if (tiff->bpc > 8) {
+                    emprintf1(tiff->memory, "Unsupported: Paletted TIFF with bpc=%d\n", tiff->bpc);
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
                 if (!TIFFGetField(tiff->handle, TIFFTAG_COLORMAP, &rmap, &gmap, &bmap)) {
+                    emprintf(tiff->memory, "Unsupported: Paletted TIFF with bad palette\n");
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
                 tiff->palette = gs_alloc_bytes(tiff->memory, 3*256, "palette");
                 if (tiff->palette == NULL) {
-                    code = gs_error_unknownerror;
+                    code = gs_error_VMerror;
                     goto fail_decode;
                 }
                 memset(tiff->palette, 0, 3 * 256);
@@ -892,11 +906,13 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 /* Now we need to make a "proc_samples" area to store the
                  * processed samples in. */
                 if (tiff->is_rgba) {
+                    emprintf(tiff->memory, "Unsupported: Paletted TIFF with RGBA\n");
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 } else if (tiff->tiled) {
                     size_t z = size_mla(tiff->memory, &code, tiff->tile_width, tiff->tile_height, 3, 0);
                     if (code < 0) {
+                        emprintf(tiff->memory, "Unsupported: TIFF size overflow\n");
                         goto fail_decode;
                     }
                     tiff->proc_samples = gs_alloc_bytes(tiff->memory, z, "tiff_tile");
@@ -908,24 +924,30 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             }
             case PHOTOMETRIC_MASK:
                 if (tiff->num_comps != 1) {
+                    emprintf1(tiff->memory, "Unsupported: Mask TIFF with nc=%d\n", tiff->num_comps);
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
                 break;
             case PHOTOMETRIC_SEPARATED:
                 if (tiff->num_comps == 3 || tiff->num_comps == 4)
+                {
+                    emprintf1(tiff->memory, "Unsupported: Separated TIFF with nc=%d\n", tiff->num_comps);
                     break;
+                }
             case PHOTOMETRIC_YCBCR:
             case PHOTOMETRIC_CIELAB:
             case PHOTOMETRIC_ICCLAB:
             case PHOTOMETRIC_ITULAB:
                 if (tiff->num_comps != 3) {
+                    emprintf1(tiff->memory, "Unsupported: YUV/LAB TIFF with nc=%d\n", tiff->num_comps);
                     code = gs_error_unknownerror;
                     goto fail_decode;
                 }
                 break;
             case PHOTOMETRIC_CFA:
             default:
+                emprintf(tiff->memory, "Unsupported TIFF\n");
                 tiff->state = ii_state_flush;
                 break;
             }
@@ -952,6 +974,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 /* We can cope with all these. */
                 break;
             default:
+                emprintf1(tiff->memory, "Unsupported: TIFF with bpc=%d\n", tiff->bpc);
                 code = gs_error_unknownerror;
                 goto fail_decode;
             }
