@@ -385,7 +385,6 @@ static int gs_ConvertUTF16(unsigned char *UTF16, size_t UTF16Len, unsigned char 
                     bytes = 2;
             } else {
                 bytes = 3;
-                U16 = 0xFFFD;
             }
         }
         if (UTF8 + bytes > UTF8End)
