@@ -366,5 +366,3 @@
 /TimesNewRoman,Bold			/TimesNewRomanPS-BoldMT		;
 /TimesNewRoman,Italic			/TimesNewRomanPS-ItalicMT	;
 /TimesNewRoman,BoldItalic		/TimesNewRomanPS-BoldItalicMT	;
-
-/Alkatra  (/home/cliddell/Downloads/Alkatra/static/Alkatra-Regular.ttf) ;
