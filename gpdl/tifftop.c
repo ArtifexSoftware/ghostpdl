@@ -942,6 +942,20 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                 break;
             }
 
+            switch (tiff->bpc)
+            {
+            case 1:
+            case 2:
+            case 4:
+            case 8:
+            case 16:
+                /* We can cope with all these. */
+                break;
+            default:
+                code = gs_error_unknownerror;
+                goto fail_decode;
+            }
+
             /* Scale to fit, if too large. */
             scale = 1.0f;
             if (tiff->width * tiff->dev->HWResolution[0] > tiff->dev->width * tiff->xresolution)
@@ -1108,6 +1122,20 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                                 }
                                 row += span;
                                 in_row += span;
+                            }
+                            row -= span * tiff->raw_num_comps;
+                        }
+
+                        if (tiff->bpc == 16)
+                        {
+                            byte *p = row;
+                            int n = tiff->tile_width * tiff->raw_num_comps;
+                            while (n--)
+                            {
+                                byte b = p[0];
+                                p[0] = p[1];
+                                p[1] = b;
+                                p += 2;
                             }
                         }
 
