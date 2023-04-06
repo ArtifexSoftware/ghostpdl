@@ -137,7 +137,7 @@ Installing
 
 To install Ghostscript on Windows, you should run the installer executable.
 
-The installer is NSIS-based and supports a few standard NSIS options: ``/NCRC`` disables the ``CRC`` check, ``/S`` runs the installer or uninstaller silently, ``/D`` sets the default installation directory (It must be the last parameter used in the command line and must not contain any quotes, even if the path contains spaces. Only absolute paths are supported).
+The installer is NSIS-based and supports a few standard NSIS options: ``/NCRC`` disables the ``CRC`` check, ``/D`` sets the default installation directory (It must be the last parameter used in the command line and must not contain any quotes, even if the path contains spaces. Only absolute paths are supported).
 
 
 General Windows configuration
