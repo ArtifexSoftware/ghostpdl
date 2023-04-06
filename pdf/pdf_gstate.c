@@ -609,6 +609,11 @@ static int pdfi_set_blackgeneration(pdf_context *ctx, pdf_obj *obj, pdf_dict *pa
             if (code < 0)
                 return code;
 
+            if (pfn->params.n != 1) {
+                pdfi_free_function(ctx, pfn);
+                return_error(gs_error_rangecheck);
+            }
+
             gs_setblackgeneration_remap(ctx->pgs, gs_mapped_transfer, false);
             for (i = 0; i < transfer_map_size; i++) {
                 float v, f;

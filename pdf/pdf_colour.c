@@ -2004,6 +2004,11 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     if (code < 0)
         goto pdfi_separation_error;
 
+    if (pfn->params.m != 1 || pfn->params.n != cs_num_components(pcs_alt)) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto pdfi_separation_error;
+    }
+
     code = gs_cspace_new_Separation(&pcs, pcs_alt, ctx->memory);
     if (code < 0)
         goto pdfi_separation_error;
@@ -2183,6 +2188,11 @@ all_error:
     code = pdfi_build_function(ctx, &pfn, NULL, 1, transform, page_dict);
     if (code < 0)
         goto pdfi_devicen_error;
+
+    if (pfn->params.m != pdfi_array_size(inks) || pfn->params.n != cs_num_components(pcs_alt)) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto pdfi_devicen_error;
+    }
 
     code = gs_cspace_new_DeviceN(&pcs, pdfi_array_size(inks), pcs_alt, ctx->memory);
     if (code < 0)
