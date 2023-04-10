@@ -359,6 +359,7 @@ static const char firstByteMark[7] = { 0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC 
 static int gs_ConvertUTF16(unsigned char *UTF16, size_t UTF16Len, unsigned char **UTF8Start, int UTF8Len)
 {
     size_t i, bytes = 0;
+    uint32_t U32 = 0;
     unsigned short U16;
     unsigned char *UTF8 = *UTF8Start;
     unsigned char *UTF8End = UTF8 + UTF8Len;
@@ -372,21 +373,38 @@ static int gs_ConvertUTF16(unsigned char *UTF16, size_t UTF16Len, unsigned char 
         U16 += *UTF16++;
 
         if (U16 >= 0xD800 && U16 <= 0xDBFF) {
-            return gs_note_error(gs_error_rangecheck);
-        }
-        if (U16 >= 0xDC00 && U16 <= 0xDFFF) {
-            return gs_note_error(gs_error_rangecheck);
-        }
+            /* Ensure at least two bytes of input left */
+            if (i == (UTF16Len / sizeof(short)) - 1)
+                return gs_note_error(gs_error_rangecheck);
 
-        if(U16 < 0x80) {
-            bytes = 1;
+            U32 += (U16 & 0x3FF) << 10;
+            U16 = (*(UTF16++) << 8);
+            U16 += *(UTF16++);
+            i++;
+
+            /* Ensure a high order surrogate is followed by a low order surrogate */
+            if (U16 < 0xDC00 || U16 > 0xDFFF)
+                return gs_note_error(gs_error_rangecheck);
+
+            U32 += (U16 & 0x3FF) | 0x10000;
+            bytes = 4;
         } else {
-            if (U16 < 0x800) {
-                    bytes = 2;
+            if (U16 >= 0xDC00 && U16 <= 0xDFFF) {
+                /* We got a low order surrogate without a preceding high-order */
+                return gs_note_error(gs_error_rangecheck);
+            }
+
+            if(U16 < 0x80) {
+                bytes = 1;
             } else {
-                bytes = 3;
+                if (U16 < 0x800) {
+                    bytes = 2;
+                } else {
+                    bytes = 3;
+                }
             }
         }
+
         if (UTF8 + bytes > UTF8End)
             return gs_note_error(gs_error_VMerror);
 
@@ -394,6 +412,9 @@ static int gs_ConvertUTF16(unsigned char *UTF16, size_t UTF16Len, unsigned char 
         UTF8 += bytes;
 
         switch(bytes) {
+            case 4:
+                *--UTF8 = (unsigned char)((U32 | 0x80) & 0xBF);
+                U16 = U32 >> 6;
             case 3:
                 *--UTF8 = (unsigned char)((U16 | 0x80) & 0xBF);
                 U16 >>= 6;
