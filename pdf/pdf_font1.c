@@ -521,6 +521,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
     pdf_obj *tounicode = NULL;
     ps_font_interp_private fpriv = { 0 };
     bool key_known;
+    bool force_symbolic = false;
 
     if (font_dict != NULL)
         (void)pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, &fontdesc);
@@ -605,6 +606,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             }
 
             if (pdfi_font_known_symbolic(basefont)) {
+                force_symbolic = true;
                 t1f->descflags |= 4;
             }
 
@@ -645,7 +647,11 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             else
                 code = gs_error_undefined;
             if (code == 1) {
-                if (pdfi_type_of(tmp) == PDF_DICT && (t1f->descflags & 4) != 0) {
+                if (pdfi_type_of(tmp) == PDF_NAME && force_symbolic == true) {
+                    t1f->Encoding = fpriv.u.t1.Encoding;
+                    pdfi_countup(t1f->Encoding);
+                }
+                else if (pdfi_type_of(tmp) == PDF_DICT && (t1f->descflags & 4) != 0) {
                     code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)fpriv.u.t1.Encoding, (pdf_obj **) & t1f->Encoding);
                     if (code >= 0)
                         code = 1;
@@ -657,8 +663,6 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
                 }
                 pdfi_countdown(tmp);
                 tmp = NULL;
-                if (code == 1) {
-                }
             }
             else {
                 pdfi_countdown(tmp);
@@ -765,6 +769,7 @@ pdfi_copy_type1_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, 
     gs_font_type1 *dpfont1;
     gs_id t_id;
     pdf_obj *tmp;
+    bool force_symbolic = false;
 
     if (font_dict == NULL)
         return_error(gs_error_invalidfont);
@@ -846,24 +851,27 @@ pdfi_copy_type1_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, 
     }
 
     if (pdfi_font_known_symbolic(font->BaseFont)) {
+        force_symbolic = true;
         font->descflags |= 4;
     }
 
     tmp = NULL;
     code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
     if (code == 1) {
-        if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT) && (font->descflags & 4) == 0) {
-            code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & font->Encoding);
-            if (code >= 0)
-                code = 1;
+        if (pdfi_type_of(tmp) == PDF_NAME && force_symbolic == true) {
+            font->Encoding = spdffont->Encoding;
+            pdfi_countup(font->Encoding);
         }
         else if (pdfi_type_of(tmp) == PDF_DICT && (font->descflags & 4) != 0) {
             code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
             if (code >= 0)
                 code = 1;
         }
-        else
-            code = gs_error_undefined;
+        else {
+            code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & font->Encoding);
+            if (code >= 0)
+                code = 1;
+        }
         pdfi_countdown(tmp);
         tmp = NULL;
     }
