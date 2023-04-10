@@ -391,14 +391,20 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
                                 fabs((medium->p.x - ry) * (medium->q.x - ry)) +
                                     (pmat->xx == 0.0 || (rotate & 1) == 1 ? 0.01 : 0);	/* rotated */
         } else {
-            int rotate =
-                (orient >= 0 ? orient :
-                 (rx < ry) ^ (medium->q.x < medium->q.y));
-            bool larger = (policy == 13) ? 0 :
-                (rotate & 1 ? medium->q.y >= rx && medium->q.x >= ry :
-                 medium->q.x >= rx && medium->q.y >= ry);
+            int rotate = 0;
+            bool larger = 0;
             bool adjust = false;
             float mismatch = medium->q.x * medium->q.y - rx * ry;
+
+            rotate = orient >= 0 ? orient : (rx < ry) ^ (medium->q.x < medium->q.y);
+
+            /* If either the request or the media is square, there is no point in rotating */
+            if (rx == ry || medium->q.x == medium->q.y)
+                rotate = 0;
+
+            larger = (policy == 13) ? 0 :
+                    (rotate & 1 ? medium->q.y >= rx && medium->q.x >= ry :
+                    medium->q.x >= rx && medium->q.y >= ry);
 
             switch (policy) {
                 default:		/* exact match only */
