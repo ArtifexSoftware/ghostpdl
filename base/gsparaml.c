@@ -423,7 +423,7 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
             case '.':
             case '+':
             case '-':
-                if (array_type == gs_param_type_string_array) {
+                if (array_type == gs_param_type_string_array || array_type == gs_param_type_name_array ) {
                     code = gs_error_typecheck;
                     break;
                 } else {
