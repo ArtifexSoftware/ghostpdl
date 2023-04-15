@@ -95,4 +95,5 @@ PARAM(W_PDF_FONTRESOURCE_TYPE,      "A Font key in a Resources dictionary has a 
 PARAM(W_PDF_UNBLANACED_BT,          "A page ended after a BT had been executed and without a mtching ET"),
 PARAM(W_PDF_MISMATCH_GENERATION,    "The generation number of an indirectly referenced object did not match the xref"),
 PARAM(W_PDF_BAD_RENDERINGINTENT,    "A ri or /RI used an unknown named rendering intent"),
+PARAM(W_PDF_BAD_VIEW,               "Couldn't read the initial document view"),
 #undef PARAM

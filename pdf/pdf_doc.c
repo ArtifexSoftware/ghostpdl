@@ -1676,6 +1676,111 @@ static int pdfi_doc_AcroForm(pdf_context *ctx)
 }
 
 
+static int pdfi_doc_view(pdf_context *ctx)
+{
+    int code = 0;
+    pdf_dict *tempdict = NULL;
+    pdf_name *Mode = NULL;
+    pdf_obj *ActionDest = NULL;
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageMode", PDF_NAME, (pdf_obj **)&Mode);
+    if (code < 0)
+        return code;
+
+    if (code != 0) {
+        code = pdfi_dict_alloc(ctx, 1, &tempdict);
+        if (code < 0)
+            return code;
+
+        pdfi_countup(tempdict);
+
+        code = pdfi_dict_put(ctx, tempdict, "PageMode", (pdf_obj *)Mode);
+        if (code < 0)
+            goto exit;
+
+        code = pdfi_pdfmark_from_dict(ctx, tempdict, NULL, "DOCVIEW");
+        if (code < 0)
+            goto exit;
+        pdfi_countdown(tempdict);
+        tempdict = NULL;
+    }
+
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageLayout", PDF_NAME, (pdf_obj **)&Mode);
+    if (code < 0)
+        return code;
+
+    if (code != 0) {
+        code = pdfi_dict_alloc(ctx, 1, &tempdict);
+        if (code < 0)
+            return code;
+
+        pdfi_countup(tempdict);
+
+        code = pdfi_dict_put(ctx, tempdict, "PageLayout", (pdf_obj *)Mode);
+        if (code < 0)
+            goto exit;
+
+        code = pdfi_pdfmark_from_dict(ctx, tempdict, NULL, "DOCVIEW");
+        if (code < 0)
+            goto exit;
+        pdfi_countdown(tempdict);
+        tempdict = NULL;
+    }
+
+    code = pdfi_dict_knownget(ctx, ctx->Root, "OpenAction", &ActionDest);
+    if (code < 0)
+        return code;
+
+    if (code != 0) {
+        if (pdfi_type_of(ActionDest) == PDF_DICT) {
+            /* Dictionary means this is an action */
+            code = pdfi_dict_alloc(ctx, 1, &tempdict);
+            if (code < 0)
+                return code;
+
+            pdfi_countup(tempdict);
+
+            code = pdfi_dict_put(ctx, tempdict, "A", (pdf_obj *)ActionDest);
+            if (code < 0)
+                goto exit;
+
+            code = pdfi_pdfmark_modA(ctx, tempdict);
+            if (code < 0) goto exit;
+
+            code = pdfi_pdfmark_from_dict(ctx, tempdict, NULL, "DOCVIEW");
+        } else {
+            if (pdfi_type_of(ActionDest) == PDF_ARRAY) {
+                /* Array means this is a destination */
+                code = pdfi_dict_alloc(ctx, 1, &tempdict);
+                if (code < 0)
+                    return code;
+
+                pdfi_countup(tempdict);
+
+                code = pdfi_dict_put(ctx, tempdict, "Dest", (pdf_obj *)ActionDest);
+                if (code < 0)
+                    goto exit;
+                code = pdfi_pdfmark_modDest(ctx, tempdict);
+                if (code < 0)
+                    goto exit;
+                code = pdfi_pdfmark_from_dict(ctx, tempdict, NULL, "DOCVIEW");
+                if (code < 0)
+                    goto exit;
+            } else {
+                code = gs_note_error(gs_error_typecheck);
+                goto exit;
+            }
+        }
+    }
+
+exit:
+    pdfi_countdown(ActionDest);
+    pdfi_countdown(Mode);
+    pdfi_countdown(tempdict);
+    return code;
+}
+
+
 /* See pdf_main.ps/process_trailer_attrs()
  * Some of this stuff is about pdfmarks, and some of it is just handling
  * random things in the trailer.
@@ -1691,10 +1796,20 @@ int pdfi_doc_trailer(pdf_context *ctx)
     }
 
     if (ctx->device_state.writepdfmarks) {
+        code = pdfi_doc_view(ctx);
+
         /* Handle Outlines */
         code = pdfi_doc_Outlines(ctx);
         if (code < 0) {
             pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_OUTLINES, "pdfi_doc_trailer", NULL);
+            if (ctx->args.pdfstoponerror)
+                goto exit;
+        }
+
+        /* Handle Docview pdfmark stuff */
+        code = pdfi_doc_view(ctx);
+        if (code < 0) {
+            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_VIEW, "pdfi_doc_view", NULL);
             if (ctx->args.pdfstoponerror)
                 goto exit;
         }
