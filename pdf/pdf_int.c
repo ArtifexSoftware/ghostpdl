@@ -236,7 +236,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     unsigned short exponent_index = 0;
     pdf_num *num;
     int code = 0, malformed = false, doubleneg = false, recovered = false, negative = false, overflowed = false;
-    int int_val = 0, tenth_max_int = max_int / 10;
+    int int_val = 0, tenth_max_int = max_int / 10, tenth_max_uint = max_uint / 10;
 
     pdfi_skip_white(ctx, s);
 
@@ -262,7 +262,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
 
         if (c >= '0' && c <= '9') {
             if  (!(malformed && recovered) && !overflowed && !real) {
-                if (int_val < tenth_max_int)
+                if ((negative && (int_val < tenth_max_int)) || int_val < tenth_max_uint)
                     int_val = int_val*10 + c - '0';
                 else {
                     pdfi_set_error(ctx, 0, NULL, E_PDF_NUMBEROVERFLOW, "pdfi_read_num", NULL);
