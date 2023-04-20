@@ -137,6 +137,8 @@ typedef struct cmd_args_s {
     bool preserveannots;
     char **preserveannottypes; /* Null terminated array of strings, NULL if none */
     bool preservemarkedcontent;
+    bool preserveembeddedfiles;
+    bool preservedocview;
     bool nouserunit;
     bool renderttnotdef;
     bool pdfinfo;

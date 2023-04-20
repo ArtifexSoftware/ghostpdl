@@ -1820,6 +1820,8 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
     /* Setup some flags that don't default to 'false' */
     ctx->args.showannots = true;
     ctx->args.preserveannots = true;
+    ctx->args.preserveembeddedfiles = true;
+    ctx->args.preservedocview = true;
     /* NOTE: For testing certain annotations on cluster, might want to set this to false */
     ctx->args.printed = false; /* True if OutputFile is set, false otherwise see pdftop.c, pdf_impl_set_param() */
 

@@ -824,7 +824,8 @@ systemdict /OLDPDF known not {/OLDPDF //false def} if
                /PDFNOCIDFALLBACK /NO_PDFMARK_OUTLINES /NO_PDFMARK_DESTS /PDFFitPage /Printed /UsePDFX3Profile
                /UseBleedBox /UseCropBox /UseArtBox /UseTrimBox /ShowAcroForm /ShowAnnots /PreserveAnnots
                /NoUserUnit /RENDERTTNOTDEF /DOPDFMARKS /PDFINFO /ShowAnnotTypes /PreserveAnnotTypes
-               /CIDFSubstPath /CIDFSubstFont /SUBSTFONT /IgnoreToUnicode /NONATIVEFONTMAP /PreserveMarkedContent /OutputFile] def
+               /CIDFSubstPath /CIDFSubstFont /SUBSTFONT /IgnoreToUnicode /NONATIVEFONTMAP /PreserveMarkedContent /OutputFile
+               /PreserveDocView /PreserveEmbeddedFiles ] def
 
 /newpdf_gather_parameters
 {
@@ -923,10 +924,10 @@ currentdict /PDFSwitches undef
   } ifelse
 } bind def
 
-% <file> runpdf -
-/newpdf_runpdf
+
+/runpdf_collection_entry
 {
-  runpdfbegin                       % <file> runpdfbegin -
+  <</PreserveDocView false>> runpdfbegin_with_params                       % <file> runpdfbegin -
   PDFInfo type /dicttype eq
   {
     PDFInfo /Collection known
@@ -935,7 +936,7 @@ currentdict /PDFSwitches undef
       pdfclose
       dup length 1 sub 0 2 3 -1 roll
       {
-        1 index exch get (r) file runpdf
+        1 index exch get (r) file runpdf_collection_entry
       } for
       pop
     }
@@ -950,7 +951,40 @@ currentdict /PDFSwitches undef
   }ifelse
 } bind def
 
-/newpdf_runpdfbegin
+% <file> runpdf -
+/newpdf_runpdf
+{
+  runpdfbegin                       % <file> runpdfbegin -
+  PDFInfo type /dicttype eq
+  {
+    PDFInfo /Collection known
+    {
+      PDFInfo /Collection get
+      pdfclose
+      dup length 1 sub 0 2 3 -1 roll
+      {
+        1 index exch get (r) file runpdf_collection_entry
+      } for
+      pop
+    }
+    {
+      process_trailer_attrs             % - process_trailer_attrs -
+      runpdfpagerange                   % - runpdfpagerange <int> <int>
+      dopdfpages                        % <int> <int> dopdfpages -
+      runpdfend                         % - runpdfend -
+    } ifelse
+  } {
+    pop pop
+  }ifelse
+} bind def
+
+% start a PDF file, and specify interpreter parameters to be used
+% to override any command line ones.
+% Mostly for the benefit of PDF Collections where we want to disable
+%preserving DocView information for pdfwrite.
+%
+% file <dict> runpdfbegin_with_params -
+/runpdfbegin_with_params
 {
   /pdfdict 10 dict def
   pdfdict begin
@@ -981,7 +1015,8 @@ currentdict /PDFSwitches undef
   /knownoget {2 copy known {get //true}{pop pop //false}ifelse} bind def
   /pget {2 copy known {get //true}{pop pop //false}ifelse}bind def
 
-  newpdf_gather_parameters
+  newpdf_gather_parameters          % <parameter overrides dict> <parameter dict>
+  exch {2 index 3 1 roll put} forall
   PDFSTOPONERROR
   {
     .PDFInit
@@ -1004,6 +1039,12 @@ currentdict /PDFSwitches undef
       pop
     }ifelse
   }ifelse
+} bind def
+
+% -file- newpdf_runpdfbegin -
+/newpdf_runpdfbegin
+{
+  <<>> runpdfbegin_with_params
 } bind def
 
 /newpdf_pdfgetpage

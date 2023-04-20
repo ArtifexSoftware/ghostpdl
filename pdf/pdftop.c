@@ -632,6 +632,16 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
+        if (argis(param, "PreserveEmbeddedFiles")) {
+            code = plist_value_get_bool(&pvalue, &ctx->args.preserveembeddedfiles);
+            if (code < 0)
+                return code;
+        }
+        if (argis(param, "PreserveDocView")) {
+            code = plist_value_get_bool(&pvalue, &ctx->args.preservedocview);
+            if (code < 0)
+                return code;
+        }
         if (argis(param, "NoUserUnit")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.nouserunit);
             if (code < 0)

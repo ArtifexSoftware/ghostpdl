@@ -1602,6 +1602,13 @@ static int pdfi_doc_EmbeddedFiles(pdf_context *ctx)
     pdf_array *Names_array = NULL;
     pdf_array *Kids = NULL;
 
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "Collection", PDF_DICT, (pdf_obj **)&Names);
+    if (code < 0) goto exit;
+    if (code > 0) {
+        code = 0;
+        goto exit;
+    }
+
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, (pdf_obj **)&Names);
     if (code <= 0) goto exit;
 
@@ -1796,8 +1803,6 @@ int pdfi_doc_trailer(pdf_context *ctx)
     }
 
     if (ctx->device_state.writepdfmarks) {
-        code = pdfi_doc_view(ctx);
-
         /* Handle Outlines */
         code = pdfi_doc_Outlines(ctx);
         if (code < 0) {
@@ -1807,11 +1812,13 @@ int pdfi_doc_trailer(pdf_context *ctx)
         }
 
         /* Handle Docview pdfmark stuff */
-        code = pdfi_doc_view(ctx);
-        if (code < 0) {
-            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_VIEW, "pdfi_doc_view", NULL);
-            if (ctx->args.pdfstoponerror)
-                goto exit;
+        if (ctx->args.preservedocview) {
+            code = pdfi_doc_view(ctx);
+            if (code < 0) {
+                pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_VIEW, "pdfi_doc_view", NULL);
+                if (ctx->args.pdfstoponerror)
+                    goto exit;
+            }
         }
 
         /* Handle Info */
@@ -1828,11 +1835,13 @@ int pdfi_doc_trailer(pdf_context *ctx)
 
         /* Handle EmbeddedFiles */
         /* TODO: add a configuration option to embed or omit */
-        code = pdfi_doc_EmbeddedFiles(ctx);
-        if (code < 0) {
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_EMBEDDEDFILES, "pdfi_doc_trailer", NULL);
-            if (ctx->args.pdfstoponerror)
-                goto exit;
+        if (ctx->args.preserveembeddedfiles) {
+            code = pdfi_doc_EmbeddedFiles(ctx);
+            if (code < 0) {
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_EMBEDDEDFILES, "pdfi_doc_trailer", NULL);
+                if (ctx->args.pdfstoponerror)
+                    goto exit;
+            }
         }
     }
 
