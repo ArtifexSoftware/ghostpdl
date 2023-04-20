@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2022 Artifex Software, Inc.
+.. Copyright (C) 2001-2023 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: The Ghostscript Library
@@ -10,7 +10,7 @@
 .. _Lib.htm:
 
 
-The Ghostscript Library
+The Core Library
 ===================================
 
 

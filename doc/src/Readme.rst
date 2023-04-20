@@ -4,8 +4,6 @@
 .. title:: Ghostscript Introduction
 
 
-
-
 .. include:: header.rst
 
 .. _Ghostscript Introduction:

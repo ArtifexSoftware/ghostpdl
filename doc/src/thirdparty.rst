@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2022 Artifex Software, Inc.
+.. Copyright (C) 2001-2023 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: Third Party Libraries Used by Ghostscript and GhostPDL
@@ -9,9 +9,12 @@
 .. _thirdparty.htm:
 
 
-Third Party Libraries Used by Ghostscript and GhostPDL
+Third Party Libraries
 =========================================================
 
+
+Third Party Libraries used by Ghostscript and GhostPDL
+---------------------------------------------------------
 
 The table below details the third party libraries that Ghostscript and/or GhostPDL include, the versions QA tested and shipped with our releases, the relevant license, and the "upstream" URL.
 
