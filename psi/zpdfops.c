@@ -409,6 +409,7 @@ typedef struct pdfctx_s {
     stream *pdf_stream;
     bool UsingPDFFile;
     gsicc_profile_cache_t *profile_cache;
+    ref names_dict;
     gs_memory_t *cache_memory;      /* The memory allocator used to allocate the working (GC'ed) profile cache */
 } pdfctx_t;
 
@@ -454,10 +455,13 @@ gs_private_st_composite_final(st_pdfctx_t, pdfctx_t, "pdfctx_struct",\
 
 static
 ENUM_PTRS_BEGIN(pdfctx_enum_ptrs) return 0;
-ENUM_PTR3(0, pdfctx_t, ps_stream, pdf_stream, profile_cache);
+  ENUM_PTR3(0, pdfctx_t, ps_stream, pdf_stream, profile_cache);
+  case 3:
+    ENUM_RETURN_REF(&((pdfctx_t *)vptr)->names_dict);
 ENUM_PTRS_END
 
 static RELOC_PTRS_BEGIN(pdfctx_reloc_ptrs);
+RELOC_REF_VAR(((pdfctx_t *)vptr)->names_dict);
 RELOC_PTR3(pdfctx_t, ps_stream, pdf_stream, profile_cache);
 RELOC_PTRS_END
 
@@ -469,6 +473,7 @@ pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
      *  on the same object - hence we null the entries.
      */
 
+    make_null(&pdfctx->names_dict);
     if (pdfctx->profile_cache != NULL) {
         rc_decrement(pdfctx->profile_cache, "free the working profile cache");
         pdfctx->profile_cache = NULL;
@@ -1188,9 +1193,21 @@ static int zpdfi_glyph_index(gs_font *pfont, byte *str, uint size, uint *glyph)
 {
     int code = 0;
     ref nref;
+    i_ctx_t *i_ctx_p = get_minst_from_memory(pfont->memory)->i_ctx_p;
+    os_ptr op = osp;
+    pdfctx_t *pdfctx;
+
+    check_type(*op - 1, t_pdfctx);
+    pdfctx = r_ptr(op - 1, pdfctx_t);
+
     code = name_ref(pfont->memory, str, size, &nref, true);
     if (code < 0)
         return code;
+
+    code = dict_put(&pdfctx->names_dict, &nref, &nref, &i_ctx_p->dict_stack);
+    if (code < 0)
+        return code;
+
     *glyph = name_index(pfont->memory, &nref);
     return 0;
 }
@@ -1561,6 +1578,10 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
         goto error;
     }
     pdfctx->cache_memory = imemory;
+    /* The size is arbitrary */
+    code = dict_alloc(iimemory, 1, &pdfctx->names_dict);
+    if (code < 0)
+        goto error;
 
     ctx = pdfi_create_context(cmem);
     if (ctx == NULL) {
