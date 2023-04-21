@@ -2185,7 +2185,7 @@ int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font
         xvalues[0] = 1000000; /* "Private" value */
         xvalues[1] = hash;
 
-        xvalues[2] = ctx->device_state.HighLevelDevice ? pfont->id : 0;
+        xvalues[2] = ctx->device_state.HighLevelDevice ? fontdict->object_num : 0;
 
         if (uid_is_XUID(&pfont->UID)) {
             for (i = 0; i < uid_XUID_size(&pfont->UID); i++) {
