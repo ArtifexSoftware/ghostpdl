@@ -1072,7 +1072,8 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
 
             if (code > 0)
                 *KeyLen = (int)f;
-        }
+        } else
+            *KeyLen = 40;
     }
 
     code = pdfi_dict_get_int(ctx, d, "P", &i64);
@@ -1407,10 +1408,13 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
                 }
             }
             /* Revision 3 *may* be more than 40 bits of RC4 */
-            if (KeyLen != 0 && (KeyLen < 40 || KeyLen > 128 || KeyLen % 8 != 0)) {
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
-                KeyLen = 128;
-            }
+            if (KeyLen != 0) {
+                if (KeyLen < 40 || KeyLen > 128 || KeyLen % 8 != 0) {
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
+                    KeyLen = 128;
+                }
+            } else
+                KeyLen = 40;
             if (ctx->encryption.StmF == CRYPT_NONE)
                 ctx->encryption.StmF = CRYPT_V2;
             if (ctx->encryption.StrF == CRYPT_NONE)
