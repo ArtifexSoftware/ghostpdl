@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2022 Artifex Software, Inc.
+.. Copyright (C) 2001-2023 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: Using Ghostscript
@@ -9,7 +9,7 @@
 .. _Use.htm:
 
 
-Using Ghostscript
+Using
 ===================================
 
 
@@ -28,23 +28,29 @@ The command line to invoke Ghostscript is essentially the same on all systems, a
 
 Here are some basic examples. The details of how these work are described below.
 
-To view a file:
+To view a file
+~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
    gs -dSAFER -dBATCH document.pdf
 
 
-You'll be prompted to press return between pages.
+.. note::
 
-To convert a figure to an image file:
+      You'll be prompted to press return between pages.
+
+To convert a figure to an image file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
    gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -dGraphicsAlphaBits=4 \
       -sOutputFile=tiger.png tiger.eps
 
-To render the same image at 300 dpi:
+
+To render the same image at 300 dpi
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -52,7 +58,8 @@ To render the same image at 300 dpi:
                    -sOutputFile=tiger_300.png tiger.eps
 
 
-To render a figure in grayscale:
+To render a figure in grayscale
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 .. code-block:: bash
@@ -61,7 +68,8 @@ To render a figure in grayscale:
    gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pnggray -sOutputFile=figure.png figure.pdf
 
 
-To rasterize a whole document:
+To rasterize a whole document
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -69,8 +77,8 @@ To rasterize a whole document:
                    -dTextAlphaBits=4 -sOutputFile='paper-%00d.pgm' paper.ps
 
 
-There are also a number of utility scripts for common to convert a PostScript document to PDF:
-
+Convert a PostScript document to PDF
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. code-block:: bash
 
@@ -80,13 +88,16 @@ There are also a number of utility scripts for common to convert a PostScript do
 The output is saved as ``file.pdf``.
 
 
-There are other utility scripts besides ``ps2pdf``, including ``pdf2ps``, ``ps2epsi``, ``pdf2dsc``, ``ps2ascii``, ``ps2ps`` and ``ps2ps2``. These just call Ghostscript with the appropriate (if complicated) set of options. You can use the 'ps2' set with eps files.
 
-Ghostscript is capable of interpreting PostScript, encapsulated PostScript (EPS), DOS EPS (EPSF), and Adobe Portable Document Format (PDF). The interpreter reads and executes the files in sequence, using the method described under "`File searching`_" to find them.
+.. note::
 
-The interpreter runs in interactive mode by default. After processing the files given on the command line (if any) it reads further lines of PostScript language commands from the primary input stream, normally the keyboard, interpreting each line separately. To quit the interpreter, type "``quit``". The ``-dBATCH -dNOPAUSE`` options in the examples above disable the interactive prompting. The interpreter also quits gracefully if it encounters end-of-file or control-C.
+   There are other utility scripts besides ``ps2pdf``, including ``pdf2ps``, ``ps2epsi``, ``pdf2dsc``, ``ps2ascii``, ``ps2ps`` and ``ps2ps2``. These just call Ghostscript with the appropriate (if complicated) set of options. You can use the 'ps2' set with eps files.
 
-The interpreter recognizes many options. An option may appear anywhere in the command line, and applies to all files named after it on the line. Many of them include "=" followed by a parameter. The most important are described in detail here. Please see the reference sections on `Command line options`_ and `Devices <Devices.htm>`_ for a more complete listing.
+   Ghostscript is capable of interpreting PostScript, encapsulated PostScript (EPS), DOS EPS (EPSF), and Adobe Portable Document Format (PDF). The interpreter reads and executes the files in sequence, using the method described under "`File searching`_" to find them.
+
+   The interpreter runs in interactive mode by default. After processing the files given on the command line (if any) it reads further lines of PostScript language commands from the primary input stream, normally the keyboard, interpreting each line separately. To quit the interpreter, type "``quit``". The ``-dBATCH -dNOPAUSE`` options in the examples above disable the interactive prompting. The interpreter also quits gracefully if it encounters end-of-file or *control-C*.
+
+   The interpreter recognizes many options. An option may appear anywhere in the command line, and applies to all files named after it on the line. Many of them include "=" followed by a parameter. The most important are described in detail here. Please see the reference sections on `Command line options`_ and `Devices <Devices.htm>`_ for a more complete listing.
 
 
 

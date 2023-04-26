@@ -1,3 +1,6 @@
+.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. All Rights Reserved.
+
 .. meta::
    :description: The Ghostscript documentation
    :keywords: Ghostscript command line, Ghostscript options, Ghostscript command line examples, Ghostscript parameters, install Ghostscript, dpdfsettings, Ghostscript sdevice, how to use Ghostscript, eps, Ghostscript language bindings, Ghostscript command line general switches
