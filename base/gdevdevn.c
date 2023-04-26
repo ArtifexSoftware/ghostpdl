@@ -704,6 +704,9 @@ devn_copy_params(gx_device * psrcdev, gx_device * pdesdev)
     /* Get pointers to the parameters */
     src_devn_params = dev_proc(psrcdev, ret_devn_params)(psrcdev);
     des_devn_params = dev_proc(pdesdev, ret_devn_params)(pdesdev);
+    if (src_devn_params == NULL || des_devn_params == NULL)
+        return gs_note_error(gs_error_undefined);
+
     /* First the easy items */
     des_devn_params->bitspercomponent = src_devn_params->bitspercomponent;
     des_devn_params->max_separations = src_devn_params->max_separations;
