@@ -4312,16 +4312,21 @@ pdf14_fill_stroke_prefill(gx_device* dev, gs_gstate* pgs, gx_path* ppath,
         (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
         return 0;
 
+    /* The clip box returned here is scaled up by path_log2scale, so we need
+     * to scale down by this later. */
     code = gx_curr_fixed_bbox(pgs, &clip_bbox, NO_PATH);
     if (code < 0 && code != gs_error_unknownerror)
         return code;
 
     if (code == gs_error_unknownerror) {
         /* didn't get clip box from gx_curr_fixed_bbox */
+        /* This is NOT scaled by path_log2scale, so allow for the fact we'll be
+         * scaling down by this in a moment. */
         clip_bbox.p.x = clip_bbox.p.y = 0;
-        clip_bbox.q.x = int2fixed(dev->width);
-        clip_bbox.q.y = int2fixed(dev->height);
+        clip_bbox.q.x = int2fixed(dev->width) << path_log2scale.x;
+        clip_bbox.q.y = int2fixed(dev->height) << path_log2scale.y;
     }
+    /* pcpath->outer_box is scaled by path_log2scale too. */
     if (pcpath)
         rect_intersect(clip_bbox, pcpath->outer_box);
 
@@ -4336,6 +4341,10 @@ pdf14_fill_stroke_prefill(gx_device* dev, gs_gstate* pgs, gx_path* ppath,
         path_bbox.q.x = path_bbox.q.x >> path_log2scale.x;
         path_bbox.p.y = path_bbox.p.y >> path_log2scale.y;
         path_bbox.q.y = path_bbox.q.y >> path_log2scale.y;
+        clip_bbox.p.x = clip_bbox.p.x >> path_log2scale.x;
+        clip_bbox.q.x = clip_bbox.q.x >> path_log2scale.x;
+        clip_bbox.p.y = clip_bbox.p.y >> path_log2scale.y;
+        clip_bbox.q.y = clip_bbox.q.y >> path_log2scale.y;
     }
 
     if (code == gs_error_nocurrentpoint && ppath->segments->contents.subpath_first == 0) {
