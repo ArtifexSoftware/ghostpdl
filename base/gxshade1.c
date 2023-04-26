@@ -652,7 +652,7 @@ check_above_quarter:
             v1 = 1;
             goto check_bottom;
         }
-        else if (c[1].vertex.p.y > pfs->rect.q.y && c[2].vertex.p.y > pfs->rect.q.y)
+        else if (c[3].vertex.p.y > pfs->rect.q.y && c[2].vertex.p.y > pfs->rect.q.y)
         {
             /* Check 3+2 off bottom. */
             v0 = 3;
@@ -800,7 +800,7 @@ check_rot_above_quarter:
             v1 = 3;
             goto check_rot_bottom;
         }
-        else if (c[3].vertex.p.y > pfs->rect.q.y && c[2].vertex.p.y > pfs->rect.q.y)
+        else if (c[1].vertex.p.y > pfs->rect.q.y && c[2].vertex.p.y > pfs->rect.q.y)
         {
             /* Check 1+2 off the bottom. */
             v0 = 1;
@@ -1410,7 +1410,7 @@ check_above_quarter:
             v1 = 1;
             goto check_bottom;
         }
-        else if (cc->corners[1].y > pfs->rect.q.y && cc->corners[2].y > pfs->rect.q.y)
+        else if (cc->corners[3].y > pfs->rect.q.y && cc->corners[2].y > pfs->rect.q.y)
         {
             /* Check 3+2 off bottom. */
             v0 = 3;
@@ -1558,7 +1558,7 @@ check_rot_above_quarter:
             v1 = 3;
             goto check_rot_bottom;
         }
-        else if (cc->corners[3].y > pfs->rect.q.y && cc->corners[2].y > pfs->rect.q.y)
+        else if (cc->corners[1].y > pfs->rect.q.y && cc->corners[2].y > pfs->rect.q.y)
         {
             /* Check 1+2 off the bottom. */
             v0 = 1;
