@@ -4468,6 +4468,7 @@ pdf14_fill_stroke_poststroke(gx_device* dev, gs_gstate* pgs, float fill_alpha, b
           * We therefore need to make sure it is set according to the current fill state.
           */
         (void)gs_setfillconstantalpha(pgs, fill_alpha);
+        gs_update_trans_marking_params(pgs);
         pdf14_set_marking_params(dev, pgs);
     }
 }
