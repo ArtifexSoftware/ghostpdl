@@ -4457,9 +4457,11 @@ pdf14_fill_stroke_prestroke(gx_device* dev, gs_gstate* pgs, float stroke_alpha,
 }
 
 /* Cleanup after the stroke in fill-stroke  */
-static void
+static int
 pdf14_fill_stroke_poststroke(gx_device* dev, gs_gstate* pgs, float fill_alpha, bool op_ca_eq_CA)
 {
+    int code;
+
     if (!op_ca_eq_CA) {
         /* Bug 703324 we need to reset the fill constant alpha in the graphics
           * state to the correct saved value. We also need to reset the 'opacity' member of the
@@ -4468,9 +4470,13 @@ pdf14_fill_stroke_poststroke(gx_device* dev, gs_gstate* pgs, float fill_alpha, b
           * We therefore need to make sure it is set according to the current fill state.
           */
         (void)gs_setfillconstantalpha(pgs, fill_alpha);
-        gs_update_trans_marking_params(pgs);
+        code = gs_update_trans_marking_params(pgs);
+        if (code < 0)
+            return code;
         pdf14_set_marking_params(dev, pgs);
     }
+
+    return 0;
 }
 
 /* cleanup in fill-stroke  */
@@ -4590,13 +4596,16 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     global_index++;
 #endif
     if (group_needed)
-        pdf14_fill_stroke_poststroke(dev, pgs, fill_alpha, save_op_state);
+        code = pdf14_fill_stroke_poststroke(dev, pgs, fill_alpha, save_op_state);
 
 cleanup:
     if (group_needed) {
+        int code1;
         pgs->device = dev; /* This is needed due to the gs_trans calls */
-        code = pdf14_fill_stroke_cleanup(dev, pgs, fill_alpha, stroke_alpha, blend_mode,
+        code1 = pdf14_fill_stroke_cleanup(dev, pgs, fill_alpha, stroke_alpha, blend_mode,
             save_op_state);
+        if (code1 < 0)
+            code = code1;
         pgs->device = curr_pgs_dev;
     }
     return code;
@@ -8782,7 +8791,7 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
                     if (code < 0)
                         goto cleanup;
                 }
-                gs_update_trans_marking_params(pgs);
+                code = gs_update_trans_marking_params(pgs);
                 break;
 
             case OP_FS_TRANS_PRESTROKE:
@@ -8790,15 +8799,16 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
                     pdf14_fill_stroke_prestroke(pdev, pdf14_abuf->pgs, pdf14_abuf->stroke_alpha,
                                                 pdf14_abuf->blend_mode, pdf14_abuf->op_ca_eq_CA);
                 }
-                gs_update_trans_marking_params(pgs);
+                code = gs_update_trans_marking_params(pgs);
                 break;
 
             case OP_FS_TRANS_POSTSTROKE:
                 if (pdf14_abuf->group_needed) {
-                    pdf14_fill_stroke_poststroke(pdev, pdf14_abuf->pgs, pdf14_abuf->fill_alpha,
-                                                 pdf14_abuf->op_ca_eq_CA);
+                    code = pdf14_fill_stroke_poststroke(pdev, pdf14_abuf->pgs, pdf14_abuf->fill_alpha,
+                                                        pdf14_abuf->op_ca_eq_CA);
                 }
-                gs_update_trans_marking_params(pgs);
+                if (code >= 0)
+                    code = gs_update_trans_marking_params(pgs);
 
                 /* fallthrough */
 

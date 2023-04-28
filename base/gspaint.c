@@ -240,7 +240,9 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
     /* We may have to update the marking parameters if we have a pdf14 device
        as our target.  Need to do while dev is still active in pgs */
     if (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0) > 0) {
-        gs_update_trans_marking_params(pgs);
+        int code = gs_update_trans_marking_params(pgs);
+        if (code < 0)
+            return code;
     }
     gs_make_mem_abuf_device(mdev, mem, dev, &log2_scale,
                             alpha_bits, ibox.p.x << log2_scale.x, devn);
