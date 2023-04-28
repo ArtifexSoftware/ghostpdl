@@ -7980,7 +7980,7 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
             /* Complement the components for subtractive color spaces */
             if (has_backdrop) {
                 if (additive) {
-                    for (k = 0; k < num_chan; ++k)
+                    for (k = 0; k < num_comp; ++k)
                         dst[k] = bg_ptr[k * planestride];
                 } else {
                     for (k = 0; k < num_comp; ++k)
@@ -8208,7 +8208,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
             /* Complement the components for subtractive color spaces */
             if (has_backdrop) {
                 if (additive) {
-                    for (k = 0; k < num_chan; ++k)
+                    for (k = 0; k < num_comp; ++k)
                         dst[k] = bg_ptr[k * planestride];
                 } else {
                     for (k = 0; k < num_comp; ++k)
