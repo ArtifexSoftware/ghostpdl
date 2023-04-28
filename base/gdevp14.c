@@ -4596,7 +4596,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     global_index++;
 #endif
     if (group_needed)
-        code = pdf14_fill_stroke_poststroke(dev, pgs, fill_alpha, save_op_state);
+        code = pdf14_fill_stroke_poststroke(dev, pgs, fill_alpha, op_ca_eq_CA);
 
 cleanup:
     if (group_needed) {
