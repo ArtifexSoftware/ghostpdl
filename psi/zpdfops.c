@@ -42,6 +42,7 @@
 #include "gspath.h"
 #include "math_.h"
 #include "ialloc.h"
+#include "igc.h" /* needed for definition of gc_state for the ref_struct_clear_marks call */
 #include "malloc_.h"
 #include "string_.h"
 #include "store.h"
@@ -462,6 +463,7 @@ ENUM_PTRS_END
 
 static RELOC_PTRS_BEGIN(pdfctx_reloc_ptrs);
 RELOC_REF_VAR(((pdfctx_t *)vptr)->names_dict);
+ref_struct_clear_marks(gcst->cur_mem, &(((pdfctx_t *)vptr)->names_dict), 1, pstype);
 RELOC_PTR3(pdfctx_t, ps_stream, pdf_stream, profile_cache);
 RELOC_PTRS_END
 
