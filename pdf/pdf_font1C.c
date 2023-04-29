@@ -693,7 +693,7 @@ pdfi_read_cff_real(byte *p, byte *e, float *val)
 
     /* b0 was 30 */
 
-    while (txt < buf + (sizeof buf) - 3 && p < e) {
+    while (txt < buf + (sizeof buf) - 5 && p < e) {
         int b, n;
 
         b = *p++;
