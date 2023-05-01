@@ -966,6 +966,11 @@ currentdict /PDFSwitches undef
         1 index exch get (r) file runpdf_collection_entry
       } for
       pop
+      % We need to do this, even though we called pdfclose above, in order to clean
+      % up our dictionary and restore the state. We can't use runpdfend above because
+      % if we do then we will delete all the temporary files containing the embedded
+      % PDF files.
+      runpdfend
     }
     {
       process_trailer_attrs             % - process_trailer_attrs -
