@@ -187,10 +187,14 @@ int
 gs_update_trans_marking_params(gs_gstate * pgs)
 {
     gs_pdf14trans_params_t params = { 0 };
+    int code;
 
     if_debug0m('v', pgs->memory, "[v]gs_update_trans_marking_params\n");
     params.pdf14_op = PDF14_SET_BLEND_PARAMS;
-    return gs_gstate_update_pdf14trans(pgs, &params);
+    code = gs_gstate_update_pdf14trans(pgs, &params);
+    if (code == gs_error_unregistered)
+        code = 0;
+    return code;
 }
 
 int
