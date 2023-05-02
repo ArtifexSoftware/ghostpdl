@@ -19,6 +19,7 @@
 #include "errno_.h"
 #include "memory_.h"
 #include "string_.h"
+#include "ctype_.h"
 #include "ghost.h"
 #include "gp.h"
 #include "oper.h"
