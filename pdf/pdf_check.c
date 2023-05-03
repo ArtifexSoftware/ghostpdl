@@ -903,7 +903,7 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
                 }
             }
 
-            if (known >= 0)
+            if (known > 0)
                 code = pdfi_dict_put(ctx, font_info_dict, "Embedded", PDF_TRUE_OBJ);
             else
                 code = pdfi_dict_put(ctx, font_info_dict, "Embedded", PDF_FALSE_OBJ);
