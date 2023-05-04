@@ -569,7 +569,13 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             if (fpriv.gsu.gst1.UID.id != 0)
                 memcpy(&pfont1->UID, &fpriv.gsu.gst1.UID, sizeof(pfont1->UID));
             fpriv.gsu.gst1.UID.xvalues = NULL; /* In case of error */
-            pfont1->WMode = fpriv.gsu.gst1.WMode;
+            if (fpriv.gsu.gst1.WMode != 0) {
+                if (fpriv.gsu.gst1.WMode != 1)
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_WMODE, "pdfi_read_type1_font", NULL);
+                pfont1->WMode = 1;
+            }
+            else
+                pfont1->WMode = 0;
             pfont1->PaintType = fpriv.gsu.gst1.PaintType;
             pfont1->StrokeWidth = fpriv.gsu.gst1.StrokeWidth;
 

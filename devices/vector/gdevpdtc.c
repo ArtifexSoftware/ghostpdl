@@ -431,7 +431,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
     gs_font_type0 *const font = (gs_font_type0 *)pte->orig_font; /* Type 0, fmap_CMap */
     /* Not sure. Changed for CDevProc callout. Was pte->current_font */
     gs_text_enum_t scan = *(gs_text_enum_t *)pte;
-    int wmode = font->WMode, code, rcode = 0;
+    int wmode = font->WMode == 0 ? 0 : 1, code, rcode = 0;
     pdf_font_resource_t *pdsubf0 = NULL;
     gs_font *subfont0 = NULL, *saved_subfont = NULL;
     uint index = scan.index, xy_index = scan.xy_index, start_index = index;

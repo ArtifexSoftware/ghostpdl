@@ -448,7 +448,13 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
               }
               else if (pdf_ps_name_cmp(&s->cur[-1], "WMode")) {
                   if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
-                      priv->gsu.gst1.WMode = s->cur[0].val.i;
+                      if (s->cur[0].val.i != 0) {
+                          if (s->cur[0].val.i != 1)
+                            pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_BAD_WMODE, "ps_font_def_func", NULL);
+                        priv->gsu.gst1.WMode = 1;
+                      }
+                      else
+                        priv->gsu.gst1.WMode = 0;
                   }
               }
               else if (pdf_ps_name_cmp(&s->cur[-1], "lenIV")) {

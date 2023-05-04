@@ -96,4 +96,5 @@ PARAM(W_PDF_UNBLANACED_BT,          "A page ended after a BT had been executed a
 PARAM(W_PDF_MISMATCH_GENERATION,    "The generation number of an indirectly referenced object did not match the xref"),
 PARAM(W_PDF_BAD_RENDERINGINTENT,    "A ri or /RI used an unknown named rendering intent"),
 PARAM(W_PDF_BAD_VIEW,               "Couldn't read the initial document view"),
+PARAM(W_PDF_BAD_WMODE,              "A Font or CMap has a WMode which is neither 0 (horizontal) nor 1 (vertical)"),
 #undef PARAM

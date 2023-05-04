@@ -630,7 +630,13 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
         }
         else if (!memcmp(s->cur[-1].val.name, CMAP_NAME_AND_LEN("WMode"))) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
-                pdficmap->wmode = s->cur[0].val.i;
+                if (s->cur[0].val.i != 0) {
+                    if (s->cur[0].val.i != 1)
+                        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_BAD_WMODE, "cmap_def_func", NULL);
+                    pdficmap->wmode = 1;
+                }
+                else
+                    pdficmap->wmode = 0;
             }
             else {
                 pdficmap->wmode = 0;
