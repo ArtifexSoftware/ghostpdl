@@ -1808,6 +1808,7 @@ zpdfops_=$(PSOBJ)zpdfops.$(OBJ)
 $(PSD)pdfops.dev : $(ECHOGS_XE) $(zpdfops_) $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdfops $(zpdfops_)
 	$(ADDMOD) $(PSD)pdfops -oper zpdfops
+	$(ADDMOD) $(PSD)pdfops -oper zpdfops_old
 
 $(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP) $(MAKEFILE)\
  $(ghost_h) $(gsmchunk_h) $(oper_h) \

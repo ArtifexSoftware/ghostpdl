@@ -1742,11 +1742,19 @@ static int zPDFAvailable(i_ctx_t *i_ctx_p)
 
 /* ------ Initialization procedure ------ */
 
-const op_def zpdfops_op_defs[] =
+const op_def zpdfops_old_op_defs[] =
 {
     {"0.pdfinkpath", zpdfinkpath},
     {"1.pdfFormName", zpdfFormName},
     {"3.setscreenphase", zsetscreenphase},
+#ifdef HAVE_LIBIDN
+    {"1.saslprep", zsaslprep},
+#endif
+    op_def_end(0)
+};
+
+const op_def zpdfops_op_defs[] =
+{
     {"0.PDFFile", zPDFfile},
     {"1.PDFStream", zPDFstream},
     {"1.PDFClose", zPDFclose},
@@ -1760,8 +1768,5 @@ const op_def zpdfops_op_defs[] =
     {"1.PDFparsePageList", zPDFparsePageList},
     {"0.PDFAvailable", zPDFAvailable},
     {"2.PDFSetParams", zPDFSetParams},
-#ifdef HAVE_LIBIDN
-    {"1.saslprep", zsaslprep},
-#endif
     op_def_end(0)
 };
