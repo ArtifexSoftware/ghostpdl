@@ -571,9 +571,10 @@ static int _TIFFVSetField(TIFF *tif, uint32_t tag, va_list ap)
             break;
         case TIFFTAG_INKNAMES:
         {
+            uint16_t ninksinstring;
+
             v = (uint16_t)va_arg(ap, uint16_vap);
             s = va_arg(ap, char *);
-            uint16_t ninksinstring;
             ninksinstring = countInkNamesString(tif, v, s);
             status = ninksinstring > 0;
             if (ninksinstring > 0)
@@ -771,8 +772,9 @@ static int _TIFFVSetField(TIFF *tif, uint32_t tag, va_list ap)
                 }
                 else
                 {
+                    size_t len;
                     mb = (const char *)va_arg(ap, const char *);
-                    size_t len = strlen(mb) + 1;
+                    len = strlen(mb) + 1;
                     if (len >= 0x80000000U)
                     {
                         status = 0;
@@ -852,8 +854,9 @@ static int _TIFFVSetField(TIFF *tif, uint32_t tag, va_list ap)
                     {
                         if (tv->info->field_type == TIFF_LONG8)
                         {
+                            int i;
                             uint64_t *pui64 = (uint64_t *)tv->value;
-                            for (int i = 0; i < tv->count; i++)
+                            for (i = 0; i < tv->count; i++)
                             {
                                 if (pui64[i] > 0xffffffffu)
                                 {
@@ -871,8 +874,9 @@ static int _TIFFVSetField(TIFF *tif, uint32_t tag, va_list ap)
                         }
                         else if (tv->info->field_type == TIFF_SLONG8)
                         {
+                            int i;
                             int64_t *pi64 = (int64_t *)tv->value;
-                            for (int i = 0; i < tv->count; i++)
+                            for (i = 0; i < tv->count; i++)
                             {
                                 if (pi64[i] > 2147483647 ||
                                     pi64[i] < (-2147483647 - 1))

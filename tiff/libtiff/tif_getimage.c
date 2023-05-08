@@ -768,6 +768,7 @@ static int gtTileContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
     leftmost_toskew = toskew + leftmost_fromskew;
     for (row = 0; ret != 0 && row < h; row += nrow)
     {
+        tmsize_t roffset;
         rowstoread = th - (row + img->row_offset) % th;
         nrow = (row + rowstoread > h ? h - row : rowstoread);
         fromskew = leftmost_fromskew;
@@ -796,7 +797,7 @@ static int gtTileContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
                 this_tw = tw - fromskew;
                 this_toskew = toskew + fromskew;
             }
-            tmsize_t roffset = (tmsize_t)y * w + tocol;
+            roffset = (tmsize_t)y * w + tocol;
             (*put)(img, raster + roffset, tocol, y, this_tw, nrow, fromskew,
                    this_toskew, buf + pos);
             tocol += this_tw;
@@ -924,6 +925,7 @@ static int gtTileSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
     leftmost_toskew = toskew + leftmost_fromskew;
     for (row = 0; ret != 0 && row < h; row += nrow)
     {
+        tmsize_t roffset;
         rowstoread = th - (row + img->row_offset) % th;
         nrow = (row + rowstoread > h ? h - row : rowstoread);
         fromskew = leftmost_fromskew;
@@ -999,7 +1001,7 @@ static int gtTileSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
                 this_tw = tw - fromskew;
                 this_toskew = toskew + fromskew;
             }
-            tmsize_t roffset = (tmsize_t)y * w + tocol;
+            roffset = (tmsize_t)y * w + tocol;
             (*put)(img, raster + roffset, tocol, y, this_tw, nrow, fromskew,
                    this_toskew, p0 + pos, p1 + pos, p2 + pos,
                    (alpha ? (pa + pos) : NULL));
@@ -1097,6 +1099,7 @@ static int gtStripContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
     fromskew = (w < imagewidth ? imagewidth - w : 0);
     for (row = 0; row < h; row += nrow)
     {
+        tmsize_t roffset;
         uint32_t temp;
         rowstoread = rowsperstrip - (row + img->row_offset) % rowsperstrip;
         nrow = (row + rowstoread > h ? h - row : rowstoread);
@@ -1122,7 +1125,7 @@ static int gtStripContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
 
         pos = ((row + img->row_offset) % rowsperstrip) * scanline +
               ((tmsize_t)img->col_offset * img->samplesperpixel);
-        tmsize_t roffset = (tmsize_t)y * w;
+        roffset = (tmsize_t)y * w;
         (*put)(img, raster + roffset, 0, y, w, nrow, fromskew, toskew,
                buf + pos);
         y += ((flip & FLIP_VERTICALLY) ? -(int32_t)nrow : (int32_t)nrow);
@@ -1220,6 +1223,7 @@ static int gtStripSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
     fromskew = (w < imagewidth ? imagewidth - w : 0);
     for (row = 0; row < h; row += nrow)
     {
+        tmsize_t roffset;
         uint32_t temp;
         rowstoread = rowsperstrip - (row + img->row_offset) % rowsperstrip;
         nrow = (row + rowstoread > h ? h - row : rowstoread);
@@ -1291,7 +1295,7 @@ static int gtStripSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
 
         pos = ((row + img->row_offset) % rowsperstrip) * scanline +
               ((tmsize_t)img->col_offset * img->samplesperpixel);
-        tmsize_t roffset = (tmsize_t)y * w;
+        roffset = (tmsize_t)y * w;
         (*put)(img, raster + roffset, 0, y, w, nrow, fromskew, toskew, p0 + pos,
                p1 + pos, p2 + pos, (alpha ? (pa + pos) : NULL));
         y += ((flip & FLIP_VERTICALLY) ? -(int32_t)nrow : (int32_t)nrow);

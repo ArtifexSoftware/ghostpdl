@@ -350,18 +350,24 @@ static int Fax3Decode2D(TIFF *tif, uint8_t *buf, tmsize_t occ, uint16_t s)
 #undef SWAP
 
 #define FILL(n, cp)                                                            \
-    for (int32_t ifill = 0; ifill < (n); ++ifill)                              \
+  {\
+    int32_t ifill; \
+    for (ifill = 0; ifill < (n); ++ifill)                              \
     {                                                                          \
         (cp)[ifill] = 0xff;                                                    \
     }                                                                          \
-    (cp) += (n);
+    (cp) += (n); \
+  }
 
 #define ZERO(n, cp)                                                            \
-    for (int32_t izero = 0; izero < (n); ++izero)                              \
+  {\
+    int32_t izero; \
+    for (izero = 0; izero < (n); ++izero)                              \
     {                                                                          \
         (cp)[izero] = 0;                                                       \
     }                                                                          \
-    (cp) += (n);
+    (cp) += (n); \
+  }
 
 /*
  * Bit-fill a row according to the white/black

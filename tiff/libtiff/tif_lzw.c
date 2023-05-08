@@ -416,6 +416,9 @@ static int LZWDecode(TIFF *tif, uint8_t *op0, tmsize_t occ0, uint16_t s)
     long nbits, nextbits, nbitsmask;
     WordType nextdata;
     code_t *free_entp, *maxcodep, *oldcodep;
+    code_t *codep;
+    code_t *dec_codetab;
+    uint64_t dec_bitsleft;
 
     (void)s;
     assert(sp != NULL);
@@ -431,9 +434,10 @@ static int LZWDecode(TIFF *tif, uint8_t *op0, tmsize_t occ0, uint16_t s)
      */
     if (sp->dec_restart)
     {
+        uint8_t *tp;
         tmsize_t residue;
 
-        code_t *codep = sp->dec_codep;
+        codep = sp->dec_codep;
         residue = codep->length - sp->dec_restart;
         if (residue > occ)
         {
@@ -464,7 +468,7 @@ static int LZWDecode(TIFF *tif, uint8_t *op0, tmsize_t occ0, uint16_t s)
          */
         op += residue;
         occ -= residue;
-        uint8_t *tp = op;
+        tp = op;
         do
         {
             *--tp = codep->value;
@@ -475,7 +479,7 @@ static int LZWDecode(TIFF *tif, uint8_t *op0, tmsize_t occ0, uint16_t s)
 
     bp = (uint8_t *)tif->tif_rawcp;
     sp->dec_bitsleft += (((uint64_t)tif->tif_rawcc - sp->old_tif_rawcc) << 3);
-    uint64_t dec_bitsleft = sp->dec_bitsleft;
+    dec_bitsleft = sp->dec_bitsleft;
     nbits = sp->lzw_nbits;
     nextdata = sp->lzw_nextdata;
     nextbits = sp->lzw_nextbits;
@@ -483,8 +487,7 @@ static int LZWDecode(TIFF *tif, uint8_t *op0, tmsize_t occ0, uint16_t s)
     oldcodep = sp->dec_oldcodep;
     free_entp = sp->dec_free_entp;
     maxcodep = sp->dec_maxcodep;
-    code_t *const dec_codetab = sp->dec_codetab;
-    code_t *codep;
+    dec_codetab = sp->dec_codetab;
 
     if (occ == 0)
     {
@@ -539,6 +542,8 @@ code_below_256:
 
 code_above_or_equal_to_258:
 {
+    unsigned short len;
+    uint8_t *tp;
     /*
      * Add the new entry to the code table.
      */
@@ -581,7 +586,7 @@ code_above_or_equal_to_258:
      * value to output (written in reverse).
      */
     /* tiny bit faster on x86_64 to store in unsigned short than int */
-    unsigned short len = codep->length;
+    len = codep->length;
 
     if (len < 3) /* equivalent to len == 2 given all other conditions */
     {
@@ -642,7 +647,7 @@ code_above_or_equal_to_258:
         goto begin;
     }
 
-    uint8_t *tp = op + len;
+    tp = op + len;
 
     assert(len >= 4);
 
@@ -697,6 +702,7 @@ code_clear:
 
 too_short_buffer:
 {
+    uint8_t *tp;
     /*
      * String is too long for decode buffer,
      * locate portion that will fit, copy to
@@ -710,7 +716,7 @@ too_short_buffer:
     } while (codep->length > occ);
 
     sp->dec_restart = occ;
-    uint8_t *tp = op + occ;
+    tp = op + occ;
     do
     {
         *--tp = codep->value;
@@ -805,6 +811,7 @@ static int LZWDecodeCompat(TIFF *tif, uint8_t *op0, tmsize_t occ0, uint16_t s)
     long nextbits, nbitsmask;
     WordType nextdata;
     code_t *codep, *free_entp, *maxcodep, *oldcodep;
+    uint64_t dec_bitsleft;
 
     (void)s;
     assert(sp != NULL);
@@ -856,7 +863,7 @@ static int LZWDecodeCompat(TIFF *tif, uint8_t *op0, tmsize_t occ0, uint16_t s)
     bp = (uint8_t *)tif->tif_rawcp;
 
     sp->dec_bitsleft += (((uint64_t)tif->tif_rawcc - sp->old_tif_rawcc) << 3);
-    uint64_t dec_bitsleft = sp->dec_bitsleft;
+    dec_bitsleft = sp->dec_bitsleft;
 
     nbits = sp->lzw_nbits;
     nextdata = sp->lzw_nextdata;

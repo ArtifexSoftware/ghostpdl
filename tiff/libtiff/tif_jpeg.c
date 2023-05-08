@@ -1643,6 +1643,9 @@ static int JPEGDecode(TIFF *tif, uint8_t *buf, tmsize_t cc, uint16_t s)
     JPEGState *sp = JState(tif);
     tmsize_t nrows;
     TIFFDirectory *td = &tif->tif_dir;
+#if defined(JPEG_LIB_MK1_OR_12BIT)
+    unsigned short *tmpbuf = NULL;
+#endif
     (void)s;
 
     nrows = sp->cinfo.d.image_height;
@@ -1652,9 +1655,6 @@ static int JPEGDecode(TIFF *tif, uint8_t *buf, tmsize_t cc, uint16_t s)
     if ((uint32_t)nrows > td->td_imagelength - tif->tif_row && !isTiled(tif))
         nrows = td->td_imagelength - tif->tif_row;
 
-#if defined(JPEG_LIB_MK1_OR_12BIT)
-    unsigned short *tmpbuf = NULL;
-#endif
 
     /* data is expected to be read in multiples of a scanline */
     if (nrows != 0)

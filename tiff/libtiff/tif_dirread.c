@@ -5331,6 +5331,10 @@ static bool equalFuncNumberToOffset(const void *elt1, const void *elt2)
  */
 int _TIFFCheckDirNumberAndOffset(TIFF *tif, tdir_t dirn, uint64_t diroff)
 {
+    TIFFOffsetAndDirNumber entry;
+    TIFFOffsetAndDirNumber *foundEntry;
+    TIFFOffsetAndDirNumber *entryPtr;
+
     if (diroff == 0) /* no more directories */
         return 0;
 
@@ -5365,11 +5369,10 @@ int _TIFFCheckDirNumberAndOffset(TIFF *tif, tdir_t dirn, uint64_t diroff)
      * loop
      * -  no: add to list or update offset at that IFD number
      */
-    TIFFOffsetAndDirNumber entry;
     entry.offset = diroff;
     entry.dirNumber = dirn;
 
-    TIFFOffsetAndDirNumber *foundEntry =
+    foundEntry =
         (TIFFOffsetAndDirNumber *)TIFFHashSetLookup(
             tif->tif_map_dir_offset_to_number, &entry);
     if (foundEntry)
@@ -5397,13 +5400,15 @@ int _TIFFCheckDirNumberAndOffset(TIFF *tif, tdir_t dirn, uint64_t diroff)
     {
         if (foundEntry->offset != diroff)
         {
+            TIFFOffsetAndDirNumber *foundEntryOld;
+            TIFFOffsetAndDirNumber *entryPtr;
             TIFFOffsetAndDirNumber entryOld;
             entryOld.offset = foundEntry->offset;
             entryOld.dirNumber = dirn;
             /* We must remove first from tif_map_dir_number_to_offset as the */
             /* entry is owned (and thus freed) by */
             /* tif_map_dir_offset_to_number */
-            TIFFOffsetAndDirNumber *foundEntryOld =
+            foundEntryOld =
                 (TIFFOffsetAndDirNumber *)TIFFHashSetLookup(
                     tif->tif_map_dir_number_to_offset, &entryOld);
             if (foundEntryOld)
@@ -5419,7 +5424,7 @@ int _TIFFCheckDirNumberAndOffset(TIFF *tif, tdir_t dirn, uint64_t diroff)
                                   foundEntryOld);
             }
 
-            TIFFOffsetAndDirNumber *entryPtr = (TIFFOffsetAndDirNumber *)malloc(
+            entryPtr = (TIFFOffsetAndDirNumber *)malloc(
                 sizeof(TIFFOffsetAndDirNumber));
             if (entryPtr == NULL)
             {
@@ -5456,7 +5461,7 @@ int _TIFFCheckDirNumberAndOffset(TIFF *tif, tdir_t dirn, uint64_t diroff)
         return 0;
     }
 
-    TIFFOffsetAndDirNumber *entryPtr =
+    entryPtr =
         (TIFFOffsetAndDirNumber *)malloc(sizeof(TIFFOffsetAndDirNumber));
     if (entryPtr == NULL)
     {
@@ -5495,6 +5500,9 @@ int _TIFFCheckDirNumberAndOffset(TIFF *tif, tdir_t dirn, uint64_t diroff)
  */
 int _TIFFGetDirNumberFromOffset(TIFF *tif, uint64_t diroff, tdir_t *dirn)
 {
+    TIFFOffsetAndDirNumber entry;
+    TIFFOffsetAndDirNumber *foundEntry;
+
     if (diroff == 0) /* no more directories */
         return 0;
     if (tif->tif_dirnumber >= TIFF_MAX_DIR_COUNT)
@@ -5511,11 +5519,10 @@ int _TIFFGetDirNumberFromOffset(TIFF *tif, uint64_t diroff, tdir_t *dirn)
      */
     if (tif->tif_map_dir_offset_to_number == NULL)
         return 0;
-    TIFFOffsetAndDirNumber entry;
     entry.offset = diroff;
     entry.dirNumber = 0; /* not used */
 
-    TIFFOffsetAndDirNumber *foundEntry =
+    foundEntry =
         (TIFFOffsetAndDirNumber *)TIFFHashSetLookup(
             tif->tif_map_dir_offset_to_number, &entry);
     if (foundEntry)
