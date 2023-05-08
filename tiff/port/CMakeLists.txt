@@ -31,21 +31,21 @@ set(port_HEADERS libport.h)
 
 # Only build if any needed features are missing
 if(NOT HAVE_GETOPT)
-  add_library(port STATIC)
+  add_library(tiff_port STATIC ../placeholder.h)
 
   # Add getopt if missing
   if(NOT HAVE_GETOPT)
-    target_sources(port PUBLIC
+    target_sources(tiff_port PRIVATE
             ${CMAKE_CURRENT_SOURCE_DIR}/getopt.c)
   endif()
 
-  target_include_directories(port PUBLIC
+  target_include_directories(tiff_port PUBLIC
           ${CMAKE_CURRENT_BINARY_DIR}
           ${CMAKE_CURRENT_SOURCE_DIR})
 else()
   # Dummy interface library
-  add_library(port INTERFACE)
-  target_include_directories(port INTERFACE
+  add_library(tiff_port INTERFACE)
+  target_include_directories(tiff_port INTERFACE
           ${CMAKE_CURRENT_BINARY_DIR}
           ${CMAKE_CURRENT_SOURCE_DIR})
 endif()

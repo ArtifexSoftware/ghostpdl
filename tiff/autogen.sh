@@ -1,6 +1,13 @@
 #!/bin/sh
 set -x
-libtoolize --force --copy
+case `uname` in
+  Darwin*)
+    glibtoolize --force --copy
+    ;;
+  *)
+    libtoolize --force --copy
+    ;;
+esac
 aclocal -I ./m4
 autoheader
 automake --foreign --add-missing --copy
@@ -12,7 +19,7 @@ do
     echo "$0: getting $file..."
     wget -q --timeout=5 -O config/$file.tmp \
       "https://git.savannah.gnu.org/cgit/config.git/plain/${file}" \
-      && mv config/$file.tmp config/$file \
+      && mv -f config/$file.tmp config/$file \
       && chmod a+x config/$file
     retval=$?
     rm -f config/$file.tmp

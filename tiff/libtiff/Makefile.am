@@ -47,6 +47,7 @@ endif
 noinst_HEADERS = \
 	t4.h \
 	tif_dir.h \
+	tif_hash_set.h \
 	tif_predict.h \
 	tiffiop.h \
 	uvcode.h
@@ -71,6 +72,7 @@ libtiff_la_SOURCES = \
 	tif_fax3sm.c \
 	tif_flush.c \
 	tif_getimage.c \
+	tif_hash_set.c \
 	tif_jbig.c \
 	tif_jpeg.c \
 	tif_jpeg_12.c \
@@ -147,4 +149,16 @@ mkg3states_LDADD = $(LIBPORT)
 faxtable: mkg3states
 	(rm -f tif_fax3sm.c && ./mkg3states -b -c const tif_fax3sm.c)
 
-AM_CPPFLAGS = -I$(top_srcdir)/libtiff -I$(top_srcdir)/port
+if STATIC_LERC
+extra_CPPFLAGS = -DLERC_STATIC
+else
+extra_CPPFLAGS =
+endif
+
+if HAVE_JPEGTURBO_DUAL_MODE_8_12
+JPEGTURBO_CPPFLAGS = -DHAVE_JPEGTURBO_DUAL_MODE_8_12
+else
+JPEGTURBO_CPPFLAGS =
+endif
+
+AM_CPPFLAGS = -I$(top_srcdir)/libtiff -I$(top_srcdir)/port $(extra_CPPFLAGS) $(JPEGTURBO_CPPFLAGS)

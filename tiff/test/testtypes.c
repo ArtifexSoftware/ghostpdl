@@ -33,25 +33,24 @@
 
 #include "tiffio.h"
 
-#define CHECK_TYPE(t, s) \
-	if (sizeof(t) != s) { \
-		fprintf(stderr, "sizeof(" # t ")=%d, it should be %d\n", (int)sizeof(t), (int)s); \
-		return 1; \
-	}
+#define CHECK_TYPE(t, s)                                                       \
+    if (sizeof(t) != s)                                                        \
+    {                                                                          \
+        fprintf(stderr, "sizeof(" #t ")=%d, it should be %d\n",                \
+                (int)sizeof(t), (int)s);                                       \
+        return 1;                                                              \
+    }
 
-int
-main()
+int main()
 {
-	CHECK_TYPE(int8_t, 1)
-	CHECK_TYPE(int16_t, 2)
-	CHECK_TYPE(int32_t, 4)
-	CHECK_TYPE(int64_t, 8)
-	CHECK_TYPE(uint8_t, 1)
-	CHECK_TYPE(uint16_t, 2)
-	CHECK_TYPE(uint32_t, 4)
-	CHECK_TYPE(uint64_t, 8)
-	CHECK_TYPE(tmsize_t , sizeof(size_t))
-	return 0;
+    CHECK_TYPE(int8_t, 1)
+    CHECK_TYPE(int16_t, 2)
+    CHECK_TYPE(int32_t, 4)
+    CHECK_TYPE(int64_t, 8)
+    CHECK_TYPE(uint8_t, 1)
+    CHECK_TYPE(uint16_t, 2)
+    CHECK_TYPE(uint32_t, 4)
+    CHECK_TYPE(uint64_t, 8)
+    CHECK_TYPE(tmsize_t, sizeof(size_t))
+    return 0;
 }
-
-/* vim: set ts=8 sts=8 sw=8 noet: */

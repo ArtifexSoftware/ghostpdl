@@ -23,7 +23,7 @@
 # OF THIS SOFTWARE.
 
 add_executable(addtiffo addtiffo.c tif_overview.c tif_ovrcache.c tif_ovrcache.h)
-target_link_libraries(addtiffo tiff port)
+target_link_libraries(addtiffo tiff tiff_port)
 
 if(WEBP_SUPPORT AND EMSCRIPTEN)
   # Emscripten is pretty finnicky about linker flags.

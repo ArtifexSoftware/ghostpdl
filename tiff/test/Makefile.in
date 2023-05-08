@@ -113,14 +113,20 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-TESTS = $(check_PROGRAMS) $(am__EXEEXT_3)
+@TIFF_TESTS_TRUE@TESTS = $(check_PROGRAMS) $(am__EXEEXT_4)
 XFAIL_TESTS =
-check_PROGRAMS = ascii_tag$(EXEEXT) long_tag$(EXEEXT) \
-	short_tag$(EXEEXT) strip_rw$(EXEEXT) rewrite$(EXEEXT) \
-	custom_dir$(EXEEXT) custom_dir_EXIF_231$(EXEEXT) \
-	rational_precision2double$(EXEEXT) \
-	defer_strile_loading$(EXEEXT) defer_strile_writing$(EXEEXT) \
-	testtypes$(EXEEXT) $(am__EXEEXT_1)
+@TIFF_TESTS_TRUE@check_PROGRAMS = ascii_tag$(EXEEXT) long_tag$(EXEEXT) \
+@TIFF_TESTS_TRUE@	short_tag$(EXEEXT) strip_rw$(EXEEXT) \
+@TIFF_TESTS_TRUE@	rewrite$(EXEEXT) custom_dir$(EXEEXT) \
+@TIFF_TESTS_TRUE@	custom_dir_EXIF_231$(EXEEXT) \
+@TIFF_TESTS_TRUE@	defer_strile_loading$(EXEEXT) \
+@TIFF_TESTS_TRUE@	defer_strile_writing$(EXEEXT) \
+@TIFF_TESTS_TRUE@	test_directory$(EXEEXT) \
+@TIFF_TESTS_TRUE@	test_open_options$(EXEEXT) \
+@TIFF_TESTS_TRUE@	test_append_to_strip$(EXEEXT) \
+@TIFF_TESTS_TRUE@	test_ifd_loop_detection$(EXEEXT) \
+@TIFF_TESTS_TRUE@	testtypes$(EXEEXT) test_signed_tags$(EXEEXT) \
+@TIFF_TESTS_TRUE@	$(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = test
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
@@ -132,13 +138,14 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 DIST_COMMON = $(srcdir)/Makefile.am $(noinst_HEADERS) \
 	$(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h \
+CONFIG_HEADER = $(top_builddir)/config/config.h \
 	$(top_builddir)/libtiff/tif_config.h \
 	$(top_builddir)/libtiff/tiffconf.h \
 	$(top_builddir)/port/libport_config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 @HAVE_JPEG_TRUE@am__EXEEXT_1 = raw_decode$(EXEEXT)
+@BUILD_STATIC_TRUE@am__EXEEXT_2 = rational_precision2double$(EXEEXT)
 am_ascii_tag_OBJECTS = ascii_tag.$(OBJEXT)
 ascii_tag_OBJECTS = $(am_ascii_tag_OBJECTS)
 ascii_tag_DEPENDENCIES = $(LIBTIFF)
@@ -161,11 +168,18 @@ defer_strile_writing_DEPENDENCIES = $(LIBTIFF)
 am_long_tag_OBJECTS = long_tag.$(OBJEXT) check_tag.$(OBJEXT)
 long_tag_OBJECTS = $(am_long_tag_OBJECTS)
 long_tag_DEPENDENCIES = $(LIBTIFF)
-am_rational_precision2double_OBJECTS =  \
-	rational_precision2double.$(OBJEXT)
+am__rational_precision2double_SOURCES_DIST =  \
+	rational_precision2double.c
+@BUILD_STATIC_TRUE@am_rational_precision2double_OBJECTS =  \
+@BUILD_STATIC_TRUE@	rational_precision2double.$(OBJEXT)
 rational_precision2double_OBJECTS =  \
 	$(am_rational_precision2double_OBJECTS)
-rational_precision2double_DEPENDENCIES = $(LIBTIFF)
+@BUILD_STATIC_TRUE@rational_precision2double_DEPENDENCIES =  \
+@BUILD_STATIC_TRUE@	$(LIBTIFF)
+rational_precision2double_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(rational_precision2double_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_raw_decode_OBJECTS = raw_decode.$(OBJEXT)
 raw_decode_OBJECTS = $(am_raw_decode_OBJECTS)
 raw_decode_DEPENDENCIES = $(LIBTIFF)
@@ -179,6 +193,27 @@ am_strip_rw_OBJECTS = strip_rw.$(OBJEXT) strip.$(OBJEXT) \
 	test_arrays.$(OBJEXT)
 strip_rw_OBJECTS = $(am_strip_rw_OBJECTS)
 strip_rw_DEPENDENCIES = $(LIBTIFF)
+am_test_append_to_strip_OBJECTS = test_append_to_strip.$(OBJEXT)
+test_append_to_strip_OBJECTS = $(am_test_append_to_strip_OBJECTS)
+test_append_to_strip_DEPENDENCIES = $(LIBTIFF)
+am_test_directory_OBJECTS = test_directory.$(OBJEXT)
+test_directory_OBJECTS = $(am_test_directory_OBJECTS)
+test_directory_DEPENDENCIES = $(LIBTIFF)
+am_test_ifd_loop_detection_OBJECTS =  \
+	test_ifd_loop_detection-test_ifd_loop_detection.$(OBJEXT)
+test_ifd_loop_detection_OBJECTS =  \
+	$(am_test_ifd_loop_detection_OBJECTS)
+test_ifd_loop_detection_DEPENDENCIES = $(LIBTIFF)
+test_ifd_loop_detection_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(test_ifd_loop_detection_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_test_open_options_OBJECTS = test_open_options.$(OBJEXT)
+test_open_options_OBJECTS = $(am_test_open_options_OBJECTS)
+test_open_options_DEPENDENCIES = $(LIBTIFF)
+am_test_signed_tags_OBJECTS = test_signed_tags.$(OBJEXT)
+test_signed_tags_OBJECTS = $(am_test_signed_tags_OBJECTS)
+test_signed_tags_DEPENDENCIES = $(LIBTIFF)
 testtypes_SOURCES = testtypes.c
 testtypes_OBJECTS = testtypes.$(OBJEXT)
 testtypes_LDADD = $(LDADD)
@@ -194,7 +229,7 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/libtiff -I$(top_builddir)/port
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/config -I$(top_builddir)/libtiff -I$(top_builddir)/port
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/ascii_tag.Po \
@@ -205,8 +240,11 @@ am__depfiles_remade = ./$(DEPDIR)/ascii_tag.Po \
 	./$(DEPDIR)/rational_precision2double.Po \
 	./$(DEPDIR)/raw_decode.Po ./$(DEPDIR)/rewrite_tag.Po \
 	./$(DEPDIR)/short_tag.Po ./$(DEPDIR)/strip.Po \
-	./$(DEPDIR)/strip_rw.Po ./$(DEPDIR)/test_arrays.Po \
-	./$(DEPDIR)/testtypes.Po
+	./$(DEPDIR)/strip_rw.Po ./$(DEPDIR)/test_append_to_strip.Po \
+	./$(DEPDIR)/test_arrays.Po ./$(DEPDIR)/test_directory.Po \
+	./$(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Po \
+	./$(DEPDIR)/test_open_options.Po \
+	./$(DEPDIR)/test_signed_tags.Po ./$(DEPDIR)/testtypes.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -231,12 +269,18 @@ SOURCES = $(ascii_tag_SOURCES) $(custom_dir_SOURCES) \
 	$(defer_strile_writing_SOURCES) $(long_tag_SOURCES) \
 	$(rational_precision2double_SOURCES) $(raw_decode_SOURCES) \
 	$(rewrite_SOURCES) $(short_tag_SOURCES) $(strip_rw_SOURCES) \
+	$(test_append_to_strip_SOURCES) $(test_directory_SOURCES) \
+	$(test_ifd_loop_detection_SOURCES) \
+	$(test_open_options_SOURCES) $(test_signed_tags_SOURCES) \
 	testtypes.c
 DIST_SOURCES = $(ascii_tag_SOURCES) $(custom_dir_SOURCES) \
 	$(custom_dir_EXIF_231_SOURCES) $(defer_strile_loading_SOURCES) \
 	$(defer_strile_writing_SOURCES) $(long_tag_SOURCES) \
-	$(rational_precision2double_SOURCES) $(raw_decode_SOURCES) \
-	$(rewrite_SOURCES) $(short_tag_SOURCES) $(strip_rw_SOURCES) \
+	$(am__rational_precision2double_SOURCES_DIST) \
+	$(raw_decode_SOURCES) $(rewrite_SOURCES) $(short_tag_SOURCES) \
+	$(strip_rw_SOURCES) $(test_append_to_strip_SOURCES) \
+	$(test_directory_SOURCES) $(test_ifd_loop_detection_SOURCES) \
+	$(test_open_options_SOURCES) $(test_signed_tags_SOURCES) \
 	testtypes.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -447,11 +491,11 @@ am__set_TESTS_bases = \
   bases=`echo $$bases`
 RECHECK_LOGS = $(TEST_LOGS)
 AM_RECURSIVE_TARGETS = check recheck
-@HAVE_JPEG_TRUE@am__EXEEXT_2 = tiff2rgba-quad-tile.jpg.sh \
+@HAVE_JPEG_TRUE@am__EXEEXT_3 = tiff2rgba-quad-tile.jpg.sh \
 @HAVE_JPEG_TRUE@	tiff2rgba-ojpeg_zackthecat_subsamp22_single_strip.sh \
 @HAVE_JPEG_TRUE@	tiff2rgba-ojpeg_chewey_subsamp21_multi_strip.sh \
 @HAVE_JPEG_TRUE@	tiff2rgba-ojpeg_single_strip_no_rowsperstrip.sh
-am__EXEEXT_3 = ppm2tiff_pbm.sh ppm2tiff_pgm.sh ppm2tiff_ppm.sh \
+am__EXEEXT_4 = ppm2tiff_pbm.sh ppm2tiff_pgm.sh ppm2tiff_ppm.sh \
 	fax2tiff.sh tiffcp-g3.sh tiffcp-g3-1d.sh tiffcp-g3-1d-fill.sh \
 	tiffcp-g3-2d.sh tiffcp-g3-2d-fill.sh tiffcp-g4.sh \
 	tiffcp-logluv.sh tiffcp-thumbnail.sh tiffcp-lzw-compat.sh \
@@ -500,7 +544,7 @@ am__EXEEXT_3 = ppm2tiff_pbm.sh ppm2tiff_pgm.sh ppm2tiff_ppm.sh \
 	tiff2rgba-miniswhite-1c-1b.sh tiff2rgba-palette-1c-1b.sh \
 	tiff2rgba-palette-1c-4b.sh tiff2rgba-palette-1c-8b.sh \
 	tiff2rgba-rgb-3c-16b.sh tiff2rgba-rgb-3c-8b.sh testfax4.sh \
-	testdeflatelaststripextradata.sh $(am__EXEEXT_2)
+	testdeflatelaststripextradata.sh $(am__EXEEXT_3)
 TEST_SUITE_LOG = test-suite.log
 TEST_EXTENSIONS = @EXEEXT@ .test
 LOG_DRIVER = $(SHELL) $(top_srcdir)/config/test-driver
@@ -606,11 +650,17 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
+PYTHON_BIN = @PYTHON_BIN@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SPHINX_BUILD = @SPHINX_BUILD@
 STRIP = @STRIP@
+TIFF_MAN1_GEN = @TIFF_MAN1_GEN@
+TIFF_MAN1_PREBUILT = @TIFF_MAN1_PREBUILT@
+TIFF_MAN3_GEN = @TIFF_MAN3_GEN@
+TIFF_MAN3_PREBUILT = @TIFF_MAN3_PREBUILT@
 VERSION = @VERSION@
 XMKMF = @XMKMF@
 X_CFLAGS = @X_CFLAGS@
@@ -670,6 +720,7 @@ srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 tiff_libs_private = @tiff_libs_private@
+tiff_requires_private = @tiff_requires_private@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
@@ -704,6 +755,7 @@ CLEANFILES = test_packbits.tif o-*
 @HAVE_JPEG_TRUE@	tiff2rgba-ojpeg_chewey_subsamp21_multi_strip.sh \
 @HAVE_JPEG_TRUE@	tiff2rgba-ojpeg_single_strip_no_rowsperstrip.sh
 
+@BUILD_STATIC_TRUE@STATIC_CHECK_PROGS = rational_precision2double
 
 # Test scripts to execute
 TESTSCRIPTS = \
@@ -820,7 +872,8 @@ TIFFIMAGES = \
 	images/ojpeg_chewey_subsamp21_multi_strip.tiff \
 	images/ojpeg_single_strip_no_rowsperstrip.tiff \
 	images/testfax4.tiff \
-	images/deflate-last-strip-extra-data.tiff
+	images/deflate-last-strip-extra-data.tiff \
+	images/custom_dir_EXIF_GPS.tiff
 
 PNMIMAGES = \
 	images/minisblack-1c-8b.pgm \
@@ -835,10 +888,18 @@ PNMIMAGES = \
 IMAGES_EXTRA_DIST = \
 	images/README.txt \
 	images/miniswhite-1c-1b.g3 \
+	images/test_float64_predictor2_le_lzw.tif \
+	images/test_float64_predictor2_be_lzw.tif \
+	images/tiff_with_subifd_chain.tif \
+	images/test_ifd_loop_to_self.tif \
+	images/test_ifd_loop_to_first.tif \
+	images/test_two_ifds.tif \
 	$(PNMIMAGES) \
 	$(TIFFIMAGES)
 
 noinst_HEADERS = tifftest.h
+test_signed_tags_SOURCES = test_signed_tags.c
+test_signed_tags_LDADD = $(LIBTIFF)
 ascii_tag_SOURCES = ascii_tag.c
 ascii_tag_LDADD = $(LIBTIFF)
 long_tag_SOURCES = long_tag.c check_tag.c
@@ -853,14 +914,24 @@ raw_decode_SOURCES = raw_decode.c
 raw_decode_LDADD = $(LIBTIFF)
 custom_dir_SOURCES = custom_dir.c
 custom_dir_LDADD = $(LIBTIFF)
-rational_precision2double_SOURCES = rational_precision2double.c
-rational_precision2double_LDADD = $(LIBTIFF)
+@BUILD_STATIC_TRUE@rational_precision2double_SOURCES = rational_precision2double.c
+@BUILD_STATIC_TRUE@rational_precision2double_LDADD = $(LIBTIFF)
+@BUILD_STATIC_TRUE@rational_precision2double_LDFLAGS = -static
 custom_dir_EXIF_231_SOURCES = custom_dir_EXIF_231.c
 custom_dir_EXIF_231_LDADD = $(LIBTIFF)
 defer_strile_loading_SOURCES = defer_strile_loading.c
 defer_strile_loading_LDADD = $(LIBTIFF)
 defer_strile_writing_SOURCES = defer_strile_writing.c
 defer_strile_writing_LDADD = $(LIBTIFF)
+test_directory_SOURCES = test_directory.c
+test_directory_LDADD = $(LIBTIFF)
+test_open_options_SOURCES = test_open_options.c
+test_open_options_LDADD = $(LIBTIFF)
+test_append_to_strip_SOURCES = test_append_to_strip.c
+test_append_to_strip_LDADD = $(LIBTIFF)
+test_ifd_loop_detection_CFLAGS = -DSOURCE_DIR=\"@srcdir@\"
+test_ifd_loop_detection_SOURCES = test_ifd_loop_detection.c
+test_ifd_loop_detection_LDADD = $(LIBTIFF)
 AM_CPPFLAGS = -I$(top_srcdir)/libtiff
 all: all-am
 
@@ -931,7 +1002,7 @@ long_tag$(EXEEXT): $(long_tag_OBJECTS) $(long_tag_DEPENDENCIES) $(EXTRA_long_tag
 
 rational_precision2double$(EXEEXT): $(rational_precision2double_OBJECTS) $(rational_precision2double_DEPENDENCIES) $(EXTRA_rational_precision2double_DEPENDENCIES) 
 	@rm -f rational_precision2double$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(rational_precision2double_OBJECTS) $(rational_precision2double_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(rational_precision2double_LINK) $(rational_precision2double_OBJECTS) $(rational_precision2double_LDADD) $(LIBS)
 
 raw_decode$(EXEEXT): $(raw_decode_OBJECTS) $(raw_decode_DEPENDENCIES) $(EXTRA_raw_decode_DEPENDENCIES) 
 	@rm -f raw_decode$(EXEEXT)
@@ -948,6 +1019,26 @@ short_tag$(EXEEXT): $(short_tag_OBJECTS) $(short_tag_DEPENDENCIES) $(EXTRA_short
 strip_rw$(EXEEXT): $(strip_rw_OBJECTS) $(strip_rw_DEPENDENCIES) $(EXTRA_strip_rw_DEPENDENCIES) 
 	@rm -f strip_rw$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(strip_rw_OBJECTS) $(strip_rw_LDADD) $(LIBS)
+
+test_append_to_strip$(EXEEXT): $(test_append_to_strip_OBJECTS) $(test_append_to_strip_DEPENDENCIES) $(EXTRA_test_append_to_strip_DEPENDENCIES) 
+	@rm -f test_append_to_strip$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test_append_to_strip_OBJECTS) $(test_append_to_strip_LDADD) $(LIBS)
+
+test_directory$(EXEEXT): $(test_directory_OBJECTS) $(test_directory_DEPENDENCIES) $(EXTRA_test_directory_DEPENDENCIES) 
+	@rm -f test_directory$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test_directory_OBJECTS) $(test_directory_LDADD) $(LIBS)
+
+test_ifd_loop_detection$(EXEEXT): $(test_ifd_loop_detection_OBJECTS) $(test_ifd_loop_detection_DEPENDENCIES) $(EXTRA_test_ifd_loop_detection_DEPENDENCIES) 
+	@rm -f test_ifd_loop_detection$(EXEEXT)
+	$(AM_V_CCLD)$(test_ifd_loop_detection_LINK) $(test_ifd_loop_detection_OBJECTS) $(test_ifd_loop_detection_LDADD) $(LIBS)
+
+test_open_options$(EXEEXT): $(test_open_options_OBJECTS) $(test_open_options_DEPENDENCIES) $(EXTRA_test_open_options_DEPENDENCIES) 
+	@rm -f test_open_options$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test_open_options_OBJECTS) $(test_open_options_LDADD) $(LIBS)
+
+test_signed_tags$(EXEEXT): $(test_signed_tags_OBJECTS) $(test_signed_tags_DEPENDENCIES) $(EXTRA_test_signed_tags_DEPENDENCIES) 
+	@rm -f test_signed_tags$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test_signed_tags_OBJECTS) $(test_signed_tags_LDADD) $(LIBS)
 
 testtypes$(EXEEXT): $(testtypes_OBJECTS) $(testtypes_DEPENDENCIES) $(EXTRA_testtypes_DEPENDENCIES) 
 	@rm -f testtypes$(EXEEXT)
@@ -972,7 +1063,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/short_tag.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strip.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strip_rw.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_append_to_strip.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_arrays.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_directory.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_open_options.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_signed_tags.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testtypes.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -1001,6 +1097,20 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
+
+test_ifd_loop_detection-test_ifd_loop_detection.o: test_ifd_loop_detection.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_ifd_loop_detection_CFLAGS) $(CFLAGS) -MT test_ifd_loop_detection-test_ifd_loop_detection.o -MD -MP -MF $(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Tpo -c -o test_ifd_loop_detection-test_ifd_loop_detection.o `test -f 'test_ifd_loop_detection.c' || echo '$(srcdir)/'`test_ifd_loop_detection.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Tpo $(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_ifd_loop_detection.c' object='test_ifd_loop_detection-test_ifd_loop_detection.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_ifd_loop_detection_CFLAGS) $(CFLAGS) -c -o test_ifd_loop_detection-test_ifd_loop_detection.o `test -f 'test_ifd_loop_detection.c' || echo '$(srcdir)/'`test_ifd_loop_detection.c
+
+test_ifd_loop_detection-test_ifd_loop_detection.obj: test_ifd_loop_detection.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_ifd_loop_detection_CFLAGS) $(CFLAGS) -MT test_ifd_loop_detection-test_ifd_loop_detection.obj -MD -MP -MF $(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Tpo -c -o test_ifd_loop_detection-test_ifd_loop_detection.obj `if test -f 'test_ifd_loop_detection.c'; then $(CYGPATH_W) 'test_ifd_loop_detection.c'; else $(CYGPATH_W) '$(srcdir)/test_ifd_loop_detection.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Tpo $(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_ifd_loop_detection.c' object='test_ifd_loop_detection-test_ifd_loop_detection.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_ifd_loop_detection_CFLAGS) $(CFLAGS) -c -o test_ifd_loop_detection-test_ifd_loop_detection.obj `if test -f 'test_ifd_loop_detection.c'; then $(CYGPATH_W) 'test_ifd_loop_detection.c'; else $(CYGPATH_W) '$(srcdir)/test_ifd_loop_detection.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1250,13 +1360,6 @@ custom_dir_EXIF_231.log: custom_dir_EXIF_231$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-rational_precision2double.log: rational_precision2double$(EXEEXT)
-	@p='rational_precision2double$(EXEEXT)'; \
-	b='rational_precision2double'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 defer_strile_loading.log: defer_strile_loading$(EXEEXT)
 	@p='defer_strile_loading$(EXEEXT)'; \
 	b='defer_strile_loading'; \
@@ -1271,6 +1374,34 @@ defer_strile_writing.log: defer_strile_writing$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_directory.log: test_directory$(EXEEXT)
+	@p='test_directory$(EXEEXT)'; \
+	b='test_directory'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_open_options.log: test_open_options$(EXEEXT)
+	@p='test_open_options$(EXEEXT)'; \
+	b='test_open_options'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_append_to_strip.log: test_append_to_strip$(EXEEXT)
+	@p='test_append_to_strip$(EXEEXT)'; \
+	b='test_append_to_strip'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_ifd_loop_detection.log: test_ifd_loop_detection$(EXEEXT)
+	@p='test_ifd_loop_detection$(EXEEXT)'; \
+	b='test_ifd_loop_detection'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 testtypes.log: testtypes$(EXEEXT)
 	@p='testtypes$(EXEEXT)'; \
 	b='testtypes'; \
@@ -1278,9 +1409,23 @@ testtypes.log: testtypes$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+test_signed_tags.log: test_signed_tags$(EXEEXT)
+	@p='test_signed_tags$(EXEEXT)'; \
+	b='test_signed_tags'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 raw_decode.log: raw_decode$(EXEEXT)
 	@p='raw_decode$(EXEEXT)'; \
 	b='raw_decode'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+rational_precision2double.log: rational_precision2double$(EXEEXT)
+	@p='rational_precision2double$(EXEEXT)'; \
+	b='rational_precision2double'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -1966,7 +2111,12 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/short_tag.Po
 	-rm -f ./$(DEPDIR)/strip.Po
 	-rm -f ./$(DEPDIR)/strip_rw.Po
+	-rm -f ./$(DEPDIR)/test_append_to_strip.Po
 	-rm -f ./$(DEPDIR)/test_arrays.Po
+	-rm -f ./$(DEPDIR)/test_directory.Po
+	-rm -f ./$(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Po
+	-rm -f ./$(DEPDIR)/test_open_options.Po
+	-rm -f ./$(DEPDIR)/test_signed_tags.Po
 	-rm -f ./$(DEPDIR)/testtypes.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -2026,7 +2176,12 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/short_tag.Po
 	-rm -f ./$(DEPDIR)/strip.Po
 	-rm -f ./$(DEPDIR)/strip_rw.Po
+	-rm -f ./$(DEPDIR)/test_append_to_strip.Po
 	-rm -f ./$(DEPDIR)/test_arrays.Po
+	-rm -f ./$(DEPDIR)/test_directory.Po
+	-rm -f ./$(DEPDIR)/test_ifd_loop_detection-test_ifd_loop_detection.Po
+	-rm -f ./$(DEPDIR)/test_open_options.Po
+	-rm -f ./$(DEPDIR)/test_signed_tags.Po
 	-rm -f ./$(DEPDIR)/testtypes.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

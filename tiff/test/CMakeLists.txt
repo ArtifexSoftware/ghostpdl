@@ -22,95 +22,18 @@
 # LIABILITY, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
 # OF THIS SOFTWARE.
 
-# Test scripts (not used by CMake)
-set(TESTSCRIPTS
-    bmp2tiff_palette.sh
-    bmp2tiff_rgb.sh
-    gif2tiff.sh
-    ppm2tiff_pbm.sh
-    ppm2tiff_pgm.sh
-    ppm2tiff_ppm.sh
-    fax2tiff.sh
-    tiffcp-g3.sh
-    tiffcp-g3-1d.sh
-    tiffcp-g3-1d-fill.sh
-    tiffcp-g3-2d.sh
-    tiffcp-g3-2d-fill.sh
-    tiffcp-g4.sh
-    tiffcp-logluv.sh
-    tiffcp-thumbnail.sh
-    tiffcp-lzw-compat.sh
-    tiffcp-lzw-scanline-decode.sh
-    tiffdump.sh
-    tiffinfo.sh
-    tiffcp-split.sh
-    tiffcp-split-join.sh
-    tiff2ps-PS1.sh
-    tiff2ps-PS2.sh
-    tiff2ps-PS3.sh
-    tiff2ps-EPS1.sh
-    tiff2pdf.sh
-    tiffcrop-doubleflip-logluv-3c-16b.sh
-    tiffcrop-doubleflip-minisblack-1c-16b.sh
-    tiffcrop-doubleflip-minisblack-1c-8b.sh
-    tiffcrop-doubleflip-minisblack-2c-8b-alpha.sh
-    tiffcrop-doubleflip-miniswhite-1c-1b.sh
-    tiffcrop-doubleflip-palette-1c-1b.sh
-    tiffcrop-doubleflip-palette-1c-4b.sh
-    tiffcrop-doubleflip-palette-1c-8b.sh
-    tiffcrop-doubleflip-rgb-3c-16b.sh
-    tiffcrop-doubleflip-rgb-3c-8b.sh
-    tiffcrop-extract-logluv-3c-16b.sh
-    tiffcrop-extract-minisblack-1c-16b.sh
-    tiffcrop-extract-minisblack-1c-8b.sh
-    tiffcrop-extract-minisblack-2c-8b-alpha.sh
-    tiffcrop-extract-miniswhite-1c-1b.sh
-    tiffcrop-extract-palette-1c-1b.sh
-    tiffcrop-extract-palette-1c-4b.sh
-    tiffcrop-extract-palette-1c-8b.sh
-    tiffcrop-extract-rgb-3c-16b.sh
-    tiffcrop-extract-rgb-3c-8b.sh
-    tiffcrop-extractz14-logluv-3c-16b.sh
-    tiffcrop-extractz14-minisblack-1c-16b.sh
-    tiffcrop-extractz14-minisblack-1c-8b.sh
-    tiffcrop-extractz14-minisblack-2c-8b-alpha.sh
-    tiffcrop-extractz14-miniswhite-1c-1b.sh
-    tiffcrop-extractz14-palette-1c-1b.sh
-    tiffcrop-extractz14-palette-1c-4b.sh
-    tiffcrop-extractz14-palette-1c-8b.sh
-    tiffcrop-extractz14-rgb-3c-16b.sh
-    tiffcrop-extractz14-rgb-3c-8b.sh
-    tiffcrop-R90-logluv-3c-16b.sh
-    tiffcrop-R90-minisblack-1c-16b.sh
-    tiffcrop-R90-minisblack-1c-8b.sh
-    tiffcrop-R90-minisblack-2c-8b-alpha.sh
-    tiffcrop-R90-miniswhite-1c-1b.sh
-    tiffcrop-R90-palette-1c-1b.sh
-    tiffcrop-R90-palette-1c-4b.sh
-    tiffcrop-R90-palette-1c-8b.sh
-    tiffcrop-R90-rgb-3c-16b.sh
-    tiffcrop-R90-rgb-3c-8b.sh
-    tiff2rgba-logluv-3c-16b.sh
-    tiff2rgba-minisblack-1c-16b.sh
-    tiff2rgba-minisblack-1c-8b.sh
-    tiff2rgba-minisblack-2c-8b-alpha.sh
-    tiff2rgba-miniswhite-1c-1b.sh
-    tiff2rgba-palette-1c-1b.sh
-    tiff2rgba-palette-1c-4b.sh
-    tiff2rgba-palette-1c-8b.sh
-    tiff2rgba-rgb-3c-16b.sh
-    tiff2rgba-rgb-3c-8b.sh
-    tiff2rgba-quad-tile.jpg.sh
-    tiff2rgba-ojpeg_zackthecat_subsamp22_single_strip.sh
-    tiff2rgba-ojpeg_chewey_subsamp21_multi_strip.sh
-    tiff2rgba-ojpeg_single_strip_no_rowsperstrip.sh
-    testfax4.sh
-    testdeflatelaststripextradata.sh)
+# Images for tiff2bw (8-bit RGB only)
+set(RGBIMAGES
+    images/palette-1c-8b.tiff
+    images/rgb-3c-8b.tiff
+    images/quad-lzw-compat.tiff
+)
 
 # This list should contain all of the TIFF files in the 'images'
 # subdirectory which are intended to be used as input images for
 # tests.  All of these files should use the extension ".tiff".
 set(TIFFIMAGES
+    images/custom_dir_EXIF_GPS.tiff
     images/logluv-3c-16b.tiff
     images/minisblack-1c-16b.tiff
     images/minisblack-1c-8b.tiff
@@ -121,13 +44,23 @@ set(TIFFIMAGES
     images/palette-1c-8b.tiff
     images/rgb-3c-16b.tiff
     images/rgb-3c-8b.tiff
-    images/quad-tile.jpg.tiff
     images/quad-lzw-compat.tiff
     images/lzw-single-strip.tiff
-    images/ojpeg_zackthecat_subsamp22_single_strip.tiff
-    images/ojpeg_chewey_subsamp21_multi_strip.tiff
-    images/ojpeg_single_strip_no_rowsperstrip.tiff
     images/testfax4.tiff)
+# TIFF images using old-jpeg.  Unused unless JPEG support is enabled.
+set(TIFFIMAGES_OJPEG)
+
+if(JPEG_SUPPORT)
+    list(APPEND TIFFIMAGES images/quad-tile.jpg.tiff)
+endif()
+
+if (OJPEG_SUPPORT)
+    list(APPEND TIFFIMAGES_OJPEG
+        images/ojpeg_zackthecat_subsamp22_single_strip.tiff
+        images/ojpeg_chewey_subsamp21_multi_strip.tiff
+        images/ojpeg_single_strip_no_rowsperstrip.tiff
+    )
+endif()
 
 set(BMPIMAGES
     images/palette-1c-8b.bmp
@@ -165,75 +98,112 @@ set(IMAGES_EXTRA_DIST
 
 set(noinst_HEADERS tifftest.h)
 
-add_executable(ascii_tag)
+set(simple_tests)
+
+add_executable(test_signed_tags ../placeholder.h)
+target_sources(test_signed_tags PRIVATE test_signed_tags.c)
+target_link_libraries(test_signed_tags PRIVATE tiff tiff_port)
+list(APPEND simple_tests test_signed_tags)
+
+add_executable(ascii_tag ../placeholder.h)
 target_sources(ascii_tag PRIVATE ascii_tag.c)
-target_link_libraries(ascii_tag PRIVATE tiff port)
+target_link_libraries(ascii_tag PRIVATE tiff tiff_port)
+list(APPEND simple_tests ascii_tag)
 
-add_executable(long_tag)
+add_executable(long_tag ../placeholder.h)
 target_sources(long_tag PRIVATE long_tag.c check_tag.c)
-target_link_libraries(long_tag PRIVATE tiff port)
+target_link_libraries(long_tag PRIVATE tiff tiff_port)
+list(APPEND simple_tests long_tag)
 
-add_executable(short_tag)
+add_executable(short_tag ../placeholder.h)
 target_sources(short_tag PRIVATE short_tag.c check_tag.c)
-target_link_libraries(short_tag PRIVATE tiff port)
+target_link_libraries(short_tag PRIVATE tiff tiff_port)
+list(APPEND simple_tests short_tag)
 
-add_executable(strip_rw)
+add_executable(strip_rw ../placeholder.h)
 target_sources(strip_rw PRIVATE strip_rw.c strip.c test_arrays.c test_arrays.h)
-target_link_libraries(strip_rw PRIVATE tiff port)
+target_link_libraries(strip_rw PRIVATE tiff tiff_port)
+list(APPEND simple_tests strip_rw)
 
-add_executable(rewrite)
+add_executable(rewrite ../placeholder.h)
 target_sources(rewrite PRIVATE rewrite_tag.c)
-target_link_libraries(rewrite PRIVATE tiff port)
+target_link_libraries(rewrite PRIVATE tiff tiff_port)
+list(APPEND simple_tests rewrite)
 
 if(JPEG_SUPPORT)
-  add_executable(raw_decode)
+  add_executable(raw_decode ../placeholder.h)
   target_sources(raw_decode PRIVATE raw_decode.c)
-  target_link_libraries(raw_decode PRIVATE tiff port JPEG::JPEG)
+  target_link_libraries(raw_decode PRIVATE tiff tiff_port JPEG::JPEG)
+  list(APPEND simple_tests raw_decode)
 endif()
 
-add_executable(custom_dir)
+add_executable(custom_dir ../placeholder.h)
 target_sources(custom_dir PRIVATE custom_dir.c)
-target_link_libraries(custom_dir PRIVATE tiff port)
+target_link_libraries(custom_dir PRIVATE tiff tiff_port)
+list(APPEND simple_tests custom_dir)
 
+# Uses private functions from static library
 if(NOT BUILD_SHARED_LIBS)
-add_executable(rational_precision2double)
-target_sources(rational_precision2double PRIVATE rational_precision2double.c)
-target_link_libraries(rational_precision2double PRIVATE tiff port)
-add_test(NAME "rational_precision2double"
-         COMMAND "rational_precision2double")
+  add_executable(rational_precision2double ../placeholder.h)
+  target_sources(rational_precision2double PRIVATE rational_precision2double.c)
+  target_link_libraries(rational_precision2double PRIVATE tiff tiff_port)
+  list(APPEND simple_tests rational_precision2double)
 endif()
 
-if(NOT BUILD_SHARED_LIBS)
-add_executable(custom_dir_EXIF_231)
+add_executable(custom_dir_EXIF_231 ../placeholder.h)
 target_sources(custom_dir_EXIF_231 PRIVATE custom_dir_EXIF_231.c)
-target_link_libraries(custom_dir_EXIF_231 PRIVATE tiff port)
-add_test(NAME "custom_dir_EXIF_231"
-         COMMAND "custom_dir_EXIF_231")
-endif()
+target_link_libraries(custom_dir_EXIF_231 PRIVATE tiff tiff_port)
+list(APPEND simple_tests custom_dir_EXIF_231)
 
-add_executable(defer_strile_loading)
+add_executable(defer_strile_loading ../placeholder.h)
 target_sources(defer_strile_loading PRIVATE defer_strile_loading.c)
-target_link_libraries(defer_strile_loading PRIVATE tiff port)
+target_link_libraries(defer_strile_loading PRIVATE tiff tiff_port)
+list(APPEND simple_tests defer_strile_loading)
 
-add_executable(defer_strile_writing)
+add_executable(defer_strile_writing ../placeholder.h)
 target_sources(defer_strile_writing PRIVATE defer_strile_writing.c)
-target_link_libraries(defer_strile_writing PRIVATE tiff port)
+target_link_libraries(defer_strile_writing PRIVATE tiff tiff_port)
+list(APPEND simple_tests defer_strile_writing)
 
-add_executable(testtypes)
+add_executable(test_directory ../placeholder.h)
+target_sources(test_directory PRIVATE test_directory.c)
+target_link_libraries(test_directory PRIVATE tiff tiff_port)
+list(APPEND simple_tests test_directory)
+
+add_executable(testtypes ../placeholder.h)
 target_sources(testtypes PRIVATE testtypes.c)
-target_link_libraries(testtypes PRIVATE tiff port)
+target_link_libraries(testtypes PRIVATE tiff tiff_port)
+list(APPEND simple_tests testtypes)
+
+add_executable(test_open_options ../placeholder.h)
+target_sources(test_open_options PRIVATE test_open_options.c)
+target_link_libraries(test_open_options PRIVATE tiff tiff_port)
+list(APPEND simple_tests test_open_options)
+
+add_executable(test_append_to_strip ../placeholder.h)
+target_sources(test_append_to_strip PRIVATE test_append_to_strip.c)
+target_link_libraries(test_append_to_strip PRIVATE tiff tiff_port)
+list(APPEND simple_tests test_append_to_strip)
+
+add_executable(test_ifd_loop_detection ../placeholder.h)
+target_sources(test_ifd_loop_detection PRIVATE test_ifd_loop_detection.c)
+target_link_libraries(test_ifd_loop_detection PRIVATE tiff tiff_port)
+target_compile_definitions(test_ifd_loop_detection PRIVATE SOURCE_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}\")
+list(APPEND simple_tests test_ifd_loop_detection)
 
 if(WEBP_SUPPORT AND EMSCRIPTEN)
   # Emscripten is pretty finnicky about linker flags.
   # It needs --shared-memory if and only if atomics or bulk-memory is used.
-  foreach(target ascii_tag
-                 custom_dir
-                 defer_strile_loading
-                 defer_strile_writing
-                 long_tag
-                 rewrite
-                 short_tag
-                 strip_rw)
+  foreach(target
+          ascii_tag
+          long_tag
+          short_tag
+          strip_rw
+          rewrite
+          custom_dir
+          defer_strile_loading
+          defer_strile_writing
+          )
     target_link_options(${target} PUBLIC "-Wl,--shared-memory")
   endforeach()
   if(JPEG_SUPPORT)
@@ -256,7 +226,7 @@ if(CYGWIN)
   list(APPEND tiff_test_extra_args "-DCYGWIN=${CYGWIN}")
 endif()
 
-macro(tiff_test_convert name command1 command2 command3 infile outfile validate)
+function(tiff_test_convert name command1 command2 command3 infile outfile validate)
   add_test(NAME "${name}"
            COMMAND "${CMAKE_COMMAND}"
            "-DCONVERT_COMMAND1=${command1}"
@@ -267,9 +237,12 @@ macro(tiff_test_convert name command1 command2 command3 infile outfile validate)
            "-DVALIDATE=${validate}"
            ${tiff_test_extra_args}
            -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
-endmacro()
+endfunction()
 
-macro(tiff_test_stdout name command infile outfile)
+function(tiff_test_stdout name suffix command infile outfile)
+  if (suffix)
+     set(name "${name}-${suffix}")
+  endif()
   add_test(NAME "${name}"
            COMMAND "${CMAKE_COMMAND}"
            "-DSTDOUT_COMMAND=${command}"
@@ -277,18 +250,29 @@ macro(tiff_test_stdout name command infile outfile)
            "-DOUTFILE=${outfile}"
            ${tiff_test_extra_args}
            -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
-endmacro()
+endfunction()
 
-macro(tiff_test_reader name command infile)
+function(tiff_test_stdout_noargs name command)
+  add_test(NAME "${name}"
+          COMMAND "${CMAKE_COMMAND}"
+          "-DSTDOUT_COMMAND=$<TARGET_FILE:${command}>"
+          ${tiff_test_extra_args}
+          -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake"
+          WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}")
+  set_tests_properties("${name}" PROPERTIES ENVIRONMENT
+          "srcdir=${CMAKE_CURRENT_SOURCE_DIR}")
+endfunction()
+
+function(tiff_test_reader name command infile)
   add_test(NAME "${name}"
            COMMAND "${CMAKE_COMMAND}"
            "-DREADER_COMMAND=${command}"
            "-DINFILE=${infile}"
            ${tiff_test_extra_args}
            -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
-endmacro()
+endfunction()
 
-macro(add_convert_test_multi commandname1 commandname2 commandname3
+function(add_convert_test_multi commandname1 commandname2 commandname3
       categoryname commandargs1 commandargs2 commandargs3
       image validate)
   string(REPLACE " " "^" escaped_commandargs1 "${commandargs1}")
@@ -316,21 +300,20 @@ macro(add_convert_test_multi commandname1 commandname2 commandname3
     set(command3)
   endif()
   set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
-  set(outfile "${TEST_OUTPUT}/${commandname1}-${categoryname}-${name}")
-  string(REGEX REPLACE "\\.tiff\$" "" name "${name}")
+  set(outfile "${TEST_OUTPUT}/${commandname1}-${categoryname}-${base}.tiff")
   tiff_test_convert("${testname}" "${command1}" "${command2}" "${command3}"
                     "${infile}" "${outfile}" "${validate}")
-endmacro()
+endfunction()
 
-macro(add_convert_test commandname
+function(add_convert_test commandname
       categoryname commandargs
       image validate)
     add_convert_test_multi("${commandname}" "" ""
                            "${categoryname}" "${commandargs}" "" ""
                            "${image}" "${validate}")
-endmacro()
+endfunction()
 
-macro(add_convert_tests_multi commandname commandname2 commandname3
+function(add_convert_tests_multi commandname1 commandname2 commandname3
       categoryname
       commandargs1 commandargs2 commandargs3
       images validate)
@@ -340,16 +323,16 @@ macro(add_convert_tests_multi commandname commandname2 commandname3
                            "${commandargs1}" "${commandargs2}"
                            "${commandargs3}" "${file}" "${validate}")
   endforeach()
-endmacro()
+endfunction()
 
-macro(add_convert_tests commandname categoryname commandargs images validate)
+function(add_convert_tests commandname categoryname commandargs images validate)
   foreach(file ${${images}})
     add_convert_test("${commandname}" "${categoryname}"
                      "${commandargs}" "${file}" "${validate}")
   endforeach()
-endmacro()
+endfunction()
 
-macro(add_stdout_test commandname commandargs image)
+function(add_stdout_test commandname suffix commandargs image)
   string(REPLACE " " "^" escaped_commandargs "${commandargs}")
   get_filename_component(name "${image}" NAME)
   get_filename_component(base "${image}" NAME_WE)
@@ -358,26 +341,24 @@ macro(add_stdout_test commandname commandargs image)
   set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
   set(outfile "${TEST_OUTPUT}/${commandname}-${name}")
   string(REGEX REPLACE "\\.tiff\$" "" name "${name}")
-  tiff_test_stdout("${testname}" "${command}" "${infile}" "${outfile}")
-endmacro()
+  tiff_test_stdout("${testname}" "${suffix}" "${command}" "${infile}" "${outfile}")
+endfunction()
 
-macro(add_reader_test commandname commandargs image)
+function(add_reader_test commandname commandargs image)
   string(REPLACE " " "^" escaped_commandargs "${commandargs}")
   get_filename_component(name "${image}" NAME)
   get_filename_component(base "${image}" NAME_WE)
   set(testname "${commandname}-${base}")
   set(command "$<TARGET_FILE:${commandname}>^${escaped_commandargs}")
   set(infile "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
-  string(REGEX REPLACE "\\.tiff\$" "" name "${name}")
   tiff_test_reader("${testname}" "${command}" "${infile}")
-endmacro()
+endfunction()
 
-# BMP
-add_convert_test(bmp2tiff palette "" "images/palette-1c-8b.bmp" TRUE)
-add_convert_test(bmp2tiff rgb     "" "images/rgb-3c-8b.bmp"     TRUE)
+# Plain executables with no arguments
+foreach(target IN LISTS simple_tests)
+  tiff_test_stdout_noargs("${target}" "${target}")
+endforeach()
 
-# GIF
-add_convert_test(gif2tiff palette "" "images/palette-1c-8b.gif" TRUE)
 
 # PPM
 add_convert_test(ppm2tiff miniswhite "" "images/miniswhite-1c-1b.pbm" TRUE)
@@ -392,18 +373,22 @@ add_convert_test(tiffcp   g31dfill   "-c g3:1d:fill" "images/miniswhite-1c-1b.ti
 add_convert_test(tiffcp   g32d       "-c g3:2d"      "images/miniswhite-1c-1b.tiff" FALSE)
 add_convert_test(tiffcp   g32dfill   "-c g3:2d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
 add_convert_test(tiffcp   g4         "-c g4"         "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   none       "-c none"       "images/quad-lzw-compat.tiff" FALSE)
-add_convert_test(tiffcp   noner1     "-c none -r 1"  "images/lzw-single-strip.tiff" FALSE)
 add_convert_test_multi(tiffcp tiffcp "" logluv "-c none" "-c sgilog" ""
                        "images/logluv-3c-16b.tiff"    FALSE)
-add_convert_test_multi(tiffcp thumbnail "" thumbnail "g3:1d" "" ""
+add_convert_test_multi(tiffcp thumbnail "" thumbnail "-c g3:1d" "" ""
                        "images/miniswhite-1c-1b.tiff"    FALSE)
+add_convert_test(tiffcp   none       "-c none"       "images/quad-lzw-compat.tiff" FALSE)
+add_convert_test(tiffcp   noner1     "-c none -r 1"  "images/lzw-single-strip.tiff" FALSE)
+add_convert_test(tiffcp   float64_lzw_2_le "-c lzw:2"       "images/test_float64_predictor2_le_lzw.tif" FALSE)
+add_convert_test(tiffcp   float64_lzw_2_be "-c lzw:2"       "images/test_float64_predictor2_be_lzw.tif" FALSE)
 
 # tiffdump
 add_reader_test(tiffdump "" "images/miniswhite-1c-1b.tiff")
 
 # tiffinfo
+add_reader_test(tiffinfo "-c -D -d -j -s" "images/custom_dir_EXIF_GPS.tiff")
 add_reader_test(tiffinfo "-c -D -d -j -s" "images/minisblack-1c-16b.tiff")
+add_reader_test(tiffinfo " " "images/tiff_with_subifd_chain.tif")
 
 # tiffcp split/join
 foreach(image ${UNCOMPRESSEDIMAGES})
@@ -413,24 +398,35 @@ string(REPLACE ";" "^" ESCAPED_UNCOMPRESSED "${ESCAPED_UNCOMPRESSED}")
 add_test(NAME "tiffcp-split"
          COMMAND "${CMAKE_COMMAND}"
          "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
-         "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-conjoined.tif"
+         "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-conjoined.tiff"
          "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-split-"
          ${tiff_test_extra_args}
          -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
 add_test(NAME "tiffcp-split-join"
          COMMAND "${CMAKE_COMMAND}"
          "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
-         "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-join-conjoined.tif"
+         "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-join-conjoined.tiff"
          "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-join-split-"
-         "-DRECONJOINED=${TEST_OUTPUT}/tiffcp-split-join-reconjoined.tif"
+         "-DRECONJOINED=${TEST_OUTPUT}/tiffcp-split-join-reconjoined.tiff"
          ${tiff_test_extra_args}
          -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
 
 # PDF
-add_stdout_test(tiff2pdf "" "images/miniswhite-1c-1b.tiff" TRUE)
+add_stdout_test(tiff2pdf "" "" "images/miniswhite-1c-1b.tiff" TRUE)
+
+# PS
+add_stdout_test(tiff2ps "ps-1" "-a -p -1" "images/miniswhite-1c-1b.tiff" TRUE)
+add_stdout_test(tiff2ps "ps-2" "-a -p -2" "images/miniswhite-1c-1b.tiff" TRUE)
+add_stdout_test(tiff2ps "ps-3" "-a -p -3" "images/miniswhite-1c-1b.tiff" TRUE)
+add_stdout_test(tiff2ps "eps-1" "-e -1" "images/miniswhite-1c-1b.tiff" TRUE)
+
+# BW
+add_convert_tests(tiff2bw default      ""                         RGBIMAGES TRUE)
 
 # RGBA
 add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES TRUE)
+# RGBA (old-jpeg)
+add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES_OJPEG TRUE)
 # Test rotations
 add_convert_tests(tiffcrop  R90        "-R90"                     TIFFIMAGES TRUE)
 # Test flip (mirror)
@@ -439,7 +435,3 @@ add_convert_tests(tiffcrop  doubleflip "-F both"                  TIFFIMAGES TRU
 add_convert_tests(tiffcrop  extract    "-U px -E top -X 60 -Y 60" TIFFIMAGES TRUE)
 # Test extracting the first and fourth quarters from the left side.
 add_convert_tests(tiffcrop  extractz14 "-E left -Z1:4,2:4"        TIFFIMAGES TRUE)
-
-# test types
-add_test(NAME "testtypes"
-         COMMAND "testtypes")
