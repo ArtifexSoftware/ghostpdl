@@ -23,4 +23,4 @@
 # OF THIS SOFTWARE.
 
 add_executable(iptcutil iptcutil.c)
-target_link_libraries(iptcutil tiff port)
+target_link_libraries(iptcutil tiff tiff_port)

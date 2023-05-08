@@ -29,7 +29,9 @@ EXTRA_DIST = \
 	CMakeLists.txt \
 	README
 
+if TIFF_CONTRIB
 noinst_PROGRAMS = addtiffo
+endif
 
 addtiffo_SOURCES = addtiffo.c tif_overview.c tif_ovrcache.c tif_ovrcache.h
 addtiffo_LDADD = $(LIBTIFF)

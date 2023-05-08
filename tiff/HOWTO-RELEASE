@@ -41,14 +41,14 @@ Notes on releasing.
      mv ChangeLog.new ChangeLog
      rm ChangeLog.added
 
-3. Create html/vX.X.html and add it to git with 'git add html/vX.X.html'.
-   Take ChangeLog entries and html-ify in there.
-   Easist thing to do is take html/vX.(X-1).html and use it as a template.
+3. Create doc/releases/vX.X.rst and add it to git with 'git add doc/releases/vX.X.rst'.
+   Update doc/releases/index.rst to point to the new file
+   Take ChangeLog entries and rst-ify in there.
+   Easist thing to do is take doc/releases/vX.(X-1).rst and use it as a template.
 
-4. Add vX.X.html file to the list of 'docfiles' files in the html/Makefile.am.
+4. Add vX.X.rst file to the list of 'rst_sources' files in the doc/Makefile.am.
 
-5. Update html/index.html to refer to this new page as the current release,
-   and update date at the bottom of the page
+5. Update "Latest Stable Release" in doc/index.rst.
 
 6. Increment the release version in configure.ac.  Put 'alpha' or
    'beta' after the version, if applicable.  For example:
@@ -134,18 +134,18 @@ Notes on releasing.
 16. Sign the release files in the build tree using your private key
 
       export GPG_TTY=$(tty)
-      for file in tiff-*.tar.gz tiff-*.zip ; do \
+      for file in tiff-*.tar.gz tiff-*.tar.xz tiff-*.zip ; do \
         gpg2 --output ${file}.sig --detach-sig $file ; \
       done
 
-      for file in tiff-*.tar.gz tiff-*.zip ; do \
+      for file in tiff-*.tar.gz tiff-*.tar.xz tiff-*.zip ; do \
         gpg2 --verify ${file}.sig $file ; \
       done
 
 17. Copy release packages from the build tree to the
     ftp.remotesensing.org ftp site.
 
-      scp tiff-*.tar.gz tiff-*.tar.gz.sig tiff-*.zip tiff-*.zip.sig \
+      scp tiff-*.tar.gz tiff-*.tar.gz.sig tiff-*.tar.xz tiff-*.tar.xz.sig tiff-*.zip tiff-*.zip.sig \
          bfriesen@upload.osgeo.org:/osgeo/download/libtiff
 
-18. Announce to list, tiff@lists.maptools.org
+18. Announce to list: tiff@lists.osgeo.org

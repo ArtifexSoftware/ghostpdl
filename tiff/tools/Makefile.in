@@ -113,16 +113,20 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = fax2ps$(EXEEXT) fax2tiff$(EXEEXT) pal2rgb$(EXEEXT) \
-	ppm2tiff$(EXEEXT) raw2tiff$(EXEEXT) tiff2bw$(EXEEXT) \
-	tiff2pdf$(EXEEXT) tiff2ps$(EXEEXT) tiff2rgba$(EXEEXT) \
-	tiffcmp$(EXEEXT) tiffcp$(EXEEXT) tiffcrop$(EXEEXT) \
-	tiffdither$(EXEEXT) tiffdump$(EXEEXT) tiffinfo$(EXEEXT) \
-	tiffmedian$(EXEEXT) tiffset$(EXEEXT) tiffsplit$(EXEEXT) \
-	$(am__EXEEXT_1)
-@HAVE_OPENGL_TRUE@am__append_1 = tiffgt
+@TIFF_TOOLS_TRUE@bin_PROGRAMS = fax2ps$(EXEEXT) fax2tiff$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	pal2rgb$(EXEEXT) ppm2tiff$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	raw2tiff$(EXEEXT) tiff2bw$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	tiff2pdf$(EXEEXT) tiff2ps$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	tiff2rgba$(EXEEXT) tiffcmp$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	tiffcp$(EXEEXT) tiffcrop$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	tiffdither$(EXEEXT) tiffdump$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	tiffinfo$(EXEEXT) tiffmedian$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	tiffset$(EXEEXT) tiffsplit$(EXEEXT) \
+@TIFF_TOOLS_TRUE@	$(am__EXEEXT_1)
+@HAVE_OPENGL_TRUE@@TIFF_TOOLS_TRUE@am__append_1 = tiffgt
 EXTRA_PROGRAMS = rgb2ycbcr$(EXEEXT) thumbnail$(EXEEXT)
-check_PROGRAMS = rgb2ycbcr$(EXEEXT) thumbnail$(EXEEXT)
+@TIFF_TESTS_TRUE@check_PROGRAMS = rgb2ycbcr$(EXEEXT) \
+@TIFF_TESTS_TRUE@	thumbnail$(EXEEXT)
 subdir = tools
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/acinclude.m4 \
@@ -133,13 +137,13 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h \
+CONFIG_HEADER = $(top_builddir)/config/config.h \
 	$(top_builddir)/libtiff/tif_config.h \
 	$(top_builddir)/libtiff/tiffconf.h \
 	$(top_builddir)/port/libport_config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@HAVE_OPENGL_TRUE@am__EXEEXT_1 = tiffgt$(EXEEXT)
+@HAVE_OPENGL_TRUE@@TIFF_TOOLS_TRUE@am__EXEEXT_1 = tiffgt$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_fax2ps_OBJECTS = fax2ps.$(OBJEXT)
@@ -226,7 +230,7 @@ AM_V_at = $(am__v_at_@AM_V@)
 am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir) -I$(top_builddir)/libtiff -I$(top_builddir)/port
+DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/config -I$(top_builddir)/libtiff -I$(top_builddir)/port
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/fax2ps.Po ./$(DEPDIR)/fax2tiff.Po \
@@ -382,11 +386,17 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
+PYTHON_BIN = @PYTHON_BIN@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SPHINX_BUILD = @SPHINX_BUILD@
 STRIP = @STRIP@
+TIFF_MAN1_GEN = @TIFF_MAN1_GEN@
+TIFF_MAN1_PREBUILT = @TIFF_MAN1_PREBUILT@
+TIFF_MAN3_GEN = @TIFF_MAN3_GEN@
+TIFF_MAN3_PREBUILT = @TIFF_MAN3_PREBUILT@
 VERSION = @VERSION@
 XMKMF = @XMKMF@
 X_CFLAGS = @X_CFLAGS@
@@ -446,6 +456,7 @@ srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 tiff_libs_private = @tiff_libs_private@
+tiff_requires_private = @tiff_requires_private@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@

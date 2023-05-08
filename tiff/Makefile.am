@@ -29,27 +29,30 @@ AUTOMAKE_OPTIONS = 1.12 dist-zip foreign
 ACLOCAL_AMFLAGS = -I m4
 
 docfiles = \
-	COPYRIGHT \
 	ChangeLog \
+	LICENSE.md \
 	README.md \
 	RELEASE-DATE \
 	TODO \
 	VERSION
 
 EXTRA_DIST = \
+	placeholder.h \
 	cmake \
 	CMakeLists.txt \
 	HOWTO-RELEASE \
 	autogen.sh \
 	libtiff-4.pc.in
 
+if TIFF_DOCS
 dist_doc_DATA = $(docfiles)
+endif
 
 distcheck-hook:
 	if [ -x "$(CMAKE)" ]; then \
 	  mkdir $(distdir)/_build/cmake \
 	  && cd $(distdir)/_build/cmake \
-	  && cmake ../.. \
+	  && cmake -Dsphinx=OFF ../.. \
 	  && $(MAKE) \
 	  && ctest -V \
 	  && $(MAKE) DESTDIR=../../_inst/cmake install ; \
@@ -57,12 +60,12 @@ distcheck-hook:
 	rm -rf $(distdir)/_build/cmake
 	rm -rf $(distdir)/_inst/cmake
 
-SUBDIRS = port libtiff tools build contrib test man html
+SUBDIRS = port libtiff tools build contrib test doc
 
 release:
 	(rm -f $(top_srcdir)/RELEASE-DATE && echo $(LIBTIFF_RELEASE_DATE) > $(top_srcdir)/RELEASE-DATE)
 	(rm -f $(top_srcdir)/VERSION && echo $(LIBTIFF_VERSION) > $(top_srcdir)/VERSION)
-	(rm -f $(top_srcdir)/libtiff/tiffvers.h && sed 's,LIBTIFF_VERSION,$(LIBTIFF_VERSION),;s,LIBTIFF_RELEASE_DATE,$(LIBTIFF_RELEASE_DATE),' $(top_srcdir)/libtiff/tiffvers.h.in > $(top_srcdir)/libtiff/tiffvers.h)
+	(rm -f $(top_srcdir)/libtiff/tiffvers.h && sed 's,LIBTIFF_VERSION,$(LIBTIFF_VERSION),;s,LIBTIFF_RELEASE_DATE,$(LIBTIFF_RELEASE_DATE),;s,LIBTIFF_MAJOR_VERSION,$(LIBTIFF_MAJOR_VERSION),;s,LIBTIFF_MINOR_VERSION,$(LIBTIFF_MINOR_VERSION),;s,LIBTIFF_MICRO_VERSION,$(LIBTIFF_MICRO_VERSION),' $(top_srcdir)/libtiff/tiffvers.h.in > $(top_srcdir)/libtiff/tiffvers.h)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libtiff-4.pc

@@ -220,6 +220,10 @@ typedef unsigned long long uint64_t;
 #define PRIx64 "llx"
 #endif
 
+#ifndef PRIi64
+#define PRIi64 "lli"
+#endif
+
 #endif /* _TIFFCONF_ */
 /*
  * Local Variables:

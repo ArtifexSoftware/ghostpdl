@@ -123,7 +123,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/config.h \
+CONFIG_HEADER = $(top_builddir)/config/config.h \
 	$(top_builddir)/libtiff/tif_config.h \
 	$(top_builddir)/libtiff/tiffconf.h \
 	$(top_builddir)/port/libport_config.h
@@ -293,11 +293,17 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
+PYTHON_BIN = @PYTHON_BIN@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SPHINX_BUILD = @SPHINX_BUILD@
 STRIP = @STRIP@
+TIFF_MAN1_GEN = @TIFF_MAN1_GEN@
+TIFF_MAN1_PREBUILT = @TIFF_MAN1_PREBUILT@
+TIFF_MAN3_GEN = @TIFF_MAN3_GEN@
+TIFF_MAN3_PREBUILT = @TIFF_MAN3_PREBUILT@
 VERSION = @VERSION@
 XMKMF = @XMKMF@
 X_CFLAGS = @X_CFLAGS@
@@ -357,6 +363,7 @@ srcdir = @srcdir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 tiff_libs_private = @tiff_libs_private@
+tiff_requires_private = @tiff_requires_private@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@

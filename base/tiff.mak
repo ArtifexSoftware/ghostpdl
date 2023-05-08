@@ -33,12 +33,12 @@ TIFFCONF_H=$(TIFFCONF)libtiff$(D)tiffconf$(TIFFCONFIG_SUFFIX).h
 # Define the name of this makefile.
 LIBTIFF_MAK=$(GLSRC)tiff.mak $(TOP_MAKEFILES)
 
-TIFFCC=$(CC) $(I_)$(TI_) $(II)$(JI_)$(_I) $(PF_) $(CCFLAGS) $(TIFF_CFLAGS)
+TIFFCC=$(CC) $(I_)$(TI_) $(II)$(JI_)$(_I) $(I_)$(GLSRCDIR)$(_I) $(PF_) $(CCFLAGS) $(TIFF_CFLAGS)
 
 TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h $(LIBTIFF_MAK) $(MAKEDIRS)
 gstiffio_h=$(GLSRC)gstiffio.h
 
-tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$(OBJ) $(TIFFOBJ)tif_color.$(OBJ)
+tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$(OBJ) $(TIFFOBJ)tif_color.$(OBJ) $(TIFFOBJ)tif_hash_set.$(OBJ)
 tiff_2=$(TIFFOBJ)tif_compress.$(OBJ) $(TIFFOBJ)tif_dir.$(OBJ) $(TIFFOBJ)tif_dirinfo.$(OBJ) $(TIFFOBJ)tif_dirread.$(OBJ)
 tiff_3=$(TIFFOBJ)tif_dirwrite.$(OBJ) $(TIFFOBJ)tif_dumpmode.$(OBJ) $(TIFFOBJ)tif_error.$(OBJ) $(TIFFOBJ)tif_extension.$(OBJ)
 tiff_4=$(TIFFOBJ)tif_fax3.$(OBJ) $(TIFFOBJ)tif_fax3sm.$(OBJ) $(TIFFOBJ)tif_flush.$(OBJ) $(TIFFOBJ)tif_getimage.$(OBJ)
@@ -70,6 +70,9 @@ $(TIFFOBJ)tif_codec.$(OBJ) : $(TIFFSRC)/libtiff/tif_codec.c $(TIFFDEP)
 
 $(TIFFOBJ)tif_color.$(OBJ) : $(TIFFSRC)/libtiff/tif_color.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_color.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_color.c
+
+$(TIFFOBJ)tif_hash_set.$(OBJ) : $(TIFFSRC)/libtiff/tif_hash_set.c $(TIFFDEP)
+	$(TIFFCC) $(TIFFO_)tif_hash_set.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_hash_set.c
 
 $(TIFFOBJ)tif_compress.$(OBJ) : $(TIFFSRC)/libtiff/tif_compress.c $(TIFFDEP)
 	$(TIFFCC) $(TIFFO_)tif_compress.$(OBJ) $(C_) $(TIFFSRC)/libtiff/tif_compress.c

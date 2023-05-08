@@ -134,7 +134,7 @@ typedef unsigned long long uint64_t;
  */
 #ifdef ARCH_SIZEOF_GS_OFFSET_T
 # if ARCH_SIZEOF_GS_OFFSET_T == 8
-typedef int64_t gs_offset_t;
+typedef int64_t gs_offset_t;off64_t
 # elif ARCH_SIZEOF_GS_OFFSET_T == 4
 typedef int32_t gs_offset_t;
 # else
@@ -145,6 +145,7 @@ UNSUPPORTED
 typedef int64_t gs_offset_t;
 #endif
 
+typedef int64_t off64_t;
 
 #if defined(HAVE_INTTYPES_H) && HAVE_INTTYPES_H == 1
 # include <inttypes.h>
