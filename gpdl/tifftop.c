@@ -888,12 +888,6 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
     if (scale * tiff->height * tiff->dev->HWResolution[1] > tiff->dev->height * tiff->yresolution)
         scale = ((float)tiff->dev->height * tiff->yresolution) / (tiff->height * tiff->dev->HWResolution[1]);
 
-    tiff->nulldev = gs_currentdevice(tiff->pgs);
-    rc_increment(tiff->nulldev);
-    code = gs_setdevice_no_erase(tiff->pgs, tiff->dev);
-    if (code < 0)
-        return code;
-
     code = gs_erasepage(tiff->pgs);
     if (code < 0)
         return code;
@@ -1108,6 +1102,29 @@ fail_decode:
 }
 
 static int
+decode_all_tiffs(tiff_interp_instance_t *tiff)
+{
+    int code;
+
+    tiff->nulldev = gs_currentdevice(tiff->pgs);
+    rc_increment(tiff->nulldev);
+    code = gs_setdevice_no_erase(tiff->pgs, tiff->dev);
+    if (code < 0)
+        return code;
+
+    do
+    {
+        code = do_tiff_decode(tiff);
+        if (code < 0)
+            return code;
+    }
+    while (TIFFReadDirectory(tiff->handle));
+
+    return 0;
+}
+
+
+static int
 do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int eof)
 {
     tiff_interp_instance_t *tiff = (tiff_interp_instance_t *)impl->interp_client_data;
@@ -1209,7 +1226,7 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
                                    &tiff_jpeg_mem_callback);
 #endif
 
-            code = do_tiff_decode(tiff);
+            code = decode_all_tiffs(tiff);
             if (code < 0)
             {
                 tiff->state = ii_state_flush;
