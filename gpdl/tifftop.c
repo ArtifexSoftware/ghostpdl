@@ -1022,8 +1022,6 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
                 } else {
                     int span = tiff->raw_byte_width;
                     byte *in_row = tiff->samples;
-                    if (planar != PLANARCONFIG_SEPARATE)
-                        span /= tiff->raw_num_comps;
                     row = tiff->proc_samples;
                     for (s = 0; s < tiff->raw_num_comps; s++) {
                          plane_data[s].data = row;
