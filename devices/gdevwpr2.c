@@ -193,6 +193,8 @@ struct gx_device_win_pr2_s {
     int selected_bpp;		/* selected bpp, memorised by win_pr2_set_bpp */
     bool tumble;		/* tumble setting (with duplex) */
     int query_user;		/* query user (-dQueryUser) */
+    int TextAlpha;
+    int GraphicsAlpha;
 
     HANDLE win32_hdevmode;	/* handle to device mode information */
     HANDLE win32_hdevnames;	/* handle to device names information */
@@ -235,6 +237,8 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
     0,				/* selected_bpp */
     false,			/* tumble */
     -1,				/* query_user */
+    0,
+    0,
     NULL,			/* win32_hdevmode */
     NULL,			/* win32_hdevnames */
     NULL,			/* lpfnAbortProc */
@@ -699,6 +703,14 @@ win_pr2_map_color_rgb(gx_device * dev, gx_color_index color,
 }
 
 static int
+param_normalize_anti_alias_bits( uint max_gray, int bits )
+{
+        int	max_bits = ilog2( max_gray + 1);
+
+        return  (bits > max_bits ? max_bits : bits);
+}
+
+static int
 win_pr2_set_bpp(gx_device * dev, int depth)
 {
     int code = 0;
@@ -801,6 +813,12 @@ win_pr2_set_bpp(gx_device * dev, int depth)
         }
     }
 
+    wdev->color_info.anti_alias.text_bits =
+            param_normalize_anti_alias_bits(max(wdev->color_info.max_gray,
+            wdev->color_info.max_color), wdev->TextAlpha);
+    wdev->color_info.anti_alias.graphics_bits =
+            param_normalize_anti_alias_bits(max(wdev->color_info.max_gray,
+            wdev->color_info.max_color), wdev->GraphicsAlpha);
     wdev->selected_bpp = depth;
 
     /* copy encode/decode procedures */
@@ -855,7 +873,7 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 {
     int ecode = 0, code;
     int old_bpp = pdev->color_info.depth;
-    int bpp = old_bpp;
+    int bpp = old_bpp, tab = 1, gab = 1;
     gx_device_win_pr2 *wdev = (gx_device_win_pr2 *)pdev;
     bool tumble   = wdev->tumble;
     bool nocancel = wdev->nocancel;
@@ -939,6 +957,50 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
         default:
             ecode = code;
             param_signal_error(plist, "QueryUser", ecode);
+        case 1:
+            break;
+    }
+
+    switch (code = param_read_int(plist, "TextAlphaBits", &tab))
+    {
+        case 0:
+            switch(tab) {
+                case 1:
+                case 2:
+                case 4:
+                    wdev->TextAlpha = tab;
+                    break;
+                default:
+                    ecode = gs_error_rangecheck;
+                    param_signal_error(plist, "TextAlphaBits", ecode);
+                    break;
+            }
+            break;
+        default:
+            ecode = code;
+            param_signal_error(plist, "TextAlphaBits", ecode);
+        case 1:
+            break;
+    }
+
+    switch (code = param_read_int(plist, "GraphicsAlphaBits", &gab))
+    {
+        case 0:
+            switch(gab) {
+                case 1:
+                case 2:
+                case 4:
+                    wdev->GraphicsAlpha = gab;
+                    break;
+                default:
+                    ecode = gs_error_rangecheck;
+                    param_signal_error(plist, "GraphicsAlphaBits", ecode);
+                    break;
+            }
+            break;
+        default:
+            ecode = code;
+            param_signal_error(plist, "GraphicsAlphaBits", ecode);
         case 1:
             break;
     }
