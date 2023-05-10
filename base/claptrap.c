@@ -88,10 +88,9 @@ inline static void process_at_pixel(ClapTrap      * gs_restrict ct,
         int min_v, max_v;
 
         lo = sy % lines_in_buf;
-        if (!first_comp)
-            max_v = v;
-        if (!last_comp)
-            min_v = v;
+        /* min_v only used if (!last_comp), max_v only used if (!first_comp),
+         * but setting them unconditionally avoids warnings. */
+        min_v = max_v = v;
         pc = &linebuf[lo * span + sx * num_comps + comp];
         ex -= sx;
         for (sy = ey-sy; sy >= 0; sy--)
