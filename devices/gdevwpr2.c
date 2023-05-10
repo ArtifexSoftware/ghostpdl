@@ -1607,8 +1607,24 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
     free(devname);
 
     if (mode == 3) {
+		devmode->dmFields |= DM_COPIES;
         devmode->dmCopies = wdev->user_copies * wdev->print_copies;
         pd.nCopies = 1;
+
+		if(wdev->user_orient){
+			devmode->dmFields |= DM_ORIENTATION;
+			devmode->dmOrientation = wdev->user_orient;
+		}
+
+        if (wdev->user_color) {
+		    devmode->dmFields |= DM_COLOR;
+		    devmode->dmColor = wdev->user_color;
+        }
+
+		if(wdev->user_paper){
+			devmode->dmFields |= DM_PAPERSIZE;
+			devmode->dmPaperSize = wdev->user_paper;
+		}
     }
 
     wdev->user_page_begin = pd.nFromPage;
