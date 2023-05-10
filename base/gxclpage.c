@@ -46,8 +46,8 @@ do_page_save(gx_device_printer * pdev, gx_saved_page * page, clist_file_ptr *sav
     page->tag = pdev->graphics_type_tag;
     page->io_procs = cdev->common.page_info.io_procs;
     /* Save the page information. */
-    strncpy(page->cfname, pcldev->page_info.cfname, sizeof(page->cfname)-1);
-    strncpy(page->bfname, pcldev->page_info.bfname, sizeof(page->bfname)-1);
+    memcpy(page->cfname, pcldev->page_info.cfname, sizeof(page->cfname));
+    memcpy(page->bfname, pcldev->page_info.bfname, sizeof(page->bfname));
     page->bfile_end_pos = pcldev->page_info.bfile_end_pos;
     if (save_files != NULL) {
       save_files[0] =  pcldev->page_info.cfile;
@@ -460,8 +460,8 @@ do_page_load(gx_device_printer *pdev, gx_saved_page *page, clist_file_ptr *save_
     crdev->ymin = crdev->ymax = 0;      /* invalidate buffer contents to force rasterizing */
 
     /* We probably don't need to copy in the filenames, but do it in case something expects it */
-    strncpy(crdev->page_info.cfname, page->cfname, sizeof(crdev->page_info.cfname)-1);
-    strncpy(crdev->page_info.bfname, page->bfname, sizeof(crdev->page_info.bfname)-1);
+    memcpy(crdev->page_info.cfname, page->cfname, sizeof(crdev->page_info.cfname));
+    memcpy(crdev->page_info.bfname, page->bfname, sizeof(crdev->page_info.bfname));
     if (save_files != NULL)
     {
         crdev->page_info.cfile = save_files[0];

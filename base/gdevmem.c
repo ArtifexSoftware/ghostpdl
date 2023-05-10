@@ -425,7 +425,7 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
 {
     int height;
     ulong max_height;
-    ulong data_size;
+    ulong data_size = 0;
     bool deep = device_is_deep((const gx_device *)dev);
 
     if (page_uses_transparency) {

@@ -619,7 +619,7 @@ xps_reorder_pages(xps_context_t *ctx)
     char *page_list = ctx->page_range->page_list;
     xps_page_t **page_ptr_array, *page = ctx->first_page;
     int count = 0, k;
-    int code;
+    int code = 0;
     int start;
     int end;
     xps_page_t* first_page = NULL;
