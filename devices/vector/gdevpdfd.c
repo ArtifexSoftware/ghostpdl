@@ -1418,7 +1418,6 @@ lcvd_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
     const gs_fixed_edge * right, fixed ybot, fixed ytop, bool swap_axes,
     const gx_device_color * pdevc, gs_logical_operation_t lop)
 {
-    int code = 0;
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
 
     if (cvd->mask != NULL)

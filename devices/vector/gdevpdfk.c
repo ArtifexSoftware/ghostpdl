@@ -243,12 +243,12 @@ const pdf_color_space_names_t base_names = {
     PDF_COLOR_SPACE_NAMES
 };
 
-int put_calgray_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
+static int put_calgray_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
 {
-    int code, i;
+    int code;
     cos_value_t v;
     cos_dict_t *pcd;
-    cos_array_t *WP = NULL, *BP = NULL, *Gamma = NULL, *Matrix;
+    cos_array_t *WP = NULL, *BP = NULL;
 
     pcd = cos_dict_alloc(pdev, "write_calgray_color_space");
     if (pcd == NULL)
@@ -295,9 +295,9 @@ error:
     return code;
 }
 
-int put_calrgb_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
+static int put_calrgb_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
 {
-    int code, i;
+    int code;
     cos_value_t v;
     cos_dict_t *pcd = NULL;
     cos_array_t *WP = NULL, *BP = NULL, *Gamma = NULL, *Matrix;
@@ -376,7 +376,7 @@ error:
     return code;
 }
 
-int put_lab_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
+static int put_lab_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, const gs_color_space *pcs, cos_array_t *pca)
 {
     int code, i;
     cos_value_t v;

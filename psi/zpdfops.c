@@ -1553,7 +1553,6 @@ static int zPDFSetParams(i_ctx_t *i_ctx_p)
 static int zPDFInit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    ref *pdictref = NULL, *pvalueref;
     pdfctx_t *pdfctx = NULL;
     pdf_context *ctx = NULL;
     int code = 0;

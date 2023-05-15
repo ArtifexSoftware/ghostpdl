@@ -583,7 +583,7 @@ void pSHA256_Update(SHA256_CTX* context, const sha2_byte *data, size_t len) {
         usedspace = freespace = 0;
 }
 
-void pSHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
+void pSHA256_Final(sha2_byte digest[SHA256_DIGEST_LENGTH], SHA256_CTX* context) {
         sha2_word32	*d = (sha2_word32*)digest;
         unsigned int	usedspace;
 
@@ -646,7 +646,7 @@ void pSHA256_Final(sha2_byte digest[], SHA256_CTX* context) {
         usedspace = 0;
 }
 
-char *pSHA256_End(SHA256_CTX* context, char buffer[]) {
+char *pSHA256_End(SHA256_CTX* context, char buffer[SHA256_DIGEST_STRING_LENGTH]) {
         sha2_byte	digest[SHA256_DIGEST_LENGTH], *d = digest;
         int		i;
 
@@ -944,7 +944,7 @@ void pSHA512_Last(SHA512_CTX* context) {
         pSHA512_Transform(context, (sha2_word64*)context->buffer);
 }
 
-void pSHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
+void pSHA512_Final(sha2_byte digest[SHA512_DIGEST_LENGTH], SHA512_CTX* context) {
         sha2_word64	*d = (sha2_word64*)digest;
 
         /* Sanity check: */
@@ -973,7 +973,7 @@ void pSHA512_Final(sha2_byte digest[], SHA512_CTX* context) {
         MEMSET_BZERO(context, sizeof(*context));
 }
 
-char *pSHA512_End(SHA512_CTX* context, char buffer[]) {
+char *pSHA512_End(SHA512_CTX* context, char buffer[SHA512_DIGEST_STRING_LENGTH]) {
         sha2_byte	digest[SHA512_DIGEST_LENGTH], *d = digest;
         int		i;
 
@@ -1018,7 +1018,7 @@ void pSHA384_Update(SHA384_CTX* context, const sha2_byte* data, size_t len) {
         pSHA512_Update((SHA512_CTX*)context, data, len);
 }
 
-void pSHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
+void pSHA384_Final(sha2_byte digest[SHA384_DIGEST_LENGTH], SHA384_CTX* context) {
         sha2_word64	*d = (sha2_word64*)digest;
 
         /* Sanity check: */
@@ -1047,7 +1047,7 @@ void pSHA384_Final(sha2_byte digest[], SHA384_CTX* context) {
         MEMSET_BZERO(context, sizeof(*context));
 }
 
-char *pSHA384_End(SHA384_CTX* context, char buffer[]) {
+char *pSHA384_End(SHA384_CTX* context, char buffer[SHA384_DIGEST_STRING_LENGTH]) {
         sha2_byte	digest[SHA384_DIGEST_LENGTH], *d = digest;
         int		i;
 

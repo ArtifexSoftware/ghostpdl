@@ -238,6 +238,7 @@ restore_check_operand(os_ptr op, alloc_save_t ** pasave,
     ulong sid;
     alloc_save_t *asave;
 
+    *pasave = NULL;
     check_type(*op, t_save);
     vmsave = r_ptr(op, vm_save_t);
     if (vmsave == 0)		/* invalidated save */
