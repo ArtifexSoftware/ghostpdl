@@ -4639,7 +4639,7 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     int i, j, k;
-    byte *line, *dst_ptr;
+    byte *bline, *line, *dst_ptr, *back_ptr;
     byte src[PDF14_MAX_PLANES];
     byte dst[PDF14_MAX_PLANES] = { 0 };
     gs_blend_mode_t blend_mode = pdev->blend_mode;
@@ -4670,6 +4670,7 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     int xoff;
     gx_color_index mask = ((gx_color_index)1 << 8) - 1;
     int shift = 8;
+    bool has_backdrop = buf->backdrop != NULL;
 
     if (buf->data == NULL)
         return 0;
@@ -4713,20 +4714,27 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     if (y < buf->dirty.p.y) buf->dirty.p.y = y;
     if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
+
+    /* composite with backdrop only. */
     line = buf->data + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
+    if (knockout && has_backdrop)
+        bline = buf->backdrop + (x - buf->rect.p.x) + (y - buf->rect.p.y) * rowstride;
+    else
+        bline = line;
 
     for (j = 0; j < h; ++j, aa_row += aa_raster) {
+        back_ptr = bline;
         dst_ptr = line;
         sx = xoff;
         for (i = 0; i < w; ++i, ++sx) {
             /* Complement the components for subtractive color spaces */
             if (additive) {
                 for (k = 0; k < num_chan; ++k)		/* num_chan includes alpha */
-                    dst[k] = dst_ptr[k * planestride];
+                    dst[k] = back_ptr[k * planestride];
             } else { /* Complement the components for subtractive color spaces */
                 for (k = 0; k < num_comp; ++k)
-                    dst[k] = 255 - dst_ptr[k * planestride];
-                dst[num_comp] = dst_ptr[num_comp * planestride];	/* alpha */
+                    dst[k] = 255 - back_ptr[k * planestride];
+                dst[num_comp] = back_ptr[num_comp * planestride];	/* alpha */
             }
             /* Get the aa alpha from the buffer */
             switch(depth)
@@ -4793,11 +4801,11 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                     }
                 }
                 if (has_alpha_g) {
-                    int tmp = (255 - dst_ptr[alpha_g_off]) * (255 - src[num_comp]) + 0x80;
+                    int tmp = (255 - back_ptr[alpha_g_off]) * (255 - src[num_comp]) + 0x80;
                     dst_ptr[alpha_g_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
                 }
                 if (has_shape) {
-                    int tmp = (255 - dst_ptr[shape_off]) * (255 - shape) + 0x80;
+                    int tmp = (255 - back_ptr[shape_off]) * (255 - shape) + 0x80;
                     dst_ptr[shape_off] = 255 - ((tmp + (tmp >> 8)) >> 8);
                 }
                 if (has_tags) {
@@ -4806,13 +4814,15 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
                     if (src[num_comp] == 255 && tag_blend) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
-                        dst_ptr[tag_off] |= curr_tag;
+                        dst_ptr[tag_off] = back_ptr[tag_off] | curr_tag;
                     }
                 }
             }
             ++dst_ptr;
+            ++back_ptr;
         }
         line += rowstride;
+        bline += rowstride;
     }
     return 0;
 }
@@ -4827,8 +4837,8 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     pdf14_device *pdev = (pdf14_device *)dev;
     pdf14_buf *buf = pdev->ctx->stack;
     int i, j, k;
-    byte *line;
-    uint16_t *dst_ptr;
+    byte *bline, *line;
+    uint16_t *dst_ptr, *back_ptr;
     uint16_t src[PDF14_MAX_PLANES];
     uint16_t dst[PDF14_MAX_PLANES] = { 0 };
     gs_blend_mode_t blend_mode = pdev->blend_mode;
@@ -4857,6 +4867,7 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     int alpha2_aa, alpha_aa, sx;
     int alpha_aa_act;
     int xoff;
+    bool has_backdrop = buf->backdrop != NULL;
 
     if (buf->data == NULL)
         return 0;
@@ -4900,7 +4911,13 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     if (y < buf->dirty.p.y) buf->dirty.p.y = y;
     if (x + w > buf->dirty.q.x) buf->dirty.q.x = x + w;
     if (y + h > buf->dirty.q.y) buf->dirty.q.y = y + h;
+
+    /* composite with backdrop only. */
     line = buf->data + (x - buf->rect.p.x)*2 + (y - buf->rect.p.y) * rowstride;
+    if (knockout && has_backdrop)
+        bline = buf->backdrop + (x - buf->rect.p.x)*2 + (y - buf->rect.p.y) * rowstride;
+    else
+        bline = line;
 
     planestride >>= 1;
     rowstride   >>= 1;
@@ -4908,17 +4925,18 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     shape_off   >>= 1;
     tag_off     >>= 1;
     for (j = 0; j < h; ++j, aa_row += aa_raster) {
+        back_ptr = (uint16_t *)(void *)bline;
         dst_ptr = (uint16_t *)(void *)line;
         sx = xoff;
         for (i = 0; i < w; ++i, ++sx) {
             /* Complement the components for subtractive color spaces */
             if (additive) {
                 for (k = 0; k < num_chan; ++k)		/* num_chan includes alpha */
-                    dst[k] = dst_ptr[k * planestride];
+                    dst[k] = back_ptr[k * planestride];
             } else { /* Complement the components for subtractive color spaces */
                 for (k = 0; k < num_comp; ++k)
-                    dst[k] = 65535 - dst_ptr[k * planestride];
-                dst[num_comp] = dst_ptr[num_comp * planestride];	/* alpha */
+                    dst[k] = 65535 - back_ptr[k * planestride];
+                dst[num_comp] = back_ptr[num_comp * planestride];	/* alpha */
             }
             /* Get the aa alpha from the buffer */
             switch(depth)
@@ -4985,11 +5003,11 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
                     }
                 }
                 if (has_alpha_g) {
-                    int tmp = (65535 - dst_ptr[alpha_g_off]) * (65535 - src[num_comp]) + 0x8000;
+                    int tmp = (65535 - back_ptr[alpha_g_off]) * (65535 - src[num_comp]) + 0x8000;
                     dst_ptr[alpha_g_off] = 65535 - ((tmp + (tmp >> 16)) >> 16);
                 }
                 if (has_shape) {
-                    int tmp = (65535 - dst_ptr[shape_off]) * (65535 - shape) + 0x8000;
+                    int tmp = (65535 - back_ptr[shape_off]) * (65535 - shape) + 0x8000;
                     dst_ptr[shape_off] = 65535 - ((tmp + (tmp >> 16)) >> 16);
                 }
                 if (has_tags) {
@@ -4998,13 +5016,15 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
                     if (src[num_comp] == 65535 && tag_blend) {
                         dst_ptr[tag_off] = curr_tag;
                     } else {
-                        dst_ptr[tag_off] |= curr_tag;
+                        dst_ptr[tag_off] = back_ptr[tag_off] | curr_tag;
                     }
                 }
             }
             ++dst_ptr;
+            ++back_ptr;
         }
         line += rowstride;
+        bline += rowstride;
     }
     return 0;
 }

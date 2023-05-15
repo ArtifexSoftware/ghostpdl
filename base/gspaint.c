@@ -650,7 +650,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
     bool black_vector = false;
     bool in_smask =
         (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_in_smask_construction, NULL, 0)) > 0;
-
+    gs_logical_operation_t orig_lop = pgs->log_op;
 
     /* It is either our first time, or the stroke was a pattern and
        we are coming back from the error if restart < 1 (0 is first
@@ -777,7 +777,6 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         fixed extra_adjust;
         float xxyy = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yy);
         float xyyx = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yx);
-        gs_logical_operation_t orig_lop = pgs->log_op;
         pgs->log_op |= lop_pdf14; /* Force stroking to happen all in 1 go */
         scale = (float)(1 << (abits / 2));
         orig_width = gs_currentlinewidth(pgs);
@@ -800,7 +799,6 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         gs_setlinewidth(pgs, new_width);
         scale_dash_pattern(pgs, scale);
         gs_setflat(pgs, (double)(orig_flatness * scale));
-        pgs->log_op = orig_lop;
     } else
         acode = 0;
     code = gx_fill_stroke_path(pgs, rule);
@@ -810,6 +808,7 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         scale_dash_pattern(pgs, 1.0 / scale);
         gs_setflat(pgs, orig_flatness);
         acode = alpha_buffer_release(pgs, code >= 0);
+        pgs->log_op = orig_lop;
     }
     if (pgs->is_fill_color) {
         /* The color _should_ be the fill color, so make sure it is unlocked	*/
