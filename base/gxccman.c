@@ -482,12 +482,12 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * pdev,
     int log2_xscale = pscale->x;
     int log2_yscale = pscale->y;
     int log2_depth = ilog2(depth);
-    uint nwidth_bits = (iwidth >> log2_xscale) << log2_depth;
-    ulong isize, icdsize;
+    size_t nwidth_bits = ((size_t)iwidth >> log2_xscale) << log2_depth;
+    size_t isize, icdsize;
 #ifdef ENABLE_IMPOSSIBLE_ALPHA_CODE
     ulong isize2;
 #endif
-    uint iraster;
+    size_t iraster;
     cached_char *cc;
     float HWResolution0 = 72, HWResolution1 = 72;  /* default for dev == NULL */
     int code;
@@ -568,7 +568,7 @@ void
 gx_open_cache_device(gx_device_memory * dev, cached_char * cc)
 {
     byte *bits = cc_bits(cc);
-    ulong bsize;
+    size_t bsize;
 
     gdev_mem_bitmap_size(dev, &bsize);
 

@@ -183,13 +183,13 @@ extern_st(st_device_memory);
  */
 /* bits only */
 int gdev_mem_bits_size(const gx_device_memory *mdev, int width,
-                         int height, ulong *size);
+                         int height, size_t *size);
 /* line pointers only */
-ulong gdev_mem_line_ptrs_size(const gx_device_memory *mdev, int width,
+size_t gdev_mem_line_ptrs_size(const gx_device_memory *mdev, int width,
                               int height);
 /* bits + line pointers */
 int gdev_mem_data_size(const gx_device_memory *mdev, int width,
-                         int height, ulong *size);
+                         int height, size_t *size);
 
 #define gdev_mem_bitmap_size(mdev, size)\
   gdev_mem_data_size(mdev, (mdev)->width, (mdev)->height, size)
@@ -198,7 +198,7 @@ int gdev_mem_data_size(const gx_device_memory *mdev, int width,
  * Do the inverse computation: given the device width and a buffer size,
  * compute the maximum height.
  */
-int gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
+int gdev_mem_max_height(const gx_device_memory * dev, int width, size_t size,
                 bool page_uses_transparency);
 
 /*

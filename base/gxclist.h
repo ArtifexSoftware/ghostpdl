@@ -673,6 +673,6 @@ clist_mutate_to_clist(gx_device_clist_mutatable  *pdev,
                       bool                        bufferSpace_is_exact,
                 const gx_device_buf_procs_t      *buf_procs,
                       dev_proc_dev_spec_op(dev_spec_op),
-                      uint                        min_buffer_space);
+                      size_t                      min_buffer_space);
 
 #endif /* gxclist_INCLUDED */

@@ -1072,7 +1072,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
 {
     gx_pattern_cache *pcache;
     const gs_pattern1_instance_t *pinst;
-    ulong used = 0, mask_used = 0, trans_used = 0;
+    size_t used = 0, mask_used = 0, trans_used = 0;
     gx_bitmap_id id;
     gx_color_tile *ctile;
     int code = ensure_pattern_cache(pgs);

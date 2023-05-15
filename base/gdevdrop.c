@@ -598,7 +598,7 @@ do_strip_copy_rop(gx_device * dev,
     gx_device_memory mdev;
     union { long l; void *p; } mdev_storage[20];
     uint row_raster = bitmap_raster(width * depth);
-    ulong size_from_mem_device;
+    size_t size_from_mem_device;
     gs_logical_operation_t lop = lop_sanitize(olop);
     bool uses_d = rop3_uses_D(lop);
     bool uses_s = rop3_uses_S(lop);

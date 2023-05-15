@@ -300,7 +300,7 @@ mem32_word_copy_color(gx_device * dev,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
-    uint raster;
+    size_t raster;
 
     fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
     row = scan_line_base(mdev, y);

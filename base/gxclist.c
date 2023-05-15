@@ -217,11 +217,11 @@ clist_init_io_procs(gx_device_clist *pclist_dev, bool in_memory)
 /*
  * Calculate the desired size for the tile cache.
  */
-static uint
-clist_tile_cache_size(const gx_device * target, uint data_size)
+static size_t
+clist_tile_cache_size(const gx_device * target, size_t data_size)
 {
-    uint bits_size =
-    (data_size / 5) & -align_cached_bits_mod;   /* arbitrary */
+    size_t bits_size =
+    (data_size / 5) & ~(align_cached_bits_mod-1);   /* arbitrary */
 
     if (!gx_device_must_halftone(target)) {     /* No halftones -- cache holds only Patterns & characters. */
         bits_size -= bits_size >> 2;
@@ -238,12 +238,12 @@ clist_tile_cache_size(const gx_device * target, uint data_size)
  * tile_max_count, tile_table, chunk (structure), bits (structure).
  */
 static int
-clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
+clist_init_tile_cache(gx_device * dev, byte * init_data, size_t data_size)
 {
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
     byte *data = init_data;
-    uint bits_size = data_size;
+    size_t bits_size = data_size;
     /*
      * Partition the bits area between the hash table and the actual
      * bitmaps.  The per-bitmap overhead is about 24 bytes; if the
@@ -253,11 +253,11 @@ clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
      * are tall), which gives us a guideline for the size of the hash
      * table.
      */
-    uint avg_char_size =
-        (uint)(dev->HWResolution[0] * dev->HWResolution[1] *
+    size_t avg_char_size =
+        (size_t)(dev->HWResolution[0] * dev->HWResolution[1] *
                (0.5 * 10 / 72 * 10 / 72 / 8)) + 24;
-    uint hc = bits_size / avg_char_size;
-    uint hsize;
+    size_t hc = bits_size / avg_char_size;
+    size_t hsize;
 
     while ((hc + 1) & hc)
         hc |= hc >> 1;          /* make mask (power of 2 - 1) */
@@ -285,13 +285,13 @@ clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
  * page_band_height (=page_info.band_params.BandHeight), nbands.
  */
 static int
-clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
+clist_init_bands(gx_device * dev, gx_device_memory *bdev, size_t data_size,
                  int band_width, int band_height)
 {
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
     int nbands;
-    ulong space;
+    size_t space;
 
     if (dev_proc(dev, open_device) == pattern_clist_open_device) {
         /* We don't need bands really. */
@@ -335,11 +335,11 @@ clist_minimum_buffer(int nbands) {
  * when writing.  Requires: nbands.  Sets: states, cbuf, cend, band_range_list.
  */
 static int
-clist_init_states(gx_device * dev, byte * init_data, uint data_size)
+clist_init_states(gx_device * dev, byte * init_data, size_t data_size)
 {
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
-    ulong state_size = cdev->nbands * (ulong) sizeof(gx_clist_state);
+    size_t state_size = cdev->nbands * sizeof(gx_clist_state);
     /* Align to the natural boundary for ARM processors, bug 689600 */
     intptr_t alignment = (-(intptr_t)init_data) & (sizeof(init_data) - 1);
 
@@ -360,7 +360,7 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
  * page_info.band_params.BandBufferSpace, + see above.
  */
 static int
-clist_init_data(gx_device * dev, byte * init_data, uint data_size)
+clist_init_data(gx_device * dev, byte * init_data, size_t data_size)
 {
     gx_device_clist_writer * const cdev =
         &((gx_device_clist *)dev)->writer;
@@ -370,13 +370,13 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
         cdev->page_info.band_params.BandWidth = max(target->width, cdev->band_params.BandWidth);
     int band_height = cdev->band_params.BandHeight;
     bool page_uses_transparency = cdev->page_uses_transparency;
-    const uint band_space =
+    const size_t band_space =
     cdev->page_info.band_params.BandBufferSpace =
         (cdev->band_params.BandBufferSpace ?
          cdev->band_params.BandBufferSpace : data_size);
     byte *data = init_data;
-    uint size = band_space;
-    uint bits_size;
+    size_t size = band_space;
+    size_t bits_size;
     gx_device_memory bdev;
     gx_device *pbdev = (gx_device *)&bdev;
     int code;
@@ -412,7 +412,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
              * The band height is fixed, so the band buffer requirement
              * is completely determined.
              */
-            ulong band_data_size;
+            size_t band_data_size;
             int adjusted;
 
             adjusted = (dev_proc(dev, dev_spec_op)(dev, gxdso_adjust_bandheight, NULL, band_height));
@@ -1444,10 +1444,10 @@ clist_mutate_to_clist(gx_device_clist_mutatable  *pdev,
                       bool                        bufferSpace_is_exact,
                 const gx_device_buf_procs_t      *buf_procs,
                       dev_proc_dev_spec_op(dev_spec_op),
-                      uint                        min_buffer_space)
+                      size_t                      min_buffer_space)
 {
     gx_device *target = (gx_device *)pdev;
-    uint space;
+    size_t space;
     int code;
     gx_device_clist *const pclist_dev = (gx_device_clist *)pdev;
     gx_device_clist_common * const pcldev = &pclist_dev->common;

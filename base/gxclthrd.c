@@ -214,7 +214,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
 
     if (ncdev->page_info.tile_cache_size != cdev->page_info.tile_cache_size) {
         emprintf2(thread_mem,
-                   "clist_setup_render_threads: tile_cache_size mismatch. New size=%d, should be %d\n",
+                   "clist_setup_render_threads: tile_cache_size mismatch. New size=%"PRIdSIZE", should be %"PRIdSIZE"\n",
                    ncdev->page_info.tile_cache_size, cdev->page_info.tile_cache_size);
         goto out_cleanup;
     }

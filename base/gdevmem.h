@@ -141,7 +141,7 @@ void mem_word_dev_initialize_device_procs(gx_device *dev);
 
 /* Swap a rectangle of bytes, for converting between word- and */
 /* byte-oriented representation. */
-void mem_swap_byte_rect(byte *, uint, int, int, int, bool);
+void mem_swap_byte_rect(byte *, size_t, int, int, int, bool);
 
 /* Copy a rectangle of bytes from a source to a destination. */
 #define mem_copy_byte_rect(mdev, base, sourcex, sraster, x, y, w, h)\

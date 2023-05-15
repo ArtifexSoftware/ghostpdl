@@ -1126,7 +1126,7 @@ mem1_word_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *base;
-    uint raster;
+    size_t raster;
 
     fit_fill(dev, x, y, w, h);
     base = scan_line_base(mdev, y);
@@ -1145,7 +1145,7 @@ mem1_word_copy_mono(gx_device * dev,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *row;
-    uint raster;
+    size_t raster;
     bool store;
 
     fit_copy(dev, source_data, source_x, source_raster, id, x, y, w, h);

@@ -368,15 +368,15 @@ gdev_mem_mono_set_inverted(gx_device_memory * dev, bool black_is_1)
  * must pad its scan lines, and then we must pad again for the pointer
  * tables (one table per plane).
  *
- * Return VMerror if the size exceeds max ulong
+ * Return VMerror if the size exceeds max size_t
  */
 int
-gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *psize)
+gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, size_t *psize)
 {
     int num_planes;
     gx_render_plane_t plane1;
     const gx_render_plane_t *planes;
-    ulong size;
+    size_t size;
     int pi;
 
     if (dev->is_planar) {
@@ -387,7 +387,7 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *p
     for (size = 0, pi = 0; pi < num_planes; ++pi)
         size += bitmap_raster_pad_align(width * planes[pi].depth, dev->pad, dev->log2_align_mod);
     if (height != 0)
-        if (size > (max_ulong - ARCH_ALIGN_PTR_MOD) / (ulong)height)
+        if (size > (SIZE_MAX - ARCH_ALIGN_PTR_MOD) / (ulong)height)
             return_error(gs_error_VMerror);
     size = ROUND_UP(size * height, ARCH_ALIGN_PTR_MOD);
     if (dev->log2_align_mod > log2_align_bitmap_mod)
@@ -395,22 +395,22 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, ulong *p
     *psize = size;
     return 0;
 }
-ulong
+size_t
 gdev_mem_line_ptrs_size(const gx_device_memory * dev, int width, int height)
 {
     int num_planes = 1;
     if (dev->is_planar)
         num_planes = dev->color_info.num_components;
-    return (ulong)height * sizeof(byte *) * num_planes;
+    return (size_t)height * sizeof(byte *) * num_planes;
 }
 int
-gdev_mem_data_size(const gx_device_memory * dev, int width, int height, ulong *psize)
+gdev_mem_data_size(const gx_device_memory * dev, int width, int height, size_t *psize)
 {
-    ulong bits_size;
-    ulong line_ptrs_size = gdev_mem_line_ptrs_size(dev, width, height);
+    size_t bits_size;
+    size_t line_ptrs_size = gdev_mem_line_ptrs_size(dev, width, height);
 
     if (gdev_mem_bits_size(dev, width, height, &bits_size) < 0 ||
-        bits_size > max_ulong - line_ptrs_size)
+        bits_size > SIZE_MAX - line_ptrs_size)
         return_error(gs_error_VMerror);
     *psize = bits_size + line_ptrs_size;
     return 0;
@@ -420,12 +420,12 @@ gdev_mem_data_size(const gx_device_memory * dev, int width, int height, ulong *p
  * compute the maximum height.
  */
 int
-gdev_mem_max_height(const gx_device_memory * dev, int width, ulong size,
+gdev_mem_max_height(const gx_device_memory * dev, int width, size_t size,
                     bool page_uses_transparency)
 {
     int height;
-    ulong max_height;
-    ulong data_size = 0;
+    size_t max_height;
+    size_t data_size = 0;
     bool deep = device_is_deep((const gx_device *)dev);
 
     if (page_uses_transparency) {
@@ -483,7 +483,7 @@ gdev_mem_open_scan_lines_interleaved(gx_device_memory *mdev,
                                      int interleaved)
 {
     bool line_pointers_adjacent = true;
-    ulong size;
+    size_t size;
 
     if (setup_height < 0 || setup_height > mdev->height)
         return_error(gs_error_rangecheck);
@@ -493,9 +493,7 @@ gdev_mem_open_scan_lines_interleaved(gx_device_memory *mdev,
         if (gdev_mem_bitmap_size(mdev, &size) < 0)
             return_error(gs_error_VMerror);
 
-        if ((uint) size != size)	/* ulong may be bigger than uint */
-            return_error(gs_error_limitcheck);
-        mdev->base = gs_alloc_bytes(mdev->bitmap_memory, (uint)size,
+        mdev->base = gs_alloc_bytes(mdev->bitmap_memory, size,
                                     "mem_open");
         if (mdev->base == NULL)
             return_error(gs_error_VMerror);
@@ -732,7 +730,7 @@ mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
  * actual device depth.
  */
 void
-mem_swap_byte_rect(byte * base, uint raster, int x, int w, int h, bool store)
+mem_swap_byte_rect(byte * base, size_t raster, int x, int w, int h, bool store)
 {
     int xbit = x & 31;
 
@@ -776,7 +774,7 @@ mem_word_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte *src;
-    uint dev_raster = gx_device_raster(dev, 1);
+    size_t dev_raster = gx_device_raster(dev, 1);
     int x = prect->p.x;
     int w = prect->q.x - x;
     int y = prect->p.y;

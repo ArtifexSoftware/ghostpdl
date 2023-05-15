@@ -90,7 +90,7 @@ gx_mask_clip_initialize(gx_device_mask_clip * cdev,
         buffer_height = bits->size.y;
     gs_make_mem_mono_device(&cdev->mdev, 0, 0);
     for (;;) {
-        ulong bitmap_size = max_ulong;
+        size_t bitmap_size = max_ulong;
 
         /* Bug 702124: Allow for the case when size.y == 0 - then
          * buffer_height will be zero, and it's not a VMerror. */
