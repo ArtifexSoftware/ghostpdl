@@ -191,6 +191,7 @@ nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BIN
       $(WININT_MAK)
 	$(CP_) "$(VCINSTALLDIR)Redist\MSVC\$(MS_TOOLSET_VERSION)\$(VCREDIST)" .
 	$(MAKENSIS_XE) -NOCD -DVCREDIST=$(VCREDIST) -DTARGET=$(NSISTARGET) -DVERSION=$(GS_DOT_VERSION) -DCOMPILE_INITS=$(COMPILE_INITS) $(PSSRC)nsisinst.nsi
+	-del $(VCREDIST)
 !if defined(KEYFILE) && defined(KEYPWORD) && defined(TIMESTAMP)
         signtool sign -f $(KEYFILE) /p $(KEYPWORD) /t $(TIMESTAMP) $(NSISTARGET)$(XE)
 !endif
