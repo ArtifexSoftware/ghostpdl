@@ -102,12 +102,17 @@ int TIFFJPEGIsFullStripRequired_12(TIFF *tif);
    the JPEG library distribution for details.
 */
 
+/* If we are building for GS, do NOT mess with boolean - we want it to be int on all platforms.
+ */
+#define GS_TIFF_BUILD
+#ifndef GS_TIFF_BUILD
 /* Define "boolean" as unsigned char, not int, per Windows custom. */
 #if defined(__WIN32__) && !defined(__MINGW32__)
 #ifndef __RPCNDR_H__ /* don't conflict if rpcndr.h already read */
 typedef unsigned char boolean;
 #endif
 #define HAVE_BOOLEAN /* prevent jmorecfg.h from redefining it */
+#endif
 #endif
 
 #include "jerror.h"
@@ -329,28 +334,36 @@ static void TIFFjpeg_progress_monitor(j_common_ptr cinfo)
 #define CALLJPEG(sp, fail, op) (SETJMP((sp)->exit_jmpbuf) ? (fail) : (op))
 #define CALLVJPEG(sp, op) CALLJPEG(sp, 0, ((op), 1))
 
-static int TIFFjpeg_create_compress(JPEGState *sp)
+static int TIFFjpeg_create_compress(JPEGState *sp, TIFF *tif)
 {
     /* initialize JPEG error handling */
     sp->cinfo.c.err = jpeg_std_error(&sp->err);
     sp->err.error_exit = TIFFjpeg_error_exit;
     sp->err.output_message = TIFFjpeg_output_message;
 
-    /* set client_data to avoid UMR warning from tools like Purify */
-    sp->cinfo.c.client_data = NULL;
+        /* GS extension */
+	if (tif->get_jpeg_mem_ptr)
+		sp->cinfo.d.client_data = tif->get_jpeg_mem_ptr(tif->tif_clientdata);
+	else
+		/* set client_data to avoid UMR warning from tools like Purify */
+		sp->cinfo.d.client_data = NULL;
 
     return CALLVJPEG(sp, jpeg_create_compress(&sp->cinfo.c));
 }
 
-static int TIFFjpeg_create_decompress(JPEGState *sp)
+static int TIFFjpeg_create_decompress(JPEGState *sp, TIFF *tif)
 {
     /* initialize JPEG error handling */
     sp->cinfo.d.err = jpeg_std_error(&sp->err);
     sp->err.error_exit = TIFFjpeg_error_exit;
     sp->err.output_message = TIFFjpeg_output_message;
 
-    /* set client_data to avoid UMR warning from tools like Purify */
-    sp->cinfo.d.client_data = NULL;
+        /* GS extension */
+	if (tif->get_jpeg_mem_ptr)
+		sp->cinfo.d.client_data = tif->get_jpeg_mem_ptr(tif->tif_clientdata);
+	else
+		/* set client_data to avoid UMR warning from tools like Purify */
+		sp->cinfo.d.client_data = NULL;
 
     return CALLVJPEG(sp, jpeg_create_decompress(&sp->cinfo.d));
 }
@@ -1166,7 +1179,7 @@ int TIFFJPEGIsFullStripRequired(TIFF *tif)
     memset(&state, 0, sizeof(JPEGState));
     state.tif = tif;
 
-    TIFFjpeg_create_decompress(&state);
+    TIFFjpeg_create_decompress(&state, tif);
 
     TIFFjpeg_data_src(&state);
 
@@ -2740,12 +2753,12 @@ static int JPEGInitializeLibJPEG(TIFF *tif, int decompress)
      */
     if (decompress)
     {
-        if (!TIFFjpeg_create_decompress(sp))
+        if (!TIFFjpeg_create_decompress(sp, tif))
             return (0);
     }
     else
     {
-        if (!TIFFjpeg_create_compress(sp))
+        if (!TIFFjpeg_create_compress(sp, tif))
             return (0);
 #ifndef TIFF_JPEG_MAX_MEMORY_TO_USE
 #define TIFF_JPEG_MAX_MEMORY_TO_USE (10 * 1024 * 1024)

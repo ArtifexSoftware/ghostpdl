@@ -223,6 +223,10 @@ static const TIFFField ojpegFields[] = {
 #define XMD_H 1
 #endif
 
+/* If we are building for GS, do NOT mess with boolean - we want it to be int on all platforms.
+ */
+#define GS_TIFF_BUILD
+#ifndef GS_TIFF_BUILD
 /* Define "boolean" as unsigned char, not int, per Windows custom. */
 #if defined(__WIN32__) && !defined(__MINGW32__)
 #ifndef __RPCNDR_H__ /* don't conflict if rpcndr.h already read */
@@ -230,9 +234,13 @@ typedef unsigned char boolean;
 #endif
 #define HAVE_BOOLEAN /* prevent jmorecfg.h from redefining it */
 #endif
+#endif
 
 #include "jerror.h"
 #include "jpeglib.h"
+#ifdef GS_TIFF_BUILD
+#include "jmemcust.h"
+#endif
 
 typedef struct jpeg_error_mgr jpeg_error_mgr;
 typedef struct jpeg_common_struct jpeg_common_struct;
@@ -368,6 +376,10 @@ typedef struct
     OJPEGStateOutState out_state;
     uint8_t out_buffer[OJPEG_BUFFER];
     uint8_t *skip_buffer;
+#ifdef GS_TIFF_BUILD
+	jpeg_cust_mem_data jmem;
+	jpeg_cust_mem_data *jmem_parent;
+#endif
 } OJPEGState;
 
 static int OJPEGVGetField(TIFF *tif, uint32_t tag, va_list ap);
@@ -1312,6 +1324,92 @@ static int OJPEGReadSecondarySos(TIFF *tif, uint16_t s)
     return (1);
 }
 
+
+#ifdef GS_TIFF_BUILD
+#define TIFF_FROM_CINFO(cinfo) \
+	((TIFF *)GET_CUST_MEM_DATA(cinfo)->priv)
+
+static void *j_mem_get_small(j_common_ptr cinfo, size_t size)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+	void *ret;
+
+	cinfo->client_data = sp->jmem_parent;
+	ret = sp->jmem_parent->j_mem_get_small(cinfo, size);
+	cinfo->client_data = jc;
+
+	return ret;
+}
+
+static void *j_mem_get_large(j_common_ptr cinfo, size_t size)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+	void *ret;
+
+	cinfo->client_data = sp->jmem_parent;
+	ret = sp->jmem_parent->j_mem_get_large(cinfo, size);
+	cinfo->client_data = jc;
+
+	return ret;
+}
+
+static void j_mem_free_small(j_common_ptr cinfo, void *object, size_t size)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+
+	cinfo->client_data = sp->jmem_parent;
+	sp->jmem_parent->j_mem_free_small(cinfo, object, size);
+	cinfo->client_data = jc;
+}
+
+static void j_mem_free_large(j_common_ptr cinfo, void *object, size_t size)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+
+	cinfo->client_data = sp->jmem_parent;
+	sp->jmem_parent->j_mem_free_large(cinfo, object, size);
+	cinfo->client_data = jc;
+}
+
+static long j_mem_init (j_common_ptr cinfo)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+	long ret;
+
+	cinfo->client_data = sp->jmem_parent;
+	ret = sp->jmem_parent->j_mem_init(cinfo);
+	cinfo->client_data = jc;
+
+	return ret;
+}
+
+static void j_mem_term (j_common_ptr cinfo)
+{
+	jpeg_cust_mem_data *jc = GET_CUST_MEM_DATA(cinfo);
+	TIFF *tif = (TIFF *)jc->priv;
+	OJPEGState* sp=(OJPEGState*)tif->tif_data;
+
+	cinfo->client_data = sp->jmem_parent;
+	sp->jmem_parent->j_mem_term(cinfo);
+	cinfo->client_data = jc;
+}
+#else
+
+#define TIFF_FROM_CINFO(cinfo) \
+	((TIFF *)GET_CUST_MEM_DATA(cinfo))
+
+#endif
+
 static int OJPEGWriteHeaderInfo(TIFF *tif)
 {
     static const char module[] = "OJPEGWriteHeaderInfo";
@@ -1329,6 +1427,19 @@ static int OJPEGWriteHeaderInfo(TIFF *tif)
     sp->libjpeg_jpeg_error_mgr.error_exit = OJPEGLibjpegJpegErrorMgrErrorExit;
     sp->libjpeg_jpeg_decompress_struct.err = &(sp->libjpeg_jpeg_error_mgr);
     sp->libjpeg_jpeg_decompress_struct.client_data = (void *)tif;
+
+	/* set client_data to avoid UMR warning from tools like Purify */
+#ifdef GS_TIFF_BUILD
+	sp->jmem_parent = tif->get_jpeg_mem_ptr(tif->tif_clientdata);
+	(void)jpeg_cust_mem_init(&sp->jmem, (void *)tif,
+				 j_mem_init, j_mem_term, NULL,
+				 j_mem_get_small, j_mem_free_small,
+				 j_mem_get_large, j_mem_free_large, NULL);
+	sp->libjpeg_jpeg_decompress_struct.client_data=&sp->jmem;
+#else
+	sp->libjpeg_jpeg_decompress_struct.client_data=(void*)tif;
+#endif
+
     if (jpeg_create_decompress_encap(
             sp, &(sp->libjpeg_jpeg_decompress_struct)) == 0)
         return (0);

@@ -260,6 +260,7 @@ struct tiff
     TIFFErrorHandlerExtR tif_warnhandler;
     void *tif_warnhandler_user_data;
     tmsize_t tif_max_single_mem_alloc; /* in bytes. 0 for unlimited */
+	void                *(*get_jpeg_mem_ptr)(thandle_t);
 };
 
 struct TIFFOpenOptions

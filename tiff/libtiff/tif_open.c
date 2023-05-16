@@ -803,3 +803,10 @@ TIFFUnmapFileProc TIFFGetUnmapFileProc(TIFF *tif)
 {
     return (tif->tif_unmapproc);
 }
+
+void
+TIFFSetJpegMemFunction(TIFF *tif,
+                       void *(*fn)(thandle_t))
+{
+    tif->get_jpeg_mem_ptr = fn;
+}
