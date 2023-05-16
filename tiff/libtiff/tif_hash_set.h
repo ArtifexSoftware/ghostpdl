@@ -31,7 +31,12 @@
 #ifndef TIFF_HASH_SET_H_INCLUDED
 #define TIFF_HASH_SET_H_INCLUDED
 
+#define GS_TIFF_BUILD
+#ifdef GS_TIFF_BUILD
+#include "stdpre.h"
+#else
 #include <stdbool.h>
+#endif
 
 /**
  * \file tif_hash_set.h
