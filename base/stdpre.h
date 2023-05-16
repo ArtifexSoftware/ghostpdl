@@ -316,6 +316,7 @@ typedef signed char schar;
  * header file that includes sys/types.h.
  *
  */
+#undef bool
 #define bool bool_		/* (maybe not needed) */
 #define uchar uchar_
 #define uint uint_
