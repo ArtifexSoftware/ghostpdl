@@ -1365,7 +1365,7 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
             cwdev->height = target->height;
         }
         cwdev->LeadingEdge = target->LeadingEdge;
-        cwdev->is_planar = target->is_planar;
+        cwdev->num_planar_planes = target->num_planar_planes;
         cwdev->HWResolution[0] = target->HWResolution[0];
         cwdev->HWResolution[1] = target->HWResolution[1];
         cwdev->icc_cache_cl = NULL;

@@ -1241,6 +1241,9 @@ gdevpsd_h=$(DEVSRC)gdevpsd.h
 $(DD)psdrgb.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)psdrgb $(psd_)
 
+$(DD)psdrgbtags.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETDEV) $(DD)psdrgbtags $(psd_)
+
 $(DD)psdcmyk.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV) $(DD)psdcmyk $(psd_)
 

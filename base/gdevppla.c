@@ -37,11 +37,11 @@ gdev_prn_set_procs_planar(gx_device *dev)
 
 /* Open a printer device, conditionally setting it to be planar. */
 int
-gdev_prn_open_planar(gx_device *dev, bool upb)
+gdev_prn_open_planar(gx_device *dev, int num_planar_planes)
 {
-    if (upb) {
+    if (num_planar_planes) {
         gdev_prn_set_procs_planar(dev);
-        dev->is_planar = 1;
+        dev->num_planar_planes = num_planar_planes;
     }
     return gdev_prn_open(dev);
 }
@@ -78,7 +78,7 @@ gdev_prn_put_params_planar(gx_device * pdev, gs_param_list * plist,
 static int
 gdev_prn_set_planar(gx_device_memory *mdev, const gx_device *tdev)
 {
-    int num_comp = tdev->color_info.num_components;
+    int num_comp = tdev->num_planar_planes;
     gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int depth = tdev->color_info.depth / num_comp;
     int k;
@@ -131,7 +131,7 @@ gdev_prn_size_buf_planar(gx_device_buf_space_t *space, gx_device *target,
     mdev.color_info = target->color_info;
     mdev.pad = target->pad;
     mdev.log2_align_mod = target->log2_align_mod;
-    mdev.is_planar = target->is_planar;
+    mdev.num_planar_planes = target->num_planar_planes;
     mdev.graphics_type_tag = target->graphics_type_tag;
     code = gdev_prn_set_planar(&mdev, target);
     if (code < 0)

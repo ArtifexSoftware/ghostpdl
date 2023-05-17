@@ -1565,8 +1565,8 @@ display_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     gx_device_display *ddev = (gx_device_display *)target;
 
     depth = target->color_info.depth;
-    if (target->is_planar)
-        depth /= target->color_info.num_components;
+    if (target->num_planar_planes)
+        depth /= target->num_planar_planes;
 
     mdproto = gdev_mem_device_for_bits(depth);
     if (mdproto == NULL)
@@ -1600,7 +1600,7 @@ display_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     mdev->band_y = y;
     mdev->log2_align_mod = target->log2_align_mod;
     mdev->pad = target->pad;
-    mdev->is_planar = target->is_planar;
+    mdev->num_planar_planes = target->num_planar_planes;
     /*
      * The matrix in the memory device is irrelevant,
      * because all we do with the device is call the device-level
@@ -1648,7 +1648,7 @@ display_size_buf_device(gx_device_buf_space_t *space, gx_device *target,
     }
     mdev.pad = target->pad;
     mdev.log2_align_mod = target->log2_align_mod;
-    mdev.is_planar = target->is_planar;
+    mdev.num_planar_planes = target->num_planar_planes;
     code = set_planar(&mdev, target, interleaved);
     if (code < 0)
         return code;
@@ -2122,10 +2122,10 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     switch (nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED))
     {
         case DISPLAY_CHUNKY:
-            ddev->is_planar = 0;
+            ddev->num_planar_planes = 0;
             break;
         default:
-            ddev->is_planar = 1;
+            ddev->num_planar_planes = ddev->color_info.num_components;
             break;
     }
 
@@ -2219,7 +2219,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
         case DISPLAY_COLORS_SEPARATION:
             if ((nFormat & DISPLAY_ENDIAN_MASK) != DISPLAY_BIGENDIAN)
                 return_error(gs_error_rangecheck);
-            if (ddev->is_planar)
+            if (ddev->num_planar_planes)
             {
                 int n;
                 if (ddev->devn_params.separations.num_separations == 0)

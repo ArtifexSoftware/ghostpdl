@@ -577,8 +577,8 @@ plib_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
          */
         line_ptrs = (byte **)
             gs_alloc_byte_array(mdev->memory,
-                                (mdev->is_planar ?
-                                 full_height * mdev->color_info.num_components :
+                                (mdev->num_planar_planes ?
+                                 full_height * mdev->num_planar_planes :
                                  setup_height),
                                 sizeof(byte *), "setup_buf_device");
         if (line_ptrs == 0)
@@ -586,11 +586,11 @@ plib_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
         mdev->line_pointer_memory = mdev->memory;
         mdev->foreign_line_pointers = false;
         mdev->line_ptrs = line_ptrs;
-        mdev->raster = bandBufferStride * (mdev->is_planar ? mdev->color_info.num_components : 1);
+        mdev->raster = bandBufferStride * (mdev->num_planar_planes ? mdev->num_planar_planes : 1);
     }
     mdev->height = full_height;
     code = set_line_ptrs(mdev,
-                         bandBufferBase + bandBufferStride*(mdev->is_planar ? mdev->color_info.num_components : 1)*y,
+                         bandBufferBase + bandBufferStride*(mdev->num_planar_planes ? mdev->num_planar_planes : 1)*y,
                          bandBufferStride,
                          line_ptrs,
                          setup_height);
@@ -666,7 +666,7 @@ plib_open(gx_device * pdev)
     bdev->printer_procs.buf_procs.create_buf_device = plib_create_buf_device;
     bdev->printer_procs.buf_procs.setup_buf_device = plib_setup_buf_device;
     bdev->printer_procs.buf_procs.size_buf_device = plib_size_buf_device;
-    pdev->is_planar = 1;
+    pdev->num_planar_planes = 1;
 
     bdev->space_params.banding_type = BandingAlways;
 

@@ -215,7 +215,7 @@ struct gx_color_tile_s {
     byte is_dummy;		/* if true, the device manages the pattern,
                                    and the content of the tile is empty. */
     byte trans_group_popped;    /* Used to avoid multiple group pops in image mask fills */
-    byte is_planar;             /* Has to be stored here due to the device
+    byte num_planar_planes;     /* Has to be stored here due to the device
                                    change that can occur when the tile is
                                    created and when it is written in the clist
                                    when we are writing to a transparency

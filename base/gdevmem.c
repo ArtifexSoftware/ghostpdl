@@ -50,8 +50,8 @@ RELOC_PTRS_WITH(device_memory_reloc_ptrs, gx_device_memory *mptr)
         int y;
         int h = mptr->height;
 
-        if (mptr->is_planar)
-            h *= mptr->color_info.num_components;
+        if (mptr->num_planar_planes > 1)
+            h *= mptr->num_planar_planes;
 
         RELOC_PTR(gx_device_memory, base);
         reloc = base_old - mptr->base;
@@ -379,8 +379,8 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, size_t *
     size_t size;
     int pi;
 
-    if (dev->is_planar) {
-        num_planes = dev->color_info.num_components;
+    if (dev->num_planar_planes > 1) {
+        num_planes = dev->num_planar_planes;
         planes = dev->planes;
     } else
         planes = &plane1, plane1.depth = dev->color_info.depth, num_planes = 1;
@@ -399,8 +399,8 @@ size_t
 gdev_mem_line_ptrs_size(const gx_device_memory * dev, int width, int height)
 {
     int num_planes = 1;
-    if (dev->is_planar)
-        num_planes = dev->color_info.num_components;
+    if (dev->num_planar_planes > 1)
+        num_planes = dev->num_planar_planes;
     return (size_t)height * sizeof(byte *) * num_planes;
 }
 int
@@ -436,15 +436,17 @@ gdev_mem_max_height(const gx_device_memory * dev, int width, size_t size,
          * is only an estimate, we may exceed our desired buffer space while
          * processing the file.
          */
+            /* FIXME: For a planar device, is dev->color_info.num_components 1 ? Otherwise, aren't we
+             * calculating this too large? */
         max_height = size / (bitmap_raster_pad_align(width
             * dev->color_info.depth + ESTIMATED_PDF14_ROW_SPACE(width, dev->color_info.num_components, deep ? 16 : 8),
-                dev->pad, dev->log2_align_mod) + sizeof(byte *) * (dev->is_planar ? dev->color_info.num_components : 1));
+                dev->pad, dev->log2_align_mod) + sizeof(byte *) * (dev->num_planar_planes ? dev->num_planar_planes : 1));
         height = (int)min(max_height, max_int);
     } else {
         /* For non PDF 1.4 transparency, we can do an exact calculation */
         max_height = size /
             (bitmap_raster_pad_align(width * dev->color_info.depth, dev->pad, dev->log2_align_mod) +
-             sizeof(byte *) * (dev->is_planar ? dev->color_info.num_components : 1));
+             sizeof(byte *) * (dev->num_planar_planes ? dev->num_planar_planes : 1));
         height = (int)min(max_height, max_int);
         /*
          * Because of alignment rounding, the just-computed height might
@@ -468,7 +470,7 @@ mem_open(gx_device * dev)
     gx_device_memory *const mdev = (gx_device_memory *)dev;
 
     /* Check that we aren't trying to open a planar device as chunky. */
-    if (mdev->is_planar)
+    if (mdev->num_planar_planes > 1)
         return_error(gs_error_rangecheck);
     return gdev_mem_open_scan_lines(mdev, dev->height);
 }
@@ -512,7 +514,7 @@ gdev_mem_open_scan_lines_interleaved(gx_device_memory *mdev,
 
         mdev->line_ptrs = (byte **)
             gs_alloc_byte_array(mdev->line_pointer_memory, mdev->height,
-                                sizeof(byte *) * (mdev->is_planar ? mdev->color_info.num_components : 1),
+                                sizeof(byte *) * (mdev->num_planar_planes ? mdev->num_planar_planes : 1),
                                 "gdev_mem_open_scan_lines");
         if (mdev->line_ptrs == NULL)
             return_error(gs_error_VMerror);
@@ -553,7 +555,7 @@ gdev_mem_set_line_ptrs_interleaved(gx_device_memory * mdev, byte * base,
                                    int raster, byte **line_ptrs,
                                    int setup_height, int interleaved)
 {
-    int num_planes = (mdev->is_planar ? mdev->color_info.num_components : 0);
+    int num_planes = (mdev->num_planar_planes ? mdev->num_planar_planes : 0);
     byte **pline;
     byte *data;
     int pi;
@@ -944,8 +946,8 @@ void mem_dev_initialize_device_procs(gx_device *dev)
     int depth = dev->color_info.depth;
     const gdev_mem_functions *fns;
 
-    if (dev->is_planar)
-        depth /= dev->color_info.num_components;
+    if (dev->num_planar_planes > 1)
+        depth /= dev->num_planar_planes;
     fns = gdev_mem_functions_for_bits(depth);
 
     mem_initialize_device_procs(dev);

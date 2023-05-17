@@ -27,7 +27,7 @@
 int gdev_prn_set_procs_planar(gx_device *pdev);
 
 /* Open a printer device, conditionally setting it to be planar. */
-int gdev_prn_open_planar(gx_device *pdev, bool upb);
+int gdev_prn_open_planar(gx_device *pdev, int num_planar_planes);
 
 /* Augment get/put_params to add UsePlanarBuffer. */
 int gdev_prn_get_params_planar(gx_device * pdev, gs_param_list * plist,

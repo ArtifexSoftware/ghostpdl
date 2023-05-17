@@ -393,7 +393,7 @@ plan_open(gx_device * pdev)
 #ifdef DEBUG_PRINT
     emprintf(pdev->memory, "plan_open\n");
 #endif
-    code = gdev_prn_open_planar(pdev, 1);
+    code = gdev_prn_open_planar(pdev, pdev->color_info.num_components);
     if (code < 0)
         return code;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;

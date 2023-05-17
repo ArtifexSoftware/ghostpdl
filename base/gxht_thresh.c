@@ -868,7 +868,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
     int offset_bits = penum->ht_offset_bits;
     byte *halftone;
     int dithered_stride = penum->ht_stride;
-    bool is_planar_dev = dev->is_planar;
+    bool is_planar_dev = dev->num_planar_planes;
     gx_color_index dev_white = gx_device_white(dev);
     gx_color_index dev_black = gx_device_black(dev);
     int spp_out = dev->color_info.num_components;

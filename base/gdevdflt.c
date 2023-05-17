@@ -1579,7 +1579,7 @@ int gx_update_from_subclass(gx_device *dev)
     dev->pad = dev->child->pad;
     dev->log2_align_mod = dev->child->log2_align_mod;
     dev->max_fill_band = dev->child->max_fill_band;
-    dev->is_planar = dev->child->is_planar;
+    dev->num_planar_planes = dev->child->num_planar_planes;
     dev->LeadingEdge = dev->child->LeadingEdge;
     memcpy(&dev->ImagingBBox, &dev->child->ImagingBBox, sizeof(dev->child->ImagingBBox));
     dev->ImagingBBox_set = dev->child->ImagingBBox_set;

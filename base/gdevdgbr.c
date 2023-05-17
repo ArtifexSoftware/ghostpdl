@@ -144,7 +144,7 @@ gx_get_bits_return_pointer(gx_device * dev, int x, int h,
                        (params->options |= GB_PACKING_BIT_PLANAR,
                         dev->color_info.depth) :
                        (params->options |= GB_PACKING_PLANAR,
-                        dev->color_info.num_components));
+                        dev->num_planar_planes));
                 int i;
 
                 for (i = 0; i < n; ++i) {

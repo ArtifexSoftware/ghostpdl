@@ -476,7 +476,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
     bool bp_changed = false;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *gs_output_profile;
-    bool is_planar_dev = dev->is_planar;
+    bool is_planar_dev = !!dev->num_planar_planes;
     bool render_is_valid;
     int csi;
     gx_clip_path *lpcpath = NULL;

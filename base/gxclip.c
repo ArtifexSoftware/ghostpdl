@@ -128,7 +128,7 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     dev->target = target;
     dev->pad = target->pad;
     dev->log2_align_mod = target->log2_align_mod;
-    dev->is_planar = target->is_planar;
+    dev->num_planar_planes = target->num_planar_planes;
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
     dev->non_strict_bounds = target->non_strict_bounds;
     /* There is no finalization for device on stack so no rc increment */
@@ -173,7 +173,7 @@ gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path 
     dev->target = target;
     dev->pad = target->pad;
     dev->log2_align_mod = target->log2_align_mod;
-    dev->is_planar = target->is_planar;
+    dev->num_planar_planes = target->num_planar_planes;
     dev->graphics_type_tag = target->graphics_type_tag;	/* initialize to same as target */
     dev->non_strict_bounds = target->non_strict_bounds;
     /* There is no finalization for device on stack so no rc increment */
@@ -197,7 +197,7 @@ gx_make_clip_device_in_heap(gx_device_clip *dev,
     dev->sgr = target->sgr;
     dev->pad = target->pad;
     dev->log2_align_mod = target->log2_align_mod;
-    dev->is_planar = target->is_planar;
+    dev->num_planar_planes = target->num_planar_planes;
     dev->non_strict_bounds = target->non_strict_bounds;
     gx_device_set_target((gx_device_forward *)dev, target);
     gx_device_retain((gx_device *)dev, true); /* will free explicitly */
