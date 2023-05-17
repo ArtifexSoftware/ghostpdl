@@ -2434,45 +2434,43 @@ label:\
 
     /* Take care of the rendering intents and blackpts.  For those that
        are not set special, the default provides an override */
-    if (dev->icc_struct != NULL) {
-        /* Set the default object */
-        code = gx_default_put_intent(rend_intent[0], dev, gsDEFAULTPROFILE);
-        if (code < 0)
-            return code;
-        code = gx_default_put_blackptcomp(blackptcomp[0], dev, gsDEFAULTPROFILE);
-        if (code < 0)
-            return code;
-        code = gx_default_put_blackpreserve(blackpreserve[0], dev, gsDEFAULTPROFILE);
-        if (code < 0)
-            return code;
-        /* If the default was specified and not a specialized one (e.g. graphic
-           image or text) then the special one will get set to the default.  */
-        for (k = 1; k < NUM_DEVICE_PROFILES; k++) {
-            if (rend_intent[0] != gsRINOTSPECIFIED &&
-                rend_intent[k] == gsRINOTSPECIFIED) {
-                code = gx_default_put_intent(rend_intent[0], dev, profile_types[k]);
-            } else {
-                code = gx_default_put_intent(rend_intent[k], dev, profile_types[k]);
-            }
-            if (code < 0)
-                return code;
-            if (blackptcomp[0] != gsBPNOTSPECIFIED &&
-                blackptcomp[k] == gsBPNOTSPECIFIED) {
-                code = gx_default_put_blackptcomp(blackptcomp[0], dev, profile_types[k]);
-            } else {
-                code = gx_default_put_blackptcomp(blackptcomp[k], dev, profile_types[k]);
-            }
-            if (code < 0)
-                return code;
-            if (blackpreserve[0] != gsBKPRESNOTSPECIFIED &&
-                blackpreserve[k] == gsBKPRESNOTSPECIFIED) {
-                code = gx_default_put_blackpreserve(blackpreserve[0], dev, profile_types[k]);
-            } else {
-                code = gx_default_put_blackpreserve(blackpreserve[k], dev, profile_types[k]);
-            }
-            if (code < 0)
-                return code;
+    /* Set the default object */
+    code = gx_default_put_intent(rend_intent[0], dev, gsDEFAULTPROFILE);
+    if (code < 0)
+        return code;
+    code = gx_default_put_blackptcomp(blackptcomp[0], dev, gsDEFAULTPROFILE);
+    if (code < 0)
+        return code;
+    code = gx_default_put_blackpreserve(blackpreserve[0], dev, gsDEFAULTPROFILE);
+    if (code < 0)
+        return code;
+    /* If the default was specified and not a specialized one (e.g. graphic
+       image or text) then the special one will get set to the default.  */
+    for (k = 1; k < NUM_DEVICE_PROFILES; k++) {
+        if (rend_intent[0] != gsRINOTSPECIFIED &&
+            rend_intent[k] == gsRINOTSPECIFIED) {
+            code = gx_default_put_intent(rend_intent[0], dev, profile_types[k]);
+        } else {
+            code = gx_default_put_intent(rend_intent[k], dev, profile_types[k]);
         }
+        if (code < 0)
+            return code;
+        if (blackptcomp[0] != gsBPNOTSPECIFIED &&
+            blackptcomp[k] == gsBPNOTSPECIFIED) {
+            code = gx_default_put_blackptcomp(blackptcomp[0], dev, profile_types[k]);
+        } else {
+            code = gx_default_put_blackptcomp(blackptcomp[k], dev, profile_types[k]);
+        }
+        if (code < 0)
+            return code;
+        if (blackpreserve[0] != gsBKPRESNOTSPECIFIED &&
+            blackpreserve[k] == gsBKPRESNOTSPECIFIED) {
+            code = gx_default_put_blackpreserve(blackpreserve[0], dev, profile_types[k]);
+        } else {
+            code = gx_default_put_blackpreserve(blackpreserve[k], dev, profile_types[k]);
+        }
+        if (code < 0)
+            return code;
     }
     gsicc_setcoloraccuracy(dev->memory, color_accuracy);
     code = gx_default_put_graytok(devicegraytok, dev);
