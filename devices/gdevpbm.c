@@ -336,7 +336,7 @@ ppm_open(gx_device * pdev)
     pdev->log2_align_mod = 6;
 #endif
 
-    code = gdev_prn_open_planar(pdev, bdev->UsePlanarBuffer);
+    code = gdev_prn_open_planar(pdev, bdev->UsePlanarBuffer ? pdev->color_info.num_components : 0);
     while (pdev->child)
         pdev = pdev->child;
 

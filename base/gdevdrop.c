@@ -140,10 +140,10 @@ gx_default_strip_copy_rop2(gx_device * dev,
     pmdev->height = block_height;
     pmdev->bitmap_memory = mem;
     pmdev->color_info = dev->color_info;
-    if (dev->is_planar)
+    if (dev->num_planar_planes)
     {
         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
-        uchar num_comp = dev->color_info.num_components;
+        uchar num_comp = dev->num_planar_planes;
         uchar i;
         plane_depth = dev->color_info.depth / num_comp;
         for (i = 0; i < num_comp; i++)
@@ -650,7 +650,7 @@ do_strip_copy_rop(gx_device * dev,
 
     /* We know the device is a memory device, so we can store the
      * result directly into its scan lines, unless it is planar. */
-    if (!tdev->is_planar || tdev->color_info.num_components <= 1) {
+    if (!tdev->num_planar_planes || tdev->color_info.num_components <= 1) {
         if ((rop_depth == 24) && (dev_proc(dev, dev_spec_op)(dev,
                                       gxdso_is_std_cmyk_1bit, NULL, 0) > 0)) {
             pack = pack_cmyk_1bit_from_standard;
@@ -1849,7 +1849,7 @@ mem_transform_pixel_region_begin(gx_device *dev, int w, int h, int spp,
     if (state->posture == transform_pixel_region_portrait) {
 #ifdef WITH_CAL
         int factor;
-        if (mdev->is_planar) {
+        if (mdev->num_planar_planes > 1) {
             goto planar;
         } else if (pixels->x.step.dQ == fixed_1*8 && pixels->x.step.dR == 0 && rows->y.step.dQ == fixed_1*8 && rows->y.step.dR == 0) {
             state->render = mem_transform_pixel_region_render_portrait_1to8;
@@ -1886,7 +1886,7 @@ mem_transform_pixel_region_begin(gx_device *dev, int w, int h, int spp,
         } else
 no_cal:
 #endif
-        if (mdev->is_planar)
+        if (mdev->num_planar_planes > 1)
 #ifdef WITH_CAL
 planar:
 #endif
@@ -1895,7 +1895,7 @@ planar:
             state->render = mem_transform_pixel_region_render_portrait_1to1;
         else
             state->render = mem_transform_pixel_region_render_portrait;
-    } else if (mdev->is_planar)
+    } else if (mdev->num_planar_planes > 1)
         state->render = mem_transform_pixel_region_render_landscape_planar;
     else
         state->render = mem_transform_pixel_region_render_landscape;

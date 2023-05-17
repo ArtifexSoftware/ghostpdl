@@ -656,12 +656,19 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                 pdev->color_info.num_components =
                         pdev->color_info.max_components;
 
+            if (pdev->color_info.num_components > pdev->num_planar_planes)
+                pdev->num_planar_planes = pdev->color_info.num_components;
+
             /*
              * See earlier comment about the depth and non compressed
              * pixel encoding.
              */
-            pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components,
-                                        pdevn_params->bitspercomponent);
+            if (pdev->num_planar_planes)
+                pdev->color_info.depth = bpc_to_depth(pdev->num_planar_planes,
+                                                      pdevn_params->bitspercomponent);
+            else
+                pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components,
+                                                      pdevn_params->bitspercomponent);
         }
     }
     return code;

@@ -101,7 +101,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
     ndev->color_info = dev->color_info;     /* copy before putdeviceparams */
     ndev->pad = dev->pad;
     ndev->log2_align_mod = dev->log2_align_mod;
-    ndev->is_planar = dev->is_planar;
+    ndev->num_planar_planes = dev->num_planar_planes;
     ndev->icc_struct = NULL;
 
     /* If the device ICC profile (or proof) is OI_PROFILE, then that was not handled
@@ -185,7 +185,7 @@ setup_device_and_mem_for_thread(gs_memory_t *chunk_base_mem, gx_device *dev, boo
                (intptr_t)ncdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                (intptr_t)ncdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE]->profile_handle);
     /* If the device is_planar, then set the flag in the new_device and the procs */
-    if ((ncdev->is_planar = cdev->is_planar))
+    if ((ncdev->num_planar_planes = cdev->num_planar_planes))
         gdev_prn_set_procs_planar(ndev);
 
     /* Make sure that the ncdev BandHeight matches what we used when writing the clist, but

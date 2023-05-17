@@ -6049,10 +6049,10 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && !target->is_planar)
-        pdev->is_planar = true;
+    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
+        pdev->num_planar_planes = dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
     else
-        pdev->is_planar = target->is_planar;
+        pdev->num_planar_planes = target->num_planar_planes;
     pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     pdev->procs = dev_proto.procs;
@@ -8982,10 +8982,10 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     gx_device_set_target((gx_device_forward *)p14dev, target);
     p14dev->pad = target->pad;
     p14dev->log2_align_mod = target->log2_align_mod;
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && !target->is_planar)
-        p14dev->is_planar = true;
+    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
+        p14dev->num_planar_planes = p14dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
     else
-        p14dev->is_planar = target->is_planar;
+        p14dev->num_planar_planes = target->num_planar_planes;
     p14dev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     p14dev->alpha = 1.0;
@@ -9152,7 +9152,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
                 return code;
         }
         /* UsePlanarBuffer is true in case this is CMYKspot */
-        if ((code = gdev_prn_open_planar(new_target, UsePlanarBuffer)) < 0 ||
+        if ((code = gdev_prn_open_planar(new_target, UsePlanarBuffer ? new_target->color_info.num_components : 0)) < 0 ||
              !PRINTER_IS_CLIST((gx_device_printer *)new_target)) {
             gs_free_object(mem->stable_memory, new_target, "pdf14-accum");
             goto no_clist_accum;
@@ -10380,10 +10380,10 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && !target->is_planar)
-        pdev->is_planar = true;
+    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
+        pdev->num_planar_planes = pdev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
     else
-        pdev->is_planar = target->is_planar;
+        pdev->num_planar_planes = target->num_planar_planes;
     pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     pdev->op_state = pgs->is_fill_color ? PDF14_OP_STATE_FILL : PDF14_OP_STATE_NONE;
@@ -10527,10 +10527,10 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_gstate *	pgs,
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && !target->is_planar)
-        pdev->is_planar = true;
+    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
+        pdev->num_planar_planes = pdev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
     else
-        pdev->is_planar = target->is_planar;
+        pdev->num_planar_planes = target->num_planar_planes;
     pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
@@ -10979,14 +10979,14 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
         gx_image_plane_t planes;
         gsicc_rendering_param_t render_cond;
         cmm_dev_profile_t *dev_profile;
-        bool save_planar = pdev->is_planar;
+        bool save_planar = pdev->num_planar_planes;
         gs_devn_params *target_devn_params = dev_proc(target, ret_devn_params)(target);
         int save_num_separations;
         gs_int_rect rect;
 
-        pdev->is_planar = false;		/* so gx_device_raster is for entire chunky pixel line */
+        pdev->num_planar_planes = 0;		/* so gx_device_raster is for entire chunky pixel line */
         linebuf = gs_alloc_bytes(mem, gx_device_raster((gx_device *)pdev, true), "pdf14-clist_accum pop dev");
-        pdev->is_planar = save_planar;
+        pdev->num_planar_planes = save_planar;
 
         /* As long as we don't have spot colors, we can use ICC colorspace, but spot
          * colors do require devn support

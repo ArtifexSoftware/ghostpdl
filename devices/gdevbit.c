@@ -208,7 +208,7 @@ const gx_device_bit gs_bitrgbtags_device =
         (int)((float)(110) * (Y_DPI) / 10 + 0.5),/* height */
         0, /* Pad */
         0, /* log2_align_mod */
-        0, /* is_planar */
+        0, /* num_planar_planes */
         0, /* LeadingEdge */
         {
             (float)(((((int)((float)(85) * (X_DPI) / 10 + 0.5)) * 72.0 + 0.5) - 0.5) / (X_DPI)),

@@ -201,7 +201,7 @@ cmykog_open(gx_device * pdev)
 
   /* Finally, we open the device requesting the underlying buffers to be
    * planar, rather than chunky. See (1) at the top of this file. */
-  return gdev_prn_open_planar(pdev, true);
+  return gdev_prn_open_planar(pdev, pdev->color_info.num_components);
 }
 
 /* Close the printer */

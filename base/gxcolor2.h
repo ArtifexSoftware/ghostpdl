@@ -76,7 +76,7 @@ struct gs_pattern1_instance_s {
     bool has_overlap;           /* true if step is smaller than bbox size */
                                 /* This is used to detect if we must do */
                                 /* blending if we have transparency */
-    int is_planar;              /* During clist writing we "lose" information
+    int num_planar_planes;      /* During clist writing we "lose" information
                                    about any intervening transparency device */
     /*
      * uses_mask is always true for PostScript patterns, but is false

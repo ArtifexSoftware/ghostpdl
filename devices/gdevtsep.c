@@ -1208,7 +1208,7 @@ tiffsep1_prn_open(gx_device * pdev)
     pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components,
                                           pdev_sep->devn_params.bitspercomponent);
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
-    code = gdev_prn_open_planar(pdev, true);
+    code = gdev_prn_open_planar(pdev, pdev->color_info.num_components);
     while (pdev->child)
         pdev = pdev->child;
     ppdev = (gx_device_printer *)pdev;
@@ -1674,7 +1674,7 @@ tiffsep_prn_open(gx_device * pdev)
     pdev->color_info.depth = pdev->color_info.num_components *
                              pdev_sep->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
-    code = gdev_prn_open_planar(pdev, true);
+    code = gdev_prn_open_planar(pdev, pdev->color_info.num_components);
     if (code < 0)
         return code;
     while (pdev->child)
@@ -2065,6 +2065,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
     char *name = NULL;
     int save_depth = pdev->color_info.depth;
     int save_numcomps = pdev->color_info.num_components;
+    int save_planes = pdev->num_planar_planes;
     const char *fmt;
     gs_parsed_file_name_t parsed;
     int plane_count = 0;  /* quiet compiler */
@@ -2183,6 +2184,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
 
             pdev->color_info.depth = dst_bpc;     /* Create files for 8 bit gray */
             pdev->color_info.num_components = 1;
+            pdev->num_planar_planes = 1;
             if (!tfdev->UseBigTIFF && tfdev->Compression == COMPRESSION_NONE &&
                 height * 8 / dst_bpc > ((unsigned long)0xFFFFFFFF - (file ? gp_ftell(file) : 0)) / width) /* note width is never 0 in print_page */
             {
@@ -2195,6 +2197,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
             tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], dst_bpc, tfdev->Compression, tfdev->MaxStripSize);
             pdev->color_info.depth = save_depth;
             pdev->color_info.num_components = save_numcomps;
+            pdev->num_planar_planes = save_planes;
             if (code < 0) {
                 goto done;
             }
@@ -2428,6 +2431,7 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
     char *name = NULL;
     int save_depth = pdev->color_info.depth;
     int save_numcomps = pdev->color_info.num_components;
+    int save_planes = pdev->num_planar_planes;
     const char *fmt;
     gs_parsed_file_name_t parsed;
     int non_encodable_count = 0;
@@ -2545,10 +2549,12 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
 
         pdev->color_info.depth = 1;
         pdev->color_info.num_components = 1;
+        pdev->num_planar_planes = 1;
         code = tiff_set_fields_for_printer(pdev, tfdev->tiff[comp_num], 1, 0, tfdev->write_datetime);
         tiff_set_gray_fields(pdev, tfdev->tiff[comp_num], 1, tfdev->Compression, tfdev->MaxStripSize);
         pdev->color_info.depth = save_depth;
         pdev->color_info.num_components = save_numcomps;
+        pdev->num_planar_planes = save_planes;
         if (code < 0) {
             goto done;
         }

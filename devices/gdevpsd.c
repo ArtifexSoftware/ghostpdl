@@ -556,6 +556,7 @@ psd_prn_open(gx_device * pdev)
                     num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
                 pdev->color_info.num_components = num_comp;
                 pdev->color_info.max_components = num_comp;
+                pdev->num_planar_planes = num_comp;
             }
         }
     }
@@ -572,7 +573,7 @@ psd_prn_open(gx_device * pdev)
         pdev->icc_struct->supports_devn = false;
     else
         pdev->icc_struct->supports_devn = true;
-    code = gdev_prn_open_planar(pdev, true);
+    code = gdev_prn_open_planar(pdev, pdev->color_info.num_components);
     return code;
 }
 
@@ -1334,8 +1335,8 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
     psd_write_16(xc, 1007); /* 0x03EF */
     psd_write_16(xc, 0); /* PString */
     psd_write_32(xc, 14 * (xc->num_channels - xc->base_num_channels)); /* Length */
-    for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
-        sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS;
+    for (chan_idx = xc->base_num_channels; chan_idx < xc->num_channels; chan_idx++) {
+        sep_num = xc->chnl_to_orig_sep[chan_idx] - xc->base_num_channels;
         psd_write_16(xc, 02); /* CMYK */
         /* PhotoShop stores all component values as if they were additive. */
         if (pdev->equiv_cmyk_colors.color[sep_num].color_info_valid) {

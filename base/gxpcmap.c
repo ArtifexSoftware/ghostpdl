@@ -228,7 +228,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     size_t max_pattern_bitmap = tdev->MaxPatternBitmap == 0 ? MaxPatternBitmap_DEFAULT :
                                 tdev->MaxPatternBitmap;
 
-    pinst->is_planar = tdev->is_planar;
+    pinst->num_planar_planes = tdev->num_planar_planes;
     /*
      * If the target device can accumulate a pattern stream and the language
      * client supports high level patterns (ps and pdf only) we don't need a
@@ -295,7 +295,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     }
     fdev->log2_align_mod = tdev->log2_align_mod;
     fdev->pad = tdev->pad;
-    fdev->is_planar = tdev->is_planar;
+    fdev->num_planar_planes = tdev->num_planar_planes;
     fdev->graphics_type_tag = tdev->graphics_type_tag;
     fdev->interpolate_control = tdev->interpolate_control;
     fdev->non_strict_bounds = tdev->non_strict_bounds;
@@ -425,7 +425,7 @@ pattern_accum_open(gx_device * dev)
                     bits->color_info = padev->color_info;
                     bits->bitmap_memory = mem;
 
-                    if (target->is_planar > 0)
+                    if (target->num_planar_planes > 0)
                     {
                         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
                         uchar num_comp = padev->color_info.num_components;
@@ -860,7 +860,7 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
         tiles->index = i;
         tiles->cdev = NULL;
         tiles->ttrans = NULL;
-        tiles->is_planar = false;
+        tiles->num_planar_planes = 0;
     }
     return pcache;
 }
@@ -1166,7 +1166,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
     ctile = gx_pattern_cache_find_tile_for_id(pcache, id);
     gx_pattern_cache_free_entry(pcache, ctile);         /* ensure that this cache slot is empty */
     ctile->id = id;
-    ctile->is_planar = pinst->is_planar;
+    ctile->num_planar_planes = pinst->num_planar_planes;
     ctile->depth = fdev->color_info.depth;
     ctile->uid = pinst->templat.uid;
     ctile->tiling_type = pinst->templat.TilingType;
@@ -1326,7 +1326,7 @@ dump_raw_pattern(int height, int width, int n_chan, int depth,
     byte *curr_ptr = Buffer;
     int plane_offset;
 
-    is_planar = mdev->is_planar;
+    is_planar = mdev->num_planar_planes > 0;
     max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
     if (is_planar) {
         gs_snprintf(full_file_name, sizeof(full_file_name), "%d)PATTERN_PLANE_%dx%dx%d.raw", global_pat_index,
@@ -1402,7 +1402,7 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
     pbm->rep_height = pbm->size.y = mdev->height;
     pbm->id = id;
     pbm->rep_shift = pbm->shift = 0;
-    pbm->num_planes = (mdev->is_planar ? mdev->color_info.num_components : 1);
+    pbm->num_planes = mdev->num_planar_planes ? mdev->num_planar_planes : 1;
 
         /* Lets dump this for debug purposes */
 
