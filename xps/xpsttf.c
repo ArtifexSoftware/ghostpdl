@@ -144,6 +144,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     int numGlyphs;
     uint glyph_name_index;
     const byte *postp; /* post table pointer */
+    xps_font_t *font = pfont->client_data;
 
     if (glyph >= GS_MIN_GLYPH_INDEX) {
         glyph -= GS_MIN_GLYPH_INDEX;
@@ -261,8 +262,10 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
             return gs_throw(-1, "data out of range");
 
         /* sigh - we have to allocate a copy of the data - by the
-         * time a high level device makes use of it the font data
-         * may be freed. This is a necessary leak. */
+           time a high level device makes use of it the font data
+           may be freed.  Track the allocated memory in our
+           font 'wrapper' so we can free it when we free tha font wrapper.
+         */
         mydata = gs_alloc_bytes(pfont->memory, pstr->size + 1, "glyph to name");
         if ( mydata == 0 )
             return -1;
@@ -271,6 +274,34 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
 
         mydata[pstr->size] = 0;
 
+        if (font->names == NULL) {
+            font->names = (char **)gs_alloc_bytes(pfont->memory, 256 * sizeof (char *), "names storage");
+            if (font->names == NULL) {
+                gs_free_object(pfont->memory, (byte *)pstr->data, "free string on error");
+                pstr->data = NULL;
+                pstr->size = 0;
+                return -1;
+            }
+            font->max_name_index = 255;
+            font->next_name_index = 0;
+            memset(font->names, 0x00, 256 * sizeof (char *));
+        }
+        if (font->next_name_index > font->max_name_index) {
+            char **temp = NULL;
+            temp = (char **)gs_alloc_bytes(pfont->memory, (font->max_name_index + 256) * sizeof (char *), "names storage");
+            if (temp == NULL) {
+                gs_free_object(pfont->memory, (byte *)pstr->data, "free string on error");
+                pstr->data = NULL;
+                pstr->size = 0;
+                return -1;
+            }
+            memset(temp, 0x00, (font->max_name_index + 256) * sizeof (char *));
+            memcpy(temp, font->names, font->max_name_index * sizeof(char *));
+            gs_free_object(pfont->memory, (void *)font->names, "realloc names storage");
+            font->names = temp;
+            font->max_name_index += 256;
+        }
+        font->names[font->next_name_index++] = (char *)pstr->data;
         return 0;
     }
 }

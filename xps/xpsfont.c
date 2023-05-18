@@ -72,6 +72,8 @@ xps_new_font(xps_context_t *ctx, byte *buf, int buflen, int index)
     font->gsubrs = 0;
     font->subrs = 0;
     font->charstrings = 0;
+    font->names = NULL;
+    font->max_name_index = font->next_name_index = 0;
 
     if (memcmp(font->data, "OTTO", 4) == 0)
         code = xps_init_postscript_font(ctx, font);
@@ -109,6 +111,14 @@ xps_free_font(xps_context_t *ctx, xps_font_t *font)
     {
         gs_font_finalize(ctx->memory, font->font);
         gs_free_object(ctx->memory, font->font, "font object");
+    }
+    if (font->names != NULL) {
+        int i = 0;
+        for (i = 0;i < font->next_name_index; i++)
+            gs_free_object(font->font->memory, font->names[i], "freeing names table");
+        gs_free_object(font->font->memory, font->names, "free names table");
+        font->names = NULL;
+        font->max_name_index = font->next_name_index = 0;
     }
     xps_free(ctx, font->data);
     xps_free(ctx, font);

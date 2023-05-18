@@ -210,6 +210,9 @@ struct pl_font_s
     float pts_per_inch;         /* either 72 or 72.307 (for Intellifont) */
     pl_glyph_width_node_t *widths_cache;
     int widths_cache_nitems;
+    char **names;
+    int max_name_index;
+    int next_name_index;
 #ifdef DEBUG
     char FontName[16];
 #endif

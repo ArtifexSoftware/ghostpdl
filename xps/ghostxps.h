@@ -268,6 +268,9 @@ struct xps_font_s
     byte *gsubrs;
     byte *subrs;
     byte *charstrings;
+    char **names;
+    int max_name_index;
+    int next_name_index;
 };
 
 struct xps_glyph_metrics_s
