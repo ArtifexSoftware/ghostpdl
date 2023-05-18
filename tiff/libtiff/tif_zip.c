@@ -22,7 +22,9 @@
  * OF THIS SOFTWARE.
  */
 
+#include "stdint_.h"
 #include "tiffiop.h"
+
 #ifdef ZIP_SUPPORT
 /*
  * TIFF Library.

@@ -92,7 +92,7 @@ static const int anPrimes[] = {
 
 static unsigned long TIFFHashSetHashPointer(const void *elt)
 {
-    return (unsigned long)(uintptr_t)((void *)(elt));
+    return (unsigned long)((void *)(elt));
 }
 
 /************************************************************************/
