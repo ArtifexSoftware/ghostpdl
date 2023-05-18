@@ -65,14 +65,11 @@ Welcome to :title:`Ghostscript`
    Ps-style.rst
 
 
-
-
-
-
 .. toctree::
    :caption: Other
    :maxdepth: 1
 
+   Ghostscript-Enterprise.rst
    GPDL.rst
    Ps2epsi.rst
    Psfiles.rst
