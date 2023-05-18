@@ -428,7 +428,7 @@ struct ref_s {
 
     struct tas_s tas;
 
-    union v {			/* name the union to keep gdb happy */
+    union ref_value {			/* name the union to keep gdb happy */
         ps_int intval;
         ushort boolval;
         float realval;
