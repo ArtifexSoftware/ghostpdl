@@ -26,3 +26,29 @@
           :width: 0
           :height: 0
           :target: https://discord.gg/TSpYGBW4eq
+
+.. image:: images/icon-docx.svg
+          :alt: MS Word logo
+          :width: 0
+          :height: 0
+
+.. image:: images/icon-odt.svg
+          :alt: MS Word logo
+          :width: 0
+          :height: 0
+
+.. image:: images/icon-xlsx.svg
+          :alt: MS Word logo
+          :width: 0
+          :height: 0
+
+.. image:: images/icon-pptx.svg
+          :alt: MS Word logo
+          :width: 0
+          :height: 0
+
+.. image:: images/icon-txt.svg
+          :alt: MS Word logo
+          :width: 0
+          :height: 0
+

@@ -1817,6 +1817,10 @@ Because the PostScript and PCL interpreters cannot determine when a document ter
 
    This option is also set by the ``-dFitPage`` option.
 
+**-dReopenPerPage**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   Normally, when using a single fixed filename (e.g. `output.tif`) the Ghostscript device will not release the file handle when a page is complete, but instead will retain it for the next page. The file handle is only released when the device is closed. However, if ``-dReopenPerPage=true``, then the file handle will be released at the end of the page and a new file (with the same name) will be created for the next page, thereby creating a new file handle.
+
 **-dORIENT1=true**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 **-dORIENT1=false**

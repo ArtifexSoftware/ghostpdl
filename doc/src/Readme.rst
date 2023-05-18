@@ -98,6 +98,12 @@ GhostXPS is available both under the `GNU Affero GPL license`_ and for `commerci
 Binaries for GhostXPS for various systems can be downloaded from `here`_. The source can be found in the GhostXPS/GhostPDL downloads from the same site.
 
 
+
+Ghostscript Enterprise
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+:title:`Ghostscript Enterprise` is a commercial version of :title:`GhostPDL` which can also read and process a range of common office documents, including :title:`Word`, :title:`PowerPoint` and :title:`Excel`. Find out more in the :ref:`Ghostscript Enterprise section<Ghostscript_Enterprise>`.
+
 .. _URWFontInformation:
 
 URW Font Information

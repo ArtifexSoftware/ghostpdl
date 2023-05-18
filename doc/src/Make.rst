@@ -293,6 +293,8 @@ If your system doesn't support the ``configure`` script or you don't wish to use
 Platform-specific makefiles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The table below lists a number of platform independent ``makefiles`` in each of the core Ghostscript source directories.
+
 .. list-table::
       :widths: 50 50
       :header-rows: 1
@@ -309,7 +311,7 @@ Platform-specific makefiles
         - Unix with ANSI C compilers other than ``gcc``.
 
 
-A number of platform indepdent ``makefiles`` in each of the core Ghostscript source directories. Since these files can change from one Ghostscript version to another, sometimes substantially, and since they all include documentation for the various options, here we don't duplicate most of that documentation: we recommend strongly that you review the entire ``makefile`` specific for your operating system and compiler before building Ghostscript.
+Since these files can change from one Ghostscript version to another, sometimes substantially, and since they all include documentation for the various options, here we don't duplicate most of that documentation: we recommend strongly that you review the entire ``makefile`` specific for your operating system and compiler before building Ghostscript.
 
 
 .. _PreparingMakefiles:
