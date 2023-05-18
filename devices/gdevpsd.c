@@ -57,12 +57,14 @@ static dev_proc_open_device(psd_prn_open);
 static dev_proc_close_device(psd_prn_close);
 static dev_proc_get_params(psd_get_params);
 static dev_proc_put_params(psd_put_params);
+static dev_proc_put_params(psd_put_params_tag);
 static dev_proc_get_params(psd_get_params_cmyk);
 static dev_proc_put_params(psd_put_params_cmyk);
 static dev_proc_put_params(psd_put_params_cmyktag);
 static dev_proc_print_page(psd_print_page);
 static dev_proc_map_color_rgb(psd_map_color_rgb);
 static dev_proc_get_color_mapping_procs(get_psdrgb_color_mapping_procs);
+static dev_proc_get_color_mapping_procs(get_psdrgbtags_color_mapping_procs);
 static dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
 static dev_proc_get_color_comp_index(psd_get_color_comp_index);
 
@@ -71,6 +73,7 @@ static dev_proc_get_color_comp_index(psd_get_color_comp_index);
 typedef enum {
     psd_DEVICE_GRAY,
     psd_DEVICE_RGB,
+    psd_DEVICE_RGBT,
     psd_DEVICE_CMYK,
     psd_DEVICE_CMYKT,
     psd_DEVICE_N
@@ -81,6 +84,14 @@ fixed_colorant_name DevCMYKTComponents[] = {
   "Magenta",
   "Yellow",
   "Black",
+  "Tags",
+  0               /* List terminator */
+};
+
+fixed_colorant_name DevRGBTComponents[] = {
+  "Red",
+  "Green",
+  "Blue",
   "Tags",
   0               /* List terminator */
 };
@@ -261,6 +272,41 @@ gs_private_st_composite_final(st_psd_device, psd_device,
     "psd_device", psd_device_enum_ptrs, psd_device_reloc_ptrs,
     psd_device_finalize);
 
+static gx_color_index
+psd_rgbtags_encode_color(gx_device *dev, const gx_color_value colors[])
+{
+    int bpc = ((gx_devn_prn_device *)dev)->devn_params.bitspercomponent;
+    gx_color_index color = 0;
+    int i = 0;
+    uchar ncomp = dev->num_planar_planes;
+    COLROUND_VARS;
+
+    COLROUND_SETUP(bpc);
+    for (; i<ncomp; i++) {
+        color <<= bpc;
+        color |= COLROUND_ROUND(colors[i]);
+    }
+    color |= (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+    return (color == gx_no_color_index ? color ^ 1 : color);
+}
+
+static int
+psd_rgbtags_decode_color(gx_device * dev, gx_color_index color, gx_color_value * out)
+{
+    int bpc = ((gx_devn_prn_device *)dev)->devn_params.bitspercomponent;
+    int mask = (1 << bpc) - 1;
+    int i = 0;
+    uchar ncomp = dev->num_planar_planes;
+    COLDUP_VARS;
+
+    COLDUP_SETUP(bpc);
+    for (; i<ncomp; i++) {
+        out[ncomp - i - 1] = COLDUP_DUP(color & mask);
+        color >>= bpc;
+    }
+    return 0;
+}
+
 static void
 psd_initialize_device_procs(gx_device *dev)
 {
@@ -278,6 +324,17 @@ psd_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, update_spot_equivalent_colors, gx_devn_prn_update_spot_equivalent_colors);
     set_dev_proc(dev, ret_devn_params, gx_devn_prn_ret_devn_params);
     set_dev_proc(dev, dev_spec_op, psd_spec_op);
+}
+
+static void
+psdtags_initialize_device_procs(gx_device *dev)
+{
+    psd_initialize_device_procs(dev);
+
+    set_dev_proc(dev, get_color_mapping_procs, get_psdrgbtags_color_mapping_procs);
+    set_dev_proc(dev, put_params, psd_put_params_tag);
+    set_dev_proc(dev, encode_color, psd_rgbtags_encode_color);
+    set_dev_proc(dev, decode_color, psd_rgbtags_decode_color);
 }
 
 #define psd_device_body(procs, dname, ncomp, pol, depth, mg, mc, sl, cn)\
@@ -340,6 +397,30 @@ const psd_device gs_psdrgb16_device =
     /* PSD device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
     GS_SOFT_MAX_SPOTS,           /* max_spots */
+    false,                      /* colorants not locked */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
+};
+
+/*
+ * PSD device with RGB process color model.
+ */
+const psd_device gs_psdrgbtags_device =
+{
+    psd_device_body(psdtags_initialize_device_procs, "psdrgbtags", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    /* devn_params specific parameters */
+    { 8,	/* Bits per color - must match ncomp, depth, etc. above */
+      DevRGBTComponents,	/* Names of color model colorants */
+      3,			/* Number colorants for RGB. Tags added to extra in DevRGBTComponents */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      {0},			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    { true },			/* equivalent CMYK colors for spot colors */
+    /* PSD device specific parameters */
+    psd_DEVICE_RGBT,		/* Color model */
+    GS_SOFT_MAX_SPOTS,		/* max_spots */
     false,                      /* colorants not locked */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
@@ -476,9 +557,10 @@ psd_prn_open(gx_device * pdev)
 {
     psd_device *pdev_psd = (psd_device *) pdev;
     int code;
-    int k;
+    int k, nc;
     cmm_dev_profile_t *profile_struct;
-    bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
+    bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT ||
+                     pdev_psd->color_model == psd_DEVICE_RGBT);
 
 #ifdef TEST_PAD_AND_ALIGN
     pdev->pad = 5;
@@ -565,7 +647,10 @@ psd_prn_open(gx_device * pdev)
         for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
             pdev_psd->devn_params.separation_order_map[k] = k;
         }
-    pdev->color_info.depth = pdev->color_info.num_components *
+    nc = pdev->color_info.num_components;
+    if (pdev_psd->color_model == psd_DEVICE_RGBT)
+        nc = 4;
+    pdev->color_info.depth = nc *
                              pdev_psd->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     set_linear_color_bits_mask_shift(pdev);
@@ -573,7 +658,7 @@ psd_prn_open(gx_device * pdev)
         pdev->icc_struct->supports_devn = false;
     else
         pdev->icc_struct->supports_devn = true;
-    code = gdev_prn_open_planar(pdev, pdev->color_info.num_components);
+    code = gdev_prn_open_planar(pdev, nc);
     return code;
 }
 
@@ -635,6 +720,19 @@ cmyk_cs_to_psdrgb_cm(const gx_device * dev,
     color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
     for(; i>0; i--)			/* Clear spot colors */
         out[2 + i] = 0;
+}
+
+static void
+cmyk_cs_to_psdrgbtags_cm(const gx_device * dev,
+                         frac c, frac m, frac y, frac k, frac out[])
+{
+    int ncomps = dev->color_info.num_components;
+    int i = ((psd_device *)dev)->devn_params.separations.num_separations;
+
+    color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
+    for(; i>0; i--)			/* Clear spot colors */
+        out[2 + i] = 0;
+    out[ncomps - 1] = byte2frac(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
 }
 
 /* Color mapping routines for the psdcmyk device */
@@ -824,6 +922,10 @@ static const gx_cm_color_map_procs psdRGB_procs = {
     gray_cs_to_psdrgb_cm, rgb_cs_to_psdrgb_cm, cmyk_cs_to_psdrgb_cm
 };
 
+static const gx_cm_color_map_procs psdRGBtags_procs = {
+    gray_cs_to_psdrgb_cm, rgb_cs_to_psdrgb_cm, cmyk_cs_to_psdrgbtags_cm
+};
+
 static const gx_cm_color_map_procs psdCMYK_procs = {
     gray_cs_to_psdcmyk_cm, rgb_cs_to_psdcmyk_cm, cmyk_cs_to_psdcmyk_cm
 };
@@ -848,6 +950,13 @@ get_psdrgb_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
 }
 
 static const gx_cm_color_map_procs *
+get_psdrgbtags_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
+{
+    *map_dev = dev;
+    return &psdRGBtags_procs;
+}
+
+static const gx_cm_color_map_procs *
 get_psd_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
 {
     const psd_device *xdev = (const psd_device *)dev;
@@ -855,6 +964,8 @@ get_psd_color_mapping_procs(const gx_device * dev, const gx_device **map_dev)
     *map_dev = dev;
     if (xdev->color_model == psd_DEVICE_RGB)
         return &psdRGB_procs;
+    else if (xdev->color_model == psd_DEVICE_RGBT)
+        return &psdRGBtags_procs;
     else if (xdev->color_model == psd_DEVICE_CMYK)
         return &psdCMYK_procs;
     else if (xdev->color_model == psd_DEVICE_CMYKT)
@@ -877,6 +988,8 @@ psd_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
 
     if (xdev->color_model == psd_DEVICE_RGB)
         return gx_devn_prn_decode_color(dev, color, rgb);
+    if (xdev->color_model == psd_DEVICE_RGBT)
+        return gx_devn_prn_decode_color(dev, color>>8, rgb);
     /* TODO: return reasonable values. */
     rgb[0] = 0;
     rgb[1] = 0;
@@ -981,6 +1094,13 @@ psd_put_params_cmyktag(gx_device *pdev, gs_param_list* plist)
 {
     pdev->graphics_type_tag |= GS_DEVICE_ENCODES_TAGS;
     return psd_put_params_generic(pdev, plist, 1);
+}
+
+static int
+psd_put_params_tag(gx_device *pdev, gs_param_list* plist)
+{
+    pdev->graphics_type_tag |= GS_DEVICE_ENCODES_TAGS;
+    return psd_put_params_generic(pdev, plist, 0);
 }
 
 /*
@@ -1130,7 +1250,8 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
                 const char *prev = " ";
                 int prev_size = 1;
                 psd_device *pdev_psd = (psd_device*)dev;
-                bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
+                bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT ||
+                                 pdev_psd->color_model == psd_DEVICE_RGBT);
 
                 xc->num_channels += xc->n_extra_channels;
                 for (i=xc->base_num_channels + has_tags; i < xc->num_channels; i++) {
@@ -1253,8 +1374,10 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
     cmm_profile_t *dev_profile;
     int profile_resource_size;
     psd_device *pdev_psd = (psd_device*)pdev;
-    bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT);
+    bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT ||
+                     pdev_psd->color_model == psd_DEVICE_RGBT);
     int extra_std_colors = 0;
+    int model;
 
     psd_write(xc, (const byte*)"8BPS", 4); /* Signature */
     psd_write_16(xc, 1); /* Version - Always equal to 1*/
@@ -1266,7 +1389,10 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
     psd_write_32(xc, xc->width); /* Columns */
     psd_write_16(xc, bpc); /* Depth - 1, 8 and 16 */
     /* Modes: Bitmap=0, Grayscale=1, RGB=3, CMYK=4 MultiChannel=7 Lab=9 */
-    psd_write_16(xc, (bits16)xc->base_num_channels);  /* We use 1, 3 or 4. */
+    model = xc->base_num_channels;
+    if (pdev_psd->color_model == psd_DEVICE_RGBT)
+        model = 3;
+    psd_write_16(xc, (bits16)model);  /* We use 1, 3 or 4. */
 
     /* Color Mode Data.  Only used for indexed and duotone */
     psd_write_32(xc, 0);
