@@ -42,6 +42,9 @@
 #include "gsicc_cache.h"
 #include <stdlib.h>             /* abs() */
 
+#include "gxfcache.h"
+#include "gxfont.h"
+
 /* ---------------- Device definition ---------------- */
 
 /* Define the default resolution. */
@@ -141,6 +144,7 @@ static dev_proc_fill_mask(pclxl_fill_mask);
 
 static dev_proc_get_params(pclxl_get_params);
 static dev_proc_put_params(pclxl_put_params);
+static dev_proc_text_begin(pclxl_text_begin);
 
 /*static dev_proc_draw_thin_line(pclxl_draw_thin_line); */
 static dev_proc_begin_typed_image(pclxl_begin_typed_image);
@@ -170,6 +174,7 @@ pclxl_initialize_device_procs(gx_device *dev,
     set_dev_proc(dev, fill_triangle, gdev_vector_fill_triangle);
     set_dev_proc(dev, begin_typed_image, pclxl_begin_typed_image);
     set_dev_proc(dev, strip_copy_rop2, pclxl_strip_copy_rop2);
+    set_dev_proc(dev, text_begin, pclxl_text_begin);
 }
 
 static void
@@ -2807,4 +2812,13 @@ pclxl_put_params(gx_device * dev,       /* I - Device info */
     }
 
     return (0);
+}
+
+static int pclxl_text_begin(gx_device * dev, gs_gstate * pgs,
+                    const gs_text_params_t *text, gs_font * font,
+                    const gx_clip_path * pcpath,
+                    gs_text_enum_t ** ppte)
+{
+    font->dir->ccache.upper = 0;
+    return gx_default_text_begin(dev, pgs, text, font, pcpath, ppte);
 }
