@@ -2377,7 +2377,7 @@ cleanup:
         if (!tfdev->NoSeparationFiles) {
             for (comp_num = 0; comp_num < num_comp; comp_num++) {
                 TIFFWriteDirectory(tfdev->tiff[comp_num]);
-                if (fmt) {
+                if (fmt || tfdev->ReopenPerPage) {
                     int sep_num = tfdev->devn_params.separation_order_map[comp_num];
 
                     code = create_separation_file_name(tfdev, name, gp_file_name_sizeof, sep_num, false);
