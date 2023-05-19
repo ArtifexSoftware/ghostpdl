@@ -99,9 +99,7 @@
 #define SIPHASH_H
 
 #include <stddef.h> /* size_t */
-#ifdef HAVE_STDINT_H
 #include <stdint.h> /* uint64_t uint32_t uint8_t */
-#endif
 
 /*
  * Workaround to not require a C++11 compiler for using ULL suffix
