@@ -1074,6 +1074,10 @@ xps_output_page(gx_device *dev, int num_copies, int flush)
     gx_device_vector *vdev = (gx_device_vector *)dev;
     int code;
 
+    if (!vdev->in_page) {
+        (*vdev_proc(vdev, beginpage)) (vdev);
+        vdev->in_page = true;
+    }
     write_str_to_current_page(xps, "</Canvas></FixedPage>");
 
     if (xps->relations_head)
