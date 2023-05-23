@@ -65,6 +65,11 @@ ztoken(i_ctx_t *i_ctx_p)
             if (!r_has_attr(op, a_read))
                 return_error(gs_error_invalidaccess);
             code = gs_scan_string_token(i_ctx_p, op, &token);
+            /* gs_scan_string_token() can relocate the operand stack if a
+             * stack overflow occurs. If that happens then 'op' is no
+             * longer valid, so reload it now just in case.
+             */
+            op = osp;
             switch (code) {
             case scan_EOF:      /* no tokens */
                 make_false(op);

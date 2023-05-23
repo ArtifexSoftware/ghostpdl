@@ -267,6 +267,11 @@ zcvi(i_ctx_t *i_ctx_p)
                     code = gs_note_error(gs_error_syntaxerror);
                 if (code < 0)
                     return code;
+                /* gs_scan_string_token() can relocate the operand stack if a
+                 * stack overflow occurs. If that happens then 'op' is no
+                 * longer valid, so reload it now just in case.
+                 */
+                op = osp;
                 switch (r_type(&token)) {
                     case t_integer:
                         *op = token;
@@ -338,6 +343,11 @@ zcvr(i_ctx_t *i_ctx_p)
                     code = gs_note_error(gs_error_syntaxerror);
                 if (code < 0)
                     return code;
+                /* gs_scan_string_token() can relocate the operand stack if a
+                 * stack overflow occurs. If that happens then 'op' is no
+                 * longer valid, so reload it now just in case.
+                 */
+                op = osp;
                 switch (r_type(&token)) {
                     case t_integer:
                         make_real(op, (float)token.value.intval);
