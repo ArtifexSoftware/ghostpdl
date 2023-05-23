@@ -37,12 +37,12 @@ The table below details the third party libraries that Ghostscript and/or GhostP
      - GPL Version 3
      - http://www.cups.org/
    * - eXpat
-     - 2.4.1
+     - 2.5.0
      - XML parsing for XPS interpreter
      - MIT/eXpat License
      - http://expat.sourceforge.net/
    * - FreeType
-     - 2.12.1
+     - 2.13.0
      - Font scaling and rendering
 
        for Ghostscript
@@ -88,14 +88,14 @@ The table below details the third party libraries that Ghostscript and/or GhostP
      - MIT LICENSE
      - http://www.ghostscript.com/
    * - libpng
-     - 1.6.37
+     - 1.6.39
      - PNG image encoding/decoding
      - libpng license - classified as
 
        "a permissive free software license"
      - http://www.libpng.org/
    * - OpenJPEG
-     - 2.4.0
+     - 2.5.0
      - JPEG2000 image decoding for the
 
        PDF interpreter
@@ -103,14 +103,14 @@ The table below details the third party libraries that Ghostscript and/or GhostP
      - BSD-style
      - http://www.openjpeg.org/
    * - zlib
-     - 1.2.12
+     - 1.2.13
      - (De)Flate compression
      - zlib license - classified as
 
        "a permissive free software license"
      - http://www.zlib.net/
    * - libtiff
-     - 4.3.0
+     - 4.5.0
      - TIFF image encoding/decoding
      - BSD-style
      - http://www.remotesensing.org/libtiff
