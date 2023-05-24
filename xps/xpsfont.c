@@ -107,11 +107,6 @@ xps_free_font(xps_context_t *ctx, xps_font_t *font)
 {
     if (font == NULL)
         return;
-    if (font->font)
-    {
-        gs_font_finalize(ctx->memory, font->font);
-        gs_free_object(ctx->memory, font->font, "font object");
-    }
     if (font->names != NULL) {
         int i = 0;
         for (i = 0;i < font->next_name_index; i++)
@@ -119,6 +114,11 @@ xps_free_font(xps_context_t *ctx, xps_font_t *font)
         gs_free_object(font->font->memory, font->names, "free names table");
         font->names = NULL;
         font->max_name_index = font->next_name_index = 0;
+    }
+    if (font->font)
+    {
+        gs_font_finalize(ctx->memory, font->font);
+        gs_free_object(ctx->memory, font->font, "font object");
     }
     xps_free(ctx, font->data);
     xps_free(ctx, font);
