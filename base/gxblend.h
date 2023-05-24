@@ -24,11 +24,10 @@
 #include "gxdevcli.h"
 
 #define RAW_DUMP 0
-#define RAW_DUMP_AS_PAM 0
-/* Useful bash fragment to batch convert pams to pngs:
- * for f in *.pam; do g=${f%.*}; echo $g; convert $g.pam $g.png ; done
- * NB: "convert" is imagemagick convert, so may need to be installed.
- */
+/* We now dump as PAMs, not raws. This is because it's much easier
+ * (for me at least) to view them using:
+ *   http://ghostscript.com/~robin/pamview.html
+ * than anything else. */
 
 /* #define DUMP_TO_PNG */
 

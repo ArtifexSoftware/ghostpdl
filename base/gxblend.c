@@ -2700,148 +2700,38 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
 {
     char full_file_name[50];
     gp_file *fid;
-    int z,y;
+    int x, y, z;
     const byte *buff_ptr;
-    int max_bands;
 
    /* clist_band_count is incremented at every pdf14putimage */
    /* Useful for catching this thing and only dumping */
    /* during a particular band if we have a large file */
    /* if (clist_band_count != 65) return; */
     buff_ptr = Buffer;
-#if RAW_DUMP_AS_PAM
-    /* FIXME: GRAY + ALPHA + SHAPE + TAGS will be interpreted as RGB + ALPHA */
-    if ((n_chan == 2) || (n_chan == 3)) {
-        int x;
-        dlprintf2("%02d)%s.pam\n",global_index,filename);dflush();
-        gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s.pam",global_index,filename);
-        fid = gp_fopen(mem,full_file_name,"wb");
-        gp_fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 2\nMAXVAL %d\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n",
-                width, num_rows, deep ? 65535 : 255);
-        if (deep) {
-            for(y=0; y<num_rows; y++)
-                for(x=0; x<width; x++)
-                    for(z=0; z<2; z++) {
-                        /* This assumes a little endian host. Sue me. */
-                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be^1], fid);
-                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be  ], fid);
-                    }
-        } else {
-            for(y=0; y<num_rows; y++)
-                for(x=0; x<width; x++)
-                    for(z=0; z<2; z++)
-                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
-        }
-        gp_fclose(fid);
-        if (n_chan == 3) {
-            dlprintf2("%02d)%s_shape.pgm\n",global_index,filename);dflush();
-            gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_shape.pgm",global_index,filename);
-            fid = gp_fopen(mem,full_file_name,"wb");
-            gp_fprintf(fid, "P5\n%d %d %d\n",
-                    width, num_rows, deep ? 65535 : 255);
-            if (deep) {
-                for(y=0; y<num_rows; y++)
-                    for(x=0; x<width; x++) {
-                        /* This assumes a little endian host. Sue me. */
-                        gp_fputc(Buffer[2*plane_stride + y*rowstride + x * 2 + be^1], fid);
-                        gp_fputc(Buffer[2*plane_stride + y*rowstride + x * 2 + be  ], fid);
-                    }
-            } else {
-                for(y=0; y<num_rows; y++)
-                    for(x=0; x<width; x++)
-                        gp_fputc(Buffer[2*plane_stride + y*rowstride + x], fid);
-            }
-            gp_fclose(fid);
-        }
-    }
-    if ((n_chan == 4) || (n_chan == 5) || (n_chan == 6)) {
-        int x;
-        dprintf2("%02d)%s.pam\n",global_index,filename);dflush();
-        gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s.pam",global_index,filename);
-        fid = gp_fopen(mem,full_file_name,"wb");
-        gp_fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH 4\nMAXVAL %d\nTUPLTYPE RGB_ALPHA\nENDHDR\n",
-                width, num_rows, deep ? 65535 : 255);
-        if (deep) {
-            for(y=0; y<num_rows; y++)
-                for(x=0; x<width; x++)
-                    for(z=0; z<4; z++) {
-                        /* This assumes a little endian host. Sue me. */
-                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be^1], fid);
-                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be  ], fid);
-                    }
-        } else {
-            for(y=0; y<num_rows; y++)
-                for(x=0; x<width; x++)
-                    for(z=0; z<4; z++)
-                        gp_fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
-        }
-        gp_fclose(fid);
-        if (n_chan > 4) {
-            gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_shape.pgm",global_index,filename);
-            fid = gp_fopen(mem,full_file_name,"wb");
-            gp_fprintf(fid, "P5\n%d %d %d\n",
-                    width, num_rows, deep ? 65535 : 255);
-            if (deep) {
-                for(y=0; y<num_rows; y++)
-                    for(x=0; x<width; x++) {
-                        /* This assumes a little endian host. Sue me. */
-                        gp_fputc(Buffer[4*plane_stride + y*rowstride + x*2 + be^1], fid);
-                        gp_fputc(Buffer[4*plane_stride + y*rowstride + x*2 + be  ], fid);
-                    }
-            } else {
-                for(y=0; y<num_rows; y++)
-                    for(x=0; x<width; x++)
-                        gp_fputc(Buffer[4*plane_stride + y*rowstride + x], fid);
-            }
-            gp_fclose(fid);
-        }
-        if (n_chan == 6) {
-            gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_tags.pgm",global_index,filename);
-            fid = gp_fopen(mem, full_file_name,"wb");
-            gp_fprintf(fid, "P5\n%d %d 255\n", width, num_rows);
-            if (deep) {
-                for(y=0; y<num_rows; y++)
-                    for(x=0; x<width; x++)
-                        gp_fputc(Buffer[5*plane_stride + y*rowstride + x*2 + be ], fid);
-            } else {
-                for(y=0; y<num_rows; y++)
-                    for(x=0; x<width; x++)
-                        gp_fputc(Buffer[5*plane_stride + y*rowstride + x], fid);
-            }
-            gp_fclose(fid);
-        }
-        return;
-    }
-#endif
-    max_bands = ( n_chan < 57 ? n_chan : 56);   /* Photoshop handles at most 56 bands */
-    dlprintf6("%02d)%s_%dx%dx%dx%d.raw\n",global_index,filename,width,num_rows,deep ? 16 : 8,max_bands);dflush();
-    gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s_%dx%dx%dx%d.raw",global_index,filename,width,num_rows,deep ? 16 : 8,max_bands);
-    fid = gp_fopen(mem, full_file_name,"wb");
-
-    if (be && deep) {
-        for (z = 0; z < max_bands; ++z) {
-            /* grab pointer to the next plane */
-            buff_ptr = &(Buffer[z*plane_stride]);
-            for ( y = 0; y < num_rows; y++ ) {
-                /* write out each row */
-                int x;
-                for (x = 0; x < width; x++ ) {
-                    gp_fputc(buff_ptr[x*2 + be^1], fid);
-                    gp_fputc(buff_ptr[x*2 + be  ], fid);
+    dlprintf2("%02d)%s.pam\n",global_index,filename);dflush();
+    gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s.pam",global_index,filename);
+    fid = gp_fopen(mem,full_file_name,"wb");
+    gp_fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH %d\nMAXVAL %d\nTUPLTYPE %s\nENDHDR\n",
+               width, num_rows, n_chan, deep ? 65535 : 255,
+               n_chan == 1 ? "GRAYSCALE" :
+               n_chan == 2 ? "GRAYSCALE_ALPHA" :
+               n_chan == 3 ? "RGB" :
+               n_chan == 4 ? "CMYK" :
+               n_chan == 5 ? "CMYK_ALPHA" :
+                             "CMYK_SPOTS"
+    );
+    if (deep) {
+        for(y=0; y<num_rows; y++)
+            for(x=0; x<width; x++)
+                for(z=0; z<n_chan; z++) {
+                    gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be^1], fid);
+                    gp_fputc(Buffer[z*plane_stride + y*rowstride + x*2 + be  ], fid);
                 }
-                buff_ptr += rowstride;
-            }
-        }
     } else {
-        for (z = 0; z < max_bands; ++z) {
-            /* grab pointer to the next plane */
-            buff_ptr = &(Buffer[z*plane_stride]);
-            for ( y = 0; y < num_rows; y++ ) {
-                /* write out each row */
-                gp_fwrite(buff_ptr,sizeof(unsigned char),width<<deep,fid);
-                buff_ptr += rowstride;
-            }
-        }
+        for(y=0; y<num_rows; y++)
+            for(x=0; x<width; x++)
+                for(z=0; z<n_chan; z++)
+                    gp_fputc(Buffer[z*plane_stride + y*rowstride + x], fid);
     }
     gp_fclose(fid);
 }
