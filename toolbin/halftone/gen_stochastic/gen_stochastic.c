@@ -17,7 +17,7 @@
  *	Program to generate a stochastic threshold array that has good edge
  *	blending and high frequency spatial distribution.
  *
- *  usage:  gen_stochastic [ options ] SIZEWxSIZEH outfile [ -g ghostscript args ...]
+ *  usage:  gen_stochastic [ options ] SIZEWxSIZEH outfile
  *
  *	    SIZEWxSIZEH are the width and height of the threshold array separated
  *	    by a lower case 'x'. If the threshold array is square, then only the
@@ -64,22 +64,6 @@
  *	-t#	sets the choice value threshold in 0.1% units (default 10 = 1%)
  *
  *	-v      verbose mode. Details to stdout about choices. Default OFF
- *
- *	If the build #defined USE_GSDLL, then a graphical display will be shown
- *	as the choices are made. Three sections of the page show the pseudo-color
- *	map of densities, the expanded view of the pixels, and the 1:1 pixel view
- *	of 3 tiles wide by 3 tiles tall, allowing interactive examination of the
- *	choices. Ghostscript is used to generate this display and any Ghostscript
- *	parameters may follow the '-g' trailing option. This option is last so
- *	that the number of gs args is variable.
- *
- * 	-g 	followed by ghostscript args are only used if built with the
- *		USE_GSDLL option and must follow the SIZE and outfile parameters.
- *		All parameters are then passed to gs to control the display.
- *
- *	when paused between values, <ret> for next value, 'g' or <esc> for
- *	continuous or a character to repeat c-0x20 times (! = 1, " = 2, ...)
- *	'q' for exit.
  *
 */
 
@@ -149,13 +133,6 @@ Order_s Order[MAX_ARRAY_WIDTH * MAX_ARRAY_HEIGHT];
 int	do_dot(int choice_X, int choice_Y, int level, int last);
 int	CompareOrder(const void *, const void *);
 double	ValFunction(int thisX, int thisY, int refX, int refY, double rx_sq, double ry_sq);
-
-#ifdef USE_GSDLL
-int init_gs_display(int argc, char **argv);
-int update_gs_image(void);
-int update_gs_dot(int choice_X, int choice_Y, int last);
-void close_gs_display(void);
-#endif
 
 /* Definition of the minimum dot patterns */
 static struct min_dot_edge {
@@ -263,7 +240,6 @@ main(int argc, char *argv[])
     double	rand_scaled, bias_power = 2.0;
     float	x;
 
-    int	gsarg_start;
     int code = 0, at_arg;
 
     resolution[0] = resolution[1] = 1;
@@ -294,7 +270,7 @@ main(int argc, char *argv[])
                 resolution[1] = m;
             rx_sq = resolution[0] * resolution[0];
             ry_sq = resolution[1] * resolution[1];
-        } else if (argv[at_arg][1] = 's') {
+        } else if (argv[at_arg][1] == 's') {
             /* iseed value */
             j = sscanf(&argv[at_arg][2], "%d", &k);
             if (j != 0) {
@@ -336,19 +312,6 @@ main(int argc, char *argv[])
     if ((fp = fopen(argv[at_arg++],"w")) == NULL)
         goto usage_exit;
 
-    /* The -g is actually optional, but don't pass it to gs */
-    gsarg_start = at_arg;
-    if (at_arg < argc && argv[at_arg][0] == '-' && argv[at_arg][1] == 'g') {
-        gsarg_start++;
-    }
-#ifdef USE_GSDLL
-    if ((code=init_gs_display(argc - gsarg_start, argv+gsarg_start)) < 0)
-        return 1;
-#else
-    if (gsarg_start < argc)
-        printf("\nThis build did not specify -dUSE_GSDLL. -g args ignored and there will be no display.\n");
-#endif
-
     /* Write out the header line for the threshold array */
     /* This should be compatible with 'thresh_remap.c' */
     fprintf(fp,"# W=%d H=%d\n", array_width, array_height);
@@ -379,11 +342,6 @@ main(int argc, char *argv[])
         qsort((void *)Order, SortRange, sizeof(Order_s), CompareOrder);
         SortRange = array_width * array_height - level;
 
-#ifdef USE_GSDLL
-        /* display an array of values in pseudo color */
-        if ((code=update_gs_image()) < 0)
-            return 1;
-#endif
         if (! quiet) {
             printf("MinVal = %f, MinX = %d, MinY = %d\n", MinVal, Order[0].X, Order[0].Y);
         }
@@ -569,14 +527,11 @@ do_dot:
     }
     code = 0;				/* normal return */
     fclose(fp);
-#ifdef USE_GSDLL
-    close_gs_display();
-#endif
 
     return code;
 /* print out usage and exit */
 usage_exit:
-    printf("\nUsage:\tgen_stochastic [-m#] [-p#.##] [-q] [-rWxH] [-s#] [-t#] SIZEWxSIZEH outfile [-g ghostscript_args ... ]\n");
+    printf("\nUsage:\tgen_stochastic [-m#] [-p#.##] [-q] [-rWxH] [-s#] [-t#] SIZEWxSIZEH outfile\n");
     printf("\n\t-m#\tset the minimum dot size/shape pattern. This is an index to a specific \n");
     printf("\t\tsize/shape table as follows (default 0):\n");
     printf("\n");
@@ -600,8 +555,6 @@ usage_exit:
     printf("\n\t-s#\tInitial seed for random number generation. Useful to generate");
     printf("\n\t\tdecorrelated threshold arrays to be used with different colors.");
     printf("\n\t-t#\tsets the choice value threshold in 0.1%% units (default 10 = 1%%)\n");
-    printf("\n\t-g\t(must be last) Following arguments are passed to Ghostscript if \n");
-    printf("\t\tcompiled wuth USE_GS_DISPLAY=1.\n");
     printf("\n");
     return 1;
 }   /* end main */
@@ -658,11 +611,6 @@ do_dot(int choice_X, int choice_Y, int level, int last)
     value = (value-MinVal) / ValRange;
     fprintf(fp,"%d\t%d\n",choice_X,choice_Y);
 
-#ifdef USE_GSDLL
-    if ((code=update_gs_dot(choice_X, choice_Y, last)) < 0)
-        return -1;
-#endif
-
     Val[ choice_Y*array_width + choice_X ] =  BIG_FLOAT;	/* value for dot already painted */
     /* accumulate the value contribution of this new pixel */
     /* While we do, also recalculate the MinVal and MaxVal and ValRange */
@@ -689,449 +637,3 @@ do_dot(int choice_X, int choice_Y, int level, int last)
         ValRange = 1.0;
     return code;
 }
-
-#ifdef USE_GSDLL
-
-#ifdef __WIN32__
-#  include <windows.h>
-#include "gdevdsp.h"
-#include "dwdll.h"
-#include "dwimg.h"
-#include "dwtrace.h"
-#include <process.h>
-#include <io.h>
-#endif /* __WIN32__ */
-
-#include <fcntl.h>
-#include "errors.h"
-#include "iapi.h"
-#include "vdtrace.h"
-
-void *instance = NULL;
-
-#ifdef __WIN32__
-GSDLL gsdll;
-BOOL quitnow = FALSE;
-HANDLE hthread;
-DWORD thread_id;
-HWND hwndtext = NULL;	/* for dwimg.c, but not used */
-HWND hwndforeground;	/* our best guess for our console window handle */
-
-
-int loop_ctr;
-char start_string[] = "systemdict /start get exec\n";
-
-
-/*********************************************************************/
-/* stdio functions */
-
-static int GSDLLCALL
-gsdll_stdin(void *instance, char *buf, int len)
-{
-    return _read(fileno(stdin), buf, len);
-}
-
-static int GSDLLCALL
-gsdll_stdout(void *instance, const char *str, int len)
-{
-    fwrite(str, 1, len, stdout);
-    fflush(stdout);
-    return len;
-}
-
-static int GSDLLCALL
-gsdll_stderr(void *instance, const char *str, int len)
-{
-    fwrite(str, 1, len, stderr);
-    fflush(stderr);
-    return len;
-}
-
-/*********************************************************************/
-/* dll device */
-
-/* We must run windows from another thread, since main thread */
-/* is running Ghostscript and blocks on stdin. */
-
-/* We notify second thread of events using PostThreadMessage()
- * with the following messages. Apparently Japanese Windows sends
- * WM_USER+1 with lParam == 0 and crashes. So we use WM_USER+101.
- * Fix from Akira Kakuto
- */
-#define DISPLAY_OPEN WM_USER+101
-#define DISPLAY_CLOSE WM_USER+102
-#define DISPLAY_SIZE WM_USER+103
-#define DISPLAY_SYNC WM_USER+104
-#define DISPLAY_PAGE WM_USER+105
-
-/* The second thread is the message loop */
-static void winthread(void *arg)
-{
-    MSG msg;
-    thread_id = GetCurrentThreadId();
-    hthread = GetCurrentThread();
-
-    while (!quitnow && GetMessage(&msg, (HWND)NULL, 0, 0)) {
-        switch (msg.message) {
-            case DISPLAY_OPEN:
-                image_open((IMAGE *)msg.lParam);
-                break;
-            case DISPLAY_CLOSE:
-                {
-                    IMAGE *img = (IMAGE *)msg.lParam;
-                    HANDLE hmutex = img->hmutex;
-                    image_close(img);
-                    CloseHandle(hmutex);
-                }
-                break;
-            case DISPLAY_SIZE:
-                image_updatesize((IMAGE *)msg.lParam);
-                break;
-            case DISPLAY_SYNC:
-                image_sync((IMAGE *)msg.lParam);
-                break;
-            case DISPLAY_PAGE:
-                image_page((IMAGE *)msg.lParam);
-                break;
-            default:
-                TranslateMessage(&msg);
-                DispatchMessage(&msg);
-        }
-    }
-}
-
-
-/* New device has been opened */
-/* Tell user to use another device */
-int display_open(void *handle, void *device)
-{
-    IMAGE *img;
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_open(0x%x, 0x%x)\n", handle, device);
-#endif
-    img = image_new(handle, device);	/* create and add to list */
-    img->hmutex = CreateMutex(NULL, FALSE, NULL);
-    if (img)
-        PostThreadMessage(thread_id, DISPLAY_OPEN, 0, (LPARAM)img);
-    return 0;
-}
-
-int display_preclose(void *handle, void *device)
-{
-    IMAGE *img;
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_preclose(0x%x, 0x%x)\n", handle, device);
-#endif
-    img = image_find(handle, device);
-    if (img) {
-        /* grab mutex to stop other thread using bitmap */
-        WaitForSingleObject(img->hmutex, 120000);
-    }
-    return 0;
-}
-
-int display_close(void *handle, void *device)
-{
-    IMAGE *img;
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_close(0x%x, 0x%x)\n", handle, device);
-#endif
-    img = image_find(handle, device);
-    if (img) {
-        /* This is a hack to pass focus from image window to console */
-        if (GetForegroundWindow() == img->hwnd)
-            SetForegroundWindow(hwndforeground);
-
-        image_delete(img);	/* remove from list, but don't free */
-        PostThreadMessage(thread_id, DISPLAY_CLOSE, 0, (LPARAM)img);
-    }
-    return 0;
-}
-
-int display_presize(void *handle, void *device, int width, int height,
-        int raster, unsigned int format)
-{
-    IMAGE *img;
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_presize(0x%x 0x%x, %d, %d, %d, %d, %ld)\n",
-        handle, device, width, height, raster, format);
-#endif
-    img = image_find(handle, device);
-    if (img) {
-        /* grab mutex to stop other thread using bitmap */
-        WaitForSingleObject(img->hmutex, 120000);
-    }
-    return 0;
-}
-
-int display_size(void *handle, void *device, int width, int height,
-        int raster, unsigned int format, unsigned char *pimage)
-{
-    IMAGE *img;
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_size(0x%x 0x%x, %d, %d, %d, %d, %ld, 0x%x)\n",
-        handle, device, width, height, raster, format, pimage);
-#endif
-    img = image_find(handle, device);
-    if (img) {
-        image_size(img, width, height, raster, format, pimage);
-        /* release mutex to allow other thread to use bitmap */
-        ReleaseMutex(img->hmutex);
-        PostThreadMessage(thread_id, DISPLAY_SIZE, 0, (LPARAM)img);
-    }
-    return 0;
-}
-
-int display_sync(void *handle, void *device)
-{
-    IMAGE *img;
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_sync(0x%x, 0x%x)\n", handle, device);
-#endif
-    img = image_find(handle, device);
-    if (img)
-        PostThreadMessage(thread_id, DISPLAY_SYNC, 0, (LPARAM)img);
-    return 0;
-}
-
-int display_page(void *handle, void *device, int copies, int flush)
-{
-    IMAGE *img;
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_page(0x%x, 0x%x, copies=%d, flush=%d)\n",
-        handle, device, copies, flush);
-#endif
-    img = image_find(handle, device);
-    if (img)
-        PostThreadMessage(thread_id, DISPLAY_PAGE, 0, (LPARAM)img);
-    return 0;
-}
-
-int display_update(void *handle, void *device,
-    int x, int y, int w, int h)
-{
-    /* Unneeded for polling - we are running Windows on another thread. */
-    /* Eventually we will add code here which provides progressive
-     * update of the display during rendering.
-     */
-    return 0;
-}
-
-/*
-#define DISPLAY_DEBUG_USE_ALLOC
-*/
-#ifdef DISPLAY_DEBUG_USE_ALLOC
-/* This code isn't used, but shows how to use this function */
-void *display_memalloc(void *handle, void *device, unsigned long size)
-{
-    void *mem;
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_memalloc(0x%x 0x%x %d)\n",
-        handle, device, size);
-#endif
-    mem = malloc(size);
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "  returning 0x%x\n", (int)mem);
-#endif
-    return mem;
-}
-
-int display_memfree(void *handle, void *device, void *mem)
-{
-#ifdef DISPLAY_DEBUG
-    fprintf(stdout, "display_memfree(0x%x, 0x%x, 0x%x)\n",
-        handle, device, mem);
-#endif
-    free(mem);
-    return 0;
-}
-#endif
-
-
-
-display_callback display = {
-    sizeof(display_callback),
-    DISPLAY_VERSION_MAJOR,
-    DISPLAY_VERSION_MINOR,
-    display_open,
-    display_preclose,
-    display_close,
-    display_presize,
-    display_size,
-    display_sync,
-    display_page,
-    display_update,
-#ifdef DISPLAY_DEBUG_USE_ALLOC
-    display_memalloc,	/* memalloc */
-    display_memfree	/* memfree */
-#else
-    NULL,	/* memalloc */
-    NULL	/* memfree */
-#endif
-};
-#endif /* __WIN32__ */
-
-int
-init_gs_display(int argc, char **argv)
-{
-    char buf[256];
-    char *gsargs[32];	/* enough */
-    int atgsarg = 1;
-    int code, exit_code, i, j, k;
-
-    gsargs[0] = "";
-    memset(buf, 0, sizeof(buf));
-
-#ifdef __WIN32__
-    if (!_isatty(fileno(stdin)))
-        _setmode(fileno(stdin), _O_BINARY);
-    _setmode(fileno(stdout), _O_BINARY);
-    _setmode(fileno(stderr), _O_BINARY);
-
-    hwndforeground = GetForegroundWindow();	/* assume this is ours */
-#endif /* __WIN32__ */
-    if (gsapi_new_instance((void *)&instance, NULL) < 0) {
-        fprintf(stderr, "Can't create Ghostscript instance\n");
-        return 1;
-    }
-
-#ifdef __WIN32__
-    if (_beginthread(winthread, 65535, NULL) == -1) {
-        fprintf(stderr, "GUI thread creation failed\n");
-    }
-    else {
-        int n = 30;
-        /* wait for thread to start */
-        Sleep(0);
-        while (n && (hthread == INVALID_HANDLE_VALUE)) {
-            n--;
-            Sleep(100);
-        }
-        while (n && (PostThreadMessage(thread_id, WM_USER, 0, 0) == 0)) {
-            n--;
-            Sleep(100);
-        }
-        if (n == 0)
-            fprintf(stderr, "Can't post message to GUI thread\n");
-    }
-    gsapi_set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
-    gsapi_set_display_callback(instance, &display);
-    gsargs[atgsarg++] = "-dDisplayFormat=16#20804";
-#endif /* __WIN32__ */
-
-    for(i=0; i<argc; i++)
-        gsargs[atgsarg++] = argv[i];
-    if ((code = gsapi_init_with_args(instance, atgsarg, gsargs)) < 0) {
-        printf("gsapi_init returned code = %d\n", code);
-        return code;
-    }
-    if ((code = gsapi_run_string_begin(instance, 0, &exit_code)) < 0) {
-        printf("gsapi_run_string_begin returned code = %d\n", code);
-        gsapi_exit(instance);
-        gsapi_delete_instance(instance);
-        return -1;
-    }
-    sprintf(buf, "/NX %d def /NY %d def /RX %d def /RY %d def\n"
-                " (genpat0.ps) run\n"
-                "1 false .outputpage\n",
-                array_width, array_height, resolution[0], resolution[1]);
-    if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) != gs_error_NeedInput) {
-        printf(" Execution of 'genpat0.ps' returned code = %d\n", code);
-        return -1;
-    }
-    loop_ctr = 1;		/* stop after the first */
-    return 0;
-}
-
-int
-update_gs_image()
-{
-    char	buf[MAX_ARRAY_WIDTH*2 + 256];
-    char	*bufp;
-    int	   	code, exit_code, i, j, k, Gray;
-
-    sprintf(buf, "DoImage\n");
-    bufp = buf + 8;
-    for (i=0; i < array_width*array_height; i++) {
-        if (Val[i] < BIG_FLOAT)
-                /* Scale the value to be in the middle range of colors */
-                /* leaving 0=BLACK and 255=white			     */
-            Gray = 254 - (int)(0.5 + 253.0*
-                    pow((Val[i]-MinVal)/(ValRange), 0.25));
-        else
-            Gray = 0;
-        if ((i % array_width) == array_width - 1) {
-            sprintf(bufp, "%02X\n", Gray);
-            if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < gs_error_NeedInput) {
-                printf(" during image data for DoImage returned code = %d\n", code);
-                return -1;
-            }
-            bufp = buf;
-        } else {
-            sprintf(bufp, "%02X", Gray);
-            bufp += 2;
-        }
-    }
-    return 0;
-}
-
-int
-update_gs_dot(int choice_X, int choice_Y, int last)
-{
-    char	buf[256];
-    int	   	code, exit_code;
-
-    if (loop_ctr <= 1) {
-        sprintf(buf, "%d %d %d Dot\n", choice_X, choice_Y, 180);
-        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < gs_error_NeedInput) {
-            printf(" Execution of Dot returned code = %d\n", code);
-            return -1;
-        }
-    }
-    if (last) {
-        /* Sync the display before waiting for a character */
-        sprintf(buf, "1 false .outputpage\n");
-        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < gs_error_NeedInput) {
-            printf(" Execution of .outputpage returned code = %d\n", code);
-            return -1;
-        }
-
-
-        if (--loop_ctr <= 0) {
-#ifdef __WIN32__
-            loop_ctr = getch();
-#else
-            loop_ctr = getchar();
-#endif
-            if (loop_ctr == 'q')
-                exit(1);
-            if (loop_ctr == 27 || loop_ctr == 'g')	/* Escape means run forever */
-                loop_ctr = 9999999;
-            else
-                loop_ctr -= ' ';
-            if (loop_ctr < 0)
-                loop_ctr = 1;
-        }
-
-        /* Now change that dot to black (0) before proceeding */
-        sprintf(buf, "%d %d %d Dot\n", choice_X, choice_Y, 0);
-        if ((code = gsapi_run_string_continue(instance, buf, strlen(buf), 0, &exit_code)) < gs_error_NeedInput) {
-            printf(" Execution of Dot returned code = %d\n", code);
-            return -1;
-        }
-    }
-    return 0;
-}
-
-void
-close_gs_display()
-{
-    int exit_code;
-
-    gsapi_run_string_end(instance, 0, &exit_code);
-close_dll_exit:
-    gsapi_exit(instance);
-    gsapi_delete_instance(instance);
-}
-
-#endif /* USE_GSDLL */
