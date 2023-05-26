@@ -13,7 +13,7 @@ Welcome to :title:`Ghostscript`
    :align: left
    :scale: 20%
 
-:title:`Ghostscript` is an interpreter for the `PostScript® <https://en.wikipedia.org/wiki/PostScript>`_ language and `PDF <https://en.wikipedia.org/wiki/PDF>`_ files. It is available under either the `GNU GPL Affero license <https://www.gnu.org/licenses/agpl-3.0.html>`_ or  `licensed for commercial <https://artifex.com/licensing/commercial/>`_ use from `Artifex Software, Inc <https://artifex.com/>`_. It has been under active development for over 30 years and has been ported to several different systems during this time. Ghostscript consists of a PostScript interpreter layer and a graphics library.
+:title:`Ghostscript` is an interpreter for the `PostScript® <https://en.wikipedia.org/wiki/PostScript>`_ language and `PDF <https://en.wikipedia.org/wiki/PDF>`_ files. It is available under either the `GNU GPL Affero license <https://www.gnu.org/licenses/agpl-3.0.html>`_ or  `licensed for commercial <https://artifex.com/licensing/commercial?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link>`_ use from `Artifex Software, Inc <https://artifex.com/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link>`_. It has been under active development for over 30 years and has been ported to several different systems during this time. Ghostscript consists of a PostScript interpreter layer and a graphics library.
 
 |
 

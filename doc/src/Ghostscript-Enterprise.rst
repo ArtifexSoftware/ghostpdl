@@ -121,7 +121,7 @@ If you are interested in using :title:`Ghostscript Enterprise`, please contact o
 
 .. raw:: html
 
-   <button class="cta orange" onclick="window.location='https://artifex.com/contact/ghostscript-inquiry.php'">CONTACT US</button>
+   <button class="cta orange" onclick="window.location='https://artifex.com/contact/ghostscript-inquiry.php?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=cta-button'">CONTACT US</button>
    <p></p>
 
 
