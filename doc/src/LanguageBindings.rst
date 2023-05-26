@@ -58,7 +58,7 @@ If you cannot or do not want to comply with these restrictions, you must acquire
 
 .. raw:: html
 
-   <button class="cta orange" onclick="window.location='https://artifex.com/licensing/'">Find out more about Licensing</button>
+   <button class="cta orange" onclick="window.location='https://artifex.com/licensing?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=cta-button'">Find out more about Licensing</button>
    <p></p>
 
 
@@ -69,7 +69,7 @@ If your project does not meet the requirements of the AGPL, please contact our s
 
 .. raw:: html
 
-   <button class="cta orange" onclick="window.location='https://artifex.com/contact/'">CONTACT US</button>
+   <button class="cta orange" onclick="window.location='https://artifex.com/contact/ghostscript-inquiry.php?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=cta-button'">CONTACT US</button>
    <p></p>
 
 
@@ -119,13 +119,10 @@ Python
 
 
 
-
-
-
 .. External links
 
-.. _commercial license: https://artifex.com/licensing/commercial/
+.. _commercial license: https://artifex.com/licensing/commercial?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
 .. _.NET: https://dotnet.microsoft.com/
 .. _Visual Studio: https://visualstudio.microsoft.com/
 .. _Mono: https://www.mono-project.com/
-.. _GhostPDL repository: https://ghostscript.com/releases/gpdldnld.html
+.. _GhostPDL repository: https://ghostscript.com/releases/gpdldnld.html?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link

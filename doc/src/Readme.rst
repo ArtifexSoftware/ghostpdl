@@ -36,7 +36,7 @@ Ghostscript is an interpreter for PostScript® and Portable Document Format (PDF
 
 Ghostscript consists of a PostScript interpreter layer, and a graphics library. The graphics library is shared with all the other products in the Ghostscript family, so all of these technologies are sometimes referred to as Ghostscript, rather than the more correct GhostPDL.
 
-Binaries for Ghostscript and (see below) GhostPDF (included in the Ghostscript binaries) for various systems can be downloaded from `here`_. The source can be found in both the Ghostscript and GhostPDL downloads from the same site.
+Binaries for Ghostscript and (see below) GhostPDF (included in the Ghostscript binaries) for various systems can be downloaded from `ghostscript.com/download`_. The source can be found in both the Ghostscript and GhostPDL downloads from the same site.
 
 
 
@@ -70,7 +70,7 @@ In addition to our existing PDL modules (PS, PDF, PCL, PXL, and XPS) we have now
 
 GhostPDL is available both under the `GNU Affero GPL license`_ and for `commercial licensing`_ from `Artifex`_.
 
-The source code for GhostPDL can be found `here`_.
+The source code for GhostPDL can be found from `ghostscript.com/download`_.
 
 
 
@@ -83,7 +83,7 @@ GhostPCL is an interpreter for PCL™ and PXL files. This consists of an PCL/PXL
 
 GhostPCL is available both under the `GNU Affero GPL license`_ and for `commercial licensing`_ from `Artifex`_.
 
-Binaries for GhostPCL for various systems can be downloaded from `here`_. The source can be found in the GhostPCL/GhostPDL downloads from the same site.
+Binaries for GhostPCL for various systems can be downloaded from `ghostscript.com/download`_. The source can be found in the GhostPCL/GhostPDL downloads from the same site.
 
 
 
@@ -95,7 +95,7 @@ GhostXPS is an interpreter for XPS (XML Paper Specfication) files. This consists
 
 GhostXPS is available both under the `GNU Affero GPL license`_ and for `commercial licensing`_ from `Artifex`_.
 
-Binaries for GhostXPS for various systems can be downloaded from `here`_. The source can be found in the GhostXPS/GhostPDL downloads from the same site.
+Binaries for GhostXPS for various systems can be downloaded from `ghostscript.com/download`_. The source can be found in the GhostXPS/GhostPDL downloads from the same site.
 
 
 
@@ -217,13 +217,13 @@ Much other material about Ghostscript is available on the World Wide Web, both a
 
 .. External links
 
-.. _www.ghostscript.com: http://www.ghostscript.com/
-.. _here: http://www.ghostscript.com/download
+.. _www.ghostscript.com: http://www.ghostscript.com/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
+.. _ghostscript.com/download: http://www.ghostscript.com/download/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
 .. _AGPL:
 .. _GNU Affero GPL license: http://www.gnu.org/licenses/agpl-3.0.html
 .. _AFPL: https://en.wikipedia.org/wiki/Aladdin_Free_Public_License
-.. _commercial licensing: https://artifex.com/licensing/commercial/
-.. _Artifex: https://artifex.com
+.. _commercial licensing: https://artifex.com/licensing/commercial?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
+.. _Artifex: https://artifex.com/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
 .. _bugs.ghostscript.com: https://bugs.ghostscript.com
 .. _license:
 .. _GPL Ghostscript releases: https://github.com/ArtifexSoftware/ghostpdl/blob/master/doc/COPYING
