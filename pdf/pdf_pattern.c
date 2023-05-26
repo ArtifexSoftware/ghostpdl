@@ -290,6 +290,14 @@ pdfi_pattern_paintproc(const gs_client_color *pcc, gs_gstate *pgs)
 {
     const gs_client_pattern *pinst = gs_getpattern(pcc);
     int code = 0;
+    pdf_context *ctx = ((pdf_pattern_context_t *)((gs_pattern1_instance_t *)pcc->pattern)->client_data)->ctx;
+    text_state_t ts;
+
+    /* We want to start running the pattern PaintProc with a "clean slate"
+       so store, clear......."
+     */
+    memcpy(&ts, &ctx->text, sizeof(ctx->text));
+    memset(&ctx->text, 0x00, sizeof(ctx->text));
 
     /* pgs->device is the newly created pattern accumulator, but we want to test the device
      * that is 'behind' that, the actual output device, so we use the one from
@@ -301,10 +309,14 @@ pdfi_pattern_paintproc(const gs_client_color *pcc, gs_gstate *pgs)
     }
 
     if (code == 1) {
-        return pdfi_pattern_paint_high_level(pcc, pgs);
+        code = pdfi_pattern_paint_high_level(pcc, pgs);
     } else {
-        return pdfi_pattern_paint(pcc, pgs);
+        code =  pdfi_pattern_paint(pcc, pgs);
     }
+
+    /* .... and restore the text state in the context */
+    memcpy(&ctx->text, &ts, sizeof(ctx->text));
+    return code;
 }
 
 
