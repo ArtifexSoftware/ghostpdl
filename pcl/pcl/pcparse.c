@@ -347,7 +347,6 @@ pcl_process(pcl_parser_state_t * pst, pcl_state_t * pcs,
                                                        pst->args.command);
                     if (pst->short_hand) {
                         pst->scan_type = scanning_parameter;
-                        continue;
                     } else
                         pst->scan_type = scanning_none;
                     break;
