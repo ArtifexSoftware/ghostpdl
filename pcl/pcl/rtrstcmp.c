@@ -174,8 +174,8 @@ uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
         if (comp) {
             offset = (val >> 5) & 0x3;
             more_offset = (offset == 0x3);
-            cnt = (val & 0x1f) + 1;
-            more_cnt = (cnt == 0x20);
+            cnt = (val & 0x1f) + 2;
+            more_cnt = (cnt == 0x21);
         } else {
             offset = (val >> 3) & 0xf;
             more_offset = (offset == 0xf);
@@ -200,25 +200,22 @@ uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
 
         if ((pb += offset) >= plim)
             break;
-        if (comp) {
-            uint j = i / 2;
+        if (i <= 0)
+            break;
 
-            while (j-- > 0) {
-                uint rep_cnt = *pin++;
+        if (comp) {
+            if(i-- > 0) {
                 uint rep_val = *pin++;
 
-                if (rep_cnt > plim - pb)
-                    rep_cnt = plim - pb;
-                while (rep_cnt-- > 0)
+                if (cnt > plim - pb)
+                    cnt = plim - pb;
+                while (cnt-- > 0)
                     *pb++ = rep_val;
             }
-            i -= 2 * j;
-
         } else {
             if (cnt > i)
                 cnt = i;
             i -= cnt;
-            pin += cnt;
             if (cnt > plim - pb)
                 cnt = plim - pb;
             while (cnt-- > 0)
