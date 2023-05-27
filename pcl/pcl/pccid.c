@@ -397,6 +397,10 @@ set_simple_color_mode(int type, pcl_state_t * pcs)
         (byte) pcl_penc_indexed_by_plane,
         3, 1, 1, 1
     };
+    static const byte cid_KCMY[6] = { (byte) pcl_cspace_CMY,
+        (byte) pcl_penc_indexed_by_plane,
+        4, 1, 1, 1
+    };
     static const byte cid_RGB[6] = { (byte) pcl_cspace_RGB,
         (byte) pcl_penc_indexed_by_plane,
         3, 1, 1, 1
@@ -409,6 +413,8 @@ set_simple_color_mode(int type, pcl_state_t * pcs)
         pbuff = cid_RGB;
     else if (type == -3)
         pbuff = cid_CMY;
+    else if (type == -4)
+        pbuff = cid_KCMY;
     else
         return e_Range;
 

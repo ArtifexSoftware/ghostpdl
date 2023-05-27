@@ -269,7 +269,7 @@ set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case 
                                  byte * palette,
                                  const byte * porder, int start, int num)
 {
-    int i;
+    int i, j = 3;
     static const byte cmy_default[8 * 3] = {
         255, 255, 255,          /* white */
         0, 255, 255,            /* cyan */
@@ -281,11 +281,16 @@ set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case 
         0, 0, 0                 /* black */
     };
 
+    if (num > 8)
+        j = 4;
+
     /* fill in the num_entries - 1 values from the RGB default */
     for (i = start; i < num + start; i++) {
-        palette[3 * i] = cmy_default[3 * porder[i]];
-        palette[3 * i + 1] = cmy_default[3 * porder[i] + 1];
-        palette[3 * i + 2] = cmy_default[3 * porder[i] + 2];
+        palette[j * i] = cmy_default[3 * porder[i]];
+        palette[j * i + 1] = cmy_default[3 * porder[i] + 1];
+        palette[j * i + 2] = cmy_default[3 * porder[i] + 2];
+        if (num > 8)
+            palette[j * i + 3] = 0;
     }
 }
 
@@ -457,11 +462,11 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
     };
 
     /*
-     * For each color space, 8 palette entries are stored in the canonical
-     * CMY order; any palette entries beyond the first 8 always default to
+     * For each color space, 8 or 16 palette entries are stored in the canonical
+     * CMY order; any palette entries beyond the first 8 or 16 always default to
      * black. These arrays are incorporated into procedures that handle the
      * generation of colors for each color space type. For the bits per index
-     * settings of 1, 2, or >= 3, an order array is provided, to indicate the
+     * settings of 1, 2, 3, or >= 4, an order array is provided, to indicate the
      * order in which the default palette entries should be entered into the
      * palette. Separate arrays are provided for the RGB and CMY color spaces,
      * and for GL/2 default colors.
@@ -469,11 +474,12 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
     static const byte order_1[] = { 0, 7 };
     static const byte cmy_order_2[] = { 0, 1, 2, 7 };
     static const byte cmy_order_3[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+    static const byte cmy_order_4[] = { 0, 7, 1, 7, 2, 7, 3, 7, 4, 7, 5, 7, 6, 7, 7, 7 };
     static const byte rgb_order_2[] = { 7, 6, 5, 0 };
     static const byte rgb_order_3[] = { 7, 6, 5, 4, 3, 2, 1, 0 };
     static const byte gl2_order_2[] = { 0, 7, 6, 5 };
     static const byte gl2_order_3[] = { 0, 7, 6, 5, 4, 3, 2, 1 };
-    static const byte *cmy_order[3] = { order_1, cmy_order_2, cmy_order_3 };
+    static const byte *cmy_order[4] = { order_1, cmy_order_2, cmy_order_3, cmy_order_4 };
     static const byte *rgb_order[3] = { order_1, rgb_order_2, rgb_order_3 };
     static const byte *gl2_order[3] = { order_1, gl2_order_2, gl2_order_3 };
     int type = pindexed->cid.cspace;
@@ -485,6 +491,8 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
 
     if (bits > 2)
         bits = 2;
+    if (bits > 3)
+        bits = 3;
     if (gl2)
         porder = gl2_order[bits];
     /* check for a rgb or colorimetric.  If the colorimetric is being
@@ -495,7 +503,10 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
     else
         porder = cmy_order[bits];
 
-    /* set the default colors for up to the first 8 entries */
+    /* If 4-plane simple color KCMY graphics, set cnt for larger palette. */
+    if (bits == 3 && type == pcl_cspace_CMY)
+        cnt = 15;
+    /* set the default colors for up to the first 16 entries */
     set_default_palette[(int)type] (pindexed->pbase,
                                     pindexed->palette.data,
                                     porder, start, cnt);
