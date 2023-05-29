@@ -148,14 +148,6 @@ uncompress_3(pcl_seed_row_t * pout, const byte * pin, int in_size)
 
 /*
  * Compression mode 9.
- *
- * HP's documentation of this command is not completely clear regarding the
- * interpretation of the replacement byte count for the run-length compression
- * case. The interpretation used here, based on the documentation in the
- * "PCL 5 Comparison Guide", October 1996 edition, pp. 2.94-2.96, is that the
- * replacement byte count refers to the number of output bytes replaced, and
- * as many input bytes as required are read until at leas this many output
- * bytes have been replaced.
  */
 static void
 uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
@@ -195,7 +187,7 @@ uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
             i -= 1;
 
             more_cnt = (extra == 0xff);
-            offset += extra;
+            cnt += extra;
         }
 
         if ((pb += offset) >= plim)
