@@ -491,8 +491,6 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
 
     if (bits > 2)
         bits = 2;
-    if (bits > 3)
-        bits = 3;
     if (gl2)
         porder = gl2_order[bits];
     /* check for a rgb or colorimetric.  If the colorimetric is being
