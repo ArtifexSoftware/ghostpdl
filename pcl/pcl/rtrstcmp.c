@@ -219,12 +219,202 @@ uncompress_9(pcl_seed_row_t * pout, const byte * pin, int in_size)
 
 }
 
-void (*const pcl_decomp_proc[9 + 1]) (pcl_seed_row_t * pout,
+enum
+{
+    eeNewPixel = 0x0,
+    eeWPixel = 0x20,
+    eeNEPixel = 0x40,
+    eeCachedColor = 0x60
+};
+
+static inline uint32_t
+mode10_merge_delta(const uint8_t ** src, uint32_t oldpixel, int *countdown)
+{
+    uint32_t pixel;
+
+    if (*countdown < 2) {
+	return 0xffffff;
+    }
+    if (**src & 0x80) {
+	uint16_t delta;
+	int32_t dr, dg, db;
+	int r, g, b;
+
+	if_debug2('w', "delta %02X %02X\n", **src, *(*src + 1));
+
+	delta = (**src << 8) | *(*src + 1);
+	dr = (delta >> 10) & 0x1f;
+	dg = (delta >> 5) & 0x1f;
+	db = (delta & 0x1f) << 1;
+	if (dr & 0x10) {
+	    dr |= 0xffffffe0;
+	}
+	if (dg & 0x10) {
+	    dg |= 0xffffffe0;
+	}
+	if (db & 0x20) {
+	    db |= 0xffffffd0;
+	}
+	r = ((oldpixel >> 16) + dr) & 0xff;
+	g = ((oldpixel >> 8) + dg) & 0xff;
+	b = ((oldpixel >> 0) + db) & 0xff;
+	pixel = (r << 16) | (g << 8) | (b);
+	(*src) += 2;
+	*countdown -= 2;
+    } else {
+	if (*countdown < 3) {
+	    return 0xffffff;
+	}
+	if_debug3('w', "lit %02X %02X %02X\n", **src, *(*src + 1),
+		  *(*src + 2));
+
+	pixel = ((**src << 16) | (*(*src + 1) << 8) | (*(*src + 2))) << 1;
+	if (pixel & 0x80) {
+	    pixel |= 1;
+	}
+	(*src) += 3;
+	*countdown -= 3;
+    }
+    return pixel;
+}
+
+static void
+uncompress_10(pcl_seed_row_t * pout, const byte * pin, int in_size)
+{
+    int i = in_size;
+    byte *pb = pout->pdata;
+    byte *plim = pb + pout->size;
+    uint32_t cachedColor = 0x00ffffff;
+    uint32_t pixel = 0xffffff;
+    uint8_t val;
+    int comp;
+    int j;
+
+    while (i-- > 0) {
+	int offset;
+	int cnt;
+	int more_cnt;
+	int pixel_source;
+	val = *pin++;
+	if_debug1('w', "command %02X ", val);
+	comp = val & 0x80;
+	pixel_source = val & 0x60;
+
+	offset = (val >> 3) & 0x3;
+	if (offset == 3) {
+	    do {
+		if (i <= 0) {
+		    if_debug0('w', "source end premature 1\n");
+		    goto tidy_up;
+		}
+		offset += *pin;
+		i--;
+	    } while (*pin++ == 0xff);
+	}
+	cnt = (val & 0x7);
+	if (cnt == 7)
+	    more_cnt = 1;
+	else
+	    more_cnt = 0;
+	if_debug1('w', "offset %d ", offset);
+	pb += offset * 3;
+	if (pixel_source == eeNewPixel) {
+	    /* deal with later */
+	} else if (pixel_source == eeWPixel) {
+	    if (((pb - pout->pdata) > 2) && (pb <= plim)) {
+		pixel = (*(pb - 3) << 16) | (*(pb - 2) << 8) | (*(pb - 1));
+	    } else
+		break;
+	} else if (pixel_source == eeNEPixel) {
+	    if (pb + 5 < plim) {
+		pixel = (*(pb + 3) << 16) | (*(pb + 4) << 8) | *(pb + 5);
+	    } else
+		break;
+	} else {
+	    pixel = cachedColor;
+	}
+	if (comp) {
+	    /* RLE */
+	    cnt += 2;
+	    if (pixel_source == eeNewPixel) {
+		if ((pb + 3) > plim)
+		    break;
+		pixel = (*pb << 16) | (*(pb + 1) << 8) | (*(pb + 2));
+		pixel = mode10_merge_delta(&pin, pixel, &i);
+		cachedColor = pixel;
+	    }
+	    if (more_cnt) {
+		do {
+		    if (i <= 0) {
+			if_debug0('w', "source end premature 2\n");
+			goto tidy_up;
+		    }
+		    cnt += *pin;
+		    i--;
+		} while (*pin++ == 0xff);
+	    }
+	    if_debug1('w', "rcnt %d\n", cnt);
+	    for (j = 0; j < cnt; j++) {
+		if ((pb + 3) > plim) {
+		    if_debug0('|', "pixel over run 1\n");
+		} else {
+		    *pb++ = (pixel >> 16) & 0xff;
+		    *pb++ = (pixel >> 8) & 0xff;
+		    *pb++ = (pixel >> 0) & 0xff;
+		}
+	    }
+	} else {
+	    if ((pb + 3) > plim)
+		break;
+	    if (pixel_source == eeNewPixel) {
+		pixel = (*pb << 16) | (*(pb + 1) << 8) | (*(pb + 2));
+		pixel = mode10_merge_delta(&pin, pixel, &i);
+		cachedColor = pixel;
+	    }
+	    *pb++ = (pixel >> 16) & 0xff;
+	    *pb++ = (pixel >> 8) & 0xff;
+	    *pb++ = (pixel >> 0) & 0xff;
+	    if_debug1('w', "lcnt %d\n", cnt + 1);
+	    while (1) {
+		for (j = 0; j < cnt; j++) {
+		    if ((pb + 3) > plim)
+			goto tidy_up;
+		    pixel = (*pb << 16) | (*(pb + 1) << 8) | (*(pb + 2));
+		    pixel = mode10_merge_delta(&pin, pixel, &i);
+		    /* cachedColor only updated on first literal pixel */
+		    *pb++ = (pixel >> 16) & 0xff;
+		    *pb++ = (pixel >> 8) & 0xff;
+		    *pb++ = (pixel >> 0) & 0xff;
+		}
+		if (more_cnt) {
+		    cnt = *pin++;
+		    i--;
+		    if (cnt != 255) {
+			more_cnt = 0;
+		    }
+		} else {
+		    break;
+		}
+	    }
+	}
+    }
+  tidy_up:
+    if (in_size)
+	if_debug2('w', "data count raw %d out %ld\n", in_size,
+		  pb - pout->pdata);
+    else
+	if_debug0('w', "*");
+    pout->is_blank = (pout->is_blank && (in_size == 0));
+
+}
+
+void (*const pcl_decomp_proc[10 + 1]) (pcl_seed_row_t * pout,
                                       const byte * pin, int in_size) = {
     uncompress_0,
     uncompress_1,
     uncompress_2,
     uncompress_3,
     0, 0, 0, 0, 0,      /* modes 4 - 8 handled separately */
-    uncompress_9
+    uncompress_9,
+    uncompress_10
 };

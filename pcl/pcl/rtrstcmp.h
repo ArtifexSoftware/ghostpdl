@@ -35,6 +35,7 @@
  *     7 - compression mode 5 (ccitt group 3 2d), param is size in bytes
  *     8 - compression mode 5 (ccitt group 4 2d), param is size in bytes
  *     9 - compression mode 9 (modified delta row), param is size in bytes
+ *    10 - compression mode 10
  *
  * There is no separate format for repeated rows. The desired effect can be
  * achieve by create a buffer of type 3 with a size of 0 bytes.
@@ -50,7 +51,8 @@ typedef enum
     CCITT_GR3_1D_COMPRESS = 6,
     CCITT_GR3_2D_COMPRESS = 7,
     CCITT_GR4_COMPRESS = 8,
-    MOD_DELTA_ROW_COMPRESS = 9
+    MOD_DELTA_ROW_COMPRESS = 9,
+    MODE10_COMPRESS = 10
 } pcl_rast_buff_type_t;
 
 /*
@@ -79,7 +81,7 @@ typedef struct pcl_seed_row_s
 /*
  * The array of decompression functions.
  */
-extern void (*const pcl_decomp_proc[9 + 1]) (pcl_seed_row_t * pout,
+extern void (*const pcl_decomp_proc[10 + 1]) (pcl_seed_row_t * pout,
                                              const byte * pin, int in_size);
 
 #endif /* rtrstcmp_INCLUDED */

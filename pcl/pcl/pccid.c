@@ -422,6 +422,36 @@ set_simple_color_mode(int type, pcl_state_t * pcs)
     return install_cid_data(6, pbuff, pcs, true, false);
 }
 
+ /*
+ * ESC * g <nbytes> W
+ *
+ * This command sets compression mode, color mode and other info per component.
+ * Repaces "ESC * r <byte> U" and friends.
+ */
+static int
+pcl_configure_raster_data(pcl_args_t * pargs, pcl_state_t * pcs)
+{
+    int len = uint_arg(pargs);
+    byte *data = arg_data(pargs);
+
+    dprintf1("Format:%d\n", data[0]);
+    dprintf1("ID:%d\n", data[1]);      /* =31 for KRGB */
+    dprintf1("#Components:%d\n", (data[2] << 8 | data[3]));
+    dprintf1("X Resolution:%d\n", (data[4] << 8 | data[5]));
+    dprintf1("Y Resolution:%d\n", (data[6] << 8 | data[7]));
+    dprintf1("Compression Mode:%d\n", data[8]);        /* 9 */
+    dprintf1("Orientation:%d\n", data[9]);
+    dprintf1("Bits:%d\n", data[10]);
+    dprintf1("Planes:%d\n", data[11]);
+    dprintf1("X Resolution:%d\n", (data[12] << 8 | data[13]));
+    dprintf1("Y Resolution:%d\n", (data[14] << 8 | data[15]));
+    dprintf1("Compression Mode:%d\n", data[16]);       /* 10 */
+    dprintf1("Orientation:%d\n", data[17]);
+    dprintf1("Bits:%d\n", data[18]);
+    dprintf1("Planes:%d\n", data[19]);
+    return 0;
+}
+
 /*
  * ESC * v <nbytes> W
  *
@@ -548,6 +578,10 @@ pcl_cid_do_registration(pcl_parser_state_t * pcl_parser_state,
                         gs_memory_t * pmem)
 {
     DEFINE_CLASS('*') {
+        'g', 'W',
+            PCL_COMMAND("Configure Raster Data", pcl_configure_raster_data,
+                        pca_bytes | pca_in_rtl | pca_raster_graphics)
+    }, {
         'v', 'W',
             PCL_COMMAND("Configure Image Data", pcl_configure_image_data,
                         pca_bytes | pca_in_rtl | pca_raster_graphics)
