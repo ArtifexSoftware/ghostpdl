@@ -267,7 +267,7 @@ subdivide_patch_fill(patch_fill_state_t *pfs, patch_curve_t c[4])
 
         /* Is the whole of our patch outside the clipping rectangle? */
         /* Tempting to try to roll this into the cases below, but that
-         * doesn't work because we want <= or >= here. */
+         * doesn't work because we want <= or >= here. Do X ones first. */
         if ((c[0].vertex.p.x <= pfs->rect.p.x &&
              c[1].vertex.p.x <= pfs->rect.p.x &&
              c[2].vertex.p.x <= pfs->rect.p.x &&
@@ -275,16 +275,8 @@ subdivide_patch_fill(patch_fill_state_t *pfs, patch_curve_t c[4])
             (c[0].vertex.p.x >= pfs->rect.q.x &&
              c[1].vertex.p.x >= pfs->rect.q.x &&
              c[2].vertex.p.x >= pfs->rect.q.x &&
-             c[3].vertex.p.x >= pfs->rect.q.x) ||
-            (c[0].vertex.p.y <= pfs->rect.p.y &&
-             c[1].vertex.p.y <= pfs->rect.p.y &&
-             c[2].vertex.p.y <= pfs->rect.p.y &&
-             c[3].vertex.p.y <= pfs->rect.p.y) ||
-            (c[0].vertex.p.y >= pfs->rect.q.y &&
-             c[1].vertex.p.y >= pfs->rect.q.y &&
-             c[2].vertex.p.y >= pfs->rect.q.y &&
-             c[3].vertex.p.y >= pfs->rect.q.y))
-            return 0;
+             c[3].vertex.p.x >= pfs->rect.q.x))
+                return 0;
 
         /* First, let's try to see if we can cull the patch horizontally with the clipping
          * rectangle. */
@@ -567,6 +559,21 @@ check_rot_right_quarter:
                 while (c[v0].vertex.p.x > pfs->rect.q.x+QUARTERPOINT_ACCURACY && c[v1].vertex.p.x > pfs->rect.q.x+QUARTERPOINT_ACCURACY);
             }
         }
+
+        /* Is the whole of our patch outside the clipping rectangle? */
+        /* Tempting to try to roll this into the cases below, but that
+         * doesn't work because we want <= or >= here. Do Y ones. Can't have
+         * done this earlier, as the previous set of tests might have reduced
+         * the range here. */
+        if ((c[0].vertex.p.y <= pfs->rect.p.y &&
+             c[1].vertex.p.y <= pfs->rect.p.y &&
+             c[2].vertex.p.y <= pfs->rect.p.y &&
+             c[3].vertex.p.y <= pfs->rect.p.y) ||
+            (c[0].vertex.p.y >= pfs->rect.q.y &&
+             c[1].vertex.p.y >= pfs->rect.q.y &&
+             c[2].vertex.p.y >= pfs->rect.q.y &&
+             c[3].vertex.p.y >= pfs->rect.q.y))
+            return 0;
 
         /* Now, let's try to see if we can cull the patch vertically with the clipping
          * rectangle. */
@@ -1025,7 +1032,8 @@ subdivide_patch_fill_floats(patch_fill_state_t *pfs, corners_and_curves *cc)
 
         /* Is the whole of our patch outside the clipping rectangle? */
         /* Tempting to try to roll this into the cases below, but that
-         * doesn't work because we want <= or >= here. */
+         * doesn't work because we want <= or >= here. Do the X ones
+         * first. */
         if ((cc->corners[0].x <= pfs->rect.p.x &&
              cc->corners[1].x <= pfs->rect.p.x &&
              cc->corners[2].x <= pfs->rect.p.x &&
@@ -1033,16 +1041,8 @@ subdivide_patch_fill_floats(patch_fill_state_t *pfs, corners_and_curves *cc)
             (cc->corners[0].x >= pfs->rect.q.x &&
              cc->corners[1].x >= pfs->rect.q.x &&
              cc->corners[2].x >= pfs->rect.q.x &&
-             cc->corners[3].x >= pfs->rect.q.x) ||
-            (cc->corners[0].y <= pfs->rect.p.y &&
-             cc->corners[1].y <= pfs->rect.p.y &&
-             cc->corners[2].y <= pfs->rect.p.y &&
-             cc->corners[3].y <= pfs->rect.p.y) ||
-            (cc->corners[0].y >= pfs->rect.q.y &&
-             cc->corners[1].y >= pfs->rect.q.y &&
-             cc->corners[2].y >= pfs->rect.q.y &&
-             cc->corners[3].y >= pfs->rect.q.y))
-            return 0;
+             cc->corners[3].x >= pfs->rect.q.x))
+                return 0;
 
         /* First, let's try to see if we can cull the patch horizontally with the clipping
          * rectangle. */
@@ -1325,6 +1325,21 @@ check_rot_right_quarter:
                 while (cc->corners[v0].x > pfs->rect.q.x+QUARTERPOINT_ACCURACY && cc->corners[v1].x > pfs->rect.q.x+QUARTERPOINT_ACCURACY);
             }
         }
+
+        /* Is the whole of our patch outside the clipping rectangle? */
+        /* Tempting to try to roll this into the cases below, but that
+         * doesn't work because we want <= or >= here. Do the Y ones.
+         * Can't do these at the same time as the X ones, as the cases
+         * above may have reduced Y by the time we get here. */
+        if ((cc->corners[0].y <= pfs->rect.p.y &&
+             cc->corners[1].y <= pfs->rect.p.y &&
+             cc->corners[2].y <= pfs->rect.p.y &&
+             cc->corners[3].y <= pfs->rect.p.y) ||
+            (cc->corners[0].y >= pfs->rect.q.y &&
+             cc->corners[1].y >= pfs->rect.q.y &&
+             cc->corners[2].y >= pfs->rect.q.y &&
+             cc->corners[3].y >= pfs->rect.q.y))
+            return 0;
 
         /* Now, let's try to see if we can cull the patch vertically with the clipping
          * rectangle. */
