@@ -848,40 +848,6 @@ zquit(i_ctx_t *i_ctx_p)
     return_error(gs_error_Quit);	/* Interpreter will do the exit */
 }
 
-/* - currentfile <file> */
-static ref *zget_current_file(i_ctx_t *);
-static int
-zcurrentfile(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    ref *fp;
-
-    push(1);
-    /* Check the cache first */
-    if (esfile != 0) {
-#ifdef DEBUG
-        /* Check that esfile is valid. */
-        ref *efp = zget_current_file(i_ctx_p);
-
-        if (esfile != efp) {
-            lprintf2("currentfile: esfile="PRI_INTPTR", efp="PRI_INTPTR"\n",
-                     (intptr_t) esfile, (intptr_t) efp);
-            ref_assign(op, efp);
-        } else
-#endif
-            ref_assign(op, esfile);
-    } else if ((fp = zget_current_file(i_ctx_p)) == 0) {	/* Return an invalid file object. */
-        /* This doesn't make a lot of sense to me, */
-        /* but it's what the PostScript manual specifies. */
-        make_invalid_file(i_ctx_p, op);
-    } else {
-        ref_assign(op, fp);
-        esfile_set_cache(fp);
-    }
-    /* Make the returned value literal. */
-    r_clear_attrs(op, a_executable);
-    return 0;
-}
 /* Get the current file from which the interpreter is reading. */
 static ref *
 zget_current_file(i_ctx_t *i_ctx_p)
@@ -900,6 +866,54 @@ zget_current_file(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* - currentfile <file> */
+int
+z_current_file(i_ctx_t *i_ctx_p, ref **s)
+{
+    ref *fp;
+    /* Check the cache first */
+    if (esfile != 0) {
+#ifdef DEBUG
+        /* Check that esfile is valid. */
+        ref *efp = zget_current_file(i_ctx_p);
+
+        if (esfile != efp) {
+            lprintf2("currentfile: esfile="PRI_INTPTR", efp="PRI_INTPTR"\n",
+                     (intptr_t) esfile, (intptr_t) efp);
+            *s = efp;
+        } else
+#endif
+            *s = esfile;
+    } else if ((fp = zget_current_file(i_ctx_p)) == 0) {	/* Return an invalid file object. */
+        *s = NULL;
+    } else {
+        *s = fp;
+        esfile_set_cache(fp);
+    }
+    return 0;
+}
+static int
+zcurrentfile(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref *s;
+    int code;
+
+    push(1);
+
+    code = z_current_file(i_ctx_p, &s);
+    if (code < 0 || s == NULL) {
+        /* This doesn't make a lot of sense to me, */
+        /* but it's what the PostScript manual specifies. */
+        make_invalid_file(i_ctx_p, op);
+    }
+    else {
+        ref_assign(op, s);
+    }
+    /* Make the returned value literal. */
+    r_clear_attrs(op, a_executable);
+    return code;
+}
 /* ------ Initialization procedure ------ */
 
 /* We need to split the table because of the 16-element limit. */

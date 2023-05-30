@@ -1518,6 +1518,20 @@ remap:              if (iesp + 2 >= estop) {
                             /* the pre-check is still valid. */
                             iosp++;
                             ref_assign_inline(iosp, &token);
+                            /* With a construct like /f currentfile def //f we can
+                               end up here with IREF == &token which can go badly wrong,
+                               so find the current file we're interpeting on the estack
+                               and have IREF point to that ref, rather than "token"
+                             */
+                            if (IREF == &token) {
+                                ref *st;
+                                int code2 = z_current_file(i_ctx_p, &st);
+                                if (code2 < 0 || IREF == NULL) {
+                                    ierror.code = gs_error_Fatal;
+                                    goto rweci;
+                                }
+                                SET_IREF(st);
+                            }
                             goto rt;
                         }
                         store_state(iesp);

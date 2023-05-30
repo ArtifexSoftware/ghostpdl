@@ -167,4 +167,8 @@ void pop_estack(i_ctx_t *, uint);
  * underflow" error.
  */
 
+/* The current file is stored on the estack, hence this is here */
+int
+z_current_file(i_ctx_t *i_ctx_p, ref **s);
+
 #endif /* estack_INCLUDED */
