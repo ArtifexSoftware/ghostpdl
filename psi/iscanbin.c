@@ -117,18 +117,6 @@ typedef enum {
     BS_TYPE_EVAL_NAME = 6,
     BS_TYPE_ARRAY = 9,
     BS_TYPE_MARK = 10,
-    /*
-     * We extend the PostScript language definition by allowing
-     * dictionaries in binary object sequences.  The data for
-     * a dictionary is like that for an array, with the following
-     * changes:
-     *      - If the size is an even number, the value is the index of
-     * the first of a series of alternating keys and values.
-     *      - If the size is 1, the value is the index of another
-     * object (which must also be a dictionary, and must not have
-     * size = 1); this object represents the same object as that one.
-     */
-    BS_TYPE_DICTIONARY = 15
 } bin_seq_type_t;
 
 #define BS_EXECUTABLE 128
@@ -226,7 +214,7 @@ scan_bos(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate)
               rend = rlimit;
           for (q = p + hsize + 1; q < rend; q += 8) {
              int c = q[-1] & 0x7f;
-             if (c > 10 && c != BS_TYPE_DICTIONARY) {
+             if (c > 10) {
                 scan_bos_error(pstate, "invalid object type");
                 return_error(gs_error_syntaxerror);
              }
@@ -676,11 +664,6 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                                   osize, refs, abase + aindex);
                 }
                 break;
-            case BS_TYPE_DICTIONARY:	/* EXTENSION */
-                if ((osize & 1) != 0 && osize != 1)
-                    return_error(gs_error_syntaxerror);
-                atype = t_mixedarray;	/* mark as dictionary */
-                goto arr;
             case BS_TYPE_MARK:
                 if (osize | value) { /* unused */
                     scan_bos_error(pstate, "non-zero unused field");
@@ -777,68 +760,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
                     ref_assign(op, defp);
                 }
                 break;
-            case t_mixedarray:	/* actually a dictionary */
-                rescan = true;
         }
-
-    /* Create dictionaries, if any. */
-
-    if (rescan) {
-        rescan = false;
-        for (op = pbs->bin_array.value.refs, i = r_size(&pbs->bin_array);
-             i != 0; i--, op++
-             )
-            switch (r_type(op)) {
-            case t_mixedarray:	/* actually a dictionary */
-                {
-                    uint count = r_size(op);
-                    ref rdict;
-
-                    if (count == 1) {
-                        /* Indirect reference. */
-                        if (op->value.refs < op)
-                            ref_assign(&rdict, op->value.refs);
-                        else {
-                            rescan = true;
-                            continue;
-                        }
-                    } else {
-                        code = dict_create(count >> 1, &rdict);
-                        if (code < 0)
-                            return code;
-                        while (count) {
-                            count -= 2;
-                            code = idict_put(&rdict,
-                                             &op->value.refs[count],
-                                             &op->value.refs[count + 1]);
-                            if (code < 0)
-                                return code;
-                        }
-                    }
-                    r_set_attrs(&rdict, a_all);
-                    r_copy_attrs(&rdict, a_executable, op);
-                    ref_assign(op, &rdict);
-                }
-                break;
-            }
-    }
-
-    /* If there were any forward indirect references, fix them up now. */
-
-    if (rescan)
-        for (op = pbs->bin_array.value.refs, i = r_size(&pbs->bin_array);
-             i != 0; i--, op++
-            )
-            if (r_has_type(op, t_mixedarray)) {
-                const ref *piref = op->value.const_refs;
-                ref rdict;
-
-                if (r_has_type(piref, t_mixedarray))	/* ref to indirect */
-                    return_error(gs_error_syntaxerror);
-                ref_assign(&rdict, piref);
-                r_copy_attrs(&rdict, a_executable, op);
-                ref_assign(op, &rdict);
-            }
 
     ref_assign(pref, &pbs->bin_array);
     r_set_size(pref, pbs->top_size);
@@ -894,11 +816,7 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, ps_int *ref_offset,
         case t_array:
             type = BS_TYPE_ARRAY;
             size = r_size(obj);
-            goto aod;
-        case t_dictionary:	/* EXTENSION */
-            type = BS_TYPE_DICTIONARY;
-            size = dict_length(obj) << 1;
-          aod:value = *ref_offset;
+           value = *ref_offset;
             *ref_offset += size * SIZEOF_BIN_SEQ_OBJ;
             break;
         case t_string:
