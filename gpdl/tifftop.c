@@ -66,6 +66,7 @@ typedef struct tiff_interp_instance_s {
 
     uint32_t           bpp;
     uint32_t           bpc;
+    uint32_t           pal_bpc;
     uint32_t           cs;
     uint32_t           width;
     uint32_t           height;
@@ -799,6 +800,7 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
                 tiff->palette[3*i+2] = bmap[i]*255/65535;
             }
         }
+        tiff->pal_bpc = tiff->bpc;
         tiff->bpc = 8;
         tiff->num_comps = 3;
         tiff->raw_num_comps = 1;
@@ -1054,12 +1056,62 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
                         int n = tiff->tile_width;
                         const byte *q = tiff->samples;
                         byte *p = tiff->proc_samples;
-                        while (n--) {
-                            byte *v = &tiff->palette[3 * *q++];
-                            p[0] = *v++;
-                            p[1] = *v++;
-                            p[2] = *v++;
-                            p += 3;
+                        switch (tiff->pal_bpc)
+                        {
+                        case 8:
+                            while (n--) {
+                                byte *v = &tiff->palette[3 * *q++];
+                                p[0] = *v++;
+                                p[1] = *v++;
+                                p[2] = *v++;
+                                p += 3;
+                            }
+                            break;
+                        case 1:
+                        {
+                            int sh = 7;
+                            while (n--) {
+                                byte *v = &tiff->palette[3 * (((*q)>>sh) & 1)];
+                                sh--;
+                                if (sh < 0)
+                                    sh = 7, q++;
+                                p[0] = *v++;
+                                p[1] = *v++;
+                                p[2] = *v++;
+                                p += 3;
+                            }
+                            break;
+                        }
+                        case 2:
+                        {
+                            int sh = 6;
+                            while (n--) {
+                                byte *v = &tiff->palette[3 * (((*q)>>sh) & 3)];
+                                sh -= 2;
+                                if (sh < 0)
+                                    sh = 6, q++;
+                                p[0] = *v++;
+                                p[1] = *v++;
+                                p[2] = *v++;
+                                p += 3;
+                            }
+                            break;
+                        }
+                        case 4:
+                        {
+                            int sh = 4;
+                            while (n--) {
+                                byte *v = &tiff->palette[3 * (((*q)>>sh) & 15)];
+                                sh ^= 4;
+                                if (sh == 4)
+                                    q++;
+                                p[0] = *v++;
+                                p[1] = *v++;
+                                p[2] = *v++;
+                                p += 3;
+                            }
+                            break;
+                        }
                         }
                     }
                     if (alpha) {
