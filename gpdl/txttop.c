@@ -86,6 +86,7 @@ struct txt_interp_instance_s
     int just_had_lf;
     int just_had_cr;
     int col;
+    int sent;
 };
 
 enum
@@ -333,6 +334,7 @@ send_urc(txt_interp_instance_t *instance, int n)
 
     drop_buffered(instance, n);
 
+    instance->sent = 1;
     return send_bytes(instance, unicode_replacement_char_as_utf8, sizeof(unicode_replacement_char_as_utf8));
 }
 
@@ -383,6 +385,7 @@ send_codepoint(txt_interp_instance_t *instance, int val)
     dprintf3("Sending codepoint %d (%x) %c\n", val, val, val >= 32 && val <= 255 && val != 127 ? val : '.');
 #endif
 
+    instance->sent = 1;
     /* Tidy up whatever mess of CR/LF we are passed. */
     if (val == '\r')
     {
@@ -468,9 +471,15 @@ process_block(txt_interp_instance_t *instance, const byte *ptr, int n)
             instance->state = TXT_STATE_ASCII;
     }
 
+    instance->sent = 0;
     while (n)
     {
-        if (instance->state == old_state)
+        /* instance->sent records whether we pulled anything out of the buffer
+         * last time round the loop. If we changed state, then don't refill the
+         * buffer. Otherwise only fill the buffer if we didn't a char last time
+         * (maybe we need char 2 of a 2 char sequence?) or if we haven't got
+         * anything in the buffer already. */
+        if (instance->state == old_state && (!instance->sent || instance->buffered == 0))
         {
             assert(instance->buffered < 4);
             s[instance->buffered++] = *ptr++;
@@ -478,6 +487,7 @@ process_block(txt_interp_instance_t *instance, const byte *ptr, int n)
         }
         old_state = instance->state;
 
+        instance->sent = 0;
         switch (instance->state)
         {
         case TXT_STATE_INIT:
