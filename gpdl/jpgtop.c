@@ -539,6 +539,7 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
             jpg->jsrc.term_source = jpg_term_source;
 
             jpg->state = ii_state_jpeg_header;
+            jpg->y = 0;
             break;
         case ii_state_jpeg_header:
         {
