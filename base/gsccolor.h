@@ -36,10 +36,6 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
 #  define GS_CLIENT_COLOR_MAX_COMPONENTS (64)
 #endif
 
-#ifndef MAX_COMPONENTS_IN_DEVN
-#  define MAX_COMPONENTS_IN_DEVN (64)
-#endif
-
 /* There is a speed penalty for supporting lots of spot colors, so certain
  * devices (tiffsep, tiffsep1, psdcmyk, etc) offer -dMaxSpots. This allows
  * us to compile in a high 'hard' limit on the number of components

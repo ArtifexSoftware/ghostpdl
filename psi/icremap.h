@@ -30,7 +30,7 @@
  */
 struct int_remap_color_info_s {
     op_proc_t proc;		/* remapping procedure */
-    float tint[MAX_COMPONENTS_IN_DEVN];    /* must match limitcheck in psi/zcolor.c: validatedevicenspace */
+    float tint[GS_CLIENT_COLOR_MAX_COMPONENTS];    /* must match limitcheck in psi/zcolor.c: validatedevicenspace */
 };
 
 #define private_st_int_remap_color_info() /* in zgstate.c */\
