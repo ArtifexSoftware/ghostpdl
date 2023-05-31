@@ -498,6 +498,9 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
         case ii_state_identifying:
         {
             const byte *hdr;
+
+            jpg->jerr.setjmp_buffer = align_setjmp_buffer(&jpg->aligned_jmpbuf);
+
             /* Try and get us 11 bytes */
             code = ensure_bytes(jpg, pr, 11);
             if (code < 0)
@@ -518,8 +521,6 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
                 jpg->state = ii_state_flush;
                 break;
             }
-
-            jpg->jerr.setjmp_buffer = align_setjmp_buffer(&jpg->aligned_jmpbuf);
 
             jpg->cinfo.err = jpeg_std_error(&jpg->jerr.pub);
             jpg->jerr.pub.error_exit = jpg_error_exit;
