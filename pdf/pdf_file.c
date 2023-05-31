@@ -1705,9 +1705,9 @@ retry:
                 goto exit;
             }
             while (seofp(stream->s) != true && serrorp(stream->s) != true) {
-                (void)sbufskip(stream->s, sbufavailable(stream->s));
                 s_process_read_buf(stream->s);
                 buflen += sbufavailable(stream->s);
+                (void)sbufskip(stream->s, sbufavailable(stream->s));
             }
             pdfi_close_file(ctx, stream);
         } else {
