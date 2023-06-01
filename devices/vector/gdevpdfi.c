@@ -1772,8 +1772,10 @@ pdf_image_plane_data_alt(gx_image_enum_common_t * info,
                     if (flipped_count == 0)
                         flipped_count = block_bytes * nplanes;
                 }
-                image_flip_planes(row, bit_planes, offset, flip_count,
-                                  nplanes, pie->plane_depths[0]);
+                status = image_flip_planes(row, bit_planes, offset, flip_count,
+                                           nplanes, pie->plane_depths[0]);
+                if (status < 0)
+                    break;
                 status = sputs(pie->writer.binary[alt_writer_index].strm, row,
                                flipped_count, &ignore);
                 if (status < 0)

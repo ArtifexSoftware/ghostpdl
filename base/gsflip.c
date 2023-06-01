@@ -153,6 +153,27 @@ flip3x12(byte * buffer, const byte ** planes, int offset, int nbytes)
     return 0;
 }
 
+/* Convert 3Mx16 to 3x16. */
+static int
+flip3x16(byte * buffer, const byte ** planes, int offset, int nbytes)
+{
+    byte *out = buffer;
+    const byte *pa = planes[0] + offset;
+    const byte *pb = planes[1] + offset;
+    const byte *pc = planes[2] + offset;
+    int n = nbytes;
+
+    for (; n > 0; out += 6, pa += 2, pb += 2, pc += 2, n -= 2) {
+        out[0] = pa[0];
+        out[1] = pa[1];
+        out[2] = pb[0];
+        out[3] = pb[1];
+        out[4] = pc[0];
+        out[5] = pc[1];
+    }
+    return 0;
+}
+
 /* Convert 4Mx1 to 4x1. */
 static int
 flip4x1(byte * buffer, const byte ** planes, int offset, int nbytes)
@@ -300,6 +321,30 @@ flip4x12(byte * buffer, const byte ** planes, int offset, int nbytes)
     return 0;
 }
 
+/* Convert 4Mx16 to 4x16. */
+static int
+flip4x16(byte * buffer, const byte ** planes, int offset, int nbytes)
+{
+    byte *out = buffer;
+    const byte *pa = planes[0] + offset;
+    const byte *pb = planes[1] + offset;
+    const byte *pc = planes[2] + offset;
+    const byte *pd = planes[3] + offset;
+    int n = nbytes;
+
+    for (; n > 0; out += 8, pa += 2, pb += 2, pc += 2, pd += 2, n -= 2) {
+        out[0] = pa[0];
+        out[1] = pa[1];
+        out[2] = pb[0];
+        out[3] = pb[1];
+        out[4] = pc[0];
+        out[5] = pc[1];
+        out[6] = pd[0];
+        out[7] = pd[1];
+    }
+    return 0;
+}
+
 /* Convert NMx{1,2,4,8} to Nx{1,2,4,8}. */
 static int
 flipNx1to8(byte * buffer, const byte ** planes, int offset, int nbytes,
@@ -350,6 +395,26 @@ flipNx12(byte * buffer, const byte ** planes, int offset, int nbytes,
     return 0;
 }
 
+/* Convert NMx16 to Nx16. */
+static int
+flipNx16(byte * buffer, const byte ** planes, int offset, int nbytes,
+         int num_planes, int ignore_bits_per_sample)
+{
+    /* This is only needed for DeviceN colors, so it can be slow. */
+    int bi, pi;
+    byte *dptr = buffer;
+
+    for (bi = 0; bi < nbytes; bi += 2) {
+        for (pi = 0; pi < num_planes; ++pi) {
+            const byte *sptr = planes[pi] + offset + bi;
+            dptr[0] = sptr[0];
+            dptr[1] = sptr[1];
+            dptr += 2;
+        }
+    }
+    return 0;
+}
+
 /* Flip data given number of planes and bits per pixel. */
 typedef int (*image_flip_proc) (byte *, const byte **, int, int);
 static int
@@ -357,15 +422,17 @@ flip_fail(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
     return -1;
 }
-static const image_flip_proc image_flip3_procs[13] = {
+static const image_flip_proc image_flip3_procs[17] = {
     flip_fail, flip3x1, flip3x2, flip_fail, flip3x4,
     flip_fail, flip_fail, flip_fail, flip3x8,
-    flip_fail, flip_fail, flip_fail, flip3x12
+    flip_fail, flip_fail, flip_fail, flip3x12,
+    flip_fail, flip_fail, flip_fail, flip3x16
 };
-static const image_flip_proc image_flip4_procs[13] = {
+static const image_flip_proc image_flip4_procs[17] = {
     flip_fail, flip4x1, flip4x2, flip_fail, flip4x4,
     flip_fail, flip_fail, flip_fail, flip4x8,
-    flip_fail, flip_fail, flip_fail, flip4x12
+    flip_fail, flip_fail, flip_fail, flip4x12,
+    flip_fail, flip_fail, flip_fail, flip4x16
 };
 typedef int (*image_flipN_proc) (byte *, const byte **, int, int, int, int);
 static int
@@ -374,10 +441,11 @@ flipN_fail(byte * buffer, const byte ** planes, int offset, int nbytes,
 {
     return -1;
 }
-static const image_flipN_proc image_flipN_procs[13] = {
+static const image_flipN_proc image_flipN_procs[17] = {
     flipN_fail, flipNx1to8, flipNx1to8, flipN_fail, flipNx1to8,
     flipN_fail, flipN_fail, flipN_fail, flipNx1to8,
-    flipN_fail, flipN_fail, flipN_fail, flipNx12
+    flipN_fail, flipN_fail, flipN_fail, flipNx12,
+    flipN_fail, flipN_fail, flipN_fail, flipNx16
 };
 
 /* Here is the public interface to all of the above. */
@@ -385,7 +453,7 @@ int
 image_flip_planes(byte * buffer, const byte ** planes, int offset, int nbytes,
                   int num_planes, int bits_per_sample)
 {
-    if (bits_per_sample < 1 || bits_per_sample > 12)
+    if (bits_per_sample < 1 || bits_per_sample > 16)
         return -1;
     switch (num_planes) {
 

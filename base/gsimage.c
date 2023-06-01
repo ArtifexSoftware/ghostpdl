@@ -659,7 +659,7 @@ gs_image_next_planes(gs_image_enum * penum,
             }
         }
         cache_planes(penum);
-        if (code > 0)
+        if (code != 0)
             break;
     }
     /* Return the retained data pointers. */
