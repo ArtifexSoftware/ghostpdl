@@ -107,9 +107,9 @@ tiff_detect_language(const char *s, int len)
 {
     const byte *hdr = (const byte *)s;
     if (len >= 4) {
-        if (hdr[0] == 'I' && hdr[1] == 'I' && hdr[2] == 42 && hdr[3] == 0)
+        if (hdr[0] == 'I' && hdr[1] == 'I' && (hdr[2] == 42 || hdr[2] == 43) && hdr[3] == 0)
             return 100; /* Intel (LSB) order */
-        if (hdr[0] == 'M' && hdr[1] == 'M' && hdr[2] == 0 && hdr[3] == 42)
+        if (hdr[0] == 'M' && hdr[1] == 'M' && hdr[2] == 0 && (hdr[3] == 42 || hdr[3] == 43))
             return 100; /* Motorola (MSB) order */
     }
 
@@ -1196,11 +1196,11 @@ do_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr, int 
             if (code < 0)
                 return code;
             hdr = pr->ptr+1;
-            if (hdr[0] == 'I' && hdr[1] == 'I' && hdr[2] == 42 && hdr[3] == 0) {
+            if (hdr[0] == 'I' && hdr[1] == 'I' && (hdr[2] == 42 || hdr[2] == 43) && hdr[3] == 0) {
                 tiff->state = ii_state_tiff;
                 break;
             }
-            if (hdr[0] == 'M' && hdr[1] == 'M' && hdr[2] == 0 && hdr[3] == 42) {
+            if (hdr[0] == 'M' && hdr[1] == 'M' && hdr[2] == 0 && (hdr[3] == 42 || hdr[3] == 43)) {
                 tiff->state = ii_state_tiff;
                 break;
             }
