@@ -2226,7 +2226,7 @@ AC_SUBST(URF_DEV)
 AC_SUBST(SURFX_H)
 
 ENABLESO=
-AC_ARG_WITH([so], AS_HELP_STRING([--without-smartoffice],
+AC_ARG_WITH([so], AS_HELP_STRING([--without-so],
     [do not try to include SmartOffice support]))
 
 if test x$with_so != xno; then
