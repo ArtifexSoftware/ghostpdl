@@ -106,14 +106,25 @@ Ghostscript Enterprise
 
 .. _URWFontInformation:
 
-URW Font Information
+
+URW++ Font Information
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The set of truetype fonts in the urwfonts directory are necessary for the PCL/XL interpreter to function properly but they ARE NOT FREE SOFTWARE and are NOT distributed under the GNU GPL/AGPL. They can instead be redistributed under the `AFPL`_ license which bars commercial use.
+We rely on two sets of fonts for our products, both from URW++.
 
-If your copy of GhostPDL includes these fonts, you should have received a copy of the Aladdin Free Public License, usually in a file called COPYING.AFPL. If not, please contact Artifex Software, Inc. 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA, or visit `Artifex`_
+Firstly, there is a PostScript Language Level 2 font set (also required
+for PDF), in Type 1 font format. These are included with Ghostscript and
+GhostPDL, and are distributed under the GNU GPLv2, with an exemption to
+allowing embedding in PDF and PostScript files.
 
 
+Secondly, there is the PCL5 set, in TrueType format. These are required
+for GhostPCL and GhostPDL (since the latter includes PCL5 support).
+
+These PCL fonts are NOT FREE SOFTWARE and are NOT distributed under any
+GNU GPL/AGPL variant. They are, instead, distributed under the `AFPL license`_
+which prohibits commercial use. A copy of this license in included in
+the GhostPDL source distribution.
 
 
 Document roadmap by theme
@@ -221,7 +232,9 @@ Much other material about Ghostscript is available on the World Wide Web, both a
 .. _ghostscript.com/download: http://www.ghostscript.com/download/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
 .. _AGPL:
 .. _GNU Affero GPL license: http://www.gnu.org/licenses/agpl-3.0.html
+.. _AFPL license:
 .. _AFPL: https://en.wikipedia.org/wiki/Aladdin_Free_Public_License
+
 .. _commercial licensing: https://artifex.com/licensing/commercial?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
 .. _Artifex: https://artifex.com/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
 .. _bugs.ghostscript.com: https://bugs.ghostscript.com

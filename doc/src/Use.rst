@@ -524,7 +524,7 @@ Ignore ``UserUnit`` parameter. This may be useful for backward compatibility wit
 ``-dRENDERTTNOTDEF``
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-If a glyph is not present in a font the normal behaviour is to use the /.notdef glyph instead. On TrueType fonts, this is often a hollow sqaure. Under some conditions Acrobat does not do this, instead leaving a gap equivalent to the width of the missing glyph, or the width of the /.notdef glyph if no /Widths array is present. Ghostscript now attempts to mimic this undocumented feature using a user parameter ``RenderTTNotdef``. The PDF interpreter sets this user parameter to the value of ``RENDERTTNOTDEF`` in systemdict, when rendering PDF files. To restore rendering of /.notdef glyphs from TrueType fonts in PDF files, set this parameter to true.
+If a glyph is not present in a font the normal behaviour is to use the /.notdef glyph instead. On TrueType fonts, this is often a hollow square. Under some conditions Acrobat does not do this, instead leaving a gap equivalent to the width of the missing glyph, or the width of the /.notdef glyph if no /Widths array is present. Ghostscript now attempts to mimic this undocumented feature using a user parameter ``RenderTTNotdef``. The PDF interpreter sets this user parameter to the value of ``RENDERTTNOTDEF`` in systemdict, when rendering PDF files. To restore rendering of /.notdef glyphs from TrueType fonts in PDF files, set this parameter to true.
 
 
 These command line options are no longer specific to PDF, but have some specific differences with PDF files:
