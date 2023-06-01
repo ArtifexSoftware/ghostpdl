@@ -28,6 +28,7 @@
 #include "gsicc_create.h"
 #include "gsicc_cache.h"
 #include "gximdecode.h" /* Need so that we can unpack and decode */
+#include "gxpaint.h"
 
 #define MAXPRINTERNAME 64
 
@@ -1611,9 +1612,13 @@ gdev_xps_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                    const gx_fill_params * params,
                    const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
+    char line[5];
+    gx_device_xps *xps = (gx_device_xps *)dev;
+
     if (gx_path_is_void(ppath)) {
         return 0;
     }
+
     return gdev_vector_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
 }
 
@@ -1653,8 +1658,12 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
 
     if (!image_brush_fill(type, xps->filltype)) {
         write_str_to_current_page(xps, "<Path ");
-        if (type & gx_path_type_fill)
-            fmt = "Fill=\"#%06X\" Data=\"";
+        if (type & gx_path_type_fill) {
+            if (type == gx_path_type_fill)
+                fmt = "Fill=\"#%06X\" Data=\"F 1";
+            else
+                fmt = "Fill=\"#%06X\" Data=\"";
+        }
         else
             fmt = "Stroke=\"#%06X\" Data=\"";
         gs_snprintf(line, sizeof(line), fmt, c);
