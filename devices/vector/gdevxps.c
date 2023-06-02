@@ -1664,8 +1664,9 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
             else
                 fmt = "Fill=\"#%06X\" Data=\"";
         }
-        else
+        else {
             fmt = "Stroke=\"#%06X\" Data=\"";
+        }
         gs_snprintf(line, sizeof(line), fmt, c);
         write_str_to_current_page(xps, line);
     }
@@ -1778,8 +1779,49 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
         xps_finish_image_path(vdev);
     } else if (type & gx_path_type_stroke) {
         /* NB format width. */
-        fmt = "\" StrokeThickness=\"%g\" />\n";
+        fmt = "\" StrokeThickness=\"%g\" ";
         gs_snprintf(line, sizeof(line), fmt, xps->linewidth);
+        write_str_to_current_page(xps, line);
+        switch(xps->linecap) {
+            case gs_cap_round:
+                gs_snprintf(line, sizeof(line), "StrokeStartLineCap=\"Round\" StrokeEndLineCap=\"Round\" ");
+                write_str_to_current_page(xps, line);
+                break;
+            case gs_cap_square:
+                gs_snprintf(line, sizeof(line), "StrokeStartLineCap=\"Square\" StrokeEndLineCap=\"Square\" ");
+                write_str_to_current_page(xps, line);
+                break;
+            case gs_cap_triangle:
+                gs_snprintf(line, sizeof(line), "StrokeStartLineCap=\"Triangle\" StrokeEndLineCap=\"Triangle\" ");
+                write_str_to_current_page(xps, line);
+                break;
+            case gs_cap_butt:
+            case gs_cap_unknown:
+            default:
+                break;
+        }
+        switch(xps->linejoin) {
+            case gs_join_round:
+                gs_snprintf(line, sizeof(line), "StrokeLineJoin=\"Round\" ");
+                write_str_to_current_page(xps, line);
+                break;
+            case gs_join_miter:
+                gs_snprintf(line, sizeof(line), "StrokeLineJoin=\"Miter\" ");
+                write_str_to_current_page(xps, line);
+                gs_snprintf(line, sizeof(line), "StrokeMiterLimit=\"%g\" ", xps->miterlimit);
+                write_str_to_current_page(xps, line);
+                break;
+            case gs_join_bevel:
+                gs_snprintf(line, sizeof(line), "StrokeLineJoin=\"Bevel\" ");
+                write_str_to_current_page(xps, line);
+                break;
+            case gs_join_none:
+            case gs_join_triangle:
+            case gs_join_unknown:
+            default:
+                break;
+        }
+        gs_snprintf(line, sizeof(line), "/>\n");
         write_str_to_current_page(xps, line);
     } else { /* fill */
         /* close the path data attribute */
