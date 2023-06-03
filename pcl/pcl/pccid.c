@@ -431,7 +431,6 @@ set_simple_color_mode(int type, pcl_state_t * pcs)
 static int
 pcl_configure_raster_data(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    int len = uint_arg(pargs);
     byte *data = arg_data(pargs);
 
     dprintf1("Format:%d\n", data[0]);

@@ -1612,9 +1612,6 @@ gdev_xps_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                    const gx_fill_params * params,
                    const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
-    char line[5];
-    gx_device_xps *xps = (gx_device_xps *)dev;
-
     if (gx_path_is_void(ppath)) {
         return 0;
     }
