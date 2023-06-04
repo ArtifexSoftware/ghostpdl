@@ -397,7 +397,7 @@ set_simple_color_mode(int type, pcl_state_t * pcs)
         (byte) pcl_penc_indexed_by_plane,
         3, 1, 1, 1
     };
-    static const byte cid_KCMY[6] = { (byte) pcl_cspace_CMY,
+    static const byte cid_KCMY[6] = { (byte) pcl_cspace_KCMY,
         (byte) pcl_penc_indexed_by_plane,
         4, 1, 1, 1
     };

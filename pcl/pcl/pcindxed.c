@@ -286,11 +286,11 @@ set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case 
 
     /* fill in the num_entries - 1 values from the RGB default */
     for (i = start; i < num + start; i++) {
-        palette[j * i] = cmy_default[3 * porder[i]];
-        palette[j * i + 1] = cmy_default[3 * porder[i] + 1];
-        palette[j * i + 2] = cmy_default[3 * porder[i] + 2];
+        palette[3 * i] = cmy_default[3 * porder[i]];
+        palette[3 * i + 1] = cmy_default[3 * porder[i] + 1];
+        palette[3 * i + 2] = cmy_default[3 * porder[i] + 2];
         if (num > 8)
-            palette[j * i + 3] = 0;
+            palette[3 * i + 3] = cmy_default[3 * porder[i] + 3];
     }
 }
 
@@ -457,8 +457,9 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
             set_dev_specific_default_palette,   /* CMY */
             set_colmet_default_palette, /* colorimetric RGB */
             set_CIELab_default_palette, /* CIE L*a*b* */
-            set_lumchrom_default_palette        /* luminance-
+            set_lumchrom_default_palette,        /* luminance-
                                                  * chrominance */
+            set_dev_specific_default_palette   /* KCMY */
     };
 
     /*
@@ -502,8 +503,10 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
         porder = cmy_order[bits];
 
     /* If 4-plane simple color KCMY graphics, set cnt for larger palette. */
-    if (bits == 3 && type == pcl_cspace_CMY)
+    if (type == pcl_cspace_KCMY) {
         cnt = 15;
+        porder = cmy_order_4;
+    }
     /* set the default colors for up to the first 16 entries */
     set_default_palette[(int)type] (pindexed->pbase,
                                     pindexed->palette.data,

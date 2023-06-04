@@ -42,6 +42,7 @@ typedef enum
     pcl_cspace_Colorimetric = 2,
     pcl_cspace_CIELab = 3,
     pcl_cspace_LumChrom = 4,
+    pcl_cspace_KCMY = 5,
     pcl_cspace_num
 } pcl_cspace_type_t;
 
