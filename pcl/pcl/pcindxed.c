@@ -269,7 +269,7 @@ set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case 
                                  byte * palette,
                                  const byte * porder, int start, int num)
 {
-    int i, j = 3;
+    int i;
     static const byte cmy_default[8 * 3] = {
         255, 255, 255,          /* white */
         0, 255, 255,            /* cyan */
@@ -280,9 +280,6 @@ set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case 
         255, 0, 0,              /* red */
         0, 0, 0                 /* black */
     };
-
-    if (num > 8)
-        j = 4;
 
     /* fill in the num_entries - 1 values from the RGB default */
     for (i = start; i < num + start; i++) {
