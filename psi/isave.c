@@ -1275,7 +1275,7 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
     SCAN_MEM_CLUMPS(mem, cp) {
         if (cp->has_refs) {
             bool has_refs = false;
-
+            bool no_outer_clump = !(cp->outer != NULL && cp->ctop - cp->cbot > min_inner_clump_space);
             SCAN_CLUMP_OBJECTS(cp)
                 DO_ALL
                 if_debug3m('U', (gs_memory_t *)mem, "[U]set_new scan("PRI_INTPTR"(%u), %d)\n",
@@ -1284,7 +1284,17 @@ save_set_new(gs_ref_memory_t * mem, bool to_new, bool set_limit, ulong *pscanned
                 /* These are refs, scan them. */
                 ref_packed *prp = (ref_packed *) (pre + 1);
                 uint size;
-                has_refs = true && to_new;
+                /* In order to avoid the garbager unnecessarily scanning for refs that may
+                   not exist, we reset the "has_refs" flag if we're doing a save (and leave
+                   it alone during a restore. This generally works because when we get here
+                   during a save, we've already created the inner clump, and during a restore,
+                   we've already restored to the outer clump.
+                   Where is goes wrong is when there isn't sufficient space left in the clump
+                   for any new allocations, so we won't have created the inner clump, and then
+                   the flag isn't retained. Spot that above, and only meddle with the flag here if
+                   an inner clump has been created.
+                 */
+                has_refs = true && (to_new | no_outer_clump);
                 code = mark_allocated(prp, to_new, &size);
                 if (code < 0)
                     return code;
