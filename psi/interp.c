@@ -1526,7 +1526,7 @@ remap:              if (iesp + 2 >= estop) {
                             if (IREF == &token) {
                                 ref *st;
                                 int code2 = z_current_file(i_ctx_p, &st);
-                                if (code2 < 0 || IREF == NULL) {
+                                if (code2 < 0 || st == NULL) {
                                     ierror.code = gs_error_Fatal;
                                     goto rweci;
                                 }
