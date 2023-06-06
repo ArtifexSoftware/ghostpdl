@@ -360,6 +360,7 @@ zstringwidth(i_ctx_t *i_ctx_p)
         return code;
     *(op_proc_t *)&penum->enum_client_data = zstringwidth;
     if ((code = op_show_finish_setup(i_ctx_p, penum, 1, finish_stringwidth)) < 0) {
+        rc_decrement(penum, "error in zstringwidth");
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
          * We'll rely on gc to handle the enumerator.
@@ -370,6 +371,7 @@ zstringwidth(i_ctx_t *i_ctx_p)
     }
     code = op_show_continue_pop(i_ctx_p, 1);
     if (code < 0) {
+        rc_decrement(penum, "error in zstringwidth");
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
          * We'll rely on gc to handle the enumerator.
