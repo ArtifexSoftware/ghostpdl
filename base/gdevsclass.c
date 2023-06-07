@@ -882,12 +882,14 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
      * devices should have a reference count of 1 (referenced only by
      * their parent). Anything else is an error.
      */
-    if (dev->child->rc.ref_count != 1) {
-        dmprintf(dev->memory, "Error: finalizing subclassing device while child refcount > 1\n");
-        while (dev->child->rc.ref_count != 1)
-            rc_decrement_only(dev->child, "de-reference child device");
+    if (dev->child != NULL) {
+        if (dev->child->rc.ref_count != 1) {
+            dmprintf(dev->memory, "Error: finalizing subclassing device while child refcount > 1\n");
+            while (dev->child->rc.ref_count != 1)
+                rc_decrement_only(dev->child, "de-reference child device");
+        }
+        rc_decrement(dev->child, "de-reference child device");
     }
-    rc_decrement(dev->child, "de-reference child device");
 
     if (psubclass_data) {
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_epo_finalize(suclass data)");
