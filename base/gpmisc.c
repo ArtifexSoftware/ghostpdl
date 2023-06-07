@@ -1076,16 +1076,29 @@ gp_validate_path_len(const gs_memory_t *mem,
              && !memcmp(path + cdirstrl, dirsepstr, dirsepstrl)) {
           prefix_len = 0;
     }
-    rlen = len+1;
-    bufferfull = (char *)gs_alloc_bytes(mem->thread_safe_memory, rlen + prefix_len, "gp_validate_path");
-    if (bufferfull == NULL)
-        return gs_error_VMerror;
 
-    buffer = bufferfull + prefix_len;
-    if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
-        return gs_error_invalidfileaccess;
-    buffer[rlen] = 0;
+    /* "%pipe%" do not follow the normal rules for path definitions, so we
+       don't "reduce" them to avoid unexpected results
+     */
+    if (len > 5 && memcmp(path, "%pipe", 5) != 0) {
+        bufferfull = buffer = (char *)gs_alloc_bytes(mem->thread_safe_memory, len + 1, "gp_validate_path");
+        if (buffer == NULL)
+            return gs_error_VMerror;
+        memcpy(buffer, path, len);
+        buffer[len] = 0;
+        rlen = len;
+    }
+    else {
+        rlen = len+1;
+        bufferfull = (char *)gs_alloc_bytes(mem->thread_safe_memory, rlen + prefix_len, "gp_validate_path");
+        if (bufferfull == NULL)
+            return gs_error_VMerror;
 
+        buffer = bufferfull + prefix_len;
+        if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
+            return gs_error_invalidfileaccess;
+        buffer[rlen] = 0;
+    }
     while (1) {
         switch (mode[0])
         {
