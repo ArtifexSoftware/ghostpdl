@@ -740,14 +740,28 @@ gs_add_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type, co
             return gs_error_rangecheck;
     }
 
-    rlen = len+1;
-    buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gp_validate_path");
-    if (buffer == NULL)
-        return gs_error_VMerror;
+    /* "%pipe%" do not follow the normal rules for path definitions, so we
+       don't "reduce" them to avoid unexpected results
+     */
+    if (path[0] == '|' || (len > 5 && memcmp(path, "%pipe", 5) == 0)) {
+        buffer = (char *)gs_alloc_bytes(core->memory, len + 1, "gs_add_control_path_len");
+        if (buffer == NULL)
+            return gs_error_VMerror;
+        memcpy(buffer, path, len);
+        buffer[len] = 0;
+        rlen = len;
+    }
+    else {
+        rlen = len + 1;
 
-    if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
-        return gs_error_invalidfileaccess;
-    buffer[rlen] = 0;
+        buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gs_add_control_path_len");
+        if (buffer == NULL)
+            return gs_error_VMerror;
+
+        if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
+            return gs_error_invalidfileaccess;
+        buffer[rlen] = 0;
+    }
 
     n = control->num;
     for (i = 0; i < n; i++)
@@ -833,14 +847,28 @@ gs_remove_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type,
             return gs_error_rangecheck;
     }
 
-    rlen = len+1;
-    buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gp_validate_path");
-    if (buffer == NULL)
-        return gs_error_VMerror;
+    /* "%pipe%" do not follow the normal rules for path definitions, so we
+       don't "reduce" them to avoid unexpected results
+     */
+    if (path[0] == '|' || (len > 5 && memcmp(path, "%pipe", 5) == 0)) {
+        buffer = (char *)gs_alloc_bytes(core->memory, len + 1, "gs_remove_control_path_len");
+        if (buffer == NULL)
+            return gs_error_VMerror;
+        memcpy(buffer, path, len);
+        buffer[len] = 0;
+        rlen = len;
+    }
+    else {
+        rlen = len+1;
 
-    if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
-        return gs_error_invalidfileaccess;
-    buffer[rlen] = 0;
+        buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gs_remove_control_path_len");
+        if (buffer == NULL)
+            return gs_error_VMerror;
+
+        if (gp_file_name_reduce(path, (uint)len, buffer, &rlen) != gp_combine_success)
+            return gs_error_invalidfileaccess;
+        buffer[rlen] = 0;
+    }
 
     n = control->num;
     for (i = 0; i < n; i++) {
