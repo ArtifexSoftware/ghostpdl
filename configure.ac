@@ -825,6 +825,7 @@ dnl Tesseract/Leptonica detection
 TESSERACTDIR=tesseract
 LEPTONICADIR=leptonica
 OCR_VERSION=0
+OCR_SHARED=0
 LEPTONICAINCLUDE=
 TESSERACTINCLUDE=
 TESSERACT_LIBS=
@@ -841,6 +842,7 @@ if test x$with_tesseract != xno; then
   if test -d $srcdir/tesseract && test -d $srcdir/leptonica; then
     AC_MSG_RESULT([yes])
     AC_LANG_PUSH(C++)
+    AC_PROG_CXX
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[HAVE_CXX_COMPILER=yes; AC_SUBST(CXX)],[HAVE_CXX_COMPILER=no])
     if test x$HAVE_CXX_COMPILER != xyes; then
       AC_MSG_WARN([Disabling tesseract as no working C++ compiler])
@@ -979,9 +981,10 @@ if test x$with_tesseract != xno; then
         CXXFLAGS="$save_cxxflags"
 
         OCR_VERSION=1
+        OCR_SHARED=0
         OCR_DEVS="\$(DD)ocr.dev \$(DD)hocr.dev \$(DD)pdfocr8.dev \$(DD)pdfocr24.dev \$(DD)pdfocr32.dev"
-        LEPTONICAINCLUDE="include base/leptonica.mak"
-        TESSERACTINCLUDE="include base/tesseract.mak"
+        LEPTONICAINCLUDE="include \$(GLSRCDIR)/leptonica.mak"
+        TESSERACTINCLUDE="include \$(GLSRCDIR)/tesseract.mak"
         TESSERACT_LIBS="-lstdc++"
       else
         OCR_DEVS_WARNING_LINE1="OCR devices disabled due to incompatible compiler: tesseract requires a C++17 compatible compiler"
@@ -990,6 +993,52 @@ if test x$with_tesseract != xno; then
     AC_LANG_POP()
   else
     AC_MSG_RESULT([no])
+    AC_MSG_CHECKING(for C++ compiler)
+
+    AC_LANG_PUSH(C++)
+    AC_PROG_CXX
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[HAVE_CXX_COMPILER=yes; AC_SUBST(CXX)],[HAVE_CXX_COMPILER=no])
+
+    if test x"$HAVE_CXX_COMPILER" != x"yes" ; then
+      AC_MSG_RESULT(no)
+      OCR_DEVS_WARNING_LINE1="Disabling tesseract (OCR devices) as no working C++ compiler"
+    else
+      save_cxxflags="$CXXFLAGS"
+      cxxflags_to_try="-stdlib=libstdc++"
+      CXXFLAGS_TO_USE=""
+
+      AC_MSG_CHECKING([supported C++ compiler flags])
+      for flag in $cxxflags_to_try ; do
+        CXXFLAGS="$CXXFLAGS $flag"
+
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <cstdlib>]], [[return 0;]])],[
+                echo "   $flag"; CXXFLAGS_TO_USE="$CXXFLAGS_TO_USE $flag"
+        ],[])
+
+        CXXFLAGS="$old_cflags"
+      done
+     TESS_CXXFLAGS="$save_cxxflags $CXXFLAGS_TO_USE"
+     AC_MSG_RESULT([done])
+
+      if test "x$PKGCONFIG" != x; then
+        AC_MSG_CHECKING(for tesseract >= 4.1.0 with pkg-config)
+        if $PKGCONFIG --atleast-version=4.1.0 tesseract; then
+          AC_MSG_RESULT([yes])
+          # A little naff: because we ultimately link through CC (rather than CXX)
+          # we have to explicitly add -lstdc++
+          TESSERACT_LIBS="`$PKGCONFIG --libs tesseract lept` -lstdc++"
+          TESS_CXXFLAGS="$TESS_CXXFLAGS `$PKGCONFIG --cflags tesseract lept`"
+          OCR_VERSION=1
+          OCR_SHARED=1
+          OCR_DEVS="\$(DD)ocr.dev \$(DD)hocr.dev \$(DD)pdfocr8.dev \$(DD)pdfocr24.dev \$(DD)pdfocr32.dev"
+          LEPTONICAINCLUDE="include \$(GLSRCDIR)/stub.mak"
+          TESSERACTINCLUDE="include \$(GLSRCDIR)/tessshared.mak"
+        else
+          AC_MSG_RESULT([no])
+        fi
+      fi
+    fi
+    AC_LANG_POP()
   fi
 fi
 
@@ -1000,6 +1049,7 @@ AC_SUBST(LEPTONICADIR)
 AC_SUBST(TESSERACTDIR)
 AC_SUBST(OCR_DEVS)
 AC_SUBST(OCR_VERSION)
+AC_SUBST(OCR_SHARED)
 AC_SUBST(TESS_AVX)
 AC_SUBST(TESS_AVX2)
 AC_SUBST(TESS_FMA)

@@ -43,6 +43,17 @@
 
 #include "tesseract/baseapi.h"
 
+#if defined(OCR_SHARED) && OCR_SHARED == 1
+#if defined(TESSERACT_MAJOR_VERSION) && TESSERACT_MAJOR_VERSION <= 4
+#define USE_TESS_5_API 0
+#include "tesseract/genericvector.h"
+#else
+#define USE_TESS_5_API 1
+#endif
+#else
+#define USE_TESS_5_API 1
+#endif
+
 extern "C"
 {
 
@@ -64,6 +75,10 @@ extern "C"
 #ifdef DEBUG_ALLOCS
 #undef printf
 static int event = 0;
+#endif
+
+#ifndef FUTURE_DEVELOPMENT
+#define FUTURE_DEVELOPMENT 0
 #endif
 
 /* Hackily define prototypes for alloc routines for leptonica. */
@@ -142,8 +157,16 @@ static int convert2pix(l_uint32 *data, int w, int h, int raster)
     return w + extra*4;
 }
 
+#if USE_TESS_5_API
 static bool
-load_file(const char* filename, std::vector<char>* data) {
+load_file(const char* filename, std::vector<char> *data)
+{
+#else
+static bool
+load_file(const STRING& fname, GenericVector<char> *data)
+{
+  const char *filename = (const char *)fname.string();
+#endif
   bool result = false;
   gp_file *fp;
   int code;
@@ -164,7 +187,11 @@ load_file(const char* filename, std::vector<char>* data) {
   if (size > 0 && size < LONG_MAX) {
     // reserve an extra byte in case caller wants to append a '\0' character
     data->reserve(size + 1);
+#if USE_TESS_5_API
     data->resize(size);
+#else
+    data->resize_no_init(size);
+#endif
     result = static_cast<long>(gp_fread(&(*data)[0], 1, size, fp)) == size;
   }
   gp_fclose(fp);
@@ -175,8 +202,13 @@ fail:
   return result;
 }
 
+#if USE_TESS_5_API
 static bool
 load_file_from_path(const char *path, const char *file, std::vector<char> *out)
+#else
+static bool
+load_file_from_path(const char *path, const char *file, GenericVector<char>  *out)
+#endif
 {
     const char *sep = gp_file_name_directory_separator();
     size_t seplen = strlen(sep);
@@ -213,11 +245,18 @@ load_file_from_path(const char *path, const char *file, std::vector<char> *out)
 #endif
 #define STRINGIFY2(S) #S
 #define STRINGIFY(S) STRINGIFY2(S)
-static char *tessdata_prefix = STRINGIFY(TESSDATA);
+static char *tessdata_prefix = (char *)STRINGIFY(TESSDATA);
 
+#if USE_TESS_5_API
 static bool
 tess_file_reader(const char *fname, std::vector<char> *out)
 {
+#else
+static bool
+tess_file_reader(const STRING& fname_str, GenericVector<char>*out)
+{
+    const char *fname = fname_str.string();
+#endif
     const char *file = fname;
     const char *s;
     char text[PATH_MAX];
@@ -251,7 +290,11 @@ tess_file_reader(const char *fname, std::vector<char> *out)
         size = (long)romfs_file_len(leptonica_mem, text);
         if (size >= 0) {
             out->reserve(size + 1);
+#if USE_TESS_5_API
             out->resize(size);
+#else
+            out->resize_no_init(size);
+#endif
             code = iodev->procs.open_file(iodev, text, strlen(text), "rb", &ps, leptonica_mem);
             if (code < 0)
                 return code;
@@ -341,7 +384,7 @@ ocr_init_api(gs_memory_t *mem, const char *language, int engine, void **state)
                            NULL, 0, /* configs, configs_size */
                            NULL, NULL, /* vars_vec */
                            false, /* set_only_non_debug_params */
-                           &tess_file_reader)) {
+                           (tesseract::FileReader)&tess_file_reader)) {
         code = gs_error_unknownerror;
         goto fail;
     }
@@ -409,7 +452,6 @@ do_ocr_image(wrapped_api *wrapped,
              char **out)
 {
     char *outText;
-    int code;
     Pix *image;
 
     *out = NULL;
@@ -522,6 +564,7 @@ ocr_recognise(void *api_, int w, int h, void *data,
                                                    &smallcaps,
                                                    &pointsize,
                                                    &font_id);
+            (void)font_name;
             do {
                 const char *graph = res_it->GetUTF8Text(tesseract::RIL_SYMBOL);
                 if (graph && graph[0] != 0) {
