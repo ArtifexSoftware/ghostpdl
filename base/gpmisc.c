@@ -878,7 +878,7 @@ gp_enumerate_files_next(gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxl
     while (code == 0) {
         code = gp_enumerate_files_next_impl(mem, pfen, ptr, maxlen);
         if (code == ~0) break;
-        if (code > 0) {
+        if (code > 0 && ptr != NULL) {
             if (gp_validate_path_len(mem, ptr, code, "r") != 0)
                 code = 0;
         }
@@ -1052,7 +1052,8 @@ gp_validate_path_len(const gs_memory_t *mem,
     int prefix_len = cdirstrl + dirsepstrl;
 
     /* mem->gs_lib_ctx can be NULL when we're called from mkromfs */
-    if (mem->gs_lib_ctx == NULL ||
+    /* If path == NULL, don't care */
+    if (path == NULL || mem->gs_lib_ctx == NULL ||
         mem->gs_lib_ctx->core->path_control_active == 0)
         return 0;
 
