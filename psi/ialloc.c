@@ -225,8 +225,13 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
         }
         obj = gs_alloc_struct_array((gs_memory_t *) mem, num_refs + 1,
                                     ref, &st_refs, cname);
-        if (obj == 0)
+        if (obj == 0) {
+            /* We don't have to alloc_save_remove() because the change
+               object hasn't been attached to the allocator yet.
+             */
+            gs_free_object(mem, cp, "gs_alloc_ref_array");
             return_error(gs_error_VMerror);
+        }
         /* Set the terminating ref now. */
         end = (ref *) obj + num_refs;
         make_mark(end);
