@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _thirdparty.htm:
+.. _thirdparty.html:
 
 
 Third Party Libraries

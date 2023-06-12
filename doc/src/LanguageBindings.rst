@@ -18,7 +18,7 @@ The core of Ghostscript is written in C, but also supports language bindings for
 - Python
 
 
-All of the above languages have equivalent methods as defined in the :ref:`C API<API.htm>`. Java and C# provide additional helper methods to make the use of the API easier for certain applications. These languages also provide example viewers that make use of these methods.
+All of the above languages have equivalent methods as defined in the :ref:`C API<API.html>`. Java and C# provide additional helper methods to make the use of the API easier for certain applications. These languages also provide example viewers that make use of these methods.
 
 This developer documentation is organized by programming language type and includes API reference and sample code.
 
@@ -35,7 +35,7 @@ Before using the language bindings first ensure that Ghostscript is built for yo
 The C API
 --------------
 
-Ghostscript has been in development for over thirty years and is written in C. The API has evolved over time and is continually being developed. The language bindings into Ghostscript will attempt to mirror this evolution and match the current :ref:`C API<API.htm>` as much as possible.
+Ghostscript has been in development for over thirty years and is written in C. The API has evolved over time and is continually being developed. The language bindings into Ghostscript will attempt to mirror this evolution and match the current :ref:`C API<API.html>` as much as possible.
 
 Licensing
 -----------------

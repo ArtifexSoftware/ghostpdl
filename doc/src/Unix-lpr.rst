@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _Unix-lpr.htm:
+.. _Unix-lpr.html:
 
 
 

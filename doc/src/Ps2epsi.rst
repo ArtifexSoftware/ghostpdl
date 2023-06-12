@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _Ps2epsi.htm:
+.. _Ps2epsi.html:
 
 
 Convert PostScript to Encapsulated PostScript Interchange Format

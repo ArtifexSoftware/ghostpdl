@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _SampleDownscaleDevice.htm:
+.. _SampleDownscaleDevice.html:
 
 
 Sample CMYK 32-bit Device that Supports Post Rendering Processing

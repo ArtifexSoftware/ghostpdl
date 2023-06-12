@@ -6,13 +6,13 @@
 
 .. include:: header.rst
 
-.. _News.htm:
+.. _News.html:
 
 News
 ============================================
 
 .. raw:: html
-   :file: ../News.htm
+   :file: ../News.html
 
 
 

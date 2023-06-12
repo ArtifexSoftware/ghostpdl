@@ -24,7 +24,7 @@ Platform & setup
 
 Ghostscript should be built as a shared library for your platform.
 
-See :ref:`Building Ghostscript<Make.htm>`.
+See :ref:`Building Ghostscript<Make.html>`.
 
 
 GhostAPI

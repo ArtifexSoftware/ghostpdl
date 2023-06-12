@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _Install.htm:
+.. _Install.html:
 .. _HowToInstallGhostscript:
 
 
@@ -27,16 +27,16 @@ You must have four things to run Ghostscript:
 
 #.
 
-   - ``gs_*.ps`` unless Ghostscript was compiled using the "compiled initialization files" option. See the documentation of :ref:`PostScript files distributed with Ghostscript<PsFiles.htm>`.
+   - ``gs_*.ps`` unless Ghostscript was compiled using the "compiled initialization files" option. See the documentation of :ref:`PostScript files distributed with Ghostscript<PsFiles.html>`.
 
    - ``pdf_*.ps`` if Ghostscript was compiled with the ability to interpret Adobe Portable Document Format (PDF) files, that is, ``pdf.dev`` was included in ``FEATURE_DEVS`` when Ghostscript was built.
 
    - ``Fontmap`` and ``Fontmap.GS`` (or the appropriate ``Fontmap.xxx`` for your platform), unless you plan always to invoke Ghostscript with the :ref:`-dNOFONTMAP switch<UseDNoFontMap>`.
 
-#. Fonts, for rendering text. These are platform-independent, but if you already have fonts of the right kind on your platform, you may be able to use those. See below for details. Also see the :ref:`documentation on fonts<Fonts.htm>`.
+#. Fonts, for rendering text. These are platform-independent, but if you already have fonts of the right kind on your platform, you may be able to use those. See below for details. Also see the :ref:`documentation on fonts<Fonts.html>`.
 
 
-The :ref:`usage documentation<Use.htm>` describes the search algorithms used to find initialization files and font files. The per-platform descriptions that follow tell you where to install these files.
+The :ref:`usage documentation<Use.html>` describes the search algorithms used to find initialization files and font files. The per-platform descriptions that follow tell you where to install these files.
 
 
 
@@ -79,7 +79,7 @@ If you have Adobe Acrobat installed, you can use the Acrobat fonts in place of t
 
 
 
-Similarly, you can have Ghostscript use other fonts on your system by adding entries to the ``fontmap`` or adding the directories to the ``GS_FONTMAP`` environment variable. See the :ref:`usage documentation<Use.htm>` for more information.
+Similarly, you can have Ghostscript use other fonts on your system by adding entries to the ``fontmap`` or adding the directories to the ``GS_FONTMAP`` environment variable. See the :ref:`usage documentation<Use.html>` for more information.
 
 For example, many linux distributions place fonts under ``/usr/share/fonts``.
 

@@ -5,7 +5,7 @@
 
 .. include:: header.rst
 
-.. _Make.htm:
+.. _Make.html:
 
 Building from Source
 =========================================
@@ -28,7 +28,7 @@ This document describes how to build a Ghostscript executable from source code. 
 #. Invoke "make" to build the software.
 
 
-The remainder of this document describes each of these steps in detail. Note that some of this process is platform-dependent. After building Ghostscript you must then install it; for that, see the :ref:`installation instructions<Install.htm>`.
+The remainder of this document describes each of these steps in detail. Note that some of this process is platform-dependent. After building Ghostscript you must then install it; for that, see the :ref:`installation instructions<Install.html>`.
 
 Long term users of Ghostscript may notice the instructions for a number of older systems have been removed from this document. There is no value judgment implied in this, but recognition that the build system has changed considerably in recent years, and several of these legacy systems are no longer easily available to the development team. We will always consider contributions to continue support for legacy systems.
 
@@ -466,7 +466,7 @@ Invoking "make"
    On Unix platforms, builds with the ``-pg`` compiler switch, creating an executable for time profiling.
 
 ``make install``
-   After building, installs the Ghostscript executables, support files, and documentation, but does not install fonts. See the :ref:`installation documentation<Install.htm>`.
+   After building, installs the Ghostscript executables, support files, and documentation, but does not install fonts. See the :ref:`installation documentation<Install.html>`.
 
 ``make (debug)clean``
    Deletes all the files created by the build process (relocatables, executables, and miscellaneous temporary files). If you've built an executable and want to save it, move it first to another place, because "make clean" deletes it.

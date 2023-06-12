@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _Source.htm:
+.. _Source.html:
 
 
 Guide to Ghostscript Source Code
@@ -93,7 +93,7 @@ Files named ``s*.c`` and ``s*.h`` are a flexible stream package, including the L
 Device drivers
 ~~~~~~~~~~~~~~~~~~
 
-The interface between the graphics library and device drivers is the only really well documented one in all of Ghostscript: see the :ref:`documentation on drivers<Drivers.htm>`.
+The interface between the graphics library and device drivers is the only really well documented one in all of Ghostscript: see the :ref:`documentation on drivers<Drivers.html>`.
 
 In addition to many real device and file format drivers listed in ``devs.mak`` and ``contrib.mak``, a number of drivers are used for internal purposes. You can search ``lib.mak`` for files named ``gdev*.c`` to find almost all of them.
 

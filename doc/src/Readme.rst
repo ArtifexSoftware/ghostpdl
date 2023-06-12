@@ -7,7 +7,7 @@
 .. include:: header.rst
 
 .. _Ghostscript Introduction:
-.. _Readme.htm:
+.. _Readme.html:
 
 
 Introduction
@@ -15,7 +15,7 @@ Introduction
 
 
 This document is a roadmap to the Ghostscript documentation.
-After looking through it, if you want to install Ghostscript and not only use it, we recommend you read :ref:`How to install Ghostscript<Install.htm>`, and :ref:`How to compile Ghostscript<Make.htm>` from source code (which is necessary before installing it on Unix and VMS systems).
+After looking through it, if you want to install Ghostscript and not only use it, we recommend you read :ref:`How to install Ghostscript<Install.html>`, and :ref:`How to compile Ghostscript<Make.html>` from source code (which is necessary before installing it on Unix and VMS systems).
 
 
 .. _WhatIsGhostscript:
@@ -133,9 +133,9 @@ Document roadmap by theme
 What should I read if I'm a new user?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- :ref:`How to use Ghostscript<Use.htm>`. This includes both a quickstart introduction to the command line version and more extensive reference material.
-- detailed information about :ref:`specific devices<Devices.htm>` that Ghostscript can use for output.
-- more detailed information about how to use Ghostscript under Unix with ``lpr`` :ref:`as a filter<Unix-lpr.htm>` for printing.
+- :ref:`How to use Ghostscript<Use.html>`. This includes both a quickstart introduction to the command line version and more extensive reference material.
+- detailed information about :ref:`specific devices<Devices.html>` that Ghostscript can use for output.
+- more detailed information about how to use Ghostscript under Unix with ``lpr`` :ref:`as a filter<Unix-lpr.html>` for printing.
 - for information about known problems or to report a new one, please visit `bugs.ghostscript.com`_ but remember that free versions of Ghostscript come with with NO WARRANTY and NO SUPPORT.
 
 
@@ -148,9 +148,9 @@ GPL Ghostscript, Artifex Ghostscript and AFPL Ghostscript are different releases
 
 If you run into any questions, or if you are going to be using Ghostscript extensively, you should at least skim, and probably eventually read:
 
-- about the :ref:`fonts distributed with Ghostscript<Fonts.htm>`, including how to add or replace fonts.
-- a description of :ref:`the Ghostscript language<Language.htm>`, and its differences from the documented PostScript language.
-- about the :ref:`postscript files distributed with Ghostscript<Psfiles.htm>` (other than fonts).
+- about the :ref:`fonts distributed with Ghostscript<Fonts.html>`, including how to add or replace fonts.
+- a description of :ref:`the Ghostscript language<Language.html>`, and its differences from the documented PostScript language.
+- about the :ref:`postscript files distributed with Ghostscript<Psfiles.html>` (other than fonts).
 
 
 Before building Ghostscript
@@ -158,7 +158,7 @@ Before building Ghostscript
 
 If you are going to compile Ghostscript from source, rather than just use an executable you got from somewhere, you may want to read:
 
-- :ref:`How to build Ghostscript<Make.htm>` and :ref:`install it<Install.htm>`.
+- :ref:`How to build Ghostscript<Make.html>` and :ref:`install it<Install.html>`.
 
 
 What should I read if I'm *not* a new user?
@@ -166,7 +166,7 @@ What should I read if I'm *not* a new user?
 
 If you have already used Ghostscript, when you receive a new release you should begin by reading this file, then:
 
-- :ref:`News<News.htm>`, for incompatible changes and new features in the current release.
+- :ref:`News<News.html>`, for incompatible changes and new features in the current release.
 
 
 What if I'm a developer?
@@ -174,12 +174,12 @@ What if I'm a developer?
 
 If you are going to do any development on or with Ghostscript at all, you should at least look at:
 
-- the :ref:`roadmap documentation<Develop.htm>` for Ghostscript's source files and architecture.
+- the :ref:`roadmap documentation<Develop.html>` for Ghostscript's source files and architecture.
 
 If you are going to write a new driver for Ghostscript, you should read:
 
-- the :ref:`guide to the Ghostscript source code<Source.htm>`.
-- the interface between Ghostscript and :ref:`device drivers<Drivers.htm>`.
+- the :ref:`guide to the Ghostscript source code<Source.html>`.
+- the interface between Ghostscript and :ref:`device drivers<Drivers.html>`.
 
 If you are considering distributing GPL Ghostscript in conjunction with a commercial product, you should read the `license`_ carefully, and you should also read:
 
@@ -187,7 +187,7 @@ If you are considering distributing GPL Ghostscript in conjunction with a commer
 
 If you intend to use Ghostscript in the form of a dynamic link library (DLL) under OS/2 or Microsoft Windows or in the form of shared object under Linux, read:
 
-- documentation on :ref:`Ghostscript Interpreter API<API.htm>`.
+- documentation on :ref:`Ghostscript Interpreter API<API.html>`.
 
 If you want to use Ghostscript as part of another program, as a callable PostScript language interpreter, and not as a DLL or as a self-contained executable application, you should begin by reading:
 
@@ -195,7 +195,7 @@ If you want to use Ghostscript as part of another program, as a callable PostScr
 
 or if you are going to use only the Ghostscript graphics library:
 
-- about the structure of the :ref:`Ghostscript library<Lib.htm>` and its interfaces.
+- about the structure of the :ref:`Ghostscript library<Lib.html>` and its interfaces.
 
 What if I'm writing documentation?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -231,7 +231,7 @@ Much other material about Ghostscript is available on the World Wide Web, both a
 .. _www.ghostscript.com: http://www.ghostscript.com/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
 .. _ghostscript.com/download: http://www.ghostscript.com/download/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=inline-link
 .. _AGPL:
-.. _GNU Affero GPL license: http://www.gnu.org/licenses/agpl-3.0.html
+.. _GNU Affero GPL license: http://www.gnu.org/licenses/agpl-3.0.htmll
 .. _AFPL license:
 .. _AFPL: https://en.wikipedia.org/wiki/Aladdin_Free_Public_License
 

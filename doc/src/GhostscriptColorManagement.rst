@@ -5,7 +5,7 @@
 
 .. include:: header.rst
 
-.. _GhostscriptColorManagement.htm:
+.. _GhostscriptColorManagement.html:
 
 
 Ghostscript Color Management

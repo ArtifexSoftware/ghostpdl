@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _SavedPages.htm:
+.. _SavedPages.html:
 
 
 Using Saved Pages

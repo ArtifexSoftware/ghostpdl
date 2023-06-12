@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _DeviceSubclassing.htm:
+.. _DeviceSubclassing.html:
 
 
 Device Subclassing

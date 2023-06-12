@@ -5,7 +5,7 @@
 
 .. include:: header.rst
 
-.. _Fonts.htm:
+.. _Fonts.html:
 
 
 Fonts and Font Facilities Supplied with Ghostscript
@@ -192,7 +192,7 @@ The XUID is a Level 2 PostScript feature that serves the same function as the ``
 
 
 
-.. Note this was originally on the Use.htm page
+.. Note this was originally on the Use.html page
 
 .. _Fonts FAPI:
 

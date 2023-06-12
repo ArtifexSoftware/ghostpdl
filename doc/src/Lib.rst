@@ -7,7 +7,7 @@
 
 .. include:: header.rst
 
-.. _Lib.htm:
+.. _Lib.html:
 
 
 The Core Library

@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _Language.htm:
+.. _Language.html:
 .. _Language:
 
 
@@ -18,7 +18,7 @@ PostScript Language
 Ghostscript's capabilities in relation to PostScript
 ---------------------------------------------------------
 
-The Ghostscript interpreter, except as noted below, is intended to execute properly any source program written in the (LanguageLevel 3) PostScript language as defined in the PostScript Language Reference, Third Edition (ISBN 0-201-37922-8) published by Addison-Wesley in mid-1999. However, the interpreter is configurable in ways that can restrict it to various subsets of this language. Specifically, the base interpreter accepts the Level 1 subset of the PostScript language, as defined in the first edition of the PostScript Language Reference Manual (ISBN 0-201-10174-2) Addison-Wesley 1985, plus the file system, version 25.0 language, and miscellaneous additions listed in sections A.1.6, A.1.7, and A.1.8 of the Second Edition respectively, including allowing a string operand for the "``status``" operator. The base interpreter may be configured (see the documentation on :ref:`building Ghostscript<Make.htm>` for how to configure it) by adding any combination of the following:
+The Ghostscript interpreter, except as noted below, is intended to execute properly any source program written in the (LanguageLevel 3) PostScript language as defined in the PostScript Language Reference, Third Edition (ISBN 0-201-37922-8) published by Addison-Wesley in mid-1999. However, the interpreter is configurable in ways that can restrict it to various subsets of this language. Specifically, the base interpreter accepts the Level 1 subset of the PostScript language, as defined in the first edition of the PostScript Language Reference Manual (ISBN 0-201-10174-2) Addison-Wesley 1985, plus the file system, version 25.0 language, and miscellaneous additions listed in sections A.1.6, A.1.7, and A.1.8 of the Second Edition respectively, including allowing a string operand for the "``status``" operator. The base interpreter may be configured (see the documentation on :ref:`building Ghostscript<Make.html>` for how to configure it) by adding any combination of the following:
 
 - The ability to process PostScript Type 1 fonts. This facility is normally included in the interpreter.
 
@@ -801,7 +801,7 @@ Ghostscript supports the concept of device parameters for all devices, not just 
    Number of bits per pixel.
 
 ``.HWMargins [<four floats>]``
-   Size of non-imageable regions around the edges of the page, in points (units of 1/72in; see the :ref:`notes on measurements<Devices_Notes on measurements>` in the documentation on :ref:`devices<Devices.htm>`).
+   Size of non-imageable regions around the edges of the page, in points (units of 1/72in; see the :ref:`notes on measurements<Devices_Notes on measurements>` in the documentation on :ref:`devices<Devices.html>`).
 
 
 ``HWSize [<integer> <integer>]``

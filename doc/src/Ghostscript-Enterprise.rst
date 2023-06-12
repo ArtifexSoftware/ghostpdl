@@ -134,7 +134,7 @@ Using
 Once you have acquired a commercial license agreement you will be supplied with a built binary (``gse``) for your system to run :title:`Ghostscript Enterprise`.
 
 - Use :title:`Ghostscript Enterprise` in the regular way in which you would use :title:`Ghostscript` itself.
-- Just declare your :ref:`device<Devices.htm>`, your output & input files and then any other optional parameters as required.
+- Just declare your :ref:`device<Devices.html>`, your output & input files and then any other optional parameters as required.
 - Ensure to run your commands against your ``gse`` binary as opposed to any other installation of :title:`Ghostscript`.
 
 

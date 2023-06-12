@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _Ps-style.htm:
+.. _Ps-style.html:
 
 
 Ghostscript PostScript Coding Guidelines

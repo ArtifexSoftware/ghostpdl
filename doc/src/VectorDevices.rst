@@ -6,7 +6,7 @@
 
 .. include:: header.rst
 
-.. _VectorDevices.htm:
+.. _VectorDevices.html:
 
 
 High Level Devices
