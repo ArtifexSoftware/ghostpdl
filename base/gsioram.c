@@ -121,6 +121,8 @@ ramfs_errno_to_code(int error_number) {
         return_error(gs_error_invalidfileaccess);
     case RAMFS_NOMEM:
         return_error(gs_error_VMerror);
+    case RAMFS_BADRANGE:
+        return_error(gs_error_rangecheck);
     /* just in case */
     default:
         return_error(gs_error_ioerror);
@@ -250,10 +252,8 @@ s_ram_read_seek(register stream * s, gs_offset_t pos)
         s->cursor.r.ptr = s->cbuf + offset - 1;
         return 0;
     }
-    if (pos < 0 || pos > s->file_limit ||
-        ramfile_seek((ramhandle*)s->file, s->file_offset + pos, RAMFS_SEEK_SET) != 0
-    )
-    return ERRC;
+    if (pos < 0 || pos > s->file_limit || ramfile_seek((ramhandle*)s->file, s->file_offset + pos, RAMFS_SEEK_SET) != 0)
+        return ERRC;
     s->cursor.r.ptr = s->cursor.r.limit = s->cbuf - 1;
     s->end_status = 0;
     s->position = pos;
@@ -337,8 +337,8 @@ s_ram_write_seek(stream * s, gs_offset_t pos)
     int code = sflush(s);
 
     if (code < 0) return code;
-    if (ramfile_seek((ramhandle*)s->file, pos, RAMFS_SEEK_SET) != 0)
-    return ERRC;
+    if (pos < 0 || ramfile_seek((ramhandle*)s->file, pos, RAMFS_SEEK_SET) != 0)
+        return ERRC;
     s->position = pos;
     return 0;
 }

@@ -390,6 +390,11 @@ int ramfile_write(ramhandle * handle,const void * buf,int len)
         return -1;
     }
 
+    if (len < 0 || handle->filepos + len < 0) {
+        handle->last_error = RAMFS_BADRANGE;
+        return -1;
+    }
+
     if(handle->mode & RAMFS_APPEND) {
         handle->filepos = file->size;
     }
@@ -424,18 +429,25 @@ int ramfile_write(ramhandle * handle,const void * buf,int len)
     return len;
 }
 
-int ramfile_seek(ramhandle * handle,int pos,int whence)
+int ramfile_seek(ramhandle * handle,gs_offset_t pos,int whence)
 {
     /* Just set the handle's file position.  The effects become noticeable
        at the next read or write.
     */
+    gs_offset_t newpos = handle->filepos;
+
     if(whence == RAMFS_SEEK_CUR) {
-        handle->filepos += pos;
+        newpos += pos;
     } else if(whence == RAMFS_SEEK_END) {
-        handle->filepos = handle->file->size+pos;
+        newpos = handle->file->size+pos;
     } else {
-        handle->filepos = pos;
+        newpos = pos;
     }
+
+    if(newpos < 0 || newpos != (int)newpos)
+        return -1;
+
+    handle->filepos = (int)newpos;
     return 0;
 }
 

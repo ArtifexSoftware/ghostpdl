@@ -44,6 +44,7 @@ typedef struct _ramfs_enum ramfs_enum;
 #define RAMFS_NOACCESS 5
 #define RAMFS_NOMEM 6
 #define RAMFS_NOSPACE 7
+#define RAMFS_BADRANGE 8
 
 /* Open mode flags */
 #define RAMFS_READ   s_mode_read      /* 1 */
@@ -70,7 +71,7 @@ char* ramfs_enum_next(ramfs_enum * e);
 void ramfs_enum_end(ramfs_enum * e);
 int ramfile_read(ramhandle * handle,void * buf,int len);
 int ramfile_write(ramhandle * handle,const void * buf,int len);
-int ramfile_seek(ramhandle * handle,int pos,int whence);
+int ramfile_seek(ramhandle * handle,gs_offset_t pos,int whence);
 int ramfile_eof(ramhandle * handle);
 int ramfile_tell(ramhandle * handle);
 int ramfile_size(ramhandle * handle);
