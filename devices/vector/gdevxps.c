@@ -1749,7 +1749,6 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
     }
 
     if (!image_brush_fill(type, xps->filltype)) {
-//        write_str_to_current_page(xps, "<Path ");
         if (type & gx_path_type_fill) {
             if (type == gx_path_type_fill)
                 fmt = "Fill=\"#%06X\" Data=\"F 1";
