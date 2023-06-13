@@ -626,6 +626,8 @@ zsetfileposition(i_ctx_t *i_ctx_p)
     stream *s;
 
     check_type(*op, t_integer);
+    if ((gs_offset_t)op->value.intval < 0)
+        return_error(gs_error_rangecheck);
     check_file(s, op - 1);
     if (sseek(s, (gs_offset_t)op->value.intval) < 0)
         return_error(gs_error_ioerror);
