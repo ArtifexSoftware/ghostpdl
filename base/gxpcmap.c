@@ -428,9 +428,9 @@ pattern_accum_open(gx_device * dev)
                     if (target->num_planar_planes > 0)
                     {
                         gx_render_plane_t planes[GX_DEVICE_COLOR_MAX_COMPONENTS];
-                        uchar num_comp = padev->color_info.num_components;
+                        uchar num_comp = padev->num_planar_planes;
                         uchar i;
-                        int depth = target->color_info.depth / target->color_info.num_components;
+                        int depth = target->color_info.depth / num_comp;
                         for (i = 0; i < num_comp; i++)
                         {
                             planes[i].shift = depth * (num_comp - 1 - i);

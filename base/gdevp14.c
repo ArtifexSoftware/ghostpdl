@@ -6063,7 +6063,11 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     if (has_tags) {
         set_dev_proc(pdev, encode_color, deep ? pdf14_encode_color16_tag : pdf14_encode_color_tag);
         pdev->color_info.comp_shift[pdev->color_info.num_components] = pdev->color_info.depth;
-        pdev->color_info.depth += 8;
+        /* In planar mode, planes need to all be the same depth. Otherwise use 8 bits for tags. */
+        if (pdev->num_planar_planes > 0)
+            pdev->color_info.depth += deep ? 16 : 8;
+        else
+            pdev->color_info.depth += 8;
     }
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
     gx_device_fill_in_procs((gx_device *)pdev);
@@ -7056,6 +7060,8 @@ pdf14_pop_color_model(gx_device* dev, pdf14_group_color_t* group_color)
         set_dev_proc(pdev, get_color_mapping_procs, group_color->group_color_mapping_procs);
         set_dev_proc(pdev, get_color_comp_index, group_color->group_color_comp_index);
         pdev->color_info.polarity = group_color->polarity;
+        if (pdev->num_planar_planes > 0)
+            pdev->num_planar_planes += group_color->num_components - pdev->color_info.num_components;
         pdev->color_info.num_components = group_color->num_components;
         pdev->blend_procs = group_color->blend_procs;
         pdev->ctx->additive = group_color->isadditive;
@@ -7303,10 +7309,12 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     }
     group_color->blend_procs = pdev->blend_procs = pdevproto->blend_procs;
     group_color->polarity = pdev->color_info.polarity = new_polarity;
-    group_color->num_components = pdev->color_info.num_components = new_num_comps;
     group_color->isadditive = pdev->ctx->additive = new_additive;
     pdev->color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
     group_color->unpack_procs = pdev->pdf14_procs = new_14procs;
+    if (pdev->num_planar_planes > 0)
+        pdev->num_planar_planes += new_num_comps - pdev->color_info.num_components;
+    group_color->num_components = pdev->color_info.num_components = new_num_comps;
     pdev->color_info.depth = new_num_comps * (8<<deep);
     memset(&(pdev->color_info.comp_bits), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(&(pdev->color_info.comp_shift), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -7314,7 +7322,11 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
     memcpy(&(pdev->color_info.comp_shift), comp_shift, new_num_comps);
     if (has_tags) {
         pdev->color_info.comp_shift[pdev->color_info.num_components] = pdev->color_info.depth;
-        pdev->color_info.depth += 8;
+        /* In planar mode, planes need to all be the same depth. Otherwise use 8 bits for tags. */
+        if (pdev->num_planar_planes > 0)
+            pdev->color_info.depth += deep ? 16 : 8;
+        else
+            pdev->color_info.depth += 8;
     }
     group_color->max_color = pdev->color_info.max_color = deep ? 65535 : 255;
     group_color->max_gray = pdev->color_info.max_gray = deep ? 65535 : 255;
@@ -7574,7 +7586,11 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
         }
     }
     if (has_tags) {
-        new_depth += 8;
+        /* In planar mode, planes need to all be the same depth. Otherwise use 8 bits for tags. */
+        if (pdev->num_planar_planes > 0)
+            new_depth += deep ? 16 : 8;
+        else
+            new_depth += 8;
     }
     if_debug2m('v', pdev->memory,
         "[v]pdf14_clist_push_color_model, num_components_old = %d num_components_new = %d\n",
@@ -7590,10 +7606,12 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     }
     pdev->blend_procs = pdevproto->blend_procs;
     pdev->color_info.polarity = new_polarity;
-    pdev->color_info.num_components = new_num_comps;
     pdev->color_info.max_color = deep ? 65535 : 255;
     pdev->color_info.max_gray = deep ? 65535 : 255;
     pdev->pdf14_procs = new_14procs;
+    if (pdev->num_planar_planes > 0)
+        pdev->num_planar_planes += new_num_comps - pdev->color_info.num_components;
+    pdev->color_info.num_components = new_num_comps;
     pdev->color_info.depth = new_depth;
     memset(&(pdev->color_info.comp_bits), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(&(pdev->color_info.comp_shift), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -7657,6 +7675,8 @@ pdf14_clist_pop_color_model(gx_device *dev, gs_gstate *pgs)
         pdev->color_info.polarity = group_color->polarity;
         pdev->color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
         pdev->color_info.depth = group_color->depth;
+        if (pdev->num_planar_planes > 0)
+            pdev->num_planar_planes += group_color->num_components - pdev->color_info.num_components;
         pdev->color_info.num_components = group_color->num_components;
         pdev->blend_procs = group_color->blend_procs;
         pdev->pdf14_procs = group_color->unpack_procs;
@@ -7844,6 +7864,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
             set_dev_proc(pdev, get_color_comp_index, group_color->group_color_comp_index);
             pdev->color_info.polarity = group_color->polarity;
             pdev->color_info.opmsupported = GX_CINFO_OPMSUPPORTED_UNKNOWN;
+            if (pdev->num_planar_planes > 0)
+                pdev->num_planar_planes += group_color->num_components - pdev->color_info.num_components;
             pdev->color_info.num_components = group_color->num_components;
             pdev->color_info.depth = group_color->depth;
             pdev->blend_procs = group_color->blend_procs;
@@ -9051,7 +9073,11 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     if (has_tags) {
         set_dev_proc(p14dev, encode_color, deep ? pdf14_encode_color16_tag : pdf14_encode_color_tag);
         p14dev->color_info.comp_shift[p14dev->color_info.num_components] = p14dev->color_info.depth;
-        p14dev->color_info.depth += 8;
+        /* In planar mode, planes need to all be the same depth. Otherwise use 8 bits for tags. */
+        if (p14dev->num_planar_planes > 0)
+            p14dev->color_info.depth += deep ? 16 : 8;
+        else
+            p14dev->color_info.depth += 8;
     }
     /* if the device has separations already defined (by SeparationOrderNames) */
     /* we need to copy them (allocating new names) so the colorants are in the */
@@ -10401,7 +10427,11 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     if (has_tags) {
         set_dev_proc(pdev, encode_color, pdf14_encode_color_tag);
         pdev->color_info.comp_shift[pdev->color_info.num_components] = pdev->color_info.depth;
-        pdev->color_info.depth += 8;
+        /* In planar mode, planes need to all be the same depth. Otherwise use 8 bits for tags. */
+        if (pdev->num_planar_planes > 0)
+            pdev->color_info.depth += deep ? 16 : 8;
+        else
+            pdev->color_info.depth += 8;
     }
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;	/* this is the standard */
     gx_device_fill_in_procs((gx_device *)pdev);
@@ -12146,13 +12176,17 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                     p14dev->devn_params.page_spot_colors =
                         pclist_devn_params->page_spot_colors;
                     if (num_comp < p14dev->devn_params.page_spot_colors + 4 ) {
+                        if (p14dev->num_planar_planes > 0)
+                            p14dev->num_planar_planes += num_comp - p14dev->color_info.num_components;
                         p14dev->color_info.num_components = num_comp;
                     } else {
                         /* if page_spot_colors < 0, this will be wrong, so don't update num_components */
                         if (p14dev->devn_params.page_spot_colors >= 0) {
-                            p14dev->color_info.num_components =
-                                p14dev->devn_params.num_std_colorant_names +
-                                p14dev->devn_params.page_spot_colors;
+                            int n = p14dev->devn_params.num_std_colorant_names +
+                                    p14dev->devn_params.page_spot_colors;
+                            if (p14dev->num_planar_planes > 0)
+                                p14dev->num_planar_planes += n - p14dev->color_info.num_components;
+                            p14dev->color_info.num_components = n;
                         }
                     }
                 }
