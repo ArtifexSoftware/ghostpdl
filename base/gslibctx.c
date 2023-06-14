@@ -743,7 +743,7 @@ gs_add_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type, co
     /* "%pipe%" do not follow the normal rules for path definitions, so we
        don't "reduce" them to avoid unexpected results
      */
-    if (len > 5 && memcmp(path, "%pipe", 5) != 0) {
+    if (path[0] == '|' || (len > 5 && memcmp(path, "%pipe", 5) == 0)) {
         buffer = (char *)gs_alloc_bytes(core->memory, len + 1, "gs_add_control_path_len");
         if (buffer == NULL)
             return gs_error_VMerror;
@@ -850,7 +850,7 @@ gs_remove_control_path_len_flags(const gs_memory_t *mem, gs_path_control_t type,
     /* "%pipe%" do not follow the normal rules for path definitions, so we
        don't "reduce" them to avoid unexpected results
      */
-    if (len > 5 && memcmp(path, "%pipe", 5) != 0) {
+    if (path[0] == '|' || (len > 5 && memcmp(path, "%pipe", 5) == 0)) {
         buffer = (char *)gs_alloc_bytes(core->memory, len + 1, "gs_remove_control_path_len");
         if (buffer == NULL)
             return gs_error_VMerror;
