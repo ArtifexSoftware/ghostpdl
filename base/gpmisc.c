@@ -1081,7 +1081,7 @@ gp_validate_path_len(const gs_memory_t *mem,
     /* "%pipe%" do not follow the normal rules for path definitions, so we
        don't "reduce" them to avoid unexpected results
      */
-    if (len > 5 && memcmp(path, "%pipe", 5) != 0) {
+    if (path[0] == '|' || (len > 5 && memcmp(path, "%pipe", 5) == 0)) {
         bufferfull = buffer = (char *)gs_alloc_bytes(mem->thread_safe_memory, len + 1, "gp_validate_path");
         if (buffer == NULL)
             return gs_error_VMerror;
