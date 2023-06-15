@@ -70,18 +70,20 @@ RELOC_PTRS_END
 static
 ENUM_PTRS_WITH(device_clip_enum_ptrs, gx_device_clip *cptr)
 {
-    if (index < st_clip_list_max_ptrs + 2)
+    if (index < st_clip_list_max_ptrs + 3)
         return ENUM_USING(st_clip_list, &cptr->list,
-                          sizeof(gx_clip_list), index - 2);
+                          sizeof(gx_clip_list), index - 3);
     return ENUM_USING(st_device_forward, vptr,
                       sizeof(gx_device_forward),
-                      index - (st_clip_list_max_ptrs + 2));
+                      index - (st_clip_list_max_ptrs + 3));
 }
 case 0:
 ENUM_RETURN((cptr->current == &cptr->list.single ? NULL :
              (void *)cptr->current));
 case 1:
 ENUM_RETURN((cptr->cpath));
+case 2:
+ENUM_RETURN((cptr->rect_list));
 ENUM_PTRS_END
 static
 RELOC_PTRS_WITH(device_clip_reloc_ptrs, gx_device_clip *cptr)
@@ -91,6 +93,7 @@ RELOC_PTRS_WITH(device_clip_reloc_ptrs, gx_device_clip *cptr)
     else
         RELOC_PTR(gx_device_clip, current);
     RELOC_PTR(gx_device_clip, cpath);
+    RELOC_PTR(gx_device_clip, rect_list);
     RELOC_USING(st_clip_list, &cptr->list, sizeof(gx_clip_list));
     RELOC_USING(st_device_forward, vptr, sizeof(gx_device_forward));
 }

@@ -496,7 +496,10 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     /* it is not clear (to me) why these are freed explicitly instead
        of using reference counting */
     gs_free_object(mem, penum->rop_dev, "image RasterOp");
-    gs_free_object(mem, penum->clip_dev, "image clipper");
+
+    /* We do now reference count the clip device, see bug #706771 */
+    rc_decrement(penum->clip_dev, "gx_image1_end_image");
+    penum->clip_dev = NULL;
 
     if (scaler != 0) {
         (*scaler->templat->release) ((stream_state *) scaler);

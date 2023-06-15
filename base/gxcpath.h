@@ -83,6 +83,23 @@ struct gx_clip_list_s {
 #define clip_list_is_rectangle(clp) ((clp)->count <= 1)
 
 /*
+ * The reference counting considerations for clip paths are the same as
+ * for paths.  We need a separate reference count for the clip list,
+ * since its existence and lifetime are not necessarily the same as
+ * those of the path.
+ */
+
+typedef struct gx_clip_rect_list_s {
+    rc_header rc;
+    gx_clip_list list;
+} gx_clip_rect_list;
+
+#define private_st_clip_rect_list()	/* in gxcpath.c */\
+  gs_private_st_ptrs_add0(st_clip_rect_list, gx_clip_rect_list,\
+    "gx_clip_rect_list", clip_rect_list_enum_ptrs, clip_rect_list_reloc_ptrs,\
+    st_clip_list, list)
+
+/*
  * Clipping devices provide for translation before clipping.
  * This ability, a late addition, currently is used only in a few
  * situations that require breaking up a transfer into pieces,
@@ -91,10 +108,14 @@ struct gx_clip_list_s {
  * Note that clipping devices cache their clipping box, so the target's
  * clipping box and the clip list must be const after the clipping device
  * is opened.
+ * This is no longer entirely true. See bug #706771 for an example where
+ * this reliance on const breaks down. To solve this we now take a reference
+ * to the clip list.
  */
 typedef struct gx_device_clip_s gx_device_clip;
 struct gx_device_clip_s {
     gx_device_forward_common;	/* target is set by client */
+    gx_clip_rect_list *rect_list;
     gx_clip_list list;		/* set by client */
     gx_clip_rect *current;	/* cursor in list */
     gs_int_point translation;
@@ -104,10 +125,11 @@ struct gx_device_clip_s {
 };
 
 extern_st(st_device_clip);
+void gx_device_clip_finalize(const gs_memory_t *cmem, void *vpdev);
 #define public_st_device_clip()	/* in gxcpath.c */\
   gs_public_st_composite_use_final(st_device_clip, gx_device_clip,\
     "gx_device_clip", device_clip_enum_ptrs, device_clip_reloc_ptrs,\
-    gx_device_finalize)
+    gx_device_clip_finalize)
 void gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target);
 void gx_destroy_clip_device_on_stack(gx_device_clip * dev);
 gx_device *gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path *pcpath, gx_device *target, gs_fixed_rect *rect);

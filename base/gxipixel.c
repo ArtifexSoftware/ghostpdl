@@ -1058,6 +1058,10 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
 fail:
     gs_free_object(mem, buffer, "image buffer");
     gs_free_object(mem, penum->clues, "gx_image_enum_begin");
+    if (penum->clip_dev != NULL) {
+        rc_decrement(penum->clip_dev, "error in gx_begin_image1");
+        penum->clip_dev = NULL;
+    }
     gs_free_object(mem, penum->clip_dev, "image clipper");
     gs_free_object(mem, penum, "gx_begin_image1");
     return code;

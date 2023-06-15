@@ -24,23 +24,6 @@
 #include "gzpath.h"
 
 /*
- * The reference counting considerations for clip paths are the same as
- * for paths.  We need a separate reference count for the clip list,
- * since its existence and lifetime are not necessarily the same as
- * those of the path.
- */
-
-typedef struct gx_clip_rect_list_s {
-    rc_header rc;
-    gx_clip_list list;
-} gx_clip_rect_list;
-
-#define private_st_clip_rect_list()	/* in gxcpath.c */\
-  gs_private_st_ptrs_add0(st_clip_rect_list, gx_clip_rect_list,\
-    "gx_clip_rect_list", clip_rect_list_enum_ptrs, clip_rect_list_reloc_ptrs,\
-    st_clip_list, list)
-
-/*
  * When the clip path consists of the intersection of two or more
  * source paths, we maintain the complete list paths, so that it
  * can be accurately output for high-level devices.

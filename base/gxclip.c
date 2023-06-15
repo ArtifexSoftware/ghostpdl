@@ -107,6 +107,17 @@ clipper_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, fill_linear_color_trapezoid, gx_default_fill_linear_color_trapezoid);
     set_dev_proc(dev, fill_linear_color_triangle, gx_default_fill_linear_color_triangle);
 }
+
+void
+gx_device_clip_finalize(const gs_memory_t *cmem, void *vpdev)
+{
+    gx_device_clip *dev = (gx_device_clip *)vpdev;
+    if (dev->rect_list != NULL) {
+        rc_decrement(dev->rect_list, "finalizing clipper device");
+        dev->rect_list = NULL;
+    }
+}
+
 static const gx_device_clip gs_clip_device =
 {std_device_std_body(gx_device_clip,
                      clipper_initialize_device_procs, "clipper",
@@ -120,6 +131,12 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     gx_device_init_on_stack((gx_device *)dev, (const gx_device *)&gs_clip_device, target->memory);
     dev->cpath = pcpath;
     dev->list = *gx_cpath_list(pcpath);
+    /* NOTE we do not count up the rect list even though we've taken a reference to it.
+     * this is because we would then need to count it down in gx_destroy_clip_device_on_stack
+     * and I have found at least one place where we do not call that function (!)
+     * We should be safe though, the clip rectangle list should not disappear before we
+     * exit the calling function at which point this device will disappear too.
+     */
     dev->translation.x = 0;
     dev->translation.y = 0;
     dev->HWResolution[0] = target->HWResolution[0];
@@ -190,6 +207,13 @@ gx_make_clip_device_in_heap(gx_device_clip *dev,
     (void)gx_device_init((gx_device *)dev,
                          (const gx_device *)&gs_clip_device, mem, true);
     dev->list = *gx_cpath_list(pcpath);
+    dev->rect_list = pcpath->rect_list;
+    /* Bug #706771 we must make sure that the clip rectangle list does not
+     * vanish while we still have a pointer to it. Do that by increasing the
+     * reference count (obviously). We will decrement it in the device's finalize
+     * routine.
+     */
+    rc_increment(dev->rect_list);
     dev->translation.x = 0;
     dev->translation.y = 0;
     dev->HWResolution[0] = target->HWResolution[0];
