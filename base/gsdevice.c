@@ -706,8 +706,13 @@ gs_make_null_device(gx_device_null *dev_null, gx_device *dev,
 /* Is a null device ? */
 bool gs_is_null_device(gx_device *dev)
 {
+    gx_device ldev;
+
+    ldev.initialize_device_procs = gs_null_device.initialize_device_procs;
+    ldev.initialize_device_procs(&ldev);
+
     /* Assuming null_fill_path isn't used elswhere. */
-    return dev->procs.fill_path == gs_null_device.procs.fill_path;
+    return dev->procs.fill_path == ldev.procs.fill_path;
 }
 
 /* Mark a device as retained or not retained. */
