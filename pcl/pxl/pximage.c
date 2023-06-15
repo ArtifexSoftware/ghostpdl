@@ -678,8 +678,9 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
             case partial_cnt:{
                     /* check for possible row overflow */
                     if (pout >= *pdata + benum->data_per_row)
-                        return -1;
-                    *pout++ = *pin++;   /* copy new data into row */
+                        pin++;
+                    else
+                        *pout++ = *pin++;   /* copy new data into row */
                     avail--;
                     deltarow->row_byte_count--;
                     deltarow->short_cnt--;
