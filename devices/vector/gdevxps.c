@@ -1898,16 +1898,6 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
     char line[200];
     const char *fmt;
 
-    /* skip non-drawing paths for now */
-    if (!drawing_path(type, xps->filltype)) {
-        if (type & gx_path_type_none) {
-            if (xps->in_path == false) {
-                if_debug1m('_', xps->memory, "xps_endpath: type not supported %x\n", type);
-                return 0;
-            }
-        }
-    }
-
     if (xps->in_clip) {
         xps->in_clip = false;
         xps->clip_written = true;
