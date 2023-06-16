@@ -786,10 +786,11 @@ gdev_vector_write_clip_path(gx_device_vector * vdev,
         const gx_clip_list *list = gx_cpath_list(pcpath);
 
         prect = list->head;
-        if (prect == 0)
+        if (prect == 0) {
             prect = &list->single;
-        if (prect->xmax <= prect->xmin || prect->ymax <= prect->ymin)
-            return 0;
+            if (prect->xmax <= prect->xmin || prect->ymax <= prect->ymin)
+                return 0;
+        }
     }
     /* Write out the rectangles. */
     code = (*vdev_proc(vdev, beginpath)) (vdev, gx_path_type_clip);
