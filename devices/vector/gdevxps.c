@@ -1570,8 +1570,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
         if (xps->in_path == false)
             return 0;
         fmt = "Clip=\"M %g,%g V %g H %g V %g Z\" ";
-        c = xps->fillcolor & 0xffffffL;
-        gs_snprintf(line, sizeof(line), fmt, c,
+        gs_snprintf(line, sizeof(line), fmt,
                    fixed2float(x0), fixed2float(y0),
                    fixed2float(y1), fixed2float(x1),
                    fixed2float(y0));
@@ -1671,6 +1670,7 @@ gdev_xps_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         xps->in_clip = false;
     }
 
+    xps->clip_path_id = xps->no_clip_path_id;
     write_str_to_current_page(xps, "<Path ");
     xps->in_path = true;
     code = gdev_vector_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
@@ -1702,6 +1702,7 @@ gdev_xps_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         xps->in_clip = false;
     }
 
+    xps->clip_path_id = xps->no_clip_path_id;
     write_str_to_current_page(xps, "<Path ");
     xps->in_path = true;
     code = gdev_vector_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
@@ -1962,7 +1963,7 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
         }
     } else { /* fill */
         /* close the path data attribute */
-        write_str_to_current_page(xps, "\" ");
+        write_str_to_current_page(xps, " Z\" ");
     }
 
     return 0;
