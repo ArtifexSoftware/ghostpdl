@@ -82,6 +82,15 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+/* Recent cups releases on OSX pull in printf in a header file
+   so we need to allow it. This may well end up being required
+   on other platforms, too.
+ */
+#ifdef __APPLE__
+#undef printf
+#define printf printf
+#endif
+
 #include <cups/raster.h>
 #include <cups/ppd.h>
 #include <math.h>
