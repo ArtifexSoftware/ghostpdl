@@ -89,6 +89,12 @@ typedef struct gs_devn_params_s {
      */
     gs_separation_map separation_order_map;
     /*
+     * Number of reserved components (such as for tags). This is used
+     * to prevent our auto_spot_colors code to expand into components
+     * that it should not.
+     */
+    int num_reserved_components;
+    /*
      * Pointer to our list of which colorant combinations are being used.
      */
     gs_separations pdf14_separations;

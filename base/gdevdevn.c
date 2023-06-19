@@ -274,7 +274,8 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
 {
     int num_order = pdevn_params->num_separation_order_names;
     int color_component_number = 0;
-    int max_spot_colors = GX_DEVICE_MAX_SEPARATIONS - pdevn_params->num_std_colorant_names;
+    int num_res_comps = pdevn_params->num_reserved_components;
+    int max_spot_colors = GX_DEVICE_MAX_SEPARATIONS - pdevn_params->num_std_colorant_names - num_res_comps;
 
     /*
      * Check if the component is in either the process color model list
@@ -326,7 +327,7 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
     if (auto_spot_colors == ENABLE_AUTO_SPOT_COLORS)
         /* limit max_spot_colors to what the device can handle given max_components */
         max_spot_colors = min(max_spot_colors,
-                              dev->color_info.max_components - pdevn_params->num_std_colorant_names);
+                              dev->color_info.max_components - pdevn_params->num_std_colorant_names - num_res_comps);
     if (pdevn_params->separations.num_separations < max_spot_colors) {
         byte * sep_name;
         gs_separations * separations = &pdevn_params->separations;
@@ -450,6 +451,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     gs_param_string_array scna;         /* SeparationColorNames array */
     gs_param_string_array sona;         /* SeparationOrder names array */
     gs_param_int_array equiv_cmyk;      /* equivalent_cmyk_color_params */
+    int num_res_comps = pdevn_params->num_reserved_components;
 
     /* Get the SeparationOrder names */
     BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationOrder",
@@ -613,9 +615,9 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     param_signal_error(plist, "PageSpotColors", gs_error_rangecheck);
                     return_error(gs_error_rangecheck);
                 }
-                if (page_spot_colors > pdev->color_info.max_components - pdevn_params->num_std_colorant_names)
-                    page_spot_colors = pdev->color_info.max_components - pdevn_params->num_std_colorant_names;
-                    /* Need to leave room for the process colors in GX_DEVICE_COLOR_MAX_COMPONENTS  */
+                if (page_spot_colors > pdev->color_info.max_components - pdevn_params->num_std_colorant_names - num_res_comps)
+                    page_spot_colors = pdev->color_info.max_components - pdevn_params->num_std_colorant_names - num_res_comps;
+                    /* Need to leave room for the process colors (and tags!) in GX_DEVICE_COLOR_MAX_COMPONENTS  */
         }
         /*
          * The DeviceN device can have zero components if nothing has been

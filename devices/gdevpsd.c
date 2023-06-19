@@ -415,7 +415,8 @@ const psd_device gs_psdrgbtags_device =
       -1,			/* PageSpotColors has not been specified */
       {0},			/* SeparationNames */
       0,			/* SeparationOrder names */
-      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+      {0, 1, 2, 3, 4, 5, 6, 7 },/* Initial component SeparationOrder */
+      1				/* Num reserved components */
     },
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
@@ -491,7 +492,8 @@ const psd_device gs_psdcmyktags_device =
       -1,			/* PageSpotColors has not been specified */
       {0},			/* SeparationNames */
       0,			/* SeparationOrder names */
-      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+      {0, 1, 2, 3, 4, 5, 6, 7 },/* Initial component SeparationOrder */
+      1				/* Num reserved components */
     },
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
@@ -541,7 +543,8 @@ const psd_device gs_psdcmyktags16_device =
       -1,			/* PageSpotColors has not been specified */
       { 0 },			/* SeparationNames */
       0,			/* SeparationOrder names */
-      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+      {0, 1, 2, 3, 4, 5, 6, 7 },/* Initial component SeparationOrder */
+      1				/* Num reserved components */
     },
     { true },			/* equivalent CMYK colors for spot colors */
     /* PSD device specific parameters */
@@ -1411,6 +1414,19 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
         profile_resource_size = dev_profile->buffer_size + dev_profile->buffer_size % 2;
     }
 
+    /* RJW: This seems to me like a horrible hack.
+     * Rather than the devn 'std_colorant_names' list having just 'num_std_colorant_names'
+     * entries, it can have more. For tags devices, it will include "Tags". For "cmykog"
+     * it will include "Orange" and "Green".
+     * The rest of the system will ignore these extra names, but *our* device knows that
+     * *our* devn params will have been setup in this special way.
+     *
+     * Note, this can be very confusing, as the uninitiated might think that our
+     * components were set up to be, say:
+     *    C=0, M=1, Y=2, K=3, T=4, Spot1=5, Spot2=6 etc
+     * when actually they are:
+     *    C=0, M=1, Y=2, K=3, Spot1=4, Spot2=5, ... T=n-1
+     */
     /* Channel Names size computation -- this will get the "Tags" name */
     for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
         fixed_colorant_name n = pdev->devn_params.std_colorant_names[chan_idx];
@@ -1446,7 +1462,6 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
         psd_write_src_spot_names(xc, pdev, chan_idx, has_tags);
         chan_idx = NUM_CMYK_COMPONENTS;
         psd_write_std_extra_names(xc, pdev, chan_idx);
-
     } else {
         chan_idx = NUM_CMYK_COMPONENTS;
         psd_write_std_extra_names(xc, pdev, chan_idx);
