@@ -86,7 +86,7 @@
    so we need to allow it. This may well end up being required
    on other platforms, too.
  */
-#ifdef __MACOS__
+#ifdef __APPLE__
 #undef printf
 #define printf printf
 #endif
