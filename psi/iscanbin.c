@@ -650,7 +650,6 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                 break;
             case BS_TYPE_ARRAY:
                 atype = t_array;
-              arr:
                 {
                     const uint beg_ofs = (uint)value;
                     const uint end_ofs = beg_ofs + osize * SIZEOF_BIN_SEQ_OBJ;
@@ -733,7 +732,6 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, ref * pref,
     ref *op;
     int code = scan_bin_string_continue(i_ctx_p, &rstr, pstate);
     uint space = ialloc_space(idmemory);
-    bool rescan = false;
     uint i;
 
     if (code != 0)
