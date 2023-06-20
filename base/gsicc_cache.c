@@ -749,9 +749,14 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
     /* If present, use an graphic object defined source profile */
     if (pgs->icc_manager != NULL &&
         pgs->icc_manager->srcgtag_profile != NULL) {
-            if (gs_input_profile->data_cs == gsRGB
+            /* This is to do with 'object' based colour management which allows the user to
+             * selectively disable (or override) colour management based on the colour space
+             * and object type. The problem is that the profile data_cs is not what we'd expect
+             * for CIEBased input, so we need to check an additional member. See Bug #706789.
+             */
+            if ((gs_input_profile->data_cs == gsRGB
                 || gs_input_profile->data_cs == gsCMYK
-                || gs_input_profile->data_cs == gsGRAY) {
+                || gs_input_profile->data_cs == gsGRAY) && gs_input_profile->default_match < CIE_A) {
                 gsicc_get_srcprofile(gs_input_profile->data_cs,
                                       dev->graphics_type_tag,
                                       pgs->icc_manager->srcgtag_profile,
