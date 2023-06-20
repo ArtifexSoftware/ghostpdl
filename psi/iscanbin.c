@@ -590,33 +590,40 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
                     make_empty_string(op, attrs);
                     break;
                 }
-                if (value < (int)(max_array_index * SIZEOF_BIN_SEQ_OBJ) ||
-                    value + osize > size
-                    ) {
-                    scan_bos_error(pstate, "invalid string offset");
-                    return_error(gs_error_syntaxerror);
-                }
-                if (value < (int)min_string_index) {
-                    /* We have to (re)allocate the strings. */
-                    uint str_size = size - value;
-                    byte *sbase;
+                {
+                    const uint beg_ofs = (uint)value;
+                    const uint end_ofs = beg_ofs + osize;
 
-                    if (pstate->s_da.is_dynamic)
-                        sbase = scan_bos_resize(i_ctx_p, pstate, str_size,
-                                                index);
-                    else
-                        sbase = ialloc_string(str_size,
-                                              "bos strings");
-                    if (sbase == 0)
-                        return_error(gs_error_VMerror);
-                    pstate->s_da.is_dynamic = true;
-                    pstate->s_da.base = pstate->s_da.next = sbase;
-                    pstate->s_da.limit = sbase + str_size;
-                    min_string_index = value;
+                    if (beg_ofs < max_array_index * SIZEOF_BIN_SEQ_OBJ || beg_ofs > size) {
+                        scan_bos_error(pstate, "invalid string offset");
+                        return_error(gs_error_syntaxerror);
+                    }
+                    if (end_ofs < beg_ofs || end_ofs > size) {
+                        scan_bos_error(pstate, "invalid string length");
+                        return_error(gs_error_syntaxerror);
+                    }
+                    if (beg_ofs < min_string_index) {
+                        /* We have to (re)allocate the strings. */
+                        uint str_size = size - beg_ofs;
+                        byte *sbase;
+
+                        if (pstate->s_da.is_dynamic)
+                            sbase = scan_bos_resize(i_ctx_p, pstate, str_size,
+                                                    index);
+                        else
+                            sbase = ialloc_string(str_size,
+                                                  "bos strings");
+                        if (sbase == 0)
+                            return_error(gs_error_VMerror);
+                        pstate->s_da.is_dynamic = true;
+                        pstate->s_da.base = pstate->s_da.next = sbase;
+                        pstate->s_da.limit = sbase + str_size;
+                        min_string_index = beg_ofs;
+                    }
+                    make_string(op, attrs | icurrent_space, osize,
+                                pstate->s_da.base +
+                                (beg_ofs - min_string_index));
                 }
-                make_string(op, attrs | icurrent_space, osize,
-                            pstate->s_da.base +
-                            (value - min_string_index));
                 break;
             case BS_TYPE_EVAL_NAME:
                 attrs |= a_readonly;	/* mark as executable for later */
@@ -644,24 +651,25 @@ scan_bos_continue(i_ctx_t *i_ctx_p, ref * pref, scanner_state * pstate)
             case BS_TYPE_ARRAY:
                 atype = t_array;
               arr:
-                if (value + osize > (int)min_string_index ||
-                    value & (SIZEOF_BIN_SEQ_OBJ - 1)
-                    ) {
-                    scan_bos_error(pstate, "bad array offset");
-                    return_error(gs_error_syntaxerror);
-                }
-                if (osize > (size / 8)) {
-                    scan_bos_error(pstate, "bad array length");
-                    return_error(gs_error_syntaxerror);
-                }
                 {
-                    uint aindex = value / SIZEOF_BIN_SEQ_OBJ;
+                    const uint beg_ofs = (uint)value;
+                    const uint end_ofs = beg_ofs + osize * SIZEOF_BIN_SEQ_OBJ;
+                    const uint beg_idx = beg_ofs / SIZEOF_BIN_SEQ_OBJ;
+                    const uint end_idx = end_ofs / SIZEOF_BIN_SEQ_OBJ;
 
-                    max_array_index =
-                        max(max_array_index, aindex + osize);
+                    if (beg_ofs > min_string_index || beg_ofs & (SIZEOF_BIN_SEQ_OBJ - 1)) {
+                        scan_bos_error(pstate, "bad array offset");
+                        return_error(gs_error_syntaxerror);
+                    }
+                    if (osize > (size / 8) || end_ofs < beg_ofs || end_ofs > min_string_index) {
+                        scan_bos_error(pstate, "bad array length");
+                        return_error(gs_error_syntaxerror);
+                    }
+
+                    max_array_index = max(max_array_index, end_idx);
                     make_tasv_new(op, atype,
                                   attrs | a_all | icurrent_space,
-                                  osize, refs, abase + aindex);
+                                  osize, refs, abase + beg_idx);
                 }
                 break;
             case BS_TYPE_MARK:
