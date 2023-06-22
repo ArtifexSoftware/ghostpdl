@@ -79,11 +79,16 @@
 #include <limits.h> /* UINT_MAX */
 #include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* getenv, rand_s */
+#ifdef HAVE_STDINT_H
 #include <stdint.h> /* uintptr_t */
+#endif
 #include <math.h>   /* isnan */
 
 #ifdef _WIN32
 #  define getpid GetCurrentProcessId
+#  if (!defined(_MSC_VER) || _MSC_VER < 1910)
+#    define isnan _isnan
+#  endif
 #else
 #  include <sys/time.h>  /* gettimeofday() */
 #  include <sys/types.h> /* getpid() */

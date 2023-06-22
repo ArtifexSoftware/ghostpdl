@@ -39,7 +39,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 /*#define HAVE_STDINT_H 1*/
-# if defined(__WIN32__) /* MSVC currently doesn't provide C99 headers */
+#if defined(_WIN32) && (!defined(_MSC_VER) || _MSC_VER < 1910) /* Older MSVC don't provide C99 headers */
+#undef HAVE_STDINT_H
+
    typedef signed char             int8_t;
    typedef short int               int16_t;
    typedef int                     int32_t;
@@ -52,6 +54,8 @@
    typedef unsigned short uint16_t;
    typedef unsigned int uint32_t;
    typedef unsigned long long uint64_t;
+#else
+#define HAVE_STDINT_H 1
 #endif
 
 /* Define to 1 if you have the <stdio.h> header file. */
