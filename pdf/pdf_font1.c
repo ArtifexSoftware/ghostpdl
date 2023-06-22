@@ -895,8 +895,6 @@ pdfi_copy_type1_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, 
     /* Since various aspects of the font may differ (widths, encoding, etc)
        we cannot reliably use the UniqueID/XUID for copied fonts.
      */
-    if (uid_is_XUID(&font->pfont->UID))
-        uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
     uid_set_invalid(&font->pfont->UID);
 
     if (ctx->args.ignoretounicode != true) {
