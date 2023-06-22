@@ -35,6 +35,7 @@
 #include "pdf_dict.h"
 #include "pdf_array.h"
 #include "pdf_font.h"
+#include "pdf_fontTT.h"
 #include "gscencs.h"
 #include "gsagl.h"
 #include "gxfont1.h"        /* for gs_font_type1_s */
@@ -1027,22 +1028,14 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
                 if (code < 0 || cc == 0) {
                     gs_font_type42 *pfonttt = (gs_font_type42 *)pbfont;
-                    gs_string gname = {0};
+                    gs_string gname;
+                    gname.data = GlyphName->data;
+                    gname.size = GlyphName->length;
 
-                    /* This is a very slow implementation, we may benefit from creating a
-                     * a reverse post table upfront */
-                    for (i = 0; i < pfonttt->data.numGlyphs; i++) {
-                        code = gs_type42_find_post_name(pfonttt, (gs_glyph)i, &gname);
-                        if (code >= 0) {
-                            if (gname.data[0] == GlyphName->data[0]
-                                && gname.size == GlyphName->length
-                                && !strncmp((char *)gname.data, (char *)GlyphName->data, GlyphName->length))
-                            {
-                                cr->char_codes[0] = i;
-                                cr->is_glyph_index = true;
-                                break;
-                            }
-                        }
+                    code = pdfi_find_post_entry(pfonttt, (gs_const_string *)&gname, &cc);
+                    if (code >= 0) {
+                        cr->char_codes[0] = cc;
+                        cr->is_glyph_index = true;
                     }
                 }
                 else {
@@ -1088,22 +1081,14 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
 
                         if (cc == 0) {
                             gs_font_type42 *pfonttt = (gs_font_type42 *)pbfont;
-                            gs_string gname = {0};
+                            gs_string gname;
+                            gname.data = GlyphName->data;
+                            gname.size = GlyphName->length;
 
-                            /* This is a very slow implementation, we may benefit from creating a
-                             * a reverse post table upfront */
-                            for (i = 0; i < pfonttt->data.numGlyphs; i++) {
-                                code = gs_type42_find_post_name(pfonttt, (gs_glyph)i, &gname);
-                                if (code >= 0) {
-                                    if (gname.data[0] == GlyphName->data[0]
-                                        && gname.size == GlyphName->length
-                                        && !strncmp((char *)gname.data, (char *)GlyphName->data, GlyphName->length))
-                                    {
-                                        cr->char_codes[0] = i;
-                                        cr->is_glyph_index = true;
-                                        break;
-                                    }
-                                }
+                            code = pdfi_find_post_entry(pfonttt, (gs_const_string *)&gname, &cc);
+                            if (code >= 0) {
+                                cr->char_codes[0] = cc;
+                                cr->is_glyph_index = true;
                             }
                         }
                         else {

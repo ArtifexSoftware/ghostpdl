@@ -17,7 +17,7 @@
 
 #ifndef PDF_TRUETYPE_FONT
 #define PDF_TRUETYPE_FONT
-
+int pdfi_find_post_entry(gs_font_type42 *pfont, gs_const_string *gname, uint *cc);
 int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *buf, int64_t buflen, int findex, pdf_font **ppdffont);
 int pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pdf_font **tpdffont);
 int pdfi_free_font_truetype(pdf_obj *font);

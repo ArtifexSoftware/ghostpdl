@@ -194,6 +194,7 @@ typedef struct pdf_font_truetype_s {
     pdf_font_common;
     pdf_buffer *sfnt;
     pdfi_truetype_cmap cmap;
+    pdf_dict *post;
 } pdf_font_truetype;
 
 typedef struct pdf_cidfont_s {

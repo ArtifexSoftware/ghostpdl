@@ -85,6 +85,53 @@ static gs_glyph pdfi_ttf_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space
     return g;
 }
 
+int pdfi_find_post_entry(gs_font_type42 *pfont, gs_const_string *gname, uint *cc)
+{
+    pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
+    pdf_context *ctx = (pdf_context *)ttfont->ctx;
+    int code = 0;
+    if (ttfont->post != NULL) {
+        pdf_name *name = NULL;
+        pdf_num *n = NULL;
+
+        code = pdfi_name_alloc(ctx, (byte *)gname->data, gname->size, (pdf_obj **)&name);
+        if (code >= 0) {
+            pdfi_countup(name);
+            code = pdfi_dict_get_by_key(ctx, ttfont->post, name, (pdf_obj **)&n);
+            if (code >= 0 && pdfi_type_of(n) == PDF_INT) {
+                *cc = (uint)n->value.i;
+            }
+            else
+              *cc = 0;
+            pdfi_countdown(name);
+            pdfi_countdown(n);
+        }
+    }
+    else
+        code = gs_error_VMerror;
+
+    if (code == gs_error_VMerror){
+        uint i;
+        gs_string postname = {0};
+
+        code = gs_error_undefined;
+        for (i = 0; i < pfont->data.numGlyphs; i++) {
+            code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
+            if (code >= 0) {
+                if (gname->data[0] == postname.data[0]
+                    && gname->size == postname.size
+                    && !strncmp((char *)gname->data, (char *)postname.data, postname.size))
+                {
+                    *cc = i;
+                    code = 0;
+                    break;
+                }
+            }
+        }
+    }
+    return code;
+}
+
 extern single_glyph_list_t SingleGlyphList[];
 
 static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
@@ -110,7 +157,6 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
         }
 
         if (ttfont->cmap == pdfi_truetype_cmap_10) {
-            gs_string postname = {0};
             gs_glyph g;
 
             g = gs_c_name_glyph((const byte *)gname.data, gname.size);
@@ -126,21 +172,12 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
             }
 
             if (code < 0 || cc == 0) {
-                /* This is a very slow implementation, we may benefit from creating a
-                 * a reverse post table upfront */
-                for (i = 0; i < pfont->data.numGlyphs; i++) {
-                    code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
-                    if (code >= 0) {
-                        if (gname.data[0] == postname.data[0]
-                            && gname.size == postname.size
-                            && !strncmp((char *)gname.data, (char *)postname.data, postname.size))
-                        {
-                            cc = i;
-                            break;
-                        }
-                    }
+                code = pdfi_find_post_entry(pfont, &gname, &cc);
+                if (code < 0) {
+                    cc = 0;
+                    code = 0;
                 }
-           }
+            }
         }
         else {
             /* In theory, this should be 3,1 cmap, but we have examples that use 0,1 or other
@@ -180,21 +217,10 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
                     cc = 0;
 
                 if (cc == 0) {
-                    gs_string postname = {0};
-
-                    /* This is a very slow implementation, we may benefit from creating a
-                     * a reverse post table upfront */
-                    for (i = 0; i < pfont->data.numGlyphs; i++) {
-                        code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
-                        if (code >= 0) {
-                            if (postname.data[0] == gname.data[0]
-                                && postname.size == gname.size
-                                && !strncmp((char *)postname.data, (char *)gname.data, gname.size))
-                            {
-                                cc = i;
-                                break;
-                            }
-                        }
+                    code = pdfi_find_post_entry(pfont, &gname, &cc);
+                    if (code < 0) {
+                        cc = (uint)glyph < GS_MIN_GLYPH_INDEX ? glyph : glyph - GS_MIN_GLYPH_INDEX;
+                        code = 0;
                     }
                 }
             }
@@ -265,6 +291,50 @@ static int pdfi_ttf_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *
     return code;
 
 }
+
+static void pdfi_make_post_dict(gs_font_type42 *pfont)
+{
+    pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
+    pdf_context *ctx = (pdf_context *)ttfont->ctx;
+    int i, code = 0;
+    if (ttfont->post == NULL) {
+        code = pdfi_dict_alloc(ctx, pfont->data.numGlyphs, &ttfont->post);
+        if (code < 0)
+            return;
+
+        pdfi_countup(ttfont->post);
+
+        for (i = 0; i < pfont->data.numGlyphs; i++) {
+            gs_string postname = {0};
+            pdf_name *key;
+            pdf_num *ind;
+
+            code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
+            if (code < 0) {
+                code = 0;
+                continue;
+            }
+            code = pdfi_name_alloc(ctx, postname.data, postname.size, (pdf_obj **)&key);
+            if (code < 0) {
+               code = 0;
+               continue;
+            }
+            pdfi_countup(key);
+            code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&ind);
+            if (code < 0) {
+               code = 0;
+               pdfi_countdown(key);
+               continue;
+            }
+            pdfi_countup(ind);
+            ind->value.i = i;
+            (void)pdfi_dict_put_obj(ctx, ttfont->post, (pdf_obj *)key, (pdf_obj *)ind, true);
+            pdfi_countdown(key);
+            pdfi_countdown(ind);
+        }
+    }
+}
+
 
 static int
 pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
@@ -582,6 +652,8 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         }
     }
 
+    pdfi_make_post_dict((gs_font_type42 *)font->pfont);
+
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
     if (code < 0) {
         goto error;
@@ -639,6 +711,7 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
     memcpy(font, spdffont, sizeof(pdf_font_truetype));
     font->refcnt = 1;
     font->filename = NULL;
+    pdfi_countup(font->post);
 
     font->pfont = (gs_font_base *)dpfont42;
     dpfont42->client_data = (void *)font;
@@ -770,6 +843,7 @@ int pdfi_free_font_truetype(pdf_obj *font)
     pdfi_countdown(ttfont->PDF_font);
     pdfi_countdown(ttfont->ToUnicode);
     pdfi_countdown(ttfont->filename);
+    pdfi_countdown(ttfont->post);
 
     gs_free_object(OBJ_MEMORY(ttfont), ttfont, "Free TrueType font");
 
