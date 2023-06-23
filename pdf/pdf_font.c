@@ -1242,11 +1242,11 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
                              */
                             break;
                         }
-                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 1, &widths[GLYPH_W1_HEIGHT_INDEX]);
+                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 2, &widths[GLYPH_W1_HEIGHT_INDEX]);
                         if (code < 0) goto cleanup;
-                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 1, &widths[GLYPH_W1_V_X_INDEX]);
+                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 3, &widths[GLYPH_W1_V_X_INDEX]);
                         if (code < 0) goto cleanup;
-                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 1, &widths[GLYPH_W1_V_Y_INDEX]);
+                        code = pdfi_array_get_number(pdffont->ctx, W2, i + 4, &widths[GLYPH_W1_V_Y_INDEX]);
                         if (code < 0) goto cleanup;
                         /* We countdown and NULL c, and o on exit from the function
                          * so we don't need to do so in the break statements
