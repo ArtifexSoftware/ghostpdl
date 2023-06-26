@@ -184,6 +184,7 @@ gs_settransfer_remap(gs_gstate * pgs, gs_mapping_proc tproc, bool remap)
                       pgs->memory, goto fail, "gs_settransfer");
     ptran->gray->proc = tproc;
     ptran->gray->id = gs_next_ids(pgs->memory, 1);
+    memset(ptran->gray->values, 0x00, 256 * sizeof(frac));
     ptran->red = 0;
     ptran->green = 0;
     ptran->blue = 0;
