@@ -537,21 +537,36 @@ s16(const byte *p)
 #endif /* not currently used */
 
 static inline int
-u16(const byte *p)
+u16(const byte *p, const byte *e, int *ret)
 {
-    return (p[0] << 8) | p[1];
+    if (p + 1 > e) {
+        *ret = 0;
+        return_error(gs_error_invalidfont);
+    }
+    *ret = (p[0] << 8) | p[1];
+    return 0;
 }
 
 static inline int
-u24(const byte *p)
+u24(const byte *p, const byte *e, int *ret)
 {
-    return (p[0] << 16) | (p[1] << 8) | p[2];
+    if (p + 2 > e) {
+        *ret = 0;
+        return_error(gs_error_invalidfont);
+    }
+    *ret = (p[0] << 16) | (p[1] << 8) | p[2];
+    return 0;
 }
 
 static inline int
-u32(const byte *p)
+u32(const byte *p, const byte *e, int *ret)
 {
-    return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+    if (p + 3 > e) {
+        *ret = 0;
+        return_error(gs_error_invalidfont);
+    }
+    *ret = (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+    return 0;
 }
 
 
@@ -562,17 +577,24 @@ subrbias(int count)
 }
 
 static int
-uofs(const byte *p, int offsize)
+uofs(const byte *p, const byte *e, int offsize, int *ret)
 {
-    if (offsize == 1)
-        return p[0];
+    if (p >= e) {
+        *ret = 0;
+        return_error(gs_error_invalidfont);
+    }
+    if (offsize == 1) {
+        *ret = p[0];
+        return 0;
+    }
     if (offsize == 2)
-        return u16(p);
+        return u16(p, e, ret);
     if (offsize == 3)
-        return u24(p);
+        return u24(p, e, ret);
     if (offsize == 4)
-        return u32(p);
-    return 0;
+        return u32(p, e, ret);
+
+    return_error(gs_error_invalidfont);
 }
 
 static int
@@ -606,10 +628,14 @@ expert_subset_charset_proc(const byte *p, const byte *pe, unsigned int i)
 static int
 format0_charset_proc(const byte *p, const byte *pe, unsigned int i)
 {
+    int code, ret;
     if (p + 2 * i > pe)
         return gs_error_rangecheck;
 
-    return u16(p + 2 * i);
+    if ((code = u16(p + 2 * i, pe, &ret)) < 0) {
+        return code;
+    }
+    return ret;
 }
 
 static int
@@ -621,7 +647,9 @@ format1_charset_proc(const byte *p, const byte *pe, unsigned int i)
     while (p < pe - 3) {
         unsigned int first, count;
 
-        first = (unsigned int)u16(p);
+        code = (unsigned int)u16(p, pe, (int *)&first);
+        if (code < 0)
+            break;
         count = (unsigned int)p[2] + 1;
 
         if (i < cid + count) {
@@ -643,8 +671,13 @@ format2_charset_proc(const byte *p, const byte *pe, unsigned int i)
     while (p < pe - 4) {
         unsigned int first, count;
 
-        first = u16(p);
-        count = u16(p + 2) + 1;
+        code = u16(p, pe, (int *)&first);
+        if (code >= 0)
+            code = u16(p + 2, pe, (int *)&count);
+        if (code < 0)
+            break;
+
+        count += 1;
 
         if (i < cid + count) {
             code = first + i - cid;
@@ -666,15 +699,22 @@ static int
 format3_fdselect_proc(const byte *p, const byte *pe, unsigned int i)
 {
     unsigned int n_ranges;
+    int code;
 
-    n_ranges = u16(p);
+    if ((code = u16(p, pe, (int *)&n_ranges)) < 0)
+        return code;
+
     p += 2;
 
     while (n_ranges-- && p + 5 <= pe) {
         unsigned int first, last;
 
-        first = u16(p);
-        last = u16(p + 3);
+        code = u16(p, pe, (int *)&first);
+        if (code >= 0)
+            code = u16(p + 3, pe, (int *)&last);
+
+        if (code < 0)
+            break;
 
         if (i >= first && i < last) {
             return (int)(*(p + 2));
@@ -1194,13 +1234,16 @@ static byte *
 pdfi_count_cff_index(byte *p, byte *e, int *countp)
 {
     int count, offsize, last;
+    int code;
 
     if (p + 3 > e) {
         gs_throw(-1, "not enough data for index header");
         return 0;
     }
 
-    count = u16(p);
+    if ((code = u16(p, e, &count)) < 0)
+        return NULL;
+
     p += 2;
     *countp = count;
 
@@ -1220,11 +1263,11 @@ pdfi_count_cff_index(byte *p, byte *e, int *countp)
     }
 
     p += count * offsize;
-    last = uofs(p, offsize);
+    code = uofs(p, e, offsize, &last);
     p += offsize;
     p--;                        /* stupid offsets */
 
-    if (last < 0) {
+    if (last < 0 || code < 0) {
         gs_throw(-1, "corrupt index");
         return 0;
     }
@@ -1248,7 +1291,7 @@ pdfi_count_cff_index(byte *p, byte *e, int *countp)
 static byte *
 pdfi_find_cff_index(byte *p, byte *e, int idx, byte ** pp, byte ** ep)
 {
-    int count, offsize, sofs, eofs, last;
+    int code, count, offsize, sofs, eofs, last;
 
     if (p == NULL)
         return 0;
@@ -1258,7 +1301,9 @@ pdfi_find_cff_index(byte *p, byte *e, int idx, byte ** pp, byte ** ep)
         return 0;
     }
 
-    count = u16(p);
+    if (u16(p, e, &count) < 0)
+        return NULL;
+
     p += 2;
     if (count == 0)
         return 0;
@@ -1280,9 +1325,16 @@ pdfi_find_cff_index(byte *p, byte *e, int idx, byte ** pp, byte ** ep)
         return 0;
     }
 
-    sofs = uofs(p + idx * offsize, offsize);
-    eofs = uofs(p + (idx + 1) * offsize, offsize);
-    last = uofs(p + count * offsize, offsize);
+    code = uofs(p + idx * offsize, e,  offsize, &sofs);
+    if (code >= 0)
+        code = uofs(p + (idx + 1) * offsize, e, offsize, &eofs);
+    if (code >= 0)
+        code = uofs(p + count * offsize, e, offsize, &last);
+
+    if (code < 0) {
+        gs_throw(-1, "not enough data for index data");
+        return 0;
+    }
 
     p += count * offsize;
     p += offsize;
@@ -1579,7 +1631,8 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
 
             for (i = 0; i < n_supp && code >= 0; i++) {
                 charcode = p[1 + 3 * i];
-                sid = u16(p + 2 + 3 * i);
+                code = u16(p + 2 + 3 * i, e, (int *)&sid);
+                if (code < 0) continue;
 
                 if ((code = pdfi_make_name_from_sid(ctx, &gname, font, offsets, sid)) < 0) {
                     char buf[40];
@@ -2245,11 +2298,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
     byte *fbuf = pfbuf;
 
     if (!memcmp(fbuf, "OTTO", 4)) {
-        int i, ntables = u16(fbuf + 4);
+        int i, ntables;
         byte *p;
         uint32_t toffs = 0, tlen = 0;
 
-        if (ntables > 64)
+        code = u16(fbuf + 4, fbuf + fbuflen, &ntables);
+
+        if (code < 0 || ntables > 64)
             return_error(gs_error_invalidfont);
 
         for (i = 0; i < ntables; i++) {
@@ -2258,8 +2313,12 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 break;
 
             if (!memcmp(p, "CFF ", 4)) {
-                toffs = u32(p + 8);
-                tlen = u32(p + 12);
+                code = u32(p + 8, fbuf + fbuflen, (int *)&toffs);
+                if (code >= 0)
+                    code = u32(p + 12, fbuf + fbuflen, (int *)&tlen);
+                if (code < 0) {
+                    toffs = tlen = 0;
+                }
                 break;
             }
         }
