@@ -3994,22 +3994,36 @@ dsc_parse_platefile(CDSC *dsc)
             /* single file DCS 2.0 */
             single = TRUE;
             n++;
-            if (i)
+            if ( n + 4 > dsc->line_length) {
+                i = 0;
+            }
+            if (i) {
                 dcs2.begin= dsc_get_int(dsc->line+n, dsc->line_length-n, &i);
-            n+=i;
-            if (i)
-                dcs2.end= dcs2.begin +
-                    dsc_get_int(dsc->line+n, dsc->line_length-n, &i);
+                n+=i;
+                if ( n + 4 > dsc->line_length) {
+                    i = 0;
+                }
+                if (i)
+                    dcs2.end= dcs2.begin +
+                        dsc_get_int(dsc->line+n, dsc->line_length-n, &i);
+            }
         }
         else {
             /* multiple file DCS 2.0 */
-            if (i)
+            if ( n + sizeof(location) > dsc->line_length) {
+                i = 0;
+            }
+            if (i) {
                 dsc_copy_string(location, sizeof(location),
                     dsc->line+n, dsc->line_length-n, &i);
-            n+=i;
-            if (i) {
-                filename = dsc->line+n;
-                filename_length = dsc->line_length-n;
+                n+=i;
+                if ( n > dsc->line_length) {
+                    i = 0;
+                }
+                if (i) {
+                    filename = dsc->line+n;
+                    filename_length = dsc->line_length-n;
+                }
             }
         }
         if (i==0)
