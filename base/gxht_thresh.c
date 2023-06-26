@@ -763,15 +763,29 @@ gxht_thresh_image_init(gx_image_enum *penum)
 }
 
 static void
-fill_threshold_buffer(byte *dest_strip, byte *src_strip, int src_width,
+fill_threshold_buffer(byte *dest_strip, byte *src, byte *src_strip, int src_width,
                        int left_offset, int left_width, int num_tiles,
                        int right_width)
 {
     byte *ptr_out_temp = dest_strip;
     int ii;
 
+    /* Make sure we don't try and read before the start of the threshold array. This can happen
+     * if we drop to the beginning of the array, AND we have a negative left_offset. If we do
+     * have a negative left_offset this represents an area we won't actually be using, but we need
+     * to move along the threshold array until we get to the point where we copy data we will use.
+     * So lets simply avoid reading before the start of the data. We can leave the destination
+     * buffer uninitialised because we won't be reading from that area. Bug #706795 but the ASAN
+     * error occurs on a number of input files in the test suite.
+     */
+    if (src_strip + left_offset < src) {
+        int under = src - (src_strip + left_offset);
+        left_offset += under;
+        ptr_out_temp += under;
+        left_width -= under;
+    }
     /* Left part */
-    memcpy(dest_strip, src_strip + left_offset, left_width);
+    memcpy(ptr_out_temp, src_strip + left_offset, left_width);
     ptr_out_temp += left_width;
     /* Now the full parts */
     for (ii = 0; ii < num_tiles; ii++){
@@ -919,7 +933,7 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                        to update with stride */
                     position = contone_stride * k;
                     /* Tile into the 128 bit aligned threshold strip */
-                    fill_threshold_buffer(&(thresh_align[position]),
+                    fill_threshold_buffer(&(thresh_align[position]), threshold,
                                            thresh_tile, thresh_width, dx, left_width,
                                            num_full_tiles, right_tile_width);
                 }
