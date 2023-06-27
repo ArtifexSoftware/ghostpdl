@@ -57,6 +57,66 @@ static int pdfi_gs_setfont(pdf_context *ctx, gs_font *pfont)
     return code;
 }
 
+static void pdfi_cache_resource_font(pdf_context *ctx, pdf_obj *fontdesc, pdf_obj *ppdffont)
+{
+    resource_font_cache_t *entry = NULL;
+    int i;
+
+    if (ctx->resource_font_cache == NULL) {
+        ctx->resource_font_cache = (resource_font_cache_t *)gs_alloc_bytes(ctx->memory, RESOURCE_FONT_CACHE_BLOCK_SIZE * sizeof(pdfi_name_entry_t), "pdfi_cache_resource_font");
+        if (ctx->resource_font_cache == NULL)
+            return;
+        ctx->resource_font_cache_size = RESOURCE_FONT_CACHE_BLOCK_SIZE;
+        memset(ctx->resource_font_cache, 0x00, RESOURCE_FONT_CACHE_BLOCK_SIZE * sizeof(pdfi_name_entry_t));
+        entry = &ctx->resource_font_cache[0];
+    }
+
+    for (i = 0; entry == NULL && i < ctx->resource_font_cache_size; i++) {
+        if (ctx->resource_font_cache[i].pdffont == NULL) {
+            entry = &ctx->resource_font_cache[i];
+        }
+        else if (i == ctx->resource_font_cache_size - 1) {
+            entry = (resource_font_cache_t *)gs_resize_object(ctx->memory, ctx->resource_font_cache, sizeof(pdfi_name_entry_t) * (ctx->resource_font_cache_size + RESOURCE_FONT_CACHE_BLOCK_SIZE), "pdfi_cache_resource_font");
+            if (entry == NULL)
+                break;
+            memset(entry + ctx->resource_font_cache_size, 0x00, RESOURCE_FONT_CACHE_BLOCK_SIZE * sizeof(pdfi_name_entry_t));
+            ctx->resource_font_cache = entry;
+            entry = &ctx->resource_font_cache[ctx->resource_font_cache_size];
+            ctx->resource_font_cache_size += RESOURCE_FONT_CACHE_BLOCK_SIZE;
+        }
+    }
+    if (entry != NULL) {
+        entry->desc_obj_num = fontdesc->object_num;
+        entry->pdffont = ppdffont;
+        pdfi_countup(ppdffont);
+    }
+}
+
+void pdfi_purge_cache_resource_font(pdf_context *ctx)
+{
+    int i;
+    for (i = 0; i < ctx->resource_font_cache_size; i++) {
+       pdfi_countdown(ctx->resource_font_cache[i].pdffont);
+    }
+    gs_free_object(ctx->memory, ctx->resource_font_cache, "pdfi_purge_cache_resource_font");
+    ctx->resource_font_cache = NULL;
+    ctx->resource_font_cache_size = 0;
+}
+
+static int pdfi_find_cache_resource_font(pdf_context *ctx, pdf_obj *fontdesc, pdf_obj **ppdffont)
+{
+    int i, code = gs_error_undefined;
+    for (i = 0; i < ctx->resource_font_cache_size; i++) {
+        if (ctx->resource_font_cache[i].desc_obj_num == fontdesc->object_num) {
+           *ppdffont = ctx->resource_font_cache[i].pdffont;
+           pdfi_countup(*ppdffont);
+           code = 0;
+           break;
+        }
+    }
+    return code;
+}
+
 /* These are fonts for which we have to ignore "named" encodings */
 typedef struct known_symbolic_font_name_s
 {
@@ -895,11 +955,11 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
         /* We should always have a font descriptor here, but we have to carry on
            even if we don't
          */
-        code = pdfi_dict_get_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj**)&fontdesc);
+        code = pdfi_dict_get_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj **)&fontdesc);
         if (fontdesc != NULL && pdfi_type_of(fontdesc) == PDF_DICT) {
             pdf_obj *Name = NULL;
 
-            code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontName", PDF_NAME, (pdf_obj**)&Name);
+            code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontName", PDF_NAME, (pdf_obj **)&Name);
             if (code < 0)
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_FDESC_BAD_FONTNAME, "pdfi_load_font", "");
             pdfi_countdown(Name);
@@ -909,22 +969,22 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
                 code = -1;
             }
             else {
-                code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, ".pdfiFont", PDF_FONT, (pdf_obj**)&ppdfdescfont);
+                code = pdfi_find_cache_resource_font(ctx, (pdf_obj *)fontdesc, (pdf_obj **)&ppdfdescfont);
                 if (code >= 0) {
                     code = pdfi_copy_font(ctx, ppdfdescfont, font_dict, &ppdffont);
                 }
             }
 
             if (code < 0) {
-                code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile", PDF_STREAM, (pdf_obj**)&fontfile);
+                code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile", PDF_STREAM, (pdf_obj **)&fontfile);
                 if (code >= 0)
                     fftype = type1_font;
                 else {
-                    code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile2", PDF_STREAM, (pdf_obj**)&fontfile);
+                    code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile2", PDF_STREAM, (pdf_obj **)&fontfile);
                     fftype = tt_font;
                 }
                 if (code < 0) {
-                    code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile3", PDF_STREAM, (pdf_obj**)&fontfile);
+                    code = pdfi_dict_get_type(ctx, (pdf_dict *) fontdesc, "FontFile3", PDF_STREAM, (pdf_obj **)&fontfile);
                     if (code >= 0 && fontfile != NULL) {
                         code = pdfi_dict_get_type(ctx, fontfile->stream_dict, "Subtype", PDF_NAME, (pdf_obj **)&ffsubtype);
                         if (code >= 0) {
@@ -1020,11 +1080,10 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
 
         if ((substitute & font_substitute) == font_substitute)
             code = pdfi_font_match_glyph_widths(ppdffont);
-        else if (fontdesc != NULL && ppdfdescfont == NULL
+        else if (ppdffont->substitute != true && fontdesc != NULL && ppdfdescfont == NULL
             && (ppdffont->pdfi_font_type == e_pdf_font_type1 || ppdffont->pdfi_font_type == e_pdf_font_cff
             || ppdffont->pdfi_font_type == e_pdf_font_truetype)) {
-            /* We don't care if this fails, we'll just have to recreate the font next time around */
-            (void)pdfi_dict_put(ctx, fontdesc, ".pdfiFont", (pdf_obj *)ppdffont);
+            pdfi_cache_resource_font(ctx, (pdf_obj *)fontdesc, (pdf_obj *)ppdffont);
         }
         *ppfont = (gs_font *)ppdffont->pfont;
      }

@@ -34,6 +34,7 @@
 #include "pdf_annot.h"
 #include "pdf_check.h"
 #include "pdf_mark.h"
+#include "pdf_font.h"
 
 #include "gscoord.h"        /* for gs_concat() and others */
 #include "gspaint.h"        /* For gs_erasepage() */
@@ -1058,6 +1059,8 @@ exit3:
      * with any pattern tiles referencing our objects, in case the garbager runs.
      */
     gx_pattern_cache_winnow(gstate_pattern_cache(ctx->pgs), pdfi_pattern_purge_all_proc, NULL);
+    /* We could be smarter, but for now.. purge for each page */
+    pdfi_purge_cache_resource_font(ctx);
 
     if (code == 0 || (!ctx->args.pdfstoponerror && code != gs_error_pdf_stackoverflow))
         if (!page_dict_error && ctx->finish_page != NULL)
