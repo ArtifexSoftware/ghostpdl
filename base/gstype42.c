@@ -73,9 +73,6 @@ static byte const ver20[4] = {0x00, 0x02, 0x00, 0x00};
 
 /* ---------------- Font level ---------------- */
 
-GS_NOTIFY_PROC(gs_len_glyphs_release);
-GS_NOTIFY_PROC(gs_gsub_release);
-
 /* Read data from sfnts. */
 int
 gs_type42_read_data(gs_font_type42 * pfont, ulong pos, uint length, byte *buf)

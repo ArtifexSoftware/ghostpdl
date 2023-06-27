@@ -713,6 +713,40 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
     font->filename = NULL;
     pdfi_countup(font->post);
 
+    if (dpfont42->data.len_glyphs != NULL) {
+        dpfont42->data.len_glyphs = (uint *)gs_alloc_byte_array(dpfont42->memory, dpfont42->data.trueNumGlyphs, sizeof(uint), "pdfi_copy_truetype_font");
+        if (dpfont42->data.len_glyphs == NULL) {
+            pdfi_countdown(font);
+            return_error(gs_error_VMerror);
+        }
+        code = gs_font_notify_register((gs_font *)dpfont42, gs_len_glyphs_release, (void *)dpfont42);
+        if (code < 0) {
+            gs_free_object(dpfont42->memory, dpfont42->data.len_glyphs, "gs_len_glyphs_release");
+            dpfont42->data.len_glyphs = NULL;
+            pdfi_countdown(font);
+            return code;
+        }
+        memcpy(dpfont42->data.len_glyphs, spfont1->data.len_glyphs, dpfont42->data.trueNumGlyphs * sizeof(uint));
+    }
+    if (dpfont42->data.gsub != NULL) {
+        dpfont42->data.gsub_size = spfont1->data.gsub_size;
+
+        dpfont42->data.gsub = gs_alloc_byte_array(dpfont42->memory, dpfont42->data.gsub_size, 1, "pdfi_copy_truetype_font");
+        if (dpfont42->data.gsub == 0) {
+            pdfi_countdown(font);
+            return_error(gs_error_VMerror);
+        }
+
+        code = gs_font_notify_register((gs_font *)dpfont42, gs_gsub_release, (void *)dpfont42);
+        if (code < 0) {
+            gs_free_object(dpfont42->memory, dpfont42->data.gsub, "gs_len_glyphs_release");
+            dpfont42->data.gsub = NULL;
+            pdfi_countdown(font);
+            return code;
+        }
+        memcpy(dpfont42->data.gsub, spfont1->data.gsub, dpfont42->data.gsub_size);
+    }
+
     font->pfont = (gs_font_base *)dpfont42;
     dpfont42->client_data = (void *)font;
 

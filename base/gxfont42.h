@@ -156,6 +156,9 @@ int gs_type42_append(uint glyph_index, gs_gstate * pgs,
                  gx_path * ppath, gs_text_enum_t *penum, gs_font *pfont,
                  bool charpath_flag);
 
+GS_NOTIFY_PROC(gs_len_glyphs_release);
+GS_NOTIFY_PROC(gs_gsub_release);
+
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
                           float psbw[4]);
