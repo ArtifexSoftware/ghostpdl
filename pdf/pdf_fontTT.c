@@ -219,7 +219,7 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
                 if (cc == 0) {
                     code = pdfi_find_post_entry(pfont, &gname, &cc);
                     if (code < 0) {
-                        cc = (uint)glyph < GS_MIN_GLYPH_INDEX ? glyph : glyph - GS_MIN_GLYPH_INDEX;
+                        cc = (uint)glyph;
                         code = 0;
                     }
                 }
@@ -311,18 +311,15 @@ static void pdfi_make_post_dict(gs_font_type42 *pfont)
 
             code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
             if (code < 0) {
-                code = 0;
                 continue;
             }
             code = pdfi_name_alloc(ctx, postname.data, postname.size, (pdf_obj **)&key);
             if (code < 0) {
-               code = 0;
                continue;
             }
             pdfi_countup(key);
             code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&ind);
             if (code < 0) {
-               code = 0;
                pdfi_countdown(key);
                continue;
             }
