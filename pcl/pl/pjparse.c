@@ -23,6 +23,7 @@
 #include "scommon.h"
 #include "gdebug.h"
 #include "gp.h"
+#include "gpmisc.h"
 #include "gxiodev.h"
 #include "pjparse.h"
 #include "plfont.h"
@@ -542,22 +543,20 @@ pjl_reset_fontsource_fontnumbers(pjl_parser_state_t * pst)
 static void
 pjl_parsed_filename_to_string(char *fnamep, const char *pathname)
 {
-    int i;
-    int size;
+    size_t i, size, prefix_size;
+    const char *prefix;
+    char name[MAXPATHLEN];
+    uint rlen;
 
     *fnamep = 0;                /* in case of bad input */
-    if (pathname == 0 || pathname[0] != '"' || strlen(pathname) < 3)
+    if (pathname == 0 || strlen(pathname) < 4 ||
+        pathname[0] != '"' || pathname[strlen(pathname)-1] != '"')
         return;                 /* bad input pjl file */
 
     if (pathname[1] == '0' && pathname[2] == ':') {
-        /* copy pjl_volume string in. use strlen+1 to ensure that strncpy()
-        appends '\0', to keep coverity quiet. */
-        strncpy(fnamep, PJL_VOLUME_0, strlen(PJL_VOLUME_0)+1);
-        fnamep += strlen(PJL_VOLUME_0);
+        prefix = PJL_VOLUME_0;
     } else if (pathname[1] == '1' && pathname[2] == ':') {
-        /* copy pjl_volume string in */
-        strncpy(fnamep, PJL_VOLUME_1, strlen(PJL_VOLUME_1)+1);
-        fnamep += strlen(PJL_VOLUME_1);
+        prefix = PJL_VOLUME_1;
     } else
         return;                 /* bad input pjl file */
 
@@ -565,23 +564,35 @@ pjl_parsed_filename_to_string(char *fnamep, const char *pathname)
      * remove quotes, use forward slash, copy rest.
      */
     size = strlen(pathname);
+    if (size - 4 > MAXPATHLEN)
+        return;
+    for (i = 3; i < size - 1; i++)
+        name[i - 3] = (pathname[i] == '\\') ? '/' : pathname[i];
+    size -= 4;
 
-    for (i = 3; i < size; i++) {
-        if (pathname[i] == '\\')
-            *fnamep++ = '/';
-        else if (pathname[i] != '"')
-            *fnamep++ = pathname[i];
-        /* else it is a quote skip it */
-    }
-    /* NULL terminate */
-    *fnamep = '\0';
+    /* copy pjl_volume string in. use strlen+1 to ensure that strncpy()
+    appends '\0', to keep coverity quiet. */
+    prefix_size = strlen(prefix);
+    strncpy(fnamep, prefix, prefix_size + 1);
+
+    if (size == 0)
+        return;
+
+    if (name[0] != '/')
+        fnamep[prefix_size++] = '/';
+
+    rlen = MAXPATHLEN - prefix_size;
+    if (gp_file_name_reduce(name, size, fnamep + prefix_size, &rlen) == gp_combine_success)
+        fnamep[prefix_size + rlen] = 0;
+    else
+        fnamep[0] = 0;
 }
 
 /* Verify a file write operation is ok.  The filesystem must be 0: or
    1:, no other pjl files can have pending writes, and the pjl
    disklock state variable must be false */
 static int
-pjl_verify_file_operation(pjl_parser_state_t * pst, char *fname)
+pjl_verify_file_operation(pjl_parser_state_t * pst, char *fname, const char *access)
 {
     /* make sure we are playing in the pjl sandbox */
     if (0 != strncmp(PJL_VOLUME_0, fname, strlen(PJL_VOLUME_0))
@@ -589,6 +600,12 @@ pjl_verify_file_operation(pjl_parser_state_t * pst, char *fname)
         dmprintf1(pst->mem, "illegal path name %s\n", fname);
         return -1;
     }
+
+    if (access != NULL && gp_validate_path(pst->mem, fname, access) != 0) {
+        dmprintf1(pst->mem, "illegal path name %s\n", fname);
+        return -1;
+    }
+
     /* make sure we are not currently writing to a file.
        Simultaneously file writing is not supported */
     if (pst->bytes_to_write || pst->fp)
@@ -623,7 +640,7 @@ pjl_setup_file_for_writing(pjl_parser_state_t * pst, char *pathname, int size,
     char fname[MAXPATHLEN];
 
     pjl_parsed_filename_to_string(fname, pathname);
-    if (pjl_verify_file_operation(pst, fname) < 0)
+    if (pjl_verify_file_operation(pst, fname, NULL) < 0)
         return NULL;
     pjl_warn_exists(pst->mem, fname);
     {
@@ -676,7 +693,7 @@ pjl_fsinit(pjl_parser_state_t * pst, char *pathname)
     char fname[MAXPATHLEN];
 
     pjl_parsed_filename_to_string(fname, pathname);
-    if (pjl_verify_file_operation(pst, fname) < 0)
+    if (pjl_verify_file_operation(pst, fname, "c") < 0)
         return -1;
 #ifdef GS_NO_FILESYSTEM
     return -1;
@@ -696,7 +713,7 @@ pjl_fsmkdir(pjl_parser_state_t * pst, char *pathname)
     char fname[MAXPATHLEN];
 
     pjl_parsed_filename_to_string(fname, pathname);
-    if (pjl_verify_file_operation(pst, fname) < 0)
+    if (pjl_verify_file_operation(pst, fname, "c") < 0)
         return -1;
 #ifdef GS_NO_FILESYSTEM
     return -1;
@@ -769,9 +786,12 @@ static int
 pjl_fsdirlist(pjl_parser_state_t * pst, char *pathname, int entry, int count)
 {
     file_enum *fe;
-    char fontfilename[MAXPATHLEN];
+    char fontfilename[MAXPATHLEN + 2];
 
     pjl_parsed_filename_to_string(fontfilename, pathname);
+    if (pjl_verify_file_operation(pst, fontfilename, NULL) < 0)
+        return -1;
+
     /* if this is a directory add * for the directory listing NB fix */
     strcat(fontfilename, "/*");
     fe = gs_enumerate_files_init(pst->mem, fontfilename, strlen(fontfilename));
@@ -823,7 +843,7 @@ pjl_delete_file(pjl_parser_state_t * pst, char *pathname)
     char fname[MAXPATHLEN];
 
     pjl_parsed_filename_to_string(fname, pathname);
-    if (pjl_verify_file_operation(pst, fname) < 0)
+    if (pjl_verify_file_operation(pst, fname, NULL) < 0)
         return -1;
     return gp_unlink(pst->mem, fname);
 }
