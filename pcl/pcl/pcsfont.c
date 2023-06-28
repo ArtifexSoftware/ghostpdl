@@ -914,7 +914,7 @@ pcl_find_resource(pcl_state_t * pcs,
 
     size = pjl_proc_get_named_resource_size(pcs->pjls, alphaname);
     /* resource not found */
-    if (size == 0)
+    if (size <= 0)
         return 0;
 
     /* for a macro we need enough room for the macro header plus the
@@ -932,7 +932,7 @@ pcl_find_resource(pcl_state_t * pcs,
     if (pjl_proc_get_named_resource(pcs->pjls, alphaname,
                                         (byte *) value +
                                         (resource_type == macro_resource ?
-                                         sizeof(pcl_macro_t) : 0)) < 0) {
+                                         sizeof(pcl_macro_t) : 0), size) < 0) {
         gs_free_object(pcs->memory, value, "resource");
         return_error(gs_error_Fatal);
     }

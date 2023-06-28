@@ -121,9 +121,9 @@ long int pjl_proc_get_named_resource_size(pl_interp_implementation_t * pli,
                                           char *name);
 
 typedef int (*pjl_proc_get_named_resource_t) (pl_interp_implementation_t * pli,
-                                              char *name, byte * data);
+                                              char *name, byte * data, long int datasize);
 int pjl_proc_get_named_resource(pl_interp_implementation_t * pli, char *name,
-                                byte * data);
+                                byte * data, long int datasize);
 
 typedef int (*pjl_proc_process_t) (pl_interp_implementation_t * pli,
                                    stream_cursor_read * pr);

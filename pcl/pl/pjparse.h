@@ -124,6 +124,6 @@ long int pjl_get_named_resource_size(pjl_parser_state * pst, char *name);
 
 /* returns the contents of the resource in "mem" allocated by the
    client.  Returns < 0 if it fails to find the object */
-int pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data);
+int pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data, long int datasize);
 
 #endif /* pjparse_INCLUDED */

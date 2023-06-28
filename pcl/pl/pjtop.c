@@ -97,9 +97,9 @@ pjl_proc_get_named_resource_size(pl_interp_implementation_t * pli, char *name)
 
 int
 pjl_proc_get_named_resource(pl_interp_implementation_t * pli, char *name,
-                            byte * data)
+                            byte * data, long int datasize)
 {
-    return pjl_get_named_resource(pli->interp_client_data, name, data);
+    return pjl_get_named_resource(pli->interp_client_data, name, data, datasize);
 }
 
 int

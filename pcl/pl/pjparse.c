@@ -1182,7 +1182,7 @@ pjl_get_named_resource_size(pjl_parser_state_t * pst, char *name)
 /* get the contents of a file on 0: or 1: and return the result in the
    client allocated memory */
 int
-pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
+pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data, long int datasize)
 {
     long int size;
     int code = 0;
@@ -1194,7 +1194,7 @@ pjl_get_named_resource(pjl_parser_state * pst, char *name, byte * data)
     if (size >= 0)
         size = gp_ftell(fp);
     gp_rewind(fp);
-    if (size < 0 || (size != gp_fread(data, 1, size, fp))) {
+    if (size < 0 || size != datasize || (size != gp_fread(data, 1, size, fp))) {
         code = -1;
     }
     gp_fclose(fp);
