@@ -1987,19 +1987,10 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             const gs_param_string *p = pairs + i + 1;
             bool abort = false;
 
-            if (p->size > 9 && memcmp(p->data, "(\\376\\377", 9) == 0)
-                abort = true;
-            else {
-                int j;
-                for (j = 0;j < p->size;j++)
-                {
-                    if (p->data[j] == '\\' || p->data[j] > 0x7F || p->data[j] < 0x20)
-                    {
-                        abort = true;
-                        break;
-                    }
-                }
-            }
+            /* Ensure that we can write the XMP string. If not, handle this according to PDFACompatibilityPolicy */
+            code = pdf_xmp_write_translated(pdev, NULL, p->data + 1, p->size - 2, NULL);
+            abort = code < 0;
+
             if (abort == true)
             {
                 /* Can't handle UTF16BE in PDF/A1, so abort this pair or abort PDF/A or just abort,

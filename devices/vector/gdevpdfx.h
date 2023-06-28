@@ -1587,4 +1587,11 @@ int pdf_from_string_to_text(gx_device_pdf *pdev);
 void pdf_close_text_contents(gx_device_pdf *pdev);
 
 int gdev_pdf_get_param(gx_device *dev, char *Param, void *list);
+
+
+/* exported by gdevpdfe.c */
+
+int pdf_xmp_write_translated(gx_device_pdf* pdev, stream* s, const byte* data, int data_length,
+    void(*write)(stream* s, const byte* data, int data_length));
+
 #endif /* gdevpdfx_INCLUDED */

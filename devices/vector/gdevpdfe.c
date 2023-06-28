@@ -27,7 +27,24 @@
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
 
-static char PDFDocEncodingLookup [92] = {
+/* These two tables map PDFDocEncoding character codes (0x00->0x20 and 0x80->0xAD)
+ * to their equivalent UTF-16BE value. That allows us to convert a PDFDocEncoding
+ * string to UTF-16BE, and then further translate that into UTF-8.
+ * Note 0x7F is individually treated.
+ * See pdf_xmp_write_translated().
+ */
+static char PDFDocEncodingLookupLo [64] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x09, 0x00, 0x0A, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x02, 0xD8, 0x02, 0xC7, 0x02, 0xC6, 0x02, 0xD9,
+    0x02, 0xDD, 0x02, 0xDB, 0x02, 0xDA, 0x02, 0xDC
+};
+
+static char PDFDocEncodingLookupHi [92] = {
     0x20, 0x22, 0x20, 0x20, 0x20, 0x21, 0x20, 0x26,
     0x20, 0x14, 0x20, 0x13, 0x01, 0x92, 0x20, 0x44,
     0x20, 0x39, 0x20, 0x3A, 0x22, 0x12, 0x20, 0x30,
@@ -435,12 +452,13 @@ static int gs_ConvertUTF16(unsigned char *UTF16, size_t UTF16Len, unsigned char 
     return 0;
 }
 
-static int
+int
 pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int data_length,
                          void(*write)(stream *s, const byte *data, int data_length))
 {
+    int code = 0;
     size_t i, j=0;
-    unsigned char *buf0;
+    unsigned char *buf0 = NULL, *buf1 = NULL;
 
     if (data_length == 0)
         return 0;
@@ -458,7 +476,6 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
         j++;
     }
     if (buf0[0] != 0xfe || buf0[1] != 0xff) {
-        unsigned char *buf1;
         /* We must assume that the information is PDFDocEncoding. In this case
          * we need to convert it into UTF-8. If we just convert it to UTF-16
          * then we can safely fall through to the code below.
@@ -474,18 +491,33 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
         }
         memset(buf1, 0x00, (j * sizeof(short)) + 2);
         for (i = 0; i < j; i++) {
-            if (buf0[i] <= 0x7f || buf0[i] >= 0xAE) {
-                if (buf0[i] == 0x7f) {
-                    emprintf1(pdev->memory, "PDFDocEncoding %x cannot be represented in Unicode\n",
-                        buf0[i]);
-                } else
-                    buf1[(i * 2) + 3] = buf0[i];
-            } else {
-                buf1[(i * 2) + 2] = PDFDocEncodingLookup[(buf0[i] - 0x80) * 2];
-                buf1[(i * 2) + 3] = PDFDocEncodingLookup[((buf0[i] - 0x80) * 2) + 1];
-                if (PDFDocEncodingLookup[((buf0[i] - 0x80) * 2) + 1] == 0x00)
-                    emprintf1(pdev->memory, "PDFDocEncoding %x cannot be represented in Unicode\n",
-                        PDFDocEncodingLookup[((buf0[i] - 0x80) * 2) + 1]);
+            if ((buf0[i] >= 0x20 && buf0[i] < 0x7F) || buf0[i] >= 0xAE)
+                buf1[(i * 2) + 3] = buf0[i];
+            else {
+                if (buf0[i] == 0x7F) {
+                    emprintf1(pdev->memory, "PDFDocEncoding %x is undefined\n", buf0[i]);
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto error;
+                }
+                else {
+                    if (buf0[i] < 0x20) {
+                        buf1[(i * 2) + 2] = PDFDocEncodingLookupLo[(buf0[i]) * 2];
+                        buf1[(i * 2) + 3] = PDFDocEncodingLookupLo[((buf0[i]) * 2) + 1];
+                        if (PDFDocEncodingLookupLo[((buf0[i]) * 2) + 1] == 0x00) {
+                            emprintf1(pdev->memory, "PDFDocEncoding %x is undefined\n", buf0[i]);
+                            code = gs_note_error(gs_error_rangecheck);
+                            goto error;
+                        }
+                    } else {
+                        buf1[(i * 2) + 2] = PDFDocEncodingLookupHi[(buf0[i] - 0x80) * 2];
+                        buf1[(i * 2) + 3] = PDFDocEncodingLookupHi[((buf0[i] - 0x80) * 2) + 1];
+                        if (PDFDocEncodingLookupHi[((buf0[i] - 0x80) * 2) + 1] == 0x00) {
+                            emprintf1(pdev->memory, "PDFDocEncoding %x is undefined\n", buf0[i]);
+                            code = gs_note_error(gs_error_rangecheck);
+                            goto error;
+                        }
+                    }
+                }
             }
         }
         gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
@@ -514,11 +546,20 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
             gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
             return code;
         }
-        write(s, (const byte *)buf1, buf1b - buf1);
+
+        /* s and write can be NULL in order to use this function to test whether the specified data can be converted to UTF8 */
+        if (s && write)
+            write(s, (const byte*)buf1, buf1b - buf1);
+
         gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
     }
     gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
     return 0;
+
+error:
+    gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
+    gs_free_object(pdev->memory, buf1, "pdf_xmp_write_translated");
+    return code;
 }
 
 static int
