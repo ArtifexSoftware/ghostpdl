@@ -711,7 +711,7 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
     pdfi_countup(font->post);
 
     if (dpfont42->data.len_glyphs != NULL) {
-        dpfont42->data.len_glyphs = (uint *)gs_alloc_byte_array(dpfont42->memory, dpfont42->data.trueNumGlyphs, sizeof(uint), "pdfi_copy_truetype_font");
+        dpfont42->data.len_glyphs = (uint *)gs_alloc_byte_array(dpfont42->memory, dpfont42->data.numGlyphs + 1, sizeof(uint), "pdfi_copy_truetype_font");
         if (dpfont42->data.len_glyphs == NULL) {
             pdfi_countdown(font);
             return_error(gs_error_VMerror);
@@ -723,7 +723,7 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
             pdfi_countdown(font);
             return code;
         }
-        memcpy(dpfont42->data.len_glyphs, spfont1->data.len_glyphs, dpfont42->data.trueNumGlyphs * sizeof(uint));
+        memcpy(dpfont42->data.len_glyphs, spfont1->data.len_glyphs, (dpfont42->data.numGlyphs + 1) * sizeof(uint));
     }
     if (dpfont42->data.gsub != NULL) {
         dpfont42->data.gsub_size = spfont1->data.gsub_size;
