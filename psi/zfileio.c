@@ -686,9 +686,15 @@ zpeekstring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     stream *s;
-    uint len, rlen;
+    uint len, rlen = 0;
 
     check_read_file(i_ctx_p, s, op - 1);
+    /* The stream has been disabled, probably closed, so we shouldn't
+       be trying to read from it.
+     */
+    if (s->end_status < 0 && sbufptr(s) - 1 == NULL) {
+        return_error(gs_error_ioerror);
+    }
     check_write_type(*op, t_string);
     len = r_size(op);
     while ((rlen = sbufavailable(s)) < len) {
