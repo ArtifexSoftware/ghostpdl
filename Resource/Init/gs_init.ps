@@ -892,7 +892,7 @@ currentdict /.makeinternaldict .undef
 /write= {
         1 index exch write=only (\n) writestring
 } bind def
-/=only	{ (%stdout) (w) file exch write=only } bind def
+/=only	{ (%stdout) (w) file exch write=only } bind odef
 /=	{ =only (\n) print } bind def
 /=print	/=only load def
 % Temporarily define == as = for the sake of runlibfile0.
@@ -1012,12 +1012,13 @@ currentdict /runlibfile0 .undef
       (; OffendingCommand: ) print =only ( ]%%) =
     }
     { (Unrecoverable error: ) print =only flush
-      ( in ) print = flush
+      ( in ) print =only flush
       count 2 gt
        { (Operand stack:\n  ) print
          count 1 sub -1 2 { (  ) print index =only flush } for
-         () = flush
+         () =only
        } if
+       (\n) =only flush
     }
    ifelse
    -1 0 1 //ErrorNames length 1 sub
@@ -1089,7 +1090,7 @@ currentdict /.unstoppederrorhandler .undef
            }
            {
              exch print exch		% print heading. stack <==flag> <stack>
-             1 index not { () = } if
+             1 index not { () =only } if
              { 1 index { (\n    ) } { (   ) } ifelse print
                dup type /dicttype eq
                {
@@ -1128,7 +1129,7 @@ currentdict /.unstoppederrorhandler .undef
        errorname /VMerror eq
         { (VM status:) print mark vmstatus
           counttomark { ( ) print counttomark -1 roll dup =only } repeat
-          cleartomark () =
+          cleartomark () =only
         } if
 
        .languagelevel 2 ge
@@ -1139,8 +1140,8 @@ currentdict /.unstoppederrorhandler .undef
        .oserrno dup 0 ne
         { (Last OS error: ) print
           errorname /VMerror ne
-           { dup .oserrorstring { = pop } { = } ifelse }
-           { = }
+           { dup .oserrorstring { =only pop } { =only } ifelse }
+           { =only }
           ifelse
         }
         { pop
