@@ -201,6 +201,8 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
             /* Rounding errors can leave dist_left > length */
             dist_left = f_mod(dist_left, pattern_length);
         }
+        if (dist_left > pattern_length)
+            return_error(gs_error_rangecheck);
         while ((dist_left -= pattern[index]) >= 0 &&
                (dist_left > 0 || pattern[index] != 0)
             )
