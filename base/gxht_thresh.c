@@ -919,6 +919,8 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                                    left_width;
                 /* Get the proper threshold for the colorant count */
                 threshold = pdht->components[j].corder.threshold;
+                if (threshold == NULL)
+                    return_error(gs_error_unregistered);
                 /* Point to the proper contone data */
                 contone_align = penum->line + contone_stride * j +
                                 offset_contone[j];
@@ -1017,6 +1019,8 @@ gxht_thresh_planes(gx_image_enum *penum, fixed xrun,
                           pdht->components[j].corder.full_height;
                     /* Get the proper threshold for the colorant count */
                     threshold = pdht->components[j].corder.threshold;
+                    if (threshold == NULL)
+                        return_error(gs_error_unregistered);
                     /* Point to the proper contone data */
                     contone_align = penum->line + offset_contone[j] +
                                       LAND_BITS * j * contone_stride;
