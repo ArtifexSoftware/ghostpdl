@@ -420,7 +420,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     fixed xrun;                 /* x at start of run */
     byte run;           /* run value */
     int htrun = (masked ? 255 : -2);            /* halftone run value */
-    int code = 0;
+    int i, code = 0;
 
     if (h == 0)
         return 0;
@@ -978,12 +978,27 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 
     }
 #undef xl
-    if (code >= 0)
-        return 1;
+    if (code >= 0) {
+        code = 1;
+        goto done;
+    }
     /* Save position if error, in case we resume. */
 err:
     penum->used.x = rsrc - psrc_initial;
     penum->used.y = 0;
+done:
+    /* Since dev_color.binary.b_tile is just a pointer to an entry in the halftone tile "cache"
+       we cannot leave it set in case the interpeter changes the halftone
+       (whilst it shouldn't do it, it is possible for Postscript image data source
+       procedure to execute setcreen or similar). This also doesn't really adversely
+       affect performance, as we'll call gx_color_load_select() for all the samples
+       from the next buffer, which will NULL the b_tile pointer anyway (it only gets
+       set when we actually try to draw with it.
+    */
+    for (i = 0; i < 256; i++) {
+        if (gx_dc_is_binary_halftone(&penum->clues[i].dev_color))
+            penum->clues[i].dev_color.colors.binary.b_tile = NULL;
+    }
     return code;
 }
 
