@@ -633,6 +633,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
         if (num_spot_changed || pdevn_params->max_separations != max_sep ||
                     pdevn_params->num_separation_order_names != num_order ||
                     pdevn_params->page_spot_colors != page_spot_colors) {
+            int has_tags = !!(pdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS);
             pdevn_params->separations.num_separations = num_spot;
             pdevn_params->num_separation_order_names = num_order;
             pdevn_params->max_separations = max_sep;
@@ -652,6 +653,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                 : (page_spot_colors >= 0)
                     ? npcmcolors + page_spot_colors
                     : pdev->color_info.max_components;
+            pdev->color_info.num_components += has_tags;
 
             if (pdev->color_info.num_components >
                     pdev->color_info.max_components)
