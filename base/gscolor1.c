@@ -148,6 +148,10 @@ gs_setcolortransfer_remap(gs_gstate * pgs, gs_mapping_proc red_proc,
                       pgs->memory, goto fblue, "gs_setcolortransfer");
     ptran->gray->proc = gray_proc;
     ptran->gray->id = new_ids;
+    memset(ptran->gray->values, 0x00, 256 * sizeof(frac));
+    memset(ptran->red->values, 0x00, 256 * sizeof(frac));
+    memset(ptran->green->values, 0x00, 256 * sizeof(frac));
+    memset(ptran->blue->values, 0x00, 256 * sizeof(frac));
     ptran->red->proc = red_proc;
     ptran->red->id = new_ids + 1;
     ptran->green->proc = green_proc;
