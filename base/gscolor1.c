@@ -80,6 +80,7 @@ gs_setblackgeneration_remap(gs_gstate * pgs, gs_mapping_proc proc, bool remap)
                       "gs_setblackgeneration");
     pgs->black_generation->proc = proc;
     pgs->black_generation->id = gs_next_ids(pgs->memory, 1);
+    memset(pgs->black_generation->values, 0x00, 256 * sizeof(frac));
     if (remap) {
         load_transfer_map(pgs, pgs->black_generation, 0.0);
         gx_unset_dev_color(pgs);
@@ -110,6 +111,7 @@ gs_setundercolorremoval_remap(gs_gstate * pgs, gs_mapping_proc proc, bool remap)
                       "gs_setundercolorremoval");
     pgs->undercolor_removal->proc = proc;
     pgs->undercolor_removal->id = gs_next_ids(pgs->memory, 1);
+    memset(pgs->undercolor_removal->values, 0x00, 256 * sizeof(frac));
     if (remap) {
         load_transfer_map(pgs, pgs->undercolor_removal, -1.0);
         gx_unset_dev_color(pgs);
