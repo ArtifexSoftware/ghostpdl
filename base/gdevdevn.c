@@ -837,6 +837,7 @@ devn_generic_put_params(gx_device *pdev, gs_param_list *plist,
     gx_device_color_info save_info = pdev->color_info;
     gs_devn_params saved_devn_params = *pdevn_params;
     equivalent_cmyk_color_params saved_equiv_colors;
+    int save_planes = pdev->num_planar_planes;
 
     if (pequiv_colors != NULL)
         saved_equiv_colors = *pequiv_colors;
@@ -861,9 +862,11 @@ devn_generic_put_params(gx_device *pdev, gs_param_list *plist,
     if (!gx_color_info_equal(&pdev->color_info, &save_info) ||
         !devn_params_equal(pdevn_params, &saved_devn_params) ||
         (pequiv_colors != NULL &&
-            compare_equivalent_cmyk_color_params(pequiv_colors, &saved_equiv_colors))) {
+            compare_equivalent_cmyk_color_params(pequiv_colors, &saved_equiv_colors)) ||
+        pdev->num_planar_planes != save_planes) {
         gx_device *parent_dev = pdev;
         gx_device_color_info resave_info = pdev->color_info;
+        int resave_planes = pdev->num_planar_planes;
 
         while (parent_dev->parent != NULL)
             parent_dev = parent_dev->parent;
@@ -871,9 +874,11 @@ devn_generic_put_params(gx_device *pdev, gs_param_list *plist,
         /* Temporarily restore the old color_info, so the close happens with
          * the old version. In particular this allows Nup to flush properly. */
         pdev->color_info = save_info;
+        pdev->num_planar_planes = save_planes;
         gs_closedevice(parent_dev);
         /* Then put the shiny new color_info back in. */
         pdev->color_info = resave_info;
+        pdev->num_planar_planes = resave_planes;
         /* Reset the separable and linear shift, masks, bits. */
         set_linear_color_bits_mask_shift(pdev);
     }
