@@ -2621,6 +2621,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 
             for (i = 0; i < buf->n_planes; i++)
                 buf_ptrs[i] = buf_ptr + i * planestride;
+            for (; i < target->color_info.num_components; i++)
+                buf_ptrs[i] = 0;
             code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                 rect.p.x, rect.p.y, width, height,
                 rowstride, alpha_offset,
@@ -2647,6 +2649,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
             /* And then out */
             for (i = 0; i < buf->n_planes; i++)
                 buf_ptrs[i] = buf_ptr + i * planestride;
+            for (; i < target->color_info.num_components; i++)
+                buf_ptrs[i] = 0;
             code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                 rect.p.x, rect.p.y, width, height, rowstride, alpha_offset,
                 tag_offset);
@@ -2697,6 +2701,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         /* And then out */
         for (i = 0; i < buf->n_planes; i++)
             buf_ptrs[i] = buf_ptr + i * planestride;
+        for (; i < target->color_info.num_components; i++)
+            buf_ptrs[i] = 0;
         code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
             rect.p.x, rect.p.y, width, height, rowstride, alpha_offset,
             tag_offset);
@@ -3278,6 +3284,8 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
         if (!color_mismatch) {
             for (i = 0; i < buf->n_planes; i++)
                 buf_ptrs[i] = buf_ptr + i * planestride;
+            for (; i < target->color_info.num_components; i++)
+                buf_ptrs[i] = 0;
             code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                 rect.p.x, rect.p.y, width, height,
                 rowstride, alpha_offset, tag_offset);
@@ -3304,6 +3312,8 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             /* And then out */
             for (i = 0; i < buf->n_planes; i++)
                 buf_ptrs[i] = buf_ptr + i * planestride;
+            for (; i < target->color_info.num_components; i++)
+                buf_ptrs[i] = 0;
             code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
                 rect.p.x, rect.p.y, width, height, rowstride, alpha_offset,
                 tag_offset);
@@ -3420,6 +3430,8 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
         alpha_offset = 0;
         for (i = 0; i < buf->n_planes; i++)
             buf_ptrs[i] = buf_ptr + i * planestride;
+        for (; i < target->color_info.num_components; i++)
+            buf_ptrs[i] = 0;
         code = dev_proc(target, put_image) (target, target, buf_ptrs, num_comp,
             rect.p.x, rect.p.y, width, height,
             rowstride, alpha_offset, tag_offset);
