@@ -59,6 +59,9 @@ s_CFD_init(stream_state * st)
     if (raster < 0)
         return ERRC;
 
+    if (ss->Columns <= 0)
+        return ERRC;
+
     s_hcd_init_inline(ss);
     /* Because skip_white_pixels can look as many as 4 bytes ahead, */
     /* we need to allow 4 extra bytes at the end of the row buffers. */
