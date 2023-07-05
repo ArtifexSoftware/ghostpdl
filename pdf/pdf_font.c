@@ -1826,41 +1826,89 @@ int pdfi_tounicode_char_to_unicode(pdf_context *ctx, pdf_cmap *tounicode, gs_gly
             gs_cmap_lookups_enum_t counter = lenum;
             while (l == 0 && gs_cmap_enum_next_entry(&counter) == 0) {
                 if (counter.entry.value_type == CODE_VALUE_CID) {
-                    unsigned int v = 0;
-                    for (i = 0; i < counter.entry.key_size; i++) {
-                        v |= (counter.entry.key[0][counter.entry.key_size - i - 1]) << (i * 8);
+                    if (counter.entry.key_is_range) {
+                        unsigned int v0 = 0, v1 = 0;
+                        for (i = 0; i < counter.entry.key_size; i++) {
+                            v0 |= (counter.entry.key[0][counter.entry.key_size - i - 1]) << (i * 8);
+                        }
+                        for (i = 0; i < counter.entry.key_size; i++) {
+                            v1 |= (counter.entry.key[1][counter.entry.key_size - i - 1]) << (i * 8);
+                        }
+
+                        if (ch >= v0 && ch <= v1) {
+                            unsigned int offs = ch - v0;
+
+                            if (counter.entry.value.size == 1) {
+                                l = 2;
+                                if (ucode != NULL && length >= l) {
+                                    ucode[0] = 0x00;
+                                    ucode[1] = counter.entry.value.data[0] + offs;
+                                }
+                            }
+                            else if (counter.entry.value.size == 2) {
+                                l = 2;
+                                if (ucode != NULL && length >= l) {
+                                    ucode[0] = counter.entry.value.data[0] + ((offs << 8) & 0xff);
+                                    ucode[1] = counter.entry.value.data[1] + (offs & 0xff);
+                                }
+                            }
+                            else if (counter.entry.value.size == 3) {
+                                l = 4;
+                                if (ucode != NULL && length >= l) {
+                                    ucode[0] = 0;
+                                    ucode[1] = counter.entry.value.data[0] + ((offs << 16) & 0xff);
+                                    ucode[2] = counter.entry.value.data[1] + ((offs << 8) & 0xff);
+                                    ucode[3] = counter.entry.value.data[2] + (offs & 0xff);
+                                }
+                            }
+                            else {
+                                l = 4;
+                                if (ucode != NULL && length >= l) {
+                                    ucode[0] = counter.entry.value.data[0] + ((offs << 24) & 0xff);
+                                    ucode[1] = counter.entry.value.data[1] + ((offs << 16) & 0xff);
+                                    ucode[2] = counter.entry.value.data[2] + ((offs << 8) & 0xff);
+                                    ucode[3] = counter.entry.value.data[3] + (offs & 0xff);
+                                }
+                            }
+                        }
                     }
-                    if (ch == v) {
-                        if (counter.entry.value.size == 1) {
-                            l = 2;
-                            if (ucode != NULL && length >= l) {
-                                ucode[0] = 0x00;
-                                ucode[1] = counter.entry.value.data[0];
-                            }
+                    else {
+                        unsigned int v = 0;
+                        for (i = 0; i < counter.entry.key_size; i++) {
+                            v |= (counter.entry.key[0][counter.entry.key_size - i - 1]) << (i * 8);
                         }
-                        else if (counter.entry.value.size == 2) {
-                            l = 2;
-                            if (ucode != NULL && length >= l) {
-                                ucode[0] = counter.entry.value.data[0];
-                                ucode[1] = counter.entry.value.data[1];
+                        if (ch == v) {
+                            if (counter.entry.value.size == 1) {
+                                l = 2;
+                                if (ucode != NULL && length >= l) {
+                                    ucode[0] = 0x00;
+                                    ucode[1] = counter.entry.value.data[0];
+                                }
                             }
-                        }
-                        else if (counter.entry.value.size == 3) {
-                            l = 4;
-                            if (ucode != NULL && length >= l) {
-                                ucode[0] = 0;
-                                ucode[1] = counter.entry.value.data[0];
-                                ucode[2] = counter.entry.value.data[1];
-                                ucode[3] = counter.entry.value.data[2];
+                            else if (counter.entry.value.size == 2) {
+                                l = 2;
+                                if (ucode != NULL && length >= l) {
+                                    ucode[0] = counter.entry.value.data[0];
+                                    ucode[1] = counter.entry.value.data[1];
+                                }
                             }
-                        }
-                        else {
-                            l = 4;
-                            if (ucode != NULL && length >= l) {
-                                ucode[0] = counter.entry.value.data[0];
-                                ucode[1] = counter.entry.value.data[1];
-                                ucode[2] = counter.entry.value.data[2];
-                                ucode[3] = counter.entry.value.data[3];
+                            else if (counter.entry.value.size == 3) {
+                                l = 4;
+                                if (ucode != NULL && length >= l) {
+                                    ucode[0] = 0;
+                                    ucode[1] = counter.entry.value.data[0];
+                                    ucode[2] = counter.entry.value.data[1];
+                                    ucode[3] = counter.entry.value.data[2];
+                                }
+                            }
+                            else {
+                                l = 4;
+                                if (ucode != NULL && length >= l) {
+                                    ucode[0] = counter.entry.value.data[0];
+                                    ucode[1] = counter.entry.value.data[1];
+                                    ucode[2] = counter.entry.value.data[2];
+                                    ucode[3] = counter.entry.value.data[3];
+                                }
                             }
                         }
                     }

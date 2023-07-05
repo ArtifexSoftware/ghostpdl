@@ -874,7 +874,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             }
 
             l = penum->orig_font->procs.decode_glyph((gs_font *)penum->orig_font, ccode, (gs_char)cc, (ushort *)uc, 4);
-            if (l > 0 && l < sizeof(uc)) {
+            if (l > 0 && l <= sizeof(uc)) {
                 cc = 0;
                 for (i = 0; i < l; i++) {
                     cc |= uc[l - 1 - i] << (i * 8);
