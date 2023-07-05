@@ -115,16 +115,18 @@ int pdfi_find_post_entry(gs_font_type42 *pfont, gs_const_string *gname, uint *cc
         gs_string postname = {0};
 
         code = gs_error_undefined;
-        for (i = 0; i < pfont->data.numGlyphs; i++) {
-            code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
-            if (code >= 0) {
-                if (gname->data[0] == postname.data[0]
-                    && gname->size == postname.size
-                    && !strncmp((char *)gname->data, (char *)postname.data, postname.size))
-                {
-                    *cc = i;
-                    code = 0;
-                    break;
+        if (pfont->data.numGlyphs > 0) { /* protect from corrupt font */
+            for (i = 0; i < pfont->data.numGlyphs; i++) {
+                code = gs_type42_find_post_name(pfont, (gs_glyph)i, &postname);
+                if (code >= 0) {
+                    if (gname->data[0] == postname.data[0]
+                        && gname->size == postname.size
+                        && !strncmp((char *)gname->data, (char *)postname.data, postname.size))
+                    {
+                        *cc = i;
+                        code = 0;
+                        break;
+                    }
                 }
             }
         }
@@ -297,7 +299,7 @@ static void pdfi_make_post_dict(gs_font_type42 *pfont)
     pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
     pdf_context *ctx = (pdf_context *)ttfont->ctx;
     int i, code = 0;
-    if (ttfont->post == NULL) {
+    if (ttfont->post == NULL && pfont->data.numGlyphs > 0) {
         code = pdfi_dict_alloc(ctx, pfont->data.numGlyphs, &ttfont->post);
         if (code < 0)
             return;
