@@ -67,26 +67,33 @@ pdf_fontmap_open_file(pdf_context *ctx, const char *mapfilename, byte **buf, int
 
     if (code >= 0) {
         int i;
+        int64_t file_size;
+
         sfseek(s, 0, SEEK_END);
-        *buflen = sftell(s);
+        file_size = sftell(s);
         sfseek(s, 0, SEEK_SET);
-        *buf = gs_alloc_bytes(ctx->memory, *buflen + poststringlen, "pdf_cmap_open_file(buf)");
-        if (*buf != NULL) {
-            sfread((*buf), 1, *buflen, s);
-            memcpy((*buf) + *buflen, poststring, poststringlen);
-            *buflen += poststringlen;
-            /* This is naff, but works for now
-               When parsing Fontmap in PS, ";" is defined as "def"
-               We don't need either, because the dictionary is built from the stack.
-             */
-            for (i = 0; i < *buflen - 1; i++) {
-                if ((*buf)[i] == ';') {
-                    (*buf)[i] = ' ';
+        if (file_size < 0 || file_size > max_int - poststringlen) {
+            code = gs_note_error(gs_error_ioerror);
+        } else {
+            *buflen = (int)file_size;
+            *buf = gs_alloc_bytes(ctx->memory, *buflen + poststringlen, "pdf_cmap_open_file(buf)");
+            if (*buf != NULL) {
+                sfread((*buf), 1, *buflen, s);
+                memcpy((*buf) + *buflen, poststring, poststringlen);
+                *buflen += poststringlen;
+                /* This is naff, but works for now
+                   When parsing Fontmap in PS, ";" is defined as "def"
+                   We don't need either, because the dictionary is built from the stack.
+                 */
+                for (i = 0; i < *buflen - 1; i++) {
+                    if ((*buf)[i] == ';') {
+                        (*buf)[i] = ' ';
+                    }
                 }
             }
-        }
-        else {
-            code = gs_note_error(gs_error_VMerror);
+            else {
+                code = gs_note_error(gs_error_VMerror);
+            }
         }
         sfclose(s);
     }
