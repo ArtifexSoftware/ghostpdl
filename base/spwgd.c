@@ -62,6 +62,9 @@ s_PWGD_process(stream_state * st, stream_cursor_read * pr,
     int wb = ss->width * bpp;
     int line_pos = ss->line_pos;
 
+    if (ss->width > max_int / bpp)
+        return ERRC;
+
     if (ss->line_buffer == NULL) {
         ss->line_buffer =
                     gs_alloc_bytes_immovable(gs_memory_stable(ss->memory),
@@ -96,24 +99,27 @@ s_PWGD_process(stream_state * st, stream_cursor_read * pr,
             ss->state = 1; /* Wait for pixel repeat */
         }
         if (ss->state == 1) {
-            int rep;
+	  int rep, next_state;
             /* Awaiting pixel repeat value */
             if (p == rlimit)
                 goto need_data;
             rep = *++p;
             if (rep < 0x80) {
                 /* Repeat the next pixel multiple times */
-                ss->state = (rep+1) * bpp + 1;
+                next_state = (rep+1) * bpp + 1;
                 if (line_pos + ss->state - 1 > wb)
                     /* Too many repeats for this line! */
+                    p--;
                     goto error;
             } else {
                 /* Copy colors */
-                ss->state = -(257 - rep) * bpp;
+                next_state = -(257 - rep) * bpp;
                 if (line_pos + -ss->state > wb)
                     /* Too many pixels for this line! */
+                    p--;
                     goto error;
             }
+            ss->state = next_state;
         }
         if (ss->state > 1) {
             /* Repeating a single pixel */
