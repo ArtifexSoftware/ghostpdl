@@ -12402,7 +12402,10 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     */
     if (!pdev->overprint_sim && (component_type == NO_COMP_NAME_TYPE_HT ||
         component_type == NO_COMP_NAME_TYPE_OP)) {
-        return  (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
+            if (target_get_color_comp_index != NULL)
+                return  (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
+            else
+                return -1;
     }
     if (pdev->overprint_sim && component_type == NO_COMP_NAME_TYPE_HT) {
         return -1;
@@ -12429,7 +12432,10 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
         * the colorant so we will only get < 0 returned when we hit the max. for
         * the target device.
         */
-        comp_index = (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
+        if (target_get_color_comp_index != NULL)
+            comp_index = (*target_get_color_comp_index)(tdev, pname, name_size, component_type);
+        else
+            return -1;
         /*
         * Ignore color if unknown to the output device or if color is not being
         * imaged due to the SeparationOrder device parameter.
