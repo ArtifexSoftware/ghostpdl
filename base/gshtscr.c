@@ -328,6 +328,9 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
 
     /* Compute trial values of u and v. */
 
+    if (f0 == 0)
+        return_error(gs_error_rangecheck);
+
     {
         gs_matrix rmat;
 
@@ -385,6 +388,11 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
                 if_debug3('h', "[h]trying m=%d, n=%d, r=%d\n", p.M, p.N, rt);
                 wt = p.W;
                 if (wt >= max_short)
+                    continue;
+                /* Calculations below involve dividing by one or more of these values
+                 * make sure we can't get a divide by zero.
+                 */
+                if (wt == 0 || p.D == 0 || (p.M == 0 && p.N == 0))
                     continue;
                 /* Check the strip size, not the full tile size, */
                 /* against max_size. */
