@@ -886,8 +886,6 @@ currentdict /PDFSwitches undef
 {
   /PageList where {
     pop
-    % make sure string is NUL terminated as C expects.
-    PageList 1 string dup 0 0 put concatstrings
     pdfpagecount
     .PDFparsePageList
     dup 0 eq {	% No ranges, error

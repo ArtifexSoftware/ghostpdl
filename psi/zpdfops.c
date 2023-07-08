@@ -1640,6 +1640,7 @@ static int zPDFparsePageList(i_ctx_t *i_ctx_p)
     int *page_range_array;
     int num_pages;
     ref *o;
+    char *PageString = NULL;
 
     check_op(2);
 
@@ -1649,7 +1650,14 @@ static int zPDFparsePageList(i_ctx_t *i_ctx_p)
 
     check_type_only(*(op - 1), t_string);
 
-    code = pagelist_parse_to_array((char *)((op - 1)->value.const_bytes), imemory, num_pages, &page_range_array);
+    PageString = (char *)gs_alloc_bytes(imemory, r_size(op - 1) + 1, "zPDFparsePageList");
+    if (PageString == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(PageString, (op - 1)->value.const_bytes, r_size(op - 1));
+    PageString[r_size(op - 1)] = 0x00;
+    code = pagelist_parse_to_array(PageString, imemory, num_pages, &page_range_array);
+    gs_free_object(imemory, PageString, "zPDFparsePageList");
+
     make_int(op, 0);				/* default return 0 */
     if (code < 0) {
         return code;
