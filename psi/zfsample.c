@@ -660,6 +660,9 @@ int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t
     params.Domain = fptr;
     params.m = num_components;
 
+    if (params.m > MAX_NUM_INPUTS)
+        return_error(gs_error_rangecheck);
+
     code = altspace->numcomponents(i_ctx_p, palternatespace, &num_components);
     if (code < 0) {
         gs_free_const_object(imemory, params.Domain, "make_type4_function(Domain)");
