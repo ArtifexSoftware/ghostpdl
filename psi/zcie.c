@@ -859,9 +859,11 @@ cie_cache_finish_store(i_ctx_t *i_ctx_p, bool replicate)
         uint i;
 
         for (i = 0; i < gx_cie_cache_size; i++) {
-            code = float_param(ref_stack_index(&o_stack,
-                               (replicate ? 0 : gx_cie_cache_size - 1 - i)),
-                               &pcache->values[i]);
+            ref *o = ref_stack_index(&o_stack, (replicate ? 0 : gx_cie_cache_size - 1 - i));
+            if (o == NULL)
+                return_error(gs_error_stackunderflow);
+
+            code = float_param(o, &pcache->values[i]);
             if (code < 0) {
                 esp -= 2;			/* pop pointer to cache */
                 return code;
@@ -994,8 +996,12 @@ cie_create_icc(i_ctx_t *i_ctx_p)
         uint i;
 
         for (i = 0; i < gx_cie_cache_size; i++) {
-            code = float_param(ref_stack_index(&o_stack,gx_cie_cache_size - 1 - i),
-                               &pcache->values[i]);
+            const ref *o = ref_stack_index(&o_stack,gx_cie_cache_size - 1 - i);
+
+            if (o == NULL)
+                code = gs_note_error(gs_error_stackunderflow);
+            else
+                code = float_param(o, &pcache->values[i]);
             if (code < 0)
                 return code;
         }

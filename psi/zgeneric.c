@@ -92,9 +92,14 @@ zcopy_integer(i_ctx_t *i_ctx_p)
     code = ref_stack_push(&o_stack, count - 1);
     if (code < 0)
         return code;
-    for (i = 0; i < count; i++)
-        *ref_stack_index(&o_stack, i) =
-            *ref_stack_index(&o_stack, i + count);
+    for (i = 0; i < count; i++) {
+        ref *o = ref_stack_index(&o_stack, i);
+        ref *o1 = ref_stack_index(&o_stack, i);
+
+        if (o == NULL || o1 == NULL)
+            return_error(gs_error_stackunderflow);
+        *o = *o1;
+    }
     return 0;
 }
 

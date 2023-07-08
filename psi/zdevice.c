@@ -386,6 +386,8 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
         return code;
     }
     pmark = ref_stack_index(&o_stack, list.count * 2);
+    if (pmark == NULL)
+        return_error(gs_error_stackunderflow);
     make_mark(pmark);
     return 0;
 }
@@ -528,9 +530,13 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     if (count == 0)
         return_error(gs_error_unmatchedmark);
     prequire_all = ref_stack_index(&o_stack, count);
+    if (prequire_all == NULL)
+        return_error(gs_error_stackunderflow);
     ppolicy = ref_stack_index(&o_stack, count + 1);
+    if (ppolicy == NULL)
+        return_error(gs_error_stackunderflow);
     pdev = ref_stack_index(&o_stack, count + 2);
-    if (pdev == 0)
+    if (pdev == NULL)
         return_error(gs_error_stackunderflow);
     check_type_only(*prequire_all, t_boolean);
     check_write_type_only(*pdev, t_device);
@@ -546,14 +552,20 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     old_height = dev->height;
     code = gs_putdeviceparams(dev, (gs_param_list *) & list);
     /* Check for names that were undefined or caused errors. */
-    for (dest = count - 2, i = 0; i < count >> 1; i++)
+    for (dest = count - 2, i = 0; i < count >> 1; i++) {
+        ref *o;
         if (list.results[i] < 0) {
-            *ref_stack_index(&o_stack, dest) =
-                *ref_stack_index(&o_stack, count - (i << 1) - 2);
-            gs_errorname(i_ctx_p, list.results[i],
-                         ref_stack_index(&o_stack, dest - 1));
+            o = ref_stack_index(&o_stack, dest);
+            if (o == NULL)
+                continue;
+            *o = *ref_stack_index(&o_stack, count - (i << 1) - 2);
+            o = ref_stack_index(&o_stack, dest - 1);
+            if (o == NULL)
+                continue;
+            gs_errorname(i_ctx_p, list.results[i], o);
             dest -= 2;
         }
+    }
     iparam_list_release(&list);
     if (code < 0) {		/* There were errors reported. */
         ref_stack_pop(&o_stack, dest + 1);

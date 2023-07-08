@@ -79,6 +79,8 @@ zgetdevparams(i_ctx_t *i_ctx_p)
         return code;
     }
     pmark = ref_stack_index(&o_stack, list.count * 2);
+    if (pmark == NULL)
+        return_error(gs_error_stackunderflow);
     make_mark(pmark);
     return 0;
 }

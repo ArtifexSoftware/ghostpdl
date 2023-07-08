@@ -1639,6 +1639,7 @@ static int zPDFparsePageList(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int *page_range_array;
     int num_pages;
+    ref *o;
 
     check_op(2);
 
@@ -1661,10 +1662,16 @@ static int zPDFparsePageList(i_ctx_t *i_ctx_p)
     }
     /* push the even/odd, start, end triples on the stack */
     for (i=0; i < size;  i++) {
+        o = ref_stack_index(&o_stack, 0);
+        if (o == NULL)
+            return_error(gs_error_stackunderflow);
         /* skip the initial "ordered" flag */
-        make_int(ref_stack_index(&o_stack, size - i), page_range_array[i+1]);
+        make_int(o, page_range_array[i+1]);
     }
-    make_int(ref_stack_index(&o_stack, 0), size);
+    o = ref_stack_index(&o_stack, 0);
+    if (o == NULL)
+        return_error(gs_error_stackunderflow);
+    make_int(o, size);
     pagelist_free_range_array(imemory, page_range_array);		/* all done with C array */
     return 0;
 }

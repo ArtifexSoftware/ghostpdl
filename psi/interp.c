@@ -628,6 +628,9 @@ again:
                     for (i = skip; i < skip + MIN_BLOCK_ESTACK; ++i) {
                         const ref *ep = ref_stack_index(&e_stack, i);
 
+                        if (ep == NULL)
+                            continue;
+
                         if (r_has_type_attrs(ep, t_null, a_executable)) {
                             skip = i + 1;
                             break;

@@ -66,8 +66,12 @@ zaload(i_ctx_t *i_ctx_p)
 
         if (code < 0)
             return code;
-        for (i = asize; i > 0; i--, packed = packed_next(packed))
-            packed_get(imemory, packed, ref_stack_index(&o_stack, i));
+        for (i = asize; i > 0; i--, packed = packed_next(packed)) {
+            ref *o = ref_stack_index(&o_stack, i);
+            if (o == NULL)
+                continue;
+            packed_get(imemory, packed, o);
+        }
         *osp = aref;
         return 0;
     }
@@ -104,7 +108,7 @@ zastore(i_ctx_t *i_ctx_p)
         return_error(gs_error_invalidaccess);
     if (size > op - osbot) {
         /* The store operation might involve other stack segments. */
-        ref arr;
+        ref arr, *o;
 
         if (size >= ref_stack_count(&o_stack))
             return_error(gs_error_stackunderflow);
@@ -114,7 +118,10 @@ zastore(i_ctx_t *i_ctx_p)
         if (code < 0)
             return code;
         ref_stack_pop(&o_stack, size);
-        *ref_stack_index(&o_stack, 0) = arr;
+        o = ref_stack_index(&o_stack, 0);
+        if (o == NULL)
+            return_error(gs_error_stackunderflow);
+        *o = arr;
     } else {
         code = refcpy_to_old(op, 0, op - size, size, idmemory, "astore");
         if (code < 0)

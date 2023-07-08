@@ -137,6 +137,9 @@ zexecn(i_ctx_t *i_ctx_p)
     for (i = 0; i < n; ++i) {
         const ref *rp = ref_stack_index(&o_stack, (long)(i + 1));
 
+        if (rp == NULL)
+            continue;
+
         /* Make sure this object is legal to execute. */
         if (ref_type_uses_access(r_type(rp))) {
             if (!r_has_attr(rp, a_execute) &&
@@ -779,6 +782,8 @@ do_execstack(i_ctx_t *i_ctx_p, bool include_marks, bool include_oparrays, os_ptr
     for (i = 0, rq = arefs + asize; rq != arefs; ++i) {
         const ref *rp = ref_stack_index(&e_stack, (long)i);
 
+        if (rp == NULL)
+            continue;
         if (r_has_type_attrs(rp, t_null, a_executable) && !include_marks)
             continue;
         --rq;
@@ -1004,10 +1009,14 @@ count_exec_stack(i_ctx_t *i_ctx_p, bool include_marks)
     if (!include_marks) {
         uint i;
 
-        for (i = count; i--;)
-            if (r_has_type_attrs(ref_stack_index(&e_stack, (long)i),
-                                 t_null, a_executable))
+        for (i = count; i--;) {
+            ref *o;
+            o = ref_stack_index(&e_stack, (long)i);
+            if (o == NULL)
+                continue;
+            if (r_has_type_attrs(o, t_null, a_executable))
                 --count;
+        }
     }
     return count;
 }
@@ -1055,6 +1064,9 @@ pop_estack(i_ctx_t *i_ctx_p, uint count)
     esfile_clear_cache();
     for (; idx < count; idx++) {
         ref *ep = ref_stack_index(&e_stack, idx - popped);
+
+        if (ep == NULL)
+            continue;
 
         if (r_is_estack_mark(ep)) {
             ref_stack_pop(&e_stack, idx + 1 - popped);

@@ -147,12 +147,16 @@ zroll(i_ctx_t *i_ctx_p)
             int j, k;
             ref *next;
 
+            if (elt == NULL)
+                return_error(gs_error_stackunderflow);
             save = *elt;
             for (j = i, left--;; j = k, elt = next, left--) {
                 k = (j + mod) % count;
                 if (k == i)
                     break;
                 next = ref_stack_index(&o_stack, k + 2);
+                if (next == NULL)
+                    return_error(gs_error_stackunderflow);
                 ref_assign(elt, next);
             }
             *elt = save;

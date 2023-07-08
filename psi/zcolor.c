@@ -756,8 +756,13 @@ zcolor_remap_one_store(i_ctx_t *i_ctx_p, double min_value)
     }
     for (i = 0; i < transfer_map_size; i++) {
         double v;
+        ref *o;
 
-        code = real_param(ref_stack_index(&o_stack, transfer_map_size - 1 - i), &v);
+        o = ref_stack_index(&o_stack, transfer_map_size - 1 - i);
+        if (o == NULL)
+            return_error(gs_error_stackunderflow);
+
+        code = real_param(o, &v);
         if (code < 0) {
             goto error;
         }

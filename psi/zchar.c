@@ -894,11 +894,15 @@ gs_text_enum_t *
 op_show_find(i_ctx_t *i_ctx_p)
 {
     uint index = op_show_find_index(i_ctx_p);
+    ref *o;
 
     if (index == 0)
         return 0;		/* no mark */
-    return r_ptr(ref_stack_index(&e_stack, index - (snumpush - 1)),
-                 gs_text_enum_t);
+    o = ref_stack_index(&e_stack, index - (snumpush - 1));
+    if (o == NULL)
+        return 0;
+
+    return r_ptr(o, gs_text_enum_t);
 }
 
 /*
@@ -935,9 +939,13 @@ op_show_return_width(i_ctx_t *i_ctx_p, uint npop, double *pwidth)
 {
     uint index = op_show_find_index(i_ctx_p);
     es_ptr ep = (es_ptr) ref_stack_index(&e_stack, index - (snumpush - 1));
-    int code = gs_text_setcharwidth(esenum(ep), pwidth);
+    int code = 0;
     uint ocount, dsaved, dcount;
 
+    if (ep == NULL)
+        return_error(gs_error_stackunderflow);
+
+    code = gs_text_setcharwidth(esenum(ep), pwidth);
     if (code < 0)
         return code;
     /* Restore the operand and dictionary stacks. */

@@ -381,10 +381,15 @@ stack_param_write(iparam_list * plist, const ref * pkey, const ref * pvalue)
 
     if (pstack->top - p < 2) {
         int code = ref_stack_push(pstack, 2);
+        ref *o;
 
         if (code < 0)
             return code;
-        *ref_stack_index(pstack, 1) = *pkey;
+        o = ref_stack_index(pstack, 1);
+        if (o == NULL)
+            return_error(gs_error_stackunderflow);
+        else
+            *o = *pkey;
         p = pstack->p;
     } else {
         pstack->p = p += 2;
@@ -1086,6 +1091,9 @@ stack_param_read(iparam_list * plist, const ref * pkey, iparam_loc * ploc)
 
     for (; count; count--, index += 2) {
         const ref *p = ref_stack_index(pstack, index);
+
+        if (p == NULL)
+            continue;
 
         if (r_has_type(p, t_name) && name_eq(p, pkey)) {
             ploc->pvalue = ref_stack_index(pstack, index - 1);

@@ -240,10 +240,15 @@ dstack_gc_cleanup(dict_stack_t * pds)
     for (dsi = pds->min_size; dsi > 0; --dsi) {
         const dict *pdict =
         ref_stack_index(&pds->stack, count - dsi)->value.pdict;
-        uint size = nslots(pdict);
-        ref *pvalue = pdict->values.value.refs;
+        uint size = 0;
+        ref *pvalue = NULL;
         uint i;
 
+        if (pdict == NULL)
+            continue;
+
+        size = nslots(pdict);
+        pvalue = pdict->values.value.refs;
         for (i = 0; i < size; ++i, ++pvalue) {
             ref key;
             ref *old_pvalue;

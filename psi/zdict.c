@@ -187,6 +187,9 @@ zload(i_ctx_t *i_ctx_p)
                 for (i = 0; i < size; i++) {
                     ref *dp = ref_stack_index(&d_stack, i);
 
+                    if (dp == NULL)
+                        return_error(gs_error_stackunderflow);
+
                     check_dict_read(*dp);
                     if (dict_find(dp, op, &pvalue) > 0) {
                         ref_assign(op, pvalue);
