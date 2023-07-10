@@ -313,7 +313,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
             uint cidbase = stobj[i + 2].val.i;
             int m, size;
 
-            if (stobj[i + 2].val.arr[0].type != PDF_PS_OBJ_STRING)
+            if (stobj[i + 2].size < 1 || stobj[i + 2].val.arr[0].type != PDF_PS_OBJ_STRING)
                 continue;
             size = stobj[i + 2].val.arr[0].size;
 
