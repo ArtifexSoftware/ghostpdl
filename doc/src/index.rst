@@ -25,6 +25,7 @@ Welcome to :title:`Ghostscript`
 
    Readme.rst
    News.rst
+   ReleaseDates.rst
 
 .. toctree::
    :caption: Ghostscript User Guide

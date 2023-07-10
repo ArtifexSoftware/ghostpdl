@@ -25,7 +25,7 @@ You must have four things to run Ghostscript:
 
 #. Initialization files that Ghostscript reads in when it starts up; these are the same on all platforms.
 
-#.
+#. Check the following:
 
    - ``gs_*.ps`` unless Ghostscript was compiled using the "compiled initialization files" option. See the documentation of :ref:`PostScript files distributed with Ghostscript<PsFiles.html>`.
 
