@@ -40,9 +40,16 @@ extern const int zcolor_remap_one_estack;
 int zcolor_remap_one(i_ctx_t *, const ref *, gx_transfer_map *,
                      const gs_gstate *, op_proc_t);
 
+int transfer_remap_red_finish(i_ctx_t *i_ctx_p);
+int transfer_remap_green_finish(i_ctx_t *i_ctx_p);
+int transfer_remap_blue_finish(i_ctx_t *i_ctx_p);
+int transfer_remap_gray_finish(i_ctx_t *);
+int transfer_remap_one_finish(i_ctx_t *i_ctx_p);
+int setblackgeneration_remap_one_finish(i_ctx_t *);
 /* Reload a cache with entries in [0..1] after sampling. */
 int zcolor_remap_one_finish(i_ctx_t *);
 
+int setundercolor_remap_one_signed_finish(i_ctx_t *);
 /* Reload a cache with entries in [-1..1] after sampling. */
 int zcolor_remap_one_signed_finish(i_ctx_t *);
 

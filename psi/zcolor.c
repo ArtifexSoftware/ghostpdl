@@ -55,6 +55,8 @@
 #include "iddict.h"	/* for idict_put_string */
 #include "zfrsd.h"      /* for make_rss() */
 #include "smd5.h"   /* To hash CIE colour spaces, in order to check equality in ICC cache */
+#include "gxhttype.h"   /* for ht_type_colorscreen */
+#include "gsht.h"
 
 /* Reject color spaces with excessive values of various parameters */
 /* to avoid dealing with overflows, INF, NaN during cache generation */
@@ -677,20 +679,53 @@ static int
 zsettransfer(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
-    int     code;
+    int code, identity = r_size(op) == 0;
+    gx_transfer txfer, txfer1;
 
     check_proc(*op);
     check_ostack(zcolor_remap_one_ostack - 1);
     check_estack(1 + zcolor_remap_one_estack);
+
+    if (!identity) {
+        txfer = igs->set_transfer;
+        if (txfer.red != NULL)
+            rc_increment(txfer.red);
+        if (txfer.green != NULL)
+            rc_increment(txfer.green);
+        if (txfer.blue != NULL)
+            rc_increment(txfer.blue);
+        if (txfer.gray != NULL)
+            rc_increment(txfer.gray);
+    }
+
+    if ((code = gs_settransfer_remap(igs, gs_mapped_transfer, false)) < 0) {
+        if (!identity) {
+            rc_decrement(txfer.red, "settransfer");
+            rc_decrement(txfer.green, "settransfer");
+            rc_decrement(txfer.blue, "settransfer");
+            rc_decrement(txfer.gray, "settransfer");
+        }
+        return code;
+    }
     istate->transfer_procs.red =
         istate->transfer_procs.green =
         istate->transfer_procs.blue =
         istate->transfer_procs.gray = *op;
-    if ((code = gs_settransfer_remap(igs, gs_mapped_transfer, false)) < 0)
-        return code;
+
     push_op_estack(zcolor_reset_transfer);
     ref_stack_pop(&o_stack, 1);
-    return zcolor_remap_one( i_ctx_p,
+
+    if (!identity) {
+        txfer1 = igs->set_transfer;
+        igs->set_transfer = txfer;
+        txfer = txfer1;
+
+        return zcolor_remap_one( i_ctx_p,
+                             &istate->transfer_procs.gray,
+                             txfer.gray, igs,
+                             transfer_remap_one_finish );
+    } else
+        return zcolor_remap_one( i_ctx_p,
                              &istate->transfer_procs.gray,
                              igs->set_transfer.gray,
                              igs,
@@ -782,11 +817,115 @@ error:
     make_null(esp);
     return code;
 }
+
+int
+setblackgeneration_remap_one_finish(i_ctx_t *i_ctx_p)
+{
+    int code = 0;
+    gx_transfer_map *pmap = r_ptr(esp, gx_transfer_map);
+
+    code = zcolor_remap_one_store(i_ctx_p, 0.0);
+
+    rc_decrement(igs->black_generation, "");
+    igs->black_generation = pmap;
+    return code;
+}
+
+int
+transfer_remap_one_finish(i_ctx_t *i_ctx_p)
+{
+    int code = 0;
+    gx_transfer_map *map = r_ptr(esp, gx_transfer_map);
+
+    code = zcolor_remap_one_store(i_ctx_p, 0.0);
+
+    rc_decrement(igs->set_transfer.red, "");
+    igs->set_transfer.red = NULL;
+    rc_decrement(igs->set_transfer.green, "");
+    igs->set_transfer.green = NULL;
+    rc_decrement(igs->set_transfer.blue, "");
+    igs->set_transfer.blue = NULL;
+    rc_decrement(igs->set_transfer.gray, "");
+    igs->set_transfer.gray = map;
+    return code;
+}
+
+int
+transfer_remap_red_finish(i_ctx_t *i_ctx_p)
+{
+    int code = 0;
+    gx_transfer_map *map = r_ptr(esp, gx_transfer_map);
+
+    code = zcolor_remap_one_store(i_ctx_p, 0.0);
+
+    rc_decrement(igs->set_transfer.red, "");
+    igs->set_transfer.red = map;
+    igs->set_transfer.red_component_num =
+        gs_color_name_component_number(igs->device, "Red", 3, ht_type_colorscreen);
+    return code;
+}
+int
+transfer_remap_green_finish(i_ctx_t *i_ctx_p)
+{
+    int code = 0;
+    gx_transfer_map *map = r_ptr(esp, gx_transfer_map);
+
+    code = zcolor_remap_one_store(i_ctx_p, 0.0);
+
+    rc_decrement(igs->set_transfer.green, "");
+    igs->set_transfer.green = map;
+    igs->set_transfer.green_component_num =
+        gs_color_name_component_number(igs->device, "Green", 5, ht_type_colorscreen);
+    return code;
+}
+int
+transfer_remap_blue_finish(i_ctx_t *i_ctx_p)
+{
+    int code = 0;
+    gx_transfer_map *map = r_ptr(esp, gx_transfer_map);
+
+    code = zcolor_remap_one_store(i_ctx_p, 0.0);
+
+    rc_decrement(igs->set_transfer.blue, "");
+    igs->set_transfer.blue = map;
+    igs->set_transfer.blue_component_num =
+        gs_color_name_component_number(igs->device, "Blue", 4, ht_type_colorscreen);
+    return code;
+}
+int
+transfer_remap_gray_finish(i_ctx_t *i_ctx_p)
+{
+    int code = 0;
+    gx_transfer_map *map = r_ptr(esp, gx_transfer_map);
+
+    code = zcolor_remap_one_store(i_ctx_p, 0.0);
+
+    rc_decrement(igs->set_transfer.gray, "");
+    igs->set_transfer.gray = map;
+    igs->set_transfer.gray_component_num =
+        gs_color_name_component_number(igs->device, "Gray", 4, ht_type_colorscreen);
+    return code;
+}
+
 int
 zcolor_remap_one_finish(i_ctx_t *i_ctx_p)
 {
     return zcolor_remap_one_store(i_ctx_p, 0.0);
 }
+
+int
+setundercolor_remap_one_signed_finish(i_ctx_t *i_ctx_p)
+{
+    int code = 0;
+    gx_transfer_map *pmap = r_ptr(esp, gx_transfer_map);
+
+    code = zcolor_remap_one_store(i_ctx_p, -1.0);
+
+    rc_decrement(igs->undercolor_removal, "");
+    igs->undercolor_removal = pmap;
+    return code;
+}
+
 int
 zcolor_remap_one_signed_finish(i_ctx_t *i_ctx_p)
 {
@@ -4621,10 +4760,12 @@ indexed_cont(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     es_ptr ep = esp;
     int i = (int)ep[csme_index].value.intval;
+    gs_color_space *pcs = r_ptr(&ep[csme_cspace], gs_color_space);
+    gs_indexed_map *map = pcs->params.indexed.lookup.map;
 
     if (i >= 0) {		/* i.e., not first time */
         int m = (int)ep[csme_num_components].value.intval;
-        int code = float_params(op, m, &r_ptr(&ep[csme_map], gs_indexed_map)->values[i * m]);
+        int code = float_params(op, m, &(map->values[i * m]));
 
         if (code < 0) {
             esp -= num_csme;
@@ -4633,6 +4774,8 @@ indexed_cont(i_ctx_t *i_ctx_p)
         ref_stack_pop(&o_stack, m);
         op -= m;
         if (i == (int)ep[csme_hival].value.intval) {	/* All done. */
+            code = gs_setcolorspace(igs, pcs);
+            rc_decrement_only_cs(pcs, "indexed_cont");
             esp -= num_csme;
             return o_pop_estack;
         }
@@ -4718,21 +4861,19 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     } else {
         gs_indexed_map *map;
 
-        /*
-         * We have to call zcs_begin_map before moving the parameters,
-         * since if the color space is a DeviceN or Separation space,
-         * the memmove will overwrite its parameters.
-         */
-        code = zcs_begin_map(i_ctx_p, &map, &lookup, (hival.value.intval + 1),
-                             pcs_base, indexed_cont);
-        if (code < 0)
-            return code;
         if (igs->icc_manager->device_named != NULL &&
             (base_type == gs_color_space_index_Separation ||
              base_type == gs_color_space_index_DeviceN))
             pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed_Named);
         else
             pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
+
+        code = zcs_begin_map(i_ctx_p, pcs, &map, &lookup, (hival.value.intval + 1),
+                             pcs_base, indexed_cont);
+        if (code < 0) {
+            rc_decrement_only_cs(pcs, "setindexedspace");
+            return code;
+        }
         pcs->base_space = pcs_base;
         rc_increment_cs(pcs_base);
         pcs->params.indexed.use_proc = 1;
@@ -4742,18 +4883,20 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     }
     pcs->params.indexed.hival = hival.value.intval;
     pcs->params.indexed.n_comps = cs_num_components(pcs_base);
-    code = gs_setcolorspace(igs, pcs);
-    /* release reference from construction */
-    rc_decrement_only_cs(pcs, "setindexedspace");
-    if (code < 0) {
-        istate->colorspace[0] = cspace_old;
-        ref_stack_pop_to(&e_stack, edepth);
-        return code;
-    }
-    *stage = 0;
     if (ref_stack_count(&e_stack) == edepth) {
+        code = gs_setcolorspace(igs, pcs);
+        /* release reference from construction */
+        rc_decrement_only_cs(pcs, "setindexedspace");
+        if (code < 0) {
+            istate->colorspace[0] = cspace_old;
+            ref_stack_pop_to(&e_stack, edepth);
+            return code;
+        }
+        *stage = 0;
         return 0;
     } else {
+        /* release reference from construction */
+        rc_decrement_only_cs(pcs, "setindexedspace");
         *cont = 1;
         *stage = 1;
         return o_push_estack; /* installation will load the caches */

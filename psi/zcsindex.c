@@ -35,7 +35,7 @@
 
 /* Allocate, and prepare to load, the index or tint map. */
 int
-zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
+zcs_begin_map(i_ctx_t *i_ctx_p, gs_color_space *pcs, gs_indexed_map ** pmap, const ref * pproc,
               int num_entries,  const gs_color_space * base_space,
               op_proc_t map1)
 {
@@ -57,7 +57,8 @@ zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
     check_estack(num_csme + 1);	/* 1 extra for map1 proc */
     ep = esp += num_csme;
     make_int(ep + csme_num_components, num_components);
-    make_struct(ep + csme_map, space, map);
+    make_struct(ep + csme_cspace, space, pcs);
+    rc_increment_cs(pcs);
     ep[csme_proc] = *pproc;
     make_int(ep + csme_hival, num_entries - 1);
     make_int(ep + csme_index, -1);

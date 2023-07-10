@@ -28,8 +28,8 @@
  * procedure is called, the following structure is on the e_stack:
  */
 #define num_csme 5
-#  define csme_num_components (-4)	/* t_integer */
-#  define csme_map (-3)		/* t_struct (bytes) */
+#  define csme_cspace (-4)	/* t_struct (bytes) */
+#  define csme_num_components (-3)	/* t_integer */
 #  define csme_proc (-2)	/* -procedure- */
 #  define csme_hival (-1)	/* t_integer */
 #  define csme_index 0		/* t_integer */
@@ -38,7 +38,7 @@
  * base space, since the underlying space of an Indexed color space may be
  * a Separation or DeviceN space.
  */
-int zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap,
+int zcs_begin_map(i_ctx_t *i_ctx_p, gs_color_space *pcs, gs_indexed_map ** pmap,
                   const ref * pproc, int num_entries,
                   const gs_color_space * base_space,
                   op_proc_t map1);
