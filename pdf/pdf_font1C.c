@@ -2462,15 +2462,18 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
                         code = pdfi_object_alloc(ctx, PDF_BUFFER, 0, (pdf_obj **)&cffcid->cidtogidmap);
                         if (code < 0) {
+                            pdfi_countdown(obj);
                             goto error;
                         }
                         pdfi_countup(cffcid->cidtogidmap);
                         code = pdfi_stream_to_buffer(ctx, (pdf_stream *)obj, &d, &sz);
                         if (code < 0) {
+                            pdfi_countdown(obj);
                             goto error;
                         }
                         code = pdfi_buffer_set_data((pdf_obj *)cffcid->cidtogidmap, d, (int32_t)sz);
                         if (code < 0) {
+                            pdfi_countdown(obj);
                             goto error;
                         }
                     }
@@ -2889,7 +2892,9 @@ error:
             pdfi_countdown(cffpriv.pdfcffpriv.ordering);
             pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
             if (cffpriv.FontType == ft_CID_encrypted) {
+                gs_font_cid0 *pgscidfont = (gs_font_cid0 *)ppdfont->pfont;
                 gs_free_object(ctx->memory, cffpriv.cidata.FDArray, "pdfi_read_cff_font(gs_font FDArray, error)");
+                pgscidfont->cidata.FDArray = NULL;
             }
         }
         else {
