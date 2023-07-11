@@ -2892,9 +2892,10 @@ error:
             pdfi_countdown(cffpriv.pdfcffpriv.ordering);
             pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
             if (cffpriv.FontType == ft_CID_encrypted) {
-                gs_font_cid0 *pgscidfont = (gs_font_cid0 *)ppdfont->pfont;
+                if (ppdfont != NULL && ppdfont->pfont != NULL) {
+                    ((gs_font_cid0 *)ppdfont->pfont)->cidata.FDArray = NULL;
+                }
                 gs_free_object(ctx->memory, cffpriv.cidata.FDArray, "pdfi_read_cff_font(gs_font FDArray, error)");
-                pgscidfont->cidata.FDArray = NULL;
             }
         }
         else {
