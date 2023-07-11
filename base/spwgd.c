@@ -108,16 +108,20 @@ s_PWGD_process(stream_state * st, stream_cursor_read * pr,
                 /* Repeat the next pixel multiple times */
                 next_state = (rep+1) * bpp + 1;
                 if (line_pos + ss->state - 1 > wb)
+                {
                     /* Too many repeats for this line! */
                     p--;
                     goto error;
+                }
             } else {
                 /* Copy colors */
                 next_state = -(257 - rep) * bpp;
                 if (line_pos + -ss->state > wb)
+                {
                     /* Too many pixels for this line! */
                     p--;
                     goto error;
+                }
             }
             ss->state = next_state;
         }
