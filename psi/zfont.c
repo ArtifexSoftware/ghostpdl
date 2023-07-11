@@ -31,6 +31,7 @@
 #include "store.h"
 #include "ivmspace.h"
 #include "gscencs.h"
+#include "ichar.h"
 
 /* Forward references */
 static int make_font(i_ctx_t *, const gs_matrix *);
@@ -161,6 +162,13 @@ zsetcacheparams(i_ctx_t *i_ctx_p)
     uint params[3];
     int i, code;
     os_ptr opp = op;
+
+    /* Changing the cache params clears the "pairs" cache, which
+       causes a crash if the in use font/matrix pair disappears
+       during a text operation. So don't allow that to happen.
+     */
+    if (op_show_find(i_ctx_p) != NULL)
+        return_error(gs_error_invalidaccess);
 
     for (i = 0; i < 3 && !r_has_type(opp, t_mark); i++, opp--) {
         check_int_leu(*opp, max_uint);
