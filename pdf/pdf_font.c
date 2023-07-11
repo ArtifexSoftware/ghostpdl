@@ -1848,7 +1848,7 @@ int pdfi_tounicode_char_to_unicode(pdf_context *ctx, pdf_cmap *tounicode, gs_gly
                             else if (counter.entry.value.size == 2) {
                                 l = 2;
                                 if (ucode != NULL && length >= l) {
-                                    ucode[0] = counter.entry.value.data[0] + ((offs << 8) & 0xff);
+                                    ucode[0] = counter.entry.value.data[0] + ((offs >> 8) & 0xff);
                                     ucode[1] = counter.entry.value.data[1] + (offs & 0xff);
                                 }
                             }
@@ -1856,17 +1856,17 @@ int pdfi_tounicode_char_to_unicode(pdf_context *ctx, pdf_cmap *tounicode, gs_gly
                                 l = 4;
                                 if (ucode != NULL && length >= l) {
                                     ucode[0] = 0;
-                                    ucode[1] = counter.entry.value.data[0] + ((offs << 16) & 0xff);
-                                    ucode[2] = counter.entry.value.data[1] + ((offs << 8) & 0xff);
+                                    ucode[1] = counter.entry.value.data[0] + ((offs >> 16) & 0xff);
+                                    ucode[2] = counter.entry.value.data[1] + ((offs >> 8) & 0xff);
                                     ucode[3] = counter.entry.value.data[2] + (offs & 0xff);
                                 }
                             }
                             else {
                                 l = 4;
                                 if (ucode != NULL && length >= l) {
-                                    ucode[0] = counter.entry.value.data[0] + ((offs << 24) & 0xff);
-                                    ucode[1] = counter.entry.value.data[1] + ((offs << 16) & 0xff);
-                                    ucode[2] = counter.entry.value.data[2] + ((offs << 8) & 0xff);
+                                    ucode[0] = counter.entry.value.data[0] + ((offs >> 24) & 0xff);
+                                    ucode[1] = counter.entry.value.data[1] + ((offs >> 16) & 0xff);
+                                    ucode[2] = counter.entry.value.data[2] + ((offs >> 8) & 0xff);
                                     ucode[3] = counter.entry.value.data[3] + (offs & 0xff);
                                 }
                             }
