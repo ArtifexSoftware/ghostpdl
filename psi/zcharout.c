@@ -175,6 +175,9 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
     double w2[10];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
 
+    if (penum == NULL)
+        return_error(gs_error_invalidaccess);
+
     w2[0] = pwidth[0], w2[1] = pwidth[1];
 
     /* Adjust the bounding box for stroking if needed. */
