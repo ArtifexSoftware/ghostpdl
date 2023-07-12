@@ -549,6 +549,9 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
         else
             to_pop = stack_depth_adjust - num_out;
 
+        if (to_pop < 0)
+            return_error(gs_error_stackunderflow);
+
         ref_stack_pop(&o_stack, to_pop);
 
         /* Execute the closing procedure, if given */
