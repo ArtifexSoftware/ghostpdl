@@ -540,10 +540,17 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
      */
     /* Check if we are done collecting data. */
     if (increment_cube_indexes(params, penum->indexes)) {
+        int to_pop;
         if (stack_depth_adjust == 0)
-            ref_stack_pop(&o_stack, O_STACK_PAD);	    /* Remove spare stack space */
+            if (ref_stack_count(&o_stack) >= O_STACK_PAD)
+                to_pop = O_STACK_PAD;	    /* Remove spare stack space */
+            else
+                to_pop = ref_stack_count(&o_stack);
         else
-            ref_stack_pop(&o_stack, stack_depth_adjust - num_out);
+            to_pop = stack_depth_adjust - num_out;
+
+        ref_stack_pop(&o_stack, to_pop);
+
         /* Execute the closing procedure, if given */
         code = 0;
         if (esp_finish_proc != 0)
