@@ -37,6 +37,7 @@
 ; Newer nsis releases deprecate ansi encoding, require Unicode
 Unicode True
 
+!include 'FileFunc.nsh'
 !include 'LogicLib.nsh'
 
 SetCompressor /SOLID /FINAL lzma
@@ -159,20 +160,34 @@ Page custom OldVersionsPageCreate
 
 !insertmacro MUI_LANGUAGE "English"
 
-Function OldVersionsPageCreate
-  !insertmacro MUI_HEADER_TEXT "Previous Ghostscript Installations" "Optionally run the uninstallers for previous Ghostscript installations$\nClick $\"Cancel$\" to stop uninstalling previous installs"
+Function RemoveOld
   StrCpy $0 0
   loop:
     EnumRegKey $1 HKLM "Software\Artifex\GPL Ghostscript" $0
     StrCmp $1 "" done
     IntOp $0 $0 + 1
-    MessageBox MB_YESNOCANCEL|MB_ICONQUESTION "Uninstall Ghostscript Version $1?" IDNO loop IDCANCEL done
     Var /GLOBAL uninstexe
     ReadRegStr $uninstexe HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript $1" "UninstallString"
-    ExecWait "$uninstexe"
-    Goto loop
-  done:
 
+    IfSilent silent noisey
+
+    silent:
+      ExecWait "$uninstexe /S"
+      Goto loopEnd
+
+    noisey:
+      MessageBox MB_YESNOCANCEL|MB_ICONQUESTION "Uninstall Ghostscript Version $1?" IDNO loop IDCANCEL done
+      ExecWait "$uninstexe"
+      Goto loopEnd
+
+    LoopEnd:
+      Goto loop
+  done:
+FunctionEnd
+
+Function OldVersionsPageCreate
+  !insertmacro MUI_HEADER_TEXT "Previous Ghostscript Installations" "Optionally run the uninstallers for previous Ghostscript installations$\nClick $\"Cancel$\" to stop uninstalling previous installs"
+  Call RemoveOld
 FunctionEnd
 
 Function RedistInstCreate
@@ -180,6 +195,7 @@ Function RedistInstCreate
     ${If} $0 == 3010
       StrCpy $RebootRequired "yes"
     ${EndIf}
+    Delete "$INSTDIR\${VCREDIST}"
 FunctionEnd
 
 !searchparse /ignorecase /noerrors "${TARGET}" w WINTYPE
@@ -300,6 +316,7 @@ FunctionEnd
 Function .onInit
     SetSilent normal
     StrCpy $RebootRequired "no"
+
 !if "${WINTYPE}" == "64"
     SetRegView 64
     ${IfNot} ${RunningX64}
@@ -307,12 +324,23 @@ Function .onInit
         Abort
     ${EndIf}
 !endif
-
     System::Call 'kernel32::CreateMutexA(i 0, i 0, t "Ghostscript${VERSION}Installer") i .r1 ?e'
     Pop $R0
     StrCmp $R0 0 +3
     MessageBox MB_OK "The Ghostscript ${VERSION} installer is already running." /SD IDOK
     Abort
+
+    IfSilent Uninst CarryOn
+
+    Uninst:
+      ${GetParameters} $0
+      ClearErrors
+      ${GetOptions} $0 "/U" $1
+      ${IfNot} ${Errors}
+        Call RemoveOld
+      ${EndIF}
+
+    CarryOn:
 FunctionEnd
 
 Function Un.onInit
