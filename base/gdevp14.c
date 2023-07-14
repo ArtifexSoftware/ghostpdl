@@ -4688,7 +4688,10 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
         return 0;
     aa_row = data;
     if (has_tags) {
-        curr_tag = (color >> (num_comp*8)) & 0xff;
+        if (devn)
+            curr_tag = pdc->tag;
+        else
+            curr_tag = (color >> (num_comp*8)) & 0xff;
     }
 
     if (devn) {
@@ -4885,7 +4888,10 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
         return 0;
     aa_row = data;
     if (has_tags) {
-        curr_tag = (color >> (num_comp*16)) & 0xff;
+        if (devn)
+            curr_tag = pdc->tag;
+        else
+            curr_tag = (color >> (num_comp*16)) & 0xff;
     }
 
     if (devn) {
