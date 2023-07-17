@@ -397,7 +397,7 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
 
     {
         ulong format;
-        uint numGlyphs;
+        int numGlyphs;
         uint glyph_name_index;
         const byte *postp;      /* post table pointer */
 
@@ -414,8 +414,8 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
             return -1;
         }
         /* skip over the post header */
-        numGlyphs = u16(postp + 32);
-        if (glyph > numGlyphs - 1) {
+        numGlyphs = (int)u16(postp + 32);
+        if ((int)glyph > numGlyphs - 1) {
             if_debug1m('=', pfont->memory,
                        "[=]glyph index %lx out of range\n", glyph);
             return -1;
