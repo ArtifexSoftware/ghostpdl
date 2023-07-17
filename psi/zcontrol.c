@@ -1069,9 +1069,15 @@ pop_estack(i_ctx_t *i_ctx_p, uint count)
             continue;
 
         if (r_is_estack_mark(ep)) {
+            /* If the data objects for the cleanup proc we're about to
+               call straddles a stack block and ref_stack_pop() pops the
+               entire block, the stack ref containing the cleanup proc
+               can be freed... so store it first.
+             */
+            op_proc_t opproc = real_opproc(ep);
             ref_stack_pop(&e_stack, idx + 1 - popped);
             popped = idx + 1;
-            (*real_opproc(ep)) (i_ctx_p);
+            (*opproc) (i_ctx_p);
         }
     }
     ref_stack_pop(&e_stack, count - popped);
