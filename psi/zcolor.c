@@ -56,7 +56,7 @@
 #include "zfrsd.h"      /* for make_rss() */
 #include "smd5.h"   /* To hash CIE colour spaces, in order to check equality in ICC cache */
 #include "gxhttype.h"   /* for ht_type_colorscreen */
-#include "gsht.h"
+#include "gzht.h"
 
 /* Reject color spaces with excessive values of various parameters */
 /* to avoid dealing with overflows, INF, NaN during cache generation */

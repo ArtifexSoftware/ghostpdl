@@ -479,7 +479,7 @@ $(PSOBJ)zcolor.$(OBJ) : $(PSSRC)zcolor.c $(OP)\
  $(gxcspace_h) $(gxcolor2_h) $(gxpcolor_h)\
  $(idict_h) $(icolor_h) $(idparam_h) $(iname_h) $(iutil_h) $(icsmap_h)\
  $(ifunc_h) $(zht2_h) $(zcolor_h) $(zcie_h) $(zicc_h) $(gscspace_h)\
- $(zfrsd_h) $(INT_MAK) $(MAKEDIRS)
+ $(zfrsd_h) $(gxhttype_h) $(gzht_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c
 
 $(PSOBJ)zdevice.$(OBJ) : $(PSSRC)zdevice.c $(OP) $(string__h)\
@@ -656,8 +656,8 @@ $(PSD)cmykread.dev : $(ECHOGS_XE) $(cmykread_) $(INT_MAK) $(MAKEDIRS)
 $(PSOBJ)zcolor1.$(OBJ) : $(PSSRC)zcolor1.c $(OP)\
  $(gscolor1_h) $(gscssub_h)\
  $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
- $(gzstate_h)\
- $(ialloc_h) $(icolor_h) $(iimage_h) $(estack_h) $(iutil_h) $(igstate_h) $(store_h)\
+ $(gzstate_h) $(ialloc_h) $(icolor_h) $(iimage_h) $(estack_h) $(iutil_h)\
+ $(igstate_h) $(store_h) $(gxhttype_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zcolor1.$(OBJ) $(C_) $(PSSRC)zcolor1.c
 
