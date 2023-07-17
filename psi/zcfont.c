@@ -35,6 +35,7 @@ static int cshow_restore_font(i_ctx_t *);
 static int
 zcshow(i_ctx_t *i_ctx_p)
 {
+    es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
     os_ptr proc_op = op - 1;
     os_ptr str_op = op;
@@ -65,7 +66,16 @@ zcshow(i_ctx_t *i_ctx_p)
     }
     sslot = *proc_op;		/* save kerning proc */
     ref_stack_pop(&o_stack, 2);
-    return cshow_continue(i_ctx_p);
+    code = cshow_continue(i_ctx_p);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We'll rely on gc to handle the enumerator.
+         *  Bug 706868 (fix from zchar.c: Bug #700618)
+         */
+        esp = ep;
+    }
+    return code;
 }
 static int
 cshow_continue(i_ctx_t *i_ctx_p)
