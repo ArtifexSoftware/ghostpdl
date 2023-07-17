@@ -685,6 +685,17 @@ again:
         dict_find(perrordict, &error_name, &epref) <= 0))
         return code;            /* error name not in errordict??? */
 
+    if (code == gs_error_execstackoverflow
+        && obj_eq(imemory, &doref, epref)) {
+        /* This strongly suggests we're in an error handler that
+           calls itself infinitely, so Postscript is done, return
+           to the caller.
+         */
+         ref_stack_clear(&e_stack);
+         *pexit_code = gs_error_execstackoverflow;
+         return_error(gs_error_execstackoverflow);
+    }
+
     doref = *epref;
     epref = &doref;
     /* Push the error object on the operand stack if appropriate. */
