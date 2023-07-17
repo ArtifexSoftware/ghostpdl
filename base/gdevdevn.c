@@ -1983,7 +1983,7 @@ devn_pcx_write_rle(const byte * from, const byte * end, int step, gp_file * file
         byte data = *from;
 
         from += step;
-        if (data != *from || from == end) {
+        if (from >= end || data != *from) {
             if (data >= 0xc0)
                 gp_fputc(0xc1, file);
         } else {
