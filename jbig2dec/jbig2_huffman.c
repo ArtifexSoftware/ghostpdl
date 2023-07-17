@@ -513,7 +513,7 @@ static uint32_t
 jbig2_table_read_bits(const byte *data, size_t *bitoffset, const int bitlen)
 {
     uint32_t result = 0;
-    uint32_t byte_offset = *bitoffset / 8;
+    size_t byte_offset = *bitoffset / 8;
     const int endbit = (*bitoffset & 7) + bitlen;
     const int n_proc_bytes = (endbit + 7) / 8;
     const int rshift = n_proc_bytes * 8 - endbit;
@@ -649,7 +649,12 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
             line = new_line;
         }
         params->HTOOB = HTOOB;
-        params->n_lines = NTEMP;
+        /* Assuming int >= int32_t here. */
+        if (NTEMP > INT32_MAX) {
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "implausible number of huffman table lines");
+            goto error_exit;
+        }
+        params->n_lines = (int)NTEMP;
         params->lines = line;
         segment->result = params;
 

@@ -72,7 +72,7 @@ jbig2_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_dat
 
     /* find a free page */
     {
-        size_t index, j;
+        uint32_t index, j;
 
         index = ctx->current_page;
         while (ctx->pages[index].state != JBIG2_PAGE_FREE) {
