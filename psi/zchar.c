@@ -844,6 +844,10 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
                 else
                   return code;
             }
+        case gs_error_Remap_Color:
+            {
+                return code;
+            }
         default:		/* error */
 err:
             if (code >= 0)
