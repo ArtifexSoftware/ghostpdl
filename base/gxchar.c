@@ -845,6 +845,9 @@ show_update(gs_show_enum * penum)
             ;
     }
     if (penum->charpath_flag != cpm_show) {
+        if (pgs->level <= penum->level) {
+            return_error(gs_error_invalidfont);
+        }
         /* Move back to the character origin, so that */
         /* show_move will get us to the right place. */
         code = gx_path_add_point(pgs->show_gstate->path,
