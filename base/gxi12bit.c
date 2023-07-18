@@ -655,7 +655,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
             if (need_decode) {
                 /* Need decode and CM.  This is slow but does not happen that often */
                 psrc_decode = (unsigned short*) gs_alloc_bytes(pgs->memory,
-                                sizeof(unsigned short) * w * spp_cm/spp,
+                                sizeof(unsigned short) * w * spp,
                                 "image_render_icc16");
                 if (!penum->use_cie_range) {
                     decode_row16(penum, psrc, spp, psrc_decode,
