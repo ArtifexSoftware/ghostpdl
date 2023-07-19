@@ -458,8 +458,12 @@ s_aos_process(stream_state * st, stream_cursor_read * ignore_pr,
     blk_off = pos % ss->blk_sz;
     blk_cnt = r_size(&ss->blocks);
     count = blk_i < blk_cnt - 1 ? ss->blk_sz : ss->blk_sz_last;
-    blk_ref = ss->blocks.value.refs;
-    data = blk_ref[blk_i].value.bytes;
+    blk_ref = &ss->blocks.value.refs[blk_i];
+
+    if (!r_has_type_attrs(blk_ref, t_string, a_read) || r_size(blk_ref) != count)
+        return ERRC;
+
+    data = blk_ref->value.bytes;
 
     if (max_count > count - blk_off) {
         max_count = count - blk_off;
