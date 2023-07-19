@@ -3553,6 +3553,8 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     if (i_ctx_p->language_level < 2)
         return_error(gs_error_undefined);
 
+    check_op(1);
+
     *cont = 0;
     if ((*stage) == 0) {
         code = array_get(imemory, sepspace, 3, &proc);
