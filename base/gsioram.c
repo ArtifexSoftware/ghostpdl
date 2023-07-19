@@ -252,8 +252,11 @@ s_ram_read_seek(register stream * s, gs_offset_t pos)
         s->cursor.r.ptr = s->cbuf + offset - 1;
         return 0;
     }
-    if (pos < 0 || pos > s->file_limit || ramfile_seek((ramhandle*)s->file, s->file_offset + pos, RAMFS_SEEK_SET) != 0)
+
+    if (pos < 0 || pos > s->file_limit || s->file == NULL ||
+        ramfile_seek((ramhandle*)s->file, s->file_offset + pos, RAMFS_SEEK_SET) != 0)
         return ERRC;
+
     s->cursor.r.ptr = s->cursor.r.limit = s->cbuf - 1;
     s->end_status = 0;
     s->position = pos;
