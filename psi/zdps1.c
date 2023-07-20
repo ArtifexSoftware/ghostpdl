@@ -248,7 +248,7 @@ typedef struct local_rects_s {
 } local_rects_t;
 
 /* Forward references */
-static int rect_get(local_rects_t *, os_ptr, gs_memory_t *);
+static int rect_get(i_ctx_t *i_ctx_p, local_rects_t *, os_ptr, gs_memory_t *);
 static void rect_release(local_rects_t *, gs_memory_t *);
 
 /* <x> <y> <width> <height> .rectappend - */
@@ -258,7 +258,7 @@ zrectappend(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     local_rects_t lr;
-    int npop = rect_get(&lr, op, imemory);
+    int npop = rect_get(i_ctx_p, &lr, op, imemory);
     int code;
 
     if (npop < 0)
@@ -278,7 +278,7 @@ zrectclip(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     local_rects_t lr;
-    int npop = rect_get(&lr, op, imemory);
+    int npop = rect_get(i_ctx_p, &lr, op, imemory);
     int code;
 
     if (npop < 0)
@@ -298,7 +298,7 @@ zrectfill(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     local_rects_t lr;
-    int npop = rect_get(&lr, op, imemory);
+    int npop = rect_get(i_ctx_p, &lr, op, imemory);
     int code;
 
     if (npop < 0)
@@ -323,14 +323,14 @@ zrectstroke(i_ctx_t *i_ctx_p)
 
     if (read_matrix(imemory, op, &mat) >= 0) {
         /* Concatenate the matrix to the CTM just before stroking the path. */
-        npop = rect_get(&lr, op - 1, imemory);
+        npop = rect_get(i_ctx_p, &lr, op - 1, imemory);
         if (npop < 0)
             return npop;
         code = gs_rectstroke(igs, lr.pr, lr.count, &mat);
         npop++;
     } else {
         /* No matrix. */
-        npop = rect_get(&lr, op, imemory);
+        npop = rect_get(i_ctx_p, &lr, op, imemory);
         if (npop < 0)
             return npop;
         code = gs_rectstroke(igs, lr.pr, lr.count, (gs_matrix *) 0);
@@ -347,13 +347,14 @@ zrectstroke(i_ctx_t *i_ctx_p)
 /* Get rectangles from the stack. */
 /* Return the number of elements to pop (>0) if OK, <0 if error. */
 static int
-rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
+rect_get(i_ctx_t *i_ctx_p, local_rects_t * plr, os_ptr op, gs_memory_t *mem)
 {
     int format, code;
     uint n, count;
     gs_rect *pr;
     double rv[4];
 
+    check_op(1);
     switch (r_type(op)) {
         case t_array:
         case t_mixedarray:
@@ -369,6 +370,7 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
             count /= 4;
             break;
         default:		/* better be 4 numbers */
+            check_op(4);
             code = num_params(op, 4, rv);
             if (code < 0)
                 return code;
