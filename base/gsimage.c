@@ -56,7 +56,7 @@ typedef struct image_enum_plane_s {
 /*
   - A (retained) source string, which may be empty (size = 0).
 */
-    gs_const_string source;
+    gs_string source;
 } image_enum_plane_t;
 /*
   The possible states for each plane do not depend on the state of any other
@@ -145,7 +145,7 @@ static RELOC_PTRS_WITH(gs_image_enum_reloc_ptrs, gs_image_enum *eptr)
     RELOC_PTR(gs_image_enum, dev);
     RELOC_PTR(gs_image_enum, info);
     for (i = 0; i < eptr->num_planes; i++)
-        RELOC_CONST_STRING_PTR(gs_image_enum, planes[i].source);
+        RELOC_STRING_PTR(gs_image_enum, planes[i].source);
     for (i = 0; i < eptr->num_planes; i++)
         RELOC_STRING_PTR(gs_image_enum, planes[i].row);
 }
@@ -493,6 +493,10 @@ free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
                        penum->planes[i].row.size, cname);
         penum->planes[i].row.data = 0;
         penum->planes[i].row.size = 0;
+        gs_free_string(gs_image_row_memory(penum), penum->planes[i].source.data,
+                       penum->planes[i].source.size, cname);
+        penum->planes[i].source.data = 0;
+        penum->planes[i].source.size = 0;
     }
 }
 
@@ -505,13 +509,13 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
     int num_planes = penum->num_planes;
     int i, code;
     uint used[GS_IMAGE_MAX_COMPONENTS];
-    gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
+    gs_string plane_data[GS_IMAGE_MAX_COMPONENTS];
 
     if (penum->planes[px].source.size != 0)
         return_error(gs_error_rangecheck);
     for (i = 0; i < num_planes; i++)
         plane_data[i].size = 0;
-    plane_data[px].data = dbytes;
+    plane_data[px].data = (byte *)dbytes;
     plane_data[px].size = dsize;
     penum->error = false;
     code = gs_image_next_planes(penum, plane_data, used);
@@ -523,7 +527,7 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
 
 int
 gs_image_next_planes(gs_image_enum * penum,
-                     gs_const_string *plane_data /*[num_planes]*/,
+                     gs_string *plane_data /*[num_planes]*/,
                      uint *used /*[num_planes]*/)
 {
     const int num_planes = penum->num_planes;
@@ -544,8 +548,24 @@ gs_image_next_planes(gs_image_enum * penum,
     for (i = 0; i < num_planes; ++i) {
         used[i] = 0;
         if (penum->wanted[i] && plane_data[i].size != 0) {
+            gs_memory_t *mem = gs_image_row_memory(penum);
+            uint old_size = penum->planes[i].row.size;
+            byte *old_data = penum->planes[i].source.data;
+
+            byte *source = (old_data == 0 ?
+                 gs_alloc_string(mem, plane_data[i].size,
+                                 "gs_image_next(source)") :
+                 gs_resize_string(mem, old_data, old_size, plane_data[i].size,
+                                  "gs_image_next(source)"));
+
+            if (source == 0) {
+                free_row_buffers(penum, i, "gs_image_next(row)");
+                return_error(gs_error_VMerror);
+            }
+            memcpy(source, plane_data[i].data, plane_data[i].size);
+
             penum->planes[i].source.size = plane_data[i].size;
-            penum->planes[i].source.data = plane_data[i].data;
+            penum->planes[i].source.data = source;
         }
     }
     for (;;) {
@@ -565,12 +585,12 @@ gs_image_next_planes(gs_image_enum * penum,
             if (size > 0) {
                 if (pos < raster && (pos != 0 || size < raster)) {
                     /* Buffer a partial row. */
+                    gs_memory_t *mem = gs_image_row_memory(penum);
                     int copy = min(size, raster - pos);
                     uint old_size = penum->planes[i].row.size;
 
                     /* Make sure the row buffer is fully allocated. */
                     if (raster > old_size) {
-                        gs_memory_t *mem = gs_image_row_memory(penum);
                         byte *old_data = penum->planes[i].row.data;
                         byte *row =
                             (old_data == 0 ?
@@ -592,8 +612,17 @@ gs_image_next_planes(gs_image_enum * penum,
                     }
                     memcpy(penum->planes[i].row.data + pos,
                            penum->planes[i].source.data, copy);
-                    penum->planes[i].source.data += copy;
-                    penum->planes[i].source.size = size -= copy;
+                    if (copy == penum->planes[i].source.size) {
+                        gs_free_string(mem, penum->planes[i].source.data, penum->planes[i].source.size, "gs_image_next(source)");
+                        penum->planes[i].source.data = NULL;
+                        penum->planes[i].source.size = 0;
+                    } else {
+                        byte *source = gs_alloc_string(mem, penum->planes[i].source.size - copy, "gs_image_next(source)");
+                        memcpy(source, penum->planes[i].source.data + copy, penum->planes[i].source.size - copy);
+                        gs_free_string(mem, penum->planes[i].source.data, penum->planes[i].source.size, "gs_image_next(source)");
+                        penum->planes[i].source.data = source;
+                        penum->planes[i].source.size -= copy;
+                    }
                     penum->planes[i].pos = pos += copy;
                     used[i] += copy;
                 }
@@ -653,8 +682,19 @@ gs_image_next_planes(gs_image_enum * penum,
                 penum->planes[i].pos = 0;
             } else {
                 /* We transferred the row(s) from the source. */
-                penum->planes[i].source.data += count;
-                penum->planes[i].source.size -= count;
+                gs_memory_t *mem = gs_image_row_memory(penum);
+
+                if (count == penum->planes[i].source.size) {
+                    gs_free_string(mem, penum->planes[i].source.data, penum->planes[i].source.size, "gs_image_next(source)");
+                    penum->planes[i].source.data = NULL;
+                    penum->planes[i].source.size = 0;
+                } else {
+                    byte *source = gs_alloc_string(mem, penum->planes[i].source.size - count, "gs_image_next(source)");
+                    memcpy(source, penum->planes[i].source.data + count, penum->planes[i].source.size - count);
+                    gs_free_string(mem, penum->planes[i].source.data, penum->planes[i].source.size, "gs_image_next(source)");
+                    penum->planes[i].source.data = source;
+                    penum->planes[i].source.size -= count;
+                }
                 used[i] += count;
             }
         }

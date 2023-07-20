@@ -778,7 +778,7 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
     uint64_t bytes_left;
     uint64_t bytes_used = 0;
     uint64_t bytes_avail = 0;
-    gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
+    gs_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     int main_plane=0, mask_plane=0;
     bool no_progress = false;
     int min_left;
