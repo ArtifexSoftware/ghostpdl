@@ -465,12 +465,12 @@
     <ClCompile Include="..\base\gp_unix.c" />
     <ClCompile Include="..\base\gp_unix_cache.c" />
     <ClCompile Include="..\base\gp_upapr.c" />
+    <ClCompile Include="..\base\gp_utf8.c" />
     <ClCompile Include="..\base\gp_vms.c" />
     <ClCompile Include="..\base\gp_wgetv.c" />
     <ClCompile Include="..\base\gp_win32.c" />
     <ClCompile Include="..\base\gp_wpapr.c" />
     <ClCompile Include="..\base\gp_wsync.c" />
-    <ClCompile Include="..\base\gp_wutf8.c" />
     <ClCompile Include="..\base\gpmisc.c" />
     <ClCompile Include="..\base\gsalloc.c" />
     <ClCompile Include="..\base\gsalpha.c" />
