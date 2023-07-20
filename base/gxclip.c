@@ -941,13 +941,15 @@ clip_copy_mono_t1(gx_device * dev,
         INCR(in_y);
         if (x >= rptr->xmin && xe <= rptr->xmax) {
             INCR(in);
+            /* Untranspose coords here. */
             return dev_proc(tdev, copy_mono)
-                    (tdev, data, sourcex, raster, id, y, x, h, w, color0, color1);
+                    (tdev, data, sourcex, raster, id, y, x, w, h, color0, color1);
         }
     }
     ccdata.tdev = tdev;
     ccdata.data = data, ccdata.sourcex = sourcex, ccdata.raster = raster;
     ccdata.color[0] = color0, ccdata.color[1] = color1;
+    /* Coords are passed in transposed here, but will appear untransposed at the end. */
     return clip_enumerate_rest(rdev, x, y, xe, ye,
                                clip_call_copy_mono, &ccdata);
 }
