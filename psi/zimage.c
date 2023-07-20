@@ -544,7 +544,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
                 avail = (avail - min_left) / num_aliases; /* may be 0 */
             if (avail < min_avail)
                 min_avail = avail;
-            plane_data[px].data = sbufptr(s);
+            plane_data[px].data = (byte *)sbufptr(s);
             plane_data[px].size = avail;
         }
 

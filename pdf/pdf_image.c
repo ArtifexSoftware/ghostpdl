@@ -866,7 +866,7 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
         if (bytes_avail >= min_left)
             bytes_avail = (bytes_avail - min_left); /* may be 0 */
 
-        plane_data[main_plane].data = sbufptr(image_stream->s);
+        plane_data[main_plane].data = (byte *)sbufptr(image_stream->s);
         plane_data[main_plane].size = bytes_avail;
 
         code = gs_image_next_planes(penum, plane_data, used);
