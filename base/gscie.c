@@ -842,11 +842,25 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
         const double X = -N * A / R;	/* know X > 0 */
         /* Choose K to minimize range expansion. */
         const int K = (int)(A + B < 0 ? floor(X) : ceil(X)); /* know 0 < K < N */
-        const double Ca = -A / K, Cb = B / (N - K); /* know Ca, Cb > 0 */
-        double C = max(Ca, Cb);	/* know C > 0 */
         const int M = ARCH_FLOAT_MANTISSA_BITS - CEIL_LOG2_N;
         int cexp;
-        const double cfrac = frexp(C, &cexp);
+
+        double Ca, Cb;
+        double C;
+        double cfrac;
+
+        if (K != 0)
+            Ca = -A / K;
+        else
+            Ca = 0;
+
+        if (N != K)
+            Cb = B / (N - K); /* know Ca, Cb > 0 */
+        else
+            Cb = 0;
+
+        C = max(Ca, Cb);	/* know C > 0 */
+        cfrac = frexp(C, &cexp);
 
         if_debug4('c', "[c]adjusting cache_init(%8g, %8g), X = %8g, K = %d:\n",
                   A, B, X, K);
