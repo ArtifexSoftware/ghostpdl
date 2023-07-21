@@ -200,8 +200,14 @@ tile_clip_copy_mono(gx_device * dev,
     setup_mask_copy_mono(cdev, color, mcolor0, mcolor1);
     for (ty = y; ty < y + h; ty += ny) {
         int tx, nx;
-        int cy = (ty + cdev->phase.y) % cdev->tiles.rep_height;
-        int xoff = x_offset(ty, cdev);
+        int cy;
+        int xoff;
+
+        if (cdev->tiles.rep_height == 0 || cdev->tiles.rep_width == 0)
+            return 0;
+
+        cy = (ty + cdev->phase.y) % cdev->tiles.rep_height;
+        xoff = x_offset(ty, cdev);
 
         ny = min(y + h - ty, cdev->tiles.size.y - cy);
         if (ny > cdev->mdev.height)
@@ -253,9 +259,14 @@ tile_clip_copy_mono(gx_device * dev,
   } END
 #define FOR_RUNS(data_row, tx1, tx, ty)\
         const byte *data_row = data;\
-        int cy = imod(y + cdev->phase.y, cdev->tiles.rep_height);\
-        const byte *tile_row = cdev->tiles.data + cy * cdev->tiles.raster;\
-        int ty;\
+        int cy;\
+        byte *tile_row;\
+         int ty;\
+\
+        if (cdev->tiles.rep_height == 0 || cdev->tiles.rep_width == 0)\
+            return 0;\
+        cy = imod(y + cdev->phase.y, cdev->tiles.rep_height);\
+        tile_row = cdev->tiles.data + cy * cdev->tiles.raster;\
 \
         for ( ty = y; ty < y + h; ty++, data_row += raster ) {\
           int cx = imod(x + x_offset(ty, cdev), cdev->tiles.rep_width);\
