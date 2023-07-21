@@ -288,6 +288,11 @@ clip_enumerate_rest(gx_device_clip * rdev,
      * the list.
      */
     if (y >= rptr->ymax) {
+        /* Bug 706875: The 'stopper' here is a rectangle from (max_int, max_int) to
+         * (max_int, max_int). Hence it doesn't 'stop' cases when y == max_int.
+         * These shouldn't really happen, but let's be sure. */
+        if (y == max_int)
+            return 0;
         if ((rptr = rptr->next) != 0)
             while (INCR_THEN(up, y >= rptr->ymax))
                 rptr = rptr->next;

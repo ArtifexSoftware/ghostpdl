@@ -270,6 +270,11 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
                 yoff = y0 - y, y = y0, h -= yoff;
             else
                 yoff = 0;
+            /* Check for overflow */
+            if (h > 0 && max_int - h < y)
+                h = max_int - y;
+            if (w > 0 && max_int - w < x)
+                w = max_int - x;
             if (x + w > x1)
                 w = x1 - x;
             if (y + h > y1)
