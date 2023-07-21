@@ -35,7 +35,7 @@ LIBTIFF_MAK=$(GLSRC)tiff.mak $(TOP_MAKEFILES)
 
 TIFFCC=$(CC) $(I_)$(TI_) $(II)$(JI_)$(_I) $(I_)$(GLSRCDIR)$(_I) $(PF_) $(CCFLAGS) $(TIFF_CFLAGS)
 
-TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h $(LIBTIFF_MAK) $(MAKEDIRS)
+TIFFDEP = $(AK) $(TIFFGEN)tif_config.h $(TIFFGEN)tiffconf.h $(LIBTIFF_MAK) $(arch_h) $(MAKEDIRS)
 gstiffio_h=$(GLSRC)gstiffio.h
 
 tiff_1=$(TIFFOBJ)tif_aux.$(OBJ) $(TIFFOBJ)tif_close.$(OBJ) $(TIFFOBJ)tif_codec.$(OBJ) $(TIFFOBJ)tif_color.$(OBJ) $(TIFFOBJ)tif_hash_set.$(OBJ)

@@ -1042,7 +1042,7 @@ WINSDKVER=8.0
 !endif
 
 !ifndef WINSDKDIR
-WINSDKDIR=$(VS110COMNTOOLS)..\..\..\Windows Kits\$(WINSDKVER)\
+WINSDKDIR=$(VS110COMNTOOLS)..\..\..\Windows Kits\$(WINSDKVER)
 !endif
 
 COMPAUX__="$(VCINSTDIR)\bin\cl.exe"

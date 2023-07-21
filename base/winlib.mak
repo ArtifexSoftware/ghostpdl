@@ -184,7 +184,7 @@ GSDLL_OBJ=$(GLOBJ)$(GSDLL)
 # -------------------------- Auxiliary files --------------------------- #
 
 # No special gconfig_.h is needed.	/* This file deliberately left blank. */
-$(gconfig__h): $(TOP_MAKEFILES)
+$(gconfig__h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfig__h) -x 2f2a20 This file deliberately left blank. -x 2a2f
 
 # -------------------------------- Library -------------------------------- #

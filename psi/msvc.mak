@@ -1571,7 +1571,7 @@ WINSDKVER=8.0
 !endif
 
 !ifndef WINSDKDIR
-WINSDKDIR=$(VS110COMNTOOLS)..\..\..\Windows Kits\$(WINSDKVER)\
+WINSDKDIR=$(VS110COMNTOOLS)..\..\..\Windows Kits\$(WINSDKVER)
 !endif
 
 COMPAUX__="$(VCINSTDIR)\bin\cl.exe"
@@ -1793,7 +1793,7 @@ PDF_FEATURE_DEVS=$(PDFOBJDIR)/pl.dev $(PDFOBJDIR)/gpdf.dev
 
 FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev $(GLD)psl2lib.dev \
              $(GLD)dps2lib.dev $(GLD)path1lib.dev $(GLD)patlib.dev $(GLD)psl2cs.dev $(GLD)rld.dev $(GLD)gxfapiu$(UFST_BRIDGE).dev\
-             $(GLD)ttflib.dev  $(GLD)cielib.dev $(GLD)pipe.dev $(GLD)htxlib.dev $(GLD)sdct.dev $(GLD)libpng.dev\
+             $(GLD)ttflib.dev  $(GLD)cielib.dev $(GLD)sdct.dev $(GLD)libpng.dev\
 	     $(GLD)seprlib.dev $(GLD)translib.dev $(GLD)cidlib.dev $(GLD)psf0lib.dev $(GLD)psf1lib.dev\
              $(GLD)psf2lib.dev $(GLD)lzwd.dev $(GLD)sicclib.dev $(GLD)mshandle.dev $(GLD)mspoll.dev \
              $(GLD)ramfs.dev $(GLD)sjpx.dev $(GLD)sjbig2.dev \
@@ -2331,29 +2331,31 @@ RECURSIVEDEFS=DEVSTUDIO="$(DEVSTUDIO)" $(RECURSIVEDEFS)
 
 DEBUGDEFS=DEBUG=1 TDEBUG=1 $(RECURSIVEDEFS)
 
+RECURSIVEMAKE=nmake
+
 debug:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE)
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE)
 
 gsdebug:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
 
 gpcl6debug:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
 
 gxpsdebug:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
 
 gpdfdebug:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gpdf
+	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gpdf
 
 gpdldebug:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
 
 debugclean:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
 
 debugbsc:
-	nmake -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 # --------------------- Memento targets --------------------- #
 # Simply set some definitions and call ourselves back         #
@@ -2361,28 +2363,28 @@ debugbsc:
 MEMENTODEFS=$(DEBUGDEFS) MEMENTO=1
 
 memento-target:
-	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE)
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE)
 
 gsmemento:
-	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gs
 
 gpcl6memento:
-	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
 
 gxpsmemento:
-	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
 
 gpdfmemento:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gpdf
+	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gpdf
 
 gpdlmemento:
-	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
 
 mementoclean:
-	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) clean
 
 mementobsc:
-	nmake -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 # --------------------- Profile targets --------------------- #
 # Simply set some definitions and call ourselves back         #
@@ -2391,28 +2393,28 @@ PROFILEDEFS=$(RECURSIVEDEFS) PROFILE=1
 
 profile:
 profile-target:
-	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE)
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE)
 
 gsprofile:
-	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
 
 gpcl6profile:
-	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
 
 gxpsprofile:
-	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
 
 gpdfprofile:
-	nmake -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gpdf
+	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gpdf
 
 gpdlprofile:
-	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
 
 profileclean:
-	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
 
 profilebsc:
-	nmake -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 
 
@@ -2422,25 +2424,25 @@ profilebsc:
 SANITIZEDEFS=SANITIZE=1 $(RECURSIVEDEFS)
 
 sanitize:
-	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE)
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE)
 
 gssanitize:
-	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
 
 gpcl6sanitze:
-	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
 
 gxpssanitize:
-	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
 
 gpdlsanitize:
-	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
 
 sanitizeclean:
-	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
 
 sanitizebsc:
-	nmake -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
 
 # ---------------------- UFST targets ---------------------- #
 # Simply set some definitions and call ourselves back        #
@@ -2472,31 +2474,31 @@ UFSTDEFS=BINDIR=.\ufstbin GLGENDIR=.\ufstobj GLOBJDIR=.\ufstobj
 ufst-lib:
 #	Could make this call a makefile in the ufst code?
 #	cd $(UFST_ROOT)\rts\lib
-#	nmake -f makefile.artifex fco_lib.a if_lib.a psi_lib.a tt_lib.a
+#	$(RECURSIVEMAKE) -f makefile.artifex fco_lib.a if_lib.a psi_lib.a tt_lib.a
 
 ufst-debug: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
 
 ufst-debug-pcl: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" pcl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" pcl
 
 ufst-debugclean: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
 
 ufst-debugbsc: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEBUGDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" bsc
 
 ufst: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)"
 
 ufst-pcl: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" pcl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" pcl
 
 ufst-clean: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" clean
 
 ufst-bsc: ufst-lib
-	nmake -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(RECURSIVEDEFS) $(UFSTBASEDEFS) $(UFSTDEFS) UFST_CFLAGS="$(UFST_CFLAGS)" bsc
 
 #----------------------- Individual Product Targets --------------------#
 gs:$(GS_XE) $(GSCONSOLE_XE)
