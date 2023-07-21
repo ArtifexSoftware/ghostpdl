@@ -570,7 +570,7 @@ All Ghostscript builds in PC (DOS and MS Windows) environments are 32- or 64-bit
 
 Ghostscript requires at least MS Windows 95 (although we no longer actively test nor support Win95, we have not deliberately done anything to break compatibility with it). We recommend at least MS Windows NT 4.0.
 
-For building, Ghostscript requires at least Visual Studio .NET 2003, and we recommend at least Visual Studio 2005 (required for 64 bit Windows support).
+For building, Ghostscript requires at least Visual Studio .NET 2003, and we recommend at least Visual Studio 2019. It can probably be made to work with earlier versions, though at least VS2005 will be required for 64 bit Windows support.
 
 
 .. note::
@@ -594,7 +594,7 @@ To build the required DLLs, load ``/windows/ghostpdl.sln`` into Visual Studio, a
 Further details
 """"""""""""""""""
 
-The Ghostscript source distribution ships with ``project`` and ``solution`` files for Visual Studio 2005 and later. These can be found in the ``windows`` directory. The ``project(s)`` are ``nmake projects`` which means that rather than Visual Studio controlling the build directly, it delegates the build process to the ``nmake``.
+The Ghostscript source distribution ships with ``project`` and ``solution`` files for Visual Studio 2015 and later. These can be found in the ``windows`` directory. The ``project(s)`` are ``nmake projects`` which means that rather than Visual Studio controlling the build directly, it delegates the build process to the ``nmake``.
 
 Beyond lacking support for parallel builds (``nmake`` cannot support parallel builds), there should be little visible difference between a conventional VS project and an ``nmake project`` to the user of the VS graphical interface. The only exception to that is if you have to make changes to build options beyond those available in the defined build configurations. In that case, you need to find the ``Nmake`` tab in the project ``Property Pages`` and modify the appropriate entry: ``Build Command Line``, ``Rebuild All Command Line`` and/or ``Clean Command Line``.
 
