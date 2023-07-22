@@ -4944,6 +4944,8 @@ static int validateindexedspace(i_ctx_t * i_ctx_p, ref **space)
         code = array_get(imemory, &altspace, 0, &nameref);
         if (code < 0)
             return code;
+        if (!r_has_type(&nameref, t_name))
+            return_error(gs_error_typecheck);
     }
     /* Convert alternate space name to string */
     name_string_ref(imemory, &nameref, &sref);
