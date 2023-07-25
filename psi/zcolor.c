@@ -3540,6 +3540,7 @@ static int convert_transform(i_ctx_t * i_ctx_p, ref *arr, ref *pproc)
 static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int *cont, int CIESubst)
 {
     os_ptr op = osp;   /* required by "push" macro */
+    es_ptr ep = esp;
     int code = 0;
     ref sname, proc;
     ref name_none, name_all;
@@ -3578,12 +3579,21 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
              */
             op = osp;
             pfn = ref_function(op);
+            /* Obscure code... The caller (setcolorspace_cont) has pushed an object on the exec stack
+             * We want to affect the stored colour space which will be put in the interpreter gstate
+             * which is taken from the exec stack, we need to affect the entry on the exec stack *before*
+             * the object pushed by setcolorspace_cont.
+             */
+            ep -= 1;
+            ep = op;
             pop (1);
         }
     } else {
         /* The function is returned on the operand stack */
         op = osp;
         pfn = ref_function(op);
+        ep -= 1;
+        ep = op;
         pop (1);
     }
 
@@ -4091,7 +4101,8 @@ static int devicenprocess_cont(i_ctx_t *i_ctx_p)
 
 static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int *cont, int CIESubst)
 {
-    os_ptr  op = osp;   /* required by "push" macro */
+    os_ptr op = osp;   /* required by "push" macro */
+    es_ptr ep = esp;
     int code = 0, num_components, i;
     ref namesarray, proc, sname, tname, sref;
     ref_colorspace cspace_old;
@@ -4285,12 +4296,16 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
              */
             op = osp;
             pfn = ref_function(op);
+            ep -= 1;
+            ep = op;
             pop (1);
         }
     } else {
         /* The function is returned on the operand stack */
         op = osp;
         pfn = ref_function(op);
+            ep -= 1;
+            ep = op;
         pop (1);
     }
 
@@ -6685,6 +6700,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
     int i, code = 0, stage, cont, CIESubst = 0;
     unsigned int depth;
     PS_colour_space_t *obj;
+    int_gstate *is = istate;
 
     pCIESubst = &ep[-3];
     pdepth = &ep[-2];
@@ -6728,8 +6744,12 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
         code = obj->setproc(i_ctx_p, parr, &stage, &cont, CIESubst);
         make_int(pstage, stage);
         if (code != 0) {
-            if (code < 0 && code != gs_error_stackoverflow)
-                esp -= 5;
+            if (code < 0) {
+                if (code != gs_error_stackoverflow)
+                    esp -= 5;
+                else
+                    esp -= 1;
+            }
             return code;
         }
         if (!cont) {
@@ -6740,9 +6760,9 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
     }
     if (code == 0) {
         /* Remove our next continuation and our data */
+        istate->colorspace[0].array = *ep;
         esp -= 5;
         op = osp;
-        istate->colorspace[0].array = *op;
         /* Remove the colorspace array form the operand stack */
         pop(1);
         code = o_pop_estack;
