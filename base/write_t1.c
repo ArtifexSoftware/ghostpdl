@@ -772,7 +772,7 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output, int Wri
             len = a_fapi_font->get_proc(a_fapi_font,
                                       gs_fapi_font_feature_DollarBlend, 0,
                                       (char *)a_output->m_pos);
-            if (a_output->m_pos)
+            if (a_output->m_pos && len > 0)
                 a_output->m_pos += len;
             WRF_wstring(a_fapi_font->memory, a_output, "} def\n");
         } else {

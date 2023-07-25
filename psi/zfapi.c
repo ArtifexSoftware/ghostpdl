@@ -686,6 +686,8 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     break;
                 }
                 for (i = 0; i < r_size(DBlend); i++) {
+                    /* When reading the real proc, we add a space between each entry */
+                    length++;
                     if (array_get(ff->memory, DBlend, i, &Element) < 0) {
                         *ret = 0;
                         break;
@@ -693,22 +695,22 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     switch (r_btype(&Element)) {
                         case t_name:
                             name_string_ref(ff->memory, &Element, &string);
-                            length += r_size(&string) + 1;
+                            length += r_size(&string);
                             break;
                         case t_real:
                             gs_snprintf(Buffer, sizeof(Buffer), "%f", Element.value.realval);
-                            length += strlen(Buffer) + 1;
+                            length += strlen(Buffer);
                             break;
                         case t_integer:
                             gs_snprintf(Buffer, sizeof(Buffer), "%"PRIpsint, Element.value.intval);
-                            length += strlen(Buffer) + 1;
+                            length += strlen(Buffer);
                             break;
                         case t_operator:
                             {
                                 op_def const *op;
 
                                 op = op_index_def(r_size(&Element));
-                                length += strlen(op->oname + 1) + 1;
+                                length += strlen(op->oname + 1);
                             }
                             break;
                         default:
