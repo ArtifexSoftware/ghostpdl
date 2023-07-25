@@ -287,7 +287,11 @@ cie_cache_joint(i_ctx_t *i_ctx_p, const ref_cie_render_procs * pcrprocs,
         return gs_cie_cs_complete(pgs, true);
     }
     gs_cie_compute_points_sd(pjc, pcie, pcrd);
-    code = ialloc_ref_array(&pqr_procs, a_readonly, 3 * (1 + 4 + 4 * 6),
+    /* We use global memory for this array because it's going to be pushed onto
+       the exec stack, if it triggers an error and a restore happens, we don't want
+       a dangling stack reference to a restored away object.
+     */
+    code = gs_alloc_ref_array(iimemory_global, &pqr_procs, a_readonly, 3 * (1 + 4 + 4 * 6),
                             "cie_cache_common");
     if (code < 0)
         return code;
