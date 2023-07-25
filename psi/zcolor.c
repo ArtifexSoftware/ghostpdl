@@ -4885,6 +4885,7 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         else
             pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
 
+        pcs->params.indexed.lookup.map = NULL;
         code = zcs_begin_map(i_ctx_p, pcs, &map, &lookup, (hival.value.intval + 1),
                              pcs_base, indexed_cont);
         if (code < 0) {
