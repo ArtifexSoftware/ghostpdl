@@ -4331,7 +4331,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                 return_error(gs_error_typecheck);
                 break;
         }
-        if (strncmp((const char *)tname.value.const_bytes, "All", 3) == 0 && r_size(&tname) == 3) {
+        if (r_size(&tname) == 3 && strncmp((const char *)tname.value.const_bytes, "All", 3) == 0) {
             separation_type sep_type;
 
             /* Sigh, Acrobat allows this, even though its contra the spec. Convert to
