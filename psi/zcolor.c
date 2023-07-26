@@ -3540,7 +3540,6 @@ static int convert_transform(i_ctx_t * i_ctx_p, ref *arr, ref *pproc)
 static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int *cont, int CIESubst)
 {
     os_ptr op = osp;   /* required by "push" macro */
-    es_ptr ep = esp;
     int code = 0;
     ref sname, proc;
     ref name_none, name_all;
@@ -3579,21 +3578,12 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
              */
             op = osp;
             pfn = ref_function(op);
-            /* Obscure code... The caller (setcolorspace_cont) has pushed an object on the exec stack
-             * We want to affect the stored colour space which will be put in the interpreter gstate
-             * which is taken from the exec stack, we need to affect the entry on the exec stack *before*
-             * the object pushed by setcolorspace_cont.
-             */
-            ep -= 1;
-            ep = op;
             pop (1);
         }
     } else {
         /* The function is returned on the operand stack */
         op = osp;
         pfn = ref_function(op);
-        ep -= 1;
-        ep = op;
         pop (1);
     }
 
@@ -4102,7 +4092,6 @@ static int devicenprocess_cont(i_ctx_t *i_ctx_p)
 static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int *cont, int CIESubst)
 {
     os_ptr op = osp;   /* required by "push" macro */
-    es_ptr ep = esp;
     int code = 0, num_components, i;
     ref namesarray, proc, sname, tname, sref;
     ref_colorspace cspace_old;
@@ -4296,16 +4285,12 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
              */
             op = osp;
             pfn = ref_function(op);
-            ep -= 1;
-            ep = op;
             pop (1);
         }
     } else {
         /* The function is returned on the operand stack */
         op = osp;
         pfn = ref_function(op);
-            ep -= 1;
-            ep = op;
         pop (1);
     }
 
