@@ -4774,7 +4774,7 @@ indexed_cont(i_ctx_t *i_ctx_p)
             return code;
         }
         ref_stack_pop(&o_stack, m);
-        op -= m;
+        op = osp;
         if (i == (int)ep[csme_hival].value.intval) {	/* All done. */
             code = gs_setcolorspace(igs, pcs);
             rc_decrement_only_cs(pcs, "indexed_cont");
