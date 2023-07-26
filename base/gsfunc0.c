@@ -1493,7 +1493,7 @@ gs_function_Sd_init(gs_function_t ** ppfn,
         gs_function_Sd_t *pfn =
             gs_alloc_struct(mem, gs_function_Sd_t, &st_function_Sd,
                             "gs_function_Sd_init");
-        int bps, sa, ss, i, order;
+        int bps, sa, ss, i, order, was;
 
         if (pfn == 0)
             return_error(gs_error_VMerror);
@@ -1520,7 +1520,11 @@ gs_function_Sd_init(gs_function_t ** ppfn,
             order = pfn->params.Order;
             for (i = 0; i < pfn->params.m; i++) {
                 pfn->params.array_step[i] = sa * order;
+                was = sa;
                 sa = (pfn->params.Size[i] * order - (order - 1)) * sa;
+                /* If the calculation of sa went backwards then we overflowed! */
+                if (was > sa)
+                    return_error(gs_error_VMerror);
                 pfn->params.stream_step[i] = ss;
                 ss = pfn->params.Size[i] * ss;
             }

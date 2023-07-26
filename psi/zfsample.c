@@ -643,7 +643,16 @@ int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t
     /*
      * Set up the hyper cube function data structure.
      */
-    params.Order = 3;
+    /* The amount of memory required grows dramatitcally with the number of inputs when
+     * Order is 3 (cubic interpolation). This is the same test as used in determine_sampled_data_size()
+     * below to limit the number of samples in the cube. We use it here to switch to the
+     * cheaper (memory usage) linear interpolation if there are a lot of input
+     * components, in the hope of being able to continue.
+     */
+    if (params.m <= 8)
+        params.Order = 3;
+    else
+        params.Order = 1;
     params.BitsPerSample = 16;
 
     code = space->numcomponents(i_ctx_p, arr, &num_components);
