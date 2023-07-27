@@ -6682,6 +6682,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
 {
     ref arr, *parr = &arr;
     es_ptr ep = esp, pdepth, pstage, pCIESubst;
+    os_ptr op = osp;
     int i, code = 0, stage, cont, CIESubst = 0;
     unsigned int depth;
     PS_colour_space_t *obj;
@@ -6746,7 +6747,8 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
         /* Remove our next continuation and our data */
         istate->colorspace[0].array = *ep;
         esp -= 5;
-        /* Remove the colorspace array form the operand stack */
+        /* Remove the colorspace array from the operand stack */
+        check_op(1);
         pop(1);
         code = o_pop_estack;
     }
