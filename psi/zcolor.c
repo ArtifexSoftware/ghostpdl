@@ -1983,6 +1983,9 @@ static int comparearrays(i_ctx_t * i_ctx_p, ref *m1, ref *m2)
     if (r_size(m1) != r_size(m2))
         return 0;
 
+    if (m1->value.refs == m2->value.refs)
+        return 1;
+
     for (i=0;i < r_size(m1);i++) {
         code = array_get(imemory, m1, i, &ref1);
         if (code < 0)
@@ -4708,7 +4711,7 @@ static int devicencompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
     if (!comparearrays(i_ctx_p, &sname1, &sname2))
         return 0;
 
-    code = array_get(imemory, testspace, 2, &sname1);
+    code = array_get(imemory, space, 2, &sname1);
     if (code < 0)
         return 0;
     code = array_get(imemory, testspace, 2, &sname2);
