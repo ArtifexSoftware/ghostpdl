@@ -719,6 +719,7 @@ zsettransfer(i_ctx_t * i_ctx_p)
         txfer1 = igs->set_transfer;
         igs->set_transfer = txfer;
         txfer = txfer1;
+        gx_set_effective_transfer(igs);
 
         return zcolor_remap_one( i_ctx_p,
                              &istate->transfer_procs.gray,
@@ -847,6 +848,7 @@ transfer_remap_one_finish(i_ctx_t *i_ctx_p)
     igs->set_transfer.blue = NULL;
     rc_decrement(igs->set_transfer.gray, "");
     igs->set_transfer.gray = map;
+    gx_set_effective_transfer(igs);
     return code;
 }
 
@@ -862,6 +864,7 @@ transfer_remap_red_finish(i_ctx_t *i_ctx_p)
     igs->set_transfer.red = map;
     igs->set_transfer.red_component_num =
         gs_color_name_component_number(igs->device, "Red", 3, ht_type_colorscreen);
+    gx_set_effective_transfer(igs);
     return code;
 }
 int
@@ -876,6 +879,7 @@ transfer_remap_green_finish(i_ctx_t *i_ctx_p)
     igs->set_transfer.green = map;
     igs->set_transfer.green_component_num =
         gs_color_name_component_number(igs->device, "Green", 5, ht_type_colorscreen);
+    gx_set_effective_transfer(igs);
     return code;
 }
 int
@@ -890,6 +894,7 @@ transfer_remap_blue_finish(i_ctx_t *i_ctx_p)
     igs->set_transfer.blue = map;
     igs->set_transfer.blue_component_num =
         gs_color_name_component_number(igs->device, "Blue", 4, ht_type_colorscreen);
+    gx_set_effective_transfer(igs);
     return code;
 }
 int
@@ -904,6 +909,7 @@ transfer_remap_gray_finish(i_ctx_t *i_ctx_p)
     igs->set_transfer.gray = map;
     igs->set_transfer.gray_component_num =
         gs_color_name_component_number(igs->device, "Gray", 4, ht_type_colorscreen);
+    gx_set_effective_transfer(igs);
     return code;
 }
 

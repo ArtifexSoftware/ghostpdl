@@ -163,6 +163,7 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
     if (r_size(&istate->transfer_procs.red) == 0) {
         rc_decrement(igs->set_transfer.red, "");
         igs->set_transfer.red = txfer.red;
+        gx_set_effective_transfer(igs);
         igs->set_transfer.red_component_num = txfer.red_component_num;
         code = zcolor_remap_one(i_ctx_p,
                                  &istate->transfer_procs.red,
@@ -181,6 +182,7 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
     if (r_size(&istate->transfer_procs.green) == 0) {
         rc_decrement(igs->set_transfer.green, "");
         igs->set_transfer.green = txfer.green;
+        gx_set_effective_transfer(igs);
         igs->set_transfer.green_component_num = txfer.green_component_num;
         code = zcolor_remap_one(i_ctx_p,
                                  &istate->transfer_procs.green,
@@ -199,6 +201,7 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
     if (r_size(&istate->transfer_procs.blue) == 0) {
         rc_decrement(igs->set_transfer.blue, "");
         igs->set_transfer.blue = txfer.blue;
+        gx_set_effective_transfer(igs);
         igs->set_transfer.blue_component_num = txfer.blue_component_num;
         code = zcolor_remap_one(i_ctx_p,
                                  &istate->transfer_procs.blue,
@@ -217,6 +220,7 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
     if (r_size(&istate->transfer_procs.gray) == 0) {
         rc_decrement(igs->set_transfer.gray, "");
         igs->set_transfer.gray = txfer.gray;
+        gx_set_effective_transfer(igs);
         igs->set_transfer.gray_component_num = txfer.gray_component_num;
         code = zcolor_remap_one(i_ctx_p,
                                  &istate->transfer_procs.gray,
