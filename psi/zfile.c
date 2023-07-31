@@ -414,7 +414,7 @@ zfilenameforall(i_ctx_t *i_ctx_p)
     *++esp = op[-1];
     ref_stack_pop(&o_stack, 3);
     code = file_continue(i_ctx_p);
-    return (code == o_pop_estack ? o_push_estack : code);
+    return code;
 }
 /* Continuation operator for enumerating files */
 static int
@@ -429,7 +429,7 @@ file_continue(i_ctx_t *i_ctx_p)
     uint code;
 
     if (len < devlen) {
-        esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
+        esp -= 6;               /* pop proc, pfen, scratch, devlen, iodev , mark */
         return_error(gs_error_rangecheck);     /* not even room for device len */
     }
 
@@ -438,7 +438,7 @@ file_continue(i_ctx_t *i_ctx_p)
         code = iodev->procs.enumerate_next(imemory, pfen, (char *)pscratch->value.bytes + devlen,
                     len - devlen);
         if (code == ~(uint) 0) {    /* all done */
-            esp -= 5;               /* pop proc, pfen, devlen, iodev , mark */
+            esp -= 6;               /* pop proc, pfen, scratch, devlen, iodev , mark */
             return o_pop_estack;
         } else if (code > len) {      /* overran string */
             return_error(gs_error_rangecheck);
