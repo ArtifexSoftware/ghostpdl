@@ -8,7 +8,15 @@
 
 .. raw:: html
 
-   <div class="discordLink"><a href="https://discord.gg/H9GXKwyPvY" target=_blank>Find <b>#ghostscript</b> on <b>Discord</b><img src="_images/discord-mark-blue.svg" alt="Discord logo" /></a></div>
+
+
+
+   <div class="discordLink">
+      <div style="display:flex;flex-direction: row;">
+         <button class="cta orange small" style="margin-right: 10px;" onclick="window.location='https://www.ghostscript.com/releases/index.html?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=cta-button'">DOWNLOAD</button>
+         <a href="https://discord.gg/H9GXKwyPvY" target=_blank>Find <b>#ghostscript</b> on <b>Discord</b><img src="_images/discord-mark-blue.svg" alt="Discord logo" /></a>
+      </div>
+   </div>
 
    <div class="feedbackLink"><a id="feedbackLinkTop" target=_blank>Do you have any feedback on this page?</b></a></div>
 

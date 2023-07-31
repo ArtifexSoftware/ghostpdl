@@ -87,6 +87,14 @@ button.cta a {
     color:#fff !important;
 }
 
+button.cta.orange.small {
+    font-size:13px;
+    font-weight:500;
+    min-height:20px;
+    line-height:20px;
+    padding: 0 8px;
+}
+
 
 
 .discordLink {
