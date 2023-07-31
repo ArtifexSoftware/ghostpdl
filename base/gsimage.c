@@ -618,6 +618,10 @@ gs_image_next_planes(gs_image_enum * penum,
                         penum->planes[i].source.size = 0;
                     } else {
                         byte *source = gs_alloc_string(mem, penum->planes[i].source.size - copy, "gs_image_next(source)");
+                        if (source == NULL) {
+                            code = gs_note_error(gs_error_VMerror);
+                            break;
+                        }
                         memcpy(source, penum->planes[i].source.data + copy, penum->planes[i].source.size - copy);
                         gs_free_string(mem, penum->planes[i].source.data, penum->planes[i].source.size, "gs_image_next(source)");
                         penum->planes[i].source.data = source;
@@ -690,6 +694,10 @@ gs_image_next_planes(gs_image_enum * penum,
                     penum->planes[i].source.size = 0;
                 } else {
                     byte *source = gs_alloc_string(mem, penum->planes[i].source.size - count, "gs_image_next(source)");
+                    if (source == NULL) {
+                        code = gs_note_error(gs_error_VMerror);
+                        break;
+                    }
                     memcpy(source, penum->planes[i].source.data + count, penum->planes[i].source.size - count);
                     gs_free_string(mem, penum->planes[i].source.data, penum->planes[i].source.size, "gs_image_next(source)");
                     penum->planes[i].source.data = source;
