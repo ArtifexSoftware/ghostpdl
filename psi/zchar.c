@@ -371,7 +371,6 @@ zstringwidth(i_ctx_t *i_ctx_p)
     }
     code = op_show_continue_pop(i_ctx_p, 1);
     if (code < 0) {
-        rc_decrement(penum, "error in zstringwidth");
         /* We must restore the exec stack pointer back to the point where we entered, in case
          * we 'retry' the operation (eg having increased the operand stack).
          * We'll rely on gc to handle the enumerator.
