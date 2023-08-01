@@ -415,10 +415,15 @@ zforall(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     os_ptr obj = op - 1;
-    es_ptr ep = esp;
-    es_ptr cproc = ep + 4;
+    es_ptr ep;
+    es_ptr cproc;
 
     check_estack(6);
+    /* check_estack() could cause the exec stack to be copied to a new block
+     * so don't caulculate ep and things based on ep until *after* the check
+     */
+    ep = esp;
+    cproc = ep + 4;
     check_proc(*op);
     switch (r_type(obj)) {
         default:
