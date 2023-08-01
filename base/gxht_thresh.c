@@ -783,6 +783,8 @@ fill_threshold_buffer(byte *dest_strip, byte *src, byte *src_strip, int src_widt
         left_offset += under;
         ptr_out_temp += under;
         left_width -= under;
+        if (left_width < 0)
+            left_width = 0;
     }
     /* Left part */
     memcpy(ptr_out_temp, src_strip + left_offset, left_width);
