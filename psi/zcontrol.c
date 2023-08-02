@@ -81,6 +81,7 @@ cond_continue(i_ctx_t *i_ctx_p)
         const ref_packed *elts = ep->value.packed;
 
         check_estack(2);
+        ep = esp;
         r_dec_size(ep, 2);
         elts = packed_next(elts);
         elts = packed_next(elts);

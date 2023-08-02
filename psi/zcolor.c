@@ -5030,6 +5030,7 @@ static int indexedbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage,
              * lookup procedure. (The index is already on the operand stack)
              */
             check_estack(1);
+            ep = esp;
             code = array_get(imemory, space, 3, &proc);
             if (code < 0)
                 return code;
@@ -6606,6 +6607,7 @@ setcolor_cont(i_ctx_t *i_ctx_p)
      * so that our continuation is ahead of the sub-proc's continuation.
      */
     check_estack(1);
+    ep = esp;
     push_op_estack(setcolor_cont);
 
     while (code == 0) {
@@ -6708,6 +6710,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
      * so that our continuation is ahead of the sub-proc's continuation.
      */
     check_estack(1);
+    ep = esp;
     push_op_estack(setcolorspace_cont);
 
     while (code == 0 && depth) {
@@ -6791,6 +6794,7 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
      * so that our continuation is ahead of the sub-proc's continuation.
      */
     check_estack(1);
+    ep = esp;
     /* May need to push a /Device... name on the stack so make sure we have space */
     check_ostack(1);
     /* The push_op_estack macro increments esp before use, so we don't need to */
@@ -7041,6 +7045,7 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
      * so that our continuation is ahead of the sub-proc's continuation.
      */
     check_estack(1);
+    ep = esp;
     /* The push_op_estack macro increments esp before use, so we don't need to */
     push_op_estack(currentbasecolor_cont);
 
@@ -7266,6 +7271,7 @@ zsetstrokecolor(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will finish by restoring the fill colour space */
     /* Make sure the exec stack has enough space */
     check_estack(1);
+    iesp = esp;
     /* Now, the actual continuation routine */
     push_op_estack(setstrokecolor_cont);
 
@@ -7297,6 +7303,7 @@ zsetstrokecolorspace(i_ctx_t * i_ctx_p)
     /* Set up for the continuation procedure which will finish by restoring the fill colour space */
     /* Make sure the exec stack has enough space */
     check_estack(1);
+    iesp = esp;
     /* Now, the actual continuation routine */
     push_op_estack(setstrokecolorspace_cont);
 
