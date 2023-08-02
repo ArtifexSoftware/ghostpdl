@@ -364,8 +364,8 @@ pclxl_can_handle_color_space(const gs_color_space * pcs)
              index == gs_color_space_index_Pattern ||
              index == gs_color_space_index_DeviceN ||
              index == gs_color_space_index_ICC ||
-             index <= gs_color_space_index_CIEA &&
-             index >= gs_color_space_index_CIEDEFG
+             (index <= gs_color_space_index_CIEA &&
+             index >= gs_color_space_index_CIEDEFG)
              );
 }
 

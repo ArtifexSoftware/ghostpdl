@@ -229,7 +229,7 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
             /* We don't have to alloc_save_remove() because the change
                object hasn't been attached to the allocator yet.
              */
-            gs_free_object(mem, cp, "gs_alloc_ref_array");
+            gs_free_object((gs_memory_t *) mem, cp, "gs_alloc_ref_array");
             return_error(gs_error_VMerror);
         }
         /* Set the terminating ref now. */
