@@ -33,6 +33,9 @@
 #include "iimage.h"
 #include "gxhttype.h"
 
+/* imported from gsht.c */
+extern  void    gx_set_effective_transfer(gs_gstate *);
+
 /* - currentblackgeneration <proc> */
 static int
 zcurrentblackgeneration(i_ctx_t *i_ctx_p)
