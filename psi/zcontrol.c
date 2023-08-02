@@ -1069,15 +1069,22 @@ pop_estack(i_ctx_t *i_ctx_p, uint count)
             continue;
 
         if (r_is_estack_mark(ep)) {
-            /* If the data objects for the cleanup proc we're about to
-               call straddles a stack block and ref_stack_pop() pops the
-               entire block, the stack ref containing the cleanup proc
-               can be freed... so store it first.
+            /* This exec stack juggling is to cope with hitting
+               exactly the bottom of a stack block. It is possible
+               to end up with the book keeping at the bottom of
+               one block, and the opproc at the top of the previous
+               block. If we pop everything in one go, the book keeping
+               entries disappear, so we pop to the start of the book
+               keeping values, call the cleanup, then pop the final
+               entry.
              */
             op_proc_t opproc = real_opproc(ep);
-            ref_stack_pop(&e_stack, idx + 1 - popped);
-            popped = idx + 1;
+            ref_stack_pop(&e_stack, idx - popped);
+            esp--;
             (*opproc) (i_ctx_p);
+            esp++;
+            ref_stack_pop(&e_stack, 1);
+            popped = idx + 1;
         }
     }
     ref_stack_pop(&e_stack, count - popped);
