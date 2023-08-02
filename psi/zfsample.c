@@ -597,6 +597,7 @@ sampled_data_finish(i_ctx_t *i_ctx_p)
     ref cref;			/* closure */
     int code = gs_function_Sd_init(&pfn, params, imemory);
 
+    check_op(1);
     if (code < 0) {
         esp -= estack_storage;
         return code;
