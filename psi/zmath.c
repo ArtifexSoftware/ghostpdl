@@ -70,6 +70,9 @@ zarccos(i_ctx_t *i_ctx_p)
 
     if (code < 0)
         return code;
+    if (num < -1 || num > 1)
+        return_error(gs_error_rangecheck);
+
     result = acos(num) * radians_to_degrees;
     make_real(op, result);
     return 0;
@@ -85,6 +88,9 @@ zarcsin(i_ctx_t *i_ctx_p)
 
     if (code < 0)
         return code;
+    if (num < -1 || num > 1)
+        return_error(gs_error_rangecheck);
+
     result = asin(num) * radians_to_degrees;
     make_real(op, result);
     return 0;

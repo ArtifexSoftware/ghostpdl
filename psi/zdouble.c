@@ -161,12 +161,30 @@ darc(i_ctx_t *i_ctx_p, double (*afunc)(double))
 static int
 zdarccos(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+    double num;
+    int code = real_param(op, &num);
+
+    if (code < 0)
+        return code;
+    if (num < -1 || num > 1)
+        return_error(gs_error_rangecheck);
+
     return darc(i_ctx_p, acos);
 }
 /* <dnum> <dresult> .darcsin <dresult> */
 static int
 zdarcsin(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+    double num;
+    int code = real_param(op, &num);
+
+    if (code < 0)
+        return code;
+    if (num < -1 || num > 1)
+        return_error(gs_error_rangecheck);
+
     return darc(i_ctx_p, asin);
 }
 
