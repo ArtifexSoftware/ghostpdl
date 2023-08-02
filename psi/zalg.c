@@ -56,6 +56,7 @@ zsort(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint N;
 
+    check_op(2);
     /* Check operands for type and access */
     /* we can sort only writable [and unpacked] arrays */
     if (r_type(&op[-1]) == t_mixedarray || r_type(&op[-1]) == t_shortarray)
