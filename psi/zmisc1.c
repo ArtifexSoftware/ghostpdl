@@ -48,6 +48,7 @@ type1crypt(i_ctx_t *i_ctx_p,
     crypt_state state;
     uint ssize;
 
+    check_op(3);
     check_type(op[-2], t_integer);
     state = op[-2].value.intval;
     if (op[-2].value.intval != state)

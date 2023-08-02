@@ -34,6 +34,7 @@ static int
 zsetglobal(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    check_op(1);
     check_type(*op, t_boolean);
     ialloc_set_space(idmemory,
                      (op->value.boolval ? avm_global : avm_local));
@@ -113,6 +114,7 @@ zvmreclaim(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_integer);
     if (op->value.intval == 1 || op->value.intval == 2) {
         /* Force the interpreter to store its state and exit. */

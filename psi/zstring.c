@@ -35,6 +35,7 @@ zbytestring(i_ctx_t *i_ctx_p)
     byte *sbody;
     uint size;
 
+    check_op(1);
     check_int_leu(*op, max_int);
     size = (uint)op->value.intval;
     sbody = ialloc_bytes(size, ".bytestring");
@@ -53,6 +54,7 @@ zstring(i_ctx_t *i_ctx_p)
     byte *sbody;
     uint size;
 
+    check_op(1);
     check_type(*op, t_integer);
     if (op->value.intval < 0 )
         return_error(gs_error_rangecheck);
@@ -73,6 +75,7 @@ znamestring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_name);
     name_string_ref(imemory, op, op);
     return 0;
@@ -87,6 +90,7 @@ zanchorsearch(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     uint size = r_size(op);
 
+    check_op(2);
     check_read_type(*op, t_string);
     check_read_type(*op1, t_string);
     if (size <= r_size(op1) && !memcmp(op1->value.bytes, op->value.bytes, size)) {
@@ -117,6 +121,7 @@ search_impl(i_ctx_t *i_ctx_p, bool forward)
     byte ch;
     int incr = forward ? 1 : -1;
 
+    check_op(2);
     check_read_type(*op1, t_string);
     check_read_type(*op, t_string);
     if (size > r_size(op1)) {	/* can't match */
@@ -179,6 +184,7 @@ zstringbreak(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint i, j;
 
+    check_op(2);
     check_read_type(op[-1], t_string);
     check_read_type(*op, t_string);
     /* We can't use strpbrk here, because C doesn't allow nulls in strings. */
@@ -202,6 +208,7 @@ zstringmatch(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     bool result;
 
+    check_op(2);
     check_read_type(*op, t_string);
     switch (r_type(op1)) {
         case t_string:

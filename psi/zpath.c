@@ -102,6 +102,7 @@ common_to(i_ctx_t *i_ctx_p,
     double opxy[2];
     int code;
 
+    check_op(2);
     if ((code = num_params(op, 2, opxy)) < 0 ||
         (code = (*add_proc)(igs, opxy[0], opxy[1])) < 0
         )
@@ -133,6 +134,7 @@ common_curve(i_ctx_t *i_ctx_p,
     double opxy[6];
     int code;
 
+    check_op(6);
     if ((code = num_params(op, 6, opxy)) < 0)
         return code;
     code = (*add_proc)(igs, opxy[0], opxy[1], opxy[2], opxy[3], opxy[4], opxy[5]);

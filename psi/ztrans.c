@@ -85,6 +85,7 @@ zsetblendmode(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(1);
     check_type(*op, t_name);
     if ((code = enum_param(imemory, op, blend_mode_names)) < 0 ||
         (code = gs_setblendmode(igs, code)) < 0
@@ -116,6 +117,7 @@ zsettextknockout(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_boolean);
     gs_settextknockout(igs, op->value.boolval);
     pop(1);
@@ -173,6 +175,7 @@ static int common_transparency_group(i_ctx_t *i_ctx_p, pdf14_compositor_operatio
     ref *dummy;
     int code;
 
+    check_op(5);
     check_type(*dop, t_dictionary);
     check_dict_read(*dop);
     gs_trans_group_params_init(&params, 1.0);
@@ -271,6 +274,7 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
         GS_TRANSPARENCY_MASK_SUBTYPE_NAMES, 0
     };
 
+    check_op(6);
     check_type(*dop, t_dictionary);
     check_dict_read(*dop);
     if (dict_find_string(dop, "Subtype", &pparam) <= 0)
@@ -332,11 +336,13 @@ static int
 zbegintransparencymaskimage(i_ctx_t *i_ctx_p)
 {
     os_ptr dop = osp;
+    os_ptr op = osp;
     gs_transparency_mask_params_t params;
     gs_rect bbox = { { 0, 0} , { 1, 1} };
     int code;
     gs_color_space *gray_cs = gs_cspace_new_DeviceGray(imemory);
 
+    check_op(1);
     check_type(*dop, t_dictionary);
     check_dict_read(*dop);
     if (!gray_cs)
@@ -481,6 +487,7 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
     const ref *puserdict = ref_stack_index(rdstack, ref_stack_count(rdstack) - 1 -
                             dstack->userdict_index);
 
+    check_op(1);
     check_type(*op, t_integer);
     depth = (int)op->value.intval;
 

@@ -52,8 +52,10 @@ common_arc(i_ctx_t *i_ctx_p,
 {
     os_ptr op = osp;
     double xyra[5];		/* x, y, r, ang1, ang2 */
-    int code = num_params(op, 5, xyra);
+    int code;
 
+    check_op(5);
+    code = num_params(op, 5, xyra);
     if (code < 0)
         return code;
     code = (*aproc)(igs, xyra[0], xyra[1], xyra[2], xyra[3], xyra[4]);
@@ -98,8 +100,10 @@ common_arct(i_ctx_t *i_ctx_p, float *tanxy)
 {
     os_ptr op = osp;
     double args[5];		/* x1, y1, x2, y2, r */
-    int code = num_params(op, 5, args);
+    int code;
 
+    check_op(5);
+    code = num_params(op, 5, args);
     if (code < 0)
         return code;
     return gs_arcto(igs, args[0], args[1], args[2], args[3], args[4], tanxy);
@@ -148,6 +152,7 @@ z1pathbbox(i_ctx_t *i_ctx_p)
     gs_rect box;
     int code;
 
+    check_op(1);
     check_type(*op, t_boolean);
     code = gs_upathbbox(igs, &box, op->value.boolval);
     if (code < 0)
@@ -190,6 +195,7 @@ zpathforall(i_ctx_t *i_ctx_p)
     gs_path_enum *penum;
     int code;
 
+    check_op(4);
     check_proc(op[-3]);
     check_proc(op[-2]);
     check_proc(op[-1]);

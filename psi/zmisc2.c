@@ -53,6 +53,7 @@ zsetlanguagelevel(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code = 0;
 
+    check_op(1);
     check_type(*op, t_integer);
     if (op->value.intval != LANGUAGE_LEVEL) {
         code = set_language_level(i_ctx_p, (int)op->value.intval);

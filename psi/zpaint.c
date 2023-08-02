@@ -49,6 +49,7 @@ fillstroke_cont(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int restart, code;
 
+    check_op(1);
     check_type(*op, t_integer);
     restart = (int)op->value.intval;
     code = gs_fillstroke(igs, &restart);
@@ -76,6 +77,7 @@ eofillstroke_cont(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int restart, code;
 
+    check_op(1);
     check_type(*op, t_integer);
     restart = (int)op->value.intval;
     code = gs_eofillstroke(igs, &restart);
@@ -113,6 +115,7 @@ zimagepath(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(3);
     check_type(op[-2], t_integer);
     check_type(op[-1], t_integer);
     check_read_type(*op, t_string);

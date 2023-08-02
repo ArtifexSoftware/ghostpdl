@@ -66,6 +66,7 @@ zsetscreenphase(i_ctx_t *i_ctx_p)
     int code;
     int x, y;
 
+    check_op(3);
     check_type(op[-2], t_integer);
     check_type(op[-1], t_integer);
     check_type(*op, t_integer);
@@ -86,7 +87,7 @@ zsetscreenphase(i_ctx_t *i_ctx_p)
 /* for PDF ink annotations. The program is based on a very simple method of */
 /* smoothing polygons by Maxim Shemanarev. */
 /* http://www.antigrain.com/research/bezier_interpolation/ */
-/* <mark> <x0> <y0> ... <xn> <yn> .pdfinkpath - */
+/* <array> .pdfinkpath - */
 static int
 zpdfinkpath(i_ctx_t *i_ctx_p)
 {
@@ -99,6 +100,7 @@ zpdfinkpath(i_ctx_t *i_ctx_p)
     const double smooth_value = 1; /* from 0..1 range */
     ref lval;
 
+    check_op(1);
     check_read_type(*op, t_array);
     count = r_size(op);
 
@@ -229,6 +231,7 @@ zsaslprep(i_ctx_t *i_ctx_p)
     uint output_size;
     Stringprep_rc err;
 
+    check_op(1);
     check_read_type(*op, t_string);
 
     /* According to http://unicode.org/faq/normalization.html, converting

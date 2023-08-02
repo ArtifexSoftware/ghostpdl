@@ -47,6 +47,7 @@ int
 zeq(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    check_op(2);
     EQ_CHECK_READ(op - 1, check_op(2));
     EQ_CHECK_READ(op, DO_NOTHING);
     make_bool(op - 1, (obj_eq(imemory, op - 1, op) ? 1 : 0));
@@ -71,8 +72,10 @@ int
 zge(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(op, op - 1);
+    int code;
 
+    check_op(2);
+    code = obj_le(op, op - 1);
     if (code < 0)
         return code;
     make_bool(op - 1, code);
@@ -86,8 +89,10 @@ int
 zgt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(op - 1, op);
+    int code;
 
+    check_op(2);
+    code = obj_le(op - 1, op);
     if (code < 0)
         return code;
     make_bool(op - 1, code ^ 1);
@@ -101,8 +106,10 @@ int
 zle(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(op - 1, op);
+    int code;
 
+    check_op(2);
+    code = obj_le(op - 1, op);
     if (code < 0)
         return code;
     make_bool(op - 1, code);
@@ -116,8 +123,10 @@ int
 zlt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(op, op - 1);
+    int code;
 
+    check_op(2);
+    code = obj_le(op, op - 1);
     if (code < 0)
         return code;
     make_bool(op - 1, code ^ 1);
@@ -131,8 +140,10 @@ static int
 zmax(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(op - 1, op);
+    int code;
 
+    check_op(2);
+    code = obj_le(op - 1, op);
     if (code < 0)
         return code;
     if (code) {
@@ -148,8 +159,10 @@ static int
 zmin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = obj_le(op - 1, op);
+    int code;
 
+    check_op(2);
+    code = obj_le(op - 1, op);
     if (code < 0)
         return code;
     if (!code) {
@@ -166,6 +179,7 @@ zand(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     switch (r_type(op)) {
         case t_boolean:
             check_type(op[-1], t_boolean);
@@ -189,6 +203,7 @@ znot(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     switch (r_type(op)) {
         case t_boolean:
             op->value.boolval = !op->value.boolval;
@@ -209,6 +224,7 @@ zor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     switch (r_type(op)) {
         case t_boolean:
             check_type(op[-1], t_boolean);
@@ -232,6 +248,7 @@ zxor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     switch (r_type(op)) {
         case t_boolean:
             check_type(op[-1], t_boolean);
@@ -257,6 +274,7 @@ zbitshift(i_ctx_t *i_ctx_p)
     short max_shift = (sizeof(ps_int) * 8) - 1;
     short max_shift32 = (sizeof(ps_int32) * 8) - 1;
 
+    check_op(2);
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     if ((op->value.intval < -max_shift) || (op->value.intval > max_shift))
@@ -293,6 +311,7 @@ zidenteq(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     EQ_CHECK_READ(op - 1, check_op(2));
     EQ_CHECK_READ(op, DO_NOTHING);
     make_bool(op - 1, (obj_ident_eq(imemory, op - 1, op) ? 1 : 0));
@@ -306,8 +325,11 @@ static int
 zidentne(i_ctx_t *i_ctx_p)
 {
         /* We'll just be lazy and use .identeq. */
-    int code = zidenteq(i_ctx_p);
+    os_ptr op = osp;
+    int code;
 
+    check_op(1);
+    code = zidenteq(i_ctx_p);
     if (!code)
         osp->value.boolval ^= 1;
     return code;

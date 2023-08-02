@@ -32,6 +32,7 @@ zdict(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_integer);
     if (op->value.intval < 0)
         return_error(gs_error_rangecheck);
@@ -44,6 +45,7 @@ zmaxlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     make_int(op, dict_maxlength(op));
@@ -56,6 +58,7 @@ zbegin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if ( dsp == dstop ) {
@@ -106,6 +109,7 @@ zop_def(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     ref *pvslot;
 
+    check_op(2);
     /* The following combines a check_op(2) with a type check. */
     switch (r_type(op1)) {
         case t_name: {
@@ -168,6 +172,7 @@ zload(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref *pvalue;
 
+    check_op(1);
     switch (r_type(op)) {
         case t_name:
             /* Use the fast lookup. */
@@ -214,6 +219,7 @@ zundef(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     int code;
 
+    check_op(2);
     check_type(*op1, t_dictionary);
     check_dict_write(*op1);
     code = idict_undef(op1, op);
@@ -232,6 +238,7 @@ zknown(i_ctx_t *i_ctx_p)
     ref *pvalue;
     int code;
 
+    check_op(2);
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     code = dict_find(op1, op, &pvalue);
@@ -290,6 +297,7 @@ zcopy_dict(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     int code;
 
+    check_op(2);
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     check_dict_write(*op);
@@ -344,6 +352,7 @@ zdictstack(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint count = ref_stack_count(&d_stack);
 
+    check_op(1);
     if (!level2_enabled)
         count--;		/* see dstack.h */
     if (!r_is_array(op))
@@ -426,6 +435,7 @@ zforcecopynew(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     int code;
 
+    check_op(2);
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     check_type(*op, t_dictionary);
@@ -452,6 +462,7 @@ zforceundef(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     check_type(op[-1], t_dictionary);
     /* Don't check_dict_write */
     idict_undef(op - 1, op);	/* ignore undefined error */
@@ -468,6 +479,7 @@ zknownget(i_ctx_t *i_ctx_p)
     register os_ptr op1 = op - 1;
     ref *pvalue;
 
+    check_op(2);
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     if (dict_find(op1, op, &pvalue) <= 0) {
@@ -488,6 +500,7 @@ zknownundef(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     int code;
 
+    check_op(2);
     check_type(*op1, t_dictionary);
     check_dict_write(*op1);
     code = idict_undef(op1, op);
@@ -505,6 +518,7 @@ zsetmaxlength(i_ctx_t *i_ctx_p)
     uint new_size;
     int code;
 
+    check_op(2);
     check_type(*op1, t_dictionary);
     check_dict_write(*op1);
     check_type(*op, t_integer);

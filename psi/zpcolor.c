@@ -95,6 +95,7 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     gs_client_color cc_instance;
     ref *pPaintProc;
 
+    check_op(2);
     code = read_matrix(imemory, op, &mat);
     if (code < 0)
         return code;

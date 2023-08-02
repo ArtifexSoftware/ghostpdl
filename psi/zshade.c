@@ -61,6 +61,7 @@ zsetsmoothness(i_ctx_t *i_ctx_p)
     double smoothness;
     int code;
 
+    check_op(1);
     if (real_param(op, &smoothness) < 0)
         return_op_typecheck(op);
     if ((code = gs_setsmoothness(igs, smoothness)) < 0)
@@ -75,8 +76,10 @@ zshfill(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     const gs_shading_t *psh;
-    int code = shading_param(op, &psh);
+    int code;
 
+    check_op(1);
+    code = shading_param(op, &psh);
     if (code < 0 || (code = gs_shfill(igs, psh)) < 0)
         return code;
     pop(1);
@@ -97,6 +100,7 @@ zbuildshadingpattern(i_ctx_t *i_ctx_p)
     gs_client_color cc_instance;
     int code;
 
+    check_op(3);
     check_type(*op2, t_dictionary);
     check_dict_read(*op2);
     gs_pattern2_init(&templat);
@@ -423,6 +427,7 @@ build_shading_2(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     gs_shading_A_params_t params;
     int code;
 
+    check_op(1);
     *(gs_shading_params_t *)&params = *pcommon;
     if ((code = build_directional_shading(i_ctx_p, op, params.Coords, 4,
                                           params.Domain, &params.Function,

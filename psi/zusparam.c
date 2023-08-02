@@ -134,6 +134,7 @@ zcheckpassword(i_ctx_t *i_ctx_p)
 
     if (code < 0)
         return code;
+    check_op(1);
     params[1] = *op;
     array_param_list_read(&list, params, 2, NULL, false, iimemory);
     if (dict_read_password(&pass, systemdict, "StartJobPassword") >= 0 &&
@@ -297,6 +298,7 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
     gs_param_list *const plist = (gs_param_list *)&list;
     password pass;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
@@ -758,8 +760,10 @@ static int
 zsetuserparams(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code = set_user_params(i_ctx_p, op);
+    int code;
 
+    check_op(1);
+    code = set_user_params(i_ctx_p, op);
     if (code >= 0) {
         /* Update cached scanner options. */
         i_ctx_p->scanner_options =

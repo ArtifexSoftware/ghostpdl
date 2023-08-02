@@ -51,6 +51,7 @@ zbind(i_ctx_t *i_ctx_p)
     ref defn;
     register os_ptr bsp;
 
+    check_op(1);
     switch (r_type(op)) {
         case t_array:
             if (!r_has_attr(op, a_write)) {
@@ -224,6 +225,7 @@ zgetenv(i_ctx_t *i_ctx_p)
     byte *value;
     int len = 0;
 
+    check_op(1);
     check_read_type(*op, t_string);
     str = ref_to_string(op, imemory, "getenv key");
     if (str == 0)
@@ -292,6 +294,7 @@ zmakeoperator(i_ctx_t *i_ctx_p)
     uint count;
     ref *tab;
 
+    check_op(2);
     check_type(op[-1], t_name);
     check_proc(*op);
     switch (r_space(op)) {
@@ -343,6 +346,7 @@ zsetoserrno(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_integer);
     errno = op->value.intval;
     pop(1);
@@ -360,6 +364,7 @@ zoserrorstring(i_ctx_t *i_ctx_p)
     uint len;
     byte ch;
 
+    check_op(1);
     check_type(*op, t_integer);
     str = gp_strerror((int)op->value.intval);
     if (str == 0 || (len = strlen(str)) == 0) {
@@ -385,6 +390,7 @@ static int
 zsetdebug(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    check_op(2);
     check_read_type(op[-1], t_string);
     check_type(*op, t_boolean);
     {
@@ -416,6 +422,7 @@ static int
 zsetCPSImode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    check_op(1);
     check_type(*op, t_boolean);
     gs_setcpsimode(imemory, op->value.boolval);
     if (op->value.boolval) {
@@ -446,6 +453,7 @@ zsetscanconverter(i_ctx_t *i_ctx_p)
     int val;
 
     os_ptr op = osp;
+    check_op(1);
     if (r_has_type(op, t_boolean))
         val = (int)op->value.boolval;
     else if (r_has_type(op, t_integer))

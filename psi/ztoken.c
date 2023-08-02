@@ -43,6 +43,7 @@ ztoken(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     switch (r_type(op)) {
         default:
             return_op_typecheck(op);
@@ -100,6 +101,7 @@ ztoken_continue(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     scanner_state *pstate;
 
+    check_op(1);
     check_stype(*op, st_scanner_state_dynamic);
     pstate = r_ptr(op, scanner_state);
     return token_continue(i_ctx_p, pstate, false);
@@ -112,6 +114,7 @@ token_continue(i_ctx_t *i_ctx_p, scanner_state * pstate, bool save)
     int code;
     ref token;
 
+    check_op(1);
     /* Since we might free pstate below, and we're dealing with
      * gc memory referenced by the stack, we need to explicitly
      * remove the reference to pstate from the stack, otherwise
@@ -174,6 +177,7 @@ ztokenexec(i_ctx_t *i_ctx_p)
     stream *s;
     scanner_state state;
 
+    check_op(1);
     check_read_file(i_ctx_p, s, op);
     check_estack(1);
     gs_scanner_init(&state, op);
@@ -189,6 +193,7 @@ ztokenexec_continue(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     scanner_state *pstate;
 
+    check_op(1);
     check_stype(*op, st_scanner_state_dynamic);
     pstate = r_ptr(op, scanner_state);
     return tokenexec_continue(i_ctx_p, pstate, false);
@@ -199,6 +204,7 @@ tokenexec_continue(i_ctx_t *i_ctx_p, scanner_state * pstate, bool save)
 {
     os_ptr op = osp;
     int code;
+    check_op(1);
     /* Since we might free pstate below, and we're dealing with
      * gc memory referenced by the stack, we need to explicitly
      * remove the reference to pstate from the stack, otherwise

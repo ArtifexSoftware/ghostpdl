@@ -68,6 +68,7 @@ zsetpacking(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     ref cont;
+    check_op(1);
     check_type(*op, t_boolean);
     make_struct(&cont, avm_local, ref_array_packing_container);
     ref_assign_old(&cont, &ref_array_packing, op, "setpacking");

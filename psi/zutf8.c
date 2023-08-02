@@ -38,6 +38,7 @@ zlocale_to_utf8(i_ctx_t *i_ctx_p)
     char *output;
     int code;
 
+    check_op(1);
     check_read_type(*op, t_string);
     input = ref_to_string(op, imemory, "locale_to_utf8 input");
     if (input == 0)

@@ -33,6 +33,7 @@ zsettrapparams(i_ctx_t *i_ctx_p)
     dict_param_list list;
     int code;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
