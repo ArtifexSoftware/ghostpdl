@@ -1277,9 +1277,9 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
             /* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
             else {
                 /* Get the length of the TrueType data. */
-                unsigned long ms;
 
                 if (a_font->retrieve_tt_font != NULL) {
+                    unsigned int ms;
                     code = a_font->retrieve_tt_font(a_font, &own_font_data, &ms);
                     if (code == 0) {
                         data_owned = false;
@@ -1291,13 +1291,14 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                     code = gs_error_unregistered;
 
                 if (code < 0) {
-                    code = a_font->get_long(a_font, gs_fapi_font_feature_TT_size, 0, &ms);
+                    unsigned long lms;
+                    code = a_font->get_long(a_font, gs_fapi_font_feature_TT_size, 0, &lms);
                     if (code < 0)
                         return code;
-                    if (ms == 0)
+                    if (lms == 0)
                         return_error(gs_error_invalidfont);
 
-                    open_args.memory_size = (FT_Long)ms;
+                    open_args.memory_size = (FT_Long)lms;
 
                     /* Load the TrueType data into a single buffer. */
                     open_args.memory_base = own_font_data =
