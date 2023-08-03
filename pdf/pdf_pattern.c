@@ -526,17 +526,52 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     {
         unsigned long hash = 5381;
         unsigned int i;
-        const char *str = (const char *)&ctx->pgs->ctm;
+        const byte *str;
 
         gs_pattern1_instance_t *pinst = (gs_pattern1_instance_t *)cc->pattern;
 
 
-        for (i = 0; i < 4 * sizeof(float); i++)
+        str = (const byte *)&ctx->pgs->ctm.xx;
+        for (i = 0; i < sizeof(ctx->pgs->ctm.xx); i++) {
+#if ARCH_IS_BIG_ENDIAN
+            hash = ((hash << 5) + hash) + str[sizeof(ctx->pgs->ctm.xx) - 1 - i]; /* hash * 33 + c */
+#else
             hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
+#endif
+        }
+        str = (const byte *)&ctx->pgs->ctm.xy;
+        for (i = 0; i < sizeof(ctx->pgs->ctm.xy); i++) {
+#if ARCH_IS_BIG_ENDIAN
+            hash = ((hash << 5) + hash) + str[sizeof(ctx->pgs->ctm.xy) - 1 - i]; /* hash * 33 + c */
+#else
+            hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
+#endif
+        }
+        str = (const byte *)&ctx->pgs->ctm.yx;
+        for (i = 0; i < sizeof(ctx->pgs->ctm.yx); i++) {
+#if ARCH_IS_BIG_ENDIAN
+            hash = ((hash << 5) + hash) + str[sizeof(ctx->pgs->ctm.yx) - 1 - i]; /* hash * 33 + c */
+#else
+            hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
+#endif
+        }
+        str = (const byte *)&ctx->pgs->ctm.yy;
+        for (i = 0; i < sizeof(ctx->pgs->ctm.yy); i++) {
+#if ARCH_IS_BIG_ENDIAN
+            hash = ((hash << 5) + hash) + str[sizeof(ctx->pgs->ctm.yy) - 1 - i]; /* hash * 33 + c */
+#else
+            hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
+#endif
+        }
 
-        str = (const char *)&pdict->object_num;
-        for (i = 0; i < sizeof(uint32_t); i++)
+        str = (const byte *)&pdict->object_num;
+        for (i = 0; i < sizeof(pdict->object_num); i++) {
+#if ARCH_IS_BIG_ENDIAN
+            hash = ((hash << 5) + hash) + str[sizeof(pdict->object_num) - 1 - i]; /* hash * 33 + c */
+#else
             hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
+#endif
+        }
 
         hash = ((hash << 5) + hash) + ctx->pgs->device->color_info.num_components; /* hash * 33 + c */
 
