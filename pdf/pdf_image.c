@@ -1324,13 +1324,13 @@ static int pdfi_create_JPX_Lab(pdf_context *ctx, pdf_obj **ColorSpace)
     if (code < 0)
         goto cleanupExit;
 
-    code = pdfi_array_put(ctx, (pdf_array *)ColorSpace, 0, (pdf_obj *)SpaceName);
+    code = pdfi_array_put(ctx, (pdf_array *)*ColorSpace, 0, (pdf_obj *)SpaceName);
     if (code < 0)
         goto cleanupExit;
     pdfi_countdown(SpaceName);
     SpaceName = NULL;
 
-    code = pdfi_array_put(ctx, (pdf_array *)ColorSpace, 1, (pdf_obj *)Params);
+    code = pdfi_array_put(ctx, (pdf_array *)*ColorSpace, 1, (pdf_obj *)Params);
     if (code < 0)
         goto cleanupExit;
     pdfi_countdown(Params);

@@ -1671,25 +1671,34 @@ static int pdfi_create_Lab(pdf_context *ctx, pdf_array *color_array, int index, 
     pdf_array *Range = NULL;
     float RangeBuf[4];
     double f;
+    bool known = false;
 
     code = pdfi_array_get_type(ctx, color_array, index + 1, PDF_DICT, (pdf_obj **)&Lab_dict);
     if (code < 0)
         return code;
 
-    code = pdfi_dict_get_type(ctx, Lab_dict, "Range", PDF_ARRAY, (pdf_obj **)&Range);
-    if (code < 0) {
+    code = pdfi_dict_known(ctx, Lab_dict, "Range", &known);
+    if (code < 0)
         goto exit;
-    }
-    if (pdfi_array_size(Range) != 4){
-        code = gs_note_error(gs_error_rangecheck);
-        goto exit;
-    }
-
-    for (i=0; i < 4; i++) {
-        code = pdfi_array_get_number(ctx, Range, (uint64_t)i, &f);
-        if (code < 0)
+    if (known) {
+        code = pdfi_dict_get_type(ctx, Lab_dict, "Range", PDF_ARRAY, (pdf_obj **)&Range);
+        if (code < 0) {
             goto exit;
-        RangeBuf[i] = (float)f;
+        }
+        if (pdfi_array_size(Range) != 4){
+            code = gs_note_error(gs_error_rangecheck);
+            goto exit;
+        }
+
+        for (i=0; i < 4; i++) {
+            code = pdfi_array_get_number(ctx, Range, (uint64_t)i, &f);
+            if (code < 0)
+                goto exit;
+            RangeBuf[i] = (float)f;
+        }
+    } else {
+        RangeBuf[0] = RangeBuf[2] = -100.0;
+        RangeBuf[1] = RangeBuf[3] = 100.0;
     }
 
     code = pdfi_seticc_lab(ctx, RangeBuf, ppcs);
