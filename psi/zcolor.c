@@ -6769,6 +6769,7 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
         }
     }
     if (code == 0) {
+        op = osp;
         /* Remove our next continuation and our data */
         istate->colorspace[0].array = *ep;
         ref_stack_pop(&e_stack, 5);
