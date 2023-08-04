@@ -162,6 +162,7 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
     txfer1 = igs->set_transfer;
     igs->set_transfer = txfer;
     txfer = txfer1;
+    gx_set_effective_transfer(igs);
 
     if (r_size(&istate->transfer_procs.red) == 0) {
         rc_decrement(igs->set_transfer.red, "");
