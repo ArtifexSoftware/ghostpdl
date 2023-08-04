@@ -1036,7 +1036,7 @@ $(PSOBJ)zusparam.$(OBJ) : $(PSSRC)zusparam.c $(OP) $(memory__h) $(string__h)\
  $(gscdefs_h) $(gsfont_h) $(gsstruct_h) $(gsutil_h) $(gxht_h)\
  $(ialloc_h) $(icontext_h) $(idict_h) $(idparam_h) $(iparam_h)\
  $(iname_h) $(itoken_h) $(iutil2_h) $(ivmem2_h)\
- $(dstack_h) $(estack_h) $(store_h) $(gsnamecl_h) $(gslibctx_h)\
+ $(dstack_h) $(estack_h) $(store_h) $(gsnamecl_h) $(gslibctx_h) $(ichar_h) \
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zusparam.$(OBJ) $(C_) $(PSSRC)zusparam.c
 
