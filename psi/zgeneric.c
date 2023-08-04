@@ -48,11 +48,11 @@ int
 zcopy(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int type = r_type(op);
-
+    int type;
+    check_op(2);
+    type = r_type(op);
     if (type == t_integer)
         return zcopy_integer(i_ctx_p);
-    check_op(2);
     switch (type) {
         case t_array:
         case t_string:
@@ -125,6 +125,8 @@ static int
 zlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+
+    check_op(1);
     switch (r_type(op)) {
         case t_array:
         case t_string:
@@ -164,6 +166,8 @@ zget(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     os_ptr op1 = op - 1;
     ref *pvalue;
+
+    check_op(2);
 
     switch (r_type(op1)) {
         case t_dictionary:
@@ -207,6 +211,7 @@ zput(i_ctx_t *i_ctx_p)
     byte *sdata;
     uint ssize;
 
+    check_op(3);
     switch (r_type(op2)) {
         case t_dictionary:
             check_dict_write(*op2);
@@ -269,6 +274,8 @@ zforceput(i_ctx_t *i_ctx_p)
     os_ptr op2 = op - 2;
     int code;
 
+    check_op(3);
+
     switch (r_type(op2)) {
     case t_array:
         check_int_ltu(*op1, r_size(op2));
@@ -312,6 +319,8 @@ zgetinterval(i_ctx_t *i_ctx_p)
     os_ptr op2 = op1 - 1;
     uint index;
     uint count;
+
+    check_op(3);
 
     switch (r_type(op2)) {
         default:
@@ -360,6 +369,8 @@ zputinterval(i_ctx_t *i_ctx_p)
     os_ptr opindex = op - 1;
     os_ptr opto = opindex - 1;
     int code;
+
+    check_op(3);
 
     switch (r_type(opto)) {
         default:
