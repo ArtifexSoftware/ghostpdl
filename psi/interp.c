@@ -49,6 +49,7 @@
 #include "oper.h"
 #include "store.h"
 #include "gpcheck.h"
+#include "assert_.h"
 
 /*
  * We may or may not optimize the handling of the special fast operators
@@ -83,9 +84,13 @@ static int
 do_call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 {
     int code;
+    assert(e_stack.p >= e_stack.bot - 1);
+    assert(o_stack.p >= o_stack.bot - 1);
     code = op_proc(i_ctx_p);
     if (gs_debug_c(gs_debug_flag_validate_clumps))
         ivalidate_clean_spaces(i_ctx_p);
+    assert(o_stack.p >= o_stack.bot - 1);
+    assert(e_stack.p >= e_stack.bot - 1);
     return code; /* A good place for a conditional breakpoint. */
 }
 static int
