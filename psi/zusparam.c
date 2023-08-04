@@ -44,7 +44,7 @@
 #include "gx.h"
 #include "gxgstate.h"
 #include "gslibctx.h"
-
+#include "ichar.h"
 
 /* The (global) font directory */
 extern gs_font_dir *ifont_dir;	/* in zfont.c */
@@ -172,6 +172,12 @@ current_MaxFontCache(i_ctx_t *i_ctx_p)
 static int
 set_MaxFontCache(i_ctx_t *i_ctx_p, long val)
 {
+    /* Changing the cache params clears the "pairs" cache, which
+       causes a crash if the in use font/matrix pair disappears
+       during a text operation. So don't allow that to happen.
+     */
+    if (op_show_find(i_ctx_p) != NULL)
+        return_error(gs_error_invalidaccess);
     return gs_setcachesize(igs, ifont_dir,
                            (uint)(val < 0 ? 0 : val > max_uint ? max_uint :
                                    val));
