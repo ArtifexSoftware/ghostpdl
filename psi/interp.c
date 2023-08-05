@@ -1037,6 +1037,7 @@ interp(/* lgtm [cpp/use-of-goto] */
      make_null(&ierror.full);
      ierror.obj = &ierror.full;
      make_null(&refnull);
+     refnull.value.intval = 0;
      pvalue = &refnull;
 
     /*
