@@ -62,6 +62,7 @@ zsetstrokeadjust(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_boolean);
     gs_setstrokeadjust(igs, op->value.boolval);
     pop(1);
@@ -160,6 +161,7 @@ zcopy_gstate(i_ctx_t *i_ctx_p)
     gs_memory_t *mem;
     int code;
 
+    check_op(2);
     check_stype(*op, st_igstate_obj);
     check_stype(*op1, st_igstate_obj);
     check_write(*op);
@@ -196,6 +198,7 @@ zcurrentgstate(i_ctx_t *i_ctx_p)
     int code;
     gs_memory_t *mem;
 
+    check_op(1);
     check_stype(*op, st_igstate_obj);
     check_write(*op);
     code = gstate_unshare(i_ctx_p);
@@ -225,6 +228,7 @@ zsetgstate(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(1);
     check_stype(*op, st_igstate_obj);
     check_read(*op);
     code = gs_setgstate(igs, igstate_ptr(op));
@@ -430,8 +434,10 @@ zsetbbox(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double box[4];
+    int code;
 
-    int code = num_params(op, 4, box);
+    check_op(4);
+    code = num_params(op, 4, box);
 
     if (code < 0)
         return code;

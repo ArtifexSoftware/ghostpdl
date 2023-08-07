@@ -2495,8 +2495,8 @@ zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     build_proc_refs build;
     gs_font *pfont;
-    int code = font_param(op - 1, &pfont);
-    gs_font_base *pbfont = (gs_font_base *) pfont;
+    int code;
+    gs_font_base *pbfont;
     ref *v;
     char *font_file_path = NULL;
     char FAPI_ID[20];
@@ -2508,8 +2508,12 @@ zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     bool has_buildchar;
     int subfont;
 
+    check_op(3);
+    code = font_param(op - 1, &pfont);
     if (code < 0)
         return code;
+
+    pbfont = (gs_font_base *) pfont;
 
     check_type(*op, t_boolean);
     /* If someone has copied the font dictionary, we may still
@@ -3224,7 +3228,10 @@ FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
     ref *v;
     char *font_file_path = NULL;
     gs_font *pfont;
-    int code = font_param(osp - 1, &pfont);
+    int code;
+
+    check_op(2);
+    code = font_param(osp - 1, &pfont);
 
     if (code == 0) {
         gs_font_base *pbfont = (gs_font_base *) pfont;
@@ -3347,6 +3354,7 @@ zFAPIBuildGlyph9(i_ctx_t *i_ctx_p)
     ref *rFDArray, f;
     int font_index;
 
+    check_op(2);
     check_type(op[0], t_integer);
     check_type(op[-1], t_dictionary);
     cid = op[0].value.intval;
@@ -3438,6 +3446,7 @@ zFAPIpassfont(i_ctx_t *i_ctx_p)
     ref reqstr;
     int subfont;
 
+    check_op(1);
     /* Normally embedded fonts have no Path, but if a CID font is
      * emulated with a TT font, and it is hooked with FAPI,
      * the path presents and is neccessary to access the full font data.

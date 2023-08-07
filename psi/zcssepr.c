@@ -67,6 +67,7 @@ zsetoverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_boolean);
     gs_setoverprint(igs, op->value.boolval);
     pop(1);
@@ -90,6 +91,7 @@ zsetstrokeoverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_boolean);
     gs_setstrokeoverprint(igs, op->value.boolval);
     pop(1);
@@ -113,6 +115,7 @@ zsetfilloverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_boolean);
     gs_setfilloverprint(igs, op->value.boolval);
     pop(1);
@@ -136,7 +139,10 @@ zsetoverprintmode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, max_int, &param);
+    int code;
+
+    check_op(1);
+    code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setoverprintmode(igs, param)) < 0)
         return code;

@@ -66,6 +66,7 @@ zbuildfont3(i_ctx_t *i_ctx_p)
     build_proc_refs build;
     gs_font_base *pfont;
 
+    check_op(2);
     check_type(*op, t_dictionary);
     code = build_gs_font_procs(op, &build);
     if (code < 0)

@@ -41,6 +41,7 @@ zdefaultmatrix(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_matrix mat;
 
+    check_op(1);
     gs_defaultmatrix(igs, &mat);
     return write_matrix(op, &mat);
 }
@@ -68,7 +69,10 @@ zsetmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
-    int code = float_params(op, 6, &mat.xx);
+    int code;
+
+    check_op(6);
+    code = float_params(op, 6, &mat.xx);
 
     if (code < 0)
         return code;
@@ -85,6 +89,7 @@ zsetdefaultmatrix(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(1);
     if (r_has_type(op, t_null))
         code = gs_setdefaultmatrix(igs, NULL);
     else {
@@ -200,7 +205,10 @@ zconcat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
-    int code = read_matrix(imemory, op, &mat);
+    int code;
+
+    check_op(1);
+    code = read_matrix(imemory, op, &mat);
 
     if (code < 0)
         return code;
@@ -219,6 +227,7 @@ zconcatmatrix(i_ctx_t *i_ctx_p)
     gs_matrix m1, m2, mp;
     int code;
 
+    check_op(3);
     if ((code = read_matrix(imemory, op - 2, &m1)) < 0 ||
         (code = read_matrix(imemory, op - 1, &m2)) < 0 ||
         (code = gs_matrix_multiply(&m1, &m2, &mp)) < 0 ||
@@ -327,6 +336,7 @@ zinvertmatrix(i_ctx_t *i_ctx_p)
     gs_matrix m;
     int code;
 
+    check_op(2);
     if ((code = read_matrix(imemory, op - 1, &m)) < 0 ||
         (code = gs_matrix_invert(&m, &m)) < 0 ||
         (code = write_matrix(op, &m)) < 0
@@ -349,6 +359,7 @@ zbbox_transform(i_ctx_t *i_ctx_p)
     double temp;
     int code;
 
+    check_op(2);
     if ((code = read_matrix(imemory, op, &m)) < 0)
         return code;
 

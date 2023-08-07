@@ -59,7 +59,10 @@ zshow(i_ctx_t *i_ctx_p)
     es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
     gs_text_enum_t *penum = NULL;
-    int code = op_show_setup(i_ctx_p, op);
+    int code;
+
+    check_op(1);
+    code = op_show_setup(i_ctx_p, op);
 
     if (code != 0 ||
         (code = gs_show_begin(igs, op->value.bytes, r_size(op), imemory_local, &penum)) < 0)
@@ -95,7 +98,10 @@ zashow(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_text_enum_t *penum = NULL;
     double axy[2];
-    int code = num_params(op - 1, 2, axy);
+    int code;
+
+    check_op(3);
+    code = num_params(op - 1, 2, axy);
 
     if (code < 0 ||
         (code = op_show_setup(i_ctx_p, op)) != 0 ||
@@ -132,6 +138,7 @@ widthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     double cxy[2];
     int code;
 
+    check_op(4);
     if ((code = op_show_setup(i_ctx_p, op)) != 0 )
         return code;
     check_type(op[-1], t_integer);
@@ -217,6 +224,7 @@ awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
     double cxy[2], axy[2];
     int code;
 
+    check_op(6);
     if ((code = op_show_setup(i_ctx_p, op)) != 0 )
         return code;
     if ((code = num_params(op - 1, 2, axy)) < 0 )
@@ -286,6 +294,7 @@ zkshow(i_ctx_t *i_ctx_p)
     gs_text_enum_t *penum = NULL;
     int code;
 
+    check_op(2);
     check_read_type(*op, t_string);
     check_proc(op[-1]);
     /*
@@ -352,7 +361,10 @@ zstringwidth(i_ctx_t *i_ctx_p)
     es_ptr ep = esp;        /* Save in case of error */
     os_ptr op = osp;
     gs_text_enum_t *penum = NULL;
-    int code = op_show_setup(i_ctx_p, op);
+    int code;
+
+    check_op(1);
+    code = op_show_setup(i_ctx_p, op);
 
     if (code != 0 ||
         (code = gs_stringwidth_begin(igs, op->value.bytes, r_size(op),
@@ -391,6 +403,7 @@ zchar_path(i_ctx_t *i_ctx_p, op_proc_t proc,
     gs_text_enum_t *penum = NULL;
     int code;
 
+    check_op(2);
     check_type(*op, t_boolean);
     code = op_show_setup(i_ctx_p, op - 1);
     if (code != 0 ||
@@ -438,7 +451,10 @@ zsetcachedevice(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double wbox[6];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
-    int code = num_params(op, 6, wbox);
+    int code;
+
+    check_op(6);
+    code = num_params(op, 6, wbox);
 
     if (penum == 0)
         return_error(gs_error_undefined);
@@ -462,7 +478,10 @@ zsetcachedevice2(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double wbox[10];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
-    int code = num_params(op, 10, wbox);
+    int code;
+
+    check_op(10);
+    code = num_params(op, 10, wbox);
 
     if (penum == 0)
         return_error(gs_error_undefined);
@@ -488,7 +507,10 @@ zsetcharwidth(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double width[2];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
-    int code = num_params(op, 2, width);
+    int code;
+
+    check_op(2);
+    code = num_params(op, 2, width);
 
     if (penum == 0)
         return_error(gs_error_undefined);
@@ -512,6 +534,7 @@ zfontbbox(i_ctx_t *i_ctx_p)
     double bbox[4];
     int code;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     code = font_bbox_param(imemory, op, bbox);

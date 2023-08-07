@@ -64,6 +64,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     int i;
     int code = 0;
 
+    check_op(2);
     check_type(*op, t_dictionary);
     {
         ref *pfmaptype;

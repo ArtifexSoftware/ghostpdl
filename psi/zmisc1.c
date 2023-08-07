@@ -106,6 +106,7 @@ zexD(i_ctx_t *i_ctx_p)
     stream_exD_state state = {0};
     int code = 0;
 
+    check_op(2);
     (*s_exD_template.set_defaults)((stream_state *)&state);
     if (r_has_type(op, t_dictionary)) {
         uint cstate = 0;

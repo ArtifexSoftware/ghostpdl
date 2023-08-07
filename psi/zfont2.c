@@ -2766,6 +2766,7 @@ zparsecff(i_ctx_t *i_ctx_p)
     cff_data_t data;
     ref blk_wrap[1];
 
+    check_op(2);
     check_read(*op);
 
     if (r_has_type(op, t_array)) {  /* no packedarrays */

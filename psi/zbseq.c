@@ -71,6 +71,7 @@ zinstallsystemnames(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     if (r_space(op) != avm_global || imemory_save_level(iimemory_global) != 0)
         return_error(gs_error_invalidaccess);
     check_read_type(*op, t_shortarray);
@@ -97,6 +98,7 @@ zsetobjectformat(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref cont;
 
+    check_op(1);
     check_type(*op, t_integer);
     if (op->value.intval < 0 || op->value.intval > 4)
         return_error(gs_error_rangecheck);
@@ -122,6 +124,7 @@ zbosobject(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(4);
     check_type(op[-3], t_integer);
     check_type(op[-2], t_integer);
     check_write_type(*op, t_string);

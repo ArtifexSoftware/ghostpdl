@@ -35,6 +35,8 @@ glyph_show_setup(i_ctx_t *i_ctx_p, gs_glyph *pglyph)
 {
     os_ptr op = osp;
 
+    check_op(1);
+
     switch (gs_currentfont(igs)->FontType) {
         case ft_CID_encrypted:
         case ft_CID_user_defined:
@@ -78,12 +80,14 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
 {
     os_ptr op = osp;
     gs_text_enum_t *penum = NULL;
-    int code = op_show_setup(i_ctx_p, op - 1);
+    int code;
     int format;
     uint i, size, widths_needed;
     float *values;
     bool CPSI_mode = gs_currentcpsimode(imemory);
 
+    check_op(2);
+    code = op_show_setup(i_ctx_p, op - 1);
     if (code != 0)
         return code;
     format = num_array_format(op);

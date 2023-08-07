@@ -80,6 +80,7 @@ zsetblackgeneration(i_ctx_t *i_ctx_p)
     int code, identity = r_size(op) == 0;
     gx_transfer_map *map = NULL, *map1;
 
+    check_op(1);
     check_proc(*op);
     check_ostack(zcolor_remap_one_ostack - 1);
     check_estack(2 + zcolor_remap_one_estack);
@@ -122,6 +123,7 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
     int code;
     gx_transfer txfer, txfer1;
 
+    check_op(4);
     check_proc(op[-3]);
     check_proc(op[-2]);
     check_proc(op[-1]);
@@ -252,6 +254,7 @@ zsetundercolorremoval(i_ctx_t *i_ctx_p)
     int code, identity = r_size(op) == 0;
     gx_transfer_map *map = NULL, *map1;
 
+    check_op(1);
     check_proc(*op);
     check_ostack(zcolor_remap_one_ostack - 1);
     check_estack(2 + zcolor_remap_one_estack);

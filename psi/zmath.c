@@ -50,7 +50,10 @@ zsqrt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num;
-    int code = real_param(op, &num);
+    int code;
+
+    check_op(1);
+    code = real_param(op, &num);
 
     if (code < 0)
         return code;
@@ -66,7 +69,10 @@ zarccos(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num, result;
-    int code = real_param(op, &num);
+    int code;
+
+    check_op(1);
+    code = real_param(op, &num);
 
     if (code < 0)
         return code;
@@ -84,7 +90,10 @@ zarcsin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num, result;
-    int code = real_param(op, &num);
+    int code;
+
+    check_op(1);
+    code = real_param(op, &num);
 
     if (code < 0)
         return code;
@@ -103,7 +112,10 @@ zatan(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double args[2];
     double result;
-    int code = num_params(op, 2, args);
+    int code;
+
+    check_op(2);
+    code = num_params(op, 2, args);
 
     if (code < 0)
         return code;
@@ -121,7 +133,10 @@ zcos(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double angle;
-    int code = real_param(op, &angle);
+    int code;
+
+    check_op(1);
+    code = real_param(op, &angle);
 
     if (code < 0)
         return code;
@@ -135,7 +150,9 @@ zsin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double angle;
-    int code = real_param(op, &angle);
+    int code;
+    check_op(1);
+    code = real_param(op, &angle);
 
     if (code < 0)
         return code;
@@ -151,7 +168,10 @@ zexp(i_ctx_t *i_ctx_p)
     double args[2];
     double result;
     double ipart;
-    int code = num_params(op, 2, args);
+    int code;
+
+    check_op(2);
+    code = num_params(op, 2, args);
 
     if (code < 0)
         return code;
@@ -178,7 +198,10 @@ zln(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num;
-    int code = real_param(op, &num);
+    int code;
+
+    check_op(1);
+    code = real_param(op, &num);
 
     if (code < 0)
         return code;
@@ -194,7 +217,10 @@ zlog(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num;
-    int code = real_param(op, &num);
+    int code;
+
+    check_op(1);
+    code = real_param(op, &num);
 
     if (code < 0)
         return code;
@@ -241,6 +267,7 @@ zsrand(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int state;
 
+    check_op(1);
     check_type(*op, t_integer);
     state = op->value.intval;
     /*

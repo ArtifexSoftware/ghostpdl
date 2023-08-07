@@ -82,8 +82,11 @@ zDCTD(i_ctx_t *i_ctx_p)
     uint dspace;
     gx_device *dev = gs_currentdevice(igs);
 
-    if (r_has_type(op, t_dictionary))
+    check_op(1);
+    if (r_has_type(op, t_dictionary)) {
         dop = op, dspace = r_space(op);
+        check_op(2);
+    }
     else
         dop = 0, dspace = 0;
     mem = (gs_memory_t *)find_stream_memory(i_ctx_p, 0, &dspace);

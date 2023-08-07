@@ -262,6 +262,7 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     gsicc_manager_t         *icc_manager = igs->icc_manager;
     cmm_profile_t           *source_profile = NULL;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if_debug0m(gs_debug_flag_icc, imemory, "[icc] Using OutputIntent\n");
@@ -517,6 +518,7 @@ znumicc_components(i_ctx_t * i_ctx_p)
     cmm_profile_t           *picc_profile;
     os_ptr                  op = osp;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     check_dict_read(*op);
 

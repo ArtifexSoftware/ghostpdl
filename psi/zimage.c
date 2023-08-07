@@ -197,6 +197,7 @@ zimage1(i_ctx_t *i_ctx_p)
     int             code;
     gs_color_space *csp = gs_currentcolorspace(igs);
 
+    check_op(1);
     /* Adobe interpreters accept sampled images when the current color
      * space is a pattern color space using the base color space instead
      * of the pattern space. CET 12-07a-12
@@ -256,6 +257,7 @@ zimagemask1(i_ctx_t *i_ctx_p)
     image_params ip;
     int code;
 
+    check_op(1);
     gs_image_t_init_mask_adjust(&image, false,
                                 gs_incachedevice(igs) != CACHE_DEVICE_NONE);
     code = data_image_params(imemory, op, (gs_data_image_t *) & image,

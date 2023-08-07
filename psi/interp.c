@@ -49,6 +49,8 @@
 #include "oper.h"
 #include "store.h"
 #include "gpcheck.h"
+#define FORCE_ASSERT_CHECKING 1
+#define DEBUG_TRACE_PS_OPERATORS 1
 #include "assert_.h"
 
 /*
@@ -2106,6 +2108,7 @@ zsetstackprotect(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref *ep = oparray_find(i_ctx_p);
 
+    check_op(1);
     check_type(*op, t_boolean);
     if (ep == 0)
         return_error(gs_error_rangecheck);

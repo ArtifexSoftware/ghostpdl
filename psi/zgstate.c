@@ -213,7 +213,10 @@ zsetlinewidth(i_ctx_t *i_ctx_p)
          * of the width.
          */
     double width;
-    int code = real_param(op, &width);
+    int code;
+
+    check_op(1);
+    code = real_param(op, &width);
 
     if (code < 0)
         return_op_typecheck(op);
@@ -240,7 +243,10 @@ zsetlinecap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, max_int, &param);
+    int code;
+
+    check_op(1);
+    code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setlinecap(igs, (gs_line_cap) param)) < 0)
         return code;
@@ -265,7 +271,10 @@ zsetlinejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, max_int, &param);
+    int code;
+
+    check_op(1);
+    code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setlinejoin(igs, (gs_line_join) param)) < 0)
         return code;
@@ -288,6 +297,8 @@ zcurrentlinejoin(i_ctx_t *i_ctx_p)
 static int
 zsetmiterlimit(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+    check_op(1);
     return zset_real(i_ctx_p, gs_setmiterlimit);
 }
 
@@ -309,11 +320,13 @@ zsetdash(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     os_ptr op1 = op - 1;
     double offset;
-    int code = real_param(op, &offset);
+    int code;
     uint i, n;
     gs_memory_t *mem = imemory;
     float *pattern;
 
+    check_op(2);
+    code = real_param(op, &offset);
     if (code < 0)
         return_op_typecheck(op);
     if (!r_is_array(op1))

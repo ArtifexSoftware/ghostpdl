@@ -143,6 +143,7 @@ zreusablestream(i_ctx_t *i_ctx_p)
     bool close_source;
     int code;
 
+    check_op(2);
     check_type(*op, t_boolean);
     close_source = op->value.boolval;
     if (r_has_type(source_op, t_string)) {

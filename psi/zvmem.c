@@ -112,7 +112,7 @@ zsave(i_ctx_t *i_ctx_p)
 }
 
 /* <save> restore - */
-static int restore_check_operand(os_ptr, alloc_save_t **, gs_dual_memory_t *);
+static int restore_check_operand(i_ctx_t *i_ctx_p, alloc_save_t **, gs_dual_memory_t *);
 static int restore_check_stack(const i_ctx_t *i_ctx_p, const ref_stack_t *, const alloc_save_t *, bool);
 static void restore_fix_stack(i_ctx_t *i_ctx_p, ref_stack_t *, const alloc_save_t *, bool);
 
@@ -121,7 +121,7 @@ int
 restore_check_save(i_ctx_t *i_ctx_p, alloc_save_t **asave)
 {
     os_ptr op = osp;
-    int code = restore_check_operand(op, asave, idmemory);
+    int code = restore_check_operand(i_ctx_p, asave, idmemory);
 
     if (code < 0)
         return code;
@@ -233,13 +233,15 @@ zrestore(i_ctx_t *i_ctx_p)
 
 /* Check the operand of a restore. */
 static int
-restore_check_operand(os_ptr op, alloc_save_t ** pasave,
+restore_check_operand(i_ctx_t *i_ctx_p, alloc_save_t ** pasave,
                       gs_dual_memory_t *idmem)
 {
+    os_ptr op = osp;
     vm_save_t *vmsave;
     ulong sid;
     alloc_save_t *asave;
 
+    check_op(1);
     *pasave = NULL;
     check_type(*op, t_save);
     vmsave = r_ptr(op, vm_save_t);
@@ -438,10 +440,9 @@ zvmstatus(i_ctx_t *i_ctx_p)
 static int
 zforgetsave(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp;
     alloc_save_t *asave;
     vm_save_t *vmsave;
-    int code = restore_check_operand(op, &asave, idmemory);
+    int code = restore_check_operand(i_ctx_p, &asave, idmemory);
 
     if (code < 0)
         return 0;

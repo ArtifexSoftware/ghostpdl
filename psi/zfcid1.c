@@ -44,10 +44,12 @@ zbuildfont10(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     build_proc_refs build;
-    int code = build_gs_font_procs(op, &build);
+    int code;
     gs_cid_system_info_t cidsi;
     gs_font_base *pfont;
 
+    check_op(2);
+    code = build_gs_font_procs(op, &build);
     if (code < 0)
         return code;
     code = cid_font_system_info_param(&cidsi, op);
@@ -365,7 +367,10 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     int MetricsCount;
     ref rcidmap, ignore_gdir, file, *pfile, cfnstr, *pCIDFontName, CIDFontName, *t;
     ulong loca_glyph_pos[2][2];
-    int code = cid_font_data_param(op, &common, &ignore_gdir);
+    int code;
+
+    check_op(2);
+    code = cid_font_data_param(op, &common, &ignore_gdir);
     if (code < 0)
         return code;
 
@@ -532,8 +537,10 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(op - 1, &pfont);
+    int code;
 
+    check_op(2);
+    code = font_param(op - 1, &pfont);
     if (code < 0)
         return code;
     check_type(*op, t_integer);
@@ -570,6 +577,7 @@ zfillCIDMap(i_ctx_t *i_ctx_p)
         *GDBytes = op - 1, *CIDMap = op;
     int code;
 
+    check_op(5);
     check_type(*Decoding, t_dictionary);
     check_type(*TT_cmap, t_dictionary);
     check_type(*SubstNWP, t_array);
@@ -591,6 +599,7 @@ zfillIdentityCIDMap(i_ctx_t *i_ctx_p)
     ref *CIDMap = op;
     int code;
 
+    check_op(1);
     check_type(*CIDMap, t_array);
     code = cid_fill_Identity_CIDMap(imemory, CIDMap);
     pop(1);

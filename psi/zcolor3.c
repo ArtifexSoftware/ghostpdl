@@ -39,6 +39,7 @@ static int
 zsetuseciecolor(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
+    check_op(1);
     check_type(*op, t_boolean);
 
     istate->use_cie_color = *op;
@@ -65,7 +66,10 @@ zsetrenderingintent(i_ctx_t * i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, max_int, &param);
+    int code;
+
+    check_op(1);
+    code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setrenderingintent(igs, param)) < 0)
         return code;
@@ -90,7 +94,10 @@ zsetblackptcomp(i_ctx_t * i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, max_int, &param);
+    int code;
+
+    check_op(1);
+    code = int_param(op, max_int, &param);
 
     if (code < 0 || (code = gs_setblackptcomp(igs, param)) < 0)
         return code;

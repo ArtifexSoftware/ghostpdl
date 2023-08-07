@@ -591,9 +591,11 @@ buildfont1or4(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs * pbuild,
               font_type ftype, build_font_options_t options)
 {
     charstring_font_refs_t refs;
-    int code = charstring_font_get_refs(op, &refs);
+    int code;
     gs_type1_data data1;
 
+    check_op(2);
+    code = charstring_font_get_refs(op, &refs);
     if (code < 0)
         return code;
     data1.interpret = gs_type1_interpret;

@@ -40,6 +40,7 @@ z_aes_d(i_ctx_t * i_ctx_p)
     stream_aes_state state;
     int use_padding;
 
+    check_op(2);
     /* extract the key from the parameter dictionary */
     check_type(*op, t_dictionary);
     check_dict_read(*op);

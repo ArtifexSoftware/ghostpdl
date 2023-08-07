@@ -56,7 +56,10 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_function_t *pfn;
-    int code = fn_build_function(i_ctx_p, op, &pfn, imemory, 0, 0);
+    int code;
+
+    check_op(1);
+    code = fn_build_function(i_ctx_p, op, &pfn, imemory, 0, 0);
 
     if (code < 0)
         return code;
@@ -166,6 +169,7 @@ zisencapfunction(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_function_t *pfn;
 
+    check_op(1);
     check_proc(*op);
     pfn = ref_function(op);
     make_bool(op, pfn != NULL);

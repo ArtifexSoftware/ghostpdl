@@ -41,6 +41,7 @@ z_imscale_d(i_ctx_t * i_ctx_p)
     int width, height;
     stream_imscale_state state;
 
+    check_op(2);
     /* extract the key from the parameter dictionary */
     check_type(*op, t_dictionary);
     check_dict_read(*op);

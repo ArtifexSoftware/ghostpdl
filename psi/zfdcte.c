@@ -46,6 +46,7 @@ zDCTE(i_ctx_t *i_ctx_p)
     const ref *dop;
     uint dspace;
 
+    check_op(2);
     /* First allocate space for IJG parameters. */
     jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
       &st_jpeg_compress_data, "zDCTE");

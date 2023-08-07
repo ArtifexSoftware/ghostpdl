@@ -404,6 +404,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     gs_font_cid0 *pfcid;
     uint i;
 
+    check_op(2);
     /*
      * If the CIDFont's data have been loaded into VM, GlyphData will be
      * a string or an array of strings; if they are loaded incrementally
@@ -545,10 +546,12 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_font *pfont;
     gs_font_cid0 *pfcid;
-    int code = font_param(op - 1, &pfont);
+    int code;
     gs_glyph_data_t gdata;
     int fidx;
 
+    check_op(2);
+    code = font_param(op - 1, &pfont);
     if (code < 0)
         return code;
     if (pfont->FontType != ft_CID_encrypted)

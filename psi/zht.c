@@ -130,7 +130,10 @@ zsetscreen(i_ctx_t *i_ctx_p)
     gx_ht_order order;
     int code = zscreen_params(op, &screen);
     gs_memory_t *mem;
-    int space_index = r_space_index(op);
+    int space_index;
+
+    check_op(3);
+    space_index = r_space_index(op);
 
     if (code < 0)
         return code;

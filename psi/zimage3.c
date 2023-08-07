@@ -42,6 +42,7 @@ zimage3(i_ctx_t *i_ctx_p)
     int ignored;
     int code, mcode;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     if ((code = dict_int_param(op, "InterleaveType", 1, 3, -1,
@@ -99,6 +100,7 @@ zimage4(i_ctx_t *i_ctx_p)
     int code;
     int i;
 
+    check_op(1);
     gs_image4_t_init(&image, NULL);
     code = pixel_image_params(i_ctx_p, op, (gs_pixel_image_t *)&image, &ip,
                               12, gs_currentcolorspace(igs));

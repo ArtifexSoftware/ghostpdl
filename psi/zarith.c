@@ -37,6 +37,7 @@ zop_add(i_ctx_t *i_ctx_p)
     register os_ptr op = osp;
     float result;
 
+    check_op(2);
     switch (r_type(op)) {
     default:
         return_op_typecheck(op);
@@ -123,6 +124,7 @@ zdiv(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     float result;
 
+    check_op(2);
     /* We can't use the non_int_cases macro, */
     /* because we have to check explicitly for op == 0. */
     switch (r_type(op)) {
@@ -333,6 +335,7 @@ zop_sub(i_ctx_t *i_ctx_p)
 {
     register os_ptr op = osp;
 
+    check_op(2);
     switch (r_type(op)) {
     default:
         return_op_typecheck(op);
@@ -400,6 +403,7 @@ zidiv(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     if (sizeof(ps_int) && gs_currentcpsimode(imemory)) {
@@ -428,6 +432,7 @@ zmod(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     if (op->value.intval == 0)
@@ -443,6 +448,7 @@ zneg(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     switch (r_type(op)) {
         default:
             return_op_typecheck(op);
@@ -472,6 +478,7 @@ zabs(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     switch (r_type(op)) {
         default:
             return_op_typecheck(op);
@@ -493,6 +500,7 @@ zceiling(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     switch (r_type(op)) {
         default:
             return_op_typecheck(op);
@@ -509,6 +517,7 @@ zfloor(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     switch (r_type(op)) {
         default:
             return_op_typecheck(op);
@@ -525,6 +534,7 @@ zround(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     switch (r_type(op)) {
         default:
             return_op_typecheck(op);
@@ -541,6 +551,7 @@ ztruncate(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     switch (r_type(op)) {
         default:
             return_op_typecheck(op);
@@ -562,6 +573,7 @@ zbitadd(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
     op[-1].value.intval += op->value.intval;

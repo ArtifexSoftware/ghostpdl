@@ -43,6 +43,7 @@ zbuildfont32(i_ctx_t *i_ctx_p)
     build_proc_refs build;
     gs_font_base *pfont;
 
+    check_op(2);
     check_type(*op, t_dictionary);
     code = build_proc_name_refs(imemory, &build, NULL, "%Type32BuildGlyph");
     if (code < 0)

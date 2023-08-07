@@ -43,6 +43,7 @@ z_arcfour_d(i_ctx_t * i_ctx_p)
 
     state.x = state.y = 0;
 
+    check_op(2);
     /* extract the key from the parameter dictionary */
     check_type(*op, t_dictionary);
     check_dict_read(*op);
@@ -74,6 +75,7 @@ z_arcfour_e(i_ctx_t * i_ctx_p)
 
     state.x = state.y = 0;
 
+    check_op(2);
     /* extract the key from the parameter dictionary */
     check_type(*op, t_dictionary);
     check_dict_read(*op);

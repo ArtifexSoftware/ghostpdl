@@ -44,6 +44,7 @@ zcond(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     es_ptr ep = esp;
 
+    check_op(1);
     /* Push the array on the e-stack and call the continuation. */
     if (!r_is_array(op))
         return_op_typecheck(op);
@@ -68,6 +69,7 @@ cond_continue(i_ctx_t *i_ctx_p)
     es_ptr ep = esp;
     int code;
 
+    check_op(1);
     /* The top element of the e-stack is the remaining tail of */
     /* the cond body.  The top element of the o-stack should be */
     /* the (boolean) result of the test that is the first element */
@@ -130,6 +132,7 @@ zexecn(i_ctx_t *i_ctx_p)
     uint n, i;
     es_ptr esp_orig;
 
+    check_op(1);
     check_int_leu(*op, max_uint - 1);
     n = (uint) op->value.intval;
     check_op(n + 1);
@@ -241,6 +244,7 @@ zif(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     check_proc(*op);
     check_type(op[-1], t_boolean);
     if (op[-1].value.boolval) {
@@ -259,6 +263,7 @@ zifelse(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(3);
     check_proc(*op);
     check_proc(op[-1]);
     check_type(op[-2], t_boolean);
@@ -287,6 +292,7 @@ zfor(i_ctx_t *i_ctx_p)
     int code;
     float params[3];
 
+    check_op(4);
         /* Mostly undocumented, and somewhat bizarre Adobe behavior discovered	*/
         /* with the CET (28-05) and FTS (124-01) is that the proc is not run	*/
         /* if BOTH the initial value and increment are zero.			*/
@@ -414,6 +420,7 @@ zfor_samples(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     es_ptr ep;
 
+    check_op(4);
     check_type(op[-3], t_real);
     check_type(op[-2], t_integer);
     check_type(op[-1], t_real);
@@ -458,6 +465,8 @@ int
 zrepeat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+
+    check_op(2);
     check_proc(*op);
     check_type(op[-1], t_integer);
     if (op[-1].value.intval < 0)
@@ -495,6 +504,7 @@ zloop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_proc(*op);
     check_estack(4);
     /* Push a mark and the procedure, and invoke */
@@ -602,6 +612,7 @@ zzstop(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint count;
 
+    check_op(2);
     check_type(*op, t_integer);
     count = count_to_stopped(i_ctx_p, op->value.intval);
     if (count) {

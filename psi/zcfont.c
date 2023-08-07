@@ -42,6 +42,7 @@ zcshow(i_ctx_t *i_ctx_p)
     gs_text_enum_t *penum;
     int code;
 
+    check_op(2);
     /*
      * Even though this is not documented anywhere by Adobe,
      * some Adobe interpreters apparently allow the string and

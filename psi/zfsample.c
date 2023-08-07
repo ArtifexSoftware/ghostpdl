@@ -101,6 +101,7 @@ zbuildsampledfunction(i_ctx_t *i_ctx_p)
     gs_function_t *pfn;
     gs_function_Sd_params_t params = {0};
 
+    check_op(1);
     check_type(*pdict, t_dictionary);
     /*
      * Check procedure to be sampled.

@@ -428,7 +428,8 @@ static int
 zparse_dsc_comments(i_ctx_t *i_ctx_p)
 {
 #define MAX_DSC_MSG_SIZE (DSC_LINE_LENGTH + 4)	/* Allow for %% and CR/LF */
-    os_ptr const opString = osp;
+    os_ptr op = osp;
+    os_ptr const opString = op;
     os_ptr const opDict = opString - 1;
     uint ssize;
     int comment_code, code;
@@ -439,6 +440,7 @@ zparse_dsc_comments(i_ctx_t *i_ctx_p)
     dsc_data_t * dsc_state = NULL;
     dict_param_list list;
 
+    check_op(2);
     /*
      * Verify operand types and length of DSC comment string.  If a comment
      * is too long then we simply truncate it.  Russell's parser gets to

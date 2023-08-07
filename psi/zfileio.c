@@ -47,6 +47,7 @@ zclosefile(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     stream *s;
 
+    check_op(1);
     check_type(*op, t_file);
     if (file_is_valid(s, op)) {	/* closing a closed file is a no-op */
         int status = sclose(s);
@@ -73,6 +74,7 @@ zread(i_ctx_t *i_ctx_p)
     stream *s;
     int ch;
 
+    check_op(1);
     check_read_file(i_ctx_p, s, op);
     /* We 'push' first in case of ostack block overflow and the */
     /* usual case is we will need to push anyway. If we get EOF */
@@ -107,6 +109,7 @@ zwrite(i_ctx_t *i_ctx_p)
     byte ch;
     int status;
 
+    check_op(1);
     check_write_file(s, op - 1);
     check_type(*op, t_integer);
     ch = (byte) op->value.intval;
@@ -172,6 +175,7 @@ zreadhexstring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(2);
     check_write_type(*op, t_string);
     return zreadhexstring_at(i_ctx_p, op, 0, -1);
 }
@@ -255,6 +259,7 @@ static int
 zwritehexstring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    check_op(2);
 
     return zwritehexstring_at(i_ctx_p, op, 0);
 }
@@ -343,6 +348,7 @@ zwritestring(i_ctx_t *i_ctx_p)
     stream *s;
     int status;
 
+    check_op(2);
     check_write_file(s, op - 1);
     check_read_type(*op, t_string);
     status = write_string(op, s);
@@ -407,6 +413,7 @@ static int
 zreadline(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    check_op(2);
 
     return zreadline_at(i_ctx_p, op, 0, false);
 }
@@ -456,6 +463,7 @@ zbytesavailable(i_ctx_t *i_ctx_p)
     stream *s;
     gs_offset_t avail;
 
+    check_op(1);
     check_read_file(i_ctx_p, s, op);
     switch (savailable(s, &avail)) {
         default:
@@ -503,6 +511,7 @@ zflushfile(i_ctx_t *i_ctx_p)
     stream *s;
     int status;
 
+    check_op(1);
     check_type(*op, t_file);
     /*
      * We think flushfile is a no-op on closed input files, but causes an
@@ -532,6 +541,7 @@ zresetfile(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     stream *s;
 
+    check_op(1);
     /* According to Adobe, resetfile is a no-op on closed files. */
     check_type(*op, t_file);
     if (file_is_valid(s, op))
@@ -550,6 +560,7 @@ zprint(i_ctx_t *i_ctx_p)
     ref rstdout;
     int code;
 
+    check_op(1);
     check_read_type(*op, t_string);
     code = zget_stdout(i_ctx_p, &s);
     if (code < 0)
@@ -577,6 +588,7 @@ zecho(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_type(*op, t_boolean);
     /****** NOT IMPLEMENTED YET ******/
     pop(1);
@@ -592,6 +604,7 @@ zfileposition(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     stream *s;
 
+    check_op(1);
     check_file(s, op);
     /*
      * The PLRM says fileposition must give an error for non-seekable
@@ -609,6 +622,7 @@ zxfileposition(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     stream *s;
 
+    check_op(1);
     check_file(s, op);
     /*
      * This version of fileposition doesn't give the error, so we can
@@ -625,6 +639,7 @@ zsetfileposition(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     stream *s;
 
+    check_op(2);
     check_type(*op, t_integer);
     if ((gs_offset_t)op->value.intval < 0)
         return_error(gs_error_rangecheck);
@@ -647,6 +662,7 @@ zfilename(i_ctx_t *i_ctx_p)
     gs_const_string fname;
     byte *str;
 
+    check_op(1);
     check_file(s, op);
     if (sfilename(s, &fname) < 0) {
         make_false(op);
@@ -673,6 +689,7 @@ zisprocfilter(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     stream *s;
 
+    check_op(1);
     check_file(s, op);
     while (s->strm != 0)
         s = s->strm;
@@ -688,6 +705,7 @@ zpeekstring(i_ctx_t *i_ctx_p)
     stream *s;
     uint len, rlen = 0;
 
+    check_op(2);
     check_read_file(i_ctx_p, s, op - 1);
     /* The stream has been disabled, probably closed, so we shouldn't
        be trying to read from it.
@@ -737,6 +755,7 @@ zunread(i_ctx_t *i_ctx_p)
     stream *s;
     ulong ch;
 
+    check_op(2);
     check_read_file(i_ctx_p, s, op - 1);
     check_type(*op, t_integer);
     ch = op->value.intval;

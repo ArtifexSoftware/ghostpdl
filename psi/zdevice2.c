@@ -100,6 +100,7 @@ zsetpagedevice(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(1);
 /******
     if ( igs->in_cachedevice )
         return_error(gs_error_undefined);
@@ -151,6 +152,7 @@ zcallbeginpage(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
 
+    check_op(1);
     check_type(*op, t_integer);
     if ((dev = (*dev_proc(dev, get_page_device))(dev)) != 0) {
         int code = (*dev->page_procs.begin_page)(dev, igs);
@@ -170,6 +172,7 @@ zcallendpage(i_ctx_t *i_ctx_p)
     gx_device *dev = gs_currentdevice(igs);
     int code;
 
+    check_op(2);
     check_type(op[-1], t_integer);
     check_type(*op, t_integer);
     if ((dev = (*dev_proc(dev, get_page_device))(dev)) != 0) {
@@ -234,6 +237,8 @@ z2gstate(i_ctx_t *i_ctx_p)
 static int
 z2copy_gstate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+    check_op(2);
     if (!save_page_device(igs))
         return zcopy_gstate(i_ctx_p);
     return push_callout(i_ctx_p, "%copygstatepagedevice");
@@ -243,6 +248,8 @@ z2copy_gstate(i_ctx_t *i_ctx_p)
 static int
 z2currentgstate(i_ctx_t *i_ctx_p)
 {
+    os_ptr op = osp;
+    check_op(1);
     if (!save_page_device(igs))
         return zcurrentgstate(i_ctx_p);
     return push_callout(i_ctx_p, "%currentgstatepagedevice");
@@ -392,6 +399,7 @@ z2setgstate(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(1);
     check_stype(*op, st_igstate_obj);
     code = restore_page_device(i_ctx_p, igs, igstate_ptr(op));
     if (code < 0) return code;

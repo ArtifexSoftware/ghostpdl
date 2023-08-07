@@ -402,6 +402,7 @@ zbuildcmap(i_ctx_t *i_ctx_p)
     ref rcmap;
     uint i;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     check_dict_write(*op);
     if ((code = dict_find_string(op, "CMapName", &pcmapname)) <= 0) {

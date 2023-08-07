@@ -59,6 +59,7 @@ zbuildcolorrendering1(i_ctx_t *i_ctx_p)
     gs_cie_render *pcrd;
     ref_cie_render_procs procs;
 
+    check_op(1);
     check_read_type(*op, t_dictionary);
     check_dict_read(*op);
     code = gs_cie_render1_build(&pcrd, mem, ".buildcolorrendering1");
@@ -87,6 +88,7 @@ zbuilddevicecolorrendering1(i_ctx_t *i_ctx_p)
     gs_cie_render *pcrd = 0;
     int code;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
@@ -119,6 +121,7 @@ zsetcolorrendering1(i_ctx_t *i_ctx_p)
     ref_cie_render_procs procs;
     int code;
 
+    check_op(2);
     check_type(op[-1], t_dictionary);
     check_stype(*op, st_cie_render1);
     code = zcrd1_proc_params(imemory, op - 1, &procs);
@@ -145,6 +148,7 @@ zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
     int code;
     ref_cie_render_procs procs;
 
+    check_op(2);
     check_type(op[-1], t_dictionary);
     check_stype(*op, st_cie_render1);
     code = gs_setcolorrendering(igs, r_ptr(op, gs_cie_render));
@@ -395,6 +399,7 @@ ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
     int code;
     int i;
 
+    check_op(4);
     code = real_param(op, &Ps);
     if (code < 0) return code;
 

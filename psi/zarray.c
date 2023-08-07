@@ -33,6 +33,7 @@ zarray(i_ctx_t *i_ctx_p)
     uint size;
     int code;
 
+    check_op(1);
     check_type(*op, t_integer);
     if (op->value.intval < 0)
         return_error(gs_error_rangecheck);
@@ -54,6 +55,7 @@ zaload(i_ctx_t *i_ctx_p)
     ref aref;
     uint asize;
 
+    check_op(1);
     ref_assign(&aref, op);
     if (!r_is_array(&aref))
         return_op_typecheck(op);
@@ -98,6 +100,7 @@ zastore(i_ctx_t *i_ctx_p)
     uint size;
     int code;
 
+    check_op(1);
     if (!r_is_array(op))
         return_op_typecheck(op);
     size = r_size(op);

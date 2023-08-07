@@ -56,6 +56,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     font_data *pdata;
     int code;
 
+    check_op(2);
     code = build_proc_name_refs(imemory, &build, bcstr, bgstr);
     if (code < 0)
         return code;

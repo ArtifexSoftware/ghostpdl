@@ -44,6 +44,7 @@ static int zbeginform(i_ctx_t *i_ctx_p)
     gs_point ll, ur;
     gs_fixed_rect box;
 
+    check_op(2);
     check_type(*op, t_dictionary);
     check_dict_read(*op);
 
@@ -182,6 +183,7 @@ static int zrepeatform(i_ctx_t *i_ctx_p)
     gs_form_template_t tmplate;
     float BBox[4], Matrix[6];
 
+    check_op(3);
     check_type(*op, t_integer);
 
     code = read_matrix(imemory, op - 2, &tmplate.CTM);

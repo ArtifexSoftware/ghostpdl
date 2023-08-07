@@ -86,6 +86,7 @@ zcopydevice2(i_ctx_t *i_ctx_p)
     int code;
     psi_device_ref *psdev;
 
+    check_op(2);
     check_read_type(op[-1], t_device);
     check_type(*op, t_boolean);
     if (op[-1].value.pdevice == NULL)
@@ -173,6 +174,7 @@ zdevicename(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     const char *dname;
 
+    check_op(1);
     check_read_type(*op, t_device);
     if (op->value.pdevice == NULL)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
@@ -225,6 +227,7 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
     int num_rows;
     int code;
 
+    check_op(7);
     check_read_type(op[-7], t_device);
     if (op[-7].value.pdevice == NULL)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
@@ -303,6 +306,7 @@ zgetdevice(i_ctx_t *i_ctx_p)
     const gx_device *dev;
     psi_device_ref *psdev;
 
+    check_op(1);
     check_type(*op, t_integer);
     if (op->value.intval != (int)(op->value.intval))
         return_error(gs_error_rangecheck);	/* won't fit in an int */
@@ -357,6 +361,7 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
     int code;
     ref *pmark;
 
+    check_op(2);
     check_read_type(op[-1], t_device);
 
     if(!r_has_type(op, t_null)) {
@@ -417,6 +422,7 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
     int code;
     psi_device_ref *psdev;
 
+    check_op(5);
     check_int_leu(op[-3], max_uint >> 1);	/* width */
     check_int_leu(op[-2], max_uint >> 1);	/* height */
     check_type(*op, t_boolean);
@@ -485,6 +491,7 @@ zoutputpage(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(2);
     check_type(op[-1], t_integer);
     check_type(*op, t_boolean);
     if (gs_debug[':']) {
@@ -624,6 +631,7 @@ zsetdevice(i_ctx_t *i_ctx_p)
 
     if (code < 0)
         return code;
+    check_op(1);
     check_write_type(*op, t_device);
 
     if (op->value.pdevice == 0)

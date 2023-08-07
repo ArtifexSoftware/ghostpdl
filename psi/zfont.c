@@ -84,6 +84,7 @@ zscalefont(i_ctx_t *i_ctx_p)
     double scale;
     gs_matrix mat;
 
+    check_op(2);
     if ((code = real_param(op, &scale)) < 0)
         return code;
     if ((code = gs_make_scaling(scale, scale, &mat)) < 0)
@@ -99,6 +100,7 @@ zmakefont(i_ctx_t *i_ctx_p)
     int code;
     gs_matrix mat;
 
+    check_op(2);
     if ((code = read_matrix(imemory, op, &mat)) < 0)
         return code;
     return make_font(i_ctx_p, &mat);
@@ -110,8 +112,10 @@ zsetfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(op, &pfont);
+    int code;
 
+    check_op(1);
+    code = font_param(op, &pfont);
     if (code < 0 || (code = gs_setfont(igs, pfont)) < 0)
         return code;
     pop(1);
@@ -148,6 +152,7 @@ zsetcachelimit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
+    check_op(1);
     check_int_leu(*op, max_uint);
     gs_setcachelimit(ifont_dir, (uint) op->value.intval);
     pop(1);
@@ -170,7 +175,9 @@ zsetcacheparams(i_ctx_t *i_ctx_p)
     if (op_show_find(i_ctx_p) != NULL)
         return_error(gs_error_invalidaccess);
 
+    check_op(1);
     for (i = 0; i < 3 && !r_has_type(opp, t_mark); i++, opp--) {
+        check_op(i + 1);
         check_int_leu(*opp, max_uint);
         params[i] = opp->value.intval;
     }
@@ -211,7 +218,10 @@ zregisterfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(op, &pfont);
+    int code;
+
+    check_op(1);
+    code = font_param(op, &pfont);
 
     if (code < 0)
         return code;
@@ -227,6 +237,7 @@ zsetupUnicodeDecoder(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
+    check_op(1);
     check_type(*op, t_dictionary);
     code = setup_unicode_decoder(i_ctx_p, op);
     if (code < 0)
