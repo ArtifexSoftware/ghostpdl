@@ -120,14 +120,13 @@ static void restore_fix_stack(i_ctx_t *i_ctx_p, ref_stack_t *, const alloc_save_
 int
 restore_check_save(i_ctx_t *i_ctx_p, alloc_save_t **asave)
 {
-    os_ptr op = osp;
     int code = restore_check_operand(i_ctx_p, asave, idmemory);
 
     if (code < 0)
         return code;
     if_debug2m('u', imemory, "[u]vmrestore "PRI_INTPTR", id = %lu\n",
                (intptr_t) alloc_save_client_data(*asave),
-               (ulong) op->value.saveid);
+               (ulong) osp->value.saveid);
     if (I_VALIDATE_BEFORE_RESTORE)
         ivalidate_clean_spaces(i_ctx_p);
     /* Check the contents of the stacks. */
