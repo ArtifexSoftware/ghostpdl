@@ -186,6 +186,8 @@ typedef struct gx_image_enum_procs_s {
         const gx_image_enum_procs_t *procs;\
         gx_device *dev;\
         gs_memory_t *memory;	/* from begin_image */\
+        const gs_gstate *pgs; \
+        int pgs_level;         /* Used for sanity checking */\
         gs_id id;\
         bool skipping; /* don't render, just consume image streams. */\
         int num_planes;\

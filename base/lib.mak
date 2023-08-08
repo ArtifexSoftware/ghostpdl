@@ -782,17 +782,17 @@ $(GLOBJ)gxht_thresh.$(OBJ) : $(GLSRC)gxht_thresh.c $(AK) $(memory__h)\
 	$(GLCC) $(GLO_)gxht_thresh.$(OBJ) $(C_) $(GLSRC)gxht_thresh.c
 
 $(GLOBJ)gxidata_0.$(OBJ) : $(GLSRC)gxidata.c $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h)\
+ $(memory__h) $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h) $(gxgstate_h) \
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gxidata_0.$(OBJ) $(C_) $(GLSRC)gxidata.c
 
 $(GLOBJ)gxidata_1.$(OBJ) : $(GLSRC)gxidata.c $(AK) $(cal_h) $(gx_h) $(gserrors_h)\
- $(memory__h) $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h)\
+ $(memory__h) $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h) $(gxgstate_h) \
  $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(D_)WITH_CAL$(_D) $(I_)$(CALSRCDIR)$(_I) $(GLO_)gxidata_1.$(OBJ) $(C_) $(GLSRC)gxidata.c
 
 $(GLOBJ)gxidata.$(OBJ) : $(GLOBJ)gxidata_$(WITH_CAL).$(OBJ) $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h)\
+ $(memory__h) $(gxcpath_h) $(gxdevice_h) $(gximage_h) $(gsicc_cache_h) $(gxgstate_h) \
  $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)gxidata_$(WITH_CAL).$(OBJ) $(GLOBJ)gxidata.$(OBJ)
 

@@ -823,6 +823,8 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
          (x_extent.x | y_extent.y) == 0 ? image_landscape :
          image_skewed);
     penum->pgs = pgs;
+    if (pgs != NULL)
+        penum->pgs_level = pgs->level;
     penum->pcs = pcs;
     rc_increment_cs(pcs); /* Grab a ref (will decrement in gx_image1_end_image() */
     penum->memory = mem;

@@ -808,14 +808,13 @@ plane_strip_copy_rop2(gx_device *dev,
 typedef struct plane_image_enum_s {
     gx_image_enum_common;
     gx_image_enum_common_t *info; /* plane device enumerator */
-    const gs_gstate *pgs;	/* original gs_gstate */
     gs_gstate *pgs_image;	/* modified gs_gstate state */
 } plane_image_enum_t;
 /* Note that we include the pgs_image which is 'bytes' type (not gs_gstate) */
 /* It still needs to be traced so that a GC won't free it prematurely.      */
-gs_private_st_suffix_add3(st_plane_image_enum, plane_image_enum_t,
+gs_private_st_suffix_add2(st_plane_image_enum, plane_image_enum_t,
   "plane_image_enum_t", plane_image_enum_enum_ptrs,
-  plane_image_enum_reloc_ptrs, st_gx_image_enum_common, info, pgs, pgs_image);
+  plane_image_enum_reloc_ptrs, st_gx_image_enum_common, info, pgs_image);
 
 /*
  * Reduce drawing colors returned by color mapping.  Note that these
@@ -964,7 +963,9 @@ plane_begin_typed_image(gx_device * dev,
     info->id = gs_next_ids(memory, 1);
     info->memory = memory;
     info->pgs = pgs;
-    info->pgs_image = pgs_image;
+    info->pgs_level = pgs->level;
+    if (pgs!= NULL)
+        info->pgs_image = pgs_image;
     *pinfo = (gx_image_enum_common_t *)info;
     return code;
 fail:
@@ -980,6 +981,9 @@ plane_image_plane_data(gx_image_enum_common_t * info,
                        int *rows_used)
 {
     plane_image_enum_t * const ppie = (plane_image_enum_t *)info;
+
+    if (info->pgs!= NULL && info->pgs->level < info->pgs_level)
+        return_error(gs_error_undefinedresult);
 
     return gx_image_plane_data_rows(ppie->info, planes, height, rows_used);
 }

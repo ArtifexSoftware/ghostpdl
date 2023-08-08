@@ -160,17 +160,16 @@ typedef struct xps_image_enum_s {
     byte *devc_buffer; /* Needed for case where we are mapping to device colors */
     gs_color_space *pcs;     /* Needed for Sep, DeviceN, Indexed */
     gsicc_link_t *icc_link;  /* Needed for CIELAB */
-    const gs_gstate *pgs;    /* Needed for color conversions of DeviceN etc */
     gp_file *fid;
 } xps_image_enum_t;
 
 static void
 xps_image_enum_finalize(const gs_memory_t *cmem, void *vptr);
 
-gs_private_st_suffix_add4_final(st_xps_image_enum, xps_image_enum_t,
+gs_private_st_suffix_add3_final(st_xps_image_enum, xps_image_enum_t,
     "xps_image_enum_t", xps_image_enum_enum_ptrs,
     xps_image_enum_reloc_ptrs, xps_image_enum_finalize, st_vector_image_enum,
-    buffer, devc_buffer, pcs, pgs);
+    buffer, devc_buffer, pcs);
 
 typedef struct gx_device_xps_s {
     /* superclass state */
@@ -2370,9 +2369,12 @@ xps_begin_typed_image(gx_device               *dev,
             *pinfo = NULL;
             return_error(gs_error_VMerror);
         }
-        /* Also, the color remaps need the gs_gstate */
-        pie->pgs = pgs;
     }
+
+    /* Also, the color remaps need the gs_gstate */
+    pie->pgs = pgs;
+    if (pgs != NULL)
+        pie->pgs_level = pgs->level;
 
     *pinfo = (gx_image_enum_common_t *)pie;
     return 0;
@@ -2457,6 +2459,9 @@ const gx_image_plane_t *planes, int height, int *rows_used)
         pie->decode_st.bps / num_planes + 7) >> 3);
     void *bufend = (void*)(pie->buffer + width * bytes_comp * pie->decode_st.spp);
     byte *outbuffer;
+
+    if (info->pgs != NULL && info->pgs->level < info->pgs_level)
+        return_error(gs_error_undefinedresult);
 
     if (width_bits != pie->bits_per_row || (data_bit & 7) != 0)
         return_error(gs_error_rangecheck);

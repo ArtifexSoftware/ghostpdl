@@ -22,6 +22,8 @@
 #include "gxcpath.h"
 #include "gximage.h"
 #include "gsicc_cache.h"
+#include "gxgstate.h"
+
 #ifdef WITH_CAL
 #include "cal.h"
 #endif
@@ -58,6 +60,11 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
     bool bit_planar = penum->num_planes > penum->spp;
     int code;
 
+    /* Sanity check */
+    if (penum->pgs != NULL && penum->pgs->level < penum->pgs_level) {
+        code = gs_note_error(gs_error_undefinedresult);
+        goto out;
+    }
     if (height == 0) {
         *rows_used = 0;
         return 0;

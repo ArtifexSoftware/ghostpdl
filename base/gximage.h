@@ -215,7 +215,6 @@ struct gx_image_enum_s {
     SAMPLE_UNPACK_PROC((*unpack));
     irender_proc((*render));
     int (*skip_next_line)(gx_image_enum *penum, gx_device *dev);
-    const gs_gstate *pgs;
     gs_color_space *pcs;  /* color space of image */
     byte *buffer;               /* for expanding samples to a */
                                 /* byte or frac */
@@ -302,11 +301,11 @@ struct gx_image_enum_s {
 
 /* Enumerate the pointers in an image enumerator. */
 #define gx_image_enum_do_ptrs(m)\
-  m(0,pgs) m(1,pcs) m(2,dev) m(3,buffer) m(4,line)\
-  m(5,clip_dev) m(6,rop_dev) m(7,scaler) m(8,icc_link)\
-  m(9,color_cache) m(10,ht_buffer) m(11,thresh_buffer) \
-  m(12,clues)
-#define gx_image_enum_num_ptrs 13
+  m(0,pcs) m(1,dev) m(2,buffer) m(3,line)\
+  m(4,clip_dev) m(5,rop_dev) m(6,scaler) m(7,icc_link)\
+  m(8,color_cache) m(9,ht_buffer) m(10,thresh_buffer) \
+  m(11,clues)
+#define gx_image_enum_num_ptrs 12
 #define private_st_gx_image_enum() /* in gsimage.c */\
   gs_private_st_composite(st_gx_image_enum, gx_image_enum, "gx_image_enum",\
     image_enum_enum_ptrs, image_enum_reloc_ptrs)

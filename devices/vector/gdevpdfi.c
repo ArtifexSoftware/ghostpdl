@@ -409,7 +409,7 @@ static int convert_type4_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 {
     /* Try to convert the image to a plain masked image. */
     gx_drawing_color icolor;
-    int code;
+    int code = 1;
 
     pdev->image_mask_is_SMask = false;
     if (pdf_convert_image4_to_image1(pdev, pgs, pdcolor,
@@ -436,9 +436,11 @@ static int convert_type4_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                                      pinfo, context);
         if (code < 0)
             return code;
-        return gs_grestore((gs_gstate *)pgs);
+        code = gs_grestore((gs_gstate *)pgs);
+        /* To account for the above pdf_begin_typed_image() being with a gsave/grestore */
+        (*pinfo)->pgs_level = pgs->level;
     }
-    return 1;
+    return code;
 }
 
 static int convert_type4_to_masked_image(gx_device_pdf *pdev, const gs_gstate * pgs,
@@ -1335,6 +1337,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
                             &pdf_image_enum_procs),
                         (gx_device *)pdev, num_components, format);
     pie->memory = mem;
+    pie->pgs = pgs;
+    if (pgs != NULL)
+        pie->pgs_level = pgs->level;
     width = rect.q.x - rect.p.x;
     pie->width = width;
     height = rect.q.y - rect.p.y;
@@ -1805,6 +1810,9 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 {
     pdf_image_enum *pie = (pdf_image_enum *) info;
     int i;
+
+    if (info->pgs != NULL && info->pgs->level < info->pgs_level)
+        return_error(gs_error_undefinedresult);
 
     if (pie->JPEG_PassThrough || pie->JPX_PassThrough) {
         pie->rows_left -= height;

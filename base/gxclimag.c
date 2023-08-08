@@ -295,7 +295,6 @@ typedef struct clist_image_enum_s {
     gs_pixel_image_t image;     /* only uses Width, Height, Interpolate */
     gx_drawing_color dcolor;    /* only pure right now */
     gs_int_rect rect;
-    const gs_gstate *pgs;
     const gx_clip_path *pcpath;
     /* Set at creation time */
     gs_image_format_t format;
@@ -329,10 +328,10 @@ typedef struct clist_image_enum_s {
     image_decode_t decode;
     byte *buffer;  /* needed for unpacking during monitoring */
 } clist_image_enum;
-gs_private_st_suffix_add4(st_clist_image_enum, clist_image_enum,
+gs_private_st_suffix_add3(st_clist_image_enum, clist_image_enum,
                           "clist_image_enum", clist_image_enum_enum_ptrs,
                           clist_image_enum_reloc_ptrs, st_gx_image_enum_common,
-                          pgs, pcpath, color_space.space, buffer);
+                          pcpath, color_space.space, buffer);
 
 static image_enum_proc_plane_data(clist_image_plane_data);
 static image_enum_proc_end_image(clist_image_end_image);
@@ -603,6 +602,8 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
             pie->rect.q.x = pim->Width, pie->rect.q.y = pim->Height;
         }
         pie->pgs = pgs;
+        if (pgs != NULL)
+            pie->pgs_level = pgs->level;
 
         if (pcpath) {
             lpcpath = gx_cpath_alloc(mem, "clist_begin_typed_image(lpcpath)");
@@ -1006,6 +1007,10 @@ clist_image_plane_data(gx_image_enum_common_t * info,
         return_error(gs_error_Fatal);
     }
 #endif
+
+    if (info->pgs != NULL && info->pgs->level < info->pgs_level)
+        return_error(gs_error_undefinedresult);
+
     /****** CAN'T HANDLE VARYING data_x VALUES YET ******/
     {
         int i;

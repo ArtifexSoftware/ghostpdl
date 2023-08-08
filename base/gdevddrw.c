@@ -994,11 +994,13 @@ static
 ENUM_PTRS_WITH(image_enum_common_enum_ptrs, gx_image_enum_common_t *eptr)
     return 0;
 case 0: return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
+ENUM_PTR(1,gx_image_enum_common_t,pgs);
 ENUM_PTRS_END
 
 static RELOC_PTRS_WITH(image_enum_common_reloc_ptrs, gx_image_enum_common_t *eptr)
 {
     eptr->dev = gx_device_reloc_ptr(eptr->dev, gcst);
+    RELOC_PTR(gx_image_enum_common_t,pgs);
 }
 RELOC_PTRS_END
 
