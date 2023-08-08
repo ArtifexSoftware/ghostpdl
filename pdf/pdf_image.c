@@ -778,7 +778,7 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
     uint64_t bytes_left;
     uint64_t bytes_used = 0;
     uint64_t bytes_avail = 0;
-    gs_string plane_data[GS_IMAGE_MAX_COMPONENTS];
+    gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     int main_plane=0, mask_plane=0;
     bool no_progress = false;
     int min_left;
@@ -866,10 +866,10 @@ pdfi_render_image(pdf_context *ctx, gs_pixel_image_t *pim, pdf_c_stream *image_s
         if (bytes_avail >= min_left)
             bytes_avail = (bytes_avail - min_left); /* may be 0 */
 
-        plane_data[main_plane].data = (byte *)sbufptr(image_stream->s);
+        plane_data[main_plane].data = sbufptr(image_stream->s);
         plane_data[main_plane].size = bytes_avail;
 
-        code = gs_image_next_planes(penum, plane_data, used);
+        code = gs_image_next_planes(penum, plane_data, used, false);
         if (code < 0) {
             goto cleanupExit;
         }

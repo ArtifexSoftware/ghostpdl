@@ -179,8 +179,8 @@ const byte *gs_image_planes_wanted(gs_image_enum *penum);
  * stores pointers to the retained strings into plane_data[].  Note that
  * used[] and plane_data[] are set even in the error or end-of-image case.
  */
-int gs_image_next_planes(gs_image_enum *penum, gs_string *plane_data,
-                         uint *used);
+int gs_image_next_planes(gs_image_enum *penum, gs_const_string *plane_data,
+                         uint *used, bool txfer_control);
 
 /* Pass the next plane of data for an image.  See above for details. */
 int gs_image_next(gs_image_enum * penum, const byte * dbytes,

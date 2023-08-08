@@ -422,7 +422,7 @@ image_proc_continue(i_ctx_t *i_ctx_p)
     int px = ETOP_PLANE_INDEX(esp)->value.intval;
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
     uint size, used[GS_IMAGE_MAX_COMPONENTS];
-    gs_string plane_data[GS_IMAGE_MAX_COMPONENTS];
+    gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
     const byte *wanted;
     int i, code;
 
@@ -439,9 +439,22 @@ image_proc_continue(i_ctx_t *i_ctx_p)
     else {
         for (i = 0; i < num_sources; i++)
             plane_data[i].size = 0;
-        plane_data[px].data = op->value.bytes;
+
+        /* Make a copy of the string source data in 'stable' memory (immune to save/restore)
+         * We need this because of bug #706867 where one of the procedure data sources does
+         * a 'restore' back to a point where the string returned (and saved) by one of the
+         * other procedure data sources is freed. By copying the string to stable memory
+         * this can't happen.
+         */
+        plane_data[px].data = gs_alloc_string(imemory->stable_memory, size, "image_proc_continue");
+        if (plane_data[px].data == NULL)
+            return_error(gs_error_VMerror);
+        memcpy(plane_data[px].data, op->value.bytes, size);
         plane_data[px].size = size;
-        code = gs_image_next_planes(penum, plane_data, used);
+        /* Set the txfer_control flag to true to transfer control of the string (which must be allocated
+         * in stable memory for this) to the gs_image_next_planes() routine.
+         */
+        code = gs_image_next_planes(penum, plane_data, used, true);
         if (code == gs_error_Remap_Color) {
             op->value.bytes += used[px]; /* skip used data */
             r_dec_size(op, used[px]);
@@ -494,7 +507,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 
     for (;;) {
         uint min_avail = max_int;
-        gs_string plane_data[GS_IMAGE_MAX_COMPONENTS];
+        gs_const_string plane_data[GS_IMAGE_MAX_COMPONENTS];
         int code;
         int px;
         const ref *pp;
@@ -546,7 +559,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
                 avail = (avail - min_left) / num_aliases; /* may be 0 */
             if (avail < min_avail)
                 min_avail = avail;
-            plane_data[px].data = (byte *)sbufptr(s);
+            plane_data[px].data = sbufptr(s);
             plane_data[px].size = avail;
         }
 
@@ -561,7 +574,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
             int pi;
             uint used[GS_IMAGE_MAX_COMPONENTS];
 
-            code = gs_image_next_planes(penum, plane_data, used);
+            code = gs_image_next_planes(penum, plane_data, used, false);
             /* Now that used has been set, update the streams. */
             total_used = 0;
             for (pi = 0, pp = ETOP_SOURCE(esp, 0); pi < num_sources;
@@ -591,14 +604,14 @@ image_string_continue(i_ctx_t *i_ctx_p)
 {
     gs_image_enum *penum = r_ptr(esp, gs_image_enum);
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
-    gs_string sources[GS_IMAGE_MAX_COMPONENTS];
+    gs_const_string sources[GS_IMAGE_MAX_COMPONENTS];
     uint used[GS_IMAGE_MAX_COMPONENTS];
 
     /* Pass no data initially, to find out how much is retained. */
     memset(sources, 0, sizeof(sources[0]) * num_sources);
     for (;;) {
         int px;
-        int code = gs_image_next_planes(penum, sources, used);
+        int code = gs_image_next_planes(penum, sources, used, false);
 
         if (code == gs_error_Remap_Color)
             return code;
