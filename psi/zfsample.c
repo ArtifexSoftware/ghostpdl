@@ -490,7 +490,13 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
 
     /*
      * Check to make sure that the procedure produced the correct number of
-     * values.  If not, move the stack back to where it belongs and abort
+     * values.  If not, move the stack back to where it belongs and abort.
+     * There are two forms of "stackunderflow" one is that there are genuinely
+     * too few entries on the stack, the other is that there are too few entries
+     * on this stack block. To establish the difference, we need to return the
+     * stackunderflow error, without meddling with the exec stack, so gs_call_interp()
+     * can try popping a stack block, and letting us retry.
+     * Hence we check overall stack depth, *and* do check_op().
      */
     if (num_out + O_STACK_PAD + penum->o_stack_depth != ref_stack_count(&o_stack)) {
         stack_depth_adjust = ref_stack_count(&o_stack) - penum->o_stack_depth;
@@ -509,7 +515,7 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
             return_error(gs_error_undefinedresult);
         }
     }
-
+    check_op(num_out);
     /* Save data from the given function */
     data_ptr = cube_ptr_from_index(params, penum->indexes);
     for (i=0; i < num_out; i++) {
