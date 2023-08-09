@@ -449,7 +449,7 @@ image_proc_continue(i_ctx_t *i_ctx_p)
         plane_data[px].data = gs_alloc_string(imemory->stable_memory, size, "image_proc_continue");
         if (plane_data[px].data == NULL)
             return_error(gs_error_VMerror);
-        memcpy(plane_data[px].data, op->value.bytes, size);
+        memcpy((byte *)plane_data[px].data, op->value.bytes, size);
         plane_data[px].size = size;
         /* Set the txfer_control flag to true to transfer control of the string (which must be allocated
          * in stable memory for this) to the gs_image_next_planes() routine.

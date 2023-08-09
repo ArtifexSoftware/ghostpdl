@@ -1120,7 +1120,7 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
                 }
 
                 if (tiff->image.format == gs_image_format_component_planar) {
-                    code = gs_image_next_planes(tiff->penum, (gs_string *)&plane_data[0], used, false);
+                    code = gs_image_next_planes(tiff->penum, (gs_const_string *)&plane_data[0], used, false);
                 } else {
                     code = gs_image_next(tiff->penum, row, tiff->byte_width, used);
                 }
