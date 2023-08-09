@@ -184,7 +184,7 @@ zexp(i_ctx_t *i_ctx_p)
     else
         result = pow(args[0], args[1]);
 #ifdef HAVE_ISINF
-    if (isinf((op - 1)->value.realval))
+    if (isinf(result))
         return_error(gs_error_undefinedresult);
 #endif
     make_real(op - 1, result);
