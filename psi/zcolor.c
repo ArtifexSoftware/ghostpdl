@@ -1173,8 +1173,8 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                         body = ialloc_string(47, "string");
                         if (body == 0)
                             return_error(gs_error_VMerror);
-                        memcpy(body, "{/DefaultGray /ColorSpace findresource} stopped",47);
-                        make_string(&stref, a_all | icurrent_space, 47, body);
+                        memcpy(body, "{/DefaultGray /ColorSpace systemdict /findresource get exec} systemdict /stopped get exec",89);
+                        make_string(&stref, a_all | icurrent_space, 89, body);
                         r_set_attrs(&stref, a_executable);
                         check_estack(1);
                         esp++;
@@ -1400,8 +1400,8 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                         body = ialloc_string(46, "string");
                         if (body == 0)
                             return_error(gs_error_VMerror);
-                        memcpy(body, "{/DefaultRGB /ColorSpace findresource} stopped", 46);
-                        make_string(&stref, a_all | icurrent_space, 46, body);
+                        memcpy(body, "{/DefaultRGB /ColorSpace systemdict /findresource get exec} systemdict /stopped get exec", 88);
+                        make_string(&stref, a_all | icurrent_space, 88, body);
                         r_set_attrs(&stref, a_executable);
                         check_estack(1);
                         esp++;
@@ -1750,8 +1750,8 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                         body = ialloc_string(47, "string");
                         if (body == 0)
                             return_error(gs_error_VMerror);
-                        memcpy(body, "{/DefaultCMYK /ColorSpace findresource} stopped", 47);
-                        make_string(&stref, a_all | icurrent_space, 47, body);
+                        memcpy(body, "{/DefaultCMYK /ColorSpace systemdict /findresource get exec} systemdict /stopped get exec", 89);
+                        make_string(&stref, a_all | icurrent_space, 89, body);
                         r_set_attrs(&stref, a_executable);
                         check_estack(1);
                         esp++;
