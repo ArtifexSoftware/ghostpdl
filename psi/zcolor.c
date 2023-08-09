@@ -3451,7 +3451,7 @@ static char const * const CIESpaces[] = {
  */
 static int ciebasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int *cont, int *stack_depth)
 {
-    os_ptr op;
+    os_ptr op = osp;
     ref *spacename, nref;
     int i, components=1, code;
 
@@ -3488,7 +3488,8 @@ static int ciebasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage, int
             components = 4;
             break;
     }
-    /* Remove teh requisite number of values */
+    /* Remove the requisite number of values */
+    check_op(components);
     ref_stack_pop(&o_stack, components);
     op = osp;
     /* Find out how many values we need to return, which
