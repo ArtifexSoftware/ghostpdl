@@ -1728,9 +1728,10 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_gstate * pgs,
                 color_set_phase(pdevc, -px, -py);
 #               endif
             }
-            pdevc->mask.m_tile =
-                (ctile->tmask.data == 0 ? (gx_color_tile *) 0 :
-                 ctile);
+            if (ctile->tmask.rep_width == 0 || ctile->tmask.rep_height == 0 || ctile->tmask.data == 0 || ctile->tmask.num_planes <= 0)
+                pdevc->mask.m_tile = (gx_color_tile *)NULL;
+            else
+                pdevc->mask.m_tile = ctile;
             pdevc->mask.m_phase.x = -px;
             pdevc->mask.m_phase.y = -py;
             return true;
