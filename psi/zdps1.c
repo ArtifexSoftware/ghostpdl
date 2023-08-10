@@ -170,6 +170,10 @@ zcopy_gstate(i_ctx_t *i_ctx_p)
         return code;
     pgs = igstate_ptr(op);
     pgs1 = igstate_ptr(op1);
+
+    if (pgs == pgs1)
+        return 0;
+
     pistate = gs_int_gstate(pgs);
     code = gstate_check_space(i_ctx_p, gs_int_gstate(pgs1), r_space(op));
     if (code < 0)
