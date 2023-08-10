@@ -1757,6 +1757,8 @@ $(PSD)pdf.dev : $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)pdf -include $(PSD)type2
 	$(ADDMOD) $(PSD)pdf -include $(PSD)pdfops
 	$(ADDMOD) $(PSD)pdf -include $(PSD)pdf_r6
+	$(ADDMOD) $(PSD)pdf -include $(PSD)cff
+	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
 
@@ -1770,12 +1772,7 @@ $(PSD)pdfread.dev : $(ECHOGS_XE) \
  $(PSD)ttfont.dev $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdfread -include $(PSD)frsd $(PSD)func4 $(PSD)fzlib
 	$(ADDMOD) $(PSD)pdfread -include $(PSD)transpar
-	$(ADDMOD) $(PSD)pdfread -ps pdf_ops
-	$(ADDMOD) $(PSD)pdfread -ps pdf_rbld
-	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw
-	$(ADDMOD) $(PSD)pdfread -include $(PSD)cff
-	$(ADDMOD) $(PSD)pdfread -include $(PSD)ttfont
-	$(ADDMOD) $(PSD)pdfread -ps pdf_font pdf_main pdf_sec
+	$(ADDMOD) $(PSD)pdfread -ps pdf_main
 
 # ---------------- PS Support for Font API ---------------- #
 $(PSD)fapi_ps.dev : $(LIB_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\

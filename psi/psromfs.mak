@@ -410,13 +410,7 @@ PS_INIT_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)gs_typ42.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_type1.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_wan_e.ps \
-	$(PSRESDIR)$(D)Init$(D)pdf_base.ps \
-	$(PSRESDIR)$(D)Init$(D)pdf_draw.ps \
-	$(PSRESDIR)$(D)Init$(D)pdf_font.ps \
 	$(PSRESDIR)$(D)Init$(D)pdf_main.ps \
-	$(PSRESDIR)$(D)Init$(D)pdf_ops.ps \
-	$(PSRESDIR)$(D)Init$(D)pdf_rbld.ps \
-	$(PSRESDIR)$(D)Init$(D)pdf_sec.ps \
 	$(PSRESDIR)$(D)Init$(D)xlatmap
 
 PS_SUBSTCID_DEPS=\
