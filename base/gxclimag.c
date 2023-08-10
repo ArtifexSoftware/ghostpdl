@@ -480,6 +480,13 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
     int csi;
     gx_clip_path *lpcpath = NULL;
 
+    if (pgs == NULL) {
+        /* At this time, this cannot/should not ever happen,
+           so it's fatal if it does.
+         */
+        return_error(gs_error_Fatal);
+    }
+
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {
     case 1:
@@ -602,8 +609,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
             pie->rect.q.x = pim->Width, pie->rect.q.y = pim->Height;
         }
         pie->pgs = pgs;
-        if (pgs != NULL)
-            pie->pgs_level = pgs->level;
+        pie->pgs_level = pgs->level;
 
         if (pcpath) {
             lpcpath = gx_cpath_alloc(mem, "clist_begin_typed_image(lpcpath)");
