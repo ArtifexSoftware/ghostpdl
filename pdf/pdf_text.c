@@ -471,6 +471,8 @@ static int pdfi_show_Tr_1(pdf_context *ctx, gs_text_params_t *text)
     int code;
     gs_text_enum_t *penum=NULL, *saved_penum=NULL;
     gs_point end_point, initial_point;
+    gx_device *dev = ctx->pgs->device;
+    int galphabits = dev->color_info.anti_alias.graphics_bits, talphabits = dev->color_info.anti_alias.text_bits;
 
     end_point.x = end_point.y = initial_point.x = initial_point.y = 0;
 
@@ -520,12 +522,19 @@ static int pdfi_show_Tr_1(pdf_context *ctx, gs_text_params_t *text)
     code = gs_currentpoint(ctx->pgs, &end_point);
     if (code < 0)
         goto Tr1_error;
+
+    if (talphabits != galphabits)
+        dev->color_info.anti_alias.graphics_bits = talphabits;
+
     /* Change to the current stroking colour */
     gs_swapcolors_quick(ctx->pgs);
     /* Finally, stroke the actual path */
     code = gs_stroke(ctx->pgs);
     /* Switch back to the non-stroke colour */
     gs_swapcolors_quick(ctx->pgs);
+
+    if (talphabits != galphabits)
+        dev->color_info.anti_alias.graphics_bits = galphabits;
 
 Tr1_error:
     /* And grestore back to where we started */
@@ -545,6 +554,8 @@ static int pdfi_show_Tr_2(pdf_context *ctx, gs_text_params_t *text)
     int code, restart = 0;
     gs_text_enum_t *penum=NULL, *saved_penum=NULL;
     gs_point end_point, initial_point;
+    gx_device *dev = ctx->pgs->device;
+    int galphabits = dev->color_info.anti_alias.graphics_bits, talphabits = dev->color_info.anti_alias.text_bits;
 
     end_point.x = end_point.y = initial_point.x = initial_point.y = 0;
 
@@ -594,7 +605,11 @@ static int pdfi_show_Tr_2(pdf_context *ctx, gs_text_params_t *text)
     code = gs_currentpoint(ctx->pgs, &end_point);
     if (code < 0)
         goto Tr1_error;
+    if (talphabits != galphabits)
+        dev->color_info.anti_alias.graphics_bits = talphabits;
     code = gs_fillstroke(ctx->pgs, &restart);
+    if (talphabits != galphabits)
+        dev->color_info.anti_alias.graphics_bits = galphabits;
 
 Tr1_error:
     /* And grestore back to where we started */
