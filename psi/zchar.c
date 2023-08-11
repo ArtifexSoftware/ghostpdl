@@ -196,25 +196,6 @@ zwidthshow(i_ctx_t *i_ctx_p)
     return(widthshow_aux(i_ctx_p, false));
 }
 
-/* For PDF word spacing we need to identify strictly
-   single byte character codes of the value 32, and
-   this conflicts with Postscript's widthshow character
-   code matching, where any character code, regardless of
-   its length will match. For example, in widthshow, a
-   character code of <0032> will match a parameter value
-   of 32, but for PDF word spacing, <0032> will not match
-   the space character, and won't have the word spacing
-   applied, but <32> will.
-   Hence, we have a couple of custom operators to cover
-   the different requirements.
-*/
-/* <cx> <cy> <char> <string> .pdfwidthshow - */
-static int
-zpdfwidthshow(i_ctx_t *i_ctx_p)
-{
-    return(widthshow_aux(i_ctx_p, true));
-}
-
 static int
 awidthshow_aux(i_ctx_t *i_ctx_p, bool single_byte_space)
 {
@@ -276,13 +257,6 @@ static int
 zawidthshow(i_ctx_t *i_ctx_p)
 {
     return(awidthshow_aux(i_ctx_p, false));
-}
-
-/* <cx> <cy> <char> <ax> <ay> <string> .pdfawidthshow - */
-static int
-zpdfawidthshow(i_ctx_t *i_ctx_p)
-{
-    return(awidthshow_aux(i_ctx_p, true));
 }
 
 /* <proc> <string> kshow - */
@@ -581,8 +555,6 @@ const op_def zchar_a_op_defs[] =
     {"4widthshow", zwidthshow},
                 /* Extensions */
     {"1.fontbbox", zfontbbox},
-    {"6.pdfawidthshow", zpdfawidthshow},
-    {"4.pdfwidthshow", zpdfwidthshow},
 
                 /* Internal operators */
     {"0%finish_show", finish_show},

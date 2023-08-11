@@ -534,82 +534,16 @@ zcurrentlimitclamp(i_ctx_t *i_ctx_p)
     return zcurrent_bool(i_ctx_p, gs_currentlimitclamp);
 }
 
+/* We need this for the PScript5.DLL Idiom recognition, when outputting
+ * to pdfwrite. This is used to turn the 'fake bold' text into text
+ * rendering mode 2 (fill and then stroke).
+ */
 /* <int> .settextrenderingmode - */
 static int
 zsettextrenderingmode(i_ctx_t *i_ctx_p)
 {
     return zset_uint(i_ctx_p, gs_settextrenderingmode);
 }
-
-/* - .currenttextrenderingmode <int> */
-static int
-zcurrenttextrenderingmode(i_ctx_t *i_ctx_p)
-{
-    return zcurrent_uint(i_ctx_p, gs_currenttextrenderingmode);
-}
-static int
-zsettextspacing(i_ctx_t *i_ctx_p)
-{
-    return zset_real(i_ctx_p, gs_settextspacing);
-}
-static int
-zcurrenttextspacing(i_ctx_t *i_ctx_p)
-{
-    return zcurrent_real(i_ctx_p, gs_currenttextspacing);
-}
-static int
-zsettextleading(i_ctx_t *i_ctx_p)
-{
-    return zset_real(i_ctx_p, gs_settextleading);
-}
-static int
-zcurrenttextleading(i_ctx_t *i_ctx_p)
-{
-    return zcurrent_real(i_ctx_p, gs_currenttextleading);
-}
-static int
-zsettextrise(i_ctx_t *i_ctx_p)
-{
-    return zset_real(i_ctx_p, gs_settextrise);
-}
-static int
-zcurrenttextrise(i_ctx_t *i_ctx_p)
-{
-    return zcurrent_real(i_ctx_p, gs_currenttextrise);
-}
-static int
-zsetwordspacing(i_ctx_t *i_ctx_p)
-{
-    return zset_real(i_ctx_p, gs_setwordspacing);
-}
-static int
-zcurrentwordspacing(i_ctx_t *i_ctx_p)
-{
-    return zcurrent_real(i_ctx_p, gs_currentwordspacing);
-}
-
-static int
-zsettexthscaling(i_ctx_t *i_ctx_p)
-{
-    return zset_real(i_ctx_p, gs_settexthscaling);
-}
-static int
-zcurrenttexthscaling(i_ctx_t *i_ctx_p)
-{
-    return zcurrent_real(i_ctx_p, gs_currenttexthscaling);
-}
-
-static int
-zsetPDFfontsize(i_ctx_t *i_ctx_p)
-{
-    return zset_real(i_ctx_p, gs_setPDFfontsize);
-}
-static int
-zcurrentPDFfontsize(i_ctx_t *i_ctx_p)
-{
-    return zcurrent_real(i_ctx_p, gs_currentPDFfontsize);
-}
-
 
 /* <bool> .sethpglpathmode - */
 static int
@@ -666,24 +600,8 @@ const op_def zgstate2_op_defs[] = {
 };
 const op_def zgstate3_op_defs[] = {
     {"1.settextrenderingmode", zsettextrenderingmode},
-    {"0.currenttextrenderingmode", zcurrenttextrenderingmode},
-    {"1.settextspacing", zsettextspacing},
-    {"0.currenttextspacing", zcurrenttextspacing},
-    {"1.settextleading", zsettextleading},
-    {"0.currenttextleading", zcurrenttextleading},
-    {"1.settextrise", zsettextrise},
-    {"0.currenttextrise", zcurrenttextrise},
-    {"1.setwordspacing", zsetwordspacing},
-    {"0.currentwordspacing", zcurrentwordspacing},
-    {"1.settexthscaling", zsettexthscaling},
-    {"0.currenttexthscaling", zcurrenttexthscaling},
     {"0.sethpglpathmode", zsethpglpathmode},
     {"0.currenthpglpathmode", zcurrenthpglpathmode},
-    op_def_end(0)
-};
-const op_def zgstate4_op_defs[] = {
-    {"1.setPDFfontsize", zsetPDFfontsize},
-    {"0.currentPDFfontsize", zcurrentPDFfontsize},
     op_def_end(0)
 };
 

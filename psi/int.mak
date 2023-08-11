@@ -561,9 +561,9 @@ Z2OPS=zdict1 zdict2 zfile zfile1 zfileio1 zfileio2
 Z3_4OPS=zfilter zfproc zgeneric ziodev zmath zalg
 Z5_6OPS=zmisc_a zmisc_b zpacked zrelbit zstack zstring zsysvm
 Z7_8OPS=ztoken ztype zvmem zbfont zchar_a zchar_b zcolor zcolor_ext
-Z9OPS=zdevice zdevice_ext zfont zfontenum zgstate1 zgstate2 zgstate3 zgstate4
+Z9OPS=zdevice zdevice_ext zfont zfontenum zgstate1 zgstate2 zgstate3
 Z10OPS=zht zimage zmatrix zmatrix2
-Z11OPS=zpaint zpath pantone zcolor_pdf
+Z11OPS=zpaint zpath pantone
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
 INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ) $(PSOBJ)idisp.$(OBJ)
@@ -1805,7 +1805,6 @@ zpdfops_=$(PSOBJ)zpdfops.$(OBJ)
 $(PSD)pdfops.dev : $(ECHOGS_XE) $(zpdfops_) $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdfops $(zpdfops_)
 	$(ADDMOD) $(PSD)pdfops -oper zpdfops
-	$(ADDMOD) $(PSD)pdfops -oper zpdfops_old
 
 $(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP) $(MAKEFILE)\
  $(ghost_h) $(gsmchunk_h) $(oper_h) \

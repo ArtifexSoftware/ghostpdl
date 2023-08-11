@@ -47,64 +47,6 @@ zsetuseciecolor(i_ctx_t * i_ctx_p)
     return 0;
 }
 
-/* - .currentrenderingintent <int> */
-static int
-zcurrentrenderingintent(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-
-    push(1);
-    make_int(op, gs_currentrenderingintent(igs));
-    return 0;
-}
-
-/* <int> .setrenderingintent -
- * See the comment in gsstate.c about the argumet interepretation.
- */
-static int
-zsetrenderingintent(i_ctx_t * i_ctx_p)
-{
-    os_ptr op = osp;
-    int param;
-    int code;
-
-    check_op(1);
-    code = int_param(op, max_int, &param);
-
-    if (code < 0 || (code = gs_setrenderingintent(igs, param)) < 0)
-        return code;
-    pop(1);
-    return 0;
-}
-
-/* - .currentblackptcomp <int> */
-static int
-zcurrentblackptcomp(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-
-    push(1);
-    make_int(op, gs_currentblackptcomp(igs));
-    return 0;
-}
-
-/* <int> .setblackptcomp */
-static int
-zsetblackptcomp(i_ctx_t * i_ctx_p)
-{
-    os_ptr op = osp;
-    int param;
-    int code;
-
-    check_op(1);
-    code = int_param(op, max_int, &param);
-
-    if (code < 0 || (code = gs_setblackptcomp(igs, param)) < 0)
-        return code;
-    pop(1);
-    return 0;
-}
-
 /*
  * Initialization procedure
  */
@@ -112,9 +54,5 @@ zsetblackptcomp(i_ctx_t * i_ctx_p)
 const op_def    zcolor3_l3_op_defs[] = {
     op_def_begin_ll3(),
     { "1.setuseciecolor", zsetuseciecolor },
-    { "0.currentrenderintent", zcurrentrenderingintent },
-    { "1.setrenderingintent", zsetrenderingintent },
-    { "0.currentblackptcomp", zcurrentblackptcomp },
-    { "1.setblackptcomp", zsetblackptcomp },
     op_def_end(0)
 };
