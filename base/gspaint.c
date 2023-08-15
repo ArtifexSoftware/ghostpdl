@@ -241,7 +241,7 @@ alpha_buffer_init(gs_gstate * pgs, fixed extra_x, fixed extra_y, int alpha_bits,
             return code;
     }
     mem = pgs->memory;
-    mdev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+    mdev = gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory,
                            "alpha_buffer_init");
     if (mdev == 0)
         return 0;		/* if no room, don't buffer */

@@ -3595,7 +3595,7 @@ pdf_text_process(gs_text_enum_t *pte)
                     /* This code copied from show_cache_setup */
                     gs_memory_t *mem = penum->memory;
                     gx_device_memory *dev =
-                        gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+                        gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory,
                         "show_cache_setup(dev_cache)");
 
                     if (dev == 0) {

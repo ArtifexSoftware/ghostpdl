@@ -1551,10 +1551,10 @@ show_cache_setup(gs_show_enum * penum)
     gs_gstate *pgs = penum->pgs;
     gs_memory_t *mem = penum->memory;
     gx_device_memory *dev =
-        gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+        gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory,
                         "show_cache_setup(dev_cache)");
     gx_device_memory *dev2 =
-        gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+        gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory,
                         "show_cache_setup(dev_cache2)");
 
     if (dev == 0 || dev2 == 0) {

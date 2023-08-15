@@ -1571,7 +1571,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     if (code < 0)
         return code; /* FIXME: free cvd? */
     if (need_mask) {
-        mask = gs_alloc_struct(mem, gx_device_memory, &st_device_memory, "pdf_setup_masked_image_converter");
+        mask = gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory, "pdf_setup_masked_image_converter");
         if (mask == NULL)
             return_error(gs_error_VMerror); /* FIXME: free cvd? */
         cvd->mask = mask;

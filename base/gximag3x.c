@@ -516,7 +516,7 @@ make_midx_default(gx_device **pmidev, gx_device *dev, int width, int height,
             return_error(gs_error_VMerror);
     if (mdproto == 0)
         return_error(gs_error_rangecheck);
-    midev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+    midev = gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory,
                             "make_mid_default");
     if (midev == 0)
         return_error(gs_error_VMerror);

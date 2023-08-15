@@ -100,7 +100,7 @@ make_mid_default(gx_device **pmidev, gx_device *dev, int width, int height,
                  gs_memory_t *mem)
 {
     gx_device_memory *midev =
-        gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+        gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory,
                         "make_mid_default");
     int code;
 

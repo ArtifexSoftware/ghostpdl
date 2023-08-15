@@ -1572,7 +1572,7 @@ display_create_buf_device(gx_device **pbdev, gx_device *target, int y,
     if (mdproto == NULL)
         return_error(gs_error_rangecheck);
     if (mem) {
-        mdev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
+        mdev = gs_alloc_struct_immovable(mem, gx_device_memory, &st_device_memory,
                                "create_buf_device");
         if (mdev == NULL)
             return_error(gs_error_VMerror);
