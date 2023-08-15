@@ -1170,7 +1170,7 @@ static int setgrayspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                     } else {
                         *stage = 2;
                         *cont = 1;
-                        body = ialloc_string(47, "string");
+                        body = ialloc_string(89, "string");
                         if (body == 0)
                             return_error(gs_error_VMerror);
                         memcpy(body, "{/DefaultGray /ColorSpace systemdict /findresource get exec} systemdict /stopped get exec",89);
@@ -1397,7 +1397,7 @@ static int setrgbspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                     } else {
                         *stage = 2;
                         *cont = 1;
-                        body = ialloc_string(46, "string");
+                        body = ialloc_string(88, "string");
                         if (body == 0)
                             return_error(gs_error_VMerror);
                         memcpy(body, "{/DefaultRGB /ColorSpace systemdict /findresource get exec} systemdict /stopped get exec", 88);
@@ -1747,7 +1747,7 @@ static int setcmykspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CI
                     } else {
                         *stage = 2;
                         *cont = 1;
-                        body = ialloc_string(47, "string");
+                        body = ialloc_string(89, "string");
                         if (body == 0)
                             return_error(gs_error_VMerror);
                         memcpy(body, "{/DefaultCMYK /ColorSpace systemdict /findresource get exec} systemdict /stopped get exec", 89);
