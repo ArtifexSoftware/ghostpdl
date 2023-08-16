@@ -1176,22 +1176,7 @@
     <None Include="..\Resource\Init\pdf_cslayer.ps">
       <Filter>Resource\Init</Filter>
     </None>
-    <None Include="..\Resource\Init\pdf_draw.ps">
-      <Filter>Resource\Init</Filter>
-    </None>
-    <None Include="..\Resource\Init\pdf_font.ps">
-      <Filter>Resource\Init</Filter>
-    </None>
     <None Include="..\Resource\Init\pdf_main.ps">
-      <Filter>Resource\Init</Filter>
-    </None>
-    <None Include="..\Resource\Init\pdf_ops.ps">
-      <Filter>Resource\Init</Filter>
-    </None>
-    <None Include="..\Resource\Init\pdf_rbld.ps">
-      <Filter>Resource\Init</Filter>
-    </None>
-    <None Include="..\Resource\Init\pdf_sec.ps">
       <Filter>Resource\Init</Filter>
     </None>
     <None Include="..\Resource\Init\xlatmap">

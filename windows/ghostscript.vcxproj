@@ -935,12 +935,7 @@
     <None Include="..\Resource\Init\gs_wan_e.ps" />
     <None Include="..\Resource\Init\pdf_base.ps" />
     <None Include="..\Resource\Init\pdf_cslayer.ps" />
-    <None Include="..\Resource\Init\pdf_draw.ps" />
-    <None Include="..\Resource\Init\pdf_font.ps" />
     <None Include="..\Resource\Init\pdf_main.ps" />
-    <None Include="..\Resource\Init\pdf_ops.ps" />
-    <None Include="..\Resource\Init\pdf_rbld.ps" />
-    <None Include="..\Resource\Init\pdf_sec.ps" />
     <None Include="..\Resource\Init\xlatmap" />
     <None Include="..\Resource\SubstCID\CNS1-WMode" />
     <None Include="..\Resource\SubstCID\GB1-WMode" />
