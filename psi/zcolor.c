@@ -7051,7 +7051,6 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
      * set the depth to at *least* 1.
      */
     if (depth < 1) {
-        ref_stack_pop(&e_stack, 7);
         return_error(gs_error_unknownerror);
     }
 
@@ -7073,18 +7072,15 @@ currentbasecolor_cont(i_ctx_t *i_ctx_p)
         for (i = 0;i < depth;i++) {
             code = get_space_object(i_ctx_p, parr, &obj);
             if (code < 0) {
-                ref_stack_pop(&e_stack, 7);
                 return code;
             }
 
             if (i < (depth - 1)) {
                 if (!obj->alternateproc) {
-                    ref_stack_pop(&e_stack, 7);
                     return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
                 if (code < 0) {
-                    ref_stack_pop(&e_stack, 7);
                     return code;
                 }
             }
