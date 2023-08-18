@@ -1031,7 +1031,11 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
     if (penum->k_text_release) {
         gsicc_restore_blacktextvec(igs, true);
     }
-
+    /* Because the garbager, in most places, works on clumps, taking no
+       account of where the top of the exec stack is, we can't leave a
+       dangling pointer to this enumerator when we're about to free it.
+     */
+    make_null(ep);
     gs_text_release(NULL, penum, "op_show_restore");
     return code;
 }
