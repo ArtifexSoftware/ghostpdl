@@ -3954,14 +3954,12 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
         if (stage == 0) {
             code = gs_gsave(igs);
             if (code < 0) {
-                ref_stack_pop(&e_stack, 4);
                 return code;
             }
 
             code = validate_spaces(i_ctx_p, &space[1], &depth);
             if (code < 0) {
                 (void)gs_grestore(igs);
-                ref_stack_pop(&e_stack, 4);
                 return code;
             }
 
@@ -3982,7 +3980,6 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 
             if (code < 0) {
                 (void)gs_grestore(igs);
-                ref_stack_pop(&e_stack, 4);
                 return code;
             } else
                 return code;
@@ -4000,7 +3997,6 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
              * colour space is the one we want.
              */
             if (!pgs->saved) {
-                ref_stack_pop(&e_stack, 4);
                 return gs_note_error(gs_error_unknownerror);
             }
             devn_cs = gs_currentcolorspace_inline(pgs->saved);
@@ -4036,7 +4032,6 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
 
             code = gs_grestore(igs);
             if (code < 0) {
-                ref_stack_pop(&e_stack, 4);
                 return code;
             }
         }
@@ -4060,7 +4055,6 @@ static int devicenprocess_cont(i_ctx_t *i_ctx_p)
     if (stage == 0) {
         code = gs_gsave(igs);
         if (code < 0) {
-            ref_stack_pop(&e_stack, 4);
             return code;
         }
         /* If we get a continuation from a sub-procedure, we will want to come back
@@ -4080,7 +4074,6 @@ static int devicenprocess_cont(i_ctx_t *i_ctx_p)
 
         if (code < 0) {
             (void)gs_grestore(igs);
-            ref_stack_pop(&e_stack, 5);
             return code;
         } else
             return code;
@@ -4097,7 +4090,6 @@ static int devicenprocess_cont(i_ctx_t *i_ctx_p)
 
         code = gs_grestore(igs);
         if (code < 0) {
-            ref_stack_pop(&e_stack, 4);
             return code;
         }
         devn_cs = gs_currentcolorspace_inline(igs);
@@ -4790,7 +4782,6 @@ indexed_cont(i_ctx_t *i_ctx_p)
         int code = float_params(op, m, &(map->values[i * m]));
 
         if (code < 0) {
-            ref_stack_pop(&e_stack, num_csme);
             return code;
         }
         ref_stack_pop(&o_stack, m);
@@ -4914,7 +4905,6 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         rc_decrement_only_cs(pcs, "setindexedspace");
         if (code < 0) {
             istate->colorspace[0] = cspace_old;
-            ref_stack_pop_to(&e_stack, edepth);
             return code;
         }
         *stage = 0;
@@ -5171,7 +5161,6 @@ static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
     /* release reference from construction */
     rc_decrement_only_cs(pcs, "zsetpatternspace");
     if (code < 0) {
-        ref_stack_pop_to(&e_stack, edepth);
         return code;
     }
     make_null(&istate->pattern[0]); /* PLRM: initial color value is a null object */
@@ -6632,7 +6621,6 @@ setcolor_cont(i_ctx_t *i_ctx_p)
         for (i=0;i<=depth;i++) {
             code = get_space_object(i_ctx_p, parr, &obj);
             if (code < 0) {
-                ref_stack_pop(&e_stack, 5);
                 return code;
             }
 
@@ -6645,7 +6633,6 @@ setcolor_cont(i_ctx_t *i_ctx_p)
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
                 if (code < 0) {
-                    ref_stack_pop(&e_stack, 5);
                     return code;
                 }
             }
@@ -6655,7 +6642,6 @@ setcolor_cont(i_ctx_t *i_ctx_p)
             make_int(&ep[-3], stack_depth);
             make_int(&ep[-1], stage);
             if (code < 0) {
-                ref_stack_pop(&e_stack, 5);
                 return code;
             }
             if (code != 0)
@@ -6675,7 +6661,6 @@ setcolor_cont(i_ctx_t *i_ctx_p)
     if (IsICC && depth == 0) {
         code = gx_set_dev_color(i_ctx_p->pgs);
         if (code < 0) {
-            ref_stack_pop(&e_stack, 5);
             return code;
         }
     }
@@ -6735,18 +6720,15 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
         for (i = 0;i < depth;i++) {
             code = get_space_object(i_ctx_p, parr, &obj);
             if (code < 0) {
-                ref_stack_pop(&e_stack, 5);
                 return code;
             }
 
             if (i < (depth - 1)) {
                 if (!obj->alternateproc) {
-                    ref_stack_pop(&e_stack, 5);
                     return_error(gs_error_typecheck);
                 }
                 code = obj->alternateproc(i_ctx_p, parr, &parr, &CIESubst);
                 if (code < 0) {
-                    ref_stack_pop(&e_stack, 5);
                     return code;
                 }
             }
@@ -6755,12 +6737,13 @@ setcolorspace_cont(i_ctx_t *i_ctx_p)
         code = obj->setproc(i_ctx_p, parr, &stage, &cont, CIESubst);
         make_int(pstage, stage);
         if (code != 0) {
-            if (code < 0) {
-                if (code != gs_error_stackoverflow)
-                    ref_stack_pop(&e_stack, 5);
-                else
-                    ref_stack_pop(&e_stack, 1);
-            }
+            /* The main loop handles growing the operand stack, so we want to
+             * return and let it deal with that, but we pushed an extra copy of
+             * this procedure on the exec stack, in case we ran a sub-procedure,
+             * so we need to remove that first.
+             */
+            if (code == gs_error_stackoverflow)
+                esp--;
             return code;
         }
         if (!cont) {
@@ -6832,12 +6815,10 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
                         break;
                 }
                 if (code < 0) {
-                    ref_stack_pop(&e_stack, 3);
                     return code;
                 }
                 code = absolute_setcolorspace(i_ctx_p);
                 if (code < 0) {
-                    ref_stack_pop(&e_stack, 3);
                     return code;
                 }
                 if (code != 0)
@@ -6847,7 +6828,6 @@ setdevicecolor_cont(i_ctx_t *i_ctx_p)
                 make_int(pstage, ++stage);
                 code = zsetcolor(i_ctx_p);
                 if (code < 0) {
-                    ref_stack_pop(&e_stack, 3);
                     return code;
                 }
                 if (code != 0)
