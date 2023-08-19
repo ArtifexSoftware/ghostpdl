@@ -219,12 +219,31 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_gstate * pgs,
                      gx_device * dev, gs_color_select_t select)
 {
     int component_index = pdevc->colors.binary.b_index;
-    const gx_ht_order *porder =
-        (component_index < 0 ?
-         &pdevc->colors.binary.b_ht->order :
-         &pdevc->colors.binary.b_ht->components[component_index].corder);
-    gx_ht_cache *pcache = porder->cache;
+    const gx_ht_order *porder;
+    gx_ht_cache *pcache;
 
+    if (component_index < 0) {
+        porder = &pdevc->colors.binary.b_ht->order;
+    } else {
+        int i = 0;
+
+        /* Ensure the halftone saved in the device colour matches one of the
+         * object-type device halftones. It should not be possible for this not
+         * to be the case, but an image with a procedural data source which executes
+         * more grestores than gsaves can restore away the halftone that was in
+         * force at the start of the image, while we're trying to still use it.
+         * If that happens we cna't do anything but throw an error.
+         */
+        for (i=0;i < HT_OBJTYPE_COUNT;i++) {
+            if (pdevc->colors.binary.b_ht == pgs->dev_ht[i])
+                break;
+        }
+        if (i == HT_OBJTYPE_COUNT)
+            return_error(gs_error_unknownerror);
+        porder = &pdevc->colors.binary.b_ht->components[component_index].corder;
+
+    }
+    pcache = porder->cache;
     if (pcache->order.bit_data != porder->bit_data)
         gx_ht_init_cache(pgs->memory, pcache, porder);
     /*
