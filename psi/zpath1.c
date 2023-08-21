@@ -283,6 +283,11 @@ path_cleanup(i_ctx_t *i_ctx_p)
 
     gs_path_enum_cleanup(penum);
     ifree_object(penum, "path_cleanup");
+    /* We need to 'null' the ref on the exec stack because a later GC could
+     * run off the top of the stack and try to reloc the pointer, even
+     * though we've freed it. See the fix for bug 707007.
+     */
+    make_null(esp + 6);
     return 0;
 }
 
