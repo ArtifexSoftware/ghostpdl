@@ -481,7 +481,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
         break;
     } END_ARRAY_PARAM(equiv_cmyk, equiv_cmyk_e);
     if (equiv_cmyk.data != 0 && scna.size > pdev->color_info.max_components) {
-        param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
+        param_signal_error(plist, ".EquivCMYKColors", gs_error_rangecheck);
         return_error(gs_error_rangecheck);
     }
 
@@ -496,6 +496,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             fixed_colorant_names_list pcomp_names = pdevn_params->std_colorant_names;
 
             num_spot = pdevn_params->separations.num_separations;
+            if (num_spot + num_names > pdev->color_info.max_components) {
+                param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
+                return_error(gs_error_rangecheck);
+            }
             for (i = 0; i < num_names; i++) {
                 /* Verify that the name is not one of our process colorants */
                 if (!check_process_color_names(pcomp_names, &scna.data[i])) {
