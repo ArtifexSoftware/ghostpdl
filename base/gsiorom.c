@@ -305,6 +305,7 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     code = file_prepare_stream(fname, namelen, access, ROMFS_BLOCKSIZE+256, ps, fmode, mem);
     if (code < 0)
         return code;
+    (*ps)->modes = s_mode_read;
     sread_block(*ps, (*ps)->cbuf, (*ps)->cbsize, node);
     /* return success */
     return 0;
