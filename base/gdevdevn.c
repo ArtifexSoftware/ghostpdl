@@ -992,7 +992,7 @@ static void
 devicen_initialize_device_procs(gx_device *dev)
 {
     set_dev_proc(dev, open_device, spotcmyk_prn_open);
-    set_dev_proc(dev, output_page, gdev_prn_output_page);
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, close_device, gdev_prn_close);
     set_dev_proc(dev, get_params, gx_devn_prn_get_params);
     set_dev_proc(dev, put_params, gx_devn_prn_put_params);
