@@ -649,6 +649,9 @@ sethalftone_cleanup(i_ctx_t *i_ctx_p)
                    "sethalftone_cleanup(device halftone)");
     gs_free_object(pht->rc.memory, pht,
                    "sethalftone_cleanup(halftone)");
+    /* See bug #707007, explicitly freed structures on the stacks need to be made NULL */
+    make_null(&esp[4]);
+    make_null(&esp[3]);
     return 0;
 }
 

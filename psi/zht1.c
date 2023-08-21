@@ -141,6 +141,9 @@ setcolorscreen_cleanup(i_ctx_t *i_ctx_p)
                    "setcolorscreen_cleanup(device halftone)");
     gs_free_object(pht->rc.memory, pht,
                    "setcolorscreen_cleanup(halftone)");
+    /* See bug #707007, explicitly freed structures on the stacks need to be made NULL */
+    make_null(esp + 6);
+    make_null(esp + 7);
     return 0;
 }
 
