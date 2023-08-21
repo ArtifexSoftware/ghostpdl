@@ -621,6 +621,8 @@ sampled_data_finish(i_ctx_t *i_ctx_p)
     make_oper_new(cref.value.refs + 1, 0, zexecfunction);
     ref_assign(op, &cref);
 
+    /* See bug #707007, explicitly freed structures on the stacks need to be made NULL */
+    make_null(esp);
     esp -= estack_storage;
     ifree_object(penum->pfn, "sampled_data_finish(pfn)");
     ifree_object(penum, "sampled_data_finish(enum)");

@@ -464,6 +464,8 @@ file_cleanup(i_ctx_t *i_ctx_p)
     gx_io_device *iodev = r_ptr(esp + 2, gx_io_device);
 
     iodev->procs.enumerate_close(imemory, r_ptr(esp + 5, file_enum));
+    /* See bug #707007, gp_enumerate_file_close() explicitly frees the file enumerator */
+    make_null(esp + 5);
     return 0;
 }
 
