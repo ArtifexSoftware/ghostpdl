@@ -308,7 +308,7 @@ int spseek(stream *, gs_offset_t);
   register const byte *cp;\
   const byte *ep
 #define s_begin_inline(s, cp, ep)\
-  cp = (s)->cursor.r.ptr, ep = (s)->cursor.r.limit
+  ep = (cp = (s)->cursor.r.ptr) == NULL ? NULL : (s)->cursor.r.limit
 #define s_end_inline(s, cp, ep)\
   (s)->cursor.r.ptr = cp
 #define sbufavailable_inline(s, cp, ep)\
