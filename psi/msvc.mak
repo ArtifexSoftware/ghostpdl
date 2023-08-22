@@ -795,6 +795,7 @@ OCR_VERSION=1
 !else
 OCR_VERSION=0
 !endif
+OCR_SHARED=0
 
 !ifndef JBIG2_LIB
 JBIG2_LIB=jbig2dec
