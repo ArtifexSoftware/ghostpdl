@@ -1799,6 +1799,8 @@ int pdfi_doc_trailer(pdf_context *ctx)
     /* Can't do this stuff with no Trailer */
     if (!ctx->Trailer) {
         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_TRAILER, "pdfi_doc_trailer", NULL);
+        if (ctx->args.pdfstoponwarning)
+            code = gs_note_error(gs_error_undefined);
         goto exit;
     }
 
@@ -1816,7 +1818,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
             code = pdfi_doc_view(ctx);
             if (code < 0) {
                 pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_VIEW, "pdfi_doc_view", NULL);
-                if (ctx->args.pdfstoponerror)
+                if (ctx->args.pdfstoponwarning)
                     goto exit;
             }
         }
@@ -1829,7 +1831,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
              * told to create a PDF/A. the PDFA compatibility is 2, and the file info
              * cannot be handled. In that case, abort immediately.
              */
-            if (ctx->args.pdfstoponerror || code == gs_error_Fatal)
+            if (ctx->args.pdfstoponwarning || code == gs_error_Fatal)
                 goto exit;
         }
 
@@ -1839,7 +1841,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
             code = pdfi_doc_EmbeddedFiles(ctx);
             if (code < 0) {
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_EMBEDDEDFILES, "pdfi_doc_trailer", NULL);
-                if (ctx->args.pdfstoponerror)
+                if (ctx->args.pdfstoponwarning)
                     goto exit;
             }
         }
@@ -1852,7 +1854,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     code = pdfi_doc_AcroForm(ctx);
     if (code < 0) {
         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_ACROFORM, "pdfi_doc_trailer", NULL);
-        if (ctx->args.pdfstoponerror)
+        if (ctx->args.pdfstoponwarning)
             goto exit;
     }
 
@@ -1860,7 +1862,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     code = pdfi_doc_OutputIntents(ctx);
     if (code < 0) {
         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_OUTPUTINTENTS, "pdfi_doc_trailer", NULL);
-        if (ctx->args.pdfstoponerror)
+        if (ctx->args.pdfstoponwarning)
             goto exit;
     }
 
@@ -1868,7 +1870,7 @@ int pdfi_doc_trailer(pdf_context *ctx)
     code = pdfi_doc_PageLabels(ctx);
     if (code < 0) {
         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_PAGELABELS, "pdfi_doc_trailer", NULL);
-        if (ctx->args.pdfstoponerror)
+        if (ctx->args.pdfstoponwarning)
             goto exit;
     }
 

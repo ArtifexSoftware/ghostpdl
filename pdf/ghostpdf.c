@@ -1463,8 +1463,13 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
         Offset += bytes;
     } while(Offset < ctx->main_stream_length);
 
-    if (!found)
+    if (!found) {
         pdfi_set_error(ctx, 0, NULL, E_PDF_NOSTARTXREF, "pdfi_set_input_stream", NULL);
+        if (ctx->args.pdfstoponerror) {
+            code = gs_note_error(gs_error_undefined);
+            goto error;
+        }
+    }
 
     code = pdfi_init_file(ctx);
 
