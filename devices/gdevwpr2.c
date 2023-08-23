@@ -434,7 +434,7 @@ win_pr2_open(gx_device * dev)
     }
 
     if ((code < 0) && wdev->fname[0])
-        unlink(wdev->fname);
+        gp_unlink(wdev->memory, wdev->fname);
 
     if (!wdev->nocancel) {
         /* inform user of progress with dialog box and allow cancel */
@@ -489,7 +489,7 @@ win_pr2_close(gx_device * dev)
 
     /* delete unwanted temporary file */
     if (wdev->fname[0])
-        unlink(wdev->fname);
+        gp_unlink(wdev->memory, wdev->fname);
 
     return code;
 }
