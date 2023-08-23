@@ -1375,7 +1375,7 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     pdfi_seek(ctx, ctx->main_stream, 0, SEEK_END);
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Searching for 'startxerf' keyword\n");
+        dmprintf(ctx->memory, "%% Searching for 'startxref' keyword\n");
 
     /* Initially read min(BUF_SIZE, file_length) bytes of data to the buffer */
     bytes = Offset;
