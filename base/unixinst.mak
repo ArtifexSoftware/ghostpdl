@@ -146,12 +146,12 @@ install-resdata1 :
 install-iccdata1 :
 
 # install html documentation
-DOC_PAGES=index.html News.htm COPYING Ghostscript.pdf \
+DOC_PAGES=index.html News.html COPYING Ghostscript.pdf \
           GS9_Color_Management.pdf
 
 DOC_PAGE_IMAGES=
 
-install-doc: $(PSDOCDIR)/News.htm
+install-doc: $(PSDOCDIR)/News.html
 	-mkdir -p $(DESTDIR)$(docdir)
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(DESTDIR)$(docdir); fi;\
