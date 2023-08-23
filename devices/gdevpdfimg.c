@@ -1239,7 +1239,7 @@ PCLm_close_temp_file(gx_device_pdf_image *pdev, PCLm_temp_file_t *ptf, int code)
     }
     if (file) {
         err = gp_ferror(file) | gp_fclose(file);
-        unlink(ptf->file_name);
+        gp_unlink(pdev->memory, ptf->file_name);
         ptf->file = 0;
     }
     return

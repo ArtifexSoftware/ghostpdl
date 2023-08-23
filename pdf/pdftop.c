@@ -344,7 +344,7 @@ pdf_impl_process_eof(pl_interp_implementation_t *impl)
         gp_fclose(instance->scratch_file);
         instance->scratch_file = NULL;
         code = pdfi_process_pdf_file(ctx, instance->scratch_name);
-        unlink(instance->scratch_name);
+        gp_unlink(ctx->memory, instance->scratch_name);
         if (code < 0)
         {
             gs_catch(code, "cannot process PDF file");

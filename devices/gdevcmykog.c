@@ -709,7 +709,7 @@ prn_done:
       if (arg->spot_file[i] != NULL)
         gp_fclose(arg->spot_file[i]);
       if(arg->spot_name[i][0])
-        unlink(arg->spot_name[i]);
+        gp_unlink(pdev->memory, arg->spot_name[i]);
     }
 #endif
     gs_free_object(pdev->memory, psd_ctx, "cmykog_print_page psd_ctx");
