@@ -409,13 +409,8 @@ win_pr2_open(gx_device * dev)
     }
     code1 = win_pr2_set_bpp(dev, depth);
 
-    /* gdev_prn_open opens a temporary file which we don't want */
-    /* so we specify the name now so we can delete it later */
+    /* No output filename, we're going to a printer */
     wdev->fname[0] = '\0';
-    pfile = gp_open_scratch_file(dev->memory,
-                                 gp_scratch_file_name_prefix,
-                                 wdev->fname, "wb");
-    gp_fclose(pfile);
     code = gdev_prn_open(dev);
 
     /* If we subclassed the device, with a FirstPage LastPage device,
@@ -432,9 +427,6 @@ win_pr2_open(gx_device * dev)
 
         windev->original_device = (gx_device_win_pr2 *)dev;
     }
-
-    if ((code < 0) && wdev->fname[0])
-        gp_unlink(wdev->memory, wdev->fname);
 
     if (!wdev->nocancel) {
         /* inform user of progress with dialog box and allow cancel */
@@ -486,10 +478,6 @@ win_pr2_close(gx_device * dev)
     }
 
     code = gdev_prn_close(dev);
-
-    /* delete unwanted temporary file */
-    if (wdev->fname[0])
-        gp_unlink(wdev->memory, wdev->fname);
 
     return code;
 }
