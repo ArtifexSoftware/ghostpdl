@@ -1884,7 +1884,7 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
  $(iname_h) $(interp_h) $(iscan_h) $(iutil_h) $(ivmspace_h)\
  $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h) \
  $(vdtrace_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)imainarg.$(OBJ) $(C_) $(PSSRC)imainarg.c
+	$(PSCC) $(D_)GS_DOT_VERSION=$(GS_DOT_VERSION)$(_D) $(PSO_)imainarg.$(OBJ) $(C_) $(PSSRC)imainarg.c
 
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
  $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h)\
