@@ -1170,12 +1170,6 @@
     <None Include="..\Resource\Init\gs_wan_e.ps">
       <Filter>Resource\Init</Filter>
     </None>
-    <None Include="..\Resource\Init\pdf_base.ps">
-      <Filter>Resource\Init</Filter>
-    </None>
-    <None Include="..\Resource\Init\pdf_cslayer.ps">
-      <Filter>Resource\Init</Filter>
-    </None>
     <None Include="..\Resource\Init\pdf_main.ps">
       <Filter>Resource\Init</Filter>
     </None>
