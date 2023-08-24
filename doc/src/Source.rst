@@ -78,7 +78,7 @@ The main loop of the PostScript interpreter is the interp procedure in ``interp.
 PDF interpreter
 --------------------
 
-The PDF interpreter is written entirely in PostScript. Its main loop is the ``.pdfrun`` procedure in ``pdf_base.ps``. When the PDF interpreter is configured into the build, it redefines the "run" operator to test whether the file is a PDF file. This redefinition is near the beginning of ``pdf_main.ps``.
+The PDF interpreter is written entirely in ``C`` meaning it's faster than the old interpreter, uses less memory, is more robust and more secure because it can't execute PostScript. Furthermore it is easier to maintain than previous versions.
 
 
 
