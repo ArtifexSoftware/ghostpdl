@@ -1455,11 +1455,15 @@ static void
 print_help_trailer(const gs_main_instance *minst)
 {
     char buffer[gp_file_name_sizeof];
-    const char *use_htm = "Use.htm", *p = buffer;
+    const char *use_htm = "Use.html", *p = buffer;
+    const char *rtd_url = "https://ghostscript.readthedocs.io/en/gs";
+    const char *latest_ver="latest";
+    const char *vers = latest_ver;
     uint blen = sizeof(buffer);
 
-    if (gp_file_name_combine(gs_doc_directory, strlen(gs_doc_directory),
-            use_htm, strlen(use_htm), false, buffer, &blen) != gp_combine_success)
-        p = use_htm;
+    if (strlen(GS_PRODUCT) == strlen(GS_PRODUCTFAMILY))
+        vers = GS_STRINGIZE(GS_DOT_VERSION);
+
+    snprintf(buffer, blen, "%s/%s/%s", rtd_url, vers, use_htm);
     outprintf(minst->heap, help_trailer, p);
 }
