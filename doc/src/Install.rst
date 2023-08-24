@@ -14,6 +14,10 @@ Installing
 ===================================
 
 
+Downloading
+----------------------
+
+See `Ghostscript releases`_ if you need to download a Ghostscript release.
 
 
 Overview of how to install Ghostscript
@@ -269,6 +273,7 @@ If you have ``DECWindows/Motif`` installed, you may wish to replace the ``FONTMA
 .. External links
 
 .. _RPM: http://www.rpm.org/
+.. _Ghostscript releases: https://ghostscript.com/releases
 
 
 .. include:: footer.rst
