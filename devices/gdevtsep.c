@@ -1487,15 +1487,17 @@ create_separation_file_name(tiffsep_device * pdev, char * buffer,
     buffer[base_filename_length] = 0;  /* terminate the string */
 
     if (sep_num < pdev->devn_params.num_std_colorant_names) {
-        if (max_size < strlen(pdev->devn_params.std_colorant_names[sep_num]))
+        if ((max_size - base_filename_length - 1) < strlen(pdev->devn_params.std_colorant_names[sep_num]))
             return_error(gs_error_rangecheck);
         strcat(buffer, pdev->devn_params.std_colorant_names[sep_num]);
     }
     else {
         sep_num -= pdev->devn_params.num_std_colorant_names;
         if (use_sep_name) {
+            if ((max_size - SUFFIX_SIZE - 3 - base_filename_length) < pdev->devn_params.separations.names[sep_num].size)
+                return_error(gs_error_rangecheck);
             copy_separation_name(pdev, buffer + base_filename_length,
-                                max_size - SUFFIX_SIZE - 2, sep_num, 1);
+                                max_size - SUFFIX_SIZE - 2 - base_filename_length, sep_num, 1);
         } else {
                 /* Max of 10 chars in %d format */
             if (max_size < base_filename_length + 11)
