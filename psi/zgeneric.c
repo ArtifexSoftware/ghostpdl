@@ -49,10 +49,11 @@ zcopy(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int type;
-    check_op(2);
+    check_op(1);
     type = r_type(op);
     if (type == t_integer)
         return zcopy_integer(i_ctx_p);
+    check_op(2);
     switch (type) {
         case t_array:
         case t_string:
