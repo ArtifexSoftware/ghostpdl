@@ -149,15 +149,10 @@ install-iccdata1 :
 DOC_PAGES=index.html News.html COPYING Ghostscript.pdf \
           GS9_Color_Management.pdf
 
-DOC_PAGE_IMAGES=
-
 install-doc: $(PSDOCDIR)/News.html
 	-mkdir -p $(DESTDIR)$(docdir)
 	$(SH) -c 'for f in $(DOC_PAGES) ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(DESTDIR)$(docdir); fi;\
-	done'
-	$(SH) -c 'for f in $(DOC_PAGE_IMAGES) ;\
-	do if ( test -f $(PSDOCDIR)/images/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/images/$$f $(DESTDIR)$(docdir)/images; fi;\
 	done'
 
 # install the man pages for each locale
