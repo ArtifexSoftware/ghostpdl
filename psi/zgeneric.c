@@ -95,7 +95,7 @@ zcopy_integer(i_ctx_t *i_ctx_p)
         return code;
     for (i = 0; i < count; i++) {
         ref *o = ref_stack_index(&o_stack, i);
-        ref *o1 = ref_stack_index(&o_stack, i);
+        ref *o1 = ref_stack_index(&o_stack, i + count);
 
         if (o == NULL || o1 == NULL)
             return_error(gs_error_stackunderflow);

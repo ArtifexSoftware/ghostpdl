@@ -1029,7 +1029,7 @@ push_value(gs_main_instance *minst, ref * pvalue)
     int code = ref_stack_push(&o_stack, 1);
     ref *o = ref_stack_index(&o_stack, 0L);
 
-    if (0 == NULL)
+    if (o == NULL)
         return_error(gs_error_stackoverflow);
 
     if (code < 0)
