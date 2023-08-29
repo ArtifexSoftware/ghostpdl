@@ -466,7 +466,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
     clist_icc_color_t icc_zero_init = { 0 };
     cmm_profile_t *src_profile;
     cmm_srcgtag_profile_t *srcgtag_profile;
-    gsicc_rendering_intents_t renderingintent = pgs->renderingintent;
+    gsicc_rendering_intents_t renderingintent;
     gsicc_blackptcomp_t blackptcomp = pgs->blackptcomp;
     gsicc_rendering_param_t stored_rendering_cond;
     gsicc_rendering_param_t dev_render_cond;
@@ -486,6 +486,7 @@ clist_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
          */
         return_error(gs_error_Fatal);
     }
+    renderingintent = pgs->renderingintent;
 
     /* We can only handle a limited set of image types. */
     switch ((gs_debug_c('`') ? -1 : pic->type->index)) {

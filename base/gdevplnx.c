@@ -964,8 +964,7 @@ plane_begin_typed_image(gx_device * dev,
     info->memory = memory;
     info->pgs = pgs;
     info->pgs_level = pgs->level;
-    if (pgs!= NULL)
-        info->pgs_image = pgs_image;
+    info->pgs_image = pgs_image;
     *pinfo = (gx_image_enum_common_t *)info;
     return code;
 fail:
