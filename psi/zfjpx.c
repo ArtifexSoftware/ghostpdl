@@ -98,7 +98,13 @@ z_jpx_decode(i_ctx_t * i_ctx_p)
             if (csname != NULL) {
                 ref sref;
                 /* get a reference to the name's string value */
-                name_string_ref(imemory, csname, &sref);
+                if (r_has_type(csname, t_name))
+                    name_string_ref(imemory, csname, &sref);
+                else if (r_has_type(csname, t_string))
+                    sref = *csname;
+                else
+                    return_error(gs_error_typecheck);
+
                 /* request raw index values if the colorspace is /Indexed */
                 if (!ISTRCMP(&sref, "Indexed"))
                     state.colorspace = gs_jpx_cs_indexed;
