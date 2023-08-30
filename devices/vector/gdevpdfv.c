@@ -1108,7 +1108,7 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
     }
     code1 =  cos_dict_put_c_key_int(pscd, "/BitsPerFlag", bits_per_flag);
     if (code1 < 0)
-        return code;
+        return code1;
     return code;
 }
 
