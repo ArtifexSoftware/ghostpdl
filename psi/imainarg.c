@@ -1262,7 +1262,7 @@ static const char help_debug[] = "\
  --debug                       list debugging options\n";
 #endif
 static const char help_trailer[] = "\
-For more information, see %s.\n\
+For more information, see %s\n\
 Please report bugs to bugs.ghostscript.com.\n";
 static const char help_devices[] = "Available devices:";
 static const char help_default_device[] = "Default output device:";
@@ -1456,14 +1456,18 @@ print_help_trailer(const gs_main_instance *minst)
 {
     char buffer[gp_file_name_sizeof];
     const char *use_htm = "Use.html", *p = buffer;
-    const char *rtd_url = "https://ghostscript.readthedocs.io/en/gs";
+    const char *rtd_url = "https://ghostscript.readthedocs.io/en";
     const char *latest_ver="latest";
     const char *vers = latest_ver;
+    const char *gs_str = "gs";
+    const char *gs = "";
     uint blen = sizeof(buffer);
 
-    if (strlen(GS_PRODUCT) == strlen(GS_PRODUCTFAMILY))
+    if (strlen(GS_PRODUCT) == strlen(GS_PRODUCTFAMILY)) {
         vers = GS_STRINGIZE(GS_DOT_VERSION);
+        gs = gs_str;
+    }
 
-    snprintf(buffer, blen, "%s/%s/%s", rtd_url, vers, use_htm);
+    snprintf(buffer, blen, "%s/%s%s/%s", rtd_url, gs, vers, use_htm);
     outprintf(minst->heap, help_trailer, p);
 }
