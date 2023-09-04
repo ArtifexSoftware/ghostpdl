@@ -1988,8 +1988,11 @@ static int cmykinitialproc(i_ctx_t *i_ctx_p, ref *space)
 /* A utility routine to check whether two arrays contain the same
  * contents. Used to check whether two color spaces are the same
  * Note that this can be recursive if the array contains arrays.
+ * Level is the level of recursion if that exceeds 10 we just assume
+ * they are different, otherwise we can potentially get into infinite
+ * recursion, or at least enough to trigger a C stack overflow.
  */
-static int comparearrays(i_ctx_t * i_ctx_p, ref *m1, ref *m2)
+static int comparearrays(i_ctx_t * i_ctx_p, ref *m1, ref *m2, int level)
 {
     int i, code;
     ref ref1, ref2;
@@ -2039,7 +2042,9 @@ static int comparearrays(i_ctx_t * i_ctx_p, ref *m1, ref *m2)
             case t_array:
             case t_mixedarray:
             case t_shortarray:
-                if (!comparearrays(i_ctx_p, &ref1, &ref2))
+                if (++level > 10)
+                    return 0;
+                if (!comparearrays(i_ctx_p, &ref1, &ref2, level))
                     return 0;
                 break;
             case t_oparray:
@@ -2092,7 +2097,7 @@ static int comparedictkey(i_ctx_t * i_ctx_p, ref *CIEdict1, ref *CIEdict2, char 
     if (r_type(tempref1) == t_null)
         return 1;
 
-    code = comparearrays(i_ctx_p, tempref1, tempref2);
+    code = comparearrays(i_ctx_p, tempref1, tempref2, 0);
 
     if (code > 0)
         return 1;
@@ -3904,7 +3909,7 @@ static int sepcompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
         return 0;
 
     if (r_is_array(&sname1)) {
-        if (!comparearrays(i_ctx_p, &sname1, &sname2))
+        if (!comparearrays(i_ctx_p, &sname1, &sname2, 0))
             return 0;
     } else {
         if (!r_has_type(&sname1, t_name))
@@ -3918,7 +3923,7 @@ static int sepcompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
     code = array_get(imemory, testspace, 3, &sname2);
     if (code < 0)
         return 0;
-    return(comparearrays(i_ctx_p, &sname1, &sname2));
+    return(comparearrays(i_ctx_p, &sname1, &sname2, 0));
 }
 static int sepinitialproc(i_ctx_t *i_ctx_p, ref *space)
 {
@@ -4717,7 +4722,7 @@ static int devicencompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
     if (!r_is_array(&sname2))
         return 0;
 
-    if (!comparearrays(i_ctx_p, &sname1, &sname2))
+    if (!comparearrays(i_ctx_p, &sname1, &sname2, 0))
         return 0;
 
     code = array_get(imemory, space, 2, &sname1);
@@ -4730,7 +4735,7 @@ static int devicencompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
         return 0;
 
     if (r_is_array(&sname1)) {
-        if (!comparearrays(i_ctx_p, &sname1, &sname2))
+        if (!comparearrays(i_ctx_p, &sname1, &sname2, 0))
             return 0;
     } else {
         if (!r_has_type(&sname1, t_name))
@@ -4744,7 +4749,7 @@ static int devicencompareproc(i_ctx_t *i_ctx_p, ref *space, ref *testspace)
     code = array_get(imemory, testspace, 3, &sname2);
     if (code < 0)
         return 0;
-    return(comparearrays(i_ctx_p, &sname1, &sname2));
+    return(comparearrays(i_ctx_p, &sname1, &sname2, 0));
 }
 static int deviceninitialproc(i_ctx_t *i_ctx_p, ref *space)
 {
