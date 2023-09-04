@@ -1027,39 +1027,43 @@ currentdict /runlibfile0 .undef
     }
    for exch pop .quit
  } bind executeonly def
+/.acquire_$error {
+  systemdict /$error get
+} bind def
+
 /.errorhandler		% <command> <errorname> .errorhandler -
   {		% Detect an internal 'stopped'.
     1 .instopped { //null eq { pop pop stop } if } if
-    $error /.inerror get 1 .instopped { pop } { pop //true } ifelse
+    //.acquire_$error exec /.inerror get 1 .instopped { pop } { pop //true } ifelse
      { //.unstoppederrorhandler exec
      } if	% detect error recursion
-    $error /globalmode .currentglobal //false .setglobal put
-    $error /.inerror //true put
-    $error /newerror //true put
-    $error exch /errorname exch put
-    $error exch /command exch put
-    $error /errorinfo known not { $error /errorinfo //null put } if
-    $error /recordstacks get $error /errorname get /VMerror ne and
+    //.acquire_$error exec /globalmode .currentglobal //false .setglobal put
+    //.acquire_$error exec /.inerror //true put
+    //.acquire_$error exec /newerror //true put
+    //.acquire_$error exec exch /errorname exch put
+    //.acquire_$error exec exch /command exch put
+    //.acquire_$error exec /errorinfo known not { //.acquire_$error exec /errorinfo //null put } if
+    //.acquire_$error exec /recordstacks get //.acquire_$error exec /errorname get /VMerror ne and
      {		% Attempt to store the stack contents atomically.
-       count array astore dup $error /ostack 4 -1 roll
+       count array astore dup //.acquire_$error exec /ostack 4 -1 roll
        % Grab the execstack, then remove to two elements that are from
        % this error handler (not interesting).
        countexecstack array execstack dup length 2 sub 0 exch getinterval
-       $error /estack 3 -1 roll
-       countdictstack array dictstack $error /dstack 3 -1 roll
+       //.acquire_$error exec /estack 3 -1 roll
+       countdictstack array dictstack //.acquire_$error exec /dstack 3 -1 roll
        put put put aload pop
      }
-     { $error /dstack .undef
-       $error /estack .undef
-       $error /ostack .undef
+     { //.acquire_$error exec /dstack .undef
+       //.acquire_$error exec /estack .undef
+       //.acquire_$error exec /ostack .undef
      }
     ifelse
-    $error /position currentfile status
+    //.acquire_$error exec /position currentfile status
      { currentfile { fileposition } //.internalstopped exec { pop //null } if
      }
      {		% If this was a scanner error, the file is no longer current,
                 % but the command holds the file, which may still be open.
-       $error /command get dup type /filetype eq
+       //.acquire_$error exec /command get dup type /filetype eq
         { { fileposition } //.internalstopped exec { pop //null } if }
         { pop //null }
        ifelse
@@ -1067,8 +1071,8 @@ currentdict /runlibfile0 .undef
     ifelse put
                 % During initialization, we don't reset the allocation
                 % mode on errors.
-    $error /globalmode get $error /.nosetlocal get and .setglobal
-    $error /.inerror //false put
+    //.acquire_$error exec /globalmode get //.acquire_$error exec /.nosetlocal get and .setglobal
+    //.acquire_$error exec /.inerror //false put
     stop
   } bind executeonly def
 currentdict /.unstoppederrorhandler .undef
@@ -1154,7 +1158,8 @@ currentdict /.unstoppederrorhandler .undef
 
 } bind executeonly def
 /.printerror
-{ $error begin newerror
+{
+     //.acquire_$error exec begin newerror
      {
        /command load errorname //systemdict /SHORTERRORS get
         { (%%[ Error: ) print =only flush
@@ -1200,6 +1205,7 @@ currentdict /.unstoppederrorhandler .undef
      end
      flush
 } bind executeonly def
+currentdict /.acquire_$error .undef
 currentdict /.printerror_long .undef
 
 % Define $error.  This must be in local VM.
