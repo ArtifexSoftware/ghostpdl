@@ -1884,59 +1884,104 @@ nce:
     }
     /* Set the ICC output colors first */
     if ((code = param_read_string(plist, "ICCOutputColors", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc_colorants(&icc_pro, dev)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "ICCOutputColors", ecode);
+        } else {
+            if ((code = gx_default_put_icc_colorants(&icc_pro, dev)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "ICCOutputColors", ecode);
+            }
         }
     }
     if ((code = param_read_string(plist, "DeviceLinkProfile", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc(&icc_pro, dev, gsLINKPROFILE)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "DeviceLinkProfile", ecode);
+        } else {
+            if ((code = gx_default_put_icc(&icc_pro, dev, gsLINKPROFILE)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "DeviceLinkProfile", ecode);
+            }
         }
     }
     if ((code = param_read_string(plist, "PostRenderProfile", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc(&icc_pro, dev, gsPRPROFILE)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "PostRenderProfile", ecode);
+        } else {
+            if ((code = gx_default_put_icc(&icc_pro, dev, gsPRPROFILE)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "PostRenderProfile", ecode);
+            }
         }
     }
     if ((code = param_read_string(plist, "OutputICCProfile", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc(&icc_pro, dev, gsDEFAULTPROFILE)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "OutputICCProfile", ecode);
+        } else {
+            if ((code = gx_default_put_icc(&icc_pro, dev, gsDEFAULTPROFILE)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "OutputICCProfile", ecode);
+            }
         }
     }
     /* Note, if a change is made to NUM_DEVICE_PROFILES we need to update
        this with the name of the profile */
     if ((code = param_read_string(plist, "VectorICCProfile", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc(&icc_pro, dev, gsGRAPHICPROFILE)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "VectorICCProfile", ecode);
+        } else {
+            if ((code = gx_default_put_icc(&icc_pro, dev, gsGRAPHICPROFILE)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "VectorICCProfile", ecode);
+            }
         }
     }
     if ((code = param_read_string(plist, "ImageICCProfile", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc(&icc_pro, dev, gsIMAGEPROFILE)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "ImageICCProfile", ecode);
+        } else {
+            if ((code = gx_default_put_icc(&icc_pro, dev, gsIMAGEPROFILE)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "ImageICCProfile", ecode);
+            }
         }
     }
     if ((code = param_read_string(plist, "TextICCProfile", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc(&icc_pro, dev, gsTEXTPROFILE)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "TextICCProfile", ecode);
+        } else {
+            if ((code = gx_default_put_icc(&icc_pro, dev, gsTEXTPROFILE)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "TextICCProfile", ecode);
+            }
         }
     }
     if ((code = param_read_string(plist, "ProofProfile", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc(&icc_pro, dev, gsPROOFPROFILE)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "ProofProfile", ecode);
+        } else {
+            if ((code = gx_default_put_icc(&icc_pro, dev, gsPROOFPROFILE)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "ProofProfile", ecode);
+            }
         }
     }
     if ((code = param_read_string(plist, "BlendColorProfile", &icc_pro)) != 1) {
-        if ((code = gx_default_put_icc(&icc_pro, dev, gsBLENDPROFILE)) < 0) {
+        if (code < 0) {
             ecode = code;
             param_signal_error(plist, "BlendColorProfile", ecode);
+        } else {
+            if ((code = gx_default_put_icc(&icc_pro, dev, gsBLENDPROFILE)) < 0) {
+                ecode = code;
+                param_signal_error(plist, "BlendColorProfile", ecode);
+            }
         }
     }
     if ((code = param_read_int(plist, (param_name = "RenderIntent"),
