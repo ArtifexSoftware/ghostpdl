@@ -4310,6 +4310,9 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
         pop (1);
     }
 
+    if (pfn == NULL)
+        return_error(gs_error_typecheck);
+
     *stage = 2;
 
     code = array_get(imemory, devicenspace, 1, &namesarray);
