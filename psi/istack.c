@@ -299,7 +299,7 @@ ref_stack_store_check(const ref_stack_t *pstack, ref *parray, uint count,
 }
 
 int
-ref_stack_array_sanitize(i_ctx_t *i_ctx_p, ref *sarr, ref *darr)
+ref_stack_array_sanitize(i_ctx_t *i_ctx_p, ref *sarr, ref *darr, int depth)
 {
     int i, code;
     ref obj, arr2;
@@ -350,12 +350,17 @@ ref_stack_array_sanitize(i_ctx_t *i_ctx_p, ref *sarr, ref *darr)
             int attrs = r_type_attrs(&obj) & (a_write | a_read | a_execute | a_executable);
             /* We only want to copy executable arrays */
             if (attrs & (a_execute | a_executable)) {
-                code = ialloc_ref_array(&arr2, attrs, r_size(&obj), "ref_stack_array_sanitize");
+                if (++depth > 50) {
+                    code = gs_error_limitcheck;
+                }
+                else {
+                    code = ialloc_ref_array(&arr2, attrs, r_size(&obj), "ref_stack_array_sanitize");
+                }
                 if (code < 0) {
                     make_null(&arr2);
                 }
                 else {
-                    code = ref_stack_array_sanitize(i_ctx_p, &obj, &arr2);
+                    code = ref_stack_array_sanitize(i_ctx_p, &obj, &arr2, depth);
                     if (code < 0) {
                         ifree_ref_array(&arr2, "ref_stack_array_sanitize");
                         return code;

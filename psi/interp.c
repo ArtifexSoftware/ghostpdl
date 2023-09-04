@@ -890,7 +890,7 @@ copy_stack(i_ctx_t *i_ctx_p, const ref_stack_t * pstack, int skip, ref * arr)
     if (pstack == &o_stack && dict_find_string(systemdict, "SAFETY", &safety) > 0 &&
         dict_find_string(safety, "safe", &safe) > 0 && r_has_type(safe, t_boolean) &&
         safe->value.boolval == true) {
-        code = ref_stack_array_sanitize(i_ctx_p, arr, arr);
+        code = ref_stack_array_sanitize(i_ctx_p, arr, arr, 0);
         if (code < 0)
             return code;
     }
