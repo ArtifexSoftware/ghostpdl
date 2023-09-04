@@ -750,6 +750,33 @@ SUBCONFIG_OPTS="--build=$build --host=$host"
 #fi
 
 dnl --------------------------------------------------
+dnl Check for NEON support
+dnl --------------------------------------------------
+save_cflags=$CFLAGS
+AC_MSG_CHECKING([neon support])
+CFLAGS="$save_cflags $OPT_CFLAGS -mfpu=neon -mcpu=cortex-a53"
+HAVE_NEON=""
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([#include "arm_neon.h"], [
+  int32x4_t round = vdupq_n_s32(10);
+  return(0);
+  ])],
+  [HAVE_NEON="-DHAVE_NEON"], [HAVE_NEON=""])
+
+AC_ARG_ENABLE([neon], AS_HELP_STRING([--disable-neon],
+       [Do not use neon instrinsics]), [
+             if test "x$enable_neon" = xno; then
+                HAVE_NEON=""
+             fi])
+
+if test "x$HAVE_NEON" != x; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+CFLAGS=$save_cflags
+
+dnl --------------------------------------------------
 dnl Check for libraries
 dnl --------------------------------------------------
 
@@ -971,11 +998,12 @@ if test x$with_tesseract != xno; then
          [TESS_NEON="-mfpu=neon -mcpu=cortex-a53 -D__ARM_NEON__"],
          [TESS_NEON=""])
 
-        if test "x$TESS_NEON" != x; then
+        if test "x$TESS_NEON" != x && test "x$enable_neon" != xno; then
           AC_MSG_RESULT(yes)
           TESS_CXXFLAGS="$TESS_CXXFLAGS -DHAVE_NEON"
         else
           AC_MSG_RESULT(no)
+          TESS_NEON=""
         fi
 
         CXXFLAGS="$save_cxxflags"
@@ -2382,28 +2410,6 @@ if test x$WITH_CAL != x0; then
   #             fi])
 
   if test "x$HAVE_AVX2" != x; then
-    AC_MSG_RESULT(yes)
-  else
-    AC_MSG_RESULT(no)
-  fi
-
-  AC_MSG_CHECKING([neon support])
-  CFLAGS="$save_cflags $OPT_CFLAGS -mfpu=neon -mcpu=cortex-a53"
-  HAVE_NEON=""
-  AC_LINK_IFELSE(
-    [AC_LANG_PROGRAM([#include "arm_neon.h"], [
-    int32x4_t round = vdupq_n_s32(10);
-    return(0);
-    ])],
-    [HAVE_NEON="-DHAVE_NEON"], [HAVE_NEON=""])
-
-  #AC_ARG_ENABLE([neon], AS_HELP_STRING([--disable-neon],
-  #       [Do not use neon instrinsics]), [
-  #             if test "x$enable_neon" = xno; then
-  #                HAVE_NEON=""
-  #             fi])
-
-  if test "x$HAVE_NEON" != x; then
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
