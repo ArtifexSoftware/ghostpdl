@@ -193,8 +193,16 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
     pte->pgs = pgs;
     pte->orig_font = font;
     pte->pcpath = pcpath;
+    pte->pcpath = gx_cpath_alloc_shared(pcpath, mem, "gs_text_enum_init");
+    /* Assign the following before potentially returning an error
+       so there's enough there to all the cleanup
+     */
     pte->memory = mem;
     pte->procs = procs;
+    if (pte->pcpath == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
+    }
 #ifdef DEBUG
     pte->text_enum_id = gs_next_text_enum_id(font);
 #else
@@ -210,6 +218,7 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
     pte->k_text_release = 0;
     if (code >= 0)
         rc_increment(dev);
+done:
     return code;
 }
 
@@ -781,6 +790,8 @@ gs_text_retry(gs_text_enum_t * pte)
 void
 gx_default_text_release(gs_text_enum_t *pte, client_name_t cname)
 {
+    gx_cpath_free((gx_clip_path *)pte->pcpath, "gx_default_text_release");
+    pte->pcpath = NULL;
     rc_decrement_only(pte->dev, cname);
     rc_decrement_only(pte->imaging_dev, cname);
 }
