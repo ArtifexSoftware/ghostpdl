@@ -366,7 +366,8 @@ s_filter_close(register stream * s)
 
         if (status != 0 && status != EOFC)
             return status;
-        status = sflush(stemp);
+        if (status != EOFC)
+            status = sflush(stemp);
         if (status != 0 && status != EOFC)
             return status;
     }
