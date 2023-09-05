@@ -515,7 +515,10 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
             return_error(gs_error_undefinedresult);
         }
     }
-    check_op(num_out);
+    if ( op < osbot + ((num_out) - 1) ) {
+        esp -= estack_storage;
+        return_error(gs_error_stackunderflow);
+    }
     /* Save data from the given function */
     data_ptr = cube_ptr_from_index(params, penum->indexes);
     for (i=0; i < num_out; i++) {
