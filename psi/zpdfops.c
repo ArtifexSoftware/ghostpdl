@@ -319,6 +319,7 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
     if (code < 0) {
         memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
         gs_free_object(imemory, pdfctx->pdf_stream, "PDFstream copy of PS stream");
+        pdfctx->ctx->main_stream->s = NULL;
         pdfctx->pdf_stream = NULL;
         pdfctx->ps_stream = NULL;
         return code;
@@ -390,7 +391,8 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     }
 
     if (pdfctx->ctx != NULL) {
-        pdfi_report_errors(pdfctx->ctx);
+        if (pdfctx->pdf_stream != NULL || pdfctx->ps_stream != NULL)
+            pdfi_report_errors(pdfctx->ctx);
         if (pdfctx->ps_stream) {
             /* Detach the PostScript stream from the PDF context, otherwise the
              * close code will close the main stream

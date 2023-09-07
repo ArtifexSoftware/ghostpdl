@@ -901,6 +901,9 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     if (ctx->xref_table == NULL)
         return_error(gs_error_typecheck);
 
+    if (ctx->main_stream == NULL || ctx->main_stream->s == NULL)
+        return_error(gs_error_ioerror);
+
     if (obj >= ctx->xref_table->xref_size) {
         char extra_info[gp_file_name_sizeof];
 
