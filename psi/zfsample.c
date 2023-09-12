@@ -511,12 +511,10 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
              * hope.
              */
             push(-stack_depth_adjust);
-            esp -= estack_storage;
             return_error(gs_error_undefinedresult);
         }
     }
     if ( op < osbot + ((num_out) - 1) ) {
-        esp -= estack_storage;
         return_error(gs_error_stackunderflow);
     }
     /* Save data from the given function */
