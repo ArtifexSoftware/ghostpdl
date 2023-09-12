@@ -141,6 +141,9 @@ $(GPDL_PWG_TOP_OBJ): $(GPDLSRC)pwgtop.c $(AK)\
 
 # TIFF reading can only work with both libtiff and libjpeg using share libs
 # *or* both using local - we can't mix.
+$(GPDLOBJ)tifftop_.$(OBJ): $(GPDLSRC)tifftop.c $(AK)
+	$(GPDLCC) $(D_)SHARE_LIBTIFF=0$(_D) $(D_)SHARE_JPEG=0$(_D) $(II)$(TI_)$(_I) $(II)$(JI_)$(_I) $(GPDLSRC)tifftop.c $(GPDLO_)tifftop_.$(OBJ)
+
 $(GPDLOBJ)tifftop_0.$(OBJ): $(GPDLSRC)tifftop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
  $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h) $(jmemcust_h)

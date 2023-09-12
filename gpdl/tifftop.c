@@ -15,6 +15,7 @@
 
 /* tifftop.c */
 /* Top-level API implementation of "TIF" Language Interface */
+#ifdef TIFF_INCLUDED
 
 #include "pltop.h"
 #include "gserrors.h"
@@ -1422,3 +1423,4 @@ const pl_interp_implementation_t tiff_implementation = {
   NULL, /* tiff_impl_reset */
   NULL  /* interp_client_data */
 };
+#endif /* TIFF_INCLUDED */
