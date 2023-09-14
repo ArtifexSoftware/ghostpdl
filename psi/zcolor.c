@@ -2105,7 +2105,9 @@ static int comparedictkey(i_ctx_t * i_ctx_p, ref *CIEdict1, ref *CIEdict2, char 
         return 0;
 }
 
-static int hasharray(i_ctx_t * i_ctx_p, ref *m1, gs_md5_state_t *md5)
+
+#define hasharray(a, b, c) hasharray_impl(a, b, c, 0)
+static int hasharray_impl(i_ctx_t * i_ctx_p, ref *m1, gs_md5_state_t *md5, int depth)
 {
     int i, code;
     ref ref1;
@@ -2136,8 +2138,11 @@ static int hasharray(i_ctx_t * i_ctx_p, ref *m1, gs_md5_state_t *md5)
             case t_array:
             case t_mixedarray:
             case t_shortarray:
-                if (!hasharray(i_ctx_p, &ref1, md5))
-                    return 0;
+                if (++depth > 32) {
+                    return_error(gs_error_rangecheck);
+                }
+                if ((code = hasharray_impl(i_ctx_p, &ref1, md5, depth)) <= 0)
+                    return code;
                 break;
             case t_oparray:
                 break;
