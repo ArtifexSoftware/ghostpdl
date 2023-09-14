@@ -3628,6 +3628,10 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
         if (code < 0)
             return code;
     }
+    if (!r_has_type(&sname, t_name)) {
+        return_error(gs_error_typecheck);
+    }
+
     sep_type = ( name_eq(&sname, &name_all) ? SEP_ALL :
                  name_eq(&sname, &name_none) ? SEP_NONE : SEP_OTHER);
 
