@@ -2059,6 +2059,7 @@ textw_text_release(gs_text_enum_t *pte, client_name_t cname)
         gs_free(tdev->memory, penum->text_state, 1, sizeof(penum->text_state), "txtwrite free text state");
         penum->text_state = NULL;
     }
+    rc_decrement_only(pte->dev, "textw_text_release");
 }
 
 /* This is the list of methods for the text enumerator */
