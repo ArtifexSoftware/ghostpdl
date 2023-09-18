@@ -1447,7 +1447,7 @@ static int zPDFparsePageList(i_ctx_t *i_ctx_p)
     }
     /* push the even/odd, start, end triples on the stack */
     for (i=0; i < size;  i++) {
-        o = ref_stack_index(&o_stack, 0);
+        o = ref_stack_index(&o_stack, size - i);
         if (o == NULL)
             return_error(gs_error_stackunderflow);
         /* skip the initial "ordered" flag */

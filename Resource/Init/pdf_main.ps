@@ -710,8 +710,7 @@ currentdict /PDFSwitches undef
 {
   /PageList where {
     pop
-    pdfpagecount
-    .PDFparsePageList
+    PageList pdfpagecount .PDFparsePageList
     dup 0 eq {	% No ranges, error
       (\n   **** Error: Invalid PageList: ) print
       PageList  print
