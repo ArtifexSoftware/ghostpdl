@@ -703,6 +703,11 @@ again:
          return_error(gs_error_execstackoverflow);
     }
 
+    if (!r_is_proc(epref)){
+        *pexit_code = gs_error_Fatal;
+        return_error(gs_error_Fatal);
+    }
+
     doref = *epref;
     epref = &doref;
     /* Push the error object on the operand stack if appropriate. */
