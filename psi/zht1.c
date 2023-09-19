@@ -64,7 +64,9 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
         space = max(space, r_space_index(op1));
     }
     mem = (gs_memory_t *)idmemory->spaces_indexed[space];
-    check_estack(8);		/* for sampling screens */
+    /* We must have the currentglobal consistent through the sampling process */
+    ialloc_set_space(idmemory, (mem == (gs_memory_t *)idmemory->spaces.memories.named.global ? avm_global : avm_local));
+    check_estack(9);		/* for sampling screens */
     rc_alloc_struct_0(pht, gs_halftone, &st_halftone,
                       mem, pht = 0, "setcolorscreen(halftone)");
     rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
@@ -80,8 +82,9 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
     if (code >= 0) {		/* Schedule the sampling of the screens. */
         es_ptr esp0 = esp;	/* for backing out */
 
-        esp += 8;
-        make_mark_estack(esp - 7, es_other, setcolorscreen_cleanup);
+        esp += 9;
+        make_mark_estack(esp - 8, es_other, setcolorscreen_cleanup);
+        make_bool(esp - 7, (mem == (gs_memory_t *)idmemory->spaces.memories.named.global));
         memcpy(esp - 6, sprocs, sizeof(ref) * 4);	/* procs */
         make_istruct(esp - 2, 0, pht);
         make_istruct(esp - 1, 0, pdht);
@@ -117,8 +120,13 @@ setcolorscreen_finish(i_ctx_t *i_ctx_p)
     pdht->order = pdht->components[0].corder;
     code = gx_ht_install(igs, r_ptr(esp - 1, gs_halftone), pdht);
     if (code < 0) {
-        esp -= 7;
+        /* We need the stack correct for setcolorscreen_cleanup() but we need it back
+           where we started before we return the error.
+         */
+        es_ptr esp0 = esp;
+        esp -= 8;
         setcolorscreen_cleanup(i_ctx_p);
+        esp = esp0;
         return code;
     }
     istate->screen_procs.red   = esp[-5];
@@ -126,7 +134,7 @@ setcolorscreen_finish(i_ctx_t *i_ctx_p)
     istate->screen_procs.blue  = esp[-3];
     istate->screen_procs.gray  = esp[-2];
     make_null(&istate->halftone);
-    esp -= 7;
+    esp -= 8;
     setcolorscreen_cleanup(i_ctx_p);
     return o_pop_estack;
 }
@@ -134,8 +142,9 @@ setcolorscreen_finish(i_ctx_t *i_ctx_p)
 static int
 setcolorscreen_cleanup(i_ctx_t *i_ctx_p)
 {
-    gs_halftone *pht = r_ptr(esp + 6, gs_halftone);
-    gx_device_halftone *pdht = r_ptr(esp + 7, gx_device_halftone);
+    gs_halftone *pht = r_ptr(esp + 7, gs_halftone);
+    gx_device_halftone *pdht = r_ptr(esp + 8, gx_device_halftone);
+    bool global = (esp + 2)->value.boolval;
 
     gs_free_object(pdht->rc.memory, pdht,
                    "setcolorscreen_cleanup(device halftone)");
@@ -144,6 +153,7 @@ setcolorscreen_cleanup(i_ctx_t *i_ctx_p)
     /* See bug #707007, explicitly freed structures on the stacks need to be made NULL */
     make_null(esp + 6);
     make_null(esp + 7);
+    ialloc_set_space(idmemory, (global ? avm_global : avm_local));
     return 0;
 }
 
