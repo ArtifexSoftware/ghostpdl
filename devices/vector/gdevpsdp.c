@@ -1276,6 +1276,8 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
     if (code < 0)
         goto exit;
 
+    params.PSPageOptions.size = 0;
+    params.PSPageOptions.data = NULL;
     code = psdf_read_copy_param_string_array(pdev->memory, plist, "PSPageOptions", &params.PSPageOptions);
     if (code < 0)
         goto exit;
@@ -1308,9 +1310,11 @@ exit:
         if (params.PSPageOptions.data != NULL) {
             int ix;
 
-            for (ix = 0; ix < pdev->params.PSPageOptions.size;ix++)
-                gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data[ix].data, "freeing dummy PSPageOptions");
-            gs_free_object(mem->non_gc_memory, (byte *)pdev->params.PSPageOptions.data, "freeing dummy PSPageOptions");
+            if (params.PSPageOptions.size != 0 && params.PSPageOptions.data != pdev->params.PSPageOptions.data) {
+                for (ix = 0; ix < params.PSPageOptions.size;ix++)
+                    gs_free_object(mem->non_gc_memory, (byte *)params.PSPageOptions.data[ix].data, "freeing dummy PSPageOptions");
+                gs_free_object(mem->non_gc_memory, (byte *)params.PSPageOptions.data, "freeing dummy PSPageOptions");
+            }
             params.PSPageOptions.data = NULL;
             params.PSPageOptions.size = 0;
         }
