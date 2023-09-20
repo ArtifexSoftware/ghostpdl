@@ -1507,6 +1507,11 @@ static int zPDFdrawannots(i_ctx_t *i_ctx_p)
     return_error(gs_error_undefined);
 }
 
+static int zPDFSetParams(i_ctx_t *i_ctx_p)
+{
+    return_error(gs_error_undefined);
+}
+
 static int zPDFInit(i_ctx_t *i_ctx_p)
 {
     return_error(gs_error_undefined);
