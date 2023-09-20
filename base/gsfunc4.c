@@ -326,9 +326,11 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         case PtCr_idiv:
             if (vsp->value.i == 0)
                 return_error(gs_error_undefinedresult);
-            if ((vsp[-1].value.i /= vsp->value.i) == min_int &&
+            if (vsp[-1].value.i == min_int &&
                 vsp->value.i == -1)  /* anomalous boundary case, fail */
                 return_error(gs_error_rangecheck);
+            else
+                vsp[-1].value.i /= vsp->value.i;
             --vsp; continue;
         case PtCr_ln:
             vsp->value.f = log(vsp->value.f);
