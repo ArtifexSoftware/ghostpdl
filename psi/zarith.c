@@ -435,7 +435,7 @@ zmod(i_ctx_t *i_ctx_p)
     check_op(2);
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
-    if (op->value.intval == 0)
+    if (op->value.intval == 0 || op[-1].value.intval == MIN_PS_INT)
         return_error(gs_error_undefinedresult);
     op[-1].value.intval %= op->value.intval;
     pop(1);
