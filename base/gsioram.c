@@ -152,7 +152,8 @@ ram_open_file(gx_io_device * iodev, const char *fname, uint len,
     strncpy(namestr,fname,len);
     namestr[len] = 0;
 
-    if (!iodev) {/*iodev = iodev_default;*/
+    /* Make sure iodev is valid, and we have initialised the RAM file system (state != NULL) */
+    if (iodev == NULL || iodev->state == NULL) {/*iodev = iodev_default;*/
         gs_free_object(mem, namestr, "free temporary filename string");
         return gs_note_error(gs_error_invalidaccess);
     }
@@ -452,7 +453,12 @@ ram_finalize(const gs_memory_t *memory, void * vptr)
 static int
 ram_delete(gx_io_device * iodev, const char *fname)
 {
-    ramfs* fs = GETRAMFS(iodev->state);
+    ramfs* fs;
+
+    if (iodev->state == NULL)
+        return_error(gs_error_ioerror);
+    else
+        fs = GETRAMFS(iodev->state);
 
     if(ramfs_unlink(fs,fname)!=0) {
     return_error(ramfs_errno_to_code(ramfs_error(fs)));
@@ -463,7 +469,12 @@ ram_delete(gx_io_device * iodev, const char *fname)
 static int
 ram_rename(gx_io_device * iodev, const char *from, const char *to)
 {
-    ramfs* fs = GETRAMFS(iodev->state);
+    ramfs* fs;
+
+    if (iodev->state == NULL)
+        return_error(gs_error_ioerror);
+    else
+        fs = GETRAMFS(iodev->state);
 
     if(ramfs_rename(fs,from,to)!=0) {
     return_error(ramfs_errno_to_code(ramfs_error(fs)));
@@ -475,7 +486,12 @@ static int
 ram_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
 {
     ramhandle * f;
-    ramfs* fs = GETRAMFS(iodev->state);
+    ramfs* fs;
+
+    if (iodev->state == NULL)
+        return_error(gs_error_ioerror);
+    else
+        fs = GETRAMFS(iodev->state);
 
     f = ramfs_open(((ramfs_state *)iodev->state)->memory, fs,fname,RAMFS_READ);
     if(!f) return_error(ramfs_errno_to_code(ramfs_error(fs)));
@@ -501,7 +517,13 @@ ram_enumerate_init(gs_memory_t * mem, gx_io_device *iodev, const char *pat,
     mem, patlen+1, "ram_enumerate_file_init(pattern)"
     );
 
-    ramfs_enum * e = ramfs_enum_new(GETRAMFS(iodev->state));
+    ramfs_enum * e;
+
+    if (iodev->state == NULL)
+        return NULL;
+    else
+        e = ramfs_enum_new(GETRAMFS(iodev->state));
+
     if(penum && pattern && e) {
     memcpy(pattern, pat, patlen);
     pattern[patlen]=0;
@@ -556,9 +578,15 @@ ram_get_params(gx_io_device * iodev, gs_param_list * plist)
     int code;
     int i0 = 0, so = 1;
     bool btrue = true, bfalse = false;
-    ramfs* fs = GETRAMFS(iodev->state);
+    ramfs* fs;
+
     int BlockSize;
     long Free, LogicalSize;
+
+    if (iodev->state == NULL)
+        return_error(gs_error_ioerror);
+    else
+        fs = GETRAMFS(iodev->state);
 
     BlockSize = ramfs_blocksize(fs);
     LogicalSize = MAXBLOCKS;
