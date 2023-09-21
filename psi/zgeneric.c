@@ -503,6 +503,9 @@ dict_continue(i_ctx_t *i_ctx_p)
     es_ptr obj = esp - 2;
     int index = esp->value.intval;
 
+    if (r_type(obj) != t_dictionary)
+        return_error(gs_error_typecheck);
+
     push(2);			/* make room for key and value */
     if ((index = dict_next(obj, index, op - 1)) >= 0) {	/* continue */
         esp->value.intval = index;
