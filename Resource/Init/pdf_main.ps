@@ -230,9 +230,22 @@ systemdict /NEWPDF known {
 
     % If we need to rotate, recalculate the box
     {
-      90 rotate
-      0 2 index neg translate                   % move 0,0 to bottom right of media to account for rotation
-      exch                                      % swap media width/height for scaling calculation
+      % We take any existing /Rotate key in the dictionary into account as well, because
+      % that way we will preserve the orientation which would be used when displaying
+      % the original, un-modified page. Note that PostScript's rotate operator works
+      % counter-clockwise, while PDF works clockwise....
+      %
+      7 index dup /Rotate known {/Rotate get}{90}ifelse
+      270 eq {
+        90 rotate
+        0 2 index neg translate                 % move 0,0 to bottom right of media to account for rotation
+        exch                                    % swap media width/height for scaling calculation
+      }
+      {
+        270 rotate
+        dup neg 0 translate                     % move 0,0 to bottom right of media to account for rotation
+        exch                                    % swap media width/height for scaling calculation
+      } ifelse
     }if
 
     % Now use the box and media values to calculate the required x/y scale factors
