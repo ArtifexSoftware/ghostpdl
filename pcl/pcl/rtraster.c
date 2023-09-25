@@ -1187,6 +1187,9 @@ pcl_start_raster(uint src_width, uint src_height, pcl_state_t * pcs)
     pcl_cs_indexed_t *pindexed = ppalet->pindexed;
     pcl_encoding_type_t penc = pcl_cs_indexed_get_encoding(pindexed);
     pcl_seed_row_t *pseed_rows = 0;
+    int pattern_could_be_transparent =
+            pcs->pattern_transparent &&
+            pcs->pattern_type != pcl_pattern_solid_frgrnd;
 
     /* there can only be one raster object present at a time */
     if (prast != 0)
@@ -1199,7 +1202,7 @@ pcl_start_raster(uint src_width, uint src_height, pcl_state_t * pcs)
 
     prast->pmem = pcs->memory;
 
-    if (pcs->source_transparent || pcs->pattern_transparent)
+    if (pcs->source_transparent || pattern_could_be_transparent)
         prast->transparent = true;
     else
         prast->transparent = false;
@@ -1306,7 +1309,7 @@ pcl_start_raster(uint src_width, uint src_height, pcl_state_t * pcs)
 
     /* see if a mask is required */
     if (!pcs->source_transparent &&
-        pcs->pattern_transparent &&
+        pattern_could_be_transparent &&
         (!prast->indexed ||
          (prast->wht_indx < (1 << prast->nplanes * prast->bits_per_plane)))) {
 
