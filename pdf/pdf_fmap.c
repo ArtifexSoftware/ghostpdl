@@ -611,7 +611,7 @@ static const char *font_scan_skip_list[] = {
   ".pcf"
 };
 
-static bool font_scan_skip_file(char *fname)
+static bool font_scan_skip_file(const char *fname)
 {
     size_t l2, l = strlen(fname);
     bool skip = false;
@@ -627,6 +627,100 @@ static bool font_scan_skip_file(char *fname)
     return skip;
 }
 
+static int pdfi_add_font_to_native_map(pdf_context *ctx, const char *fp, char *working)
+{
+    stream *sf;
+    int code = 0;
+    uint nread;
+    byte magic[4]; /* We only (currently) use up to 4 bytes for type guessing */
+    int type;
+
+    if (font_scan_skip_file(fp))
+        return 0;
+
+    sf = sfopen(fp, "r", ctx->memory);
+    if (sf == NULL)
+        return 0;
+    code = sgets(sf, magic, 4, &nread);
+    if (code < 0 || nread < 4) {
+        code = 0;
+        sfclose(sf);
+        return 0;
+    }
+
+    code = sfseek(sf, 0, SEEK_SET);
+    if (code < 0) {
+        code = 0;
+        sfclose(sf);
+        return 0;
+    }
+    /* Slightly naff: in this one case, we want to treat OTTO fonts
+       as Truetype, so we lookup the TTF 'name' table - it's more efficient
+       than decoding the CFF, and probably will give more expected results
+     */
+    if (memcmp(magic, "OTTO", 4) == 0 || memcmp(magic, "ttcf", 4) == 0) {
+        type = tt_font;
+    }
+    else {
+        type = pdfi_font_scan_type_picker((byte *)magic, 4);
+    }
+    switch(type) {
+        case tt_font:
+          code = pdfi_ttf_add_to_native_map(ctx, sf, magic, (char *)fp, working, gp_file_name_sizeof);
+          break;
+        case cff_font:
+              code = gs_error_undefined;
+          break;
+        case type1_font:
+        default:
+          code = pdfi_type1_add_to_native_map(ctx, sf, (char *)fp, working, gp_file_name_sizeof);
+          break;
+    }
+    sfclose(sf);
+    /* We ignore most errors, on the basis it probably means it wasn't a valid font file */
+    if (code != gs_error_VMerror)
+        code = 0;
+
+    return code;
+}
+
+/* still writes into pdfnativefontmap dictionary */
+static int pdfi_generate_platform_fontmap(pdf_context *ctx)
+{
+    void *enum_state = NULL;
+    int code = 0;
+    char *fontname, *path;
+    char *working = NULL;
+
+    working = (char *)gs_alloc_bytes(ctx->memory, gp_file_name_sizeof, "pdfi_generate_platform_fontmap");
+    if (working == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
+    }
+
+    enum_state = gp_enumerate_fonts_init(ctx->memory);
+    if (enum_state == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto done;
+    }
+
+    while((code = gp_enumerate_fonts_next(enum_state, &fontname, &path )) > 0) {
+        if (fontname == NULL || path == NULL) {
+            continue;
+        }
+        code = pdfi_add_font_to_native_map(ctx, path, working);
+
+        /* We ignore most errors, on the basis it probably means it wasn't a valid font file */
+        if (code == gs_error_VMerror)
+            break;
+        code = 0;
+    }
+done:
+    gp_enumerate_fonts_free(enum_state);
+    gs_free_object(ctx->memory, working, "pdfi_generate_platform_fontmap");
+    return code;
+}
+
 static int pdfi_generate_native_fontmap(pdf_context *ctx)
 {
     file_enum *fe;
@@ -634,10 +728,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
     char *patrn= NULL;
     char *result = NULL;
     char *working = NULL;
-    byte magic[4]; /* We only (currently) use up to 4 bytes for type guessing */
-    stream *sf;
     int code = 0, l;
-    uint nread;
 
     if (ctx->pdfnativefontmap != NULL) /* Only run this once */
         return 0;
@@ -668,51 +759,10 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
 
         fe = gp_enumerate_files_init(ctx->memory, (const char *)patrn, strlen(patrn));
         while ((l = gp_enumerate_files_next(ctx->memory, fe, result, gp_file_name_sizeof - 1)) != ~(uint) 0) {
-            int type;
             result[l] = '\0';
 
-            if (font_scan_skip_file(result))
-                continue;
+            code = pdfi_add_font_to_native_map(ctx, result, working);
 
-            sf = sfopen(result, "r", ctx->memory);
-            if (sf == NULL)
-                continue;
-            code = sgets(sf, magic, 4, &nread);
-            if (code < 0 || nread < 4) {
-                code = 0;
-                sfclose(sf);
-                continue;
-            }
-
-            code = sfseek(sf, 0, SEEK_SET);
-            if (code < 0) {
-                code = 0;
-                sfclose(sf);
-                continue;
-            }
-            /* Slightly naff: in this one case, we want to treat OTTO fonts
-               as Truetype, so we lookup the TTF 'name' table - it's more efficient
-               than decoding the CFF, and probably will give more expected results
-             */
-            if (memcmp(magic, "OTTO", 4) == 0 || memcmp(magic, "ttcf", 4) == 0) {
-                type = tt_font;
-            }
-            else {
-                type = pdfi_font_scan_type_picker((byte *)magic, 4);
-            }
-            switch(type) {
-                case tt_font:
-                  code = pdfi_ttf_add_to_native_map(ctx, sf, magic, result, working, gp_file_name_sizeof);
-                  break;
-                case cff_font:
-                      code = gs_error_undefined;
-                  break;
-                case type1_font:
-                default:
-                  code = pdfi_type1_add_to_native_map(ctx, sf, result, working, gp_file_name_sizeof);
-                  break;
-            }
-            sfclose(sf);
             /* We ignore most errors, on the basis it probably means it wasn't a valid font file */
             if (code == gs_error_VMerror)
                 break;
@@ -722,6 +772,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
         if (code < 0)
             gp_enumerate_files_close(ctx->memory, fe);
     }
+    (void)pdfi_generate_platform_fontmap(ctx);
 
 #ifdef DUMP_NATIVE_FONTMAP
     if (ctx->pdfnativefontmap != NULL) {
