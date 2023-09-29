@@ -267,7 +267,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                         if (Op->length > Size)
                             return_error(gs_error_undefined);
 
-                        if (memcmp(Op->op, TokenBuffer, Size - 1) == 0)
+                        if (memcmp(Op->op, TokenBuffer, Size) == 0)
                             break;
                     }
                     if (i > NumOps)
