@@ -723,7 +723,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
             gp_enumerate_files_close(ctx->memory, fe);
     }
 
-#if 0
+#ifdef DUMP_NATIVE_FONTMAP
     if (ctx->pdfnativefontmap != NULL) {
         uint64_t ind;
         int find = -1;
