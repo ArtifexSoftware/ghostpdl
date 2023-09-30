@@ -249,6 +249,11 @@ typedef struct text_state_s {
      * when we are in a text block.
      */
     int BlockDepth;
+    /* We set this when in a clipping text rendering mode when we draw the first text
+     * We use this (and the BlockDepth) to detect whether switching to a non-clipping
+     * text mode is an error or not.
+     */
+    bool TextClip;
     /* This is to determine if we get Type 3 Charproc operators (d0 and d1) outside
      * a Type 3 BuildChar.
      */

@@ -127,6 +127,7 @@ int pdfi_ET(pdf_context *ctx)
     if (ctx->text.BlockDepth == 0 && gs_currenttextrenderingmode(ctx->pgs) >= 4 /*&& !ctx->device_state.preserve_tr_mode*/) {
         gs_point initial_point;
 
+        ctx->text.TextClip = false;
         /* Capture the current position */
         code = gs_currentpoint(ctx->pgs, &initial_point);
         if (code >= 0) {
@@ -659,6 +660,7 @@ static int pdfi_show_Tr_4(pdf_context *ctx, gs_text_params_t *text)
     if (code < 0)
         return code;
 
+    ctx->text.TextClip = true;
     /* First fill the text */
     code = pdfi_show_Tr_0(ctx, text);
     if (code < 0)
@@ -683,6 +685,7 @@ static int pdfi_show_Tr_5(pdf_context *ctx, gs_text_params_t *text)
     if (code < 0)
         return code;
 
+    ctx->text.TextClip = true;
     /* First stroke the text */
     code = pdfi_show_Tr_1(ctx, text);
     if (code < 0)
@@ -707,6 +710,7 @@ static int pdfi_show_Tr_6(pdf_context *ctx, gs_text_params_t *text)
     if (code < 0)
         return code;
 
+    ctx->text.TextClip = true;
     /* First fill and stroke the text */
     code = pdfi_show_Tr_2(ctx, text);
     if (code < 0)
@@ -726,6 +730,7 @@ static int pdfi_show_Tr_7(pdf_context *ctx, gs_text_params_t *text)
     int code;
     gs_text_enum_t *penum=NULL, *saved_penum=NULL;
 
+    ctx->text.TextClip = true;
     /* Don't draw the text, create a path suitable for filling */
     text->operation |= TEXT_DO_TRUE_CHARPATH;
 
@@ -1347,9 +1352,10 @@ int pdfi_Tr(pdf_context *ctx)
         gs_point initial_point;
 
         /* Detect attempts to switch from a clipping mode to a non-clipping
-         * mode, this is defined as invalid in the spec.
+         * mode, this is defined as invalid in the spec. (We don't warn if we haven't yet
+         * drawn any text in the clipping mode).
          */
-        if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4 && ctx->text.BlockDepth != 0)
+        if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4 && ctx->text.BlockDepth != 0 && ctx->text.TextClip)
             pdfi_set_warning(ctx, 0, NULL, W_PDF_BADTRSWITCH, "pdfi_Tr", NULL);
 
         if (gs_currenttextrenderingmode(ctx->pgs) < 4 && mode >= 4 && ctx->text.BlockDepth != 0) {
