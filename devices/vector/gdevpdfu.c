@@ -590,6 +590,9 @@ int ps2write_dsc_header(gx_device_pdf * pdev, int pages)
 int
 pdfwrite_pdf_open_document(gx_device_pdf * pdev)
 {
+    if (!pdev->strm)
+        return_error(gs_error_ioerror);
+
     if (!is_in_page(pdev) && pdf_stell(pdev) == 0) {
         stream *s = pdev->strm;
         int level = (int)(pdev->CompatibilityLevel * 10 + 0.5);
