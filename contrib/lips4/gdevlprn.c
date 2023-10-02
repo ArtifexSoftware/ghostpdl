@@ -125,7 +125,7 @@ lprn_put_params(gx_device * dev, gs_param_list * plist)
                                   (param_name = "BlockWidth"),
                                   &BlockWidth)) {
         case 0:
-            if (BlockWidth < 0)
+            if (BlockWidth <= 0)
                 ecode = gs_error_rangecheck;
             else
                 break;
@@ -141,7 +141,7 @@ lprn_put_params(gx_device * dev, gs_param_list * plist)
                                   (param_name = "BlockLine"),
                                   &BlockLine)) {
         case 0:
-            if (BlockLine < 0)
+            if (BlockLine <= 0)
                 ecode = gs_error_rangecheck;
             else
                 break;
@@ -157,7 +157,7 @@ lprn_put_params(gx_device * dev, gs_param_list * plist)
                                   (param_name = "BlockHeight"),
                                   &BlockHeight)) {
         case 0:
-            if (BlockHeight < 0)
+            if (BlockHeight <= 0)
                 ecode = gs_error_rangecheck;
             else
                 break;
@@ -219,14 +219,22 @@ lprn_print_image(gx_device_printer * pdev, gp_file * fp)
     maxBy = (pdev->height + lprn->nBh - 1) / lprn->nBh;
     maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
 
-    if (!(lprn->ImageBuf = gs_malloc(pdev->memory->non_gc_memory, bpl, maxY, "lprn_print_image(ImageBuf)")))
-        return_error(gs_error_VMerror);
-    if (!(lprn->TmpBuf = gs_malloc(pdev->memory->non_gc_memory, bpl, maxY, "lprn_print_iamge(TmpBuf)")))
-        return_error(gs_error_VMerror);
-    if (!(lprn->bubbleTbl = gs_malloc(pdev->memory->non_gc_memory, sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)")))
-        return_error(gs_error_VMerror);
-    if (!(bubbleBuffer = gs_malloc(pdev->memory->non_gc_memory, sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)")))
-        return_error(gs_error_VMerror);
+    if (!(lprn->ImageBuf = gs_malloc(pdev->memory->non_gc_memory, bpl, maxY, "lprn_print_image(ImageBuf)"))) {
+        gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+    if (!(lprn->TmpBuf = gs_malloc(pdev->memory->non_gc_memory, bpl, maxY, "lprn_print_iamge(TmpBuf)"))) {
+        gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+    if (!(lprn->bubbleTbl = gs_malloc(pdev->memory->non_gc_memory, sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)"))) {
+        gs_note_error(gs_error_VMerror);
+        goto error;
+    }
+    if (!(bubbleBuffer = gs_malloc(pdev->memory->non_gc_memory, sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)"))){
+        gs_note_error(gs_error_VMerror);
+        goto error;
+    }
 
     for (i = 0; i < maxBx; i++)
         lprn->bubbleTbl[i] = NULL;
@@ -253,7 +261,7 @@ lprn_print_image(gx_device_printer * pdev, gp_file * fp)
         read_y = ri % maxY;	/* end of read position */
         code = gdev_prn_copy_scan_lines(pdev, ri, lprn->ImageBuf + bpl * read_y, bpl * lprn->nBh);
         if (code < 0)
-            return code;
+            goto error;
 
         num_y_blocks += lprn->nBh;
 
@@ -261,6 +269,7 @@ lprn_print_image(gx_device_printer * pdev, gp_file * fp)
     }
     lprn_bubble_flush_all(pdev, fp);	/* flush the rest of bubble */
 
+error:
     gs_free(pdev->memory->non_gc_memory, lprn->ImageBuf, bpl, maxY, "lprn_print_image(ImageBuf)");
     gs_free(pdev->memory->non_gc_memory, lprn->TmpBuf, bpl, maxY, "lprn_print_iamge(TmpBuf)");
     gs_free(pdev->memory->non_gc_memory, lprn->bubbleTbl, sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)");
