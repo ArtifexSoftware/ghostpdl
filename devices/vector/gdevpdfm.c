@@ -2966,6 +2966,9 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
     const pdfmark_name *pmn;
     int code = 0;
 
+    if (size < 2)
+        return_error(gs_error_stackunderflow);
+
     {	int cnt, len = pts[-1].size;
         char buf[200]; /* 6 doubles should fit (%g == -0.14285714285714285e-101 = 25 chars) */
 
