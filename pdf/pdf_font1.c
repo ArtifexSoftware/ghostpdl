@@ -761,6 +761,26 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
     }
 
     if (code < 0) {
+        tmp = NULL;
+        if (font_dict != NULL) {
+            if (pdfi_dict_get(ctx, font_dict, ".Path", &tmp) >= 0)
+            {
+                char fname[gp_file_name_sizeof + 1];
+                pdf_string *fobj = (pdf_string *)tmp;
+
+                memcpy(fname, fobj->data, fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length);
+                fname[fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length] = '\0';
+
+                pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_type1_font", "Error reading Type 1 font file %s\n", fname);
+            }
+            else {
+                pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_type1_font", "Error reading embedded Type 1 font object %u\n", font_dict->object_num);
+            }
+        }
+        else {
+            pdfi_set_error(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_truetype_font", "Error reading font\n");
+        }
+        pdfi_countdown(tmp);
         pdfi_countdown(t1f);
     }
     return code;

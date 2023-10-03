@@ -492,6 +492,8 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     return 0;
 
 error:
+    pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_type0_font", "Error reading embedded Type0 font object %u\n", font_dict->object_num);
+
     pdfi_countdown(arr);
     pdfi_countdown(pcmap);
     pdfi_countdown(tounicode);

@@ -850,7 +850,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
 }
 
 int
-pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, int *findex)
+pdf_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname, pdf_obj **mapname, int *findex)
 {
     int code;
     pdf_obj *mname;
@@ -918,6 +918,7 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_name *fname, pdf_obj **mapname, in
     }
     if (mname != NULL && pdfi_type_of(mname) == PDF_STRING && pdfi_fmap_file_exists(ctx, (pdf_string *)mname)) {
         *mapname = mname;
+        (void)pdfi_dict_put(ctx, font_dict, ".Path", mname);
         code = 0;
     }
     else if (mname != NULL && pdfi_type_of(mname) == PDF_NAME) { /* If we map to a name, we assume (for now) we have the font as a "built-in" */
@@ -1042,6 +1043,7 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
         }
 
         *mapname = (pdf_obj *)path;
+        (void)pdfi_dict_put(ctx, font_dict, ".Path", (pdf_obj *)path);
         code = pdfi_dict_get_int(ctx, rec, "Index", &i64);
         *findex = (code < 0) ? 0 : (int)i64; /* rangecheck? */
         code = 0;
