@@ -125,7 +125,7 @@ lprn_put_params(gx_device * dev, gs_param_list * plist)
                                   (param_name = "BlockWidth"),
                                   &BlockWidth)) {
         case 0:
-            if (BlockWidth <= 0)
+            if (BlockWidth <= 0 || BlockWidth > (max_int / BlockWidth))
                 ecode = gs_error_rangecheck;
             else
                 break;
@@ -157,7 +157,10 @@ lprn_put_params(gx_device * dev, gs_param_list * plist)
                                   (param_name = "BlockHeight"),
                                   &BlockHeight)) {
         case 0:
-            if (BlockHeight <= 0)
+            /* We use BlockHeight squared in lprn_print_image() below, and use it as a regular int,
+             * so we need to ensure that calculation won't overflow.
+             */
+            if (BlockHeight <= 0 || BlockHeight > (max_int / BlockHeight))
                 ecode = gs_error_rangecheck;
             else
                 break;
@@ -210,7 +213,7 @@ lprn_print_image(gx_device_printer * pdev, gp_file * fp)
     int i;
     int ri, rmin, read_y;
     int code = 0;
-    Bubble *bubbleBuffer;
+    Bubble *bubbleBuffer = NULL;
     int maxBx, maxBy, maxY;
     int start_y_block = 0;	/* start of data in buffer */
     int num_y_blocks = 0;	/* number of data line [r:r+h-1] */
@@ -274,6 +277,13 @@ error:
     gs_free(pdev->memory->non_gc_memory, lprn->TmpBuf, bpl, maxY, "lprn_print_iamge(TmpBuf)");
     gs_free(pdev->memory->non_gc_memory, lprn->bubbleTbl, sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)");
     gs_free(pdev->memory->non_gc_memory, bubbleBuffer, sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)");
+
+    /* These are initialised by the structure descriptors when the device is created, but we need to make
+     * sure to reset them after we free the buffers above, ao that it is always safe to free them.
+     * bubbleBuffer is local and initialised on entry so we can ignore that one.
+     */
+    lprn->ImageBuf = lprn->TmpBuf = NULL;
+    lprn->bubbleTbl = NULL;
 
     return code;
 }
