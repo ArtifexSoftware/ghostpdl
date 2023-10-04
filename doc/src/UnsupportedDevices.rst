@@ -1307,7 +1307,7 @@ I refuse to add code to :title:`stcolor` that tries to guess the proper margins 
 
 .. code-block:: postscript
 
-   mark % prepare stack for "putdeviceprops"
+   mark % prepare stack for "setpagedevice"
 
 insert these lines, which define page size and margins in points:
 

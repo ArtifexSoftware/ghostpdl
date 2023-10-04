@@ -1014,7 +1014,7 @@ The ``setup.ps`` file is responsible for the device selection, therefore you sho
 
 .. code-block:: postscript
 
-   mark
+   <<
      /NoCancel      true                       % don't show the cancel dialog
      /BitsPerPixel  4                          % force 4 bits/pixel
      /UserSettings
@@ -1022,8 +1022,8 @@ The ``setup.ps`` file is responsible for the device selection, therefore you sho
          /DocumentName  (Ghostscript document) % name for the Windows spooler
          /MaxResolution 360                    % maximum document resolution
        >>
-     (mswinpr2) finddevice                     % select the Windows device driver
-     putdeviceprops
+     /OutputDevice /mswinpr2                   % select the Windows device driver
+   >> setpagedevice
   setdevice
 
 
