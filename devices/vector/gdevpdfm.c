@@ -957,7 +957,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 else {
                     memcpy(Buffer, pair->data, pair->size);
                     Buffer[pair->size] = 0x00;
-                    code = sscanf(Buffer, "%ud", &Flags);
+                    code = sscanf(Buffer, "%u", &Flags);
                 }
                 if (code != 1)
                     emprintf(pdev->memory,
