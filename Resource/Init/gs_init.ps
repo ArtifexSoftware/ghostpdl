@@ -899,9 +899,6 @@ currentdict /.makeinternaldict .undef
 /== /= load def
 
 % The following procedures are documented.
-/copydevice {		% <device> copydevice <newdevice>
-  //false .copydevice2
-} odef
 /finddevice {		% <devicename> finddevice <device>
   /devicedict .systemvar exch get
   dup 1 get //null eq {
@@ -909,13 +906,10 @@ currentdict /.makeinternaldict .undef
                 % Create a default instance now.
                 % Stack: [proto null]
     .currentglobal //true .setglobal exch
-    dup dup 0 get copydevice 1 exch put
+    dup dup 0 get //false .copydevice2 1 exch put
     exch .setglobal
   } if 1 get
-} bind def
-/findprotodevice {	% <devicename> findprotodevice <protodevice>
-  /devicedict .systemvar exch get 0 get
-} bind def
+} bind executeonly odef
 
 % Run a resource file.  This allows us to distinguish resource objects
 % from objects coming from input files.
@@ -2488,6 +2482,9 @@ currentdict /.locksafeglobal .undef
   /odef
   /.packtomark
   /.putdeviceprops
+  /putdeviceprops
+  /getdeviceprops
+  /finddevice
   /.growdict /.growdictlength
   /.userdict /.uservar
   /.getdefaulthalftone

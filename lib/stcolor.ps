@@ -30,7 +30,7 @@ exch (AFPL Ghostscript) eq or{
 
 % fetch the current device-parameters this is specific for Ghostscript.
 
-  /STCold currentdevice getdeviceprops .dicttomark def
+  /STCold currentpagedevice def
 
 % Any Ghostscript-Driver has a Name, verify that the selected device is
 % stcolor, otherwise nothing than another message will be produced.
@@ -68,7 +68,7 @@ exch (AFPL Ghostscript) eq or{
 % pick the colormodel
      STCold /ProcessColorModel get /STCcolor exch def
 
-     mark % prepare stack for "putdeviceprops"
+     mark % prepare stack for "setpagedevice"
 
 % warn for BitsPerPixel=30 with fsrgb
      STCcolor /DeviceRGB eq STCold /BitsPerPixel get 32 eq and
@@ -155,7 +155,7 @@ exch (AFPL Ghostscript) eq or{
      } ifelse
 
      counttomark 0 ne
-        {currentdevice putdeviceprops pop}{cleartomark}ifelse
+        {.dicttomark setpagedevice}{cleartomark}ifelse
 
 % decativate predefined correction
 

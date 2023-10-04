@@ -59,8 +59,7 @@ dup EPSFheader ne {
   % run the file through eps2write (into a tempfile) to make an EPSF
   (_ps2epsi) (w+) .tempfile closefile /TName exch def
   /SAVE save def
-  (eps2write) finddevice mark /OutputFile TName 3 index putdeviceprops pop
-  setdevice
+  << /OutputDevice /eps2write /OutputFile TName >> setpagedevice
   InputFile run
   SAVE restore
   /I TName (r) file def

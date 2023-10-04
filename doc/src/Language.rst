@@ -592,15 +592,6 @@ Miscellaneous operators
 Device operators
 """"""""""""""""""""""""""
 
-``<device> copydevice <device>``
-   Copies a device. The copy is writable and installable. The copy is created in the current VM (local or global), usually local VM for executing ordinary PostScript files.
-
-``<devicename> finddevice <device>``
-   Creates a default instance of a device specified by name. The instance is created in global VM. If ``finddevice`` is called more than once with the same device name, it creates the default instance the first time, and returns the same instance thereafter.
-
-``<devicename> findprotodevice <device>``
-   Finds the prototype of a device specified by name. A prototype can be used with ``getdeviceprops`` or other parameter-reading operators, but it is read-only and cannot be set with setdevice: it must be copied first.
-
 ``<matrix> <width> <height> <palette> makeimagedevice <device>``
    Makes a new device that accumulates an image in memory. ``matrix`` is the initial transformation matrix: it must be orthogonal (that is, [a 0 0 b x y] or [0 a b 0 x y]). palette is a string of 2^N or 3 × 2^N elements, specifying how the 2^N possible pixel values will be interpreted. Each element is interpreted as a gray value, or as RGB values, multiplied by 255. For example, if you want a monochrome image for which 0=white and 1=black, the palette should be <ff 00>; if you want a 3-bit deep image with just the primary colors and their complements (ignoring the fact that 3-bit images are not supported), the palette might be ``<000000 0000ff 00ff00 00ffff ff0000 ff00ff ffff00 ffffff>``. At present, the palette must contain exactly 2, 4, 16, or 256 entries, and must contain an entry for black and an entry for white; if it contains any entries that aren't black, white, or gray, it must contain at least the six primary colors (red, green, blue, and their complements cyan, magenta, and yellow); aside from this, its contents are arbitrary.
 
@@ -632,16 +623,10 @@ Device operators
 ``<device> setdevice -``
    Sets the current device to the specified device. Also resets the transformation and clipping path to the initial values for the device. Signals an ``invalidaccess`` error if the device is a prototype or if :ref:`.LockSafetyParams<Language_LockSafetyParams>` is true for the current device.
 
-   Some device properties may need to be set with ``putdeviceprops`` before ``setdevice`` is called. For example, the :title:`pdfwrite` device will try to open its output file, causing an ``undefinedfilename`` error if ``OutputFile`` hasn't been set to a valid filename. Another method in such cases is to use the level 2 operator instead: ``<< /OutputDevice /pdfwrite /OutputFile (MyPDF.pdf) >> setpagedevice``.
+   Some device properties may need to be set before ``setdevice`` is called. For example, the :title:`pdfwrite` device will try to open its output file, causing an ``undefinedfilename`` error if ``OutputFile`` hasn't been set to a valid filename. In such cases use the level 2 operator instead: ``<< /OutputDevice /pdfwrite /OutputFile (MyPDF.pdf) >> setpagedevice``.
 
 ``- currentdevice <device>``
    Gets the current device from the graphics state.
-
-``<device> getdeviceprops <mark> <name1> <value1> ... <namen> <valuen>``
-   Gets the properties of a device. See the section on `device parameters`_ below for details.
-
-``<mark> <name1> <value1> ... <namen> <valuen> <device> putdeviceprops <device>``
-   Sets properties of a device. May cause ``undefined``, ``invalidaccess``, ``typecheck``, ``rangecheck``, or ``limitcheck`` errors.
 
 
 Filters
@@ -786,7 +771,7 @@ Device parameters
 ---------------------
 
 
-Ghostscript supports the concept of device parameters for all devices, not just page devices. (For non-page devices, these are accessible through ``getdeviceprops`` and ``putdeviceprops``, as indicated above.) Here are the currently defined parameters for all devices:
+Ghostscript supports the concept of device parameters for all devices, not just page devices. Here are the currently defined parameters for all devices:
 
 
 .. _Language_LockSafetyParams:

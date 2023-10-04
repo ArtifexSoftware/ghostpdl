@@ -26,7 +26,7 @@ statusdict begin product end
 dup (Ghostscript) eq 1 index (Artifex Ghostscript) eq or
 exch (AFPL Ghostscript) eq or{
 
-  currentdevice getdeviceprops .dicttomark
+  currentpagedevice
   dup /Name get (stcolor) eq /STCi_onstc exch def
   /STCinfo where {/STCinfo get exch pop} if
   /STCinfo exch def
@@ -635,7 +635,7 @@ exch (AFPL Ghostscript) eq or{
    /ColorAdjustMatrix STCiget null ne STCi_onstc and {
        mark
        /ColorAdjustMatrix null
-       currentdevice putdeviceprops pop
+       .dicttomark setpagedevice
    } if
 %
 % "Show" the text
@@ -783,7 +783,7 @@ exch (AFPL Ghostscript) eq or{
    /ColorAdjustMatrix STCiget null ne STCi_onstc and {
      STCi_win 0 get STCi_win 2 get add 2 div
      [STCi_win 0 get STCi_win 1 get 3 index STCi_win 3 get ] colortri
-     mark /ColorAdjustMatrix dup STCiget currentdevice putdeviceprops pop
+     mark /ColorAdjustMatrix dup STCiget .dicttomark setpagedevice
      [1 index STCi_win 1 get STCi_win 2 get STCi_win 3 get ] colortri
      pop
    }{
