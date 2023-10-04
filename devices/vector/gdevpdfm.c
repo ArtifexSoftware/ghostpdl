@@ -942,7 +942,8 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
      * Print flag enabled, so we need to prescan for that here.
      */
     if(pdev->PDFA != 0) {
-        int i, Flags = 0;
+        int i;
+        unsigned int Flags = 0;
         /* Check all the keys to see if we have a /F (Flags) key/value pair defined */
         for (i = 0; i < count; i += 2) {
             const gs_param_string *pair = &pairs[i];
@@ -956,7 +957,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 else {
                     memcpy(Buffer, pair->data, pair->size);
                     Buffer[pair->size] = 0x00;
-                    code = sscanf(Buffer, "%ld", (long *)&Flags);
+                    code = sscanf(Buffer, "%ud", &Flags);
                 }
                 if (code != 1)
                     emprintf(pdev->memory,
