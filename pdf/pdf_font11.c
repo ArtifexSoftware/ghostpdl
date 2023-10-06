@@ -545,23 +545,18 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 error:
     pdfi_countdown(obj);
     obj = NULL;
-    if (font_dict != NULL) {
-        if (pdfi_dict_get(ctx, font_dict, ".Path", &obj) >= 0)
-        {
-            char fname[gp_file_name_sizeof + 1];
-            pdf_string *fobj = (pdf_string *)obj;
+    if (pdfi_dict_get(ctx, font_dict, ".Path", &obj) >= 0)
+    {
+        char fname[gp_file_name_sizeof + 1];
+        pdf_string *fobj = (pdf_string *)obj;
 
-            memcpy(fname, fobj->data, fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length);
-            fname[fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length] = '\0';
+        memcpy(fname, fobj->data, fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length);
+        fname[fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length] = '\0';
 
-            pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_cidtype2_font", "Error reading CIDType2/TrueType font file %s\n", fname);
-        }
-        else {
-            pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_cidtype2_font", "Error reading embedded CIDType2/TrueType font object %u\n", font_dict->object_num);
-        }
+        pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_cidtype2_font", "Error reading CIDType2/TrueType font file %s\n", fname);
     }
     else {
-        pdfi_set_error(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_truetype_font", "Error reading font\n");
+        pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_cidtype2_font", "Error reading embedded CIDType2/TrueType font object %u\n", font_dict->object_num);
     }
 
     pdfi_countdown(obj);
