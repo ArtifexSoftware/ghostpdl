@@ -1038,8 +1038,10 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
             return code;
 
         code = pdfi_dict_first(ctx, font_dict, &Key, &Value, &index);
-        if (code < 0)
+        if (code < 0) {
+            (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current resource loop */
             goto error1;
+        }
 
         i = 1;
         do {
@@ -1074,11 +1076,11 @@ static int pdfi_check_Font_dict(pdf_context *ctx, pdf_dict *font_dict, pdf_dict 
             code = pdfi_dict_next(ctx, font_dict, &Key, &Value, &index);
             if (code < 0)
                 break;
-
         }while (1);
+
+        (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current resource loop */
     }
 
-    (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the current resource loop */
     pdfi_countdown(Key);
     pdfi_countdown(Value);
 
