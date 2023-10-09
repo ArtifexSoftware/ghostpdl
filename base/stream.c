@@ -1284,8 +1284,11 @@ s_add_filter(stream **ps, const stream_template *templat,
     ess->templat = templat;
     ess->memory = mem;
     es->memory = mem;
-    if (s_init_filter(es, ess, buf, bsize, *ps) < 0)
+    if (s_init_filter(es, ess, buf, bsize, *ps) < 0) {
+        gs_free_object(mem, buf, "s_add_filter(buf)");
+        gs_free_object(mem, es, "s_add_filter(stream)");
         return 0;
+    }
     *ps = es;
     return es;
 }

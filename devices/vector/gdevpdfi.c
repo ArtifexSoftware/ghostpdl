@@ -2184,8 +2184,13 @@ pdf_image3_make_mcde(gx_device *dev, const gs_gstate *pgs,
         code = pdf_begin_typed_image
             ((gx_device_pdf *)dev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
             pinfo, PDF_IMAGE_TYPE3_DATA);
-        if (code < 0)
+        if (code < 0) {
+            gx_device_set_target((gx_device_forward *)(*pmcdev), NULL);
+            gs_closedevice((*pmcdev));
+            gs_free_object(mem, (*pmcdev), "pdf_image3_make_mcde(*pmcdev)");
+            *pmcdev = NULL;
             return code;
+        }
     }
     /* Due to equal image merging, we delay the adding of the "Mask" entry into
        a type 3 image dictionary until the mask is completed.
