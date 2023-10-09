@@ -117,13 +117,21 @@ The options in the command line may include any switches that may be used with t
 
 
   ``AlwaysOutline``
-    Similar to the :ref:`-dNoOutputFonts<VectorDevices_NoOutputFonts>` control, this can be used to control whether text is converted into linework or preserved as a font, based on the name. Text using a font which is listed in the ``AlwaysOutline`` array will always be converted into linework and the font will not be embedded in the output.
+    Similar to the :ref:`-dNoOutputFonts<VectorDevices_NoOutputFonts>` control, this can be used to control whether text is converted into linework or preserved as a font, based on the name. Text using a font which is listed in the ``AlwaysOutline`` array will always be converted into linework and the font will not be embedded in the output. Subset fonts have a prefix of the form 'ABCDE+' (Acrobat does not display the prefix in the Fonts dialog) and the code will remove this from fonts used in the document before matching so you should not specify that part of the font name.
 
     Example usage:
 
     .. code-block:: c
 
       gs -sDEVICE=pdfwrite -o out.pdf -c "<< /AlwaysOutline [/Calibri (Comic Sans) cvn] >> setdistillerparams" -f input.pdf
+    
+    .. note::
+    
+      CIDFonts are composed with the CMap name to produce the final font name, and it is not possible to reliably remove the CMap name in the font name matching, so you must specify the composed name.
+
+    .. code-block:: c
+    
+      gs -sDEVICE=pdfwrite -o out.pdf -c "<< /AlwaysOutline [/Calibri-Identity-H (Comic Sans-Identity-H) cvn] >> setdistillerparams" -f input.pdf
 
 
   ``NeverOutline``
