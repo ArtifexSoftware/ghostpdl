@@ -1132,7 +1132,7 @@ int pdfi_read_xref(pdf_context *ctx)
 
 repair:
     (void)pdfi_loop_detector_cleartomark(ctx);
-    if (!ctx->repaired)
+    if (!ctx->repaired && !ctx->args.pdfstoponerror)
         return(pdfi_repair_file(ctx));
     return 0;
 }
