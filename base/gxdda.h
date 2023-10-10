@@ -183,6 +183,21 @@ dda_state_struct(_a, fixed, uint) gx_dda_state_fixed;
     dda_init_step((dda).step, D, N);\
   } while (0)
 
+static inline
+int dda_will_overflow(gx_dda_fixed dda)
+{
+    /* Every step, R decrements by dR. If it becomes negative, we add 1 to Q, and add N to R. */
+    /* So on average we add (N-dR)/N to Q each step. So in N steps we add (N-dR) to Q. */
+    uint N = dda.step.N;
+    fixed delta = dda.step.dQ * N + N - dda.step.dR;
+
+    if (delta > 0 && delta + dda.state.Q < dda.state.Q)
+            return 1;
+    if (delta < 0 && delta + dda.state.Q > dda.state.Q)
+            return 1;
+    return 0;
+}
+
 /*
  * Initialise a DDA, and do a half step.
  */

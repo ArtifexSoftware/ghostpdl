@@ -928,6 +928,12 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
          * row in device space. */
         dda_init(penum->dda.row.x, mtx, col_extent.x, height);
         dda_init(penum->dda.row.y, mty, col_extent.y, height);
+        if (dda_will_overflow(penum->dda.row.x) ||
+            dda_will_overflow(penum->dda.row.y))
+        {
+            code = gs_error_rangecheck;
+            goto fail;
+        }
         if (penum->posture == image_portrait) {
             penum->dst_width = row_extent.x;
             penum->dst_height = col_extent.y;
@@ -952,6 +958,12 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
          * actually rendering. */
         dda_init(penum->dda.strip.x, penum->cur.x, row_extent.x, width);
         dda_init(penum->dda.strip.y, penum->cur.y, row_extent.y, width);
+        if (dda_will_overflow(penum->dda.strip.x) ||
+            dda_will_overflow(penum->dda.strip.y))
+        {
+            code = gs_error_rangecheck;
+            goto fail;
+        }
         if (penum->rect.x) {
             dda_advance(penum->dda.strip.x, penum->rect.x);
             dda_advance(penum->dda.strip.y, penum->rect.x);
@@ -1066,6 +1078,8 @@ fail:
     }
     gs_free_object(mem, penum->clip_dev, "image clipper");
     gs_free_object(mem, penum, "gx_begin_image1");
+    rc_decrement_cs(pcs, "error in gx_begin_image1");
+    penum->pcs = NULL;
     return code;
 }
 
