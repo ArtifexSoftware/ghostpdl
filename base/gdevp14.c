@@ -6818,18 +6818,25 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
                   gx_bitmap_id id, int x, int y, int w, int h, int plane_height)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-#if RAW_DUMP
-    pdf14_ctx *ctx = pdev->ctx;
-#endif
-    pdf14_buf *buf = pdev->ctx->stack;
+    pdf14_ctx *ctx;
+    pdf14_buf *buf;
     int xo = x;
     int yo = y;
     pdf14_buf fake_tos;
-    int deep = pdev->ctx->deep;
+    int deep;
+
+    int code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
+        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    if (code < 0)
+        return code;
 
     fit_fill_xywh(dev, x, y, w, h);
     if (w <= 0 || h <= 0)
         return 0;
+
+    ctx = pdev->ctx;
+    buf = ctx->stack;
+    deep = ctx->deep;
 
     fake_tos.deep = deep;
     fake_tos.alpha = (uint16_t)(0xffff * pdev->alpha + 0.5);
