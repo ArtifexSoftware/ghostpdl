@@ -71,6 +71,7 @@ PARAM(W_PDF_BAD_TREE_LIMITS,        "Name tree node Limits array does not have 2
 PARAM(W_PDF_NAMES_ARRAY_SIZE,       "Name tree Names array size not a mulitple of 2"),
 PARAM(W_PDF_MISSING_NAMED_RESOURCE, "Couldn't find a named resource"),
 PARAM(W_PDF_BAD_OUTLINES,           "A problem was encountered trying to preserve the Outlines"),
+PARAM(W_PDF_OUTLINECHILD_NO_COUNT,  "An Outline with descendants is missing the required /Count key"),
 PARAM(W_PDF_BAD_INFO,               "The file has a bad /Info dictionary"),
 PARAM(W_PDF_BAD_EMBEDDEDFILES,      "File has Embedded files which could not be preserved"),
 PARAM(W_PDF_BAD_ACROFORM,           "Bad AcroForm detected"),

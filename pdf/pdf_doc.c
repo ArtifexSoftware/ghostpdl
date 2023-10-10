@@ -1111,7 +1111,7 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     uint64_t dictsize;
     uint64_t index;
     pdf_name *Key = NULL;
-    double num;
+    double num = 0;
 
     /* Basically we only do /Count, /Title, /A, /C, /F
      * The /First, /Last, /Next, /Parent get written magically by pdfwrite
@@ -1137,16 +1137,22 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
     if (code < 0)
         goto exit;
 
-    if (code > 0) {
+    /* We can't rely on Count being present to indicate that the Outline has descendants
+     * see bug #707228. Instead, look for the presence of a /First key. If there is no count
+     * key, or it is 0, then assume the entry is closed.
+     */
+    {
         pdf_dict *current = NULL, *next = NULL;
-        int count = 0;
+        int count = 0, code1;
 
-        code = pdfi_dict_knownget_type(ctx, outline, "First", PDF_DICT, (pdf_obj **)&current);
-        if (code > 0) {
+        code1 = pdfi_dict_knownget_type(ctx, outline, "First", PDF_DICT, (pdf_obj **)&current);
+        if (code1 > 0) {
+            if (code <= 0)
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_OUTLINECHILD_NO_COUNT, "pdfi_doc_mark_the_outline", NULL);
             count++;
             do {
-                code = pdfi_dict_knownget_type(ctx, current, "Next", PDF_DICT, (pdf_obj **)&next);
-                if (code > 0) {
+                code1 = pdfi_dict_knownget_type(ctx, current, "Next", PDF_DICT, (pdf_obj **)&next);
+                if (code1 > 0) {
                     pdfi_countdown(current);
                     current = next;
                     next = NULL;
@@ -1156,7 +1162,7 @@ static int pdfi_doc_mark_the_outline(pdf_context *ctx, pdf_dict *outline)
             } while (1);
             pdfi_countdown(current);
         }
-        if (num < 0)
+        if (num <= 0)
             count *= -1;
         pdfi_dict_put_int(ctx, tempdict, "Count", count);
     }
