@@ -1077,9 +1077,9 @@ fail:
         penum->clip_dev = NULL;
     }
     gs_free_object(mem, penum->clip_dev, "image clipper");
-    gs_free_object(mem, penum, "gx_begin_image1");
     rc_decrement_cs(pcs, "error in gx_begin_image1");
     penum->pcs = NULL;
+    gs_free_object(mem, penum, "gx_begin_image1");
     return code;
 }
 
