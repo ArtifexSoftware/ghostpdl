@@ -108,7 +108,7 @@ static int read_xref_stream_entries(pdf_context *ctx, pdf_c_stream *s, int64_t f
         }
 
         entry = &ctx->xref_table->xref[i];
-        if (entry->object_num != 0)
+        if (entry->object_num != 0 && !entry->free)
             continue;
 
         entry->compressed = false;
