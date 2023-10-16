@@ -737,6 +737,7 @@ tiffsep_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs(dev);
 
+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, open_device, tiffsep_prn_open);
     set_dev_proc(dev, close_device, tiffsep_prn_close);
     set_dev_proc(dev, map_color_rgb, tiffsep_decode_color);

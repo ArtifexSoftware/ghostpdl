@@ -1271,6 +1271,7 @@ gdev_prn_open_printer_seekable(gx_device *pdev, bool binary_mode,
               && !IS_LIBCTX_STDERR(pdev->memory, gp_get_file(ppdev->file))) {
 
                 code = gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);
+                ppdev->file = NULL;
                 if (code < 0)
                     return code;
             }
