@@ -489,7 +489,7 @@ get_dev_target(gx_device ** ptdev, gx_device * dev)
                                  dev->memory);
 
         if (code < 0)
-            return 0;
+            return code;
         check_device_separable(tdev);
         gx_device_fill_in_procs(tdev);
         gx_device_set_target((gx_device_forward *)dev, tdev);
