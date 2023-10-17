@@ -1715,17 +1715,16 @@ tiffsep_close_sep_file(tiffsep_device *tfdev, const char *fn, int comp_num)
 static int
 tiffsep_close_comp_file(tiffsep_device *tfdev, const char *fn)
 {
-    int code;
+    int code = 0;
 
     if (tfdev->tiff_comp) {
         TIFFClose(tfdev->tiff_comp);
         tfdev->tiff_comp = NULL;
     }
-
-    code = gx_device_close_output_file((gx_device *)tfdev,
-                                       fn,
-                                       tfdev->comp_file);
-    tfdev->comp_file = NULL;
+    if (tfdev->comp_file) {
+        code = gx_device_close_output_file((gx_device *)tfdev, fn, tfdev->comp_file);
+        tfdev->comp_file = NULL;
+    }
 
     return code;
 }
@@ -1743,11 +1742,9 @@ tiffsep_prn_close(gx_device * pdev)
     gsicc_free_link_dev(pdevn->icclink);
     pdevn->icclink = NULL;
 
-    if (pdevn->tiff_comp) {
-        void *t = TIFFClientdata(pdevn->tiff_comp);
-        TIFFCleanup(pdevn->tiff_comp);
-        gs_free(pdev->memory, t, sizeof(tifs_io_private), 1, "tiffsep_prn_close");
-        pdevn->tiff_comp = NULL;
+    code = tiffsep_close_comp_file(pdevn, pdevn->fname);
+    if (code < 0) {
+        goto done;
     }
     code = gdev_prn_close(pdev);
     if (code < 0) {
