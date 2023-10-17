@@ -376,7 +376,7 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, size_t *
     int num_planes;
     gx_render_plane_t plane1;
     const gx_render_plane_t *planes;
-    size_t size;
+    size_t size, alignment = bitmap_raster_pad_align(1, dev->pad, dev->log2_align_mod);
     int pi;
 
     if (dev->num_planar_planes > 1) {
@@ -384,8 +384,12 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, size_t *
         planes = dev->planes;
     } else
         planes = &plane1, plane1.depth = dev->color_info.depth, num_planes = 1;
-    for (size = 0, pi = 0; pi < num_planes; ++pi)
-        size += bitmap_raster_pad_align(width * planes[pi].depth, dev->pad, dev->log2_align_mod);
+    for (size = 0, pi = 0; pi < num_planes; ++pi) {
+        size_t raster = bitmap_raster_pad_align((size_t)width * planes[pi].depth, dev->pad, dev->log2_align_mod);
+        if (width > (SIZE_MAX - alignment) / planes[pi].depth || raster > SIZE_MAX - size)
+            return_error(gs_error_VMerror);
+        size += raster;
+    }
     if (height != 0)
         if (size > (SIZE_MAX - ARCH_ALIGN_PTR_MOD) / (ulong)height)
             return_error(gs_error_VMerror);
