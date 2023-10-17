@@ -15,8 +15,10 @@
 %
 
 % Construct the bitmap font used for printing the error page.
+% This program must be run with -dNOSAFER, as it uses the in-memory image device
+% which is unavailable with SAFER.
 
-% /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY pxbfont.ps >pxbfont.c
+% /usr/bin/gs -I/usr/lib/ghostscript -q -dNODISPLAY -dNOSAFER pxbfont.ps >pxbfont.c
 
 % Put space last so we can fake the width.
 

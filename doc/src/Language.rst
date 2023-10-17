@@ -594,6 +594,7 @@ Device operators
 
 ``<matrix> <width> <height> <palette> makeimagedevice <device>``
    Makes a new device that accumulates an image in memory. ``matrix`` is the initial transformation matrix: it must be orthogonal (that is, [a 0 0 b x y] or [0 a b 0 x y]). palette is a string of 2^N or 3 × 2^N elements, specifying how the 2^N possible pixel values will be interpreted. Each element is interpreted as a gray value, or as RGB values, multiplied by 255. For example, if you want a monochrome image for which 0=white and 1=black, the palette should be <ff 00>; if you want a 3-bit deep image with just the primary colors and their complements (ignoring the fact that 3-bit images are not supported), the palette might be ``<000000 0000ff 00ff00 00ffff ff0000 ff00ff ffff00 ffffff>``. At present, the palette must contain exactly 2, 4, 16, or 256 entries, and must contain an entry for black and an entry for white; if it contains any entries that aren't black, white, or gray, it must contain at least the six primary colors (red, green, blue, and their complements cyan, magenta, and yellow); aside from this, its contents are arbitrary.
+   This operator is only available when running Ghostscript with NOSAFER.
 
    Alternatively, ``palette`` can be 16, 24, 32, or null (equivalent to 24). These are interpreted as:
 
