@@ -1171,9 +1171,13 @@ static int pdfi_init_file(pdf_context *ctx)
         }
     }
 
+    pdfi_device_set_flags(ctx);
+
     if (ctx->Trailer) {
         /* See comment in pdfi_read_Root() (pdf_doc.c) for details */
         pdf_dict *d = ctx->Trailer;
+        double Permissions = 0;
+        uint32_t P = 0;
 
         pdfi_countup(d);
         code = pdfi_dict_get(ctx, d, "Encrypt", &o);
@@ -1185,6 +1189,35 @@ static int pdfi_init_file(pdf_context *ctx)
                 code = pdfi_initialise_Decryption(ctx);
                 if (code < 0)
                     goto exit;
+
+                /* This section is commetned out but deliberately retained. This code
+                 * prevents us from processing any PDF file where the 'print' permission
+                 * is not set. Additionally, if the 'print' permission is set, but bit 12
+                 * 'faitful digital copy' is not set, *and* we are writing to a high level
+                 * device, then we will throw an error..
+                 */
+#if USE_PDF_PERMISSIONS
+                code = pdfi_dict_knownget_number(ctx, (pdf_dict *)o, "P", &Permissions);
+                if (code < 0)
+                    goto exit;
+                if (Permissions > ((unsigned long)1 << 31)) {
+                    code = gs_note_error(gs_error_rangecheck);
+                    goto exit;
+                }
+                P = (uint32_t)Permissions;
+                if ((P & 0x04) == 0) {
+                    dmprintf(ctx->memory, "   ****The owner of this file has requested you do not print it.\n");
+                    code = gs_note_error(gs_error_invalidfileaccess);
+                    goto exit;
+                }
+                if (ctx->device_state.HighLevelDevice) {
+                    if ((P & 0x800) == 0) {
+                        dmprintf(ctx->memory, "   ****The owner of this file has requested you do not make a digital copy of it.\n");
+                        code = gs_note_error(gs_error_invalidfileaccess);
+                        goto exit;
+                    }
+                }
+#endif
             } else {
                 if (pdfi_type_of(o) != PDF_NULL)
                     pdfi_set_error(ctx, code, NULL, E_PDF_BADENCRYPT, "pdfi_init_file", NULL);
@@ -1245,8 +1278,6 @@ read_root:
 
     if (ctx->num_pages == 0)
         dmprintf(ctx->memory, "\n   **** Warning: PDF document has no pages.\n");
-
-    pdfi_device_set_flags(ctx);
 
     code = pdfi_doc_trailer(ctx);
     if (code < 0)
