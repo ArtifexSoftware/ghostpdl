@@ -123,8 +123,18 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 
     if (jddp.dinfo.density_unit == 1)
     {
-        image->xres = jddp.dinfo.X_density;
-        image->yres = jddp.dinfo.Y_density;
+        /* According to the XPS specification we should also use the EXIF and APP13 marker segments
+         * to set the resolution, but we don't and adding that would be more effort than we want to
+         * go to for XPS currently. This at least means that images won't go completely AWOL.
+         */
+        if (jddp.dinfo.X_density != 0)
+            image->xres = jddp.dinfo.X_density;
+        else
+            image->xres = 96;
+        if (jddp.dinfo.Y_density != 0)
+            image->yres = jddp.dinfo.Y_density;
+        else
+            image->yres = 96;
     }
     else if (jddp.dinfo.density_unit == 2)
     {
