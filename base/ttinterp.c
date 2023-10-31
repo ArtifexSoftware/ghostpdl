@@ -1783,6 +1783,12 @@ static int nInstrCount=0;
       CUR.IP      += (Int)(args[0]);
       CUR.step_ins = FALSE;
 
+      /* If the instruction pointer moves back past the start of the description
+       * assume there is a fatal error, and move to the end of the description instead.
+       */
+      if(CUR.IP < 0)
+          CUR.IP = CUR.codeSize;
+
       /* See JMPR below */
       if(CUR.IP > CUR.codeSize ||
          (CUR.code[CUR.IP] != 0x2D && CUR.code[CUR.IP - 1] == 0x2D))
@@ -1804,6 +1810,12 @@ static int nInstrCount=0;
 
     CUR.IP      += (Int)(args[0]);
     CUR.step_ins = FALSE;
+
+    /* If the instruction pointer moves back past the start of the description
+     * assume there is a fatal error, and move to the end of the description instead.
+     */
+    if(CUR.IP < 0)
+        CUR.IP = CUR.codeSize;
 
     if(CUR.IP > CUR.codeSize ||
        (CUR.code[CUR.IP] != 0x2D && CUR.code[CUR.IP - 1] == 0x2D))
@@ -1833,6 +1845,12 @@ static int nInstrCount=0;
 
       CUR.IP      += (Int)(args[0]);
       CUR.step_ins = FALSE;
+
+      /* If the instruction pointer moves back past the start of the description
+       * assume there is a fatal error, and move to the end of the description instead.
+       */
+      if(CUR.IP < 0)
+          CUR.IP = CUR.codeSize;
 
       /* See JMPR above */
       if(CUR.code[CUR.IP] != 0x2D && CUR.code[CUR.IP - 1] == 0x2D)
