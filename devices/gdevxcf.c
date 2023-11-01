@@ -766,6 +766,7 @@ static int
 xcf_prn_close(gx_device *dev)
 {
     xcf_device * const xdev = (xcf_device *) dev;
+    int i;
 
     if (xdev->cmyk_icc_link != NULL) {
         gscms_release_link(xdev->cmyk_icc_link);
@@ -781,6 +782,16 @@ xcf_prn_close(gx_device *dev)
         gscms_release_link(xdev->output_icc_link);
         rc_decrement(xdev->output_profile, "xcf_prn_close");
     }
+
+    /* Free all the colour separation names */
+    for (i = 0; i < xdev->separation_names.num_names; i++) {
+        if (xdev->separation_names.names[i] != NULL) {
+            gs_free_object(xdev->memory->non_gc_memory, (void *)xdev->separation_names.names[i]->data, "devicen_put_params_no_sep_order");
+            gs_free_object(xdev->memory->non_gc_memory, (void *)xdev->separation_names.names[i], "devicen_put_params_no_sep_order");
+        }
+        xdev->separation_names.names[i] = NULL;
+    }
+    xdev->separation_names.num_names = 0;
 
     return gdev_prn_close(dev);
 }
@@ -856,21 +867,54 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
          * match the process color model colorant names for the device.
          */
         if (scna.data != 0) {
-            int i;
-            int num_names = scna.size;
-            fixed_colorant_names_list pcomp_names =
-                                ((xcf_device *)pdev)->std_colorant_names;
+            int num_names = scna.size, i = 0;
+            fixed_colorant_names_list pcomp_names = pdevn->std_colorant_names;
 
-            for (i = num_spot = 0; i < num_names; i++) {
-                if (!check_process_color_names(pcomp_names, &scna.data[i]))
-                    pdevn->separation_names.names[num_spot++] = &scna.data[i];
+            if (num_spot + num_names > pdev->color_info.max_components) {
+                param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
+                return_error(gs_error_rangecheck);
+            }
+            for (i = 0; i < num_names; i++) {
+                /* Verify that the name is not one of our process colorants */
+                if (!check_process_color_names(pcomp_names, &scna.data[i])) {
+                    byte * sep_name;
+                    int name_size = scna.data[i].size;
+                    gs_param_string *new_string;
+
+                    new_string = (gs_param_string *)gs_alloc_bytes(pdev->memory->non_gc_memory, sizeof(gs_param_string), "devicen_put_params_no_sep_order");
+                    if (new_string == NULL) {
+                        param_signal_error(plist, "SeparationColorNames", gs_error_VMerror);
+                        return_error(gs_error_VMerror);
+                    }
+                    /* We have a new separation */
+                    sep_name = (byte *)gs_alloc_bytes(pdev->memory->non_gc_memory,
+                        name_size, "devicen_put_params_no_sep_order");
+                    if (sep_name == NULL) {
+                        gs_free_object(pdev->memory, new_string, "devicen_put_params_no_sep_order");
+                        param_signal_error(plist, "SeparationColorNames", gs_error_VMerror);
+                        return_error(gs_error_VMerror);
+                    }
+                    memcpy(sep_name, scna.data[i].data, name_size);
+                    new_string->size = name_size;
+                    new_string->data = sep_name;
+                    new_string->persistent = true;
+                    if (pdevn->separation_names.names[num_spot] != NULL) {
+                        gs_free_object(pdev->memory->non_gc_memory, (void *)pdevn->separation_names.names[num_spot]->data, "devicen_put_params_no_sep_order");
+                        gs_free_object(pdev->memory->non_gc_memory, (void *)pdevn->separation_names.names[num_spot], "devicen_put_params_no_sep_order");
+                    }
+                    pdevn->separation_names.names[num_spot] = new_string;
+
+                    num_spot++;
+                }
             }
             pdevn->separation_names.num_names = num_spot;
-            if (pdevn->is_open)
-                gs_closedevice(pdev);
         }
+
         npcmcolors = pdevn->num_std_colorant_names;
         pdevn->color_info.num_components = npcmcolors + num_spot;
+
+        if (pdevn->color_info.num_components > pdevn->color_info.max_components)
+            pdevn->color_info.num_components = pdevn->color_info.max_components;
         /*
          * The DeviceN device can have zero components if nothing has been
          * specified.  This causes some problems so force at least one
