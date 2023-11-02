@@ -201,11 +201,17 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                     while (pdfpsbuf < buflim && *pdfpsbuf != '>')
                         pdfpsbuf++;
                     len = pdfpsbuf - s;
-                    while (len % 2)
-                        len--;
                     for (i = 0; i < len; i += 2) {
-                        hbuf[0] = s[i];
-                        hbuf[1] = s[i + 1];
+                        /* If it's a single digit, see iff we can treat it as a nibble */
+                        if (i + 2 > len) {
+                            hbuf[0] = (byte)'0';
+                            hbuf[1] = s[i];
+                            len++;
+                        }
+                        else {
+                            hbuf[0] = s[i];
+                            hbuf[1] = s[i + 1];
+                        }
                         if (!ishex(hbuf[0]) || !ishex(hbuf[1])) {
                             code = gs_note_error(gs_error_typecheck);
                             break;

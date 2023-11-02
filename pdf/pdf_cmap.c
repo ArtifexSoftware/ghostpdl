@@ -510,7 +510,7 @@ static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *
         int preflen = 1, valuelen;
 
         if (pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_INTEGER)
-        &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING)) {
+        &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING) && stobj[i].size > 0) {
             uint cidbase = stobj[i + 1].val.i;
 
             /* Find how many bytes we need for the cidbase value */
