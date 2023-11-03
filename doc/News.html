@@ -31,6 +31,17 @@ please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
 specific release in question is listed in parentheses). We include these,
 for now, as we are aware that not everyone upgrades with every release.</h4>
 <ul>
+<li><h5>10.02.1</h5>
+<p>The <code>putdeviceprops</code>, <code>getdeviceprops</code> and <code>finddevice</code> non-standard operators
+proved high security risks, and it wasn't feasible to secure them without breaking their internal uses. So these
+operators are no longer available to regular Postscript programs, since user programs can achieve the same results
+using only standard operators.
+</li>
+<li><h5>10.02.1</h5>
+<p>The <code>makeimagedevice</code> also proved a security risk and, whilst we addressed that issue, it is an additional
+attack vector. But since there is no standard equivalent, we have opted to only make it available when <code>-dNOSAFER</code>
+is given on the command line.
+</li>
 </ul>
 <h3><a name="10.02.1_changelog"></a>Changelog</h3>
 <p>From 9.55.0 onwards, in recognition of how unwieldy very large HTML files can become
