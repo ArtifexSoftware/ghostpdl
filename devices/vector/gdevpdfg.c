@@ -798,14 +798,12 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         gs_client_color cc, cc1;
         unsigned char j;
         gs_color_space *icc_space = (gs_color_space *)pcs;
-        gs_color_space *sep_space = (gs_color_space *)pcs;
+        gs_color_space *devicen_space = (gs_color_space *)pcs;
         gs_color_space_index csi2;
-        bool save_use_alt = 0;
-        separation_type save_type = SEP_OTHER;
 
         csi = gs_color_space_get_index(pcs);
         if (csi == gs_color_space_index_Indexed)
-            sep_space = pcs->base_space;
+            devicen_space = pcs->base_space;
 
         do{
             icc_space = icc_space->base_space;
@@ -814,18 +812,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
 
         memset(&cc.paint.values, 0x00, GS_CLIENT_COLOR_MAX_COMPONENTS);
 
-        /* Force the colour management code to use the tint transform and
-         * give us the values in the Alternate space. Otherwise, for
-         * SEP_NONE or SEP_ALL it gives us the wrong answer. For SEP_NONE
-         * it always returns 0 and for SEP_ALL it sets the first component
-         * (only!) of the space to the tint value.
-         */
-        if (sep_space->params.separation.sep_type == SEP_ALL || sep_space->params.separation.sep_type == SEP_NONE) {
-            save_use_alt = sep_space->params.separation.use_alt_cspace;
-            sep_space->params.separation.use_alt_cspace = true;
-            save_type = sep_space->params.separation.sep_type;
-            sep_space->params.separation.sep_type = SEP_OTHER;
-        }
+        devicen_space->params.device_n.use_alt_cspace = true;
 
         for (loop=0;loop < samples;loop++) {
             if (loop > 0) {
@@ -842,7 +829,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
 
 
             memset (&conc, 0x00, sizeof(frac) * GS_CLIENT_COLOR_MAX_COMPONENTS);
-            sep_space->type->concretize_color(&cc, sep_space, conc, pgs, (gx_device *)pdev);
+            devicen_space->type->concretize_color(&cc, devicen_space, conc, pgs, (gx_device *)pdev);
 
             for (i = 0;i < pdev->color_info.num_components;i++)
                 cc1.paint.values[i] = frac2float(conc[i]);
@@ -870,13 +857,6 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
             }
             for (j = 0;j < pdev->color_info.num_components;j++)
                 data_buff[(loop * pdev->color_info.num_components) + j] = (int)(cc1.paint.values[j] * 255);
-        }
-        /* Put back the values we hacked in order to force the colour management code
-         * to do what we want.
-         */
-        if (save_type == SEP_ALL || save_type == SEP_NONE) {
-            sep_space->params.separation.use_alt_cspace = save_use_alt;
-            sep_space->params.separation.sep_type = save_type;
         }
     }
 
