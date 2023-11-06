@@ -871,7 +871,7 @@ currentdict /.makeinternaldict .undef
           ifelse
         } bind def
 /selectdevice
-        { finddevice setdevice .setdefaultscreen } bind def
+        { finddevice setdevice .setdefaultscreen } bind odef
 /signalerror		% <object> <errorname> signalerror -
         { /errordict .systemvar exch get exec } bind def
 /signaloperror {	% <object> <errorname> signaloperror -
