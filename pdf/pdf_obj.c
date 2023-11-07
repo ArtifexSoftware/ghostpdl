@@ -612,12 +612,16 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
     pdf_obj *object = NULL;
     bool use_label = true;
 
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
     if (ref->is_highlevelform) {
         code = pdfi_obj_getrefstr(ctx, ref->highlevel_object_num, 0, data, len);
         ref->is_highlevelform = false;
     } else {
         if (!ref->is_marking) {
-            code = pdfi_deref_loop_detect(ctx, ref->ref_object_num, ref->ref_generation_num, &object);
+            code = pdfi_dereference(ctx, ref->ref_object_num, ref->ref_generation_num, &object);
             if (code == gs_error_undefined) {
                 /* Do something sensible for undefined reference (this would be a broken file) */
                 /* TODO: Flag an error? */
@@ -649,6 +653,7 @@ static int pdfi_obj_indirect_str(pdf_context *ctx, pdf_obj *obj, byte **data, in
     }
 
  exit:
+    (void)pdfi_loop_detector_cleartomark(ctx);
     pdfi_countdown(object);
     return code;
 }
