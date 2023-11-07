@@ -916,8 +916,30 @@ currentdict /.makeinternaldict .undef
     % Check we've been given a name
     dup type /nametype eq
     {
-        % Check the name isn't the current device
-        dup currentpagedevice /Name get eq
+        % Check the name isn't the current device. Check both /Name
+        % and /OutputDevice. There seem to be some conditions where
+        % only one is present.
+        %
+        currentpagedevice /Name known
+        {
+          dup currentpagedevice /Name get eq
+        }
+        {
+          //false
+        }ifelse
+        currentpagedevice /OutputDevice known
+        {
+          1 index currentpagedevice /OutputDevice get eq
+        }
+        {
+          //false
+        }ifelse
+
+        % We tested /Name and /OutputDevice to see if they exist, if they do
+        % we checked them against the requested device. If either matches the requested
+        % device we report an error, otherwise we remove the device from the cache.
+        %
+        or
         {
             (*** ERROR: Can't uncache the current device\n) print
             /uncachedevice /invalidaccess signalerror
@@ -962,7 +984,7 @@ currentdict /.makeinternaldict .undef
     } ifelse
 } bind readonly odef
 
-% Function to purge all but the current device from teh device cache
+% Function to purge all but the current device from the device cache
 %
 % - purgedevicecache -
 %
