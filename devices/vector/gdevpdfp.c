@@ -134,6 +134,8 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("OmitXMP", gs_param_type_bool, OmitXMP),
     pi("ModifiesPageSize", gs_param_type_bool, ModifiesPageSize),
     pi("ModifiesPageOrder", gs_param_type_bool, ModifiesPageOrder),
+    pi("WriteObjStms", gs_param_type_bool, WriteObjStms),
+    pi("WriteXRefStm", gs_param_type_bool, WriteXRefStm),
 #undef pi
     gs_param_item_end
 };
@@ -881,6 +883,35 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     if (pdev->Linearise && pdev->OwnerPassword.size != 0) {
         emprintf(pdev->memory, "Can't linearise encrypted PDF, ignoring\n");
         pdev->Linearise = false;
+    }
+
+    /* Object streams and XRef streams */
+    if (pdev->is_ps2write) {
+        pdev->WriteObjStms = false;
+        pdev->WriteXRefStm = false;
+    } else {
+        if (pdev->Linearise)
+            pdev->WriteObjStms = false;
+    }
+    if (pdev->WriteObjStms && pdev->CompatibilityLevel < 1.5) {
+        emprintf(pdev->memory, "Can't use Object streams before PDF 1.5, ignoring WriteObjStms directive\n");
+        pdev->WriteObjStms = false;
+    }
+    if (pdev->WriteXRefStm && pdev->CompatibilityLevel < 1.5) {
+        emprintf(pdev->memory, "Can't use an XRef stream before PDF 1.5, ignoring WriteXRefStm directive\n");
+        pdev->WriteXRefStm = false;
+    }
+    if (pdev->WriteObjStms && !pdev->WriteXRefStm) {
+        emprintf(pdev->memory, "Can't use Object streams without XRef stream, ignoring WriteObjStms directive\n");
+        pdev->WriteObjStms = false;
+    }
+    if (pdev->WriteObjStms) {
+        if (pdev->next_id == 1)
+            pdev->doubleXref = true;
+        if (!pdev->doubleXref) {
+            emprintf(pdev->memory, "Already started writing output, too late to select WriteObjStms, ignoring directive\n");
+            pdev->WriteObjStms = false;
+        }
     }
 
     if (pdev->FlattenFonts)

@@ -89,9 +89,9 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
  ENUM_PTR(2, gx_device_pdf, asides.save_strm);
  ENUM_PTR(3, gx_device_pdf, streams.strm);
  ENUM_PTR(4, gx_device_pdf, streams.strm_buf);
- ENUM_PTR(5, gx_device_pdf, pictures.strm);
- ENUM_PTR(6, gx_device_pdf, pictures.strm_buf);
- ENUM_PTR(7, gx_device_pdf, pictures.save_strm);
+ ENUM_PTR(5, gx_device_pdf, ObjStm.strm);
+ ENUM_PTR(6, gx_device_pdf, ObjStm.strm_buf);
+ ENUM_PTR(7, gx_device_pdf, ObjStm.save_strm);
  ENUM_PTR(8, gx_device_pdf, Catalog);
  ENUM_PTR(9, gx_device_pdf, Info);
  ENUM_PTR(10, gx_device_pdf, Pages);
@@ -143,9 +143,9 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
  RELOC_PTR(gx_device_pdf, asides.save_strm);
  RELOC_PTR(gx_device_pdf, streams.strm);
  RELOC_PTR(gx_device_pdf, streams.strm_buf);
- RELOC_PTR(gx_device_pdf, pictures.strm);
- RELOC_PTR(gx_device_pdf, pictures.strm_buf);
- RELOC_PTR(gx_device_pdf, pictures.save_strm);
+ RELOC_PTR(gx_device_pdf, ObjStm.strm);
+ RELOC_PTR(gx_device_pdf, ObjStm.strm_buf);
+ RELOC_PTR(gx_device_pdf, ObjStm.save_strm);
  RELOC_PTR(gx_device_pdf, Catalog);
  RELOC_PTR(gx_device_pdf, Info);
  RELOC_PTR(gx_device_pdf, Pages);
@@ -306,7 +306,7 @@ pdfwrite_initialize_device_procs(gx_device *dev)
 /* ---------------- Device open/close ---------------- */
 
 /* Close and remove temporary files. */
-static int
+int
 pdf_close_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf, int code)
 {
     int err = 0;
@@ -343,7 +343,7 @@ pdf_close_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf, int code)
 static int
 pdf_close_files(gx_device_pdf * pdev, int code)
 {
-    code = pdf_close_temp_file(pdev, &pdev->pictures, code);
+    code = pdf_close_temp_file(pdev, &pdev->ObjStm, code);
     code = pdf_close_temp_file(pdev, &pdev->streams, code);
     code = pdf_close_temp_file(pdev, &pdev->asides, code);
     return pdf_close_temp_file(pdev, &pdev->xref, code);
@@ -364,7 +364,7 @@ pdf_reset_page(gx_device_pdf * pdev)
 }
 
 /* Open a temporary file, with or without a stream. */
-static int
+int
 pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 {
     char fmode[4];
@@ -382,7 +382,7 @@ pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
         return_error(gs_error_invalidfileaccess);
     return 0;
 }
-static int
+int
 pdf_open_temp_stream(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 {
     int code = pdf_open_temp_file(pdev, ptf);
@@ -789,8 +789,7 @@ pdf_open(gx_device * dev)
 
     if ((code = pdf_open_temp_file(pdev, &pdev->xref)) < 0 ||
         (code = pdf_open_temp_stream(pdev, &pdev->asides)) < 0 ||
-        (code = pdf_open_temp_stream(pdev, &pdev->streams)) < 0 ||
-        (code = pdf_open_temp_stream(pdev, &pdev->pictures)) < 0
+        (code = pdf_open_temp_stream(pdev, &pdev->streams))
         )
         goto fail;
     code = gdev_vector_open_file((gx_device_vector *) pdev, sbuf_size);
@@ -942,6 +941,8 @@ pdf_open(gx_device * dev)
 static int
 pdf_ferror(gx_device_pdf *pdev)
 {
+    int code = 0;
+
     gp_fflush(pdev->file);
     gp_fflush(pdev->xref.file);
     if (pdev->strm->file != NULL)
@@ -950,11 +951,13 @@ pdf_ferror(gx_device_pdf *pdev)
         sflush(pdev->asides.strm);
     if (pdev->streams.strm->file != NULL)
         sflush(pdev->streams.strm);
-    if (pdev->pictures.strm->file != NULL)
-        sflush(pdev->pictures.strm);
+    if (pdev->ObjStm.strm != NULL && pdev->ObjStm.strm->file != NULL) {
+        sflush(pdev->ObjStm.strm);
+        code = gp_ferror(pdev->ObjStm.file);
+    }
     return gp_ferror(pdev->file) || gp_ferror(pdev->xref.file) ||
         gp_ferror(pdev->asides.file) || gp_ferror(pdev->streams.file) ||
-        gp_ferror(pdev->pictures.file);
+        code;
 }
 
 /* Compute the dominant text orientation of a page. */
@@ -1575,22 +1578,33 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
 
 static int find_end_xref_section (gx_device_pdf *pdev, gp_file *tfile, int64_t start, gs_offset_t resource_pos)
 {
-    int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
+    int64_t start_offset;
+
+    if (pdev->doubleXref)
+        start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t) * 2;
+    else
+        start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
 
     if (gp_fseek(tfile, start_offset, SEEK_SET) == 0)
     {
         long i, r;
 
         for (i = start; i < pdev->next_id; ++i) {
-            gs_offset_t pos;
+            gs_offset_t pos, index = -1;
 
             r = gp_fread(&pos, sizeof(pos), 1, tfile);
             if (r != 1)
                 return(gs_note_error(gs_error_ioerror));
+            if (pdev->doubleXref) {
+                index = pos;
+                r = gp_fread(&pos, sizeof(pos), 1, tfile);
+                if (r != 1)
+                    return(gs_note_error(gs_error_ioerror));
+            }
             if (pos & ASIDES_BASE_POSITION)
                 pos += resource_pos - ASIDES_BASE_POSITION;
             pos -= pdev->OPDFRead_procset_length;
-            if (pos == 0) {
+            if (pos == 0 && index == 0) {
                 return i;
             }
         }
@@ -1600,7 +1614,12 @@ static int find_end_xref_section (gx_device_pdf *pdev, gp_file *tfile, int64_t s
 
 static int write_xref_section(gx_device_pdf *pdev, gp_file *tfile, int64_t start, int end, gs_offset_t resource_pos, gs_offset_t *Offsets)
 {
-    int64_t start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
+    int64_t start_offset;
+
+    if (pdev->doubleXref)
+        start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t) * 2;
+    else
+        start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
 
     if (gp_fseek(tfile, start_offset, SEEK_SET) == 0)
     {
@@ -1613,6 +1632,12 @@ static int write_xref_section(gx_device_pdf *pdev, gp_file *tfile, int64_t start
             r = gp_fread(&pos, sizeof(pos), 1, tfile);
             if (r != 1)
                 return(gs_note_error(gs_error_ioerror));
+            if (pdev->doubleXref) {
+                r = gp_fread(&pos, sizeof(pos), 1, tfile);
+                if (r != 1)
+                    return(gs_note_error(gs_error_ioerror));
+            }
+
             if (pos & ASIDES_BASE_POSITION)
                 pos += resource_pos - ASIDES_BASE_POSITION;
             pos -= pdev->OPDFRead_procset_length;
@@ -1636,6 +1661,67 @@ static int write_xref_section(gx_device_pdf *pdev, gp_file *tfile, int64_t start
             }
             if (Offsets)
                 Offsets[i] = pos;
+        }
+    }
+    return 0;
+}
+
+static int write_xrefstm_section(gx_device_pdf *pdev, gp_file *tfile, int64_t start, int end, gs_offset_t resource_pos, int offset_size, stream *s)
+{
+    int64_t start_offset;
+
+    if (pdev->doubleXref)
+        start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t) * 2;
+    else
+        start_offset = (start - pdev->FirstObjectNumber) * sizeof(gs_offset_t);
+
+    if (gp_fseek(tfile, start_offset, SEEK_SET) == 0)
+    {
+        long i, j, r;
+
+        for (i = start; i < end; ++i) {
+            gs_offset_t pos, objstm = -1, index = 0;
+
+            r = gp_fread(&pos, sizeof(pos), 1, tfile);
+            if (r != 1)
+                return(gs_note_error(gs_error_ioerror));
+
+            if (pdev->doubleXref) {
+                objstm = pos;
+                r = gp_fread(&index, sizeof(pos), 1, tfile);
+                if (r != 1)
+                    return(gs_note_error(gs_error_ioerror));
+                pos = index;
+            }
+
+            if (!pdev->doubleXref || objstm == 0) {
+                if (pos & ASIDES_BASE_POSITION)
+                    pos += resource_pos - ASIDES_BASE_POSITION;
+                pos -= pdev->OPDFRead_procset_length;
+
+                /* check to see we haven't got an offset which is too large to represent
+                 * in an xref (10 digits). Throw an error if we do.
+                 */
+                if (pos > 9999999999) {
+                    emprintf(pdev->pdf_memory, "ERROR - Attempt to create an xref entry with more than 10 digits which is illegal.\n");
+                    emprintf(pdev->pdf_memory, "PDF file production has been aborted.\n");
+                    return_error(gs_error_rangecheck);
+                }
+            }
+
+            if (objstm > 0) {
+                stream_putc(s, 0x02);
+                pos = objstm;
+            }
+            else
+                stream_putc(s, 0x01);
+            for (j = 1; j <= offset_size; j++)
+                stream_putc(s, (pos >> ((offset_size - j) * 8)) & 0xFF);
+            stream_putc(s, 0x00);
+            if (objstm > 0)
+                stream_putc(s, index);
+            else
+                stream_putc(s, 0x00);
         }
     }
     return 0;
@@ -2917,8 +3003,13 @@ pdf_close(gx_device * dev)
         }
 
         if (!pdev->OmitXMP) {
+            bool saved = pdev->WriteObjStms;
+
+            if (pdev->WriteObjStms)
+                pdev->WriteObjStms = false;
             /* Write the document metadata. */
             code1 = pdf_document_metadata(pdev);
+            pdev->WriteObjStms = saved;
             if (code >= 0)
                 code = code1;
         }
@@ -3027,6 +3118,10 @@ pdf_close(gx_device * dev)
 
     /* Copy the resources into the main file. */
 
+    if (pdev->WriteObjStms) {
+        FlushObjStm(pdev);
+        pdev->WriteObjStms = false;
+    }
     if (pdev->strm != NULL) {
         s = pdev->strm;
         resource_pos = stell(s);
@@ -3151,40 +3246,69 @@ pdf_close(gx_device * dev)
         if (pdev->Linearise)
             linear_params.xref = xref;
 
-        if (pdev->FirstObjectNumber == 1) {
-            gs_snprintf(str, sizeof(str), "xref\n0 %"PRId64"\n0000000000 65535 f \n",
-                  end_section);
-            stream_puts(s, str);
-        }
-        else {
-            gs_snprintf(str, sizeof(str), "xref\n0 1\n0000000000 65535 f \n%"PRId64" %"PRId64"\n",
-                  start_section,
-                  end_section - start_section);
-            stream_puts(s, str);
-        }
+        if (!pdev->WriteXRefStm) {
+            if (pdev->FirstObjectNumber == 1) {
+                gs_snprintf(str, sizeof(str), "xref\n0 %"PRId64"\n0000000000 65535 f \n",
+                      end_section);
+                stream_puts(s, str);
+            }
+            else {
+                gs_snprintf(str, sizeof(str), "xref\n0 1\n0000000000 65535 f \n%"PRId64" %"PRId64"\n",
+                      start_section,
+                      end_section - start_section);
+                stream_puts(s, str);
+            }
 
-        do {
-            code = write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
-            if (code < 0)
-                goto error_cleanup;
+            do {
+                code = write_xref_section(pdev, tfile, start_section, end_section, resource_pos, linear_params.Offsets);
+                if (code < 0)
+                    goto error_cleanup;
 
-            if (end_section >= pdev->next_id)
-                break;
-            start_section = end_section + 1;
-            end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
-            if (end_section < 0)
-                return end_section;
-            gs_snprintf(str, sizeof(str), "%"PRId64" %"PRId64"\n", start_section, end_section - start_section);
-            stream_puts(s, str);
-        } while (1);
+                if (end_section >= pdev->next_id)
+                    break;
+                start_section = end_section + 1;
+                end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+                if (end_section < 0)
+                    return end_section;
+                gs_snprintf(str, sizeof(str), "%"PRId64" %"PRId64"\n", start_section, end_section - start_section);
+                stream_puts(s, str);
+            } while (1);
 
-        /* Write the trailer. */
-
-        if (!pdev->Linearise) {
+            /* Write the trailer. */
+            if (!pdev->Linearise) {
+                char xref_str[32];
+                stream_puts(s, "trailer\n");
+                pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
+                      pdev->next_id, Catalog_id, Info_id);
+                if (!pdev->OmitID) {
+                    stream_puts(s, "/ID [");
+                    psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+                    psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+                    stream_puts(s, "]\n");
+                }
+                if (pdev->OwnerPassword.size > 0) {
+                    pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
+                }
+                stream_puts(s, ">>\n");
+                gs_snprintf(xref_str, sizeof(xref_str), "startxref\n%"PRId64"\n%%%%EOF\n", xref);
+                stream_puts(s, xref_str);
+            }
+        } else {
             char xref_str[32];
-            stream_puts(s, "trailer\n");
-            pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
-                  pdev->next_id, Catalog_id, Info_id);
+            gs_offset_t maxoffs = xref, offs_bytes = 0, length = 0;
+            int i;
+
+            while(maxoffs > 0) {
+                maxoffs = maxoffs >> 8;
+                offs_bytes++;
+            }
+
+            gs_snprintf(str, sizeof(str), "%"PRId64" 0 obj <<\n/Type /XRef\n", pdev->next_id);
+            stream_puts(s, str);
+            gs_snprintf(str, sizeof(str), "/Size %"PRId64"\n", pdev->next_id + 1);
+            stream_puts(s, str);
+
+            pprintld2(s, "/Root %ld 0 R /Info %ld 0 R\n", Catalog_id, Info_id);
             if (!pdev->OmitID) {
                 stream_puts(s, "/ID [");
                 psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
@@ -3194,9 +3318,125 @@ pdf_close(gx_device * dev)
             if (pdev->OwnerPassword.size > 0) {
                 pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
             }
-            stream_puts(s, ">>\n");
-            gs_snprintf(xref_str, sizeof(xref_str), "startxref\n%"PRId64"\n%%%%EOF\n", xref);
-            stream_puts(s, xref_str);
+
+            end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+            if (end_section == pdev->next_id)
+                end_section++;
+
+            length += (end_section - start_section) * (offs_bytes + 3);
+
+            if (pdev->FirstObjectNumber == 1) {
+                gs_snprintf(str, sizeof(str), "/Index [0 %"PRId64" ", end_section);
+                stream_puts(s, str);
+            } else {
+                gs_snprintf(str, sizeof(str), "/Index [0 1 %"PRId64" %"PRId64" ", pdev->FirstObjectNumber, end_section);
+                stream_puts(s, str);
+            }
+
+            do {
+                if (end_section >= pdev->next_id)
+                    break;
+
+                start_section = end_section + 1;
+                end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+                if (end_section < 0)
+                    return end_section;
+
+                if (end_section == pdev->next_id)
+                    end_section++;
+                gs_snprintf(str, sizeof(str), "%"PRId64" %"PRId64" ", start_section, end_section - start_section);
+                stream_puts(s, str);
+            }while (1);
+
+            {
+                pdf_temp_file_t xref_temp;
+                stream *xs = NULL, *xs1;
+                char xrefbuf[256];
+                int read = 0;
+                stream_state *st = NULL;
+                code = pdf_open_temp_stream(pdev, &xref_temp);
+                if (code < 0)
+                    return code;
+
+                xs1 = xref_temp.strm;
+                if (pdev->CompressStreams) {
+                    st = s_alloc_state(pdev->pdf_memory, s_zlibE_template.stype, "write_xref_strm");
+                    if (st == NULL)
+                        return_error(gs_error_VMerror);
+                    s_zlibE_template.set_defaults (st);
+                    xs = s_add_filter(&xref_temp.strm, &s_zlibE_template, st, pdev->pdf_memory);
+                    if (xs == NULL)
+                        xs = xref_temp.strm;
+                } else
+                    xs = xref_temp.strm;
+
+                /* write the free entry */
+                stream_putc(xs, 0x00);
+                for (i = 0; i < offs_bytes; i++)
+                    stream_putc(xs, 0x00);
+                stream_putc(xs, 0xFF);
+                stream_putc(xs, 0xFF);
+
+                start_section = pdev->FirstObjectNumber;
+                do {
+                    end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+                    if (end_section < 0)
+                    {
+                        gs_free_object(pdev->memory, st, "write_xref_strm");
+                        return end_section;
+                    }
+
+                    code = write_xrefstm_section(pdev, tfile, start_section, end_section, resource_pos, offs_bytes, xs);
+                    if (code < 0)
+                    {
+                        gs_free_object(pdev->memory, st, "write_xref_strm");
+                        goto error_cleanup;
+                    }
+
+                    start_section = end_section + 1;
+                } while (end_section < pdev->next_id);
+
+                /* write the entry for this XRefStm */
+                stream_putc(xs, 0x01);
+                for (i = 1; i <= offs_bytes; i++)
+                    stream_putc(xs, (xref >> ((offs_bytes - i) * 8)) & 0xFF);
+                stream_putc(xs, 0x00);
+                stream_putc(xs, 0x00);
+
+                sflush(xs);
+                if (pdev->CompressStreams)
+                    s_close_filters(&xref_temp.strm, xs1);
+                sflush(xref_temp.strm);
+                length = stell(xref_temp.strm);
+
+                if (pdev->CompressStreams)
+                    gs_snprintf(str, sizeof(str), "]\n/W [1 %"PRId64" 2]\n/Filter /FlateDecode/Length %"PRId64"\n>>\nstream\n", offs_bytes, length);
+                else
+                    gs_snprintf(str, sizeof(str), "]\n/W [1 %"PRId64" 2]\n/Length %"PRId64"\n>>\nstream\n", offs_bytes, length);
+                stream_puts(s, str);
+
+                code = gp_fseek(xref_temp.file , 0, SEEK_SET);
+                if (code < 0)
+                    return code;
+                do {
+                    read = gp_fread(&xrefbuf, 1, 256, xref_temp.file);
+                    if (read < 0)
+                    {
+                        gs_free_object(pdev->memory, st, "write_xref_strm");
+                        return_error(gs_error_VMerror);
+                    }
+                    stream_write(s, xrefbuf, read);
+                } while (read == 256);
+
+                pdf_close_temp_file(pdev, &xref_temp, 0);
+            }
+
+            gs_snprintf(str, sizeof(str), "\nendstream\nendobj\n");
+            stream_puts(s, str);
+            pdev->next_id++;
+
+            gs_snprintf(str, sizeof(xref_str), "startxref\n%"PRId64"\n%%%%EOF\n", xref);
+            stream_puts(s, str);
         }
     }
 

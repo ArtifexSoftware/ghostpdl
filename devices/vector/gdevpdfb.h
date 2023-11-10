@@ -112,7 +112,11 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {{0}},				/* xref */
  {{0}},				/* asides */
  {{0}},				/* streams */
- {{0}},				/* pictures */
+ {{0}},				/* ObjStm */
+ gs_no_id,          /* ObjStm_id */
+ NULL,              /* ObjStmOffsets */
+ 0,                 /* NumObjstmObjects */
+ true,             /* doubleXref */
  0,				/* next_id */
  0,				/* Catalog */
  0,				/* Info */
@@ -242,7 +246,9 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  false,                 /* OmitXMP */
  false,                 /* OmitID */
  false,                 /* ModifiesPageSize */
- false                  /* ModifiesPageOrder */
+ false,                 /* ModifiesPageOrder */
+ true,                  /* WriteXRefStm */
+ true                  /* WriteObjStms */
 };
 
 #else

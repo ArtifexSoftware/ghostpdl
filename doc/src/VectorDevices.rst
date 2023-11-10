@@ -1125,6 +1125,16 @@ The following switches are used for generating metadata according to the Adobe X
 
    Obviously this is all heuristic and undoubtedly there is more we can do to improve the functionality here, but we need concrete examples to work from.
 
+``-WriteXRefStm=boolean``
+   Controls whether the pdfwrite device will use an XRef stream in the output file instead of a regular xref table. This switch defaults to true, however if the output file is less than PDF 1.5 then XRef streams are not supported, and it will be set to false.
+   
+   Using an XRef stream instead of a regular xref can reduce the size of the output file, and is required in order to use ObjStms (see below) which can reduce the file size even further. This is currently a new feature and can be disabled if problems arise.
+
+``-WriteObjStms=boolean``
+   Controls whether the pdfwrite device will use ObjStms to store non-stream objects in the output file. This switch defaults to true, however if the output file is less than PDF 1.5, or XRef streams are disabled then ObjStms are not supported and this switch will be set to false. Additionally, the pdfwrite device does not currently support ObjStms when Linearizing (Optimize for Fast Web View) the output file and ObjStms will be disabled if Linearization is activated.
+   
+   Using ObjStms can significantly reduce the size of soem PDF files, at the cost of somewhat reduced performance. Taking as an exmple the PDF 1.7 Reference Manual; the original file is ~32MB, producing a PDF file from it using pdfwrite without the XRefStm or ObjStms enabled produces a file ~19MB, with both these features the output file is ~13.9MB. This is currently a new feature and can be disabled if problems arise.
+
 ----
 
 
