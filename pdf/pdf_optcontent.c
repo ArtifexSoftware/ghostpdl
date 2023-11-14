@@ -621,6 +621,10 @@ int pdfi_op_BMC(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
 
     if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent) {
+        /* Need to increment the BMCLevel anyway, as the EMC will count it down.
+         * If we already have a BDC, then that effectively will turn it on.
+         */
+        ctx->BMClevel ++;
         pdfi_pop(ctx, 1);
         goto exit;
     }
