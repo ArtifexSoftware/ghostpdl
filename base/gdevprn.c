@@ -302,7 +302,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
     /* Re/allocate memory */
     ppdev->orig_procs = pdev->procs;
     for ( pass = 1; pass <= (reallocate ? 2 : 1); ++pass ) {
-        ulong mem_space;
+        size_t mem_space;
         size_t pdf14_trans_buffer_size = 0;
         byte *base = 0;
         bool bufferSpace_is_default = false;
@@ -332,6 +332,11 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
         memset(ppdev->skip, 0, sizeof(ppdev->skip));
         size_ok = ppdev->printer_procs.buf_procs.size_buf_device
             (&buf_space, pdev, NULL, pdev->height, false) >= 0;
+
+        /* Make sure we won't overflow a size_t, if we do then we'll use a clist below */
+        if (ARCH_MAX_SIZE_T - buf_space.bits < buf_space.line_ptrs)
+            size_ok = 0;
+
         mem_space = buf_space.bits + buf_space.line_ptrs;
         if (ppdev->page_uses_transparency) {
             pdf14_trans_buffer_size = (ESTIMATED_PDF14_ROW_SPACE(max(1, pdev->width), pdev->color_info.num_components, deep ? 16 : 8) >> 3);
