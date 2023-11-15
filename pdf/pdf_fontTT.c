@@ -262,33 +262,43 @@ static int pdfi_ttf_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *
     pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
     pdf_context *ctx = (pdf_context *)ttfont->ctx;
     uint ID = 0;
-    int code = -1;
+    int l, code = -1;
 
-    if (glyph >= GS_MIN_GLYPH_INDEX)
-        glyph -= GS_MIN_GLYPH_INDEX;
+    if (glyph >= GS_MIN_CID_GLYPH) {	/* Fabricate a numeric name. */
+        char cid_name[sizeof(gs_glyph) * 3 + 1];
 
-    if ((ttfont->descflags & 4) != 0) {
-        code = gs_type42_find_post_name((gs_font_type42 *)pfont, glyph, (gs_string *)pstr);
-        if (code < 0) {
-            char buf[64];
-            int l;
-            l = gs_snprintf(buf, sizeof(buf), "~gs~gName~%04x", (uint)glyph);
-            code = (*ctx->get_glyph_index)(pfont, (byte *)buf, l, &ID);
-        }
-        else {
-            code = (*ctx->get_glyph_index)(pfont, (byte *)pstr->data, pstr->size, &ID);
-        }
+        l = gs_snprintf(cid_name, sizeof(cid_name), "%lu", (ulong) glyph);
+        /* We need to create the entry in the name table... */
+        code = (*ctx->get_glyph_index)(pfont, (byte *)cid_name, l, &ID);
         if (code < 0)
-            return -1; /* No name, trigger pdfwrite Type 3 fallback */
+            return -1;
 
         code = (*ctx->get_glyph_name)(pfont, (gs_glyph)ID, pstr);
         if (code < 0)
             return -1; /* No name, trigger pdfwrite Type 3 fallback */
-    }
-    else {
-        code = (*ctx->get_glyph_name)(pfont, glyph, pstr);
-        if (code < 0)
-            return -1; /* No name, trigger pdfwrite Type 3 fallback */
+    } else {
+        if ((ttfont->descflags & 4) != 0) {
+            code = gs_type42_find_post_name((gs_font_type42 *)pfont, glyph, (gs_string *)pstr);
+            if (code < 0) {
+                char buf[64];
+                l = gs_snprintf(buf, sizeof(buf), "~gs~gName~%04x", (uint)glyph);
+                code = (*ctx->get_glyph_index)(pfont, (byte *)buf, l, &ID);
+            }
+            else {
+                code = (*ctx->get_glyph_index)(pfont, (byte *)pstr->data, pstr->size, &ID);
+            }
+            if (code < 0)
+                return -1; /* No name, trigger pdfwrite Type 3 fallback */
+
+            code = (*ctx->get_glyph_name)(pfont, (gs_glyph)ID, pstr);
+            if (code < 0)
+                return -1; /* No name, trigger pdfwrite Type 3 fallback */
+        }
+        else {
+            code = (*ctx->get_glyph_name)(pfont, glyph, pstr);
+            if (code < 0)
+                return -1; /* No name, trigger pdfwrite Type 3 fallback */
+        }
     }
     return code;
 
