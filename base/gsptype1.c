@@ -118,6 +118,7 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 {
     gs_pattern_common_init((gs_pattern_template_t *)ppat, &gs_pattern1_type);
     ppat->uses_transparency = 0;        /* false */
+    ppat->BM_Not_Normal = 0;            /* false */
 }
 
 /* Make an instance of a PatternType 1 pattern. */
@@ -256,7 +257,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 
     inst.templat = *pcp;
     /* Even if the pattern wants to use transparency, don't permit it if there is no device which will support it */
-    inst.templat.uses_transparency &= dev_proc( gs_currentdevice_inline(pgs), dev_spec_op)( gs_currentdevice_inline(pgs), gxdso_supports_pattern_transparency, NULL, 0);;
+    inst.templat.uses_transparency &= dev_proc( gs_currentdevice_inline(pgs), dev_spec_op)( gs_currentdevice_inline(pgs), gxdso_supports_pattern_transparency, NULL, 0);
 
     code = compute_inst_matrix(&inst, &bbox, dev_width, dev_height, &bbw, &bbh);
     if (code < 0)

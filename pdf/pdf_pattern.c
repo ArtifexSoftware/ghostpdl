@@ -397,7 +397,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     double XStep, YStep;
     pdf_dict *Resources = NULL, *pdict = NULL;
     pdf_array *Matrix = NULL;
-    bool transparency = false;
+    bool transparency = false, BM_Not_Normal = false;
     pdf_pattern_context_t *context = NULL;
 
 #if DEBUG_PATTERN
@@ -483,13 +483,13 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
 
     /* See if pattern uses transparency, or if we are in an overprint
        simulation situation */
-    if (ctx->page.simulate_op)
+    if (ctx->page.has_transparency) {
+        code = pdfi_check_Pattern_transparency(ctx, pdict, page_dict, &transparency, &BM_Not_Normal);
+        if (code < 0)
+            goto exit;
+    }
+    if (ctx->page.simulate_op) {
         transparency = true;
-    else
-        if (ctx->page.has_transparency) {
-            code = pdfi_check_Pattern_transparency(ctx, pdict, page_dict, &transparency);
-            if (code < 0)
-                goto exit;
     }
 
     /* TODO: Resources?  Maybe I should check that they are all valid before proceeding, or something? */
@@ -502,6 +502,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     templat.XStep = XStep;
     templat.YStep = YStep;
     templat.uses_transparency = transparency;
+    templat.BM_Not_Normal = BM_Not_Normal;
     //templat.uses_transparency = false; /* disable */
 
     code = pdfi_gsave(ctx);

@@ -37,6 +37,7 @@ typedef struct gs_pattern1_template_s {
     int PaintType;
     int TilingType;
     bool uses_transparency;
+    bool BM_Not_Normal;     /* If we are using transparency, this detects the use of blend modes other than normal or compatible */
     gs_rect BBox;
     float XStep;
     float YStep;

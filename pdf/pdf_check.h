@@ -19,6 +19,6 @@
 int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, pdf_array **fonts_array, pdf_array **spots_array, bool do_setup);
 
 int pdfi_check_Pattern_transparency(pdf_context *ctx, pdf_dict *pattern,
-                                    pdf_dict *page_dict, bool *transparent);
+                                    pdf_dict *page_dict, bool *transparent, bool *BM_Not_Normal);
 
 #endif

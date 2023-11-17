@@ -72,6 +72,7 @@
  */
 typedef struct {
     bool transparent;
+    bool BM_Not_Normal;
     bool has_overprint; /* Does it have OP or op in an ExtGState? */
     pdf_dict *spot_dict;
     pdf_array *font_array;
@@ -392,22 +393,30 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
                 code = pdfi_dict_knownget_type(ctx, xobject, "Group", PDF_DICT, (pdf_obj **)&group_dict);
                 if (code > 0) {
                     tracker->transparent = true;
-                    if (tracker->spot_dict == NULL) {
+                    if (tracker->spot_dict != NULL) {
+                        /* Start a new loop detector group to avoid this being detected in the Resources check below */
+                        code = pdfi_loop_detector_mark(ctx); /* Mark the start of the XObject dictionary loop */
+                        if (code == 0) {
+                            code = pdfi_dict_knownget(ctx, group_dict, "CS", &CS);
+                            if (code > 0)
+                                /* We don't care if there's an error here, it'll be picked up if we use the ColorSpace later */
+                                (void)pdfi_check_ColorSpace_for_spots(ctx, CS, group_dict, page_dict, tracker->spot_dict);
+                            (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
+                        }
+                        pdfi_countdown(group_dict);
+                        pdfi_countdown(CS);
+                    }
+                    else if (tracker->BM_Not_Normal)
+                    {
+                        /* We already know it has a non-normal Blend Mode. No point in keeping searching. */
                         pdfi_countdown(group_dict);
                         goto transparency_exit;
                     }
-
-                    /* Start a new loop detector group to avoid this being detected in the Resources check below */
-                    code = pdfi_loop_detector_mark(ctx); /* Mark the start of the XObject dictionary loop */
-                    if (code == 0) {
-                        code = pdfi_dict_knownget(ctx, group_dict, "CS", &CS);
-                        if (code > 0)
-                            /* We don't care if there's an error here, it'll be picked up if we use the ColorSpace later */
-                            (void)pdfi_check_ColorSpace_for_spots(ctx, CS, group_dict, page_dict, tracker->spot_dict);
-                        (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
+                    else
+                    {
+                        pdfi_countdown(group_dict);
                     }
-                    pdfi_countdown(group_dict);
-                    pdfi_countdown(CS);
+                    /* We need to keep checking Resources in case there are non-Normal blend mode things still to be found. */
                 }
 
                 code = pdfi_dict_knownget_type(ctx, xobject, "Resources", PDF_DICT, (pdf_obj **)&resource_dict);
@@ -535,6 +544,27 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
         if (code == 0 && overprint)
             tracker->has_overprint = true;
 
+        /* Check Blend Mode *first* because we short-circuit transparency detection
+         * when we find transparency, and we want to be able to record the use of
+         * blend modes other than Compatible/Normal so that Patterns using these
+         * always use the clist and not tiles. The tiles implementation can't work
+         * if we change to a blend mode other than Normal or Compatible during
+         * the course of a Pattern.
+         */
+        code = pdfi_dict_knownget_type(ctx, extgstate_dict, "BM", PDF_NAME, &o);
+        if (code > 0) {
+            if (!pdfi_name_is((pdf_name *)o, "Normal")) {
+                if (!pdfi_name_is((pdf_name *)o, "Compatible")) {
+                    pdfi_countdown(o);
+                    tracker->transparent = true;
+                    tracker->BM_Not_Normal = true;
+                    return 0;
+                }
+            }
+        }
+        pdfi_countdown(o);
+        o = NULL;
+
         /* Check SMask */
         code = pdfi_dict_knownget(ctx, extgstate_dict, "SMask", &o);
         if (code > 0) {
@@ -566,19 +596,6 @@ static int pdfi_check_ExtGState(pdf_context *ctx, pdf_dict *extgstate_dict, pdf_
                 }
                 default:
                     break;
-            }
-        }
-        pdfi_countdown(o);
-        o = NULL;
-
-        code = pdfi_dict_knownget_type(ctx, extgstate_dict, "BM", PDF_NAME, &o);
-        if (code > 0) {
-            if (!pdfi_name_is((pdf_name *)o, "Normal")) {
-                if (!pdfi_name_is((pdf_name *)o, "Compatible")) {
-                    pdfi_countdown(o);
-                    tracker->transparent = true;
-                    return 0;
-                }
             }
         }
         pdfi_countdown(o);
@@ -676,7 +693,7 @@ error1:
 
 /*
  * This routine checks a Pattern dictionary to see if it contains any spot
- * colour definitions, or transparency usage.
+ * colour definitions, or transparency usage (or blend modes other than Normal/Compatible).
  */
 static int pdfi_check_Pattern(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict,
                               pdfi_check_tracker_t *tracker)
@@ -720,10 +737,10 @@ transparency_exit:
  * This routine checks a Pattern dictionary for transparency.
  */
 int pdfi_check_Pattern_transparency(pdf_context *ctx, pdf_dict *pattern, pdf_dict *page_dict,
-                                    bool *transparent)
+                                    bool *transparent, bool *BM_Not_Normal)
 {
     int code;
-    pdfi_check_tracker_t tracker = {0, 0, NULL, NULL, 0, NULL};
+    pdfi_check_tracker_t tracker = {0, 0, 0, NULL, NULL, 0, NULL};
 
     /* NOTE: We use a "null" tracker that won't do any optimization to prevent
      * checking the same resource twice.
@@ -733,8 +750,10 @@ int pdfi_check_Pattern_transparency(pdf_context *ctx, pdf_dict *pattern, pdf_dic
      * pdfi_check_free_tracker() as in pdfi_check_page(), below.
      */
     code = pdfi_check_Pattern(ctx, pattern, page_dict, &tracker);
-    if (code == 0)
+    if (code == 0) {
         *transparent = tracker.transparent;
+        *BM_Not_Normal = tracker.BM_Not_Normal;
+    }
     else
         *transparent = false;
     return code;
