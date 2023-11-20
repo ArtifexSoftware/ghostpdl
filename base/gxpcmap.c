@@ -247,8 +247,12 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
         dev_spec_op))((gx_device *)pinst->saved->device,
         gxdso_pattern_can_accum, pinst, 0) == 1)
         force_no_clist = 1; /* Set only for first time through */
-    if (force_no_clist || (size < max_pattern_bitmap && !pinst->is_clist)
-        || pinst->templat.PaintType != 1 ) {
+    /* If the blend mode in use is not Normal, then we CANNOT use a tile. What
+     * if the blend mode changes half way through the tile? We simply must use
+     * a clist. */
+    if (force_no_clist ||
+        (((size < max_pattern_bitmap && !pinst->is_clist)
+           || pinst->templat.PaintType != 1) && !pinst->templat.BM_Not_Normal)) {
         gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
                         &st_device_pattern_accum, cname);
         if (adev == 0)
@@ -1176,12 +1180,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
     ctile->has_overlap = pinst->has_overlap;
     ctile->is_dummy = false;
     ctile->is_locked = false;
-    if (pinst->templat.uses_transparency) {
-        /* to work with pdfi get the blend mode out of the saved pgs device */
-        ctile->blending_mode = ((pdf14_device*)(saved->device))->blend_mode;
-    }
-    else
-        ctile->blending_mode = 0;
+    ctile->blending_mode = 0;
     ctile->trans_group_popped = false;
     if (dev_proc(fdev, open_device) != pattern_clist_open_device) {
         if (mbits != 0) {

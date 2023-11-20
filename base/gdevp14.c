@@ -5291,16 +5291,38 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         blend_mode = ptile->blending_mode;
         memcpy(&save_pdf14_dev, p14dev, sizeof(pdf14_device));
 
-        group_color_info = pdf14_clone_group_color_info(pdev, p14dev->ctx->stack->group_color_info);
-        if (group_color_info == NULL)
-            return gs_error_VMerror;
+        /* Transparency handling with patterns confuses me, so some notes...
+         *
+         * For simple, non-transparent patterns, like you'd get in PS, we've
+         * used bitmap tiles. Draw into those tiles, and tile those out multiple
+         * times. To cope with unmarked pixels, we have a "transparency" plane
+         * (simple on/off) that says whether a pixel is marked or not.
+         *
+         * For patterns with transparency (but not blending), we can create an
+         * isolated transparency group, tile all the bitmap tiles into that, and
+         * then blend that back with the required alpha at the end. This works
+         * because the alpha values of the individual objects within the tile are
+         * recorded in that group.
+         *
+         * We can't do that for groups that use blending though, as each object
+         * in the pattern might use a different blend, and we don't (can't) record
+         * the blending mode. An isolated group doesn't even allow us to actually
+         * do the blending at all. So, for such patterns (any patterns that sets (or
+         * just has a resource that mentions) a non-normal blend mode), we use
+         * a pattern clist.
+         */
+        if (ptile->cdev == NULL) {
+            group_color_info = pdf14_clone_group_color_info(pdev, p14dev->ctx->stack->group_color_info);
+            if (group_color_info == NULL)
+                return gs_error_VMerror;
 
-        code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, (uint16_t)floor(65535 * p14dev->alpha + 0.5),
-                                             (uint16_t)floor(65535 * p14dev->shape + 0.5), (uint16_t)floor(65535 * p14dev->opacity + 0.5),
-                                              blend_mode, 0, 0, n_chan_tile - 1, false, false,
-                                              NULL, NULL, group_color_info, pgs_noconst, pdev);
-        if (code < 0)
-            return code;
+            code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, (uint16_t)floor(65535 * p14dev->alpha + 0.5),
+                                                 (uint16_t)floor(65535 * p14dev->shape + 0.5), (uint16_t)floor(65535 * p14dev->opacity + 0.5),
+                                                 blend_mode, 0, 0, n_chan_tile - 1, false, false,
+                                                 NULL, NULL, group_color_info, pgs_noconst, pdev);
+            if (code < 0)
+                return code;
+        }
 
         /* Set the blending procs and the is_additive setting based
            upon the number of channels */
@@ -5389,13 +5411,15 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             gs_free_object(pgs->memory, fill_trans_buffer, "pdf14_tile_pattern_fill");
             ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
         }
-        /* pop our transparency group which will force the blending.
-           This was all needed for Bug 693498 */
-        code = pdf14_pop_transparency_group(pgs_noconst, p14dev->ctx,
-                                            p14dev->blend_procs,
-                                            p14dev->color_info.num_components,
-                                            p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
-                                            pdev);
+        if (ptile->cdev == NULL) {
+            /* pop our transparency group which will force the blending.
+               This was all needed for Bug 693498 */
+            code = pdf14_pop_transparency_group(pgs_noconst, p14dev->ctx,
+                                                p14dev->blend_procs,
+                                                p14dev->color_info.num_components,
+                                                p14dev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
+                                                pdev);
+        }
         memcpy(p14dev, &save_pdf14_dev, sizeof(pdf14_device));
         p14dev->pclist_device = NULL;
     }
