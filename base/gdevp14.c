@@ -5135,7 +5135,7 @@ pdf14_fill_mask(gx_device * orig_dev,
                     return gs_error_VMerror;
 
                 code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
-                     1, 0, 65535, 65535, 65535, ptile->blending_mode, 0, 0,
+                     1, 0, 65535, 65535, 65535, BLEND_MODE_Normal, 0, 0,
                      ptile->ttrans->n_chan-1, false, false, NULL, NULL,
                      group_color_info, NULL, NULL);
                 if (code < 0)
@@ -5206,7 +5206,6 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
     int n_chan_tile;
     gx_clip_path cpath_intersection;
     gx_path path_ttrans;
-    gs_blend_mode_t blend_mode;
     pdf14_group_color_t *group_color_info;
 
     if (ppath == NULL)
@@ -5288,7 +5287,6 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         } else {
             n_chan_tile = ptile->cdev->common.color_info.num_components+1;
         }
-        blend_mode = ptile->blending_mode;
         memcpy(&save_pdf14_dev, p14dev, sizeof(pdf14_device));
 
         /* Transparency handling with patterns confuses me, so some notes...
@@ -5318,7 +5316,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
 
             code = pdf14_push_transparency_group(p14dev->ctx, &rect, 1, 0, (uint16_t)floor(65535 * p14dev->alpha + 0.5),
                                                  (uint16_t)floor(65535 * p14dev->shape + 0.5), (uint16_t)floor(65535 * p14dev->opacity + 0.5),
-                                                 blend_mode, 0, 0, n_chan_tile - 1, false, false,
+                                                 BLEND_MODE_Normal, 0, 0, n_chan_tile - 1, false, false,
                                                  NULL, NULL, group_color_info, pgs_noconst, pdev);
             if (code < 0)
                 return code;

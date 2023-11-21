@@ -309,7 +309,7 @@ void gx_pattern_cache_update_space(gs_gstate * pgs, size_t used);
 /* device, but it may zero out the bitmap_memory pointers to prevent */
 /* the accumulated bitmaps from being freed when the device is closed. */
 int gx_pattern_cache_add_entry(gs_gstate *, gx_device_forward *,
-                               gx_color_tile **, gs_gstate*);
+                               gx_color_tile **);
 /* Add a dummy Pattern cache entry.  Stubs a pattern tile for interpreter when
    device handles high level patterns. */
 int gx_pattern_cache_add_dummy_entry(gs_gstate *pgs, gs_pattern1_instance_t *pinst,
