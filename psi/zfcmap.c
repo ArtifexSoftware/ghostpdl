@@ -78,7 +78,7 @@ acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
         if (code < 0)
             return code;
         elem_sz = r_size(&elem);
-        if (elem_sz & 1)
+        if (elem_sz & 1 || elem_sz > max_uint - num_ranges)
             return_error(gs_error_rangecheck);
         num_ranges += elem_sz;
     }
@@ -136,8 +136,8 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
         if (code < 0)
             return code;
         elem_sz = r_size(&elem);
-        if (elem_sz % 5 != 0)
-        return_error(gs_error_rangecheck);
+        if (elem_sz % 5 != 0 || elem_sz > max_uint - num_lookup)
+            return_error(gs_error_rangecheck);
         num_lookup += elem_sz;
     }
     num_lookup /= 5;
