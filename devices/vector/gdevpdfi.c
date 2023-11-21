@@ -2426,6 +2426,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
     gx_bitmap_id id = (gx_bitmap_id)size;
 
     switch (dev_spec_op) {
+        case gxdso_skip_icc_component_validation:
+            return 1;
         case gxdso_supports_pattern_transparency:
             return 1;
         case gxdso_pattern_can_accum:
