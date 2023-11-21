@@ -635,6 +635,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
             for (i = 0; i < n; ++i) {
                 if ((code = pdata->procs.subr_data(pfont, i, false, &gdata)) >= 0) {
                         code = CheckSubrForMM(&gdata, pfont);
+                        gs_glyph_data_free(&gdata, "write_Private(Subrs)");
                         if (code < 0) {
                             if (SubrsWithMM != 0)
                                 gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
@@ -652,21 +653,27 @@ write_Private(stream *s, gs_font_type1 *pfont,
 
                 if (gdata.bits.size) {
                     if (pfont->data.WeightVector.count != 0) {
-                        byte *stripped;
-                        int length;
+                        byte *stripped = NULL;
+                        int length = 0;
 
                         length = strip_othersubrs(&gdata, pfont, NULL, SubrsWithMM);
-                        stripped = gs_alloc_bytes(pfont->memory, length, "Subrs copy for OtherSubrs");
-                        code = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
-                        if (code < 0) {
-                            if (SubrsWithMM != 0)
-                                gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
-                            return code;
+                        if (length > 0) {
+                            stripped = gs_alloc_bytes(pfont->memory, length, "Subrs copy for OtherSubrs");
+                            if (stripped == NULL) {
+                                if (SubrsWithMM != 0)
+                                    gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                                gs_glyph_data_free(&gdata, "write_Private(Subrs)");
+                                return gs_note_error(gs_error_VMerror);
+                            }
+                            length = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
+                            gs_snprintf(buf, sizeof(buf), "dup %d %u -| ", i, length);
+                            stream_puts(s, buf);
+                            write_CharString(s, stripped, length);
+                            gs_free_object(pfont->memory, stripped, "free Subrs copy for OtherSubrs");
+                        } else {
+                            gs_snprintf(buf, sizeof(buf), "dup %d 0 -| ", i);
+                            stream_puts(s, buf);
                         }
-                        gs_snprintf(buf, sizeof(buf), "dup %d %u -| ", i, code);
-                        stream_puts(s, buf);
-                        write_CharString(s, stripped, code);
-                        gs_free_object(pfont->memory, stripped, "free Subrs copy for OtherSubrs");
                     } else {
                         gs_snprintf(buf, sizeof(buf), "dup %d %u -| ", i, gdata.bits.size);
                         stream_puts(s, buf);
@@ -719,6 +726,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
                 if (code < 0) {
                     if (SubrsWithMM != 0)
                         gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                    gs_glyph_data_free(&gdata, "write_Private(Subrs)");
                     return code;
                 }
 
@@ -726,18 +734,25 @@ write_Private(stream *s, gs_font_type1 *pfont,
                 stream_write(s, gstr.data, gstr.size);
 
                 if (pfont->data.WeightVector.count != 0) {
-                    gs_bytestring *data = (gs_bytestring *)&gdata.bits;
+                    byte *stripped = NULL;
+                    int length = 0;
 
-                    stripped = gs_alloc_bytes(pfont->memory, data->size, "CharStrings copy for OtherSubrs");
-                    code = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
-                    if (code < 0) {
-                        if (SubrsWithMM != 0)
-                            gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
-                        return code;
-                    }
-                    pprintd1(s, " %d -| ", code);
-                    write_CharString(s, stripped, code);
-                    gs_free_object(pfont->memory, stripped, "free CharStrings copy for OtherSubrs");
+                    length = strip_othersubrs(&gdata, pfont, NULL, SubrsWithMM);
+                    if (length > 0) {
+                        stripped = gs_alloc_bytes(pfont->memory, length, "Subrs copy for OtherSubrs");
+                        if (stripped == NULL) {
+                            if (SubrsWithMM != 0)
+                                gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                            gs_glyph_data_free(&gdata, "write_Private(Subrs)");
+                            return gs_note_error(gs_error_VMerror);
+                        }
+                        length = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
+
+                        pprintd1(s, " %d -| ", length);
+                        write_CharString(s, stripped, length);
+                        gs_free_object(pfont->memory, stripped, "free CharStrings copy for OtherSubrs");
+                    } else
+                        pprintd1(s, " %d -| ", 0);
                 } else {
                     pprintd1(s, " %d -| ", gdata.bits.size);
                     write_CharString(s, gdata.bits.data, gdata.bits.size);
