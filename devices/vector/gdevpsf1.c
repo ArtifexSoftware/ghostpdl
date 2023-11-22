@@ -246,17 +246,28 @@ static int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
     memset(Stack, 0x00, sizeof(Stack));
     gs_type1_decrypt(source, source, data->size, &state);
 
-    if(pfont->data.lenIV)
+    if(pfont->data.lenIV) {
+        if (pfont->data.lenIV < 0) {
+            code = gs_note_error(gs_error_invalidfont);
+            goto error;
+        }
         source += pfont->data.lenIV;
+    }
 
     while (source < end) {
         if (*source < 32) {
             /* Command */
             switch (*source) {
                 case 12:
+                    if (source + 2 > end) {
+                        code = gs_note_error(gs_error_invalidfont);
+                        goto error;
+                    }
                     if (*(source + 1) == 16) {
-                        if (CurrentNumberIndex < 1)
-			  return_error(gs_error_rangecheck);
+                        if (CurrentNumberIndex < 1) {
+			                code = gs_note_error(gs_error_rangecheck);
+                            goto error;
+                        }
                         switch(Stack[CurrentNumberIndex-1]) {
                             case 18:
                                 code = 6;
@@ -289,33 +300,55 @@ static int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
             CurrentNumberIndex = 0;
         } else {
             /* Number */
+            if (CurrentNumberIndex >= count_of(Stack)) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto error;
+            }
             if (*source < 247) {
                 Stack[CurrentNumberIndex++] = *source++ - 139;
             } else {
                 if (*source < 251) {
+                    if (source + 2 > end) {
+                        code = gs_note_error(gs_error_invalidfont);
+                        goto error;
+                    }
                     Stack[CurrentNumberIndex] = ((*source++ - 247) * 256) + 108;
                     Stack[CurrentNumberIndex++] += *source++;
                 } else {
                     if (*source < 255) {
+                        if (source + 2 > end) {
+                            code = gs_note_error(gs_error_invalidfont);
+                            goto error;
+                        }
                         Stack[CurrentNumberIndex] = ((*source++ - 251) * -256) - 108;
                         Stack[CurrentNumberIndex++] -= *source++;
                     } else {
+                        if (source + 6 > end) {
+                            code = gs_note_error(gs_error_invalidfont);
+                            goto error;
+                        }
+                        source++;
                         Stack[CurrentNumberIndex] = *source++ << 24;
                         Stack[CurrentNumberIndex] += *source++ << 16;
                         Stack[CurrentNumberIndex] += *source++ << 8;
-                        Stack[CurrentNumberIndex] += *source++;
+                        Stack[CurrentNumberIndex++] += *source++;
                     }
                 }
             }
         }
     }
+    /* We decrypted the data in place at the start of the routine, we must re-encrypt it
+     * before we return, even if there's an error.
+     */
+error:
     state = crypt_charstring_seed;
     source = data->data;
     gs_type1_encrypt(source, source, data->size, &state);
     return code;
 }
+#undef MM_STACK_SIZE
 
-static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *stripped, byte *SubrsWithMM)
+static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *stripped, byte *SubrsWithMM, int SubrsCount)
 {
     crypt_state state = crypt_charstring_seed;
     gs_bytestring *data = (gs_bytestring *)&gdata->bits;
@@ -344,7 +377,15 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
             /* Command */
             switch (*source) {
                 case 12:
+                    if (source + 2 > end) {
+                        dest_length = gs_note_error(gs_error_invalidfont);
+                        goto error;
+                    }
                     if (*(source + 1) == 16) {
+                        if (CurrentNumberIndex < 1) {
+                            dest_length = gs_note_error(gs_error_rangecheck);
+                            goto error;
+                        }
                         /* Callothersubsr, the only thing we care about */
                         switch(Stack[CurrentNumberIndex-1]) {
                             /* If we find a Multiple Master call, remove all but the
@@ -437,11 +478,18 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                     }
                     break;
                 case 10:
-                    if (CurrentNumberIndex != 0 && SubrsWithMM[Stack[CurrentNumberIndex - 1]] != 0) {
+                    if (CurrentNumberIndex != 0 && Stack[CurrentNumberIndex - 1] >= 0 &&
+                        Stack[CurrentNumberIndex - 1] < SubrsCount && SubrsWithMM[Stack[CurrentNumberIndex - 1]] != 0)
+                    {
                         int index = Stack[CurrentNumberIndex - 1];
                         int StackBase = CurrentNumberIndex - 1 - pfont->data.WeightVector.count * SubrsWithMM[index];
 
                         CurrentNumberIndex--; /* Remove the subr index */
+
+                        if (StackBase > CurrentNumberIndex) {
+                            dest_length = gs_note_error(gs_error_invalidfont);
+                            goto error;
+                        }
 
                         for (i=0;i < StackBase; i++) {
                             written = WriteNumber(dest, Stack[i]);
@@ -454,7 +502,7 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                              * (due to constructs such as x y div), if we don't have enough parameters
                              * just write a 0 instead. We know this is incorrect.....
                              */
-                            if (StackBase + i >= 0)
+                            if (StackBase + i >= 0 && StackBase + i < CurrentNumberIndex)
                                 written = WriteNumber(dest, Stack[StackBase + i]);
                             else
                                 written = WriteNumber(dest, 0);
@@ -494,16 +542,32 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
         } else {
             /* Number */
             if (*source < 247) {
+                if (CurrentNumberIndex >= count_of(Stack)) {
+	                dest_length = gs_note_error(gs_error_rangecheck);
+                    goto error;
+                }
                 Stack[CurrentNumberIndex++] = *source++ - 139;
             } else {
                 if (*source < 251) {
+                    if (source + 2 > end) {
+                        dest_length = gs_note_error(gs_error_invalidfont);
+                        goto error;
+                    }
                     Stack[CurrentNumberIndex] = ((*source++ - 247) * 256) + 108;
                     Stack[CurrentNumberIndex++] += *source++;
                 } else {
                     if (*source < 255) {
+                        if (source + 2 > end) {
+                            dest_length = gs_note_error(gs_error_invalidfont);
+                            goto error;
+                        }
                         Stack[CurrentNumberIndex] = ((*source++ - 251) * -256) - 108;
                         Stack[CurrentNumberIndex++] -= *source++;
                     } else {
+                        if (source + 6 > end) {
+                            dest_length = gs_note_error(gs_error_invalidfont);
+                            goto error;
+                        }
                         source++;
                         Stack[CurrentNumberIndex] = *source++ << 24;
                         Stack[CurrentNumberIndex] += *source++ << 16;
@@ -514,11 +578,15 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
             }
         }
     }
+    /* We decrypted the data in place at the start of the routine, we must re-encrypt it
+     * before we return, even if there's an error.
+     */
+error:
     source = data->data;
     state = crypt_charstring_seed;
     gs_type1_encrypt(source, source, data->size, &state);
 
-    if (!OnlyCalcLength) {
+    if (!OnlyCalcLength && dest_length > 0) {
         state = crypt_charstring_seed;
         gs_type1_encrypt(stripped, stripped, dest_length, &state);
     }
@@ -543,6 +611,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
     gs_param_list *const plist = (gs_param_list *)&rlist;
     int code = s_init_param_printer(&rlist, ppp, s);
     byte *SubrsWithMM = 0;
+    int SubrsCount;
 
     if (code < 0)
         return 0;
@@ -625,8 +694,10 @@ write_Private(stream *s, gs_font_type1 *pfont,
             if (code >= 0)
                 gs_glyph_data_free(&gdata, "write_Private(Subrs)");
         }
-        if (pfont->data.WeightVector.count != 0)
+        if (pfont->data.WeightVector.count != 0) {
+            SubrsCount = n;
             SubrsWithMM = gs_alloc_bytes(pfont->memory, n, "Subrs record");
+        }
 
         pprintd1(s, "/Subrs %d array\n", n);
 
@@ -656,7 +727,13 @@ write_Private(stream *s, gs_font_type1 *pfont,
                         byte *stripped = NULL;
                         int length = 0;
 
-                        length = strip_othersubrs(&gdata, pfont, NULL, SubrsWithMM);
+                        length = strip_othersubrs(&gdata, pfont, NULL, SubrsWithMM, SubrsCount);
+                        if (length < 0) {
+                            gs_glyph_data_free(&gdata, "write_Private(CharStrings)");
+                            if (SubrsWithMM != 0)
+                                 gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                            return length;
+                        }
                         if (length > 0) {
                             stripped = gs_alloc_bytes(pfont->memory, length, "Subrs copy for OtherSubrs");
                             if (stripped == NULL) {
@@ -665,7 +742,14 @@ write_Private(stream *s, gs_font_type1 *pfont,
                                 gs_glyph_data_free(&gdata, "write_Private(Subrs)");
                                 return gs_note_error(gs_error_VMerror);
                             }
-                            length = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
+                            length = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM, SubrsCount);
+                            if (length < 0) {
+                                gs_glyph_data_free(&gdata, "write_Private(CharStrings)");
+                                gs_free_object(pfont->memory, stripped, "free CharStrings copy for OtherSubrs");
+                                if (SubrsWithMM != 0)
+                                     gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                                return length;
+                            }
                             gs_snprintf(buf, sizeof(buf), "dup %d %u -| ", i, length);
                             stream_puts(s, buf);
                             write_CharString(s, stripped, length);
@@ -737,7 +821,13 @@ write_Private(stream *s, gs_font_type1 *pfont,
                     byte *stripped = NULL;
                     int length = 0;
 
-                    length = strip_othersubrs(&gdata, pfont, NULL, SubrsWithMM);
+                    length = strip_othersubrs(&gdata, pfont, NULL, SubrsWithMM, SubrsCount);
+                    if (length < 0) {
+                        gs_glyph_data_free(&gdata, "write_Private(CharStrings)");
+                        if (SubrsWithMM != 0)
+                             gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                        return length;
+                    }
                     if (length > 0) {
                         stripped = gs_alloc_bytes(pfont->memory, length, "Subrs copy for OtherSubrs");
                         if (stripped == NULL) {
@@ -746,8 +836,14 @@ write_Private(stream *s, gs_font_type1 *pfont,
                             gs_glyph_data_free(&gdata, "write_Private(Subrs)");
                             return gs_note_error(gs_error_VMerror);
                         }
-                        length = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM);
-
+                        length = strip_othersubrs(&gdata, pfont, stripped, SubrsWithMM, SubrsCount);
+                        if (length < 0) {
+                            gs_glyph_data_free(&gdata, "write_Private(CharStrings)");
+                            gs_free_object(pfont->memory, stripped, "free CharStrings copy for OtherSubrs");
+                            if (SubrsWithMM != 0)
+                                 gs_free_object(pfont->memory, SubrsWithMM, "free Subrs record");
+                            return length;
+                        }
                         pprintd1(s, " %d -| ", length);
                         write_CharString(s, stripped, length);
                         gs_free_object(pfont->memory, stripped, "free CharStrings copy for OtherSubrs");
