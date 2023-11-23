@@ -246,13 +246,13 @@ static int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
     memset(Stack, 0x00, sizeof(Stack));
     gs_type1_decrypt(source, source, data->size, &state);
 
-    if(pfont->data.lenIV) {
-        if (pfont->data.lenIV < 0) {
-            code = gs_note_error(gs_error_invalidfont);
-            goto error;
-        }
-        source += pfont->data.lenIV;
+    if (pfont->data.lenIV >= data->size) {
+        code = gs_note_error(gs_error_invalidfont);
+        goto error;
     }
+
+    if(pfont->data.lenIV > 0)
+        source += pfont->data.lenIV;
 
     while (source < end) {
         if (*source < 32) {
@@ -323,7 +323,7 @@ static int CheckSubrForMM (gs_glyph_data_t *gdata, gs_font_type1 *pfont)
                         Stack[CurrentNumberIndex] = ((*source++ - 251) * -256) - 108;
                         Stack[CurrentNumberIndex++] -= *source++;
                     } else {
-                        if (source + 6 > end) {
+                        if (source + 5 > end) {
                             code = gs_note_error(gs_error_invalidfont);
                             goto error;
                         }
@@ -362,6 +362,9 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
         OnlyCalcLength = 1;
         dest = (byte *)&Buffer;
     }
+
+    if (pfont->data.lenIV >= data->size)
+        return gs_note_error(gs_error_invalidfont);
 
     gs_type1_decrypt(source, source, data->size, &state);
 
@@ -540,12 +543,12 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
             }
             CurrentNumberIndex = 0;
         } else {
+            if (CurrentNumberIndex >= count_of(Stack)) {
+                dest_length = gs_note_error(gs_error_rangecheck);
+                goto error;
+            }
             /* Number */
             if (*source < 247) {
-                if (CurrentNumberIndex >= count_of(Stack)) {
-	                dest_length = gs_note_error(gs_error_rangecheck);
-                    goto error;
-                }
                 Stack[CurrentNumberIndex++] = *source++ - 139;
             } else {
                 if (*source < 251) {
@@ -564,7 +567,7 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                         Stack[CurrentNumberIndex] = ((*source++ - 251) * -256) - 108;
                         Stack[CurrentNumberIndex++] -= *source++;
                     } else {
-                        if (source + 6 > end) {
+                        if (source + 5 > end) {
                             dest_length = gs_note_error(gs_error_invalidfont);
                             goto error;
                         }
