@@ -141,12 +141,12 @@ static int
 set_CIDMap_element(const gs_memory_t *mem, ref *CIDMap, uint cid, uint glyph_index)
 {   /* Assuming the CIDMap is already type-checked. */
     /* Assuming GDBytes == 2. */
-    int offset = cid * 2;
-    int count = r_size(CIDMap), size, i;
+    uint offset = cid * 2;
+    uint count = r_size(CIDMap), size, i;
     ref s;
     uchar *c;
 
-    if (glyph_index >= 65536)
+    if (glyph_index >= 65536 || cid > max_uint / 2)
         return_error(gs_error_rangecheck); /* Can't store with GDBytes == 2. */
     for (i = 0; i < count; i++) {
         array_get(mem, CIDMap, i, &s);
