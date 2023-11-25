@@ -372,6 +372,8 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
         for (i=0;i<pfont->data.lenIV;i++) {
             if (!OnlyCalcLength)
                 *dest++ = *source++;
+            else
+                source++;
         }
         dest_length += pfont->data.lenIV;
     }
