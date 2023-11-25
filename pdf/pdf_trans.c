@@ -270,10 +270,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
                 params.ColorSpace = pcs;
                 if (code < 0)
                     goto exit;
-            } else {
-                /* Inherit current colorspace */
-                params.ColorSpace = ctx->pgs->color[colorindex].color_space;
             }
+            else
+                   params.ColorSpace = NULL;
         } else {
             /* GS and Adobe will ignore the whole mask in this case, so we do the same.
             */

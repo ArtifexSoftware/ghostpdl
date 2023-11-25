@@ -107,8 +107,8 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
        a group color specified.
        In this case, the parent group is inherited from
        the previous group or the device color space */
-    if (pgs != NULL && pparams->group_color_type != UNKNOWN) {
-        const gs_color_space *cs = gs_currentcolorspace_inline(pgs);
+    if (pgs != NULL && pparams->ColorSpace != NULL) {
+        const gs_color_space *cs = pparams->ColorSpace;
 
         if (pparams->ColorSpace == NULL)
             code = pdf_color_space_named(pdev, pgs, &cs_value, NULL, cs,
