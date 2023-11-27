@@ -616,7 +616,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
     gs_param_list *const plist = (gs_param_list *)&rlist;
     int code = s_init_param_printer(&rlist, ppp, s);
     byte *SubrsWithMM = 0;
-    int SubrsCount;
+    int SubrsCount = 0;
 
     if (code < 0)
         return 0;
@@ -809,7 +809,6 @@ write_Private(stream *s, gs_font_type1 *pfont,
                 ) {
                 gs_const_string gstr;
                 int code;
-                byte *stripped;
 
                 code = pfont->procs.glyph_name((gs_font *)pfont, glyph, &gstr);
                 if (code < 0) {
