@@ -788,6 +788,16 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
             }
         }
     }
+    /* Record if the user has specified a custom profile, so we don't replace it
+       with a default when we change color space - see win_pr2_set_bpp()
+       Here, we only want to know *if* we have a user specced profile, actually
+       setting it will be handled by gdev_vector_put_params()
+     */
+    if (!pdev->user_icc) {
+        gs_param_string icc_pro_dummy;
+
+        pdev->user_icc = param_read_string(plist, "OutputICCProfile", &icc_pro_dummy) == 0;
+    }
     switch (pdev->params.ColorConversionStrategy) {
         case ccs_ByObjectType:
         case ccs_LeaveColorUnchanged:
@@ -798,24 +808,30 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
             break;
         case ccs_CMYK:
             pdf_set_process_color_model(pdev, 2);
-            ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
-            if (ecode < 0)
-                goto fail;
+            if (!pdev->user_icc) {
+                ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                if (ecode < 0)
+                    goto fail;
+            }
             break;
         case ccs_Gray:
             pdf_set_process_color_model(pdev,0);
-            ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
-            if (ecode < 0)
-                goto fail;
+            if (!pdev->user_icc) {
+                ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                if (ecode < 0)
+                    goto fail;
+            }
             break;
         case ccs_sRGB:
         case ccs_RGB:
             /* Only bother to do this if we didn't handle it above */
             if (!pdev->params.ConvertCMYKImagesToRGB) {
                 pdf_set_process_color_model(pdev,1);
-                ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
-                if (ecode < 0)
-                    goto fail;
+                if (!pdev->user_icc) {
+                    ecode = gsicc_init_device_profile_struct((gx_device *)pdev, NULL, 0);
+                    if (ecode < 0)
+                        goto fail;
+                }
             }
             break;
         default:

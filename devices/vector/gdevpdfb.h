@@ -100,6 +100,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0 /*false*/,			/* fill_overprint */
  0 /*false*/,			/* stroke_overprint */
  1 /* Absolute Colorimetric */, /* rendering intent */
+ 0 /*false */,                  /* user_icc */
  0 /*false*/,                   /* remap_fill_coilor */
  0 /*false*/,                   /* remap_stroke_coilor */
  gs_no_id,			/* halftone_id */

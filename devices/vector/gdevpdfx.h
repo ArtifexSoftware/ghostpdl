@@ -664,6 +664,7 @@ struct gx_device_pdf_s {
     /* Additional graphics state */
     bool fill_overprint, stroke_overprint;
     int rendering_intent;
+    bool user_icc;
     bool remap_fill_color, remap_stroke_color;
     gs_id halftone_id;
     gs_id transfer_ids[4];
