@@ -409,8 +409,21 @@ win_pr2_open(gx_device * dev)
     }
     code1 = win_pr2_set_bpp(dev, depth);
 
-    /* No output filename, we're going to a printer */
+    /* Previous comment was misleading and has been removed. This is an ugly hack!
+     * We don't get to the mswinpr2 'print_page' method until we've been through
+     * gdev_prn_output_page, which (in gdev_prn_output_page_aux) calls
+     * gdev_prn_open_printer_seekable(), which insists on having a filename and
+     * opening that file, even though we don't use it. If we don't have a valid
+     * filename we can use in that function then we get an error.....
+     *
+     * So this code simply creates a dummy temporary file which we never use,
+     * just to get around that problem.....
+     */
     wdev->fname[0] = '\0';
+    pfile = gp_open_scratch_file(dev->memory,
+                                 gp_scratch_file_name_prefix,
+                                 wdev->fname, "wb");
+    gp_fclose(pfile);
     code = gdev_prn_open(dev);
 
     /* If we subclassed the device, with a FirstPage LastPage device,
@@ -427,6 +440,9 @@ win_pr2_open(gx_device * dev)
 
         windev->original_device = (gx_device_win_pr2 *)dev;
     }
+
+    if ((code < 0) && wdev->fname[0])
+        gp_unlink(wdev->memory, wdev->fname);
 
     if (!wdev->nocancel) {
         /* inform user of progress with dialog box and allow cancel */
@@ -476,6 +492,10 @@ win_pr2_close(gx_device * dev)
         GlobalFree(wdev->win32_hdevnames);
         wdev->win32_hdevnames = NULL;
     }
+
+    /* delete unwanted temporary file */
+    if (wdev->fname[0])
+        gp_unlink(wdev->memory, wdev->fname);
 
     code = gdev_prn_close(dev);
 
