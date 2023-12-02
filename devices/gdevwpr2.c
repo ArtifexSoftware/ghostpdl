@@ -237,8 +237,8 @@ gx_device_win_pr2 far_data gs_mswinpr2_device =
     0,				/* selected_bpp */
     false,			/* tumble */
     -1,				/* query_user */
-    0,
-    0,
+    1,
+    1,
     NULL,			/* win32_hdevmode */
     NULL,			/* win32_hdevnames */
     NULL,			/* lpfnAbortProc */
