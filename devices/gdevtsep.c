@@ -2425,8 +2425,6 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
     int num_order = tfdev->devn_params.num_separation_order_names;
     int num_spot = tfdev->devn_params.separations.num_separations;
     int num_comp, comp_num, code = 0, code1 = 0;
-    bool double_f = false;
-    int base_filename_length = length_base_file_name((tiffsep_device *)tfdev, &double_f);
     short map_comp_to_sep[GX_DEVICE_COLOR_MAX_COMPONENTS];
     char *name = NULL;
     int save_depth = pdev->color_info.depth;
@@ -2443,20 +2441,6 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
 
     build_comp_to_sep_map((tiffsep_device *)tfdev, map_comp_to_sep);
 
-    /* Print the names of the spot colors */
-    if (num_order == 0) {
-        for (comp_num = 0; comp_num < num_spot; comp_num++) {
-            copy_separation_name((tiffsep_device *)tfdev, name,
-                gp_file_name_sizeof - base_filename_length - SUFFIX_SIZE, comp_num, 0);
-            dmlprintf1(pdev->memory, "%%%%SeparationName: %s", name);
-            dmlprintf4(pdev->memory, " CMYK = [ %d %d %d %d ]\n",
-                tfdev->equiv_cmyk_colors.color[comp_num].c,
-                tfdev->equiv_cmyk_colors.color[comp_num].m,
-                tfdev->equiv_cmyk_colors.color[comp_num].y,
-                tfdev->equiv_cmyk_colors.color[comp_num].k
-            );
-        }
-    }
     /*
      * Since different pages may have different spot colors, if this is for a
      * page after Page 1, we require that each output file is unique with a "fmt"
