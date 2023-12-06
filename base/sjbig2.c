@@ -365,6 +365,11 @@ s_jbig2decode_process(stream_state * ss, stream_cursor_read * pr,
         }
         /* handle fatal decoding errors reported through our callback */
         if (state->callback_data->error) return state->callback_data->error;
+    } else {
+        /* Ran out of input, try and terminate cleanly */
+        if (last == 1) {
+            jbig2_complete_page(state->decode_ctx);
+        }
     }
     if (out_size > 0) {
         if (image == NULL) {
