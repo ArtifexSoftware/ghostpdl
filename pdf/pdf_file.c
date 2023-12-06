@@ -1674,7 +1674,7 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
     int code = 0;
     int64_t buflen = 0, read = 0, ToRead = *bufferlen;
     gs_offset_t savedoffset;
-    pdf_c_stream *stream;
+    pdf_c_stream *stream = NULL, *SubFileStream = NULL;
     bool filtered;
     pdf_dict *stream_dict = NULL;
 
@@ -1729,7 +1729,14 @@ retry:
         goto exit;
     }
     if (filtered || ctx->encryption.is_encrypted) {
-        code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
+        if (ToRead && stream_obj->length_valid)
+            code = pdfi_apply_SubFileDecode_filter(ctx, stream_obj->Length, NULL, ctx->main_stream, &SubFileStream, false);
+        else
+            code = pdfi_apply_SubFileDecode_filter(ctx, 0, "endstream", ctx->main_stream, &SubFileStream, false);
+        if (code < 0)
+            goto exit;
+
+        code = pdfi_filter(ctx, stream_obj, SubFileStream, &stream, false);
         if (code < 0)
             goto exit;
         read = sfread(Buffer, 1, buflen, stream->s);
@@ -1751,7 +1758,14 @@ retry:
         }
         pdfi_close_file(ctx, stream);
     } else {
-        read = sfread(Buffer, 1, buflen, ctx->main_stream->s);
+        if (ToRead && stream_obj->length_valid)
+            code = pdfi_apply_SubFileDecode_filter(ctx, stream_obj->Length, NULL, ctx->main_stream, &SubFileStream, false);
+        else
+            code = pdfi_apply_SubFileDecode_filter(ctx, ToRead, "endstream", ctx->main_stream, &SubFileStream, false);
+        if (code < 0)
+            goto exit;
+
+        read = sfread(Buffer, 1, buflen, SubFileStream->s);
         if (read == ERRC) {
             /* Error reading the expected number of bytes. If we already calculated the number of
              * bytes in the loop above, then ignore the error and carry on. If, however, we were
