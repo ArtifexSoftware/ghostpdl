@@ -2248,7 +2248,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
             if (num_order > 0) {
                 /* In this case, there was a specification for a separation
                    color order, which indicates what colorants we will
-                   actually creat individual separation files for.  We need
+                   actually create individual separation files for.  We need
                    to allocate for the standard colorants.  This is due to the
                    fact that even when we specify a single spot colorant, we
                    still create the composite CMYK output file. */
@@ -2291,7 +2291,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
                 }
             } else {
                 /* Sep color order number was not specified so just render all
-                   the  planes that we can */
+                   the planes that we can */
                 for (comp_num = 0; comp_num < num_comp; comp_num++) {
                     planes[comp_num] = gs_alloc_bytes(pdev->memory, raster_plane,
                                                     "tiffsep_print_page");
@@ -2302,8 +2302,14 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
                     }
                 }
             }
+            /* Bug 707365: The downscaler always needs to be told to produce all the
+             * components. If SeparationOrder and/or SeparationColorNames are at play
+             * then ncomp may be smaller than this - we might only be wanting to produce
+             * a single color component - but we have no way of telling the downscaler
+             * which ones we want. So always render all the components. This is actually
+             * what we had been doing pre the downscaler refactor anyway! */
             code = gx_downscaler_init_planar(&ds, (gx_device *)pdev,
-                                             8, dst_bpc, num_comp,
+                                             8, dst_bpc, tfdev->color_info.num_components,
                                              &tfdev->downscale,
                                              &params);
             if (code < 0)
