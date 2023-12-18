@@ -126,7 +126,7 @@ SOTOP_CC=$(CC) $(GENOPT) $(GLINCLUDES) $(CFLAGS) $(GPDL_CFLAGS)
 $(GPDLOBJ)/$(GPDL_SO_TOP_OBJ_FILE): $(GPDLSOSRC)sotop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h)\
  $(gscoord_h) $(pltop_h) $(gsicc_manage_h) $(gspaint_h) $(plmain_h)
-	$(SOTOP_CC) $(GPDLSOSRC)sotop.c $(GPDLO_)$(GPDL_SO_TOP_OBJ_FILE)
+	$(SOTOP_CC) $(II)$(ZI_)$(_I) $(ZCF_) $(GPDLSOSRC)sotop.c $(GPDLO_)$(GPDL_SO_TOP_OBJ_FILE)
 
 $(GPDL_JPG_TOP_OBJ): $(GPDLSRC)jpgtop.c $(AK)\
  $(gxdevice_h) $(gserrors_h) $(gsstate_h) $(strimpl_h) $(gscoord_h)\
