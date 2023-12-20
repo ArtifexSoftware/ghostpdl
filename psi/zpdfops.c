@@ -391,8 +391,25 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     }
 
     if (pdfctx->ctx != NULL) {
-        if (pdfctx->pdf_stream != NULL || pdfctx->ps_stream != NULL)
-            pdfi_report_errors(pdfctx->ctx);
+        if (pdfctx->pdf_stream != NULL || pdfctx->ps_stream != NULL) {
+            pdfi_switch_t i_switch;
+
+            code = gs_gsave(igs);
+            if (code < 0)
+                return code;
+
+            code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
+
+            if (code >= 0) {
+                pdfi_finish_pdf_file(pdfctx->ctx);
+                pdfi_report_errors(pdfctx->ctx);
+
+                pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
+            }
+            code = gs_grestore(igs);
+            if (code < 0)
+                return code;
+        }
         if (pdfctx->ps_stream) {
             /* Detach the PostScript stream from the PDF context, otherwise the
              * close code will close the main stream

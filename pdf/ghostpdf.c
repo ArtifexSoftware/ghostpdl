@@ -39,12 +39,17 @@
 #include "pdf_repair.h"
 #include "pdf_xref.h"
 #include "pdf_device.h"
+#include "pdf_mark.h"
 
 #include "gsstate.h"        /* For gs_gstate */
 #include "gsicc_manage.h"  /* For gsicc_init_iccmanager() */
 
 #if PDFI_LEAK_CHECK
 #include "gsmchunk.h"
+#endif
+
+#ifndef USE_PDF_PERMISSIONS
+#define USE_PDF_PERMISSIONS 0
 #endif
 
 extern const char gp_file_name_list_separator;
@@ -823,12 +828,44 @@ int pdfi_separation_name_from_index(gs_gstate *pgs, gs_separation_name index, un
     return_error(gs_error_undefined);
 }
 
-/* These functions are used by the 'PL' implementation, eventually we will */
-/* need to have custom PostScript operators to process the file or at      */
-/* (least pages from it).                                                  */
+int pdfi_finish_pdf_file(pdf_context *ctx)
+{
+    if (ctx->Root) {
+        if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent) {
+            pdf_obj *o = NULL;
+            int code = 0;
+
+            code = pdfi_dict_knownget_type(ctx, ctx->Root, "OCProperties", PDF_DICT, &o);
+            if (code > 0) {
+                // Build and send the OCProperties structure
+                code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "OCProperties");
+                pdfi_countdown(o);
+                if (code < 0)
+                    /* Error message ? */
+                ;
+            }
+        }
+    }
+    return 0;
+}
 
 int pdfi_close_pdf_file(pdf_context *ctx)
 {
+    if (ctx->Root) {
+        pdf_obj *o = NULL;
+        int code = 0;
+
+        code = pdfi_dict_knownget(ctx, ctx->Root, "OCProperties", &o);
+        if (code > 0) {
+            // Build and send the OCProperties structure
+            code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "OCProperties");
+            pdfi_countdown(o);
+            if (code < 0)
+                /* Error message ? */
+                ;
+        }
+    }
+
     if (ctx->main_stream) {
         if (ctx->main_stream->s) {
             sfclose(ctx->main_stream->s);
@@ -1176,8 +1213,6 @@ static int pdfi_init_file(pdf_context *ctx)
     if (ctx->Trailer) {
         /* See comment in pdfi_read_Root() (pdf_doc.c) for details */
         pdf_dict *d = ctx->Trailer;
-        double Permissions = 0;
-        uint32_t P = 0;
 
         pdfi_countup(d);
         code = pdfi_dict_get(ctx, d, "Encrypt", &o);
@@ -1856,6 +1891,7 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
     /* Setup some flags that don't default to 'false' */
     ctx->args.showannots = true;
     ctx->args.preserveannots = true;
+    ctx->args.preservemarkedcontent = true;
     ctx->args.preserveembeddedfiles = true;
     ctx->args.preservedocview = true;
     /* NOTE: For testing certain annotations on cluster, might want to set this to false */

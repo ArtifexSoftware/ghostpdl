@@ -1134,21 +1134,27 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         goto exit;
 
     case IMAGE3X_IMAGETYPE:
-        pdev->JPEG_PassThrough = 0;
-        pdev->JPX_PassThrough = 0;
-        if (pdev->CompatibilityLevel < 1.4 ||
-            (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
-                       prect->q.x == ((const gs_image3x_t *)pic)->Width &&
-                       prect->q.y == ((const gs_image3x_t *)pic)->Height))) {
-            use_fallback = 1;
+        {
+            int64_t OC = pdev->PendingOC;
+
+            pdev->JPEG_PassThrough = 0;
+            pdev->JPX_PassThrough = 0;
+            if (pdev->CompatibilityLevel < 1.4 ||
+                (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
+                           prect->q.x == ((const gs_image3x_t *)pic)->Width &&
+                           prect->q.y == ((const gs_image3x_t *)pic)->Height))) {
+                use_fallback = 1;
+                goto exit;
+            }
+            pdev->image_mask_is_SMask = true;
+
+            pdev->PendingOC = 0;
+            code = gx_begin_image3x_generic((gx_device *)pdev, pgs, pmat, pic,
+                                            prect, pdcolor, pcpath, mem,
+                                            pdf_image3x_make_mid,
+                                            pdf_image3x_make_mcde, pinfo, OC);
             goto exit;
         }
-        pdev->image_mask_is_SMask = true;
-        code = gx_begin_image3x_generic((gx_device *)pdev, pgs, pmat, pic,
-                                        prect, pdcolor, pcpath, mem,
-                                        pdf_image3x_make_mid,
-                                        pdf_image3x_make_mcde, pinfo);
-        goto exit;
 
     case 4:
         /* If we are colour converting then we may not be able to preserve the
@@ -1346,7 +1352,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     pie->bits_per_pixel =
         pim->BitsPerComponent * num_components / pie->num_planes;
     pie->rows_left = height;
-    if (pnamed != 0) /* Don't in-line the image if it is named. */
+    if (pnamed != 0 || pdev->PendingOC) /* Don't in-line the image if it is named. Or has Optional Content */
         in_line = false;
     else {
         double nbytes = (double)(((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
@@ -2229,6 +2235,7 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
     pdf_image_enum *pmie;
     int i;
     const gs_image3x_mask_t *pixm;
+    gx_device_pdf *pdf_dev = (gx_device_pdf *)dev;
 
     if (midev[0]) {
         if (midev[1])
@@ -2241,9 +2248,16 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
     code = pdf_make_mxd(pmcdev, midev[i], mem);
     if (code < 0)
         return code;
+
+    if (pminfo[0] != NULL)
+        pdf_dev->PendingOC = pminfo[0]->OC;
+    else
+        pdf_dev->PendingOC = 0;
+
     code = pdf_begin_typed_image
         ((gx_device_pdf *)dev, pgs, pmat, pic, prect, pdcolor, pcpath, mem,
          pinfo, PDF_IMAGE_TYPE3_DATA);
+    pdf_dev->PendingOC = 0;
     if (code < 0) {
         rc_decrement(*pmcdev, "pdf_image3x_make_mcde");
         return code;
@@ -2976,6 +2990,12 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             break;
         case gxdso_in_smask_construction:
             return pdev->smask_construction;
+        case gxdso_pending_optional_content:
+            {
+                int64_t *object = data;
+                pdev->PendingOC = *object;
+            }
+            break;
         case gxdso_get_dev_param:
             {
                 int code;

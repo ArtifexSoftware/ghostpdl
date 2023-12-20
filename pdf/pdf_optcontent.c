@@ -655,7 +655,8 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdf_dict *oc_dict = NULL;
     int code = 0;
     bool ocg_is_visible;
-    pdf_obj **objarray = NULL, *o = NULL;;
+    pdf_obj **objarray = NULL, *o = NULL;
+    pdf_indirect_ref *dictref = NULL;
 
     /* This will also prevent us writing out an EMC if the BDC is in any way invalid */
     ctx->BDCWasOC = true;
@@ -676,11 +677,10 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (pdfi_type_of(tag) != PDF_NAME)
         goto exit;
 
-    if (!pdfi_name_is(tag, "OC")) {
+    if (!pdfi_name_is(tag, "OC"))
         ctx->BDCWasOC = false;
-        if (!ctx->device_state.writepdfmarks || !ctx->args.preservemarkedcontent)
-            goto exit;
 
+    if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent) {
         objarray = (pdf_obj **)gs_alloc_bytes(ctx->memory, 2 * sizeof(pdf_obj *), "pdfi_op_BDC");
         if (objarray == NULL) {
             code = gs_note_error(gs_error_VMerror);
@@ -698,7 +698,19 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                     code = gs_note_error(gs_error_typecheck);
                     goto exit;
                 }
-                objarray[1] = (pdf_obj *)oc_dict;
+                code = pdfi_pdfmark_dict(ctx, oc_dict);
+                if (code < 0)
+                    goto exit;
+
+                /* Create an indirect ref for the dict */
+                code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&dictref);
+                if (code < 0) goto exit;
+                pdfi_countup(dictref);
+                dictref->ref_object_num = oc_dict->object_num;
+                dictref->ref_generation_num = oc_dict->generation_num;
+                dictref->is_marking = true;
+
+                objarray[1] = (pdf_obj *)dictref;
                 break;
             case PDF_DICT:
                 objarray[1] = o;
@@ -712,30 +724,33 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit;
     }
 
-    /* Check if first arg is a name and handle it if so */
-    /* TODO: spec says it could also be an inline dict that we should be able to handle,
-     * but I am just matching what gs does for now, and it doesn't handle that case.
-     */
-    properties = (pdf_name *)o;
-    if (pdfi_type_of(properties) != PDF_NAME)
-        goto exit;
+    if (pdfi_name_is(tag, "OC")) {
+        /* Check if first arg is a name and handle it if so */
+        /* TODO: spec says it could also be an inline dict that we should be able to handle,
+         * but I am just matching what gs does for now, and it doesn't handle that case.
+         */
+        properties = (pdf_name *)o;
+        if (pdfi_type_of(properties) != PDF_NAME)
+            goto exit;
 
-    /* If it's a name, look it up in Properties */
-    code = pdfi_find_resource(ctx, (unsigned char *)"Properties", properties,
-                              (pdf_dict *)stream_dict, page_dict, (pdf_obj **)&oc_dict);
-    if (code != 0)
-        goto exit;
-    if (pdfi_type_of(oc_dict) != PDF_DICT)
-        goto exit;
+        /* If it's a name, look it up in Properties */
+        code = pdfi_find_resource(ctx, (unsigned char *)"Properties", properties,
+                                  (pdf_dict *)stream_dict, page_dict, (pdf_obj **)&oc_dict);
+        if (code != 0)
+            goto exit;
+        if (pdfi_type_of(oc_dict) != PDF_DICT)
+            goto exit;
 
-    /* Now we have an OC dict, see if it's visible */
-    ocg_is_visible = pdfi_oc_is_ocg_visible(ctx, oc_dict);
-    if (!ocg_is_visible)
-        code = pdfi_oc_levels_set(ctx, ctx->OFFlevels, ctx->BMClevel);
+        ocg_is_visible = pdfi_oc_is_ocg_visible(ctx, oc_dict);
+        if (!ocg_is_visible)
+            code = pdfi_oc_levels_set(ctx, ctx->OFFlevels, ctx->BMClevel);
 
- exit:
+    }
+
+exit:
     if (objarray != NULL)
         gs_free_object(ctx->memory, objarray, "free pdfi_op_BDC");
+    pdfi_countdown(dictref);
     pdfi_countdown(o);
     pdfi_countdown(tag);
     pdfi_countdown(oc_dict);
@@ -747,7 +762,7 @@ int pdfi_op_EMC(pdf_context *ctx)
 {
     int code, code1 = 0;
 
-    if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && !ctx->BDCWasOC)
+    if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent)
         code1 = pdfi_pdfmark_from_objarray(ctx, NULL, 0, NULL, "EMC");
 
     code = pdfi_oc_levels_clear(ctx, ctx->OFFlevels, ctx->BMClevel);

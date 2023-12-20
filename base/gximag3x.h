@@ -73,6 +73,6 @@ int gx_begin_image3x_generic(gx_device * dev,
                              const gx_clip_path *pcpath, gs_memory_t *mem,
                              IMAGE3X_MAKE_MID_PROC((*make_mid)),
                              IMAGE3X_MAKE_MCDE_PROC((*make_mcde)),
-                             gx_image_enum_common_t **pinfo);
+                             gx_image_enum_common_t **pinfo, int64_t OC);
 
 #endif /* gximag3x_INCLUDED */

@@ -511,6 +511,12 @@ enum {
      *  Returns >0 if replacement occurred. */
     gxdso_replacecolor,
 
+    /* Used solely (for now at least) by pdfwrite. We need to tell pdfwrite that Image and Form
+     * XObjects, have an /OC entry and what the object number of the optional content entry is.
+     * We should already have defined the optional content dictionary using a pdfmark.
+     */
+    gxdso_pending_optional_content,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

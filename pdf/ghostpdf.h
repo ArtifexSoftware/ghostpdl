@@ -538,6 +538,7 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_set_input_stream(pdf_context *ctx, stream *stm);
 int pdfi_process_pdf_file(pdf_context *ctx, char *filename);
 int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_array);
+int pdfi_finish_pdf_file(pdf_context *ctx);
 int pdfi_close_pdf_file(pdf_context *ctx);
 int pdfi_gstate_from_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch, gsicc_profile_cache_t *profile_cache);
 void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch);

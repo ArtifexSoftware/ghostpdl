@@ -249,7 +249,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  false,                 /* ModifiesPageSize */
  false,                 /* ModifiesPageOrder */
  true,                  /* WriteXRefStm */
- true                  /* WriteObjStms */
+ true,                  /* WriteObjStms */
+ 0                      /* PendingOC */
 };
 
 #else

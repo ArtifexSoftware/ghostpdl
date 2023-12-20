@@ -971,8 +971,9 @@ struct gx_device_pdf_s {
     bool OmitID;                    /* If true, do not emit a /ID array in the trailer dicionary (must not be true for encrypted files or PDF 2.0) */
     bool ModifiesPageSize;          /* If true, the new PDF interpreter will not preserve *Box values (the media size has been modified, they will be incorrect) */
     bool ModifiesPageOrder;         /* If true, the new PDF interpreter will not preserve Outlines or Dests, because they will refer to the wrong page number */
-    bool WriteXRefStm;              /* */
-    bool WriteObjStms;              /* */
+    bool WriteXRefStm;              /* If true, (the default) use an XRef stream rather than an xref table */
+    bool WriteObjStms;              /* If true, (the default) store candidate objects in ObjStms rather than plain text in the PDF file. */
+    int64_t PendingOC;
 };
 
 #define is_in_page(pdev)\

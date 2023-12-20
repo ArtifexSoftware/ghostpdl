@@ -30,6 +30,7 @@
 #include "pdf_trans.h"
 #include "pdf_misc.h"
 #include "pdf_optcontent.h"
+#include "pdf_mark.h"
 #include "stream.h"     /* for stell() */
 #include "gsicc_cache.h"
 
@@ -1717,8 +1718,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         goto cleanupExit;
     /* If there is an OC dictionary, see if we even need to render this */
     if (image_info.OC) {
-        if (!pdfi_oc_is_ocg_visible(ctx, image_info.OC))
-            goto cleanupExit;
+        if (!(ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent)) {
+            if (!pdfi_oc_is_ocg_visible(ctx, image_info.OC))
+                goto cleanupExit;
+        }
     }
 
     /* If there is an alternate, swap it in */
@@ -2616,15 +2619,31 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     if (known) {
         pdf_dict *OCDict = NULL;
         bool visible = false;
+        gx_device *cdev = gs_currentdevice_inline(ctx->pgs);
 
         code = pdfi_dict_get(ctx, xobject_dict, "OC", (pdf_obj **)&OCDict);
         if (code < 0)
             return code;
 
-        visible = pdfi_oc_is_ocg_visible(ctx, OCDict);
+        if (pdfi_type_of(OCDict) == PDF_DICT) {
+            if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent) {
+                code = pdfi_pdfmark_dict(ctx, OCDict);
+                if (code < 0)
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL);
+                code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pending_optional_content, &OCDict->object_num, 0);
+                if (code < 0)
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL);
+            } else {
+                visible = pdfi_oc_is_ocg_visible(ctx, OCDict);
+                if (!visible) {
+                    pdfi_countdown(OCDict);
+                    return 0;
+                }
+            }
+        } else {
+            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_OCDICT, "pdfi_do_image_or_form", NULL);
+        }
         pdfi_countdown(OCDict);
-        if (!visible)
-            return 0;
     }
 
 #if DEBUG_IMAGES

@@ -98,4 +98,6 @@ PARAM(W_PDF_MISMATCH_GENERATION,    "The generation number of an indirectly refe
 PARAM(W_PDF_BAD_RENDERINGINTENT,    "A ri or /RI used an unknown named rendering intent"),
 PARAM(W_PDF_BAD_VIEW,               "Couldn't read the initial document view"),
 PARAM(W_PDF_BAD_WMODE,              "A Font or CMap has a WMode which is neither 0 (horizontal) nor 1 (vertical)"),
+PARAM(W_PDF_BAD_OCDICT,             "Optional content (/OC) did not reference a dictionary object"),
+PARAM(W_PDF_DO_OC_FAILED,           "Failed to write optional content for an image or form, layers will be incorrect."),
 #undef PARAM

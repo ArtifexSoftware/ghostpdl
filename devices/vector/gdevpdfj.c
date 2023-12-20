@@ -417,6 +417,23 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
     if (pdev->JPX_PassThrough) {
         CHECK(cos_dict_put_c_strings(pcd, "/Filter", "/JPXDecode"));
     }
+    if (pdev->PendingOC != 0) {
+        char str[256];
+        gs_param_string param;
+        cos_object_t *pco = NULL;
+
+        gs_snprintf(str, sizeof(str), "{Obj%dG0}", pdev->PendingOC);
+        param.data = (const byte *)str;
+        param.size = strlen(str);
+        code = pdf_refer_named(pdev, &param, &pco);
+        if(code < 0)
+            return code;
+
+        gs_snprintf(str, sizeof(str), "%ld 0 R", pco->id);
+        code = cos_dict_put_string_copy((cos_dict_t *)piw->pres->object, "/OC", str);
+
+        pdev->PendingOC = 0;
+    }
     return code;
 }
 
