@@ -2584,7 +2584,7 @@ static int
 pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             const gs_matrix *pctm, const gs_param_string *objname)
 {
-    int code, id = 0;
+    int code, id = 0, i, esc_size = 0;
     cos_object_t *pco = NULL;
     char *cstring;
     pdf_resource_t *pres;
@@ -2664,10 +2664,44 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
                 return code;
     }
 
-    cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
+    /* We need to make sure we escape any white space in the tag */
+    for (i = 0;i < pairs[0].size;i++) {
+        switch(pairs[0].data[i]) {
+            case 0x00:
+            case 0x09:
+            case 0x0a:
+            case 0x0c:
+            case 0x0d:
+            case 0x20:
+                esc_size += 3;
+                break;
+            default:
+                esc_size++;
+                break;
+        }
+    }
+
+    cstring = (char *)gs_alloc_bytes(pdev->memory, (esc_size + 1) * sizeof(unsigned char),
                 "pdfmark_BDC");
-    memcpy(cstring, pairs[0].data, pairs[0].size);
-    cstring[pairs[0].size] = 0x00;
+    esc_size = 0;
+    for (i = 0;i < pairs[0].size;i++) {
+        switch(pairs[0].data[i]) {
+            case 0x00:
+            case 0x09:
+            case 0x0a:
+            case 0x0c:
+            case 0x0d:
+            case 0x20:
+                cstring[esc_size++] = '#';
+                cstring[esc_size++] = (pairs[0].data[i] >> 4) + 0x30;
+                cstring[esc_size++] = (pairs[0].data[i] & 0x0f) + 0x30;
+                break;
+            default:
+                cstring[esc_size++] = pairs[0].data[i];
+                break;
+        }
+    }
+    cstring[esc_size] = 0x00;
 
     /* make sure we write to the correct stream */
     code = pdf_open_contents(pdev, PDF_IN_STREAM);
