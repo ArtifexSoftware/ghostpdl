@@ -3303,7 +3303,7 @@ pdf_close(gx_device * dev)
                 offs_bytes++;
             }
 
-            gs_snprintf(str, sizeof(str), "%"PRId64" 0 obj <<\n/Type /XRef\n", pdev->next_id);
+            gs_snprintf(str, sizeof(str), "%"PRId64" 0 obj\n<<\n/Type /XRef\n", pdev->next_id);
             stream_puts(s, str);
             gs_snprintf(str, sizeof(str), "/Size %"PRId64"\n", pdev->next_id + 1);
             stream_puts(s, str);
