@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2023 Artifex Software, Inc.
+dnl Copyright (C) 2001-2024 Artifex Software, Inc.
 dnl All Rights Reserved.
 dnl
 dnl This software is provided AS-IS with no warranty, either express or
@@ -3358,6 +3358,8 @@ AC_SUBST(HAVE_ISINF)
 
 AC_CHECK_FUNCS([fpclassify], [HAVE_FPCLASSIFY=-DHAVE_FPCLASSIFY])
 AC_SUBST(HAVE_FPCLASSIFY)
+
+AC_CHECK_FUNCS([snprintf], [GCFLAGS="$GCFLAGS -DHAVE_SNPRINTF"])
 
 AC_PROG_GCC_TRADITIONAL
 
