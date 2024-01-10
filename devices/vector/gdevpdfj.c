@@ -430,7 +430,8 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
             return code;
 
         gs_snprintf(str, sizeof(str), "%ld 0 R", pco->id);
-        code = cos_dict_put_string_copy((cos_dict_t *)piw->pres->object, "/OC", str);
+        if (piw->pres != NULL && piw->pres->object != NULL)
+            code = cos_dict_put_string_copy((cos_dict_t *)piw->pres->object, "/OC", str);
 
         pdev->PendingOC = 0;
     }
