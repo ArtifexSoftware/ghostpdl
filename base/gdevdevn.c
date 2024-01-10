@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -30,6 +30,7 @@
 #include "gxblend.h"
 #include "gdevp14.h"
 #include "gdevdevnprn.h"
+#include "gxdevsop.h"
 
 /*
  * Utility routines for common DeviceN related parameters:
@@ -678,6 +679,12 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                 pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components,
                                                       pdevn_params->bitspercomponent);
         }
+    }
+    if (code >= 0)
+    {
+        int ecode = dev_proc(pdev, dev_spec_op)(pdev, gxdso_adjust_colors, NULL, 0);
+        if (ecode < 0 && ecode != gs_error_undefined)
+            code = ecode;
     }
     return code;
 }

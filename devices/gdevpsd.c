@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -155,23 +155,105 @@ static RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 RELOC_PTRS_END
 
 static int
-psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
+psd_spec_op(gx_device *pdev, int op, void *data, int datasize)
 {
+    psd_device *pdev_psd = (psd_device*)pdev;
+
     if (op == gxdso_supports_devn || op == gxdso_skip_icc_component_validation) {
         return true;
+    }
+
+    if (op == gxdso_adjust_colors)
+    {
+        int nc;
+        bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT ||
+                         pdev_psd->color_model == psd_DEVICE_RGBT);
+        /* With planar the depth can be more than 64.  Update the color
+           info to reflect the proper depth and number of planes.  Also note
+           that the number of spot colors can change from page to page.
+           Update things so that we only output separations for the
+           inks on that page. */
+        if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
+            if (pdev_psd->devn_params.page_spot_colors >= 0) {
+                cmm_dev_profile_t *profile_struct;
+                int code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
+                if (code < 0)
+                    return code;
+
+                /* PDF case, as the page spot colors are known. */
+                if (profile_struct->spotnames != NULL) {
+
+                    /* PDF case, NCLR ICC profile with spot names. The ICC spots
+                       will use up some of the max_spots values. If max_spots is
+                       too small to accomodate even the ICC spots, throw an error */
+                    if (profile_struct->spotnames->count - 4 > pdev_psd->max_spots ||
+                        profile_struct->spotnames->count < 4 ||
+                        profile_struct->spotnames->count <
+                        profile_struct->device_profile[0]->num_comps) {
+                        gs_warn("ICC profile colorant names count error");
+                        return_error(gs_error_rangecheck);
+                    }
+                    pdev->color_info.num_components =
+                        (profile_struct->spotnames->count
+                        + pdev_psd->devn_params.page_spot_colors + has_tags);
+                    if (pdev->color_info.num_components > pdev->color_info.max_components)
+                        pdev->color_info.num_components = pdev->color_info.max_components;
+                    if (pdev->num_planar_planes)
+                        pdev->num_planar_planes = pdev->color_info.num_components;
+                } else {
+
+                    /* Use the information that is in the page spot color. We should
+                       be here if we are processing a PDF and we do not have a DeviceN
+                       ICC profile specified for output */
+                    if (!(pdev_psd->lock_colorants)) {
+                        pdev->color_info.num_components =
+                            (pdev_psd->devn_params.page_spot_colors
+                            + pdev_psd->devn_params.num_std_colorant_names + has_tags);
+                        if (pdev->color_info.num_components > pdev->color_info.max_components)
+                            pdev->color_info.num_components = pdev->color_info.max_components;
+                        if (pdev->num_planar_planes)
+                            pdev->num_planar_planes = pdev->color_info.num_components;
+                    }
+                }
+            } else {
+
+                /* We do not know how many spots may occur on the page.
+                   For this reason we go ahead and allocate the maximum that we
+                   have available.  Note, lack of knowledge only occurs in the case
+                   of PS files. With PDF we know a priori the number of spot
+                   colorants. However, the first time the device is opened,
+                   pdev_psd->devn_params.page_spot_colors is -1 even if we are
+                   dealing with a PDF file, so we will first find ourselves here,
+                   which will set num_comp based upon max_spots + 4. If -dMaxSpots
+                   was set (Default is GS_SOFT_MAX_SPOTS which is 10),
+                   it is made use of here. */
+                if (!(pdev_psd->lock_colorants)) {
+                    int num_comp = pdev_psd->max_spots + 4 + has_tags; /* Spots + CMYK */
+                    if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                        num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                    pdev->color_info.num_components = num_comp;
+                    pdev->color_info.max_components = num_comp;
+                    pdev->num_planar_planes = num_comp;
+                }
+            }
+        }
+        nc = pdev->color_info.num_components;
+        if (pdev_psd->color_model == psd_DEVICE_RGBT)
+            nc = 4;
+        pdev->color_info.depth = nc * pdev_psd->devn_params.bitspercomponent;
+        return 0;
     }
 
 #if ENABLE_COLOR_REPLACE
     /* Demo of doing color replacement in the device in place of
        standard ICC color management. Only works for CMYK psd devices */
-    if (op == gxdso_replacecolor && dev_->color_info.num_components >= 4) {
+    if (op == gxdso_replacecolor && pdev->color_info.num_components >= 4) {
 
         color_replace_t *replace_data = (color_replace_t *)data;
         gx_device_color *pdc = replace_data->pdc;
         const gs_color_space *pcs = replace_data->pcs;
         const gs_client_color *pcc = replace_data->pcc;
         const gs_gstate *pgs = replace_data->pgs;  /* Perhaps needed for named color profile information */
-        psd_device* pdev_psd = (psd_device*)dev_;
 
         /* Just a warning here for now. When pdf14_profile is set, the user
            may need to do some extra work to get a desired color replacement.
@@ -192,14 +274,14 @@ psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
         if ((pcs->cmm_icc_profile_data->data_cs == gsCMYK ||
              pcs->cmm_icc_profile_data->data_cs == gsCIELAB ||
              pcs->cmm_icc_profile_data->data_cs == gsRGB ) &&
-            dev_->graphics_type_tag == GS_VECTOR_TAG) {
+            pdev->graphics_type_tag == GS_VECTOR_TAG) {
 
             int jj, ii;
             int values[4];
             int replace = 0;
 
             /* Zero out all the device values including any spots */
-            for (ii = 0; ii < dev_->color_info.num_components; ii++) {
+            for (ii = 0; ii < pdev->color_info.num_components; ii++) {
                 pdc->colors.devn.values[ii] = 0;
             }
 
@@ -256,7 +338,7 @@ psd_spec_op(gx_device *dev_, int op, void *data, int datasize)
             return false;
     }
 #endif
-    return gdev_prn_dev_spec_op(dev_, op, data, datasize);
+    return gdev_prn_dev_spec_op(pdev, op, data, datasize);
 }
 
 /* Even though psd_device_finalize is the same as gx_devn_prn_device_finalize,
@@ -561,16 +643,11 @@ psd_prn_open(gx_device * pdev)
     psd_device *pdev_psd = (psd_device *) pdev;
     int code;
     int k, nc;
-    cmm_dev_profile_t *profile_struct;
-    bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT ||
-                     pdev_psd->color_model == psd_DEVICE_RGBT);
 
 #ifdef TEST_PAD_AND_ALIGN
     pdev->pad = 5;
     pdev->log2_align_mod = 6;
 #endif
-    code = dev_proc(pdev, get_profile)((gx_device *)pdev, &profile_struct);
-
     pdev_psd->warning_given = false;
 
 #if ENABLE_COLOR_REPLACE
@@ -584,67 +661,9 @@ psd_prn_open(gx_device * pdev)
         pdev->color_info.comp_bits[k] = 8;
     }
 
-    /* With planar the depth can be more than 64.  Update the color
-       info to reflect the proper depth and number of planes.  Also note
-       that the number of spot colors can change from page to page.
-       Update things so that we only output separations for the
-       inks on that page. */
-    if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
-        if (pdev_psd->devn_params.page_spot_colors >= 0) {
-
-            /* PDF case, as the page spot colors are known. */
-            if (profile_struct->spotnames != NULL) {
-
-                /* PDF case, NCLR ICC profile with spot names. The ICC spots
-                   will use up some of the max_spots values. If max_spots is
-                   too small to accomodate even the ICC spots, throw an error */
-                if (profile_struct->spotnames->count - 4 > pdev_psd->max_spots ||
-                        profile_struct->spotnames->count < 4 ||
-                        profile_struct->spotnames->count <
-                        profile_struct->device_profile[0]->num_comps) {
-                    gs_warn("ICC profile colorant names count error");
-                    return_error(gs_error_rangecheck);
-                }
-                pdev->color_info.num_components =
-                    (profile_struct->spotnames->count
-                    + pdev_psd->devn_params.page_spot_colors + has_tags);
-                if (pdev->color_info.num_components > pdev->color_info.max_components)
-                    pdev->color_info.num_components = pdev->color_info.max_components;
-            } else {
-
-                /* Use the information that is in the page spot color. We should
-                   be here if we are processing a PDF and we do not have a DeviceN
-                   ICC profile specified for output */
-                if (!(pdev_psd->lock_colorants)) {
-                    pdev->color_info.num_components =
-                        (pdev_psd->devn_params.page_spot_colors
-                        + pdev_psd->devn_params.num_std_colorant_names + has_tags);
-                    if (pdev->color_info.num_components > pdev->color_info.max_components)
-                        pdev->color_info.num_components = pdev->color_info.max_components;
-                }
-            }
-        } else {
-
-            /* We do not know how many spots may occur on the page.
-               For this reason we go ahead and allocate the maximum that we
-               have available.  Note, lack of knowledge only occurs in the case
-               of PS files. With PDF we know a priori the number of spot
-               colorants. However, the first time the device is opened,
-               pdev_psd->devn_params.page_spot_colors is -1 even if we are
-               dealing with a PDF file, so we will first find ourselves here,
-               which will set num_comp based upon max_spots + 4. If -dMaxSpots
-               was set (Default is GS_SOFT_MAX_SPOTS which is 10),
-               it is made use of here. */
-            if (!(pdev_psd->lock_colorants)) {
-                int num_comp = pdev_psd->max_spots + 4 + has_tags; /* Spots + CMYK */
-                if (num_comp > GS_CLIENT_COLOR_MAX_COMPONENTS)
-                    num_comp = GS_CLIENT_COLOR_MAX_COMPONENTS;
-                pdev->color_info.num_components = num_comp;
-                pdev->color_info.max_components = num_comp;
-                pdev->num_planar_planes = num_comp;
-            }
-        }
-    }
+    code = psd_spec_op(pdev, gxdso_adjust_colors, NULL, 0);
+    if (code < 0)
+        return code;
     /* Push this to the max amount as a default if someone has not set it */
     if (pdev_psd->devn_params.num_separation_order_names == 0)
         for (k = 0; k < GS_CLIENT_COLOR_MAX_COMPONENTS; k++) {
@@ -653,8 +672,6 @@ psd_prn_open(gx_device * pdev)
     nc = pdev->color_info.num_components;
     if (pdev_psd->color_model == psd_DEVICE_RGBT)
         nc = 4;
-    pdev->color_info.depth = nc *
-                             pdev_psd->devn_params.bitspercomponent;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     set_linear_color_bits_mask_shift(pdev);
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)

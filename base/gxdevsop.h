@@ -517,6 +517,11 @@ enum {
      */
     gxdso_pending_optional_content,
 
+    /* Called to give a device the chance to update the color information after put_params
+     * has reset it. This enables device specific changes to not interfere when devices are
+     * cloned for NumRenderingThreads etc. */
+    gxdso_adjust_colors,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };
