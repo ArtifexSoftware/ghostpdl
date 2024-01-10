@@ -2646,7 +2646,8 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             if ((pairs[1].data)[pairs[1].size-1]!='R') {
                 if ((pairs[1].data)[pairs[1].size-2]==' ' && (pairs[1].data)[pairs[1].size-1]!='R')
                     return_error(gs_error_rangecheck);
-                sscanf((const char *)pairs[1].data, "%d 0 R", &id);
+                if (sscanf((const char *)pairs[1].data, "%d 0 R", &id) != 1)
+                    return_error(gs_error_unknownerror);
             }
 
         }
