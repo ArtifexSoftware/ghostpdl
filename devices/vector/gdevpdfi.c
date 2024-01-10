@@ -1412,8 +1412,22 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     /* We don't want to change the colour space of a mask, or an SMask (both of which are Gray) */
     if (!is_mask) {
-        if (image[0].pixel.ColorSpace != NULL && !(context == PDF_IMAGE_TYPE3_MASK))
-            convert_to_process_colors = setup_image_colorspace(pdev, &image[0], pcs, &pcs_orig, names, &cs_value);
+        if (image[0].pixel.ColorSpace != NULL) {
+            if (context != PDF_IMAGE_TYPE3_MASK)
+                convert_to_process_colors = setup_image_colorspace(pdev, &image[0], pcs, &pcs_orig, names, &cs_value);
+            else {
+                if (pdev->PDFA != 0 && pdev->params.ColorConversionStrategy != ccs_Gray)
+                {
+                    /* A SMask *must* be in DeviceGray (PDF 1.7 reference, page 555), but if we're producing a PDF/A
+                     * and not creating a Gray output then we can't write the SMask as DeviceGray!
+                     */
+                    emprintf(pdev->memory,
+                         "\nDetected SMask which must be in DeviceGray, but we are not converting to DeviceGray, reverting to normal PDF output\n");
+                    pdev->AbortPDFAX = true;
+                    pdev->PDFA = 0;
+                }
+            }
+        }
 
         if (pim->BitsPerComponent > 8 && convert_to_process_colors) {
             use_fallback = 1;
