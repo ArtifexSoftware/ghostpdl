@@ -303,9 +303,6 @@ gx_begin_image3x_generic(gx_device * dev,
     }
     if (minfo[0] != NULL)
         minfo[0]->OC = OC;
-    else
-        if (minfo[0] != NULL)
-            minfo[0]->OC = 0;
 
     code = make_mcde(dev, pgs, pmat, (const gs_image_common_t *)&pixel.image,
                      prect, pdcolor, pcpath, mem, &penum->pixel.info,
