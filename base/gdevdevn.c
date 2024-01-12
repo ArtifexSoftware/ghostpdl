@@ -481,7 +481,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     {
         break;
     } END_ARRAY_PARAM(equiv_cmyk, equiv_cmyk_e);
-    if (equiv_cmyk.data != 0 && equiv_cmyk.size > pdev->color_info.max_components) {
+    if (equiv_cmyk.data != 0 && equiv_cmyk.size > 5 * pdev->color_info.max_components) {
         param_signal_error(plist, ".EquivCMYKColors", gs_error_rangecheck);
         return_error(gs_error_rangecheck);
     }
