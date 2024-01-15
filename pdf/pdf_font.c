@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1170,14 +1170,14 @@ int pdfi_get_cidfont_glyph_metrics(gs_font *pfont, gs_glyph cid, double *widths,
 
     if (pdffont->pdfi_font_type == e_pdf_cidfont_type0) {
         pdf_cidfont_type0 *cidfont = (pdf_cidfont_type0 *)pdffont;
-        DW = (double)cidfont->DW;
+        DW = cidfont->DW;
         DW2 = cidfont->DW2;
         W = cidfont->W;
         W2 = cidfont->W2;
     }
     else if (pdffont->pdfi_font_type == e_pdf_cidfont_type2) {
         pdf_cidfont_type2 *cidfont = (pdf_cidfont_type2 *)pdffont;
-        DW = (double)cidfont->DW;
+        DW = cidfont->DW;
         DW2 = cidfont->DW2;
         W = cidfont->W;
         W2 = cidfont->W2;

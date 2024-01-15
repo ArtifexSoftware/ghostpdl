@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -106,7 +106,7 @@ typedef enum pdf_font_type_e {
 #define pdf_cid_font_common \
     pdf_font_base;\
     pdf_dict *CIDSystemInfo; \
-    int64_t DW; \
+    double DW; \
     pdf_array *W; \
     pdf_array *DW2; \
     pdf_array *W2; \

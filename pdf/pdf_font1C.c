@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2694,15 +2694,11 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 }
                 pfont->cidata.common.MaxCID = pfont->cidata.common.CIDCount - 1;
 
-                code = pdfi_dict_knownget_type(ctx, font_dict, "DW", PDF_INT, (pdf_obj **) &obj);
-                if (code > 0) {
-                    cffcid->DW = ((pdf_num *) obj)->value.i;
-                    pdfi_countdown(obj);
-                    obj = NULL;
-                }
-                else {
+                code = pdfi_dict_knownget_number(ctx, font_dict, "DW", &cffcid->DW);
+                if (code <= 0) {
                     cffcid->DW = 1000;
                 }
+
                 code = pdfi_dict_knownget_type(ctx, font_dict, "DW2", PDF_ARRAY, (pdf_obj **) &obj);
                 if (code > 0) {
                     cffcid->DW2 = (pdf_array *) obj;
