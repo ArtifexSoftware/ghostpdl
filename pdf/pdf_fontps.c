@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -213,7 +213,7 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                             hbuf[1] = s[i + 1];
                         }
                         if (!ishex(hbuf[0]) || !ishex(hbuf[1])) {
-                            code = gs_note_error(gs_error_typecheck);
+                            i = len;
                             break;
                         }
                         *s2++ = (decodehex(hbuf[0]) << 4) | decodehex(hbuf[1]);
