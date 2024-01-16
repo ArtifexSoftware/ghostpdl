@@ -238,8 +238,6 @@ psd_spec_op(gx_device *pdev, int op, void *data, int datasize)
             }
         }
         nc = pdev->color_info.num_components;
-        if (pdev_psd->color_model == psd_DEVICE_RGBT)
-            nc = 4;
         pdev->color_info.depth = nc * pdev_psd->devn_params.bitspercomponent;
         return 0;
     }
@@ -488,7 +486,7 @@ const psd_device gs_psdrgb16_device =
  */
 const psd_device gs_psdrgbtags_device =
 {
-    psd_device_body(psdtags_initialize_device_procs, "psdrgbtags", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    psd_device_body(psdtags_initialize_device_procs, "psdrgbtags", 4, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DevRGBTComponents,	/* Names of color model colorants */
@@ -670,8 +668,6 @@ psd_prn_open(gx_device * pdev)
             pdev_psd->devn_params.separation_order_map[k] = k;
         }
     nc = pdev->color_info.num_components;
-    if (pdev_psd->color_model == psd_DEVICE_RGBT)
-        nc = 4;
     pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
     set_linear_color_bits_mask_shift(pdev);
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)

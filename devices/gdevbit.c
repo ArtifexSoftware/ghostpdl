@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -181,8 +181,8 @@ const gx_device_bit gs_bitrgbtags_device =
         0,                              /* is open */
         0,                              /* max_fill_band */
         {                               /* color infor */
-            3,                          /* max_components */
-            3,                          /* num_components */
+            4,                          /* max_components */
+            4,                          /* num_components */
             GX_CINFO_POLARITY_ADDITIVE, /* polarity */
             32,                         /* depth */
             GX_CINFO_COMP_NO_INDEX,     /* gray index */
