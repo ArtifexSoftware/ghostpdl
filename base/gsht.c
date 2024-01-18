@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1032,12 +1032,17 @@ gx_gstate_dev_ht_install(
         gx_ht_order *porder = &dht.components[i].corder;
 
         if (dht.components[i].comp_number != i) {
-            if (used_default || mem_diff)
-                code = gx_ht_copy_ht_order(porder, &pdht->order, pgs->memory);
-            else {
-                gx_ht_move_ht_order(porder, &pdht->order);
-                used_default = true;
-            }
+            /* Previously this code would 'move' the default order from pdht to the
+             * dht component here, if we hadn't already done so, and would NULL out the default
+             * order in pdht to prevent it being freed when we released the halftone.
+             * However this didn't account for the possibility that one or more of the components
+             * of dht was already sharing the default order of the halftone. See gx_device_halftone_release
+             * which carefully checks to see if the default order is used by any component, in
+             * order to avoid double freeing it.
+             * We could do that check here, but the tiny benefit in not copying the data would
+             * probably be lost by the checks, so lets just always *copy* the default order if we need to.
+             */
+            code = gx_ht_copy_ht_order(porder, &pdht->order, pgs->memory);
             dht.components[i].comp_number = i;
         }
 
