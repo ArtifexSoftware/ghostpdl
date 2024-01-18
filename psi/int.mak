@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2024 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -1345,7 +1345,7 @@ $(PSOBJ)ibnum.$(OBJ) : $(PSSRC)ibnum.c $(GH) $(math__h) $(memory__h)\
 
 $(PSOBJ)zcharx.$(OBJ) : $(PSSRC)zcharx.c $(OP)\
  $(gsmatrix_h) $(gstext_h) $(gxfixed_h) $(gxfont_h) $(gxtext_h)\
- $(ialloc_h) $(ibnum_h) $(ichar_h) $(iname_h) $(igstate_h) $(memory__h)\
+ $(ialloc_h) $(ibnum_h) $(ichar_h) $(iname_h) $(igstate_h) $(estack_h) $(memory__h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zcharx.$(OBJ) $(C_) $(PSSRC)zcharx.c
 

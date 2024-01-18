@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -27,6 +27,7 @@
 #include "igstate.h"
 #include "iname.h"
 #include "ibnum.h"
+#include "estack.h"
 #include "memory_.h"
 
 /* Common setup for glyphshow and .glyphwidth. */
@@ -56,6 +57,7 @@ glyph_show_setup(i_ctx_t *i_ctx_p, gs_glyph *pglyph)
 static int
 zglyphshow(i_ctx_t *i_ctx_p)
 {
+    es_ptr ep = esp;        /* Save in case of error */
     gs_glyph glyph = GS_NO_GLYPH;
     gs_text_enum_t *penum;
     int code;
@@ -69,7 +71,16 @@ zglyphshow(i_ctx_t *i_ctx_p)
         ifree_object(penum, "zglyphshow");
         return code;
     }
-    return op_show_continue_pop(i_ctx_p, 1);
+    code = op_show_continue_pop(i_ctx_p, 1);
+    if (code < 0) {
+        /* We must restore the exec stack pointer back to the point where we entered, in case
+         * we 'retry' the operation (eg having increased the operand stack).
+         * We'll rely on gc to handle the enumerator.
+         * Bug #700618/#707485
+         */
+        esp = ep;
+    }
+    return code;
 }
 
 /* <string> <numarray|numstring> xshow - */
