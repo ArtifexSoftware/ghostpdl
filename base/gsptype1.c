@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2438,7 +2438,7 @@ gx_dc_pattern_read(
         left -= l;
         offset1 += l;
         dp += l;
-        ptile->cdev->common.page_bfile_end_pos = offset1 - sizeof(buf);
+        ptile->cdev->common.page_info.bfile_end_pos = offset1 - sizeof(buf);
     }
     if (left > 0) {
         l = left;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -737,7 +737,7 @@ typedef struct cmd_rects_enum_s {
         re.y = yvar;\
         re.height = heightvar;\
         re.yend = re.y + re.height;\
-        re.band_height = cdev->page_band_height;\
+        re.band_height = cdev->page_info.band_params.BandHeight;\
         re.rect_nbands = (re.yend - re.y + re.band_height - 1) / re.band_height;
 
 #define RECT_STEP_INIT(re)\

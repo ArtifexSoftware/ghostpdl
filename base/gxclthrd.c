@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -437,7 +437,7 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
         /* create the buf device for this thread, and allocate the semaphores */
         if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                 &(thread->bdev), ndev,
-                                band*crdev->page_band_height, NULL,
+                                band*crdev->page_info.band_params.BandHeight, NULL,
                                 thread->memory, &(crdev->color_usage_array[0]))) < 0)
             break;
         if ((thread->sema_this = gx_semaphore_label(gx_semaphore_alloc(thread->memory), "Band")) == NULL ||
@@ -684,11 +684,11 @@ clist_render_thread(void *data)
     gx_device_clist_reader *crdev = &cldev->reader;
     gx_device *bdev = thread->bdev;
     gs_int_rect band_rect;
-    byte *mdata = crdev->data + crdev->page_tile_cache_size;
-    byte *mlines = (crdev->page_line_ptrs_offset == 0 ? NULL : mdata + crdev->page_line_ptrs_offset);
+    byte *mdata = crdev->data + crdev->page_info.tile_cache_size;
+    byte *mlines = (crdev->page_info.line_ptrs_offset == 0 ? NULL : mdata + crdev->page_info.line_ptrs_offset);
     uint raster = gx_device_raster_plane(dev, NULL);
     int code;
-    int band_height = crdev->page_band_height;
+    int band_height = crdev->page_info.band_params.BandHeight;
     int band = thread->band;
     int band_begin_line = band * band_height;
     int band_end_line = band_begin_line + band_height;
@@ -894,7 +894,7 @@ clist_get_bits_rect_mt(gx_device *dev, const gs_int_rect * prect,
         code = clist_get_band_from_thread(dev, band, NULL);
     if (code < 0)
         goto free_thread_out;
-    mdata = crdev->data + crdev->page_tile_cache_size;
+    mdata = crdev->data + crdev->page_info.tile_cache_size;
     if ((code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                   &bdev, cdev->target, y, NULL,
                                   mem, &(crdev->color_usage_array[band]))) < 0 ||
@@ -980,7 +980,7 @@ clist_process_page(gx_device *dev, gx_process_page_options_t *options)
     gx_device_clist_common *cdev = (gx_device_clist_common *)dev;
     int y;
     int line_count;
-    int band_height = crdev->page_band_height;
+    int band_height = crdev->page_info.band_params.BandHeight;
     gs_int_rect band_rect;
     int lines_rasterized;
     gx_device *bdev;

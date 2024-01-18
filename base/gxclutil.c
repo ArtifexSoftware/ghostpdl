@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -178,9 +178,9 @@ clist_update_trans_bbox(gx_device_clist_writer *cldev, gs_int_rect *bbox)
     int p_y, q_y;
     int band, first_band, last_band;
 
-    first_band = max(0, bbox->p.y / cldev->page_band_height);
-    p_y = bbox->p.y - (first_band * cldev->page_band_height);
-    last_band = min((cldev->nbands - 1), bbox->q.y / cldev->page_band_height);
+    first_band = max(0, bbox->p.y / cldev->page_info.band_params.BandHeight);
+    p_y = bbox->p.y - (first_band * cldev->page_info.band_params.BandHeight);
+    last_band = min((cldev->nbands - 1), bbox->q.y / cldev->page_info.band_params.BandHeight);
 
     for (band=first_band; band <= last_band; band++) {
         if (cldev->states[band].color_usage.trans_bbox.p.y > p_y)
@@ -188,8 +188,8 @@ clist_update_trans_bbox(gx_device_clist_writer *cldev, gs_int_rect *bbox)
         if (cldev->states[band].color_usage.trans_bbox.p.x > bbox->p.x)
             cldev->states[band].color_usage.trans_bbox.p.x = bbox->p.x;
         p_y = 0;	/* will be top of next band */
-        q_y = (band == last_band) ? bbox->q.y - (last_band * cldev->page_band_height) :
-                                      cldev->page_band_height - 1;
+        q_y = (band == last_band) ? bbox->q.y - (last_band * cldev->page_info.band_params.BandHeight) :
+                                      cldev->page_info.band_params.BandHeight - 1;
         if (cldev->states[band].color_usage.trans_bbox.q.y < q_y)
             cldev->states[band].color_usage.trans_bbox.q.y = q_y;
         if (cldev->states[band].color_usage.trans_bbox.q.x < bbox->q.x)
@@ -207,8 +207,8 @@ cmd_write_band(gx_device_clist_writer * cldev, int band_min, int band_max,
     int code_c = 0;
 
     if (cp != 0 || cmd_end != cmd_opv_end_run) {
-        clist_file_ptr cfile = cldev->page_cfile;
-        clist_file_ptr bfile = cldev->page_bfile;
+        clist_file_ptr cfile = cldev->page_info.cfile;
+        clist_file_ptr bfile = cldev->page_info.bfile;
         cmd_block cb;
         byte end;
 
@@ -260,8 +260,8 @@ cmd_write_pseudo_band(gx_device_clist_writer * cldev, unsigned char *pbuf, int d
     /* Data is written out maxband + pseudo_band_offset */
 
     int band = cldev->band_range_max + pseudo_band_offset;
-    clist_file_ptr cfile = cldev->page_cfile;
-    clist_file_ptr bfile = cldev->page_bfile;
+    clist_file_ptr cfile = cldev->page_info.cfile;
+    clist_file_ptr bfile = cldev->page_info.bfile;
     cmd_block cb;
     int code_b, code_c;
 

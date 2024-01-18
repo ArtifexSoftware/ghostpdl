@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1048,7 +1048,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
     {
         int ry0 = (int)floor(dbox.p.y) - 2;
         int ry1 = (int)ceil(dbox.q.y) + 2;
-        int band_height0 = cdev->page_band_height;
+        int band_height0 = cdev->page_info.band_params.BandHeight;
 
         /*
          * Make sure we don't go into any bands beyond the Y range

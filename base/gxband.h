@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -40,7 +40,7 @@ typedef struct gx_colors_usage_s {
     bool slow_rop;		/* true if any RasterOps that can't be */
                                 /* executed plane-by-plane on CMYK devices */
     gs_int_rect trans_bbox;	/* transparency bbox allows skipping the pdf14 compositor for some bands */
-                                /* coordinates are band relative, 0 <= p.y < page_band_height */
+                                /* coordinates are band relative, 0 <= p.y < page_info.band_params.BandHeight */
 } gx_color_usage_t;
 
 /*
@@ -60,18 +60,5 @@ typedef struct gx_band_page_info_s {
 } gx_band_page_info_t;
 #define PAGE_INFO_NULL_VALUES\
   { 0 }, 0, { 0 }, NULL, 0, 0, 0, 0, { BAND_PARAMS_INITIAL_VALUES }
-
-/*
- * By convention, the structure member containing the above is called
- * page_info.  Define shorthand accessors for its members.
- */
-#define page_cfile page_info.cfile
-#define page_cfname page_info.cfname
-#define page_bfile page_info.bfile
-#define page_bfname page_info.bfname
-#define page_tile_cache_size page_info.tile_cache_size
-#define page_line_ptrs_offset page_info.line_ptrs_offset
-#define page_bfile_end_pos page_info.bfile_end_pos
-#define page_band_height page_info.band_params.BandHeight
 
 #endif /* ndef gxband_INCLUDED */

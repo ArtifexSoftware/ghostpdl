@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -91,7 +91,7 @@ s_band_read_init(stream_state * st)
     ss->b_this.band_min = 0;
     ss->b_this.band_max = 0;
     ss->b_this.pos = 0;
-    return io_procs->rewind(ss->page_bfile, false, ss->page_bfname);
+    return io_procs->rewind(ss->page_info.bfile, false, ss->page_info.bfname);
 }
 
 #ifdef DEBUG
@@ -142,8 +142,8 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     stream_band_read_state *const ss = (stream_band_read_state *) st;
     register byte *q = pw->ptr;
     byte *wlimit = pw->limit;
-    clist_file_ptr cfile = ss->page_cfile;
-    clist_file_ptr bfile = ss->page_bfile;
+    clist_file_ptr cfile = ss->page_info.cfile;
+    clist_file_ptr bfile = ss->page_info.bfile;
     uint left = ss->left;
     int status = 1;
     uint count;
@@ -199,7 +199,7 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
             /* If we hit eof, end! */
             /* Could this test be moved into the nread < sizeof() test below? */
             if (ss->b_this.band_min == cmd_band_end &&
-                io_procs->ftell(bfile) == ss->page_bfile_end_pos) {
+                io_procs->ftell(bfile) == ss->page_info.bfile_end_pos) {
                 pw->ptr = q;
                 ss->left = left;
                 return EOFC;
@@ -220,7 +220,7 @@ s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
             }
         } while (ss->band_last < bmin || ss->band_first > bmax);
         /* So let's set up to read the actual command data from cfile. Seek... */
-        io_procs->fseek(cfile, pos, SEEK_SET, ss->page_cfname);
+        io_procs->fseek(cfile, pos, SEEK_SET, ss->page_info.cfname);
         left = (uint) (ss->b_this.pos - pos);
 #ifdef DEBUG
         if (left > 0  && gs_debug_c('L')) {
@@ -765,7 +765,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
     code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                   &bdev, cdev->target, y, &render_plane,
                                   dev->memory,
-                                  &(crdev->color_usage_array[y/crdev->page_band_height]));
+                                  &(crdev->color_usage_array[y/crdev->page_info.band_params.BandHeight]));
     if (code < 0)
         return code;
     code = clist_rasterize_lines(dev, y, line_count, bdev, &render_plane, &my);
@@ -804,7 +804,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
         code = gdev_create_buf_device(cdev->buf_procs.create_buf_device,
                                       &bdev, cdev->target, y, &render_plane,
                                       dev->memory,
-                                      &(crdev->color_usage_array[y/crdev->page_band_height]));
+                                      &(crdev->color_usage_array[y/crdev->page_info.band_params.BandHeight]));
         if (code < 0)
             return code;
         band_params = *params;
@@ -847,8 +847,8 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
     gx_device_clist_reader * const crdev = &cldev->reader;
     gx_device *target = crdev->target;
     uint raster = clist_plane_raster(target, render_plane);
-    byte *mdata = crdev->data + crdev->page_tile_cache_size;
-    byte *mlines = (crdev->page_line_ptrs_offset == 0 ? NULL : mdata + crdev->page_line_ptrs_offset);
+    byte *mdata = crdev->data + crdev->page_info.tile_cache_size;
+    byte *mlines = (crdev->page_info.line_ptrs_offset == 0 ? NULL : mdata + crdev->page_info.line_ptrs_offset);
     int plane_index = (render_plane ? render_plane->index : -1);
     int code;
 
@@ -856,7 +856,7 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
     if (crdev->ymin < 0 || crdev->yplane.index != plane_index ||
         !(y >= crdev->ymin && y < crdev->ymax)
         ) {
-        int band_height = crdev->page_band_height;
+        int band_height = crdev->page_info.band_params.BandHeight;
         int band = y / band_height;
         int band_begin_line = band * band_height;
         int band_end_line = band_begin_line + band_height;
@@ -914,7 +914,7 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
     gx_device_clist_reader * const crdev = &cldev->reader;
     const gx_placed_page *ppages;
     int num_pages = crdev->num_pages;
-    int band_height = crdev->page_band_height;
+    int band_height = crdev->page_info.band_params.BandHeight;
     int band_first = prect->p.y / band_height;
     int band_last = (prect->q.y - 1) / band_height;
     gx_band_page_info_t *pinfo;
@@ -1027,19 +1027,19 @@ clist_playback_file_bands(clist_playback_action action,
     rs.local_memory = mem;
 
     /* If this is a saved page, open the files. */
-    if (rs.page_cfile == 0) {
-        code = crdev->page_info.io_procs->fopen(rs.page_cfname,
-                           gp_fmode_rb, &rs.page_cfile, crdev->bandlist_memory,
+    if (rs.page_info.cfile == 0) {
+        code = crdev->page_info.io_procs->fopen(rs.page_info.cfname,
+                           gp_fmode_rb, &rs.page_info.cfile, crdev->bandlist_memory,
                            crdev->bandlist_memory, true);
         opened_cfile = (code >= 0);
     }
-    if (rs.page_bfile == 0 && code >= 0) {
-        code = crdev->page_info.io_procs->fopen(rs.page_bfname,
-                           gp_fmode_rb, &rs.page_bfile, crdev->bandlist_memory,
+    if (rs.page_info.bfile == 0 && code >= 0) {
+        code = crdev->page_info.io_procs->fopen(rs.page_info.bfname,
+                           gp_fmode_rb, &rs.page_info.bfile, crdev->bandlist_memory,
                            crdev->bandlist_memory, false);
         opened_bfile = (code >= 0);
     }
-    if (rs.page_cfile != 0 && rs.page_bfile != 0) {
+    if (rs.page_info.cfile != 0 && rs.page_info.bfile != 0) {
         stream s;
         byte sbuf[cbuf_size];
         static const stream_procs no_procs = {
@@ -1064,10 +1064,10 @@ clist_playback_file_bands(clist_playback_action action,
     }
 
     /* Close the files if we just opened them. */
-    if (opened_bfile && rs.page_bfile != 0)
-        crdev->page_info.io_procs->fclose(rs.page_bfile, rs.page_bfname, false);
-    if (opened_cfile && rs.page_cfile != 0)
-        crdev->page_info.io_procs->fclose(rs.page_cfile, rs.page_cfname, false);
+    if (opened_bfile && rs.page_info.bfile != 0)
+        crdev->page_info.io_procs->fclose(rs.page_info.bfile, rs.page_info.bfname, false);
+    if (opened_cfile && rs.page_info.cfile != 0)
+        crdev->page_info.io_procs->fclose(rs.page_info.cfile, rs.page_info.cfname, false);
 
     return code;
 }

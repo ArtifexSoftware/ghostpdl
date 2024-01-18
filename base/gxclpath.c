@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -596,7 +596,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
          * or as a real (filled) path.
          */
         const gx_clip_path *pcpath = cldev->clip_path;
-        int band_height = cldev->page_band_height;
+        int band_height = cldev->page_info.band_params.BandHeight;
         int ymin = (pcls - cldev->states) * band_height;
         int ymax = min(ymin + band_height, cldev->height);
         gs_fixed_rect box;
