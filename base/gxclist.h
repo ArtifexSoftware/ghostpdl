@@ -79,6 +79,8 @@ typedef struct gx_saved_page_s {
     char bfname[gp_file_name_sizeof];	/* block file name */
     const clist_io_procs_t *io_procs;
     uint tile_cache_size;	/* size of tile cache */
+    size_t line_ptrs_offset;
+    int num_planar_planes;
     int64_t bfile_end_pos;		/* ftell at end of bfile */
     gx_band_params_t band_params;  /* parameters used when writing band list */
                                 /* (actual values, no 0s) */

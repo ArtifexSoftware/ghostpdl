@@ -58,6 +58,8 @@ do_page_save(gx_device_printer * pdev, gx_saved_page * page, clist_file_ptr *sav
     pcldev->page_info.cfname[0] = 0;
     pcldev->page_info.bfname[0] = 0;
     page->tile_cache_size = pcldev->page_info.tile_cache_size;
+    page->line_ptrs_offset = pcldev->page_info.line_ptrs_offset;
+    page->num_planar_planes = pcldev->num_planar_planes;
     page->band_params = pcldev->page_info.band_params;
     /* Now serialize and save the rest of the information from the device params */
     /* we count on this to correctly set the color_info, devn_params and icc_struct */
@@ -395,16 +397,6 @@ do_page_load(gx_device_printer *pdev, gx_saved_page *page, clist_file_ptr *save_
     gs_c_param_list paramlist;
     gs_devn_params *pdevn_params;
 
-    /* fetch and put the params we saved with the page */
-    gs_c_param_list_write(&paramlist, pdev->memory);
-    if ((code = gs_param_list_unserialize((gs_param_list *)&paramlist, page->paramlist)) < 0)
-        goto out;
-    gs_c_param_list_read(&paramlist);
-    code = gs_putdeviceparams((gx_device *)pdev, (gs_param_list *)&paramlist);
-    gs_c_param_list_release(&paramlist);
-    if (code < 0) {
-        goto out;
-    }
     /* if this is a DeviceN device (that supports spot colors), we need to load the */
     /* devn_params saved in the page (num_separations, separations[])               */
     if ((pdevn_params = dev_proc(pdev, ret_devn_params)((gx_device *)pdev)) != NULL) {
@@ -427,6 +419,16 @@ do_page_load(gx_device_printer *pdev, gx_saved_page *page, clist_file_ptr *save_
             memcpy(pdevn_params->separations.names[i].data, page->separation_names[i],
                    page->separation_name_sizes[i]);
         }
+    }
+    /* fetch and put the params we saved with the page */
+    gs_c_param_list_write(&paramlist, pdev->memory);
+    if ((code = gs_param_list_unserialize((gs_param_list *)&paramlist, page->paramlist)) < 0)
+        goto out;
+    gs_c_param_list_read(&paramlist);
+    code = gs_putdeviceparams((gx_device *)pdev, (gs_param_list *)&paramlist);
+    gs_c_param_list_release(&paramlist);
+    if (code < 0) {
+        goto out;
     }
     if (code > 0)
         if ((code = gs_opendevice((gx_device *)pdev)) < 0)
@@ -451,6 +453,8 @@ do_page_load(gx_device_printer *pdev, gx_saved_page *page, clist_file_ptr *save_
     crdev->page_info.bfile_end_pos = page->bfile_end_pos;
     crdev->page_info.band_params = page->band_params;
     crdev->graphics_type_tag = page->tag;
+    crdev->page_info.line_ptrs_offset = page->line_ptrs_offset;
+    crdev->num_planar_planes = page->num_planar_planes;
 
     crdev->yplane.index = -1;
     crdev->pages = NULL;

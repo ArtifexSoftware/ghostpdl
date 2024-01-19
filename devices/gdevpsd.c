@@ -163,6 +163,9 @@ psd_spec_op(gx_device *pdev, int op, void *data, int datasize)
         return true;
     }
 
+    if (op == gxdso_supports_saved_pages)
+       return 0;
+
     if (op == gxdso_adjust_colors)
     {
         int nc;

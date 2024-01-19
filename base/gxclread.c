@@ -958,9 +958,9 @@ clist_render_rectangle(gx_device_clist *cldev, const gs_int_rect *prect,
             memcpy(page_info.bfname, ppage->page->bfname, sizeof(page_info.bfname));
             page_info.io_procs = ppage->page->io_procs;
             page_info.tile_cache_size = ppage->page->tile_cache_size;
+            page_info.line_ptrs_offset = ppage->page->line_ptrs_offset;
             page_info.bfile_end_pos = ppage->page->bfile_end_pos;
             page_info.band_params = ppage->page->band_params;
-            page_info.line_ptrs_offset = 0;
             pinfo = &page_info;
 
             /*
