@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -621,7 +621,7 @@ x_set_buffer(gx_device_X * xdev)
         }
         if (mdev->width != xdev->width || mdev->height != xdev->height) {
             byte *buffer;
-            ulong space;
+            size_t space;
 
             if (gdev_mem_data_size(mdev, xdev->width, xdev->height, &space) < 0 ||
                 space > xdev->space_params.MaxBitmap) {

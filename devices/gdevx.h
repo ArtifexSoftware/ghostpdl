@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -39,7 +39,7 @@ typedef struct gx_device_X_s {
     bool is_buffered;
     bool IsPageDevice;
     byte *buffer;		/* full-window image */
-    long buffer_size;
+    size_t buffer_size;
     gx_device_color_info        orig_color_info;
 
     /* An XImage object for writing bitmap images to the screen */
