@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -845,6 +845,208 @@ xps_parse_line_cap(char *attr)
     return gs_cap_butt;
 }
 
+static void
+pdfmark_bbox_transform(gs_rect *bbox, gs_matrix *matrix)
+{
+    gs_point aa, az, za, zz;
+    double temp;
+    gs_matrix matrix2;
+
+    gs_matrix_invert(matrix, &matrix2);
+
+    gs_point_transform(bbox->p.x, bbox->p.y, &matrix2, &aa);
+    gs_point_transform(bbox->p.x, bbox->q.y, &matrix2, &az);
+    gs_point_transform(bbox->q.x, bbox->p.y, &matrix2, &za);
+    gs_point_transform(bbox->q.x, bbox->q.y, &matrix2, &zz);
+
+    if ( aa.x > az.x)
+        temp = aa.x, aa.x = az.x, az.x = temp;
+    if ( za.x > zz.x)
+        temp = za.x, za.x = zz.x, zz.x = temp;
+    if ( za.x < aa.x)
+        aa.x = za.x;  /* min */
+    if ( az.x > zz.x)
+        zz.x = az.x;  /* max */
+
+    if ( aa.y > az.y)
+        temp = aa.y, aa.y = az.y, az.y = temp;
+    if ( za.y > zz.y)
+        temp = za.y, za.y = zz.y, zz.y = temp;
+    if ( za.y < aa.y)
+        aa.y = za.y;  /* min */
+    if ( az.y > zz.y)
+        zz.y = az.y;  /* max */
+
+    bbox->p.x = aa.x;
+    bbox->p.y = aa.y;
+    bbox->q.x = zz.x;
+    bbox->q.y = zz.y;
+}
+
+static int check_pdfmark(xps_context_t *ctx, gx_device *dev)
+{
+    gs_c_param_list list;
+    int code = -1;
+    dev_param_req_t request;
+    char pdfmark[] = "pdfmark";
+
+    /* Check if the device supports pdfmark (pdfwrite) */
+    gs_c_param_list_write(&list, ctx->pgs->device->memory);
+    request.Param = pdfmark;
+    request.list = &list;
+    code = dev_proc(dev, dev_spec_op)(dev, gxdso_get_dev_param, &request, sizeof(dev_param_req_t));
+    gs_c_param_list_release(&list);
+    return code;
+}
+
+static int pdfmark_write_param_list_array(xps_context_t *ctx, const gs_param_string_array *array_list)
+{
+    gs_c_param_list list;
+    int code = 0;
+
+    /* Set the list to writeable, and initialise it */
+    gs_c_param_list_write(&list, ctx->memory);
+    /* We don't want keys to be persistent, as we are going to throw
+     * away our array, force them to be copied
+     */
+    gs_param_list_set_persistent_keys((gs_param_list *) &list, false);
+
+    /* Make really sure the list is writable, but don't initialise it */
+    gs_c_param_list_write_more(&list);
+
+    /* Add the param string array to the list */
+    code = param_write_string_array((gs_param_list *)&list, "pdfmark", (const gs_param_string_array *)array_list);
+    if (code < 0)
+        return code;
+
+    /* Set the param list back to readable, so putceviceparams can readit (mad...) */
+    gs_c_param_list_read(&list);
+
+    /* and set the actual device parameters */
+    code = gs_putdeviceparams(ctx->pgs->device, (gs_param_list *)&list);
+
+    gs_c_param_list_release(&list);
+    return code;
+}
+
+static int pdfmark_link(xps_context_t *ctx, char *navigate_uri_att, gs_rect *path_bbox, float *samples)
+{
+    gx_device *dev = ctx->pgs->device;
+    int code = 0;
+
+    code = check_pdfmark(ctx, dev);
+
+    if (code >= 0) {
+        gs_matrix ctm_placeholder;
+        gs_param_string_array array_list;
+        gs_param_string *parray = NULL;
+        char ctmstr[256];
+        char objdef0[] = "/_objdef", objdef1[256], objdef2[] = "/type", objdef3[] = "/dict", objdef4[] = "OBJ";
+        char uridef0[] = "/S", uridef1[] = "/URI", uridef2[256], uridef3[] = ".PUTDICT";
+        char linkdef0[] = "/A", linkdef1[] = "/Rect", linkdef2[] = "/Subtype", linkdef3[] = "/Link", linkdef4[] = "LNK", linkRect[256];
+        char colordef0[] = "/C", colordef1[256];
+
+        parray = (gs_param_string *)gs_alloc_bytes(ctx->memory, 10*sizeof(gs_param_string),
+                                                   "pdfi_pdfmark_from_dict(parray)");
+        if (parray == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            return code;
+        }
+
+        gs_currentmatrix(ctx->pgs, &ctm_placeholder);
+        gs_snprintf(ctmstr, 256, "[%.4f %.4f %.4f %.4f %.4f %.4f]", ctm_placeholder.xx, ctm_placeholder.xy, ctm_placeholder.yx, ctm_placeholder.yy, ctm_placeholder.tx, ctm_placeholder.ty);
+
+        memset(parray, 0, 10*sizeof(gs_param_string));
+        gs_snprintf(objdef1, 256, "{Obj%dG0}", gs_next_ids(ctx->pgs->device->memory, 1));
+        parray[0].data = (const byte *)objdef0;
+        parray[0].size = strlen(objdef0);
+        parray[1].data = (const byte *)objdef1;
+        parray[1].size = strlen(objdef1);
+        parray[2].data = (const byte *)objdef2;
+        parray[2].size = strlen(objdef2);
+        parray[3].data = (const byte *)objdef3;
+        parray[3].size = strlen(objdef3);
+        parray[4].data = (const byte *)ctmstr;
+        parray[4].size = strlen(ctmstr);
+        parray[5].data = (const byte *)objdef4;
+        parray[5].size = strlen(objdef4);
+
+        array_list.data = parray;
+        array_list.persistent = false;
+        array_list.size = 6;
+
+        code = pdfmark_write_param_list_array(ctx, (const gs_param_string_array *)&array_list);
+        if (code < 0)
+            goto  exit1;
+
+        gs_snprintf(uridef2, 256, "(%s)", navigate_uri_att);
+        memset(parray, 0, 10*sizeof(gs_param_string));
+        parray[0].data = (const byte *)objdef1;
+        parray[0].size = strlen(objdef1);
+        parray[1].data = (const byte *)uridef0;
+        parray[1].size = strlen(uridef0);
+        parray[2].data = (const byte *)uridef1;
+        parray[2].size = strlen(uridef1);
+        parray[3].data = (const byte *)uridef1;
+        parray[3].size = strlen(uridef1);
+        parray[4].data = (const byte *)uridef2;
+        parray[4].size = strlen(uridef2);
+        parray[5].data = (const byte *)ctmstr;
+        parray[5].size = strlen(ctmstr);
+        parray[6].data = (const byte *)uridef3;
+        parray[6].size = strlen(uridef3);
+
+        array_list.data = parray;
+        array_list.persistent = false;
+        array_list.size = 7;
+
+        code = pdfmark_write_param_list_array(ctx, (const gs_param_string_array *)&array_list);
+        if (code < 0)
+            goto  exit1;
+
+        memset(parray, 0, 10*sizeof(gs_param_string));
+
+        pdfmark_bbox_transform(path_bbox, &ctm_placeholder);
+        gs_snprintf(linkRect, 256, "[%f %f %f %f]", path_bbox->p.x, path_bbox->p.y, path_bbox->q.x, path_bbox->q.y);
+        if (samples[3] == 0x00)
+            gs_snprintf(colordef1, 256, "[]");
+        else
+            gs_snprintf(colordef1, 256, "[%.4f %.4f %.4f]", samples[0], samples[1], samples[2]);
+        parray[0].data = (const byte *)linkdef0;
+        parray[0].size = strlen(linkdef0);
+        parray[1].data = (const byte *)objdef1;
+        parray[1].size = strlen(objdef1);
+        parray[2].data = (const byte *)linkdef1;
+        parray[2].size = strlen(linkdef1);
+        parray[3].data = (const byte *)linkRect;
+        parray[3].size = strlen(linkRect);
+        parray[4].data = (const byte *)colordef0;
+        parray[4].size = strlen(colordef0);
+        parray[5].data = (const byte *)colordef1;
+        parray[5].size = strlen(colordef1);
+        parray[6].data = (const byte *)linkdef2;
+        parray[6].size = strlen(linkdef2);
+        parray[7].data = (const byte *)linkdef3;
+        parray[7].size = strlen(linkdef3);
+        parray[8].data = (const byte *)ctmstr;
+        parray[8].size = strlen(ctmstr);
+        parray[9].data = (const byte *)linkdef4;
+        parray[9].size = strlen(linkdef4);
+
+        array_list.data = parray;
+        array_list.persistent = false;
+        array_list.size = 10;
+
+        code = pdfmark_write_param_list_array(ctx, (const gs_param_string_array *)&array_list);
+
+exit1:
+        gs_free_object(ctx->memory, parray, "pdfi_pdfmark_from_dict(parray)");
+    } else
+        code = 0;
+
+    return code;
+}
+
 /*
  * Parse an XPS <Path> element, and call relevant ghostscript
  * functions for drawing and/or clipping the child elements.
@@ -867,6 +1069,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     char *stroke_att;
     char *opacity_att;
     char *opacity_mask_att;
+    char *navigate_uri_att;
 
     xps_item_t *transform_tag = NULL;
     xps_item_t *clip_tag = NULL;
@@ -895,6 +1098,8 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     bool opacity_pushed = false;
     bool uses_stroke = false;
 
+    gs_rect path_bbox = {0.0, 0.0, 0.0, 0.0};
+
     gs_gsave(ctx->pgs);
 
     ctx->fill_rule = 0;
@@ -910,6 +1115,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     stroke_att = xps_att(root, "Stroke");
     opacity_att = xps_att(root, "Opacity");
     opacity_mask_att = xps_att(root, "OpacityMask");
+    navigate_uri_att = xps_att(root, "FixedPage.NavigateUri");
 
     stroke_dash_array_att = xps_att(root, "StrokeDashArray");
     stroke_dash_cap_att = xps_att(root, "StrokeDashCap");
@@ -1108,6 +1314,12 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         if (data_tag)
             xps_parse_path_geometry(ctx, dict, data_tag, 0);
 
+        if (navigate_uri_att) {
+            code = gx_curr_bbox(ctx->pgs, &path_bbox, PATH_FILL);
+            if (code < 0)
+                navigate_uri_att = NULL;
+        }
+
         code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, true, uses_stroke);
         if (code)
         {
@@ -1188,6 +1400,12 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
         if (data_tag)
             xps_parse_path_geometry(ctx, dict, data_tag, 1);
 
+        if (navigate_uri_att) {
+            code = gx_curr_bbox(ctx->pgs, &path_bbox, PATH_FILL);
+            if (code < 0)
+                navigate_uri_att = NULL;
+        }
+
         if (!opacity_pushed) {
             code = xps_begin_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag, true, true);
             if (code)
@@ -1211,6 +1429,10 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     }
 
     xps_end_opacity(ctx, opacity_mask_uri, dict, opacity_att, opacity_mask_tag);
+
+    if (navigate_uri_att)
+        (void)pdfmark_link(ctx, navigate_uri_att, &path_bbox, samples);
+exit:
     gs_grestore(ctx->pgs);
     return 0;
 }
