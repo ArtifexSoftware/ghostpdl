@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -383,7 +383,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_space_params *new_space_params,
                 gs_free_object(buffer_memory, the_memory, "printer_buffer");
                 the_memory = NULL;
             }
-            base = gs_alloc_bytes(buffer_memory, (uint)mem_space, "printer_buffer");
+            base = gs_alloc_bytes(buffer_memory, mem_space, "printer_buffer");
             if (base == 0)
                 is_command_list = true;
             else
