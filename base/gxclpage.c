@@ -765,6 +765,8 @@ gx_saved_pages_list_print(gx_device_printer *pdev, gx_saved_pages_list *list,
 
                     /* print the saved page from the current curr_elem */
 
+                    if (gs_debug_c(':'))
+                        dmprintf1(pdev->memory, "Printing page %d\n", curr_page);
                     if ((code = gx_output_saved_page(pdev, curr_elem->page)) < 0)
                         goto out;
 
