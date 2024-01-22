@@ -852,7 +852,8 @@ pdfmark_bbox_transform(gs_rect *bbox, gs_matrix *matrix)
     double temp;
     gs_matrix matrix2;
 
-    gs_matrix_invert(matrix, &matrix2);
+    if (gs_matrix_invert(matrix, &matrix2) < 0)
+        return;
 
     gs_point_transform(bbox->p.x, bbox->p.y, &matrix2, &aa);
     gs_point_transform(bbox->p.x, bbox->q.y, &matrix2, &az);
@@ -1093,7 +1094,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     gs_line_join linejoin;
     float linewidth;
     float miterlimit;
-    float samples[XPS_MAX_COLORS];
+    float samples[XPS_MAX_COLORS] = {0, 0, 0, 0};
 
     bool opacity_pushed = false;
     bool uses_stroke = false;
