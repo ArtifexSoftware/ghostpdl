@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -539,15 +539,33 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
                 for (j = 0; j < nte; j++) {
                     byte *rec = namet + 6 + j * 12;
                     if (u16(rec + 6) == 6) {
+                        int pid = u16(rec);
+                        int eid = u16(rec + 2);
                         int nl = u16(rec + 8);
                         int noffs = u16(rec + 10);
+
                         if (nl + noffs + storageOffset > table_len) {
                             break;
                         }
                         memcpy(pname, namet + storageOffset + noffs, nl);
                         pname[nl] = '\0';
+                        if ((pid == 0 || (pid == 2 && eid == 1) || (pid == 3 && eid == 1)) && (nl % 2) == 0) {
+                            for (k = 0; k < nl; k += 2) {
+                                if (pname[k] != '\0')
+                                    break;
+                            }
+                            if (k == nl) {
+                                int k1, k2;
+                                for (k1 = 0, k2 = 1; k2 < nl; k1++, k2 += 2) {
+                                    pname[k1] = pname[k2];
+                                }
+                                nl = nl >> 1;
+                                pname[nl] = '\0';
+                            }
+                        }
+
                         for (k = 0; k < nl; k++)
-                            if (pname[k] < 32 || pname[k] > 126) /* is it a valid name? */
+                            if (pname[k] < 32 || pname[k] > 126) /* is it a valid PS name? */
                                 break;
                         if (k == nl) {
                             code = 0;
@@ -559,15 +577,32 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
                     for (j = 0; j < nte; j++) {
                         byte *rec = namet + 6 + j * 12;
                         if (u16(rec + 6) == 4) {
+                            int pid = u16(rec);
+                            int eid = u16(rec + 2);
                             int nl = u16(rec + 8);
                             int noffs = u16(rec + 10);
+
                             if (nl + noffs + storageOffset > table_len) {
                                 break;
                             }
                             memcpy(pname, namet + storageOffset + noffs, nl);
                             pname[nl] = '\0';
+                            if ((pid == 0 || (pid == 2 && eid == 1) || (pid == 3 && eid == 1)) && (nl % 2) == 0) {
+                                for (k = 0; k < nl; k += 2) {
+                                    if (pname[k] != '\0')
+                                        break;
+                                }
+                                if (k == nl) {
+                                    int k1, k2;
+                                    for (k1 = 0, k2 = 1; k2 < nl; k1++, k2 += 2) {
+                                        pname[k1] = pname[k2];
+                                    }
+                                    nl = nl >> 1;
+                                    pname[nl] = '\0';
+                                }
+                            }
                             for (k = 0; k < nl; k++)
-                                if (pname[k] < 32 || pname[k] > 126) /* is it a valid name? */
+                                if (pname[k] < 32 || pname[k] > 126) /* is it a valid PS name? */
                                     break;
                             if (k == nl)
                                 code = 0;
