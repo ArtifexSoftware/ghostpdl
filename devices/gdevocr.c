@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -187,11 +187,16 @@ ocr_put_params(gx_device *dev, gs_param_list *plist)
 
     switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
         case 0:
-            len = langstr.size;
-            if (len >= sizeof(pdev->language))
-                len = sizeof(pdev->language)-1;
-            memcpy(pdev->language, langstr.data, len);
-            pdev->language[len] = 0;
+            if (pdev->memory->gs_lib_ctx->core->path_control_active) {
+                return_error(gs_error_invalidaccess);
+            }
+            else {
+                len = langstr.size;
+                if (len >= sizeof(pdev->language))
+                    len = sizeof(pdev->language)-1;
+                memcpy(pdev->language, langstr.data, len);
+                pdev->language[len] = 0;
+            }
             break;
         case 1:
             break;

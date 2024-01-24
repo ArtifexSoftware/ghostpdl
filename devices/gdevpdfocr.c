@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -50,11 +50,16 @@ pdfocr_put_some_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
         case 0:
-            len = langstr.size;
-            if (len >= sizeof(pdf_dev->ocr.language))
-                len = sizeof(pdf_dev->ocr.language)-1;
-            memcpy(pdf_dev->ocr.language, langstr.data, len);
-            pdf_dev->ocr.language[len] = 0;
+            if (pdf_dev->memory->gs_lib_ctx->core->path_control_active) {
+                return_error(gs_error_invalidaccess);
+            }
+            else {
+                len = langstr.size;
+                if (len >= sizeof(pdf_dev->ocr.language))
+                    len = sizeof(pdf_dev->ocr.language)-1;
+                memcpy(pdf_dev->ocr.language, langstr.data, len);
+                pdf_dev->ocr.language[len] = 0;
+            }
             break;
         case 1:
             break;
