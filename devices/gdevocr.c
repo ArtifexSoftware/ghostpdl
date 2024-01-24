@@ -122,7 +122,6 @@ static int
 ocr_close(gx_device *pdev)
 {
     gx_device_ocr *dev = (gx_device_ocr *)pdev;
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
 
     ocr_fin_api(dev->memory->non_gc_memory, dev->api);
 
@@ -133,7 +132,6 @@ static int
 hocr_close(gx_device *pdev)
 {
     gx_device_ocr *dev = (gx_device_ocr *)pdev;
-    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
 
     if (dev->page_count > 0 && dev->file != NULL) {
        gp_fwrite(HOCR_TRAILER, 1, sizeof(HOCR_TRAILER)-1, dev->file);
@@ -235,7 +233,6 @@ ocr_put_params(gx_device *dev, gs_param_list *plist)
 static int
 do_ocr_print_page(gx_device_ocr * pdev, gp_file * file, int hocr)
 {
-    gs_memory_t *mem = pdev->memory;
     int row;
     byte *data = NULL;
     char *out;
