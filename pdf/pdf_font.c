@@ -297,22 +297,55 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                     memcpy(fontfname, fsprefix, fsprefixlen);
                 }
                 else {
-                    memcpy(fontfname, ctx->args.cidfsubstpath.data, ctx->args.cidfsubstpath.size);
-                    fsprefixlen = ctx->args.cidfsubstpath.size;
+                    if (ctx->args.cidfsubstpath.size + 1 > gp_file_name_sizeof) {
+                        code = gs_note_error(gs_error_rangecheck);
+                        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_CONFIG, "pdfi_open_CIDFont_substitute_file", "CIDFSubstPath parameter too long");
+                        if (ctx->args.pdfstoponwarning != 0) {
+                            goto exit;
+                        }
+                        code = 0;
+                        memcpy(fontfname, fsprefix, fsprefixlen);
+                    }
+                    else {
+                        memcpy(fontfname, ctx->args.cidfsubstpath.data, ctx->args.cidfsubstpath.size);
+                        fsprefixlen = ctx->args.cidfsubstpath.size;
+                    }
                 }
 
                 if (ctx->args.cidfsubstfont.data == NULL) {
                     int len = 0;
-                    if (gp_getenv("CIDFSUBSTFONT", (char *)0, &len) < 0 && len + fsprefixlen + 1 < gp_file_name_sizeof) {
-                        (void)gp_getenv("CIDFSUBSTFONT", (char *)(fontfname + fsprefixlen), &defcidfallacklen);
+                    if (gp_getenv("CIDFSUBSTFONT", (char *)0, &len) < 0) {
+                        if (len + fsprefixlen + 1 > gp_file_name_sizeof) {
+                            code = gs_note_error(gs_error_rangecheck);
+                            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_CONFIG, "pdfi_open_CIDFont_substitute_file", "CIDFSUBSTFONT environment variable too long");
+                            if (ctx->args.pdfstoponwarning != 0) {
+                                goto exit;
+                            }
+                            code = 0;
+                            memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
+                        }
+                        else {
+                            (void)gp_getenv("CIDFSUBSTFONT", (char *)(fontfname + fsprefixlen), &defcidfallacklen);
+                        }
                     }
                     else {
                         memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
                     }
                 }
                 else {
-                    memcpy(fontfname, ctx->args.cidfsubstfont.data, ctx->args.cidfsubstfont.size);
-                    defcidfallacklen = ctx->args.cidfsubstfont.size;
+                    if (ctx->args.cidfsubstfont.size > gp_file_name_sizeof - 1) {
+                        code = gs_note_error(gs_error_rangecheck);
+                        pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_CONFIG, "pdfi_open_CIDFont_substitute_file", "CIDFSubstFont parameter too long");
+                        if (ctx->args.pdfstoponwarning != 0) {
+                            goto exit;
+                        }
+                        code = 0;
+                        memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
+                    }
+                    else {
+                        memcpy(fontfname, ctx->args.cidfsubstfont.data, ctx->args.cidfsubstfont.size);
+                        defcidfallacklen = ctx->args.cidfsubstfont.size;
+                    }
                 }
                 fontfname[fsprefixlen + defcidfallacklen] = '\0';
 
