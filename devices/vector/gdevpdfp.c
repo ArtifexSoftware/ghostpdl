@@ -289,12 +289,12 @@ gdev_pdf_get_param(gx_device *dev, char *Param, void *list)
                 ocrstr.size = 5;
                 ocrstr.persistent = false;
                 break;
-            UseOCRAsNeeded:
+            case UseOCRAsNeeded:
                 ocrstr.data = (const byte *)"AsNeeded";
                 ocrstr.size = 8;
                 ocrstr.persistent = false;
                 break;
-            UseOCRAlways:
+            case UseOCRAlways:
                 ocrstr.data = (const byte *)"Always";
                 ocrstr.size = 8;
                 ocrstr.persistent = false;
@@ -347,12 +347,12 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
                 ocrstr.size = 5;
                 ocrstr.persistent = false;
                 break;
-            UseOCRAsNeeded:
+            case UseOCRAsNeeded:
                 ocrstr.data = (const byte *)"AsNeeded";
                 ocrstr.size = 8;
                 ocrstr.persistent = false;
                 break;
-            UseOCRAlways:
+            case UseOCRAlways:
                 ocrstr.data = (const byte *)"Always";
                 ocrstr.size = 8;
                 ocrstr.persistent = false;
