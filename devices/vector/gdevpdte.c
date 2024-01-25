@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -81,6 +81,9 @@ pdf_process_string_aux(pdf_text_enum_t *penum, gs_string *pstr,
     return pdf_process_string(penum, pstr, pfmat, ppts, gdata);
 }
 
+/* #define OCR_DUMP_BITMAP */
+#undef OCR_DUMP_BITMAP
+
 static int OCRText(gx_device_pdf *pdev, gs_glyph glyph, gs_char ch, gs_char *length, byte **unicode)
 {
 #if OCR_VERSION > 0
@@ -93,7 +96,9 @@ static int OCRText(gx_device_pdf *pdev, gs_glyph glyph, gs_char ch, gs_char *len
         byte *bitmap = NULL, *src, *dest, *rowptr, srcmask, destmask;
         void *state;
         const char *language = pdev->ocr_language;
+#ifdef OCR_DUMP_BITMAP
         gp_file *DbgFile;
+#endif
 
         if(language == NULL || language[0] == 0)
             language = "eng";
@@ -183,7 +188,7 @@ static int OCRText(gx_device_pdf *pdev, gs_glyph glyph, gs_char ch, gs_char *len
             next_glyph = next_glyph->next;
         }
 
-#if 0
+#ifdef OCR_DUMP_BITMAP
         DbgFile = gp_fopen(pdev->memory, "d:/temp/bits.txt", "wb+");
         for(row = 0;row < rows;row++) {
             for(column = 0;column < stride;column++) {
