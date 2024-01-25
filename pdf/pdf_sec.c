@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1283,7 +1283,7 @@ static int check_password_R5(pdf_context *ctx, char *Password, int PasswordLen, 
         /* If the supplied Password fails as the user *and* owner password, maybe its in
          * the locale, not UTF-8, try converting to UTF-8
          */
-        code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->encryption.Password), (pdf_obj **)&P);
+        code = pdfi_object_alloc(ctx, PDF_STRING, PasswordLen, (pdf_obj **)&P);
         if (code < 0)
             return code;
         memcpy(P->data, Password, PasswordLen);
@@ -1330,7 +1330,7 @@ static int check_password_R6(pdf_context *ctx, char *Password, int PasswordLen, 
         /* If the supplied Password fails as the user *and* owner password, maybe its in
          * the locale, not UTF-8, try converting to UTF-8
          */
-        code = pdfi_object_alloc(ctx, PDF_STRING, strlen(ctx->encryption.Password), (pdf_obj **)&P);
+        code = pdfi_object_alloc(ctx, PDF_STRING, PasswordLen, (pdf_obj **)&P);
         if (code < 0)
             return code;
         memcpy(P->data, Password, PasswordLen);
