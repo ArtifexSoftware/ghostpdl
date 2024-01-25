@@ -182,8 +182,11 @@ static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassw
          * Fortunately, the stringprep error codes are sorted to make
          * this easy: the errors we want to ignore are the ones with
          * codes less than 100. */
-        if ((int)err < 100)
+        if ((int)err < 100) {
+            NewPassword = Password;
+            NewLen = Len;
             return 0;
+        }
 
         return_error(gs_error_ioerror);
     }
@@ -301,7 +304,8 @@ error:
     pdfi_countdown(Key);
     gs_free_object(ctx->memory, Test, "R5 password test");
 #ifdef HAVE_LIBIDN
-    gs_free_object(ctx->memory, UTF8_Password, "free sasl result");
+    if (UTF8_Password != Password)
+        gs_free_object(ctx->memory, UTF8_Password, "free sasl result");
 #endif
     return code;
 }
