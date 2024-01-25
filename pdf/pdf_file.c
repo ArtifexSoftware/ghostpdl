@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -777,10 +777,14 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 
     if (ctx->args.pdfdebug)
     {
-        char str[100];
+        char *str;
+        str = gs_alloc_bytes(ctx->memory, n->length + 1, "temp string for debug");
+        if (str == NULL)
+            return_error(gs_error_VMerror);
         memcpy(str, (const char *)n->data, n->length);
         str[n->length] = '\0';
         dmprintf1(ctx->memory, "FILTER NAME:%s\n", str);
+        gs_free_object(ctx->memory, str, "temp string for debug");
     }
 
     if (pdfi_name_is(n, "RunLengthDecode")) {
