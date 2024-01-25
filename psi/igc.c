@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1062,7 +1062,7 @@ gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
 
             if (cp == 0) {	/* We were tracing outside collectible */
                 /* storage.  This can't happen. */
-                lprintf1("mark stack overflowed while outside collectible space at "PRI_INTPTR"!\n",
+                if_debug1('6', "mark stack overflowed while outside collectible space at "PRI_INTPTR"!\n",
                          (intptr_t)cptr);
                 gs_abort(pstate->heap);
             }
@@ -1291,7 +1291,7 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 
             if (cp != 0 && cp->cbase <= (byte *)obj && (byte *)obj <cp->ctop) {
                 if (back > (cp->ctop - cp->cbase) >> obj_back_shift) {
-                    lprintf2("Invalid back pointer %u at "PRI_INTPTR"!\n",
+                    if_debug2('6', "Invalid back pointer %u at "PRI_INTPTR"!\n",
                              back, (intptr_t)obj);
                     gs_abort(NULL);
                 }

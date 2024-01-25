@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -420,7 +420,7 @@ gs_heap_resize_string(gs_memory_t * mem, byte * data, size_t old_num, size_t new
                       client_name_t cname)
 {
     if (gs_heap_object_type(mem, data) != &st_bytes)
-        lprintf2("%s: resizing non-string "PRI_INTPTR"!\n",
+        if_debug2m('a', mem, "%s: resizing non-string "PRI_INTPTR"!\n",
                  client_name_string(cname), (intptr_t)data);
     return gs_heap_resize_object(mem, data, new_num, cname);
 }

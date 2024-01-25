@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -152,7 +152,7 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
         return false;
 #ifdef DEBUG
     if (ptr < cp->ctop) {
-        lprintf4("String pointer "PRI_INTPTR"[%u] outside ["PRI_INTPTR".."PRI_INTPTR")\n",
+        if_debug4('6', "String pointer "PRI_INTPTR"[%u] outside ["PRI_INTPTR".."PRI_INTPTR")\n",
                  (intptr_t)ptr, size, (intptr_t)cp->ctop, (intptr_t)cp->climit);
         return false;
     } else if (ptr + size > cp->climit) {	/*
@@ -171,7 +171,7 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
         while (ptr == scp->climit && scp->outer != 0)
             scp = scp->outer;
         if (ptr + size > scp->climit) {
-            lprintf4("String pointer "PRI_INTPTR"[%u] outside ["PRI_INTPTR".."PRI_INTPTR")\n",
+            if_debug4('6', "String pointer "PRI_INTPTR"[%u] outside ["PRI_INTPTR".."PRI_INTPTR")\n",
                      (intptr_t)ptr, size,
                      (intptr_t)scp->ctop, (intptr_t)scp->climit);
             return false;

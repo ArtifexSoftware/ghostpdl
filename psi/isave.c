@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -487,7 +487,7 @@ alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
     else if (r_is_struct(pcont))
         cp->offset = (byte *) where - (byte *) pcont->value.pstruct;
     else {
-        lprintf3("Bad type %u for save!  pcont = "PRI_INTPTR", where = "PRI_INTPTR"\n",
+        if_debug3('u', "Bad type %u for save!  pcont = "PRI_INTPTR", where = "PRI_INTPTR"\n",
                  r_type(pcont), (intptr_t) pcont, (intptr_t) where);
         gs_abort((const gs_memory_t *)mem);
     }

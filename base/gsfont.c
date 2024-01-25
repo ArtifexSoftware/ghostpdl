@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -791,7 +791,7 @@ gs_purge_font(gs_font * pfont)
     else if (pdir->scaled_fonts == pfont)
         pdir->scaled_fonts = next;
     else {			/* Shouldn't happen! */
-        lprintf1("purged font "PRI_INTPTR" not found\n", (intptr_t)pfont);
+        if_debug1m('u', pfont->memory, "purged font "PRI_INTPTR" not found\n", (intptr_t)pfont);
     }
 
     /* Purge the font from the scaled font cache. */

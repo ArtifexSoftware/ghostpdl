@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -178,8 +178,10 @@ gx_cpath_init_contained_shared(gx_clip_path * pcpath,
 {
     if (shared) {
         if (shared->path.segments == &shared->path.local_segments) {
+#ifdef DEBUG
             lprintf1("Attempt to share (local) segments of clip path "PRI_INTPTR"!\n",
                      (intptr_t)shared);
+#endif
             return_error(gs_error_Fatal);
         }
         *pcpath = *shared;
@@ -236,8 +238,10 @@ gx_cpath_init_local_shared_nested(gx_clip_path * pcpath,
     if (shared) {
         if ((shared->path.segments == &shared->path.local_segments) &&
             !safely_nested) {
+#ifdef DEBUG
             lprintf1("Attempt to share (local) segments of clip path "PRI_INTPTR"!\n",
                      (intptr_t)shared);
+#endif
             return_error(gs_error_Fatal);
         }
         pcpath->path = shared->path;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -229,7 +229,8 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                 if (gs_debug[':'] && !have_dumped_args) {
                     int i;
 
-                    dmprintf1(minst->heap, "%% Args passed to instance "PRI_INTPTR": ",
+                    if (gs_debug_c(gs_debug_flag_init_details))
+                        dmprintf1(minst->heap, "%% Args passed to instance "PRI_INTPTR": ",
                               (intptr_t)minst);
                     for (i=1; i<argc; i++)
                         dmprintf1(minst->heap, "%s ", argv[i]);

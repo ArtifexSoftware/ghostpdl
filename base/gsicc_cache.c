@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -161,7 +161,7 @@ icc_linkcache_finalize(const gs_memory_t *mem, void *ptr)
         return;
     while (link_cache->head != NULL) {
         if (link_cache->head->ref_count != 0) {
-            emprintf2(link_cache->memory, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n",
+            if_debug2m(gs_debug_flag_icc, link_cache->memory, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n",
                       (intptr_t)link_cache->head, link_cache->head->ref_count);
             link_cache->head->ref_count = 0;	/* force removal */
         }
@@ -586,7 +586,7 @@ gsicc_findcachelink(gsicc_hashlink_t hash, gsicc_link_cache_t *icc_link_cache,
                 /* that was building it failed to be able to complete building it.  Try this only
                    a limited number of times before we bail. */
                 if (curr->valid == false) {
-		            emprintf1(curr->memory, "link "PRI_INTPTR" lock released, but still not valid.\n", (intptr_t)curr);	/* Breakpoint here */
+		            if_debug1m(gs_debug_flag_icc, curr->memory, "link "PRI_INTPTR" lock released, but still not valid.\n", (intptr_t)curr);	/* Breakpoint here */
                 }
                 gx_monitor_enter(icc_link_cache->lock);	/* re-enter to loop and check */
             }
@@ -614,7 +614,7 @@ gsicc_remove_link(gsicc_link_t *link)
     /* NOTE: link->ref_count must be 0: assert ? */
     gx_monitor_enter(icc_link_cache->lock);
     if (link->ref_count != 0) {
-      emprintf2(memory, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n", (intptr_t)link, link->ref_count);
+      if_debug2m(gs_debug_flag_icc, memory, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n", (intptr_t)link, link->ref_count);
     }
     curr = icc_link_cache->head;
     prev = NULL;

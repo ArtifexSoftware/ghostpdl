@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -137,8 +137,10 @@ gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
 {
     if (shared) {
         if (shared->segments == &shared->local_segments) {
+#ifdef DEBUG
             lprintf1("Attempt to share (local) segments of path "PRI_INTPTR"!\n",
                      (intptr_t)shared);
+#endif
             return_error(gs_error_Fatal);
         }
         *ppath = *shared;
@@ -172,8 +174,10 @@ gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
     ppath->procs = &default_path_procs;
     if (shared) {
         if (shared->segments == &shared->local_segments) {
+#ifdef DEBUG
             lprintf1("Attempt to share (local) segments of path "PRI_INTPTR"!\n",
                      (intptr_t)shared);
+#endif
             gs_free_object(mem, ppath, cname);
             return 0;
         }
@@ -203,8 +207,10 @@ gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
 {
     if (shared) {
         if (shared->segments == &shared->local_segments) {
+#ifdef DEBUG
             lprintf1("Attempt to share (local) segments of path "PRI_INTPTR"!\n",
                      (intptr_t)shared);
+#endif
             return_error(gs_error_Fatal);
         }
         *ppath = *shared;

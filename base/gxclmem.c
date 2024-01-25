@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -490,8 +490,7 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
     /* leaks if other users of the memfile don't 'fclose with delete=true */
     if (f->openlist != NULL || ((f->base_memfile != NULL) && f->base_memfile->is_open)) {
         /* TODO: do the cleanup rather than just giving an error */
-        emprintf1(f->memory,
-                  "Attempt to delete a memfile still open for read: "PRI_INTPTR"\n",
+        if_debug1(':', "Attempt to delete a memfile still open for read: "PRI_INTPTR"\n",
                   (intptr_t)f);
         return_error(gs_error_invalidfileaccess);
     } else {
