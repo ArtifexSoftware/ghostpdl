@@ -1410,7 +1410,7 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *s
     if (!known)
         pdfi_dict_known(ctx, dict, "Filter", &known);
 
-    if (!known)
+    if (!known && !ctx->encryption.is_encrypted)
         return size;
 
     compressed_stream = *new_pdf_stream;
