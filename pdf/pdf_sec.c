@@ -1069,15 +1069,12 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
 
         ctx->encryption.V = (int)i64;
 
-        if (ctx->encryption.V == 2 || ctx->encryption.V == 3) {
-            code = pdfi_dict_knownget_number(ctx, d, "Length", &f);
-            if (code < 0)
-                goto done;
+        code = pdfi_dict_knownget_number(ctx, d, "Length", &f);
+        if (code < 0)
+            goto done;
 
-            if (code > 0)
-                *KeyLen = (int)f;
-        } else
-            *KeyLen = 40;
+        if (code > 0)
+            *KeyLen = (int)f;
     }
 
     code = pdfi_dict_get_int(ctx, d, "P", &i64);
@@ -1429,7 +1426,7 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
             if (ctx->encryption.StrF != CRYPT_IDENTITY || ctx->encryption.StmF != CRYPT_IDENTITY) {
                 /* Revision 4 is either AES or RC4, but its always 128-bits */
                 if (KeyLen != 0)
-                    pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
+                    pdfi_set_warning(ctx, 0, NULL, W_PDF_SPURIOUS_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
                 KeyLen = 128;
                 /* We can't set the encryption filter, so we have to hope the PDF file did */
                 code = check_password_preR5(ctx, ctx->encryption.Password, ctx->encryption.PasswordLen, KeyLen, 4);
@@ -1438,7 +1435,7 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
         case 5:
             /* Set up the defaults if not already set */
             if (KeyLen != 0)
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_SPURIOUS_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
             KeyLen = 256;
             if (ctx->encryption.StmF == CRYPT_NONE)
                 ctx->encryption.StmF = CRYPT_AESV2;
@@ -1450,7 +1447,7 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
             /* Set up the defaults if not already set */
             /* Revision 6 is always 256-bit AES */
             if (KeyLen != 0)
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_SPURIOUS_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
             KeyLen = 256;
             if (ctx->encryption.StmF == CRYPT_NONE)
                 ctx->encryption.StmF = CRYPT_AESV3;

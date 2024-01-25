@@ -62,6 +62,7 @@ PARAM(W_PDF_BAD_MEDIABOX,           "Couldn't retrieve MediaBox for page, using 
 PARAM(W_PDF_CA_OUTOFRANGE,          "CA or ca value not in range 0.0 to 1.0, clamped to range."),
 PARAM(W_PDF_INVALID_DEFAULTSPACE,   "Invalid DefaultGray, DefaultRGB or DefaultCMYK space specified, ignored."),
 PARAM(W_PDF_INVALID_DECRYPT_LEN,    "Invalid /Length supplied in Encryption dictionary."),
+PARAM(W_PDF_SPURIOUS_DECRYPT_LEN,   "/Length present in Encryption dictionary and /V is neither 2 nor 3"),
 PARAM(W_PDF_INVALID_FONT_BASEENC,   "Ignoring invalid BaseEncoding name in font"),
 PARAM(W_PDF_GROUP_HAS_COLORSPACE,   "Group attributes dictionary has /ColorSpace instead of /CS"),
 PARAM(W_PDF_GROUP_BAD_BC,           "Group attributes dictionary /BC differs in number of components from the colour space"),
