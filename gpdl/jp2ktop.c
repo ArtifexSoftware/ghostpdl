@@ -567,6 +567,9 @@ do_process(jp2k_interp_instance_t *jp2k, stream_cursor_read * pr, bool eof)
                         goto early_flush;
                 }
 
+                if (jp2k->penum == NULL)
+                    goto flush;
+
                 code = gs_image_next(jp2k->penum, jp2k->stream_buffer, local_w.ptr + 1 - jp2k->stream_buffer, &used);
                 if (code < 0)
                     goto flush;
