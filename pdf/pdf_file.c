@@ -778,7 +778,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (ctx->args.pdfdebug)
     {
         char *str;
-        str = gs_alloc_bytes(ctx->memory, n->length + 1, "temp string for debug");
+        str = (char *)gs_alloc_bytes(ctx->memory, n->length + 1, "temp string for debug");
         if (str == NULL)
             return_error(gs_error_VMerror);
         memcpy(str, (const char *)n->data, n->length);
@@ -1106,6 +1106,7 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
             pdf_obj *FS = NULL, *o = NULL;
             pdf_dict *dict = NULL;
             stream *gstream = NULL;
+            char CFileName[gp_file_name_sizeof];
 
             code = pdfi_dict_get(ctx, stream_dict, "F", &FileSpec);
             if (code < 0)
@@ -1128,12 +1129,20 @@ int pdfi_filter(pdf_context *ctx, pdf_stream *stream_obj, pdf_c_stream *source,
                 code = gs_note_error(gs_error_typecheck);
                 goto error;
             }
+
+            if (((pdf_string *)FileSpec)->length + 1 > gp_file_name_sizeof) {
+                code = gs_note_error(gs_error_ioerror);
+                goto error;
+            }
+            memcpy(CFileName, ((pdf_string *)FileSpec)->data, ((pdf_string *)FileSpec)->length);
+            CFileName[((pdf_string *)FileSpec)->length] = 0x00;
+
             /* We should now have a string with the filename (or URL). We need
              * to open the file and create a stream, if that succeeds.
              */
-            gstream = sfopen((const char *)((pdf_string *)FileSpec)->data, "r", ctx->memory);
+            gstream = sfopen((const char *)CFileName, "r", ctx->memory);
             if (gstream == NULL) {
-                emprintf1(ctx->memory, "Failed to open file %s\n", (const char *)((pdf_string *)FileSpec)->data);
+                emprintf1(ctx->memory, "Failed to open file %s\n", CFileName);
                 code = gs_note_error(gs_error_ioerror);
                 goto error;
             }
@@ -1803,8 +1812,14 @@ static int pdfi_open_resource_file_inner(pdf_context *ctx, const char *fname, co
     if (fname == NULL || fnamelen == 0 || fnamelen >= gp_file_name_sizeof)
         *s = NULL;
     else if (gp_file_name_is_absolute(fname, fnamelen) || fname[0] == '%') {
+        char CFileName[gp_file_name_sizeof];
+
+        if (fnamelen + 1 > gp_file_name_sizeof)
+            return_error(gs_error_ioerror);
+        memcpy(CFileName, fname, fnamelen);
+        CFileName[fnamelen] = 0x00;
         /* If it's an absolute path or an explicit PS style device, just try to open it */
-        *s = sfopen(fname, "r", ctx->memory);
+        *s = sfopen(CFileName, "r", ctx->memory);
     }
     else {
         char fnametotry[gp_file_name_sizeof];
@@ -1888,8 +1903,14 @@ static int pdfi_open_font_file_inner(pdf_context *ctx, const char *fname, const 
     if (fname == NULL || fnamelen == 0 || fnamelen >= (gp_file_name_sizeof - fontdirstrlen))
         *s = NULL;
     else if (gp_file_name_is_absolute(fname, fnamelen) || fname[0] == '%') {
+        char CFileName[gp_file_name_sizeof];
+
+        if (fnamelen + 1 > gp_file_name_sizeof)
+            return_error(gs_error_ioerror);
+        memcpy(CFileName, fname, fnamelen);
+        CFileName[fnamelen] = 0x00;
         /* If it's an absolute path or an explicit PS style device, just try to open it */
-        *s = sfopen(fname, "r", ctx->memory);
+        *s = sfopen(CFileName, "r", ctx->memory);
     }
     else {
         char fnametotry[gp_file_name_sizeof];

@@ -871,12 +871,13 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         return gs_throw1(-1, "setting of %s src obj color info failed", pname);
     }
     gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
-    srcgtag->name_length = strlen(pname);
-    srcgtag->name = (char*) gs_alloc_bytes(mem, srcgtag->name_length,
+    srcgtag->name_length = namelen;
+    srcgtag->name = (char*) gs_alloc_bytes(mem, srcgtag->name_length + 1,
                                   "gsicc_set_srcgtag_struct");
     if (srcgtag->name == NULL)
         return gs_throw(gs_error_VMerror, "Insufficient memory for tag name");
-    strncpy(srcgtag->name, pname, srcgtag->name_length);
+    memcpy(srcgtag->name, pname, namelen);
+    srcgtag->name[namelen] = 0x00;
     icc_manager->srcgtag_profile = srcgtag;
     return 0;
 }
@@ -957,7 +958,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                 return 0;
         }
         if (strncmp(icc_profile->name, OI_PROFILE,
-                    strlen(icc_profile->name)) == 0) {
+                    icc_profile->name_length) == 0) {
                 return 0;
         }
         gsicc_adjust_profile_rc(icc_profile, -1,"gsicc_set_profile");
@@ -1238,9 +1239,9 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
                                      "gsicc_open_search");
         if (buffer == NULL)
             return_error(gs_error_VMerror);
-        strcpy(buffer, dirname);
+        memcpy(buffer, dirname, dirlen);
         buffer[dirlen] = '\0';
-        strcat(buffer, pname);
+        memcpy(buffer + dirlen, pname, namelen);
         /* Just to make sure we were null terminated */
         buffer[namelen + dirlen] = '\0';
 
@@ -1259,7 +1260,14 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
 
     /* First just try it like it is */
     if (gs_check_file_permission(mem_gc, pname, namelen, "r") >= 0) {
-        str = sfopen(pname, "r", mem_gc);
+        char CFileName[gp_file_name_sizeof];
+
+        if (namelen + 1 > gp_file_name_sizeof)
+            return_error(gs_error_ioerror);
+        memcpy(CFileName, pname, namelen);
+        CFileName[namelen] = 0x00;
+
+        str = sfopen(CFileName, "r", mem_gc);
         if (str != NULL) {
             *strp = str;
             return 0;
@@ -1273,7 +1281,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     if (buffer == NULL)
         return_error(gs_error_VMerror);
     strcpy(buffer, DEFAULT_DIR_ICC);
-    strcat(buffer, pname);
+    memcpy(buffer + strlen(DEFAULT_DIR_ICC), pname, namelen);
     /* Just to make sure we were null terminated */
     buffer[namelen + strlen(DEFAULT_DIR_ICC)] = '\0';
     str = sfopen(buffer, "r", mem_gc);
