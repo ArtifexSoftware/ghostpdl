@@ -1044,8 +1044,7 @@ upd_print_page(gx_device_printer *pdev, gp_file *out)
          errprintf(pdev->memory, "CALL-REJECTED upd_print_page(" PRI_INTPTR "," PRI_INTPTR ")\n",
              (intptr_t)udev,(intptr_t) out);
 #else
-         errprintf(pdev->memory, "CALL-REJECTED upd_print_page\n",
-             (intptr_t)udev,(intptr_t) out);
+         errprintf(pdev->memory, "CALL-REJECTED upd_print_page\n");
 #endif
 #endif
 	 return_error(gs_error_undefined);
