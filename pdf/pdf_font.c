@@ -345,6 +345,10 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                     else {
                         memcpy(fontfname, ctx->args.cidfsubstfont.data, ctx->args.cidfsubstfont.size);
                         defcidfallacklen = ctx->args.cidfsubstfont.size;
+                        /* cidfsubstfont should either be a font name we find in the search path(s)
+                           or an absolute path.
+                         */
+                        fsprefixlen = 0;
                     }
                 }
                 fontfname[fsprefixlen + defcidfallacklen] = '\0';
