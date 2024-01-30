@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2024 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -63,6 +63,9 @@ $(LEPTOBJ)bilateral.$(OBJ) : $(LEPTONICADIR)/src/bilateral.c $(LEPTDEPS)
 
 $(LEPTOBJ)bilinear.$(OBJ) : $(LEPTONICADIR)/src/bilinear.c $(LEPTDEPS)
 	$(LEPTCC) $(LEPTO_)bilinear.$(OBJ) $(C_) $(LEPTONICADIR)/src/bilinear.c
+
+$(LEPTOBJ)binarize.$(OBJ) : $(LEPTONICADIR)/src/binarize.c $(LEPTDEPS)
+	$(LEPTCC) $(LEPTO_)binarize.$(OBJ) $(C_) $(LEPTONICADIR)/src/binarize.c
 
 $(LEPTOBJ)binexpand.$(OBJ) : $(LEPTONICADIR)/src/binexpand.c $(LEPTDEPS)
 	$(LEPTCC) $(LEPTO_)binexpand.$(OBJ) $(C_) $(LEPTONICADIR)/src/binexpand.c
@@ -231,6 +234,9 @@ $(LEPTOBJ)graymorph.$(OBJ) : $(LEPTONICADIR)/src/graymorph.c $(LEPTDEPS)
 
 $(LEPTOBJ)grayquant.$(OBJ) : $(LEPTONICADIR)/src/grayquant.c $(LEPTDEPS)
 	$(LEPTCC) $(LEPTO_)grayquant.$(OBJ) $(C_) $(LEPTONICADIR)/src/grayquant.c
+
+$(LEPTOBJ)hashmap.$(OBJ) : $(LEPTONICADIR)/src/hashmap.c $(LEPTDEPS)
+	$(LEPTCC) $(LEPTO_)hashmap.$(OBJ) $(C_) $(LEPTONICADIR)/src/hashmap.c
 
 $(LEPTOBJ)heap.$(OBJ) : $(LEPTONICADIR)/src/heap.c $(LEPTDEPS)
 	$(LEPTCC) $(LEPTO_)heap.$(OBJ) $(C_) $(LEPTONICADIR)/src/heap.c
@@ -508,6 +514,7 @@ LEPTONICA_OBJS=\
 	$(LEPTOBJ)bbuffer.$(OBJ)\
 	$(LEPTOBJ)bilateral.$(OBJ)\
 	$(LEPTOBJ)bilinear.$(OBJ)\
+	$(LEPTOBJ)binarize.$(OBJ)\
 	$(LEPTOBJ)binexpand.$(OBJ)\
 	$(LEPTOBJ)binreduce.$(OBJ)\
 	$(LEPTOBJ)blend.$(OBJ)\
@@ -564,6 +571,7 @@ LEPTONICA_OBJS=\
 	$(LEPTOBJ)graphics.$(OBJ)\
 	$(LEPTOBJ)graymorph.$(OBJ)\
 	$(LEPTOBJ)grayquant.$(OBJ)\
+	$(LEPTOBJ)hashmap.$(OBJ)\
 	$(LEPTOBJ)heap.$(OBJ)\
 	$(LEPTOBJ)jbclass.$(OBJ)\
 	$(LEPTOBJ)jp2kheader.$(OBJ)\

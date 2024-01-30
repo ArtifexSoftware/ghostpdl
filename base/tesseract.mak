@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2024 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -34,17 +34,15 @@ TESSINCLUDES=\
 	$(I_)$(GLSRCDIR)$(_I)\
 	$(I_)$(GLGENDIR)$(_I)
 
-# If we wanted to disable the legacy mode in tesseract, which is supposedly
-# unused, we'd:
-#   add  -DDISABLED_LEGACY_ENGINE to TESSCXX
-#   empty TESSERACT_LEGACY
+# If we wanted to enable the legacy mode in tesseract, we'd:
+#   remove  -DDISABLED_LEGACY_ENGINE from TESSCXX
+#   set TESSERACT_LEGACY to include TESSERACT_LEGACY_OBJS
 
 # We set -DCLUSTER when doing builds for our testing cluster. Unfortunately,
 # this conflicts with Tesseract's use of a CLUSTER type. We work around this
 # here by undefining CLUSTER for the tesseract portion of the build.
 
-TESSCXX = $(CXX) $(TESSINCLUDES) $(TESSCXXFLAGS) $(CCFLAGS) -DTESSERACT_IMAGEDATA_AS_PIX -DTESSERACT_DISABLE_DEBUG_FONTS -DGRAPHICS_DISABLED -UCLUSTER
-#-DDISABLED_LEGACY_ENGINE
+TESSCXX = $(CXX) $(TESSINCLUDES) $(TESSCXXFLAGS) $(CCFLAGS) -DTESSERACT_IMAGEDATA_AS_PIX -DTESSERACT_DISABLE_DEBUG_FONTS -DGRAPHICS_DISABLED -UCLUSTER -DDISABLED_LEGACY_ENGINE
 TESSOBJ = $(GLOBJDIR)$(D)tesseract_
 TESSO_ = $(O_)$(TESSOBJ)
 
@@ -61,7 +59,6 @@ TESSDEPS=\
 	$(TESSERACTDIR)/include/tesseract/publictypes.h\
 	$(TESSERACTDIR)/include/tesseract/renderer.h\
 	$(TESSERACTDIR)/include/tesseract/resultiterator.h\
-	$(TESSERACTDIR)/include/tesseract/thresholder.h\
 	$(TESSERACTDIR)/include/tesseract/unichar.h\
 	$(TESSERACTDIR)/src/arch/dotproduct.h\
 	$(TESSERACTDIR)/src/arch/intsimdmatrix.h\
@@ -118,7 +115,6 @@ TESSDEPS=\
 	$(TESSERACTDIR)/src/ccstruct/stepblob.h\
 	$(TESSERACTDIR)/src/ccstruct/werd.h\
 	$(TESSERACTDIR)/src/ccutil/ambigs.h\
-	$(TESSERACTDIR)/src/ccutil/bits16.h\
 	$(TESSERACTDIR)/src/ccutil/bitvector.h\
 	$(TESSERACTDIR)/src/ccutil/ccutil.h\
 	$(TESSERACTDIR)/src/ccutil/clst.h\
@@ -144,7 +140,6 @@ TESSDEPS=\
 	$(TESSERACTDIR)/src/ccutil/unicity_table.h\
 	$(TESSERACTDIR)/src/ccutil/universalambigs.h\
 	$(TESSERACTDIR)/src/classify/adaptive.h\
-	$(TESSERACTDIR)/src/classify/blobclass.h\
 	$(TESSERACTDIR)/src/classify/classify.h\
 	$(TESSERACTDIR)/src/classify/cluster.h\
 	$(TESSERACTDIR)/src/classify/clusttool.h\
@@ -250,7 +245,6 @@ TESSDEPS=\
 	$(TESSERACTDIR)/src/wordrec/lm_consistency.h\
 	$(TESSERACTDIR)/src/wordrec/lm_pain_points.h\
 	$(TESSERACTDIR)/src/wordrec/lm_state.h\
-	$(TESSERACTDIR)/src/wordrec/measure.h\
 	$(TESSERACTDIR)/src/wordrec/outlines.h\
 	$(TESSERACTDIR)/src/wordrec/params_model.h\
 	$(TESSERACTDIR)/src/wordrec/plotedges.h\
@@ -413,6 +407,9 @@ $(TESSOBJ)ccstruct_detlinefit.$(OBJ) : $(TESSERACTDIR)/src/ccstruct/detlinefit.c
 $(TESSOBJ)ccstruct_dppoint.$(OBJ) : $(TESSERACTDIR)/src/ccstruct/dppoint.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)ccstruct_dppoint.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccstruct/dppoint.cpp
 
+$(TESSOBJ)ccstruct_image.$(OBJ) : $(TESSERACTDIR)/src/ccstruct/image.cpp $(TESSDEPS)
+	$(TESSCXX) $(TESSO_)ccstruct_image.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccstruct/image.cpp
+
 $(TESSOBJ)ccstruct_imagedata.$(OBJ) : $(TESSERACTDIR)/src/ccstruct/imagedata.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)ccstruct_imagedata.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccstruct/imagedata.cpp
 
@@ -538,9 +535,6 @@ $(TESSOBJ)classify_kdtree.$(OBJ) : $(TESSERACTDIR)/src/classify/kdtree.cpp $(TES
 
 $(TESSOBJ)classify_mf.$(OBJ) : $(TESSERACTDIR)/src/classify/mf.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)classify_mf.$(OBJ) $(C_) $(TESSERACTDIR)/src/classify/mf.cpp
-
-$(TESSOBJ)classify_mfdefs.$(OBJ) : $(TESSERACTDIR)/src/classify/mfdefs.cpp $(TESSDEPS)
-	$(TESSCXX) $(TESSO_)classify_mfdefs.$(OBJ) $(C_) $(TESSERACTDIR)/src/classify/mfdefs.cpp
 
 $(TESSOBJ)classify_mfoutline.$(OBJ) : $(TESSERACTDIR)/src/classify/mfoutline.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)classify_mfoutline.$(OBJ) $(C_) $(TESSERACTDIR)/src/classify/mfoutline.cpp
@@ -815,14 +809,8 @@ $(TESSOBJ)ccutil_elst.$(OBJ) : $(TESSERACTDIR)/src/ccutil/elst.cpp $(TESSDEPS)
 $(TESSOBJ)ccutil_errcode.$(OBJ) : $(TESSERACTDIR)/src/ccutil/errcode.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)ccutil_errcode.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/errcode.cpp
 
-$(TESSOBJ)ccutil_mainblk.$(OBJ) : $(TESSERACTDIR)/src/ccutil/mainblk.cpp $(TESSDEPS)
-	$(TESSCXX) $(TESSO_)ccutil_mainblk.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/mainblk.cpp
-
 $(TESSOBJ)ccutil_serialis.$(OBJ) : $(TESSERACTDIR)/src/ccutil/serialis.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)ccutil_serialis.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/serialis.cpp
-
-$(TESSOBJ)ccutil_strngs.$(OBJ) : $(TESSERACTDIR)/src/ccutil/strngs.cpp $(TESSDEPS)
-	$(TESSCXX) $(TESSO_)ccutil_strngs.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/strngs.cpp
 
 $(TESSOBJ)ccutil_scanutils.$(OBJ) : $(TESSERACTDIR)/src/ccutil/scanutils.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)ccutil_scanutils.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/scanutils.cpp
@@ -853,9 +841,6 @@ $(TESSOBJ)ccutil_bitvector.$(OBJ) : $(TESSERACTDIR)/src/ccutil/bitvector.cpp $(T
 
 $(TESSOBJ)ccutil_indexmapbidi.$(OBJ) : $(TESSERACTDIR)/src/ccutil/indexmapbidi.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)ccutil_indexmapbidi.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/indexmapbidi.cpp
-
-$(TESSOBJ)ccutil_universalambigs.$(OBJ) : $(TESSERACTDIR)/src/ccutil/universalambigs.cpp $(TESSDEPS)
-	$(TESSCXX) $(TESSO_)ccutil_universalambigs.$(OBJ) $(C_) $(TESSERACTDIR)/src/ccutil/universalambigs.cpp
 
 $(TESSOBJ)lstm_convolve.$(OBJ) : $(TESSERACTDIR)/src/lstm/convolve.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)lstm_convolve.$(OBJ) $(C_) $(TESSERACTDIR)/src/lstm/convolve.cpp
@@ -976,6 +961,7 @@ TESSERACT_OBJS_2 = \
 	$(TESSOBJ)ccstruct_coutln.$(OBJ)\
 	$(TESSOBJ)ccstruct_detlinefit.$(OBJ)\
 	$(TESSOBJ)ccstruct_dppoint.$(OBJ)\
+	$(TESSOBJ)ccstruct_image.$(OBJ)\
 	$(TESSOBJ)ccstruct_imagedata.$(OBJ)\
 	$(TESSOBJ)ccstruct_linlsq.$(OBJ)\
 	$(TESSOBJ)ccstruct_matrix.$(OBJ)\
@@ -1038,8 +1024,8 @@ TESSERACT_OBJS_3=\
 	$(TESSOBJ)textord_strokewidth.$(OBJ)\
 	$(TESSOBJ)textord_tabfind.$(OBJ)\
 	$(TESSOBJ)textord_tablefind.$(OBJ)\
-	$(TESSOBJ)textord_tabvector.$(OBJ)\
 	$(TESSOBJ)textord_tablerecog.$(OBJ)\
+	$(TESSOBJ)textord_tabvector.$(OBJ)\
 	$(TESSOBJ)textord_textlineprojection.$(OBJ)\
 	$(TESSOBJ)textord_textord.$(OBJ)\
 	$(TESSOBJ)textord_topitch.$(OBJ)\
@@ -1058,20 +1044,18 @@ TESSERACT_OBJS_4=\
 	$(TESSOBJ)wordrec_wordrec.$(OBJ)\
 	$(TESSOBJ)ccutil_ccutil.$(OBJ)\
 	$(TESSOBJ)ccutil_clst.$(OBJ)\
-	$(TESSOBJ)ccutil_elst2.$(OBJ)\
 	$(TESSOBJ)ccutil_elst.$(OBJ)\
+	$(TESSOBJ)ccutil_elst2.$(OBJ)\
 	$(TESSOBJ)ccutil_errcode.$(OBJ)\
-	$(TESSOBJ)ccutil_mainblk.$(OBJ)\
-	$(TESSOBJ)ccutil_serialis.$(OBJ)\
-	$(TESSOBJ)ccutil_strngs.$(OBJ)\
+	$(TESSOBJ)ccutil_params.$(OBJ)\
 	$(TESSOBJ)ccutil_scanutils.$(OBJ)\
+	$(TESSOBJ)ccutil_serialis.$(OBJ)\
 	$(TESSOBJ)ccutil_tessdatamanager.$(OBJ)\
 	$(TESSOBJ)ccutil_tprintf.$(OBJ)\
 	$(TESSOBJ)ccutil_unichar.$(OBJ)\
 	$(TESSOBJ)ccutil_unicharcompress.$(OBJ)\
 	$(TESSOBJ)ccutil_unicharmap.$(OBJ)\
 	$(TESSOBJ)ccutil_unicharset.$(OBJ)\
-	$(TESSOBJ)ccutil_params.$(OBJ)\
 	$(TESSOBJ)lstm_convolve.$(OBJ)\
 	$(TESSOBJ)lstm_fullyconnected.$(OBJ)\
 	$(TESSOBJ)lstm_functions.$(OBJ)\
@@ -1116,7 +1100,6 @@ TESSERACT_LEGACY_OBJS=\
 	$(TESSOBJ)ccutil_ambigs.$(OBJ)\
 	$(TESSOBJ)ccutil_bitvector.$(OBJ)\
 	$(TESSOBJ)ccutil_indexmapbidi.$(OBJ)\
-	$(TESSOBJ)ccutil_universalambigs.$(OBJ)\
 	$(TESSOBJ)classify_adaptive.$(OBJ)\
 	$(TESSOBJ)classify_adaptmatch.$(OBJ)\
 	$(TESSOBJ)classify_blobclass.$(OBJ)\
@@ -1132,7 +1115,6 @@ TESSERACT_LEGACY_OBJS=\
 	$(TESSOBJ)classify_intproto.$(OBJ)\
 	$(TESSOBJ)classify_kdtree.$(OBJ)\
 	$(TESSOBJ)classify_mf.$(OBJ)\
-	$(TESSOBJ)classify_mfdefs.$(OBJ)\
 	$(TESSOBJ)classify_mfoutline.$(OBJ)\
 	$(TESSOBJ)classify_mfx.$(OBJ)\
 	$(TESSOBJ)classify_normfeat.$(OBJ)\
@@ -1167,8 +1149,8 @@ TESSERACT_LEGACY_OBJS=\
 	$(TESSOBJ)wordrec_wordclass.$(OBJ)
 
 
-TESSERACT_LEGACY=$(TESSERACT_LEGACY_OBJS)
-#TESSERACT_LEGACY=
+#TESSERACT_LEGACY=$(TESSERACT_LEGACY_OBJS)
+TESSERACT_LEGACY=
 
 TESS_ROMFS_ARGS=\
 	-c -P $(GLSRCDIR)$(D)..$(D) tessdata$(D)*
