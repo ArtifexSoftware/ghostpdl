@@ -33,9 +33,9 @@
 #include "gdevpdfimg.h"
 #include "tessocr.h"
 
-int pdf_ocr_open(gx_device *pdev);
-int pdf_ocr_close(gx_device *pdev);
-
+static dev_proc_initialize_device(pdf_ocr_initialize_device);
+static dev_proc_open_device(pdf_ocr_open);
+static dev_proc_close_device(pdf_ocr_close);
 
 static int
 pdfocr_put_some_params(gx_device * dev, gs_param_list * plist)
@@ -50,7 +50,8 @@ pdfocr_put_some_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
         case 0:
-            if (pdf_dev->memory->gs_lib_ctx->core->path_control_active) {
+                if (pdf_dev->memory->gs_lib_ctx->core->path_control_active
+                && (strlen(pdf_dev->ocr.language) != langstr.size || memcmp(pdf_dev->ocr.language, langstr.data, langstr.size) != 0)) {
                 return_error(gs_error_invalidaccess);
             }
             else {
@@ -152,6 +153,8 @@ pdfocr8_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_gray(dev);
 
+    set_dev_proc(dev, initialize_device, pdf_ocr_initialize_device);
+    set_dev_proc(dev, initialize_device, pdf_ocr_initialize_device);
     set_dev_proc(dev, open_device, pdf_ocr_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, close_device, pdf_ocr_close);
@@ -185,6 +188,7 @@ pdfocr24_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_rgb(dev);
 
+    set_dev_proc(dev, initialize_device, pdf_ocr_initialize_device);
     set_dev_proc(dev, open_device, pdf_ocr_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, close_device, pdf_ocr_close);
@@ -216,6 +220,7 @@ pdfocr32_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_cmyk8(dev);
 
+    set_dev_proc(dev, initialize_device, pdf_ocr_initialize_device);
     set_dev_proc(dev, open_device, pdf_ocr_open);
     set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);
     set_dev_proc(dev, close_device, pdf_ocr_close);
@@ -703,7 +708,18 @@ ocr_end_page(gx_device_pdf_image *dev)
     return 0;
 }
 
-int
+static int
+pdf_ocr_initialize_device(gx_device *dev)
+{
+    gx_device_pdf_image *ppdev = (gx_device_pdf_image *)dev;
+    const char *default_ocr_lang = "eng";
+
+    ppdev->ocr.language[0] = '\0';
+    strcpy(ppdev->ocr.language, default_ocr_lang);
+    return 0;
+}
+
+static int
 pdf_ocr_open(gx_device *pdev)
 {
     gx_device_pdf_image *ppdev;
@@ -726,7 +742,7 @@ pdf_ocr_open(gx_device *pdev)
     return 0;
 }
 
-int
+static int
 pdf_ocr_close(gx_device *pdev)
 {
     gx_device_pdf_image *pdf_dev;

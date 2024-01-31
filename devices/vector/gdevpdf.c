@@ -215,6 +215,7 @@ device_pdfwrite_finalize(const gs_memory_t *cmem, void *vpdev)
 }
 
 /* Driver procedures */
+static dev_proc_initialize_device(pdfwrite_initialize_device);
 static dev_proc_open_device(pdf_open);
 static dev_proc_output_page(pdf_output_page);
 static dev_proc_close_device(pdf_close);
@@ -232,6 +233,7 @@ static dev_proc_close_device(pdf_close);
 static void
 pdfwrite_initialize_device_procs(gx_device *dev)
 {
+    set_dev_proc(dev, initialize_device, pdfwrite_initialize_device);
     set_dev_proc(dev, open_device, pdf_open);
     set_dev_proc(dev, get_initial_matrix, gx_upright_get_initial_matrix);
     set_dev_proc(dev, output_page, pdf_output_page);
@@ -776,6 +778,19 @@ pdf_reset_text(gx_device_pdf * pdev)
     sync_text_state(pdev);
     pdf_reset_text_state(pdev->text);
 }
+
+static int
+pdfwrite_initialize_device(gx_device *dev)
+{
+#if OCR_VERSION > 0
+    gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    const char *default_ocr_lang = "eng";
+    pdev->ocr_language[0] = '\0';
+    strcpy(pdev->ocr_language, default_ocr_lang);
+#endif
+    return 0;
+}
+
 
 /* Open the device. */
 static int
