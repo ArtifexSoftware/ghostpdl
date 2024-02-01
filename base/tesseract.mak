@@ -908,6 +908,9 @@ $(TESSOBJ)arch_dotproductfma.$(OBJ): $(TESSERACTDIR)/src/arch/dotproductfma.cpp 
 $(TESSOBJ)arch_dotproductsse.$(OBJ): $(TESSERACTDIR)/src/arch/dotproductsse.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSSSE41) $(TESSO_)arch_dotproductsse.$(OBJ) $(C_) $(TESSERACTDIR)/src/arch/dotproductsse.cpp
 
+$(TESSOBJ)arch_dotproductneon.$(OBJ): $(TESSERACTDIR)/src/arch/dotproductneon.cpp $(TESSDEPS)
+	$(TESSCXX) $(TESSSNEON) $(TESSO_)arch_dotproductneon.$(OBJ) $(C_) $(TESSERACTDIR)/src/arch/dotproductneon.cpp
+
 $(TESSOBJ)arch_intsimdmatrixavx2.$(OBJ): $(TESSERACTDIR)/src/arch/intsimdmatrixavx2.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSAVX2) $(TESSO_)arch_intsimdmatrixavx2.$(OBJ) $(C_) $(TESSERACTDIR)/src/arch/intsimdmatrixavx2.cpp
 
@@ -1079,6 +1082,7 @@ TESSERACT_OBJS_4=\
 	$(TESSOBJ)arch_intsimdmatrixavx2.$(OBJ)\
 	$(TESSOBJ)arch_dotproductfma.$(OBJ)\
 	$(TESSOBJ)arch_dotproductsse.$(OBJ)\
+	$(TESSOBJ)arch_dotproductneon.$(OBJ)\
 	$(TESSOBJ)arch_intsimdmatrixsse.$(OBJ)\
 	$(TESSOBJ)arch_intsimdmatrixneon.$(OBJ)
 
