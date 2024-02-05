@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2024 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -1001,17 +1001,15 @@ currentdict /.pdf_hook_DSC_Creator undef
   systemdict /ProvideUnicode .knownget not { //false } if or
   {
     currentglobal //true setglobal
-    systemdict /.setupUnicodeDecoder known {
-      /Unicode /Decoding resourcestatus {
-        pop pop
-        /Unicode /Decoding findresource
-        .setupUnicodeDecoder
-      } {
-        QUIET not {
-          (WARNING: /Unicode /Decoding resource is not accessible but it is useful for generating ToUnicode CMap.) =
-        } if
-      } ifelse
-    } if
+    /Unicode /Decoding resourcestatus {
+      pop pop
+      /Unicode /Decoding findresource
+      .setupUnicodeDecoder
+    } {
+      QUIET not {
+        (WARNING: /Unicode /Decoding resource is not accessible but it is useful for generating ToUnicode CMap.) =
+      } if
+    } ifelse
     setglobal
   } if
 } .internalbind .schedule_init
