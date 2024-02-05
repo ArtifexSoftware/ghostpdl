@@ -497,7 +497,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             fixed_colorant_names_list pcomp_names = pdevn_params->std_colorant_names;
 
             num_spot = pdevn_params->separations.num_separations;
-            if (num_spot + num_names > pdev->color_info.max_components) {
+            if (pdevn_params->num_std_colorant_names + num_spot + num_names > pdev->color_info.max_components) {
                 param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
                 return_error(gs_error_rangecheck);
             }
