@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2274,7 +2274,7 @@ stroke_add_compat(gx_path * ppath, gx_path *rpath, bool ensure_closed,
        and another one for line join or for the ending cap.
        Note CPSI creates negative contours. */
     const gx_line_params *pgs_lp = gs_currentlineparams_inline(pgs);
-    gs_fixed_point points[5];
+    gs_fixed_point points[6];
     int npoints;
     bool const moveto_first = true; /* Keeping this code closer to "stroke_add". */
     int code;
