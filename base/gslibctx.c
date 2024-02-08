@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -55,6 +55,8 @@
 #include "gsargs.h"
 #include "globals.h"
 
+#include "assert_.h"
+
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
 
@@ -101,6 +103,7 @@ gs_lib_ctx_set_icc_directory(const gs_memory_t *mem_gc, const char* pname,
         return gs_error_VMerror;
     }
     strcpy(result, pname);
+    assert(strlen(result) == dir_namelen);
     p_ctx->profiledir = result;
     p_ctx->profiledir_len = dir_namelen;
     return 0;

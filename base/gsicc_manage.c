@@ -650,6 +650,8 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     bool start = true;
     gsicc_cmm_t cmm = gsCMM_DEFAULT;
 
+    assert(strlen(pname) == namelen);
+
     /* If we don't have an icc manager or if this thing is already set
        then ignore the call.  For now, I am going to allow it to
        be set one time. */
@@ -897,6 +899,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
     int num_comps = 0;
     gsicc_colorbuffer_t default_space; /* Used to verify that we have the correct type */
 
+    assert(strlen(pname) == namelen);
     /* We need to check for the smask swapped profile condition.  If we are in
        that state, then any requests for setting the profile will be ignored.
        This is valid, since we are in the middle of drawing right now and this
@@ -1228,6 +1231,8 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
     char *buffer;
     stream* str;
 
+    assert(strlen(pname) == namelen);
+    assert(strlen(dirname) == dirlen);
     /* Check if we need to prepend the file name  */
     if ( dirname != NULL) {
         /* If this fails, we will still try the file by itself and with
@@ -1240,7 +1245,6 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
         if (buffer == NULL)
             return_error(gs_error_VMerror);
         memcpy(buffer, dirname, dirlen);
-        buffer[dirlen] = '\0';
         memcpy(buffer + dirlen, pname, namelen);
         /* Just to make sure we were null terminated */
         buffer[namelen + dirlen] = '\0';
@@ -2336,7 +2340,7 @@ gsicc_init_iccmanager(gs_gstate * pgs)
                 profile = NULL;
         }
         if (profile == NULL)
-            code = gsicc_set_profile(iccmanager, pname, namelen+1,
+            code = gsicc_set_profile(iccmanager, pname, namelen,
                                      default_profile_params[k].default_type);
         if (code < 0)
             return gs_rethrow(code, "cannot find default icc profile");
@@ -3033,7 +3037,7 @@ gs_setdefaultgrayicc(const gs_gstate * pgs, gs_param_string * pval)
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pgs->icc_manager,
-        (const char*) pname, namelen, DEFAULT_GRAY);
+        (const char*) pname, namelen-1, DEFAULT_GRAY);
     gs_free_object(mem, pname,
         "set_default_gray_icc");
     if (code < 0)
@@ -3060,7 +3064,7 @@ gs_currenticcdirectory(const gs_gstate * pgs, gs_param_string * pval)
         pval->persistent = true;
     } else {
         pval->data = (const byte *)(lib_ctx->profiledir);
-        pval->size = lib_ctx->profiledir_len - 1;
+        pval->size = lib_ctx->profiledir_len;
         pval->persistent = false;
     }
 }
@@ -3080,7 +3084,7 @@ gs_seticcdirectory(const gs_gstate * pgs, gs_param_string * pval)
             return gs_rethrow(gs_error_VMerror, "cannot allocate directory name");
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
-        if (gs_lib_ctx_set_icc_directory(mem, (const char*) pname, namelen) < 0) {
+        if (gs_lib_ctx_set_icc_directory(mem, (const char*) pname, namelen-1) < 0) {
             gs_free_object(mem, pname, "gs_seticcdirectory");
             return -1;
         }
@@ -3155,7 +3159,7 @@ gs_setdefaultrgbicc(const gs_gstate * pgs, gs_param_string * pval)
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pgs->icc_manager,
-        (const char*) pname, namelen, DEFAULT_RGB);
+        (const char*) pname, namelen-1, DEFAULT_RGB);
     gs_free_object(mem, pname,
         "set_default_rgb_icc");
     if (code < 0)
@@ -3195,7 +3199,7 @@ gs_setnamedprofileicc(const gs_gstate * pgs, gs_param_string * pval)
         memcpy(pname,pval->data,namelen-1);
         pname[namelen-1] = 0;
         code = gsicc_set_profile(pgs->icc_manager,
-            (const char*) pname, namelen, NAMED_TYPE);
+            (const char*) pname, namelen-1, NAMED_TYPE);
         gs_free_object(mem, pname,
                 "set_named_profile_icc");
         if (code < 0)
@@ -3235,7 +3239,7 @@ gs_setdefaultcmykicc(const gs_gstate * pgs, gs_param_string * pval)
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pgs->icc_manager,
-        (const char*) pname, namelen, DEFAULT_CMYK);
+        (const char*) pname, namelen-1, DEFAULT_CMYK);
     gs_free_object(mem, pname,
                 "set_default_cmyk_icc");
     if (code < 0)
@@ -3269,7 +3273,7 @@ gs_setlabicc(const gs_gstate * pgs, gs_param_string * pval)
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
     code = gsicc_set_profile(pgs->icc_manager,
-        (const char*) pname, namelen, LAB_TYPE);
+        (const char*) pname, namelen-1, LAB_TYPE);
     gs_free_object(mem, pname,
                 "set_lab_icc");
     if (code < 0)

@@ -1027,7 +1027,7 @@ FEATURE_DEVS=$(FEATURE_DEVS) $(PSD)msprinter.dev $(GLD)pipe.dev
 # See gs.mak for details.
 
 !ifndef COMPILE_INITS
-COMPILE_INITS=1
+COMPILE_INITS=0
 !endif
 
 # Choose whether to store band lists on files or in memory.
