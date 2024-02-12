@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3489,11 +3489,14 @@ pdf_text_process(gs_text_enum_t *pte)
                     gs_fixed_point subpix_origin = {0,0};
                     cached_fm_pair *pair;
                     cached_char *cc;
+                    gs_glyph glyph;
 
-                    code = gx_lookup_fm_pair(pfont, &ctm_only(pte->pgs), &log2_scale, false, &pair);
+                    code = gx_lookup_fm_pair(pfont, &char_tm_only(pte->pgs), &log2_scale, false, &pair);
                     if (code < 0)
                         return code;
-                    cc = gx_lookup_cached_char(pfont, pair, pte_default->text.data.chars[pte_default->index], wmode, 1, &subpix_origin);
+                    glyph = (*pte_default->encode_char)(pfont, pte_default->text.data.chars[pte_default->index],
+                                                      GLYPH_SPACE_NAME);
+                    cc = gx_lookup_cached_char(pfont, pair, glyph, wmode, 1, &subpix_origin);
                     if (cc != 0) {
                         gx_purge_selected_cached_chars(pfont->dir, pdf_query_purge_cached_char, (void *)cc);
                     }
