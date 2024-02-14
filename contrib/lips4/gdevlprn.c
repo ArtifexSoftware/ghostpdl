@@ -223,19 +223,19 @@ lprn_print_image(gx_device_printer * pdev, gp_file * fp)
     maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
 
     if (!(lprn->ImageBuf = gs_malloc(pdev->memory->non_gc_memory, bpl, maxY, "lprn_print_image(ImageBuf)"))) {
-        gs_note_error(gs_error_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto error;
     }
     if (!(lprn->TmpBuf = gs_malloc(pdev->memory->non_gc_memory, bpl, maxY, "lprn_print_iamge(TmpBuf)"))) {
-        gs_note_error(gs_error_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto error;
     }
     if (!(lprn->bubbleTbl = gs_malloc(pdev->memory->non_gc_memory, sizeof(Bubble *), maxBx, "lprn_print_image(bubbleTbl)"))) {
-        gs_note_error(gs_error_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto error;
     }
     if (!(bubbleBuffer = gs_malloc(pdev->memory->non_gc_memory, sizeof(Bubble), maxBx, "lprn_print_image(bubbleBuffer)"))){
-        gs_note_error(gs_error_VMerror);
+        code = gs_note_error(gs_error_VMerror);
         goto error;
     }
 
