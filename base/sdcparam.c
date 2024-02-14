@@ -86,29 +86,6 @@ static const byte inverse_natural_order[DCTSIZE2] =
 /* ================ Get parameters ================ */
 
 static int
-quant_param_string(gs_param_string * pstr, int count, const UINT16 * pvals,
-                   double QFactor, gs_memory_t * mem)
-{
-    byte *data;
-    int code = 0;
-    int i;
-
-    data = gs_alloc_string(mem, count, "quant_param_string");
-    if (data == 0)
-        return_error(gs_error_VMerror);
-    for (i = 0; i < count; ++i) {
-        double val = pvals[jpeg_inverse_order(i)] / QFactor;
-
-        data[i] =
-            (val < 1 ? (code = 1) : val > 255 ? (code = 255) : (byte) val);
-    }
-    pstr->data = data;
-    pstr->size = count;
-    pstr->persistent = true;
-    return code & 1;
-}
-
-static int
 quant_param_array(gs_param_float_array * pfa, int count, const UINT16 * pvals,
                   double QFactor, gs_memory_t * mem)
 {
@@ -198,7 +175,6 @@ s_DCT_get_quantization_tables(gs_param_list * plist,
         return code;
     for (i = 0; i < num_in_tables; ++i) {
         char key[3];
-        gs_param_string str;
         gs_param_float_array fa;
 
         gs_snprintf(key, sizeof(key), "%d", i);
