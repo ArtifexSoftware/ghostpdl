@@ -606,15 +606,14 @@ gsicc_remove_link(gsicc_link_t *link)
 {
     gsicc_link_t *curr, *prev;
     gsicc_link_cache_t *icc_link_cache = link->icc_link_cache;
-    const gs_memory_t *memory = link->memory;
 
-    if_debug2m(gs_debug_flag_icc, memory,
+    if_debug2m(gs_debug_flag_icc, link->memory,
                "[icc] Removing link = "PRI_INTPTR" memory = "PRI_INTPTR"\n",
-               (intptr_t)link, (intptr_t)memory);
+               (intptr_t)link, (intptr_t)link->memory);
     /* NOTE: link->ref_count must be 0: assert ? */
     gx_monitor_enter(icc_link_cache->lock);
     if (link->ref_count != 0) {
-      if_debug2m(gs_debug_flag_icc, memory, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n", (intptr_t)link, link->ref_count);
+      if_debug2m(gs_debug_flag_icc, link->memory, "link at "PRI_INTPTR" being removed, but has ref_count = %d\n", (intptr_t)link, link->ref_count);
     }
     curr = icc_link_cache->head;
     prev = NULL;
