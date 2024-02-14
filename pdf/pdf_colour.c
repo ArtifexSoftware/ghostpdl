@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2809,6 +2809,10 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
             if (((pdf_name *)ref_space)->length <= 0) {
                 pdfi_countdown(ref_space);
                 return_error(gs_error_syntaxerror);
+            }
+            if (((pdf_name *)ref_space)->length == name->length && memcmp(((pdf_name *)ref_space)->data, name->data, name->length) == 0) {
+                pdfi_countdown(ref_space);
+                return_error(gs_error_circular_reference);
             }
         }
 
