@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2024 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -29,7 +29,7 @@ UNIX_AUX_MAK=$(GLSRC)unix-aux.mak $(TOP_MAKEFILES)
 # Unix platforms other than System V, and also System V Release 4
 # (SVR4) platforms.
 unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_upapr.$(OBJ) $(GLOBJ)gp_unix.$(OBJ)\
-       $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdia.$(OBJ)\
+       $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_stdib.$(OBJ)\
        $(GLOBJ)gp_nxpsprn.$(OBJ) $(GLOBJ)gp_utf8.$(OBJ)
 
 $(GLGEN)unix_.dev: $(unix__) $(GLD)nosync.dev $(GLD)smd5.dev $(UNIX_AUX_MAK) $(MAKEDIRS)
@@ -46,13 +46,13 @@ $(AUX)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
 	$(GLCCAUX) $(AUXO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
 
 # assume all Unix platforms support unbuffered read
-$(GLOBJ)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+$(GLOBJ)gp_stdib.$(OBJ): $(GLSRC)gp_stdib.c $(AK)\
   $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
+	$(GLCC) $(GLO_)gp_stdib.$(OBJ) $(C_) $(GLSRC)gp_stdib.c
 
-$(AUX)gp_stdia.$(OBJ): $(GLSRC)gp_stdia.c $(AK)\
+$(AUX)gp_stdib.$(OBJ): $(GLSRC)gp_stdib.c $(AK)\
   $(stdio__h) $(time__h) $(unistd__h) $(gx_h) $(gp_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(GLCCAUX) $(AUXO_)gp_stdia.$(OBJ) $(C_) $(GLSRC)gp_stdia.c
+	$(GLCCAUX) $(AUXO_)gp_stdib.$(OBJ) $(C_) $(GLSRC)gp_stdib.c
 
 # -------------------------- Auxiliary programs --------------------------- #
 
@@ -81,7 +81,7 @@ $(GENHT_XE): $(GLSRC)genht.c $(AK) $(GENHT_DEPS) $(UNIX_AUX_MAK) $(MAKEDIRS)
 # So it's split into two targets, one using the zlib source directly.....
 MKROMFS_OBJS_0=$(MKROMFS_ZLIB_OBJS) $(AUX)gpmisc.$(OBJ) $(AUX)gp_getnv.$(OBJ) \
  $(AUX)gscdefs.$(OBJ) $(AUX)gp_unix.$(OBJ) $(AUX)gp_unifs.$(OBJ) $(AUX)gp_unifn.$(OBJ) \
- $(AUX)gp_stdia.$(OBJ) $(AUX)gsutil.$(OBJ) $(AUX)memento.$(OBJ)
+ $(AUX)gp_stdib.$(OBJ) $(AUX)gsutil.$(OBJ) $(AUX)memento.$(OBJ)
 
 $(MKROMFS_XE)_0: $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS_0) $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(CCAUX_) $(GENOPTAUX) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE)_0 $(MKROMFS_OBJS_0) $(AUXEXTRALIBS)
@@ -90,7 +90,7 @@ $(MKROMFS_XE)_0: $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS_0) $(UN
 MKROMFS_OBJS_1=$(AUX)gscdefs.$(OBJ) \
  $(AUX)gpmisc.$(OBJ) $(AUX)gp_getnv.$(OBJ) \
  $(AUX)gp_unix.$(OBJ) $(AUX)gp_unifs.$(OBJ) $(AUX)gp_unifn.$(OBJ) \
- $(AUX)gp_stdia.$(OBJ) $(AUX)gsutil.$(OBJ)
+ $(AUX)gp_stdib.$(OBJ) $(AUX)gsutil.$(OBJ)
 
 $(MKROMFS_XE)_1: $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS) $(MKROMFS_OBJS_1) $(UNIX_AUX_MAK) $(MAKEDIRS)
 	$(CCAUX_) $(GENOPTAUX) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLOBJ)$(_I) $(I_)$(ZSRCDIR)$(_I) $(GLSRC)mkromfs.c $(O_)$(MKROMFS_XE)_1 $(MKROMFS_OBJS_1) $(AUXEXTRALIBS)
