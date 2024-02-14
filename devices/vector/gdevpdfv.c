@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -889,6 +889,9 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
 
     if (from_array && pdev->CompatibilityLevel < 1.5 ) {
         float min_x, max_x, min_y, max_y, z;
+        int i = 0, j, num_points = 1, num_components = 1;
+        float c = 0;
+        float x, y;
 
         /*
          * Because of the Acrobat Reader limitation noted in gdevpdfx.h,
@@ -899,11 +902,6 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
         max_x = max_y = PDFA_MAX_MESH_COORDINATE;
 
         switch(ShadingType(psh)){
-            gs_fixed_point pts[16];
-            int i = 0, j, num_points = 1, num_components = 1;
-            float c = 0;
-            float x, y;
-
             case shading_type_Tensor_product_patch:
                     while ((flag = shade_next_flag(&cs, 0)) >= 0){
                         num_points = (flag == 0 ? 16 : 12);
