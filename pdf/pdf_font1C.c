@@ -3066,12 +3066,12 @@ pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pd
     tmp = NULL;
     code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
     if (code == 1) {
-        if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT) && (font->descflags & 4) == 0) {
+        if ((font->descflags & 4) != 0 && pdfi_type_of(tmp) == PDF_DICT) {
             code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & font->Encoding);
             if (code >= 0)
                 code = 1;
         }
-        else if (pdfi_type_of(tmp) == PDF_DICT && (font->descflags & 4) != 0) {
+        else if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT)) {
             code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
             if (code >= 0)
                 code = 1;
