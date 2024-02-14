@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -202,24 +202,6 @@ s_DCT_get_quantization_tables(gs_param_list * plist,
         gs_param_float_array fa;
 
         gs_snprintf(key, sizeof(key), "%d", i);
-        if (QFactor == 1.0) {
-            code = quant_param_string(&str, DCTSIZE2,
-                            table_ptrs[comp_info[i].quant_tbl_no]->quantval,
-                                      QFactor, mem);
-            switch (code) {
-                case 0:
-                    code = param_write_string(quant_tables.list, key, &str);
-                    if (code < 0)
-                        return code;	/* should dealloc */
-                    continue;
-                default:
-                    return code;	/* should dealloc */
-                case 1:
-                    break;
-            }
-            gs_free_const_string(mem, str.data, str.size,
-                                 "quant_param_string");
-        }
         code = quant_param_array(&fa, DCTSIZE2,
                             table_ptrs[comp_info[i].quant_tbl_no]->quantval,
                                  QFactor, mem);

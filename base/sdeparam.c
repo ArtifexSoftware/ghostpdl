@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -238,14 +238,12 @@ s_DCTE_put_params(gs_param_list * plist, stream_DCT_state * pdct)
             return code;
         case 1:
             /* No QuantTables, but maybe a QFactor to apply to default. */
-            if (pdct->QFactor != 1.0) {
-                code = gs_jpeg_set_linear_quality(pdct,
-                                             (int)(min(pdct->QFactor, 100.0)
-                                                   * 100.0 + 0.5),
-                                                  TRUE);
-                if (code < 0)
-                    return code;
-            }
+            code = gs_jpeg_set_linear_quality(pdct,
+                                         (int)(min(pdct->QFactor, 100.0)
+                                               * 100.0 + 0.5),
+                                              TRUE);
+            if (code < 0)
+                return code;
     }
     /* Change IJG colorspace defaults as needed;
      * set ColorTransform to what will go in the Adobe marker.
