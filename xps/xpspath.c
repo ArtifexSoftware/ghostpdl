@@ -1099,7 +1099,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
     bool opacity_pushed = false;
     bool uses_stroke = false;
 
-    gs_rect path_bbox = {0.0, 0.0, 0.0, 0.0};
+    gs_rect path_bbox = {{0.0, 0.0}, {0.0, 0.0}};
 
     gs_gsave(ctx->pgs);
 
@@ -1433,7 +1433,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
     if (navigate_uri_att)
         (void)pdfmark_link(ctx, navigate_uri_att, &path_bbox, samples);
-exit:
+
     gs_grestore(ctx->pgs);
     return 0;
 }
