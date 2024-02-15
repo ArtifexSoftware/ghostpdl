@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -223,6 +223,16 @@ static int pdfi_annot_position_AP(pdf_context *ctx, pdf_dict *annot, pdf_stream 
     if (code < 0) goto exit;
     code = pdfi_array_to_gs_rect(ctx, BBox, &bbox);
     if (code < 0) goto exit;
+
+    if (bbox.q.x - bbox.p.x == 0.0 || bbox.q.y - bbox.p.y == 0.0) {
+        /* If the Bounding Box has 0 width or height, then the scaling calculation below will
+         * end up with a division by zero, causing the CTM to go infinite.
+         * We handle the broken BBox elsewhere, so for now just discard it, preventing
+         * us breaking the CTM.
+         */
+        pdfi_countdown(BBox);
+        BBox = NULL;
+    }
 
     code = pdfi_dict_knownget_type(ctx, Annot_dict, "Matrix", PDF_ARRAY, (pdf_obj **)&Matrix);
     if (code < 0) goto exit;

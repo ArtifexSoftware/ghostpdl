@@ -2519,6 +2519,11 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     if (bbox.q.x - bbox.p.x == 0.0 || bbox.q.y - bbox.p.y == 0.0) {
         pdfi_set_warning(ctx, 0, NULL, W_PDF_FORM_CLIPPEDOUT, "pdfi_do_form", "");
         code = 0;
+        if (ctx->PreservePDFForm) {
+            code = pdfi_form_highlevel_begin(ctx, form_dict, &CTM, &bbox, &formmatrix);
+            if (code >= 0)
+                code = pdfi_form_highlevel_end(ctx);
+        }
         goto exit1;
     }
 
