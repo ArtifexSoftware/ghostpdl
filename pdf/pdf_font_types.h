@@ -87,7 +87,8 @@ typedef enum pdf_font_type_e {
     int64_t descflags; \
     pdf_obj *ToUnicode;            /* Name or stream (technically should be a stream, but we've seen Identity names */ \
     bool substitute; /* We need to know what a CIDFont is a substitute */ \
-    pdf_string *filename           /* If we read this from disk, this is the file it came from */
+    pdf_string *filename;          /* If we read this from disk, this is the file it came from */ \
+    font_proc_font_info((*default_font_info))
 
 #define pdf_font_common \
     pdf_font_base;\

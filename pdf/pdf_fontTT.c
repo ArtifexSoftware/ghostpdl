@@ -409,7 +409,10 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     pfont->procs.decode_glyph = pdfi_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
-    pfont->procs.font_info = gs_default_font_info;
+
+    ttfont->default_font_info = gs_default_font_info;
+    pfont->procs.font_info = pdfi_default_font_info;
+
     pfont->procs.glyph_info = gs_default_glyph_info;
     pfont->procs.glyph_outline = gs_no_glyph_outline;
     pfont->procs.build_char = NULL;

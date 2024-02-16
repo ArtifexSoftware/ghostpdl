@@ -235,7 +235,7 @@ static void pdfi_print_cstring(pdf_context *ctx, const char *str)
 /* Call with a CIDFont name to try to find the CIDFont on disk
    call if with ffname NULL to load the default fallback CIDFont
    substitue
-   Currently only loads subsitute - DroidSansFallback
+   Currently only loads substitute - DroidSansFallback
  */
 static int
 pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *fontdesc, bool fallback, byte ** buf, int64_t * buflen, int *findex)
@@ -2411,6 +2411,28 @@ int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font
             xvalues[3] = pfont->UID.id;
 
         uid_set_XUID(&pfont->UID, xvalues, xuidlen);
+    }
+    return 0;
+}
+
+int pdfi_default_font_info(gs_font *font, const gs_point *pscale, int members, gs_font_info_t *info)
+{
+    pdf_font *pdff = (pdf_font *)font->client_data;
+    int code;
+
+    /* We *must* call this first as it sets info->members = 0; */
+    code = pdff->default_font_info(font, pscale, members, info);
+    if (code < 0)
+        return code;
+    if ((members & FONT_INFO_EMBEDDED) != 0) {
+        if (pdff->pdfi_font_type == e_pdf_font_type3) {
+            info->FontEmbedded = (int)(true);
+            info->members |= FONT_INFO_EMBEDDED;
+        }
+        else {
+            info->FontEmbedded = (int)(pdff->substitute == font_embedded);
+            info->members |= FONT_INFO_EMBEDDED;
+        }
     }
     return 0;
 }

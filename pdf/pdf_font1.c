@@ -494,7 +494,10 @@ pdfi_t1_font_set_procs(pdf_context *ctx, pdf_font_type1 *font)
     pfont->procs.decode_glyph = pdfi_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
-    pfont->procs.font_info = gs_default_font_info;
+
+    font->default_font_info = gs_default_font_info;
+    pfont->procs.font_info = pdfi_default_font_info;
+
     pfont->procs.glyph_info = pdfi_t1_glyph_info;
     pfont->procs.glyph_outline = pdfi_t1_glyph_outline;
     pfont->procs.same_font = gs_default_same_font;

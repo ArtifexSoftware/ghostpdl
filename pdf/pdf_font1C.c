@@ -2107,7 +2107,10 @@ pdfi_alloc_cff_cidfont(pdf_context *ctx, pdf_cidfont_type0 ** font, uint32_t obj
     pfont->procs.decode_glyph = pdfi_cidfont_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
-    pfont->procs.font_info = gs_default_font_info;
+
+    cffcidfont->default_font_info = gs_default_font_info;
+    pfont->procs.font_info = pdfi_default_font_info;
+
     pfont->procs.glyph_info = gs_default_glyph_info;
     pfont->procs.glyph_outline = pdfi_cff_glyph_outline;
     pfont->procs.build_char = NULL;
@@ -2191,7 +2194,10 @@ pdfi_alloc_cff_font(pdf_context *ctx, pdf_font_cff ** font, uint32_t obj_num, bo
     pfont->procs.decode_glyph = pdfi_decode_glyph;
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = gs_no_make_font;
-    pfont->procs.font_info = gs_default_font_info;
+
+    cfffont->default_font_info = gs_default_font_info;
+    pfont->procs.font_info = pdfi_default_font_info;
+
     pfont->procs.glyph_info = gs_default_glyph_info;
     pfont->procs.glyph_outline = pdfi_cff_glyph_outline;
     pfont->procs.build_char = NULL;
@@ -2266,8 +2272,10 @@ pdfi_init_cff_font_priv(pdf_context *ctx, pdfi_gs_cff_font_priv *cffpriv,
     cffpriv->procs.glyph_name = ctx->get_glyph_name;
     cffpriv->procs.decode_glyph = pdfi_decode_glyph;
     cffpriv->procs.define_font = gs_no_define_font;
-    cffpriv->procs.make_font = gs_no_make_font;
-    cffpriv->procs.font_info = gs_default_font_info;
+
+    cffpriv->pdfcffpriv.default_font_info = gs_default_font_info;
+    cffpriv->procs.font_info = pdfi_default_font_info;
+
     cffpriv->procs.glyph_info = gs_default_glyph_info;
     cffpriv->procs.glyph_outline = pdfi_cff_glyph_outline;
     cffpriv->procs.build_char = NULL;

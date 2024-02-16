@@ -156,7 +156,10 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
     t3font->pfont->procs.decode_glyph = pdfi_decode_glyph;
     t3font->pfont->procs.define_font = gs_no_define_font;
     t3font->pfont->procs.make_font = gs_no_make_font;
-    t3font->pfont->procs.font_info = gs_default_font_info;
+
+    t3font->default_font_info = gs_default_font_info;
+    t3font->pfont->procs.font_info = pdfi_default_font_info;
+
     t3font->pfont->procs.glyph_info = gs_default_glyph_info;
     t3font->pfont->procs.glyph_outline = gs_no_glyph_outline;
     t3font->pfont->procs.encode_char = pdfi_encode_char;
