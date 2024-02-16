@@ -1443,7 +1443,7 @@ pdfi_cff_build_encoding(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv, cff_fon
         code = pdfi_name_alloc(ctx, (byte *) enctouse, strlen(enctouse), (pdf_obj **) &enm);
         if (code >= 0) {
             pdfi_countup(enm);
-            code = pdfi_create_Encoding(ctx, (pdf_obj *) enm, NULL, (pdf_obj **) &font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_font *)font, (pdf_obj *) enm, NULL, (pdf_obj **) &font->Encoding);
             pdfi_countdown(enm);
         }
     }
@@ -2116,8 +2116,8 @@ pdfi_alloc_cff_cidfont(pdf_context *ctx, pdf_cidfont_type0 ** font, uint32_t obj
 
     pfont->cidata.glyph_data = pdfi_cff_cid_glyph_data;
 
-    pfont->encoding_index = 1;          /****** WRONG ******/
-    pfont->nearest_encoding_index = 1;          /****** WRONG ******/
+    pfont->encoding_index = ENCODING_INDEX_UNKNOWN;
+    pfont->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
 
     pfont->client_data = (void *)cffcidfont;
 
@@ -2206,8 +2206,8 @@ pdfi_alloc_cff_font(pdf_context *ctx, pdf_font_cff ** font, uint32_t obj_num, bo
     pfont->data.interpret = gs_type2_interpret;
     pfont->data.lenIV = -1;
 
-    pfont->encoding_index = 1;          /****** WRONG ******/
-    pfont->nearest_encoding_index = 1;          /****** WRONG ******/
+    pfont->encoding_index = ENCODING_INDEX_UNKNOWN;
+    pfont->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
 
     pfont->client_data = (void *)cfffont;
 
@@ -2228,6 +2228,8 @@ pdfi_init_cff_font_priv(pdf_context *ctx, pdfi_gs_cff_font_priv *cffpriv,
     cffpriv->pdfcffpriv.ctx = ctx;
     cffpriv->pdfcffpriv.type = PDF_FONT;
     cffpriv->pdfcffpriv.pdfi_font_type = e_pdf_font_cff;
+    cffpriv->client_data = (void *)(&cffpriv->pdfcffpriv);
+    cffpriv->pdfcffpriv.pfont = (gs_font_base *)cffpriv;
     /* Dummy value for dummy object */
     cffpriv->pdfcffpriv.refcnt = 0xf0f0f0f0;
     cffpriv->pdfcffpriv.cffdata = buf;
@@ -2280,8 +2282,8 @@ pdfi_init_cff_font_priv(pdf_context *ctx, pdfi_gs_cff_font_priv *cffpriv,
     cffpriv->type1data.interpret = gs_type2_interpret;
     cffpriv->type1data.lenIV = -1;
 
-    cffpriv->encoding_index = 1;          /****** WRONG ******/
-    cffpriv->nearest_encoding_index = 1;          /****** WRONG ******/
+    cffpriv->encoding_index = ENCODING_INDEX_UNKNOWN;
+    cffpriv->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
 }
 
 int
@@ -2805,7 +2807,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     code = gs_error_undefined;
                 if (code == 1) {
                     if ((cfffont->descflags & 4) != 0 && pdfi_type_of(tmp) == PDF_DICT) {
-                        code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)cffpriv.pdfcffpriv.Encoding, (pdf_obj **) &cfffont->Encoding);
+                        code = pdfi_create_Encoding(ctx, (pdf_font *)cfffont, tmp, (pdf_obj *)cffpriv.pdfcffpriv.Encoding, (pdf_obj **) &cfffont->Encoding);
                         if (code >= 0) {
                             pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
                             cffpriv.pdfcffpriv.Encoding = NULL;
@@ -2813,7 +2815,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                         }
                     }
                     else if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT)) {
-                        code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) &cfffont->Encoding);
+                        code = pdfi_create_Encoding(ctx, (pdf_font *)cfffont, tmp, NULL, (pdf_obj **) &cfffont->Encoding);
                         if (code >= 0) {
                             pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
                             cffpriv.pdfcffpriv.Encoding = NULL;
@@ -2836,6 +2838,8 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 if (code <= 0) {
                     cfffont->Encoding = cffpriv.pdfcffpriv.Encoding;
                     cffpriv.pdfcffpriv.Encoding = NULL;
+                    cfffont->pfont->encoding_index = cffpriv.encoding_index;
+                    cfffont->pfont->nearest_encoding_index = cffpriv.nearest_encoding_index;
                 }
 
                 /* Since the underlying font stream can be shared between font descriptors,
@@ -3067,12 +3071,12 @@ pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pd
     code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
     if (code == 1) {
         if ((font->descflags & 4) != 0 && pdfi_type_of(tmp) == PDF_DICT) {
-            code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_font *)font, tmp, NULL, (pdf_obj **) & font->Encoding);
             if (code >= 0)
                 code = 1;
         }
         else if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT)) {
-            code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_font *)font, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
             if (code >= 0)
                 code = 1;
         }

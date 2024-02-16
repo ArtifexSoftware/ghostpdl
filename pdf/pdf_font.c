@@ -1593,6 +1593,46 @@ int pdfi_free_font(pdf_obj *font)
     return 0;
 }
 
+/* Assumes Encoding is an array, and parameters *ind and *near_ind set to ENCODING_INDEX_UNKNOWN */
+static void
+pdfi_gs_simple_font_encoding_indices(pdf_context *ctx, pdf_array *Encoding, gs_encoding_index_t *ind, gs_encoding_index_t *near_ind)
+{
+    uint esize = Encoding->size;
+    uint best = esize / 3;	/* must match at least this many */
+    int i, index, near_index = ENCODING_INDEX_UNKNOWN, code;
+
+    for (index = 0; index < NUM_KNOWN_REAL_ENCODINGS; ++index) {
+        uint match = esize;
+
+        for (i = esize; --i >= 0;) {
+            gs_const_string rstr;
+            pdf_name *ename;
+
+            code = pdfi_array_get_type(ctx, Encoding, (uint64_t)i, PDF_NAME, (pdf_obj **)&ename);
+            if (code < 0) {
+                return;
+            }
+
+            gs_c_glyph_name(gs_c_known_encode((gs_char)i, index), &rstr);
+            if (rstr.size == ename->length &&
+                !memcmp(rstr.data, ename->data, rstr.size)
+                )
+                continue;
+            if (--match <= best)
+                break;
+        }
+        if (match > best) {
+            best = match;
+            near_index = index;
+            /* If we have a perfect match, stop now. */
+            if (best == esize)
+                break;
+        }
+    }
+    if (best == esize) *ind = index;
+    *near_ind = near_index;
+}
+
 static inline int pdfi_encoding_name_to_index(pdf_name *name)
 {
     int ind = gs_error_undefined;
@@ -1620,7 +1660,7 @@ static inline int pdfi_encoding_name_to_index(pdf_name *name)
  * Routine to fill in an array with each of the glyph names from a given
  * 'standard' Encoding.
  */
-static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Encoding)
+static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Encoding, gs_encoding_index_t *ind)
 {
     int i, code = 0;
     unsigned char gs_encoding;
@@ -1634,6 +1674,7 @@ static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Enco
     code = pdfi_encoding_name_to_index(name);
     if (code < 0)
         return code;
+    if (ind != NULL) *ind = (gs_encoding_index_t)code;
     gs_encoding = (unsigned char)code;
     code = 0;
 
@@ -1661,9 +1702,10 @@ static int pdfi_build_Encoding(pdf_context *ctx, pdf_name *name, pdf_array *Enco
  * from a Type 1 font. We then get the Differences array from the dictionary and use that to
  * refine the Encoding.
  */
-int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_Encoding, pdf_obj **Encoding)
+int pdfi_create_Encoding(pdf_context *ctx, pdf_font *ppdffont, pdf_obj *pdf_Encoding, pdf_obj *font_Encoding, pdf_obj **Encoding)
 {
     int code = 0, i;
+    gs_encoding_index_t encoding_index = ENCODING_INDEX_UNKNOWN, nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
 
     code = pdfi_array_alloc(ctx, 256, (pdf_array **)Encoding);
     if (code < 0)
@@ -1672,12 +1714,13 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
 
     switch (pdfi_type_of(pdf_Encoding)) {
         case PDF_NAME:
-            code = pdfi_build_Encoding(ctx, (pdf_name *)pdf_Encoding, (pdf_array *)*Encoding);
+            code = pdfi_build_Encoding(ctx, (pdf_name *)pdf_Encoding, (pdf_array *)*Encoding, &encoding_index);
             if (code < 0) {
                 pdfi_countdown(*Encoding);
                 *Encoding = NULL;
                 return code;
             }
+            nearest_encoding_index = encoding_index;
             break;
         case PDF_DICT:
         {
@@ -1734,7 +1777,7 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
                     pdfi_countup(n);
                 }
 
-                code = pdfi_build_Encoding(ctx, n, (pdf_array *)*Encoding);
+                code = pdfi_build_Encoding(ctx, n, (pdf_array *)*Encoding, NULL);
                 if (code < 0) {
                     pdfi_countdown(*Encoding);
                     *Encoding = NULL;
@@ -1780,12 +1823,18 @@ int pdfi_create_Encoding(pdf_context *ctx, pdf_obj *pdf_Encoding, pdf_obj *font_
                 *Encoding = NULL;
                 return code;
             }
+            if (ppdffont != NULL) /* No sense doing this if we can't record the result */
+                pdfi_gs_simple_font_encoding_indices(ctx, (pdf_array *)(*Encoding), &encoding_index, &nearest_encoding_index);
             break;
         }
         default:
             pdfi_countdown(*Encoding);
             *Encoding = NULL;
             return gs_note_error(gs_error_typecheck);
+    }
+    if (ppdffont != NULL) {
+        ppdffont->pfont->encoding_index = encoding_index;
+        ppdffont->pfont->nearest_encoding_index = nearest_encoding_index;
     }
     return 0;
 }

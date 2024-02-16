@@ -307,8 +307,8 @@ pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid
     pfont->procs.same_font = gs_default_same_font;
     pfont->procs.enumerate_glyph = gs_no_enumerate_glyph;
 
-    pfont->encoding_index = 1;          /****** WRONG ******/
-    pfont->nearest_encoding_index = 1;          /****** WRONG ******/
+    pfont->encoding_index = ENCODING_INDEX_UNKNOWN;
+    pfont->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
 
     cid_system_info_set_null(&pfont->cidata.common.CIDSystemInfo);
     pfont->cidata.common.CIDCount = 0; /* set later */

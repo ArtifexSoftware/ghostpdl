@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -416,8 +416,8 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     pfont->procs.same_font = gs_default_same_font;
     pfont->procs.enumerate_glyph = gs_no_enumerate_glyph;
 
-    pfont->encoding_index = -1;          /****** WRONG ******/
-    pfont->nearest_encoding_index = -1;          /****** WRONG ******/
+    pfont->encoding_index = ENCODING_INDEX_UNKNOWN;
+    pfont->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
 
     pfont->client_data = (void *)ttfont;
 
@@ -560,7 +560,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         descflags |= 4;
     }
 
-    code = pdfi_create_Encoding(ctx, obj, NULL, (pdf_obj **)&font->Encoding);
+    code = pdfi_create_Encoding(ctx, (pdf_font *)font, obj, NULL, (pdf_obj **)&font->Encoding);
     /* If we get an error, and the font is non-symbolic, return the error */
     if (code < 0 && (descflags & 4) == 0)
         goto error;
@@ -630,7 +630,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
             else
                 goto error;
             pdfi_countdown(font->Encoding);
-            code = pdfi_create_Encoding(ctx, obj, NULL, (pdf_obj **)&font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_font *)font, obj, NULL, (pdf_obj **)&font->Encoding);
             if (code < 0)
                 goto error;
             pdfi_countdown(obj);
@@ -821,10 +821,10 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
     code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
     if (code == 1) {
         if ((pdfi_type_of(tmp) == PDF_NAME || pdfi_type_of(tmp) == PDF_DICT) && (font->descflags & 4) == 0) {
-            code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_font *)font, tmp, NULL, (pdf_obj **) & font->Encoding);
         }
         else if (pdfi_type_of(tmp) == PDF_DICT && (font->descflags & 4) != 0) {
-            code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_font *)font, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
         }
         else {
             code = gs_error_undefined;

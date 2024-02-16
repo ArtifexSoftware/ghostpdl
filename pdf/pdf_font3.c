@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -170,8 +170,8 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
     t3font->pfont->InBetweenSize = fbit_use_bitmaps;
     t3font->pfont->TransformedChar = fbit_transform_bitmaps;
 
-    t3font->pfont->encoding_index = 1;          /****** WRONG ******/
-    t3font->pfont->nearest_encoding_index = 1;          /****** WRONG ******/
+    t3font->pfont->encoding_index = ENCODING_INDEX_UNKNOWN;
+    t3font->pfont->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
 
     t3font->pfont->client_data = (void *)t3font;
     t3font->pfont->id = gs_next_ids(ctx->memory, 1);
@@ -268,7 +268,7 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto font3_error;
 
-    code = pdfi_create_Encoding(ctx, obj, NULL, (pdf_obj **)&font->Encoding);
+    code = pdfi_create_Encoding(ctx, (pdf_font *)font, obj, NULL, (pdf_obj **)&font->Encoding);
     if (code < 0)
         goto font3_error;
     pdfi_countdown(obj);

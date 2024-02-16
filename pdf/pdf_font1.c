@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -471,8 +471,8 @@ pdfi_alloc_t1_font(pdf_context *ctx, pdf_font_type1 **font, uint32_t obj_num)
     pfont->id = gs_next_ids(ctx->memory, 1);
     uid_set_UniqueID(&pfont->UID, pfont->id);
 
-    pfont->encoding_index = 1;          /****** WRONG ******/
-    pfont->nearest_encoding_index = 1;          /****** WRONG ******/
+    pfont->encoding_index = ENCODING_INDEX_UNKNOWN;
+    pfont->nearest_encoding_index = ENCODING_INDEX_UNKNOWN;
 
     pfont->client_data = (void *)t1font;
 
@@ -658,12 +658,12 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
                     pdfi_countup(t1f->Encoding);
                 }
                 else if (pdfi_type_of(tmp) == PDF_DICT && (t1f->descflags & 4) != 0) {
-                    code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)fpriv.u.t1.Encoding, (pdf_obj **) & t1f->Encoding);
+                    code = pdfi_create_Encoding(ctx, (pdf_font *)t1f, tmp, (pdf_obj *)fpriv.u.t1.Encoding, (pdf_obj **) & t1f->Encoding);
                     if (code >= 0)
                         code = 1;
                 }
                 else {
-                    code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & t1f->Encoding);
+                    code = pdfi_create_Encoding(ctx, (pdf_font *)t1f, tmp, NULL, (pdf_obj **) & t1f->Encoding);
                     if (code >= 0)
                         code = 1;
                 }
@@ -889,12 +889,12 @@ pdfi_copy_type1_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, 
             pdfi_countup(font->Encoding);
         }
         else if (pdfi_type_of(tmp) == PDF_DICT && (font->descflags & 4) != 0) {
-            code = pdfi_create_Encoding(ctx, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_font *)font, tmp, (pdf_obj *)spdffont->Encoding, (pdf_obj **) &font->Encoding);
             if (code >= 0)
                 code = 1;
         }
         else {
-            code = pdfi_create_Encoding(ctx, tmp, NULL, (pdf_obj **) & font->Encoding);
+            code = pdfi_create_Encoding(ctx, (pdf_font *)font, tmp, NULL, (pdf_obj **) & font->Encoding);
             if (code >= 0)
                 code = 1;
         }
