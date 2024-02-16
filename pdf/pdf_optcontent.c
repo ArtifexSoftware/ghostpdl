@@ -573,7 +573,7 @@ int pdfi_op_DP(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
 
     objarray[0] = ctx->stack_top[-2];
     pdfi_countup(objarray[0]);
-    o = ctx->stack_top[-2];
+    o = ctx->stack_top[-1];
     pdfi_countup(o);
     pdfi_pop(ctx, 2); /* pop args */
 
