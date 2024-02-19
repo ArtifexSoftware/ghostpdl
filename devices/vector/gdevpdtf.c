@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -745,8 +745,10 @@ pdf_font_resource_font(const pdf_font_resource_t *pdfont, bool complete)
 static bool
 font_is_symbolic(const gs_font *font)
 {
-    if (font->FontType == ft_composite)
-        return true;		/* arbitrary */
+    if (font->FontType == ft_composite || font->FontType == ft_CID_encrypted ||
+        font->FontType == ft_CID_user_defined || font->FontType == ft_CID_TrueType ||
+        font->FontType == ft_CID_bitmap)
+        return false;		/* arbitrary */
     switch (((const gs_font_base *)font)->nearest_encoding_index) {
     case ENCODING_INDEX_STANDARD:
     case ENCODING_INDEX_ISOLATIN1:
@@ -820,7 +822,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
     gs_font_info_t info;
 
     memset(&info, 0x00, sizeof(gs_font_info_t));
-    code = font->procs.font_info(font, NULL, FONT_INFO_EMBEDDING_RIGHTS, &info);
+    code = font->procs.font_info(font, NULL, FONT_INFO_EMBEDDING_RIGHTS | FONT_INFO_EMBEDDED, &info);
     if (code == 0 && (info.members & FONT_INFO_EMBEDDING_RIGHTS)) {
         if (((info.EmbeddingRights == 0x0002) || (info.EmbeddingRights & 0x0200))
             && !IsInWhiteList ((const char *)chars, size)) {
@@ -873,10 +875,17 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
              (embed_as_standard_called = true,
               (do_embed_as_standard = embed_as_standard(pdev, font, index, pairs, num_glyphs)))))
         /* Ignore NeverEmbed for a non-standard font with a standard name */
-        ) {
-        if (pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
-            embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
-            return FONT_EMBED_YES;
+        )
+    {
+        if (embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
+                return FONT_EMBED_YES;
+        if (pdev->params.EmbedAllFonts) {
+            if (!(info.members & FONT_INFO_EMBEDDED) || info.FontEmbedded)
+                return FONT_EMBED_YES;
+        } else {
+            if (font_is_symbolic(font))
+                return FONT_EMBED_YES;
+        }
     }
     if (index >= 0 &&
         (embed_as_standard_called ? do_embed_as_standard :
