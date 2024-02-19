@@ -428,11 +428,14 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
     return 0;
 }
 
-static int pdfi_set_type42_data_procs(gs_font_type42 *pfont)
+static void pdfi_set_type42_custom_procs(pdf_font_truetype *pdfttfont)
 {
+    gs_font_type42 *pfont = (gs_font_type42 *)pdfttfont->pfont;
+
+    pdfttfont->default_font_info = pfont->procs.font_info;
+    pfont->procs.font_info = pdfi_default_font_info;
     pfont->data.get_glyph_index = pdfi_type42_get_glyph_index;
     pfont->procs.enumerate_glyph = pdfi_ttf_enumerate_glyph;
-    return 0;
 }
 
 int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *buf, int64_t buflen, int findex, pdf_font **ppdffont)
@@ -578,10 +581,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         goto error;
     }
 
-    code = pdfi_set_type42_data_procs((gs_font_type42 *)font->pfont);
-    if (code < 0) {
-        goto error;
-    }
+    pdfi_set_type42_custom_procs(font);
 
     /* We're probably dead in the water without cmap tables, but make sure, for safety */
     /* This is a horrendous morass of guesses at what Acrobat does with files that contravene

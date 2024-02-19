@@ -236,6 +236,13 @@ pdfi_cidtype2_enumerate_glyph(gs_font *font, int *pindex,
     return code;
 }
 
+static void pdfi_set_cidtype2_custom_procs(pdf_cidfont_type2 *pdfttfont)
+{
+    gs_font_type42 *pfont = (gs_font_type42 *)pdfttfont->pfont;
+    pdfttfont->default_font_info = pfont->procs.font_info;
+    pfont->procs.font_info = pdfi_default_font_info;
+}
+
 static int
 pdfi_alloc_cidtype2_font(pdf_context *ctx, pdf_cidfont_type2 **font, bool is_cid)
 {
@@ -492,6 +499,8 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     if (code < 0) {
         goto error;
     }
+    pdfi_set_cidtype2_custom_procs(font);
+
     if (uid_is_XUID(&font->pfont->UID))
         uid_free(&font->pfont->UID, font->pfont->memory, "pdfi_read_type1_font");
     uid_set_invalid(&font->pfont->UID);
