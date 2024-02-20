@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -775,7 +775,7 @@ const gx_device_cmykog gs_psdcmykog_device =
   /* device specific parameters */
   { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
     DevCMYKOGComponents,      /* Names of color model colorants */
-    4,                        /* Number colorants for CMYK */
+    6,                        /* Number colorants for CMYKOG */
     6,                        /* MaxSeparations */
     -1,                       /* PageSpotColors has not been specified */
     {0},                      /* SeparationNames */
