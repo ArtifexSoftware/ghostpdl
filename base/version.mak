@@ -17,7 +17,7 @@
 
 # Major, minor and patch version numbers.
 GS_VERSION_MAJOR=10
-GS_VERSION_MINOR=03
+GS_VERSION_MINOR=04
 GS_VERSION_PATCH=0
 # Revision date: year x 10000 + month x 100 + day.
 GS_REVISIONDATE=20240220
