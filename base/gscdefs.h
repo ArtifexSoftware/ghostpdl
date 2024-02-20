@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -36,7 +36,7 @@
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-        "Copyright (C) 2023 Artifex Software, Inc.  All rights reserved."
+        "Copyright (C) 2024 Artifex Software, Inc.  All rights reserved."
 #endif
 
 #ifndef GS_PRODUCTFAMILY
@@ -46,7 +46,7 @@
 
 #ifndef GS_PRODUCT
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY ""
+        GS_PRODUCTFAMILY " GIT PRERELEASE"
 #endif
 
 /* Prototypes for configuration definitions in gconfig.c. */
