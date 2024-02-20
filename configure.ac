@@ -3140,7 +3140,8 @@ case $host in
       PDL_DYNAMIC_LDFLAGS="-dynamiclib -install_name $DARWIN_LDFLAGS_SO_PREFIX\$(GPDL_SONAME_MAJOR)"
       PDF_DYNAMIC_LDFLAGS="-dynamiclib -install_name $DARWIN_LDFLAGS_SO_PREFIX\$(PDF_SONAME_MAJOR)"
       DYNAMIC_LIBS=""
-      SO_LIB_EXT=".dylib"
+      SO_LIB_EXT=""
+      DLL_EXT=".dylib"
     ;;
     *-sun*|*-solaris*)
       if test x"$GCC" = x"yes"; then
