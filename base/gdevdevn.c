@@ -497,10 +497,6 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             fixed_colorant_names_list pcomp_names = pdevn_params->std_colorant_names;
 
             num_spot = pdevn_params->separations.num_separations;
-            if (pdevn_params->num_std_colorant_names + num_spot + num_names > pdev->color_info.max_components) {
-                param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
-                return_error(gs_error_rangecheck);
-            }
             for (i = 0; i < num_names; i++) {
                 /* Verify that the name is not one of our process colorants */
                 if (!check_process_color_names(pcomp_names, &scna.data[i])) {
@@ -525,6 +521,10 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     num_spot++;
                     num_spot_changed = true;
                 }
+            }
+            if (pdevn_params->num_std_colorant_names + num_spot > pdev->color_info.max_components) {
+                param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
+                return_error(gs_error_rangecheck);
             }
 
             for (i = pdevn_params->separations.num_separations; i < num_spot; i++)
