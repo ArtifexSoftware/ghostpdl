@@ -187,6 +187,19 @@ check_process_color_names(fixed_colorant_names_list plist,
     return false;
 }
 
+static int count_process_color_names(fixed_colorant_names_list plist)
+{
+    int count = 0;
+
+    if (plist) {
+        while( *plist){
+            count++;
+            plist++;
+        }
+    }
+    return count;
+}
+
 /* Check only the separation names */
 int
 check_separation_names(const gx_device * dev, const gs_devn_params * pparams,
@@ -493,7 +506,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
          * match the process color model colorant names for the device.
          */
         if (scna.data != 0) {
-            int num_names = scna.size;
+            int num_names = scna.size, num_std_names = 0;
             fixed_colorant_names_list pcomp_names = pdevn_params->std_colorant_names;
 
             num_spot = pdevn_params->separations.num_separations;
@@ -522,7 +535,18 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                     num_spot_changed = true;
                 }
             }
-            if (pdevn_params->num_std_colorant_names + num_spot > pdev->color_info.max_components) {
+            /* You would expect that pdevn_params->num_std_colorant_names would have this value but it does not.
+             * That appears to be copied from the 'ncomps' of the device and that has to be the number of components
+             * in the 'base' colour model, 1, 3 or 4 for Gray, RGB or CMYK. Other kinds of DeviceN devices can have
+             * additional standard names, eg Tags, or Artifex Orange and Artifex Green, but these are not counted in
+             * the num_std_colorant_names. They are, however, listed in pdevn_params->std_colorant_names (when is a
+             * std_colorant_name not a std_colorant_name ?), which is checked above to see if a SeparationOrder name is one
+             * of the inks we are already dealing with. If it is, then we *don't* add it to num_spots.
+             * So we need to actually count the number of colorants in std_colorant_names to make sure that we
+             * don't exceed the maximum number of components.
+             */
+            num_std_names = count_process_color_names(pcomp_names);
+            if (num_std_names + num_spot > pdev->color_info.max_components) {
                 param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
                 return_error(gs_error_rangecheck);
             }
