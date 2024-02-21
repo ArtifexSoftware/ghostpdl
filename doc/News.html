@@ -11,9 +11,14 @@
 <li>
 <p>As of this release (10.03.0) pdfwrite creates PDF files with XRef streams and
 ObjStm streams. This can result in considerably smaller PDF output files.
+See <a href="https://ghostscript.readthedocs.io/en/latest/VectorDevices.html">Vector Devices</a> for more details.
 </li>
 <li>
 <p>Ghostscript/pdfwrite now supports passing through PDF "Optional Content".
+</li>
+<li>
+<p>Ghostscript/pdfwrite &quot;EmbedAllFonts&quot; behaviour has been revised,
+see <a href="https://ghostscript.readthedocs.io/en/latest/VectorDevices.html">Vector Devices</a> for more details.
 </li>
 <li>
 <p>Our efforts in code hygiene and maintainability continue.
@@ -36,11 +41,30 @@ community demand for the feature.
 </ul>
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
-<h3><a name="9.55.0_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="10.03.0_Incompatible_changes"></a>Incompatible changes</h3>
 <h4>Included below are incompatible changes from recent releases (the
 specific release in question is listed in parentheses). We include these,
 for now, as we are aware that not everyone upgrades with every release.</h4>
 <ul>
+<li>
+<p>(10.03.0) Almost all the &quot;internal&quot; PostScript procedures defined
+during the interpreter startup are now &quot;executeonly&quot;, further reducing
+the attack surface of the interpreter.
+<p>The nature of these procedures means there should be no impact for legitimate
+usage, but it is possible it will impact uses which abuse the previous accessibility
+(even for legitimate reasons). Such cases may now require &quot;DELAYBIND&quot;,
+See <a href="https://ghostscript.readthedocs.io/en/latest/Use.html#ddelaybind">DELAYBIND</a>
+</li>
+<li>
+<p>(10.03.0) The &quot;makeimagedevice&quot; non-standard operator has been removed. It allowed
+low level access to the graphics library in a way that was, essentially impossible to secure.
+</li>
+<li>
+<p>(10.03.0) The &quot;putdeviceprops&quot;, &quot;getdeviceprops&quot;, &quot;finddevice&quot;,
+&quot;copydevice&quot;, &quot;findprotodevice&quot; non-standard operators have all been removed.
+They provided functionality that is either accessible through standard operators, or should not
+be used by user PostScript.
+</li>
 <li>
 <p>(10.03.0) The process of &quot;tidying&quot; the PostScript namespace should have removed
 only non-standard and undocumented operators. Nevertheless, it is possible that
@@ -99,7 +123,7 @@ in that it now supports (although does not enforce) case sensitivity.
 (History9.html had reached 8.1Mb!), we intend to only include the summary highlights (above).
 <p>For anyone wanting the full details of the changes in
 a release, we ask them to look at the history in our public git repository:
-<a href="https://git.ghostscript.com/?p=ghostpdl.git;a=shortlog;h=refs/tags/ghostpdl-10.00.0">ghostpdl-10.00.0</a> log.
+<a href="https://git.ghostscript.com/?p=ghostpdl.git;a=shortlog;h=refs/tags/ghostpdl-10.03.0rc1">ghostpdl-10.03.0rc1</a> log.
 <p>If this change does not draw negative feedback, History?.htm file(s) will be removed from the release archives.
 
 <!-- [2.0 end contents] ==================================================== -->
@@ -118,8 +142,7 @@ implied.
 This software is distributed under license and may not be copied, modified
 or distributed except as expressly authorized under the terms of that
 license.  Refer to licensing information at <a href="https://www.artifex.com">https://www.artifex.com</a>
-or contact Artifex Software, Inc.,  1305 Grant Avenue - Suite 200,
-Novato, CA 94945, U.S.A., +1(415)492-9861, for further information.
+or contact Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA,
 
 <p>
 <small>Ghostscript version 10.03.0, 20 February 2024
