@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -56,6 +56,7 @@ typedef struct clip_callback_data_s {
     gx_path *ppath;                     /* fill_path, fill_stroke_path */
     const gx_fill_params *params;       /* fill_path, fill_stroke_path */
     const gx_stroke_params *stroke_params; /* fill_stroke_path */
+    void *last_clip_rect;               /* fill_path */
 } clip_callback_data_t;
 
 /* Declare the callback procedures. */
