@@ -2208,11 +2208,26 @@ int pdfi_map_glyph_name_via_agl(pdf_dict *cstrings, pdf_name *gname, pdf_string 
     return code;
 }
 
+
 int pdfi_init_font_directory(pdf_context *ctx)
 {
-    ctx->font_dir = gs_font_dir_alloc2(ctx->memory, ctx->memory);
-    if (ctx->font_dir == NULL) {
-        return_error(gs_error_VMerror);
+    gs_font_dir *pfdir = ctx->memory->gs_lib_ctx->font_dir;
+    if (pfdir) {
+        ctx->font_dir = gs_font_dir_alloc2_limits(ctx->memory, ctx->memory,
+                   pfdir->smax, pfdir->ccache.bmax, pfdir->fmcache.mmax,
+                   pfdir->ccache.cmax, pfdir->ccache.upper);
+        if (ctx->font_dir == NULL) {
+            return_error(gs_error_VMerror);
+        }
+        ctx->font_dir->ccache.mark_glyph = pfdir->ccache.mark_glyph;
+        ctx->font_dir->align_to_pixels = pfdir->align_to_pixels;
+        ctx->font_dir->grid_fit_tt = pfdir->grid_fit_tt;
+    }
+    else {
+        ctx->font_dir = gs_font_dir_alloc2(ctx->memory, ctx->memory);
+        if (ctx->font_dir == NULL) {
+            return_error(gs_error_VMerror);
+        }
     }
     ctx->font_dir->global_glyph_code = pdfi_global_glyph_code;
     return 0;
