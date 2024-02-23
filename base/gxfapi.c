@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1279,7 +1279,10 @@ gs_fapi_do_char(gs_font *pfont, gs_gstate *pgs, gs_text_enum_t *penum, char *fon
             (pbfont->dir->ccache.upper >> 1) : MAX_CCACHE_TEMP_BITMAP_BITS;
     }
 
-    I->grid_fit = pbfont->dir->grid_fit_tt;
+    if (pbfont->memory->gs_lib_ctx->font_dir != NULL)
+        I->grid_fit = pbfont->memory->gs_lib_ctx->font_dir->grid_fit_tt;
+    else
+        I->grid_fit = pbfont->dir->grid_fit_tt;
 
     /* Compute the scale : */
     if (!SHOW_IS(penum, TEXT_DO_NONE) && !I->use_outline) {
