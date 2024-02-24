@@ -3318,9 +3318,9 @@ pdf_close(gx_device * dev)
                 offs_bytes++;
             }
 
-            gs_snprintf(str, sizeof(str), "%"PRId64" 0 obj\n<<\n/Type /XRef\n", pdev->next_id);
+            gs_snprintf(str, sizeof(str), "%"PRId64" 0 obj\n<<\n/Type /XRef\n", (int64_t)pdev->next_id);
             stream_puts(s, str);
-            gs_snprintf(str, sizeof(str), "/Size %"PRId64"\n", pdev->next_id + 1);
+            gs_snprintf(str, sizeof(str), "/Size %"PRId64"\n", (int64_t)(pdev->next_id + 1));
             stream_puts(s, str);
 
             pprintld2(s, "/Root %ld 0 R /Info %ld 0 R\n", Catalog_id, Info_id);
