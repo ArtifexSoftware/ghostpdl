@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -396,6 +396,7 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                         psubclass_data->saved_finalize_method = NULL;
                         while (dev) {
                             memcpy(&(dev->color_info), &(dev->child->color_info), sizeof(gx_device_color_info));
+                            dev->num_planar_planes = dev->child->num_planar_planes;
                             dev = dev->parent;
                         }
                     }
@@ -422,6 +423,7 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                         (*pcdev)->parent = dev;
                         while (dev) {
                             memcpy(&dev->color_info, &(*pcdev)->color_info, sizeof(gx_device_color_info));
+                            dev->num_planar_planes = dev->child->num_planar_planes;
                             dev = dev->parent;
                         }
                     }
@@ -435,6 +437,7 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                     if (psubclass_data->pre_composite_device != NULL) {
                         while (dev) {
                             memcpy(&(dev->color_info), &(dev->child->color_info), sizeof(gx_device_color_info));
+                            dev->num_planar_planes = dev->child->num_planar_planes;
                             dev = dev->parent;
                         }
                     }
