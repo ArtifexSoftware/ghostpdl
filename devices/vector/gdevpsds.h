@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -153,7 +153,7 @@ extern const stream_template s_Average_template;
 typedef struct stream_Bicubic_state_s {
     stream_Downsample_state_common;
     int y_in;
-    ulong l_size, d_size, d_len;
+    uint64_t l_size, d_size, d_len;
     byte *data;
 } stream_Bicubic_state;
 
@@ -169,10 +169,10 @@ typedef struct stream_compr_chooser_state_s {
     uint choice;
     uint width, height, depth, bits_per_sample;
     uint samples_count, bits_left;
-    ulong packed_data;
+    uint64_t packed_data;
     byte *sample;
-    ulong upper_plateaus, lower_plateaus;
-    ulong gradients;
+    uint64_t upper_plateaus, lower_plateaus;
+    uint64_t gradients;
 } stream_compr_chooser_state;
 
 #define private_st_compr_chooser_state()	/* in gdevpsds.c */\

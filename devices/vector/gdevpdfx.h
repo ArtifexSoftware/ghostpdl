@@ -196,8 +196,8 @@ typedef enum {
     gs_id rid;                        /* optional ID key */\
     bool named;\
     bool global;                /* ps2write only */\
-    char rname[1/*R*/ + (sizeof(long) * 8 / 3 + 1) + 1/*\0*/];\
-    ulong where_used;                /* 1 bit per level of content stream */\
+    char rname[1/*R*/ + (sizeof(int64_t) * 8 / 3 + 1) + 1/*\0*/];\
+    uint64_t where_used;                /* 1 bit per level of content stream */\
     cos_object_t *object
 typedef struct pdf_resource_s pdf_resource_t;
 struct pdf_resource_s {
@@ -246,7 +246,7 @@ typedef struct pdf_text_data_s pdf_text_data_t;  /* gdevpdft.h */
 
 /* Outline nodes and levels */
 typedef struct pdf_outline_node_s {
-    long id, parent_id, prev_id, first_id, last_id;
+    int64_t id, parent_id, prev_id, first_id, last_id;
     int count;
     cos_dict_t *action;
 } pdf_outline_node_t;
@@ -262,7 +262,7 @@ typedef struct pdf_outline_level_s {
 
 /* Articles */
 typedef struct pdf_bead_s {
-    long id, article_id, prev_id, next_id, page_id;
+    int64_t id, article_id, prev_id, next_id, page_id;
     gs_rect rect;
 } pdf_bead_t;
 typedef struct pdf_article_s pdf_article_t;
@@ -298,7 +298,7 @@ typedef struct pdf_resource_list_s {
 
 /* Define the bookkeeping for an open stream. */
 typedef struct pdf_stream_position_s {
-    long length_id;
+    int64_t length_id;
     gs_offset_t start_pos;
 } pdf_stream_position_t;
 
@@ -308,7 +308,7 @@ typedef struct pdf_stream_position_s {
  * and one for the whole document (for AutoRotate /All).
  */
 typedef struct pdf_text_rotation_s {
-    long counts[5];                /* 0, 90, 180, 270, other */
+    int64_t counts[5];                /* 0, 90, 180, 270, other */
     int Rotate;                        /* computed rotation, -1 means none */
 } pdf_text_rotation_t;
 #define pdf_text_rotation_angle_values 0, 90, 180, 270, -1
@@ -331,9 +331,9 @@ typedef struct pdf_page_s {
     cos_dict_t *Page;
     gs_point MediaBox;
     pdf_procset_t procsets;
-    long contents_id;
-    long resource_ids[resourceFont + 1]; /* resources thru Font, see above */
-    long group_id;
+    int64_t contents_id;
+    int64_t resource_ids[resourceFont + 1]; /* resources thru Font, see above */
+    int64_t group_id;
     cos_array_t *Annots;
     pdf_text_rotation_t text_rotation;
     pdf_page_dsc_info_t dsc_info;
@@ -430,17 +430,17 @@ typedef struct pdf_linearisation_s {
     char HintBuffer[256];
     unsigned char HintBits;
     unsigned char HintByte;
-    long Catalog_id;
-    long Info_id;
-    long Pages_id;
-    long NumPage1Resources;
-    long NumPart1StructureResources;
-    long NumSharedResources;
-    long NumUniquePageResources;
-    long NumPart9Resources;
-    long NumNonPageResources;
-    long LastResource;
-    long MainFileEnd;
+    int64_t Catalog_id;
+    int64_t Info_id;
+    int64_t Pages_id;
+    int64_t NumPage1Resources;
+    int64_t NumPart1StructureResources;
+    int64_t NumSharedResources;
+    int64_t NumUniquePageResources;
+    int64_t NumPart9Resources;
+    int64_t NumNonPageResources;
+    int64_t LastResource;
+    int64_t MainFileEnd;
     gs_offset_t *Offsets;
     gs_offset_t xref;
     gs_offset_t FirstxrefOffset;
@@ -614,7 +614,7 @@ struct gx_device_pdf_s {
     /* Other parameters */
     bool ReAssignCharacters;
     bool ReEncodeCharacters;
-    long FirstObjectNumber;
+    int64_t FirstObjectNumber;
     bool CompressFonts;
     bool CompressStreams;
     bool PrintStatistics;
@@ -634,12 +634,12 @@ struct gx_device_pdf_s {
     bool PDFX;                   /* Generate PDF/X */
     int PDFA;                   /* Generate PDF/A 0 = don't produce, otherwise level of PDF/A */
     bool AbortPDFAX;            /* Abort generation of PDFA or X, produce regular PDF */
-    long MaxClipPathSize;  /* The maximal number of elements of a clipping path
+    int64_t MaxClipPathSize;  /* The maximal number of elements of a clipping path
                               that the target viewer|printer can handle. */
-    long MaxShadingBitmapSize; /* The maximal number of bytes in
+    int64_t MaxShadingBitmapSize; /* The maximal number of bytes in
                               a bitmap representation of a shading.
                               (Bigger shadings to be downsampled). */
-    long MaxInlineImageSize;
+    int64_t MaxInlineImageSize;
     /* Encryption parameters */
     gs_param_string OwnerPassword;
     gs_param_string UserPassword;
@@ -708,25 +708,25 @@ struct gx_device_pdf_s {
      * file, containing the ObjStm.
      */
     pdf_temp_file_t ObjStm;
-    long ObjStm_id;
+    int64_t ObjStm_id;
     gs_offset_t *ObjStmOffsets;
     int NumObjStmObjects;
     bool doubleXref;
 
     /* ................ */
-    long next_id;
+    int64_t next_id;
     /* The following 3 objects, and only these, are allocated */
     /* when the file is opened. */
     cos_dict_t *Catalog;
     cos_dict_t *Info;
     cos_dict_t *Pages;
 #define pdf_num_initial_ids 3
-    long outlines_id;
+    int64_t outlines_id;
     int next_page;
     int max_referred_page;
-    long contents_id;
+    int64_t contents_id;
     pdf_context_t context;
-    long contents_length_id;
+    int64_t contents_length_id;
     gs_offset_t contents_pos;
     pdf_procset_t procsets;        /* used on this page */
     pdf_text_data_t *text;
@@ -734,7 +734,7 @@ struct gx_device_pdf_s {
 #define initial_num_pages 50
     pdf_page_t *pages;
     int num_pages;
-    ulong used_mask;                /* for where_used: page level = 1 */
+    uint64_t used_mask;                /* for where_used: page level = 1 */
     pdf_resource_list_t resources[NUM_RESOURCE_TYPES];
     /* cs_Patterns[0] is colored; 1,3,4 are uncolored + Gray,RGB,CMYK */
     pdf_resource_t *cs_Patterns[5];
@@ -752,6 +752,10 @@ struct gx_device_pdf_s {
     cos_dict_t *EmbeddedFiles;
     byte fileID[16];
     /* Use a single time moment for all UUIDs to minimize an indeterminizm. */
+    /* This needs to be a long because we call the platform code gp_get_realtime
+     * to fill it in, and that takes a long *. Be aware that long is 32-bits on
+     * 32-bit Windows and 64-bits on 64-bit Windows.
+     */
     long uuid_time[2];
     /*
      * global_named_objects holds named objects that are independent of
@@ -1084,20 +1088,20 @@ int pdfwrite_pdf_open_document(gx_device_pdf * pdev);
 /* ------ Objects ------ */
 
 /* Allocate an ID for a future object, set its pos=0 so we can tell if it is used */
-long pdf_obj_forward_ref(gx_device_pdf * pdev);
+int64_t pdf_obj_forward_ref(gx_device_pdf * pdev);
 
 /* Allocate an ID for a future object. */
-long pdf_obj_ref(gx_device_pdf * pdev);
+int64_t pdf_obj_ref(gx_device_pdf * pdev);
 
 /* Remove an object from the xref table (mark as unused) */
-long pdf_obj_mark_unused(gx_device_pdf *pdev, long id);
+int64_t pdf_obj_mark_unused(gx_device_pdf *pdev, int64_t id);
 
 /* Read the current position in the output stream. */
 gs_offset_t pdf_stell(gx_device_pdf * pdev);
 
 /* Begin an object, optionally allocating an ID. */
-long pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type);
-long pdf_begin_obj(gx_device_pdf * pdev, pdf_resource_type_t type);
+int64_t pdf_open_obj(gx_device_pdf * pdev, int64_t id, pdf_resource_type_t type);
+int64_t pdf_begin_obj(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /* End an object. */
 int pdf_end_obj(gx_device_pdf * pdev, pdf_resource_type_t type);
@@ -1117,8 +1121,8 @@ extern const char *const pdf_resource_type_names[];
 extern const gs_memory_struct_type_t *const pdf_resource_type_structs[];
 
 /* Record usage of resoruces by pages */
-int pdf_record_usage(gx_device_pdf *const pdev, long resource_id, int page_num);
-int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long parent);
+int pdf_record_usage(gx_device_pdf *const pdev, int64_t resource_id, int page_num);
+int pdf_record_usage_by_parent(gx_device_pdf *const pdev, int64_t resource_id, int64_t parent);
 
 /*
  * Define the offset that indicates that a file position is in the
@@ -1129,24 +1133,24 @@ int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long
 
 /* Begin an object logically separate from the contents. */
 /* (I.e., an object in the resource file.) */
-long pdf_open_separate(gx_device_pdf * pdev, long id, pdf_resource_type_t type);
-long pdf_begin_separate(gx_device_pdf * pdev, pdf_resource_type_t type);
+int64_t pdf_open_separate(gx_device_pdf * pdev, int64_t id, pdf_resource_type_t type);
+int64_t pdf_begin_separate(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /* functions used for ObjStm writing */
 int FlushObjStm(gx_device_pdf *pdev);
 int NewObjStm(gx_device_pdf *pdev);
-long pdf_open_separate_noObjStm(gx_device_pdf * pdev, long id, pdf_resource_type_t type);
+int64_t pdf_open_separate_noObjStm(gx_device_pdf * pdev, int64_t id, pdf_resource_type_t type);
 int pdf_end_separate_noObjStm(gx_device_pdf * pdev, pdf_resource_type_t type);
 
 /* Reserve object id. */
-void pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *ppres, long id);
+void pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *ppres, int64_t id);
 
 /* Begin an aside (resource, annotation, ...). */
 int pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
                 const gs_memory_struct_type_t * pst, pdf_resource_t **ppres,
-                long id);
+                int64_t id);
 /* Begin an aside (resource, annotation, ...). */
-int pdf_begin_aside(gx_device_pdf * pdev, pdf_resource_t **plist,
+int64_t pdf_begin_aside(gx_device_pdf * pdev, pdf_resource_t **plist,
                     const gs_memory_struct_type_t * pst,
                     pdf_resource_t **ppres, pdf_resource_type_t type);
 
@@ -1160,7 +1164,7 @@ int pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 
 /* Allocate a resource, but don't open the stream. */
 int pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype,
-                       gs_id rid, pdf_resource_t **ppres, long id);
+                       gs_id rid, pdf_resource_t **ppres, int64_t id);
 
 /* Find same resource. */
 int pdf_find_same_resource(gx_device_pdf * pdev,
@@ -1204,7 +1208,7 @@ int pdf_substitute_resource(gx_device_pdf *pdev, pdf_resource_t **ppres,
             bool write);
 
 /* Get the object id of a resource. */
-long pdf_resource_id(const pdf_resource_t *pres);
+int64_t pdf_resource_id(const pdf_resource_t *pres);
 
 /* End a separate object. */
 int pdf_end_separate(gx_device_pdf * pdev, pdf_resource_type_t type);
@@ -1240,7 +1244,7 @@ int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_u
 
 /* Copy data from a temporary file to a stream. */
 int pdf_copy_data(stream *s, gp_file *file, gs_offset_t count, stream_arcfour_state *ss);
-int pdf_copy_data_safe(stream *s, gp_file *file, gs_offset_t position, long count);
+int pdf_copy_data_safe(stream *s, gp_file *file, gs_offset_t position, int64_t count);
 
 /* Add the encryption filter. */
 int pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id);
@@ -1258,7 +1262,7 @@ int pdf_encrypt_init(const gx_device_pdf * pdev, gs_id object_id, stream_arcfour
 
 /* Get or assign the ID for a page. */
 /* Returns 0 if the page number is out of range. */
-long pdf_page_id(gx_device_pdf * pdev, int page_num);
+int64_t pdf_page_id(gx_device_pdf * pdev, int page_num);
 
 /* Get the page structure for the current page. */
 pdf_page_t *pdf_current_page(gx_device_pdf *pdev);
@@ -1377,7 +1381,7 @@ typedef struct pdf_data_writer_s {
     gs_offset_t length_pos;
     pdf_resource_t *pres;
     gx_device_pdf *pdev; /* temporary for backward compatibility of pdf_end_data prototype. */
-    long length_id;
+    int64_t length_id;
     bool encrypted;
 } pdf_data_writer_t;
 /*
@@ -1402,7 +1406,7 @@ int pdf_end_data(pdf_data_writer_t *pdw);
 /* ------ Functions ------ */
 
 /* Define the maximum size of a Function reference. */
-#define MAX_REF_CHARS ((sizeof(long) * 8 + 2) / 3)
+#define MAX_REF_CHARS ((sizeof(int64_t) * 8 + 2) / 3)
 
 /*
  * Create a Function object with or without range scaling.  Scaling means
@@ -1418,7 +1422,7 @@ int pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
 
 /* Write a Function object, returning its object ID. */
 int pdf_write_function(gx_device_pdf *pdev, const gs_function_t *pfn,
-                       long *pid);
+                       int64_t *pid);
 
 /* If a stitching function references an array of other functions, we need
  * to 'unreference' those before freeing the function. otherwise we end up
@@ -1476,9 +1480,9 @@ int pdf_find_named(gx_device_pdf * pdev, const gs_param_string * pname,
  * means just create the object, do not name it.
  */
 int pdf_create_named(gx_device_pdf *pdev, const gs_param_string *pname,
-                     cos_type_t cotype, cos_object_t **ppco, long id);
+                     cos_type_t cotype, cos_object_t **ppco, int64_t id);
 int pdf_create_named_dict(gx_device_pdf *pdev, const gs_param_string *pname,
-                          cos_dict_t **ppcd, long id);
+                          cos_dict_t **ppcd, int64_t id);
 
 /*
  * Look up a named object as for pdf_find_named.  If the object does not

@@ -980,11 +980,11 @@ static int
 pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
 {
     int i, imax = -1;
-    long max_count = 0;
+    int64_t max_count = 0;
     static const int angles[] = { pdf_text_rotation_angle_values };
 
     for (i = 0; i < countof(ptr->counts); ++i) {
-        long count = ptr->counts[i];
+        int64_t count = ptr->counts[i];
 
         if (count > max_count)
             imax = i, max_count = count;
@@ -1168,7 +1168,7 @@ static int check_annot_in_named(void *client_data, const byte *key_data, uint ke
 static int
 pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
-    long page_id;
+    int64_t page_id;
     pdf_page_t *page;
     double mediabox[4] = {0, 0};
     stream *s;
@@ -1485,7 +1485,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     if (page->Annots) {
         const cos_value_t *value = NULL;
         const cos_array_element_t *e = NULL, *next = NULL;
-        long index = 0;
+        int64_t index = 0;
 
         stream_puts(s, "/Annots");
         COS_WRITE(page->Annots, pdev);
@@ -1602,7 +1602,7 @@ static int find_end_xref_section (gx_device_pdf *pdev, gp_file *tfile, int64_t s
 
     if (gp_fseek(tfile, start_offset, SEEK_SET) == 0)
     {
-        long i, r;
+        int64_t i, r;
 
         for (i = start; i < pdev->next_id; ++i) {
             gs_offset_t pos, index = -1;
@@ -1638,7 +1638,7 @@ static int write_xref_section(gx_device_pdf *pdev, gp_file *tfile, int64_t start
 
     if (gp_fseek(tfile, start_offset, SEEK_SET) == 0)
     {
-        long i, r;
+        int64_t i, r;
 
         for (i = start; i < end; ++i) {
             gs_offset_t pos;
@@ -1692,7 +1692,7 @@ static int write_xrefstm_section(gx_device_pdf *pdev, gp_file *tfile, int64_t st
 
     if (gp_fseek(tfile, start_offset, SEEK_SET) == 0)
     {
-        long i, j, r;
+        int64_t i, j, r;
 
         for (i = start; i < end; ++i) {
             gs_offset_t pos, objstm = -1, index = 0;
@@ -1745,7 +1745,7 @@ static int write_xrefstm_section(gx_device_pdf *pdev, gp_file *tfile, int64_t st
 static int
 rewrite_object(gx_device_pdf *const pdev, pdf_linearisation_t *linear_params, int object)
 {
-    ulong read, Size;
+    uint64_t read, Size;
     char c, *Scratch, *source, *target, Buf[280], *next;
     int code, ID, ScratchSize=16384;
 
@@ -2622,7 +2622,7 @@ error:
     return code;
 }
 
-int pdf_record_usage(gx_device_pdf *const pdev, long resource_id, int page_num)
+int pdf_record_usage(gx_device_pdf *const pdev, int64_t resource_id, int page_num)
 {
     int i;
     void *Temp;
@@ -2682,7 +2682,7 @@ int pdf_record_usage(gx_device_pdf *const pdev, long resource_id, int page_num)
     return 0;
 }
 
-int pdf_record_usage_by_parent(gx_device_pdf *const pdev, long resource_id, long parent_id)
+int pdf_record_usage_by_parent(gx_device_pdf *const pdev, int64_t resource_id, int64_t parent_id)
 {
     int i;
     if (!pdev->Linearise)
@@ -2723,7 +2723,7 @@ static int discard_dict_refs(void *client_data, const byte *key_data, uint key_s
 static int discard_array_refs(gx_device_pdf *pdev, cos_object_t *pco)
 {
     int i;
-    long index;
+    int64_t index;
     cos_array_t *pca = (cos_array_t *)pco;
     const cos_array_element_t *element = cos_array_element_first(pca);
     cos_value_t *v;
@@ -2785,9 +2785,9 @@ pdf_close(gx_device * dev)
     gp_file *tfile = pdev->xref.file;
     gs_offset_t xref = 0;
     gs_offset_t resource_pos = 0;
-    long Catalog_id = 0, Info_id = 0,
+    int64_t Catalog_id = 0, Info_id = 0,
         Pages_id = 0, Encrypt_id = 0;
-    long Threads_id = 0;
+    int64_t Threads_id = 0;
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
     int code = 0, code1, pagecount=0;
     int64_t start_section, end_section;
@@ -3659,7 +3659,7 @@ error_cleanup:
             pdf_resource_t *pres = pdev->resources[resourceColorSpace].chains[j];
             for (; pres != 0;) {
                 if (cos_type(pres->object) == cos_type_array) {
-                    long index;
+                    int64_t index;
                     cos_array_t *pca = (cos_array_t *)pres->object;
                     const cos_array_element_t *element = cos_array_element_first(pca);
                     cos_value_t *v;

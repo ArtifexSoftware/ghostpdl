@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -54,7 +54,7 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
                    gs_image_t *pim, pdf_image_writer *piw,
                    int for_pattern)
 {
-    ulong nbytes;
+    uint64_t nbytes;
     int code;
     const byte *row_base;
     int row_step;
@@ -62,7 +62,7 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 
     gs_image_t_init_mask(pim, true);
     pdf_make_bitmap_image(pim, x, y, w, h);
-    nbytes = ((ulong)w * h + 7) / 8;
+    nbytes = ((uint64_t)w * h + 7) / 8;
 
     if (for_pattern) {
         /*
@@ -269,7 +269,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     }
     pdf_make_bitmap_image(&image, x, y, w, h);
     {
-        ulong nbytes = (ulong) ((w + 7) >> 3) * h;
+        uint64_t nbytes = (uint64_t) ((w + 7) >> 3) * h;
 
         code = pdf_open_page(pdev, PDF_IN_STREAM);
         if (code < 0)
@@ -407,7 +407,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     int bytes_per_pixel = depth >> 3;
     gs_color_space *pcs;
     cos_value_t cs_value;
-    ulong nbytes;
+    uint64_t nbytes;
     int code = pdf_cspace_init_Device(pdev->memory, &pcs, bytes_per_pixel);
     const byte *row_base;
     int row_step;
@@ -420,7 +420,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     gs_image_t_init(pim, pcs);
     pdf_make_bitmap_image(pim, x, y, w, h);
     pim->BitsPerComponent = 8;
-    nbytes = (ulong)w * bytes_per_pixel * h;
+    nbytes = (uint64_t)w * bytes_per_pixel * h;
 
     if (for_pattern == 1) {
         /*
@@ -617,14 +617,14 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     if (!pres) {
         /* Create the Pattern resource. */
         int code;
-        long length_id;
+        int64_t length_id;
         gs_offset_t start, end;
         stream *s;
         gs_image_t image;
         pdf_image_writer writer;
-        long image_bytes = ((long)tw * depth + 7) / 8 * th;
+        int64_t image_bytes = ((int64_t)tw * depth + 7) / 8 * th;
         bool in_line = image_bytes < pdev->MaxInlineImageSize;
-        ulong tile_id =
+        int64_t tile_id =
             (tw == tiles->size.x && th == tiles->size.y ? tiles->id :
              gx_no_bitmap_id);
 

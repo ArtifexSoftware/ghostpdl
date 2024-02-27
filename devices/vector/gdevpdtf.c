@@ -717,7 +717,7 @@ pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, int 
 }
 
 /* Get the object ID of a font resource. */
-long
+int64_t
 pdf_font_id(const pdf_font_resource_t *pdfont)
 {
     return pdf_resource_id((const pdf_resource_t *)pdfont);

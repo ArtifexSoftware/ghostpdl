@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -676,7 +676,7 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
 /* ------ Objects ------ */
 
 /* Allocate an object ID. */
-static long
+static int64_t
 pdf_next_id(gx_device_pdf * pdev)
 {
     return (pdev->next_id)++;
@@ -714,9 +714,9 @@ pdf_stell(gx_device_pdf * pdev)
  * and we can detect that when writing the xref, and set the object to
  * 'unused'.
  */
-long pdf_obj_forward_ref(gx_device_pdf * pdev)
+int64_t pdf_obj_forward_ref(gx_device_pdf * pdev)
 {
-    long id = pdf_next_id(pdev);
+    int64_t id = pdf_next_id(pdev);
     gs_offset_t pos = 0;
 
     if (pdev->doubleXref) {
@@ -729,10 +729,10 @@ long pdf_obj_forward_ref(gx_device_pdf * pdev)
 }
 
 /* Allocate an ID for a future object. */
-long
+int64_t
 pdf_obj_ref(gx_device_pdf * pdev)
 {
-    long id = pdf_next_id(pdev);
+    int64_t id = pdf_next_id(pdev);
     gs_offset_t pos = 0;
 
     if (pdev->doubleXref) {
@@ -763,8 +763,8 @@ pdf_obj_ref(gx_device_pdf * pdev)
  * generally doesn't stop if we signal an error, we try to avoid grossly
  * broken PDF files this way.
  */
-long
-pdf_obj_mark_unused(gx_device_pdf *pdev, long id)
+int64_t
+pdf_obj_mark_unused(gx_device_pdf *pdev, int64_t id)
 {
     gp_file *tfile = pdev->xref.file;
     int64_t tpos = gp_ftell(tfile);
@@ -789,8 +789,8 @@ pdf_obj_mark_unused(gx_device_pdf *pdev, long id)
 }
 
 /* Begin an object, optionally allocating an ID. */
-long
-pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
+int64_t
+pdf_open_obj(gx_device_pdf * pdev, int64_t id, pdf_resource_type_t type)
 {
     stream *s = pdev->strm;
 
@@ -949,7 +949,7 @@ pdf_open_obj(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
         pprintld1(s, "%ld 0 obj\n", id);
     return id;
 }
-long
+int64_t
 pdf_begin_obj(gx_device_pdf * pdev, pdf_resource_type_t type)
 {
     return pdf_open_obj(pdev, 0L, type);
@@ -1236,11 +1236,11 @@ stream_to_none(gx_device_pdf * pdev)
 
         if (pdev->WriteObjStms) {
             pdf_open_separate(pdev, pdev->contents_length_id, resourceLength);
-            pprintld1(pdev->strm, "%ld\n", (long)length);
+            pprintld1(pdev->strm, "%"PRId64"\n", (int64_t)length);
             pdf_end_separate(pdev, resourceLength);
         } else {
             pdf_open_obj(pdev, pdev->contents_length_id, resourceLength);
-            pprintld1(s, "%ld\n", (long)length);
+            pprintld1(s, "%"PRId64"\n", (int64_t)length);
             pdf_end_obj(pdev, resourceLength);
         }
     }
@@ -1686,8 +1686,8 @@ int NewObjStm(gx_device_pdf *pdev)
 }
 
 /* Begin an object logically separate from the contents. */
-long
-pdf_open_separate_noObjStm(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
+int64_t
+pdf_open_separate_noObjStm(gx_device_pdf * pdev, int64_t id, pdf_resource_type_t type)
 {
     int code;
 
@@ -1713,8 +1713,8 @@ static int is_stream_resource(pdf_resource_type_t type)
     return false;
 }
 
-long
-pdf_open_separate(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
+int64_t
+pdf_open_separate(gx_device_pdf * pdev, int64_t id, pdf_resource_type_t type)
 {
     int code;
 
@@ -1744,14 +1744,14 @@ pdf_open_separate(gx_device_pdf * pdev, long id, pdf_resource_type_t type)
     }
     return code;
 }
-long
+int64_t
 pdf_begin_separate(gx_device_pdf * pdev, pdf_resource_type_t type)
 {
     return pdf_open_separate(pdev, 0L, type);
 }
 
 void
-pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *pres, long id)
+pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *pres, int64_t id)
 {
     pres->object->id = (id == 0 ? pdf_obj_ref(pdev) : id);
     gs_snprintf(pres->rname, sizeof(pres->rname), "R%ld", pres->object->id);
@@ -1761,7 +1761,7 @@ pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *pres, long id)
 int
 pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
                 const gs_memory_struct_type_t * pst, pdf_resource_t **ppres,
-                long id)
+                int64_t id)
 {
     pdf_resource_t *pres;
     cos_object_t *object;
@@ -1793,12 +1793,12 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
     *ppres = pres;
     return 0;
 }
-int
+int64_t
 pdf_begin_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
                 const gs_memory_struct_type_t * pst, pdf_resource_t ** ppres,
                 pdf_resource_type_t type)
 {
-    long id = pdf_begin_separate(pdev, type);
+    int64_t id = pdf_begin_separate(pdev, type);
     int code = 0;
 
     if (id < 0)
@@ -1861,7 +1861,7 @@ pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 */
 int
 pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
-                   pdf_resource_t ** ppres, long id)
+                   pdf_resource_t ** ppres, int64_t id)
 {
     int code;
 
@@ -1877,7 +1877,7 @@ pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
 }
 
 /* Get the object id of a resource. */
-long
+int64_t
 pdf_resource_id(const pdf_resource_t *pres)
 {
     return pres->object->id;
@@ -2020,7 +2020,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
 
             for (; pres != 0; pres = pres->next) {
                 if (pres->where_used & pdev->used_mask) {
-                    long id = pdf_resource_id(pres);
+                    int64_t id = pdf_resource_id(pres);
 
                     if (id == -1L)
                         continue;
@@ -2079,13 +2079,13 @@ pdf_copy_data(stream *s, gp_file *file, gs_offset_t count, stream_arcfour_state 
 /* Copy data from a temporary file to a stream,
    which may be targetted to the same file. */
 int
-pdf_copy_data_safe(stream *s, gp_file *file, gs_offset_t position, long count)
+pdf_copy_data_safe(stream *s, gp_file *file, gs_offset_t position, int64_t count)
 {
-    long r, left = count;
+    int64_t r, left = count;
 
     while (left > 0) {
         byte buf[sbuf_size];
-        long copy = min(left, (long)sbuf_size);
+        int64_t copy = min(left, (int64_t)sbuf_size);
         int64_t end_pos = gp_ftell(file);
 
         if (gp_fseek(file, position + count - left, SEEK_SET) != 0) {
@@ -2109,7 +2109,7 @@ pdf_copy_data_safe(stream *s, gp_file *file, gs_offset_t position, long count)
 
 /* Get or assign the ID for a page. */
 /* Returns 0 if the page number is out of range. */
-long
+int64_t
 pdf_page_id(gx_device_pdf * pdev, int page_num)
 {
     cos_dict_t *Page;
@@ -2981,7 +2981,7 @@ static int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
 
 /* Write a Function object. */
 int
-pdf_write_function(gx_device_pdf *pdev, const gs_function_t *pfn, long *pid)
+pdf_write_function(gx_device_pdf *pdev, const gs_function_t *pfn, int64_t *pid)
 {
     cos_value_t value;
     int code = pdf_function(pdev, pfn, &value);
@@ -3010,7 +3010,7 @@ free_function_refs(gx_device_pdf *pdev, cos_object_t *pco)
         }
     }
     if (cos_type(pco) == cos_type_array) {
-        long index;
+        int64_t index;
         cos_array_t *pca = (cos_array_t *)pco;
         const cos_array_element_t *element = cos_array_element_first(pca);
         cos_value_t *v;

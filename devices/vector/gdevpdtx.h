@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -85,7 +85,7 @@ typedef struct pdf_font_resource_s pdf_font_resource_t;
 /* ---------------- Font accessing ---------------- */
 
 /* Get the object ID of a font resource. */
-long pdf_font_id(const pdf_font_resource_t *pdfont);
+int64_t pdf_font_id(const pdf_font_resource_t *pdfont);
 /* Register charproc fonts with the page or substream. */
 int pdf_used_charproc_resources(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -62,7 +62,7 @@ int psw_end_file(gp_file *f, const gx_device *dev,
  */
 int psw_write_page_header(stream *s, const gx_device *dev,
                            const gx_device_pswrite_common_t *pdpc,
-                           bool do_scale, long page_ord,  int dictsize);
+                           bool do_scale, int64_t page_ord,  int dictsize);
 /*
  * Write the page trailer.  We do this directly to the file, rather than to
  * the stream, because we may have to do it during finalization.

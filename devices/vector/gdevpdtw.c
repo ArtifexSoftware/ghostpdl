@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -150,7 +150,7 @@ pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
 
 /* Write Encoding differencrs. */
 int
-pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id, int ch)
+pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, int64_t id, int ch)
 {
     /* Note : this truncates extended glyph names to original names. */
     stream *s;
@@ -211,7 +211,7 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
 /* Write Encoding reference. */
 int
 pdf_write_encoding_ref(gx_device_pdf *pdev,
-          const pdf_font_resource_t *pdfont, long id)
+          const pdf_font_resource_t *pdfont, int64_t id)
 {
     stream *s = pdev->strm;
 
@@ -232,7 +232,7 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
                           const pdf_font_resource_t *pdfont)
 {
     stream *s = pdev->strm;
-    long diff_id = 0;
+    int64_t diff_id = 0;
     int ch = (pdfont->u.simple.Encoding ? 0 : 256);
     int code = 0;
 
@@ -512,7 +512,7 @@ int
 pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     int count = pdfont->count;
-    long map_id = 0;
+    int64_t map_id = 0;
     psf_glyph_enum_t genum;
     gs_glyph glyph;
     int code;
@@ -747,7 +747,7 @@ pdf_write_cid_system_info(gx_device_pdf *pdev,
 }
 
 int
-pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev, const gs_cid_system_info_t *pcidsi, long *id)
+pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev, const gs_cid_system_info_t *pcidsi, int64_t *id)
 {
     int code;
 
@@ -862,7 +862,7 @@ pdf_write_OneByteIdentityH(gx_device_pdf *pdev)
     cos_dict_t *pcd;
     char buf[200];
     static const gs_cid_system_info_t cidsi = {{(const byte *)"Adobe", 5}, {(const byte *)"Identity", 8}, 0};
-    long id;
+    int64_t id;
 
     if (pdev->IdentityCIDSystemInfo_id == gs_no_id) {
         code = pdf_write_cid_systemInfo_separate(pdev, &cidsi, &id);

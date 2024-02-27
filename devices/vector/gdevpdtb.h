@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -142,7 +142,7 @@ int pdf_write_CharSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont);
  * Write the CIDSet object for a subsetted CIDFont.
  */
 int pdf_write_CIDSet(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
-                     long *pcidset_id);
+                     int64_t *pcidset_id);
 
 /*
  * Check whether a base font is standard.

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -47,7 +47,7 @@ struct psf_glyph_enum_s {
         uint size;
     } subset;
     gs_glyph_space_t glyph_space;
-    ulong index;
+    uint64_t index;
     int (*enumerate_next)(psf_glyph_enum_t *, gs_glyph *);
 };
 

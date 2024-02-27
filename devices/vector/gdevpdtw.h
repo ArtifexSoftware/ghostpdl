@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -44,8 +44,8 @@ int
   pdf_write_contents_cid0(gx_device_pdf *pdev, pdf_font_resource_t *pdfont),
   pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont),
   pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0),
-  pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id, int ch),
-  pdf_write_encoding_ref(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long id);
+  pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, int64_t id, int ch),
+  pdf_write_encoding_ref(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, int64_t id);
 
 /* ---------------- CMap resource writing ---------------- */
 
@@ -57,7 +57,7 @@ int pdf_write_cid_system_info(gx_device_pdf *pdev,
 
 /* Write CIDSystemInfo */
 int pdf_write_cid_systemInfo_separate(gx_device_pdf *pdev,
-                              const gs_cid_system_info_t *pcidsi, long *id);
+                              const gs_cid_system_info_t *pcidsi, int64_t *id);
 
 /*
  * Write a CMap resource.  We pass the CMap object as well as the resource,

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -111,13 +111,13 @@ int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres);
 /*
  * Get the object ID of a FontDescriptor.
  */
-long pdf_font_descriptor_id(const pdf_font_descriptor_t *pfd);
+int64_t pdf_font_descriptor_id(const pdf_font_descriptor_t *pfd);
 
 /*
  * For Linearised PDF production, set the usage array of the FontDescriptor
  * resoruce and the FontFile resource, based on teh usage of the font.
  */
-long pdf_set_font_descriptor_usage(gx_device_pdf *pdev, int parent_id, const pdf_font_descriptor_t *pfd);
+int64_t pdf_set_font_descriptor_usage(gx_device_pdf *pdev, int parent_id, const pdf_font_descriptor_t *pfd);
 
 /*
  * Get the FontType of a FontDescriptor.

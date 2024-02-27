@@ -447,7 +447,7 @@ pdfmark_bind_named_object(gx_device_pdf *pdev, const gs_const_string *objname,
 typedef struct ao_params_s {
     gx_device_pdf *pdev;	/* for pdfmark_make_dest */
     const char *subtype;	/* default Subtype in top-level dictionary */
-    long src_pg;		/* set to SrcPg - 1 if any */
+    int src_pg;		/* set to SrcPg - 1 if any */
 } ao_params_t;
 static int
 pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
@@ -475,7 +475,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
         Subtype.data = 0;
     for (i = 0; i < count; i += 2) {
         const gs_param_string *pair = &pairs[i];
-        long src_pg;
+        int src_pg;
 
         if (pdf_key_eq(pair, "/SrcPg")){
             unsigned char *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, (pair[1].size + 1) * sizeof(unsigned char),
@@ -911,8 +911,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
             pdfmark_put_c_pair(pcd, "/Dest", &Dest);
     } else if (for_outline && !Action) {
         /* Make an implicit destination. */
-        char dstr[1 + (sizeof(long) * 8 / 3 + 1) + 25 + 1];
-        long page_id = pdf_page_id(pdev, pdev->next_page + 1);
+        char dstr[1 + (sizeof(int64_t) * 8 / 3 + 1) + 25 + 1];
+        int64_t page_id = pdf_page_id(pdev, pdev->next_page + 1);
 
         gs_snprintf(dstr, MAX_DEST_STRING, "[%ld 0 R /XYZ null null null]", page_id);
         cos_dict_put_c_key_string(pcd, "/Dest", (const unsigned char*) dstr,
@@ -1237,7 +1237,7 @@ pdfmark_LNK(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 /* Write and release one node of the outline tree. */
 static int
 pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
-                      long next_id)
+                      int64_t next_id)
 {
     stream *s;
     int code = 0;
@@ -1453,7 +1453,7 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     gs_param_string title;
     gs_param_string rectstr;
     gs_rect rect;
-    long bead_id;
+    int64_t bead_id;
     pdf_article_t *part;
     int code;
 

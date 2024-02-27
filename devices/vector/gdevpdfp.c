@@ -631,7 +631,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
          * has just been opened and nothing has been written,
          * or if we are setting it to the same value.
          */
-        long fon = pdev->FirstObjectNumber;
+        int64_t fon = pdev->FirstObjectNumber;
 
         if (fon != save_dev->FirstObjectNumber) {
             if (fon <= 0 || fon > 0x7fff0000 ||

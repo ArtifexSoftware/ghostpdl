@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -112,7 +112,7 @@ gs_public_st_basic_super(st_pdf_sub_font_descriptor,
 /* ---------------- Private ---------------- */
 
 /* Get the ID of font descriptor metrics. */
-static inline long
+static inline int64_t
 pdf_font_descriptor_common_id(const pdf_font_descriptor_common_t *pfdc)
 {
     return pdf_resource_id((const pdf_resource_t *)pfdc);
@@ -266,13 +266,13 @@ int pdf_font_descriptor_free(gx_device_pdf *pdev, pdf_resource_t *pres)
 }
 
 /* Get the object ID of a FontDescriptor. */
-long
+int64_t
 pdf_font_descriptor_id(const pdf_font_descriptor_t *pfd)
 {
     return pdf_resource_id((const pdf_resource_t *)pfd);
 }
 
-long pdf_set_font_descriptor_usage(gx_device_pdf *pdev, int parent_id, const pdf_font_descriptor_t *pfd)
+int64_t pdf_set_font_descriptor_usage(gx_device_pdf *pdev, int parent_id, const pdf_font_descriptor_t *pfd)
 {
     int id = pdf_resource_id((const pdf_resource_t *)pfd);
 
@@ -664,7 +664,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_resource_t *pres)
 {
     pdf_font_descriptor_t *pfd = (pdf_font_descriptor_t *)pres;
     font_type ftype = pfd->FontType;
-    long cidset_id = 0;
+    int64_t cidset_id = 0;
     int code = 0;
     stream *s;
 

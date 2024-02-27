@@ -786,12 +786,12 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         return_error(gs_error_VMerror);
 
     samples = (unsigned int)pow(2, pcs->params.device_n.num_components);
-    data_buff = gs_alloc_bytes(pdev->memory, (unsigned long)pdev->color_info.num_components * samples, "Convert DeviceN");
+    data_buff = gs_alloc_bytes(pdev->memory, (unsigned int)pdev->color_info.num_components * samples, "Convert DeviceN");
     if (data_buff == 0) {
         COS_FREE(pca, "convert DeviceN");
         return_error(gs_error_VMerror);
     }
-    memset(data_buff, 0x00, (unsigned long)pdev->color_info.num_components * samples);
+    memset(data_buff, 0x00, (unsigned int)pdev->color_info.num_components * samples);
 
     {
         frac conc[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -2080,7 +2080,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     static const int size = transfer_map_size;
     float range01[2], decode[2];
     gs_function_t *pfn;
-    long id;
+    int64_t id;
     int code;
 
     if (map == 0) {
@@ -2283,7 +2283,7 @@ static const ht_function_t ht_functions[] = {
 /* Write each kind of halftone. */
 static int
 pdf_write_spot_function(gx_device_pdf *pdev, const gx_ht_order *porder,
-                        long *pid)
+                        int64_t *pid)
 {
     /****** DOESN'T HANDLE STRIP HALFTONES ******/
     int w = porder->width, h = porder->height;
@@ -2377,7 +2377,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
 {
     char trs[17 + MAX_FN_CHARS + 1];
     int code;
-    long spot_id;
+    int64_t spot_id;
     stream *s;
     int i = countof(ht_functions);
     gs_memory_t *mem = pdev->pdf_memory;

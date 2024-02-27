@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -33,7 +33,7 @@
 struct pdf_bitmap_fonts_s {
     pdf_font_resource_t *open_font;  /* current Type 3 synthesized font */
     bool use_open_font;		/* if false, start new open_font */
-    long bitmap_encoding_id;
+    int64_t bitmap_encoding_id;
     int max_embedded_code;	/* max Type 3 code used */
 };
 

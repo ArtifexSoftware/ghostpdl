@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -291,7 +291,7 @@ psw_end_file(gp_file *f, const gx_device *dev,
 int
 psw_write_page_header(stream *s, const gx_device *dev,
                       const gx_device_pswrite_common_t *pdpc,
-                      bool do_scale, long page_ord, int dictsize)
+                      bool do_scale, int64_t page_ord, int dictsize)
 {
     long page = dev->PageCount + 1;
     int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);

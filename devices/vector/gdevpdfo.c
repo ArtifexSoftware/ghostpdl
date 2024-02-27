@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -637,7 +637,7 @@ cos_array_hash(const cos_object_t *pco0, gs_md5_state_t *md5, gs_md5_byte_t *has
 
 /* Put/add an element in/to an array. */
 int
-cos_array_put(cos_array_t *pca, long index, const cos_value_t *pvalue)
+cos_array_put(cos_array_t *pca, int64_t index, const cos_value_t *pvalue)
 {
     gs_memory_t *mem = COS_OBJECT_MEMORY(pca);
     cos_value_t value;
@@ -652,7 +652,7 @@ cos_array_put(cos_array_t *pca, long index, const cos_value_t *pvalue)
     return code;
 }
 int
-cos_array_put_no_copy(cos_array_t *pca, long index, const cos_value_t *pvalue)
+cos_array_put_no_copy(cos_array_t *pca, int64_t index, const cos_value_t *pvalue)
 {
     gs_memory_t *mem = COS_OBJECT_MEMORY(pca);
     cos_array_element_t **ppcae = &pca->elements;
@@ -762,7 +762,7 @@ cos_array_element_first(const cos_array_t *pca)
     return pca->elements;
 }
 const cos_array_element_t *
-cos_array_element_next(const cos_array_element_t *pca, long *pindex,
+cos_array_element_next(const cos_array_element_t *pca, int64_t *pindex,
                        const cos_value_t **ppvalue)
 {
     *pindex = pca->index;
@@ -1795,7 +1795,7 @@ cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_p
 }
 
 /* Find the total length of a stream. */
-long
+int64_t
 cos_stream_length(const cos_stream_t *pcs)
 {
     return pcs->length;

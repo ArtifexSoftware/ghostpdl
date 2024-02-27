@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -66,7 +66,7 @@ gs_private_st_ptrs1(st_pdf_bitmap_fonts, pdf_bitmap_fonts_t,
   "pdf_bitmap_fonts_t", pdf_bitmap_fonts_enum_ptrs,
   pdf_bitmap_fonts_reloc_ptrs, open_font);
 
-static inline long
+static inline int64_t
 pdf_char_proc_id(const pdf_char_proc_t *pcp)
 {
     return pdf_resource_id((const pdf_resource_t *)pcp);
@@ -160,7 +160,7 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s = pdev->strm;
     const pdf_char_proc_ownership_t *pcpo;
-    long diff_id = 0;
+    int64_t diff_id = 0;
     int code;
 
     if (pdfont->u.simple.s.type3.bitmap_font)

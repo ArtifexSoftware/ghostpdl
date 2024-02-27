@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1098,9 +1098,9 @@ write_mask(gx_device_pdf *pdev, gx_device_memory *mdev, gs_matrix *m)
 }
 
 static void
-max_subimage_width(int width, byte *base, int x0, long count1, int *x1, long *count)
+max_subimage_width(int width, byte *base, int x0, int64_t count1, int *x1, int64_t *count)
 {
-    long c = 0, c1 = count1 - 1;
+    int64_t c = 0, c1 = count1 - 1;
     int x = x0;
     byte p = 1; /* The inverse of the previous bit. */
     byte r;     /* The inverse of the current  bit. */
@@ -1147,18 +1147,18 @@ cmpbits(const byte *base, const byte *base2, int w)
 
 static void
 compute_subimage(int width, int height, int raster, byte *base,
-                 int x0, int y0, long MaxClipPathSize, int *x1, int *y1)
+                 int x0, int y0, int64_t MaxClipPathSize, int *x1, int *y1)
 {
     /* Returns a semiopen range : [x0:x1)*[y0:y1). */
     if (x0 != 0) {
-        long count;
+        int64_t count;
 
         /* A partial single scanline. */
         max_subimage_width(width, base + y0 * raster, x0, MaxClipPathSize / 4, x1, &count);
         *y1 = y0;
     } else {
         int xx, y = y0, yy;
-        long count, count1 = MaxClipPathSize / 4;
+        int64_t count, count1 = MaxClipPathSize / 4;
 
         for(; y < height && count1 > 0; ) {
             max_subimage_width(width, base + y * raster, 0, count1, &xx, &count);
@@ -1191,7 +1191,7 @@ image_line_to_clip(gx_device_pdf *pdev, byte *base, int x0, int x1, int y0, int 
 {   /* returns the number of segments or error code. */
     int x = x0, xx;
     byte *q = base + (x / 8), m = 0x80 >> (x % 8);
-    long c = 0;
+    int64_t c = 0;
 
     for (;;) {
         /* Look for upgrade : */

@@ -747,7 +747,7 @@ private_st_pdf_font_cache_elem();
 /*
  * Compute id for a font cache element.
  */
-static ulong
+static int64_t
 pdf_font_cache_elem_id(gs_font *font)
 {
     return font->id;
@@ -758,7 +758,7 @@ pdf_locate_font_cache_elem(gx_device_pdf *pdev, gs_font *font)
 {
     pdf_font_cache_elem_t **e = &pdev->font_cache;
     pdf_font_cache_elem_t *prev = NULL;
-    long id = pdf_font_cache_elem_id(font);
+    int64_t id = pdf_font_cache_elem_id(font);
 
     for (; *e != 0; e = &(*e)->next) {
         if ((*e)->font_id == id) {

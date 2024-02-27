@@ -1355,7 +1355,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (pnamed != 0 || pdev->PendingOC) /* Don't in-line the image if it is named. Or has Optional Content */
         in_line = false;
     else {
-        double nbytes = (double)(((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
+        int64_t nbytes = (int64_t)(((int64_t) pie->width * pie->bits_per_pixel + 7) >> 3) *
             pie->num_planes * pie->rows_left;
 
         in_line &= (nbytes < pdev->MaxInlineImageSize);

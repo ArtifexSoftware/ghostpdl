@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -106,7 +106,7 @@ typedef struct cos_stream_piece_s cos_stream_piece_t;
 #define cos_object_struct(otype_s, etype)\
 struct otype_s {\
     const cos_object_procs_t *cos_procs;	/* must be first */\
-    long id;\
+    int64_t id;\
     etype *elements;\
     cos_stream_piece_t *pieces;\
     gs_memory_t *mem;\
@@ -114,7 +114,7 @@ struct otype_s {\
     byte is_open;		/* see above */\
     byte is_graphics;		/* see above */\
     byte written;		/* see above */\
-    long length;                /* only for stream objects */\
+    gs_offset_t length;                /* only for stream objects */\
     stream *input_strm;		/* only for stream objects */\
     gs_md5_state_t md5;         /* used to create MD5 hash to test equality */\
     int md5_valid;              /* 1 if hash created, 0 otherwise */\
@@ -244,8 +244,8 @@ const cos_value_t *cos_resource_value(cos_value_t *, cos_object_t *);
  * itself, that should not be copied.
  */
     /* array */
-int cos_array_put(cos_array_t *, long, const cos_value_t *);
-int cos_array_put_no_copy(cos_array_t *, long, const cos_value_t *);
+int cos_array_put(cos_array_t *, int64_t, const cos_value_t *);
+int cos_array_put_no_copy(cos_array_t *, int64_t, const cos_value_t *);
 int cos_array_add(cos_array_t *, const cos_value_t *);
 int cos_array_add_no_copy(cos_array_t *, const cos_value_t *);
 int cos_array_add_c_string(cos_array_t *, const char *);
@@ -284,7 +284,7 @@ int cos_dict_delete_c_key(cos_dict_t *pcd, const char *key);
  * Get the first / next element for enumerating an array.  Usage:
  *	const cos_array_element_t *elt = cos_array_element_first(pca);
  *	while (elt) {
- *	    long idx;
+ *	    int64_t idx;
  *	    const cos_value_t *pvalue;
  *	    elt = cos_array_element_next(elt, &idx, &pvalue);
  *	    ...
@@ -296,7 +296,7 @@ int cos_dict_delete_c_key(cos_dict_t *pcd, const char *key);
 const cos_array_element_t *
     cos_array_element_first(const cos_array_t *);
 const cos_array_element_t *
-    cos_array_element_next(const cos_array_element_t *, long *,
+    cos_array_element_next(const cos_array_element_t *, int64_t *,
                            const cos_value_t **);
 
 /* Look up a key in a dictionary. */
@@ -335,7 +335,7 @@ int cos_stream_elements_write(const cos_stream_t *, gx_device_pdf *); /* = dict_
 int cos_stream_contents_write(const cos_stream_t *, gx_device_pdf *);
 
 /* Find the total length of a stream. */
-long cos_stream_length(const cos_stream_t *pcs);
+int64_t cos_stream_length(const cos_stream_t *pcs);
 
 /* Write/delete definitions of named objects. */
 /* This is a special-purpose facility for pdf_close. */
