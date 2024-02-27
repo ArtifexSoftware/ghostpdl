@@ -1753,6 +1753,7 @@ retry:
         if (code < 0)
             goto exit;
         read = sfread(Buffer, 1, buflen, stream->s);
+        pdfi_close_file(ctx, stream);
         if (read == ERRC) {
             /* Error reading the expected number of bytes. If we already calculated the number of
              * bytes in the loop above, then ignore the error and carry on. If, however, we were
@@ -1761,7 +1762,6 @@ retry:
              */
             if(ToRead != 0) {
                 buflen = ToRead = 0;
-                pdfi_close_file(ctx, stream);
                 code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
                 if (code < 0)
                     goto exit;
@@ -1769,7 +1769,6 @@ retry:
                 goto retry;
             }
         }
-        pdfi_close_file(ctx, stream);
     } else {
         if (ToRead && stream_obj->length_valid)
             code = pdfi_apply_SubFileDecode_filter(ctx, stream_obj->Length, NULL, ctx->main_stream, &SubFileStream, false);
@@ -1779,6 +1778,7 @@ retry:
             goto exit;
 
         read = sfread(Buffer, 1, buflen, SubFileStream->s);
+        pdfi_close_file(ctx, SubFileStream);
         if (read == ERRC) {
             /* Error reading the expected number of bytes. If we already calculated the number of
              * bytes in the loop above, then ignore the error and carry on. If, however, we were
