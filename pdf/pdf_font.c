@@ -1615,11 +1615,14 @@ pdfi_gs_simple_font_encoding_indices(pdf_context *ctx, pdf_array *Encoding, gs_e
 
             gs_c_glyph_name(gs_c_known_encode((gs_char)i, index), &rstr);
             if (rstr.size == ename->length &&
-                !memcmp(rstr.data, ename->data, rstr.size)
-                )
+                !memcmp(rstr.data, ename->data, rstr.size)) {
+                pdfi_countdown(ename);
                 continue;
-            if (--match <= best)
+            }
+            pdfi_countdown(ename);
+            if (--match <= best) {
                 break;
+            }
         }
         if (match > best) {
             best = match;
