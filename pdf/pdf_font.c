@@ -2219,7 +2219,6 @@ int pdfi_init_font_directory(pdf_context *ctx)
         if (ctx->font_dir == NULL) {
             return_error(gs_error_VMerror);
         }
-        ctx->font_dir->ccache.mark_glyph = pfdir->ccache.mark_glyph;
         ctx->font_dir->align_to_pixels = pfdir->align_to_pixels;
         ctx->font_dir->grid_fit_tt = pfdir->grid_fit_tt;
     }
