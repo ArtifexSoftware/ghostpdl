@@ -1205,6 +1205,7 @@ stream_to_none(gx_device_pdf * pdev)
     gs_offset_t length;
     int code;
     stream *target;
+     char str[21];
 
     if (pdev->ResourcesBeforeUsage) {
         int code = pdf_exit_substream(pdev);
@@ -1236,11 +1237,13 @@ stream_to_none(gx_device_pdf * pdev)
 
         if (pdev->WriteObjStms) {
             pdf_open_separate(pdev, pdev->contents_length_id, resourceLength);
-            pprintld1(pdev->strm, "%"PRId64"\n", (int64_t)length);
+            gs_snprintf(str, sizeof(str), "%"PRId64"\n", (int64_t)length);
+            stream_puts(pdev->strm, str);
             pdf_end_separate(pdev, resourceLength);
         } else {
             pdf_open_obj(pdev, pdev->contents_length_id, resourceLength);
-            pprintld1(s, "%"PRId64"\n", (int64_t)length);
+            gs_snprintf(str, sizeof(str), "%"PRId64"\n", (int64_t)length);
+            stream_puts(s, str);
             pdf_end_obj(pdev, resourceLength);
         }
     }
