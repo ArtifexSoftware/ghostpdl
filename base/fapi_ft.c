@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -675,7 +675,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
             else if (a_server->grid_fit == 2) {
                 load_flags = FT_LOAD_FORCE_AUTOHINT;
             }
-            load_flags |= FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN;
+            load_flags |= FT_LOAD_MONOCHROME | FT_LOAD_NO_BITMAP | FT_LOAD_LINEAR_DESIGN | FT_LOAD_PEDANTIC;
         }
         else {
             /* Current FreeType hinting for type 1 fonts is so poor we are actually better off without it (fewer files render incorrectly) (FT_LOAD_NO_HINTING) */
@@ -692,6 +692,7 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
     if (ft_error == FT_Err_Invalid_Argument
         || ft_error == FT_Err_Invalid_Reference
         || ft_error == FT_Err_Invalid_Glyph_Index
+        || ft_error == FT_Err_DEF_In_Glyf_Bytecode
         || (ft_error >= FT_Err_Invalid_Opcode
             && ft_error <= FT_Err_Too_Many_Instruction_Defs)) {
 
