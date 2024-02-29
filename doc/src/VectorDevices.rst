@@ -870,7 +870,7 @@ Note 16
 
 Note 17
 ^^^^^^^^^
-   When ``EmbedAllFonts`` is false only Fonts (not CIDFonts) which are symbolic will be embedded in the output file. When ``EmbedAllFonts`` is true the behaviour is dependent on the input type. Ordinarily (all interpreters except PDF) all the fonts will be embedded in the output. Fonts which are not embedded in the input will have a substitute assigned and that will be embedded in the output. For PDF input only, if the Font or CIDFont is not embedded in the input then it will not be embedded in the output. This is a change in behaviour with the release of 10.03.0. If you have defined a specific font as a known good substitute in Fontmap.GS or cidfmap then you will also need to add it to the ``AlwaysEmbed`` array in order that it gets embedded.
+   When ``EmbedAllImages`` is false only Fonts (not CIDFonts) which are symbolic will be embedded in the output file. When ``EmbedAllFonts`` is true the behaviour is dependent on the input type. Ordinarily (all interpreters except PDF) all the fonts will be embedded in the output. Fonts which are not embedded in the input will have a substitute assigned and that will be embedded in the output. For PDF input only, if the Font or CIDFont is not embedded in the input then it will not be embedded in the output. This is a change in behaviour with the release of 10.03.0. If you have defined a specific font as a known good substitute in Fontmap.GS or cidfmap then you will also need to add it to the ``AlwaysEmbed`` array in order that it gets embedded.
 
 
 Color Conversion and Management
