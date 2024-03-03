@@ -1754,6 +1754,8 @@ retry:
             goto exit;
         read = sfread(Buffer, 1, buflen, stream->s);
         pdfi_close_file(ctx, stream);
+        /* Because we opened the SubFileDecode separately to the filter chain, we need to close it separately too */
+        pdfi_close_file(ctx, SubFileStream);
         if (read == ERRC) {
             /* Error reading the expected number of bytes. If we already calculated the number of
              * bytes in the loop above, then ignore the error and carry on. If, however, we were
