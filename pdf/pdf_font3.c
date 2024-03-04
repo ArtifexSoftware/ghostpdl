@@ -304,6 +304,7 @@ int pdfi_read_type3_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     if (code < 0)
         goto font3_error;
 
+    pdfi_font_set_orig_fonttype(ctx, (pdf_font *)font);
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
     if (code < 0)
         goto font3_error;

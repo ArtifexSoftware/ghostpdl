@@ -666,6 +666,7 @@ int pdfi_read_truetype_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
 
     pdfi_make_post_dict((gs_font_type42 *)font->pfont);
 
+    pdfi_font_set_orig_fonttype(ctx, (pdf_font *)font);
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
     if (code < 0) {
         goto error;
@@ -869,6 +870,8 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
         tmp = NULL;
     }
     font->ToUnicode = tmp;
+    pdfi_font_set_orig_fonttype(ctx, (pdf_font *)font);
+
     code = gs_definefont(ctx->font_dir, (gs_font *) font->pfont);
     if (code < 0) {
         goto error;

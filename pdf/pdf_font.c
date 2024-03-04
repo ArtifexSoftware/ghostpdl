@@ -2383,6 +2383,34 @@ void pdfi_font_set_first_last_char(pdf_context *ctx, pdf_dict *fontdict, pdf_fon
     }
 }
 
+void pdfi_font_set_orig_fonttype(pdf_context *ctx, pdf_font *font)
+{
+    pdf_name *ftype;
+    pdf_dict *fontdict = font->PDF_font;
+    int code;
+
+    code = pdfi_dict_get_type(ctx, fontdict, "Subtype", PDF_NAME, (pdf_obj**)&ftype);
+    if (code < 0) {
+        font->orig_FontType = (font_type)-1;
+    }
+    else {
+        if (pdfi_name_is(ftype, "Type1") || pdfi_name_is(ftype, "MMType1"))
+            font->orig_FontType = ft_encrypted;
+        else if (pdfi_name_is(ftype, "Type1C"))
+            font->orig_FontType = ft_encrypted2;
+        else if (pdfi_name_is(ftype, "TrueType"))
+            font->orig_FontType = ft_TrueType;
+        else if (pdfi_name_is(ftype, "Type3"))
+            font->orig_FontType = ft_user_defined;
+        else if (pdfi_name_is(ftype, "CIDFontType0"))
+            font->orig_FontType = ft_CID_encrypted;
+        else if (pdfi_name_is(ftype, "CIDFontType2"))
+            font->orig_FontType = ft_CID_TrueType;
+        else
+            font->orig_FontType = (font_type)-1;
+    }
+}
+
 /* Patch or create a new XUID based on the existing UID/XUID, a simple hash
    of the input file name and the font dictionary object number.
    This allows improved glyph cache efficiency, also ensures pdfwrite understands
@@ -2442,6 +2470,7 @@ int pdfi_default_font_info(gs_font *font, const gs_point *pscale, int members, g
     if (code < 0)
         return code;
     if ((members & FONT_INFO_EMBEDDED) != 0) {
+        info->orig_FontType = pdff->orig_FontType;
         if (pdff->pdfi_font_type == e_pdf_font_type3) {
             info->FontEmbedded = (int)(true);
             info->members |= FONT_INFO_EMBEDDED;

@@ -88,7 +88,8 @@ typedef enum pdf_font_type_e {
     pdf_obj *ToUnicode;            /* Name or stream (technically should be a stream, but we've seen Identity names */ \
     bool substitute; /* We need to know what a CIDFont is a substitute */ \
     pdf_string *filename;          /* If we read this from disk, this is the file it came from */ \
-    font_proc_font_info((*default_font_info))
+    font_proc_font_info((*default_font_info)); \
+    font_type orig_FontType
 
 #define pdf_font_common \
     pdf_font_base;\
@@ -97,7 +98,7 @@ typedef enum pdf_font_type_e {
     unsigned int LastChar;          /* For PDF up to 1.4 this may be absent for the base 14 */\
     double MissingWidth; \
     double *Widths;                 /* For PDF up to 1.4 this may be absent for the base 14 */\
-    pdf_array *Encoding             /* Array built from name or dictionary */\
+    pdf_array *Encoding             /* Array built from name or dictionary */
 
 
 /* The registry and ordering strings in gs_font_cid0_data are just references to

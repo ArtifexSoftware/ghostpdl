@@ -533,6 +533,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     cid2->cidata.orig_procs.get_outline = cid2->data.get_outline;
     cid2->data.get_glyph_index = pdfi_cidtype2_get_glyph_index;
 
+    pdfi_font_set_orig_fonttype(ctx, (pdf_font *)font);
     code = gs_definefont(ctx->font_dir, (gs_font *)font->pfont);
     if (code < 0) {
         goto error;

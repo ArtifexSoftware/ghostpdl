@@ -2908,6 +2908,7 @@ error:
                 goto error;
             }
 
+            pdfi_font_set_orig_fonttype(ctx, (pdf_font *)ppdfont);
             code = gs_definefont(ctx->font_dir, (gs_font *) ppdfont->pfont);
 
             if (code >= 0)
@@ -3128,6 +3129,7 @@ pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pd
     }
     font->ToUnicode = tmp;
 
+    pdfi_font_set_orig_fonttype(ctx, (pdf_font *)font);
     code = gs_definefont(ctx->font_dir, (gs_font *) font->pfont);
     if (code < 0) {
         goto error;

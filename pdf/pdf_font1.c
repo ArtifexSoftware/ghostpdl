@@ -729,6 +729,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
             }
             t1f->pfont->is_resource = (key_known == false);
 
+            pdfi_font_set_orig_fonttype(ctx, (pdf_font *)t1f);
             code = gs_definefont(ctx->font_dir, (gs_font *) t1f->pfont);
             if (code < 0) {
                 goto error;
@@ -939,6 +940,7 @@ pdfi_copy_type1_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, 
     }
     font->ToUnicode = tmp;
 
+    pdfi_font_set_orig_fonttype(ctx, (pdf_font *)font);
     code = gs_definefont(ctx->font_dir, (gs_font *) font->pfont);
     if (code < 0) {
         goto error;
