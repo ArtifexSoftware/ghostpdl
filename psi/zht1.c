@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -52,6 +52,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
     int code = 0;
     int space = 0;
     gs_memory_t *mem;
+    gs_memory_t *currmem = (gs_memory_t *)idmemory->current;
 
     for (i = 0; i < 4; i++) {
         os_ptr op1 = op - 9 + i * 3;
@@ -84,7 +85,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
 
         esp += 9;
         make_mark_estack(esp - 8, es_other, setcolorscreen_cleanup);
-        make_bool(esp - 7, (mem == (gs_memory_t *)idmemory->spaces.memories.named.global));
+        make_bool(esp - 7, (currmem == (gs_memory_t *)idmemory->spaces.memories.named.global));
         memcpy(esp - 6, sprocs, sizeof(ref) * 4);	/* procs */
         make_istruct(esp - 2, 0, pht);
         make_istruct(esp - 1, 0, pdht);
