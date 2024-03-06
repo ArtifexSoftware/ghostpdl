@@ -5,9 +5,14 @@
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-<h2><a name="Version10.03.0"></a>Version 10.03.0 (2024-02-20)</h2>
+<h2><a name="Version10.03.0"></a>Version 10.03.0 (2024-03-06)</h2>
 <p> Highlights in this release include:
 <ul>
+<li>
+<p>A vulnerability was identified in the way Ghostscript/GhostPDL called tesseract for
+the OCR devices, which could allow arbitrary code execution. As as result, we strongly
+urge anyone including the OCR devices in their build to update as soon as possible.
+</li>
 <li>
 <p>As of this release (10.03.0) pdfwrite creates PDF files with XRef streams and
 ObjStm streams. This can result in considerably smaller PDF output files.
@@ -119,7 +124,7 @@ in that it now supports (although does not enforce) case sensitivity.
 (History9.html had reached 8.1Mb!), we intend to only include the summary highlights (above).
 <p>For anyone wanting the full details of the changes in
 a release, we ask them to look at the history in our public git repository:
-<a href="https://git.ghostscript.com/?p=ghostpdl.git;a=shortlog;h=refs/tags/ghostpdl-10.03.0rc1">ghostpdl-10.03.0rc1</a> log.
+<a href="https://git.ghostscript.com/?p=ghostpdl.git;a=shortlog;h=refs/tags/ghostpdl-10.03.0">ghostpdl-10.03.0</a> log.
 <p>If this change does not draw negative feedback, History?.htm file(s) will be removed from the release archives.
 
 <!-- [2.0 end contents] ==================================================== -->
@@ -141,7 +146,7 @@ license.  Refer to licensing information at <a href="https://www.artifex.com">ht
 or contact Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA,
 
 <p>
-<small>Ghostscript version 10.03.0, 20 February 2024
+<small>Ghostscript version 10.03.0, 06 March 2024
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
