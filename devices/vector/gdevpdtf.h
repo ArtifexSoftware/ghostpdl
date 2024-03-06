@@ -426,7 +426,7 @@ gs_font_base *pdf_font_resource_font(const pdf_font_resource_t *pdfont, bool com
  */
 pdf_font_embed_t pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font,
                                        int *pindex,
-                                       pdf_char_glyph_pair_t *pairs, int num_glyphs);
+                                       pdf_char_glyph_pair_t *pairs, int num_glyphs, font_type *orig_type);
 
 /*
  * Compute the BaseFont of a font according to the algorithm described

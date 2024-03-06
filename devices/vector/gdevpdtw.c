@@ -242,8 +242,12 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
     code = pdf_write_encoding_ref(pdev, pdfont, diff_id);
     if (code < 0)
         return code;
-    pprints1(s, "/Subtype/%s>>\n",
+    if (pdfont->FontDescriptor == NULL || pdfont->FontDescriptor->embed)
+        pprints1(s, "/Subtype/%s>>\n",
              (pdfont->FontType == ft_TrueType ? "TrueType" : "Type1"));
+    else
+        pprints1(s, "/Subtype/%s>>\n",
+             (pdfont->FontDescriptor->FontType == ft_TrueType ? "TrueType" : "Type1"));
     pdf_end_separate(pdev, resourceFont);
     if (diff_id) {
         mark_font_descriptor_symbolic(pdfont);

@@ -810,7 +810,7 @@ has_extension_glyphs(gs_font *pfont)
 
 pdf_font_embed_t
 pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
-                      pdf_char_glyph_pair_t *pairs, int num_glyphs)
+                      pdf_char_glyph_pair_t *pairs, int num_glyphs, font_type *orig_type)
 {
     const gs_font_name *fn = &font->font_name;
     const byte *chars = fn->chars;
@@ -891,6 +891,9 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
         (embed_as_standard_called ? do_embed_as_standard :
          embed_as_standard(pdev, font, index, pairs, num_glyphs)))
         return FONT_EMBED_STANDARD;
+
+    if (info.members & FONT_INFO_EMBEDDED)
+        *orig_type = info.orig_FontType;
     return FONT_EMBED_NO;
 }
 

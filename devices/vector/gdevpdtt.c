@@ -1520,6 +1520,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
                        pdf_char_glyph_pairs_t *cgp)
 {
     int index = -1;
+    font_type orig_type = ft_undefined;
     int BaseEncoding = ENCODING_INDEX_UNKNOWN;
     pdf_font_embed_t embed;
     pdf_font_descriptor_t *pfd = 0;
@@ -1555,7 +1556,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         if (font->FontType == ft_encrypted2)
             return_error(gs_error_undefined);
     }
-    embed = pdf_font_embed_status(pdev, base_font, &index, cgp->s, cgp->num_all_chars);
+    embed = pdf_font_embed_status(pdev, base_font, &index, cgp->s, cgp->num_all_chars, &orig_type);
     if (pdev->CompatibilityLevel < 1.3)
         if (embed != FONT_EMBED_NO && font->FontType == ft_CID_TrueType)
             return_error(gs_error_rangecheck);
@@ -1730,6 +1731,9 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
             w[0] = widths.Width.w;
             pdfont->used[0] |= 0x80;
         }
+    }
+    if (embed == FONT_EMBED_NO && orig_type != ft_undefined) {
+        pfd->FontType = orig_type;
     }
     *ppdfont = pdfont;
     return 1;

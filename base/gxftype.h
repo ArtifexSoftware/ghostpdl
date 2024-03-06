@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -70,7 +70,15 @@ typedef enum {
      * for the PDF itnerpreter, it handles the BuildChar immediately. So we
      * need to differentiate between the two.
      */
-    ft_PDF_user_defined
+    ft_PDF_user_defined,
+    /*
+     * This is used by pdfwrite and the font embedding code. We need to be able to
+     * write the original font type when we don't embed a substitute font, because it
+     * was not embedded in the input. But we also need to know whether the original
+     * font type was available. We use this as the inital value, so we can tell if
+     * it has been altered.
+     */
+     ft_undefined
 } font_type;
 
 /* Define the bitmap font behaviors. */
