@@ -2391,7 +2391,7 @@ void pdfi_font_set_orig_fonttype(pdf_context *ctx, pdf_font *font)
 
     code = pdfi_dict_get_type(ctx, fontdict, "Subtype", PDF_NAME, (pdf_obj**)&ftype);
     if (code < 0) {
-        font->orig_FontType = (font_type)-1;
+        font->orig_FontType = ft_undefined;
     }
     else {
         if (pdfi_name_is(ftype, "Type1") || pdfi_name_is(ftype, "MMType1"))
@@ -2407,7 +2407,7 @@ void pdfi_font_set_orig_fonttype(pdf_context *ctx, pdf_font *font)
         else if (pdfi_name_is(ftype, "CIDFontType2"))
             font->orig_FontType = ft_CID_TrueType;
         else
-            font->orig_FontType = (font_type)-1;
+            font->orig_FontType = ft_undefined;
     }
 }
 
