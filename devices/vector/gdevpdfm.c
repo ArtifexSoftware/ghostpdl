@@ -1186,17 +1186,20 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         return code;
     code = cos_dict_put_c_strings(pcd, "/Type", "/Annot");
     if (code < 0) {
+        (void)pdf_obj_mark_unused(pdev, pcd->id);
         cos_free((cos_object_t *)pcd, "pdfmark_annot");
         return code;
     }
     code = pdfmark_put_ao_pairs(pdev, pcd, pairs, count, pctm, &params, false);
     if (code < 0) {
+        (void)pdf_obj_mark_unused(pdev, pcd->id);
         cos_free((cos_object_t *)pcd, "pdfmark_annot");
         return code;
     }
     if (params.src_pg >= 0)
         page_index = params.src_pg;
     if (pdf_page_id(pdev, page_index + 1) <= 0) {
+        (void)pdf_obj_mark_unused(pdev, pcd->id);
         cos_free((cos_object_t *)pcd, "pdfmark_annot");
         return_error(gs_error_rangecheck);
     }
@@ -1204,6 +1207,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (annots == 0) {
         annots = cos_array_alloc(pdev, "pdfmark_annot");
         if (annots == 0) {
+            (void)pdf_obj_mark_unused(pdev, pcd->id);
             cos_free((cos_object_t *)pcd, "pdfmark_annot");
             return_error(gs_error_VMerror);
         }

@@ -1615,7 +1615,8 @@ static int find_end_xref_section (gx_device_pdf *pdev, gp_file *tfile, int64_t s
                 r = gp_fread(&pos, sizeof(pos), 1, tfile);
                 if (r != 1)
                     return(gs_note_error(gs_error_ioerror));
-            }
+            } else
+                index = 0;
             if (pos & ASIDES_BASE_POSITION)
                 pos += resource_pos - ASIDES_BASE_POSITION;
             pos -= pdev->OPDFRead_procset_length;
@@ -3281,10 +3282,12 @@ pdf_close(gx_device * dev)
 
                 if (end_section >= pdev->next_id)
                     break;
-                start_section = end_section + 1;
-                end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
-                if (end_section < 0)
-                    return end_section;
+                do {
+                    start_section = end_section + 1;
+                    end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+                    if (end_section < 0)
+                        return end_section;
+                } while (start_section == end_section);
                 gs_snprintf(str, sizeof(str), "%"PRId64" %"PRId64"\n", start_section, end_section - start_section);
                 stream_puts(s, str);
             } while (1);
@@ -3352,13 +3355,12 @@ pdf_close(gx_device * dev)
                 if (end_section >= pdev->next_id)
                     break;
 
-                start_section = end_section + 1;
-                end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
-                if (end_section < 0)
-                    return end_section;
-
-                if (end_section == pdev->next_id)
-                    end_section++;
+                do {
+                    start_section = end_section + 1;
+                    end_section = find_end_xref_section(pdev, tfile, start_section, resource_pos);
+                    if (end_section < 0)
+                        return end_section;
+                } while (start_section == end_section);
                 gs_snprintf(str, sizeof(str), "%"PRId64" %"PRId64" ", start_section, end_section - start_section);
                 stream_puts(s, str);
             }while (1);
