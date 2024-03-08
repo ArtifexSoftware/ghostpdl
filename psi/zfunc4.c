@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -196,7 +196,7 @@ put_op(byte **p, byte op) {
  * known to be a procedure.
  */
 static int
-check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int *psize, bool AllowRepeat)
+check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, uint *psize, bool AllowRepeat)
 {
     int code;
     uint i, j;
@@ -276,6 +276,10 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                                         goto idiom_failed;
 
                                     if (fv != 0.) {
+                                        /* Ensure we can't overflow max_uint, Worst case is 3 x put_int + put_float + 4 x put_op */
+                                        if (sz > max_uint - ((3 * (sizeof(int) + 1)) + (sizeof(float) + 1) + 4))
+                                            return_error(gs_error_VMerror);
+
                                         if (first)
                                             sz += put_int(&p, 1);
                                         sz += put_int(&p, 1);
@@ -292,11 +296,17 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                                             sz += put_op(&p, PtCr_mul);
                                     }
                                 }
+                                /* Ensure we can't overflow max_uint */
+                                if (sz > max_uint - (sizeof(int) + 1))
+                                    return_error(gs_error_VMerror);
                                 if (first)
                                     sz += put_int(&p, 0);
                                 else
                                     sz += put_op(&p, PtCr_sub);
                             }
+                            /* Ensure we can't overflow max_uint; required size is 2 x put_int + put_op + n_col x put_op */
+                            if (sz > max_uint - ((2 * (sizeof(int) + 1)) + n_col + 1))
+                                return_error(gs_error_VMerror);
                             /* n_col+4 4 roll pop ... pop  */
                             sz += put_int(&p, n_col + 4);
                             sz += put_int(&p, 4);
@@ -321,18 +331,30 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
         array_get(imemory, pref, i, &elt);
         switch (r_btype(&elt)) {
         case t_integer:
+            /* Ensure we can't overflow max_uint */
+            if (*psize > max_uint - (sizeof(int) + 1))
+                return_error(gs_error_VMerror);
             *psize += put_int(&p, elt.value.intval);
             break;
         case t_real:
+            /* Ensure we can't overflow max_uint */
+            if (*psize > max_uint - (sizeof(float) + 1))
+                return_error(gs_error_VMerror);
             *psize += put_float(&p, elt.value.realval);
             break;
         case t_boolean:
+            /* Ensure we can't overflow max_uint */
+            if (*psize > max_uint - 1)
+                return_error(gs_error_VMerror);
             *p = (elt.value.boolval ? PtCr_true : PtCr_false);
             ++*psize;
             break;
         case t_name:
             if (!r_has_attr(&elt, a_executable))
                 return_error(gs_error_rangecheck);
+            /* Ensure we can't overflow max_uint, initially check the quick cases */
+            if (*psize > max_uint - 1)
+                return_error(gs_error_VMerror);
             name_string_ref(imemory, &elt, &elt);
             if (!bytes_compare(elt.value.bytes, r_size(&elt),
                                (const byte *)"true", 4)) {
@@ -358,6 +380,9 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
         case t_operator: {
             int j;
 
+            /* Ensure we can't overflow max_uint, all operators are a single byte */
+            if (*psize > max_uint - 1)
+                return_error(gs_error_VMerror);
             for (j = 0; j < countof(calc_ops); ++j)
                 if (elt.value.opproc == calc_ops[j].proc) {
                     *p = calc_ops[j].opcode;
@@ -373,6 +398,9 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                 return_error(gs_error_limitcheck);
             if ((code = array_get(imemory, pref, ++i, &elt2)) < 0)
                 return code;
+            /* Ensure we can't overflow max_uint */
+            if (*psize > max_uint - 3)
+                return_error(gs_error_VMerror);
             *psize += 3;
             code = check_psc_function(i_ctx_p, &elt, depth + 1, ops, psize, AllowRepeat);
             if (code < 0)
@@ -381,6 +409,9 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
             if (resolves_to_oper(i_ctx_p, &elt2, zrepeat)) {
                 if (!AllowRepeat)
                     return_error(gs_error_rangecheck);
+                /* We need a byte to add the repeat end below */
+                if (*psize > max_uint - 1)
+                    return_error(gs_error_VMerror);
                 if (ops) {
                     *p = PtCr_repeat;
                     psc_fixup(p, ops + *psize);
@@ -404,6 +435,9 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
                     p = ops + *psize;
                     *p = PtCr_else;
                 }
+                /* Ensure we can't overflow max_uint */
+                if (*psize > max_uint - 3)
+                    return_error(gs_error_VMerror);
                 *psize += 3;
                 code = check_psc_function(i_ctx_p, &elt2, depth + 1, ops, psize, AllowRepeat);
                 if (code < 0)
@@ -433,7 +467,7 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     ref *proc;
     int code;
     byte *ops;
-    int size;
+    uint size;
     int AllowRepeat = 1; /* Default to permitting Repeat, devices which can't handle it implement the spec_op */
 
     *(gs_function_params_t *)&params = *mnDR;
@@ -477,6 +511,15 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     code = check_psc_function(i_ctx_p, proc, 0, NULL, &size, AllowRepeat);
     if (code < 0)
         goto fail;
+
+    /* We need an extra byte for the function return (see below)
+     * strings are limited to max_uint size so make sure we won't overflow.
+     */
+    if (size == max_uint) {
+        code = gs_note_error(gs_error_VMerror);
+        goto fail;
+    }
+
     ops = gs_alloc_string(mem, size + 1, "gs_build_function_4(ops)");
     if (ops == 0) {
         code = gs_note_error(gs_error_VMerror);
@@ -498,8 +541,9 @@ fail:
 
 int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t **func)
 {
-    int code, size, num_components, CIESubst;
-    byte *ops;
+    int code, num_components, CIESubst;
+    uint size;
+    byte *ops = NULL;
     gs_function_PtCr_params_t params;
     float *ptr;
     ref alternatespace, *palternatespace = &alternatespace;
@@ -581,11 +625,22 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
     }
 
     code = check_psc_function(i_ctx_p, (const ref *)pproc, 0, NULL, &size, AllowRepeat);
-    if (code < 0) {
-        gs_function_PtCr_free_params(&params, imemory);
-        return code;
+    if (code < 0)
+        goto error;
+
+    /* We need an extra byte for the function return (see below)
+     * strings are limited to max_uint size so make sure we won't overflow.
+     */
+    if (size == max_uint) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
     }
+
     ops = gs_alloc_string(imemory, size + 1, "make_type4_function(ops)");
+    if (ops == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto error;
+    }
     size = 0;
     check_psc_function(i_ctx_p, (const ref *)pproc, 0, ops, &size, AllowRepeat); /* can't fail */
     ops[size] = PtCr_return;
@@ -593,7 +648,12 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
     params.ops.size = size + 1;
     code = gs_function_PtCr_init(func, &params, imemory);
     if (code < 0)
-        gs_function_PtCr_free_params(&params, imemory);
+        goto error;
 
+    return code;
+
+error:
+    /* free_params will free the ops string */
+    gs_function_PtCr_free_params(&params, imemory);
     return code;
 }
