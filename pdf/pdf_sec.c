@@ -183,8 +183,8 @@ static int apply_sasl(pdf_context *ctx, char *Password, int Len, char **NewPassw
          * this easy: the errors we want to ignore are the ones with
          * codes less than 100. */
         if ((int)err < 100) {
-            NewPassword = Password;
-            NewLen = Len;
+            *NewPassword = Password;
+            *NewLen = Len;
             return 0;
         }
 
