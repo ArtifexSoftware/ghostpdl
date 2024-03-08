@@ -509,52 +509,75 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             int num_names = scna.size, num_std_names = 0;
             fixed_colorant_names_list pcomp_names = pdevn_params->std_colorant_names;
 
-            num_spot = pdevn_params->separations.num_separations;
-            for (i = 0; i < num_names; i++) {
-                /* Verify that the name is not one of our process colorants */
-                if (!check_process_color_names(pcomp_names, &scna.data[i])) {
-                    byte * sep_name;
-                    int name_size = scna.data[i].size;
-
-                    /* We have a new separation */
-                    sep_name = (byte *)gs_alloc_bytes(pdev->memory,
-                        name_size, "devicen_put_params_no_sep_order");
-                    if (sep_name == NULL) {
-                        param_signal_error(plist, "SeparationColorNames", gs_error_VMerror);
-                        return_error(gs_error_VMerror);
-                    }
-                    memcpy(sep_name, scna.data[i].data, name_size);
-                    pdevn_params->separations.names[num_spot].size = name_size;
-                    pdevn_params->separations.names[num_spot].data = sep_name;
-                    if (pequiv_colors != NULL) {
-                        /* Indicate that we need to find equivalent CMYK color. */
-                        pequiv_colors->color[num_spot].color_info_valid = false;
-                        pequiv_colors->all_color_info_valid = false;
-                    }
-                    num_spot++;
-                    num_spot_changed = true;
-                }
-            }
             /* You would expect that pdevn_params->num_std_colorant_names would have this value but it does not.
              * That appears to be copied from the 'ncomps' of the device and that has to be the number of components
              * in the 'base' colour model, 1, 3 or 4 for Gray, RGB or CMYK. Other kinds of DeviceN devices can have
              * additional standard names, eg Tags, or Artifex Orange and Artifex Green, but these are not counted in
              * the num_std_colorant_names. They are, however, listed in pdevn_params->std_colorant_names (when is a
-             * std_colorant_name not a std_colorant_name ?), which is checked above to see if a SeparationOrder name is one
+             * std_colorant_name not a std_colorant_name ?), which is checked to see if a SeparationOrder name is one
              * of the inks we are already dealing with. If it is, then we *don't* add it to num_spots.
              * So we need to actually count the number of colorants in std_colorant_names to make sure that we
              * don't exceed the maximum number of components.
              */
             num_std_names = count_process_color_names(pcomp_names);
-            if (num_std_names + num_spot > pdev->color_info.max_components) {
+            num_spot = 0;
+            /* And now we check each ink to see if it's already in the separations list. If not then we count
+             * up the number of new inks
+             */
+            for (i = 0; i < num_names; i++) {
+                /* Verify that the name is not one of our process colorants */
+                if (!check_process_color_names(pcomp_names, &scna.data[i])) {
+                    if (check_separation_names(pdev, pdevn_params, (const char *)scna.data[i].data, scna.data[i].size, 0, 0) < 0)
+                        num_spot++;
+                }
+            }
+            /* Now we can check the number of standard colourants (eg CMYKOG) + number of existing separations + number of new separations
+             * and make sure we have enough components to handle all of them
+             */
+            if (num_std_names + pdevn_params->separations.num_separations + num_spot > pdev->color_info.max_components) {
                 param_signal_error(plist, "SeparationColorNames", gs_error_rangecheck);
                 return_error(gs_error_rangecheck);
             }
+            /* Save this value because we need it after the loop */
+            num_spot = pdevn_params->separations.num_separations;
+            /* Now go through the ink names again, this time if we get a new one we add it to the list of
+             * separations. We can do that safely now because we know we can't overflow the array of names.
+             */
+            for (i = 0; i < num_names; i++) {
+                /* Verify that the name is not one of our process colorants */
+                if (!check_process_color_names(pcomp_names, &scna.data[i])) {
+                    if (check_separation_names(pdev, pdevn_params, (const char *)scna.data[i].data, scna.data[i].size, 0, 0) < 0) {
+                        /* We have a new separation */
+                        byte * sep_name;
+                        int name_size = scna.data[i].size;
 
-            for (i = pdevn_params->separations.num_separations; i < num_spot; i++)
+                        sep_name = (byte *)gs_alloc_bytes(pdev->memory,
+                            name_size, "devicen_put_params_no_sep_order");
+                        if (sep_name == NULL) {
+                            param_signal_error(plist, "SeparationColorNames", gs_error_VMerror);
+                            return_error(gs_error_VMerror);
+                        }
+                        memcpy(sep_name, scna.data[i].data, name_size);
+                        pdevn_params->separations.names[pdevn_params->separations.num_separations].size = name_size;
+                        pdevn_params->separations.names[pdevn_params->separations.num_separations].data = sep_name;
+                        if (pequiv_colors != NULL) {
+                            /* Indicate that we need to find equivalent CMYK color. */
+                            pequiv_colors->color[num_spot].color_info_valid = false;
+                            pequiv_colors->all_color_info_valid = false;
+                        }
+                        pdevn_params->separations.num_separations++;
+                        num_spot_changed = true;
+                    }
+                }
+            }
+
+            for (i = num_spot; i < pdevn_params->separations.num_separations; i++)
                 pdevn_params->separation_order_map[i + pdevn_params->num_std_colorant_names] =
                 i + pdevn_params->num_std_colorant_names;
-            pdevn_params->separations.num_separations = num_spot;
+            /* We use num_spot below, to reset pdevn_params->separations.num_separations, set it
+             * here in case it gets used elsewhere
+             */
+            num_spot = pdevn_params->separations.num_separations;
         }
         /* Process any .EquivCMYKColors info */
         if (equiv_cmyk.data != 0 && pequiv_colors != 0) {
