@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -386,7 +386,7 @@ gdev_mem_bits_size(const gx_device_memory * dev, int width, int height, size_t *
         planes = &plane1, plane1.depth = dev->color_info.depth, num_planes = 1;
     for (size = 0, pi = 0; pi < num_planes; ++pi) {
         size_t raster = bitmap_raster_pad_align((size_t)width * planes[pi].depth, dev->pad, dev->log2_align_mod);
-        if (width > (SIZE_MAX - alignment) / planes[pi].depth || raster > SIZE_MAX - size)
+        if ((planes[pi].depth && width > (SIZE_MAX - alignment) / planes[pi].depth) || raster > SIZE_MAX - size)
             return_error(gs_error_VMerror);
         size += raster;
     }
