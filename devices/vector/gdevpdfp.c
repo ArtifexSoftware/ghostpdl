@@ -395,6 +395,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     float cl = (float)pdev->CompatibilityLevel;
     bool locked = pdev->params.LockDistillerParams, ForOPDFRead;
+    bool XRefStm_set = false, ObjStms_set = false;
     gs_param_name param_name;
 
     pdev->pdf_memory = gs_memory_stable(pdev->memory);
@@ -615,6 +616,18 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         case 1:
             break;
     }
+
+    ecode = param_read_bool(plist, (param_name = "WriteXRefStm"), &pdev->WriteXRefStm);
+    if (ecode < 0)
+        param_signal_error(plist, param_name, ecode);
+    if (ecode == 0)
+        XRefStm_set = true;
+    ecode = param_read_bool(plist, (param_name = "WriteObjStms"), &pdev->WriteObjStms);
+    if (ecode < 0)
+        param_signal_error(plist, param_name, ecode);
+    if (ecode == 0)
+        ObjStms_set = true;
+
     {
         code = gs_param_read_items(plist, pdev, pdf_param_items, pdev->pdf_memory);
         if (code < 0 || (code = param_read_bool(plist, "ForOPDFRead", &ForOPDFRead)) < 0)
@@ -731,11 +744,21 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      */
     if (pdev->PDFX) {
         cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
+        if (pdev->WriteObjStms && ObjStms_set)
+            emprintf(pdev->memory, "Can't use ObjStm before PDF 1.5, PDF/X does not support PDF 1.5, ignoring WriteObjStms directive\n");
+        if (pdev->WriteXRefStm && XRefStm_set)
+            emprintf(pdev->memory, "Can't use an XRef stream before PDF 1.5, PDF/X does not support PDF 1.5, ignoring WriteXRefStm directive\n");
+
         pdev->WriteObjStms = false;
         pdev->WriteXRefStm = false;
     }
     if (pdev->PDFA == 1 && cl != 1.4) {
         cl = (float)1.4;
+
+        if (pdev->WriteObjStms && ObjStms_set)
+            emprintf(pdev->memory, "Can't use ObjStm before PDF 1.5, PDF/A-1 does not support PDF 1.5, ignoring WriteObjStms directive\n");
+        if (pdev->WriteXRefStm && XRefStm_set)
+            emprintf(pdev->memory, "Can't use an XRef stream before PDF 1.5, PDF/A-1 does not support PDF 1.5, ignoring WriteXRefStm directive\n");
         pdev->WriteObjStms = false;
         pdev->WriteXRefStm = false;
     }
@@ -918,19 +941,28 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         pdev->WriteObjStms = false;
         pdev->WriteXRefStm = false;
     } else {
-        if (pdev->Linearise)
+        if (pdev->Linearise) {
+            if (XRefStm_set)
+                emprintf(pdev->memory, "We don't support XRefStm with FastWebView (Linearized PDF), ignoring WriteXRefStm directive\n");
+            pdev->WriteXRefStm = false;
+            if (ObjStms_set)
+                emprintf(pdev->memory, "We don't support ObjStms with FastWebView (Linearized PDF), ignoring WriteObjStms directive\n");
             pdev->WriteObjStms = false;
+        }
     }
     if (pdev->WriteObjStms && pdev->CompatibilityLevel < 1.5) {
-        emprintf(pdev->memory, "Can't use Object streams before PDF 1.5, ignoring WriteObjStms directive\n");
+        if (ObjStms_set)
+            emprintf(pdev->memory, "Can't use Object streams before PDF 1.5, ignoring WriteObjStms directive\n");
         pdev->WriteObjStms = false;
     }
     if (pdev->WriteXRefStm && pdev->CompatibilityLevel < 1.5) {
-        emprintf(pdev->memory, "Can't use an XRef stream before PDF 1.5, ignoring WriteXRefStm directive\n");
+        if (XRefStm_set)
+            emprintf(pdev->memory, "Can't use an XRef stream before PDF 1.5, ignoring WriteXRefStm directive\n");
         pdev->WriteXRefStm = false;
     }
     if (pdev->WriteObjStms && !pdev->WriteXRefStm) {
-        emprintf(pdev->memory, "Can't use Object streams without XRef stream, ignoring WriteObjStms directive\n");
+        if (ObjStms_set)
+            emprintf(pdev->memory, "Can't use Object streams without XRef stream, ignoring WriteObjStms directive\n");
         pdev->WriteObjStms = false;
     }
     if (pdev->WriteObjStms) {
