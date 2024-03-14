@@ -42,8 +42,8 @@ extern const gx_device_color_type_t gx_dc_pattern2;
  */
 #define ENCODE_VALUE(v, emax, vmin, vmax)\
   ( ((v) - (vmin)) * ((double)(emax) / ((vmax) - (vmin))) )
-#define PDFA_MIN_MESH_COORDINATE (-0x800000 / 256.0)
-#define PDFA_MAX_MESH_COORDINATE ( 0x7fffff / 256.0)
+#define PDFA_MIN_MESH_COORDINATE (-0x400000 / 128.0)
+#define PDFA_MAX_MESH_COORDINATE ( 0x3fffff / 128.0)
 #define PDFA_ENCODE_MESH_COORDINATE(v)\
   ENCODE_VALUE(v, 0xffffff, PDFA_MIN_MESH_COORDINATE, PDFA_MAX_MESH_COORDINATE)
 #define MIN_MESH_COORDINATE (-0x800000 )
@@ -690,6 +690,7 @@ typedef struct pdf_mesh_data_params_s {
     int num_components;
     bool is_indexed;
     int rescale;            /* If the co-ordinates won't fit into crappy Acrobat values, scale them here and in the pattern Matrix */
+    bool old_pdf;
     const float *Domain;	/* iff Function */
     const gs_range_t *ranges;
 } pdf_mesh_data_params_t;
@@ -713,7 +714,7 @@ put_clamped(byte *p, double v, int num_bytes)
 static inline void
 put_clamped_coord(byte *p, double v, int num_bytes, const pdf_mesh_data_params_t *pmdp)
 {
-    if (pmdp->rescale != 1.0) {
+    if (pmdp->rescale != 1.0 || pmdp->old_pdf) {
         v = v / pmdp->rescale;
         put_clamped(p, PDFA_ENCODE_MESH_COORDINATE(v), num_bytes);
     } else
@@ -1027,7 +1028,9 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
         if (z > *rescale)
             *rescale = (int)z;
         data_params.rescale = *rescale;
-    }
+        data_params.old_pdf = 1;
+    } else
+        data_params.old_pdf = 0;
 
     switch (ShadingType(psh)) {
     case shading_type_Free_form_Gouraud_triangle: {
@@ -1183,12 +1186,13 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gs_gstate * pgs, const gx_drawing_co
             yscale = 72.0 / pdev->HWResolution[1];
         }
 
-        if (rescale != 1) {
-            xscale *= rescale;
-            yscale *= rescale;
-        }
         smat.xx *= xscale, smat.yx *= xscale, smat.tx *= xscale;
         smat.xy *= yscale, smat.yy *= yscale, smat.ty *= yscale;
+
+        if (rescale != 1) {
+            smat.xx *= rescale, smat.yx *= rescale;
+            smat.xy *= rescale, smat.yy *= rescale;
+        }
     }
 
     /* Bug #697451, if we emit a PDF with a type 2 Pattern where the
