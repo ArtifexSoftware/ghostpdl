@@ -2409,6 +2409,7 @@ void pdfi_font_set_orig_fonttype(pdf_context *ctx, pdf_font *font)
         else
             font->orig_FontType = ft_undefined;
     }
+    pdfi_countdown(ftype);
 }
 
 /* Patch or create a new XUID based on the existing UID/XUID, a simple hash
