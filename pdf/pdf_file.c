@@ -1891,7 +1891,7 @@ bool pdfi_resource_file_exists(pdf_context *ctx, const char *fname, const int fn
     stream *s = NULL;
     int code = pdfi_open_resource_file_inner(ctx, fname, fnamelen, &s);
     if (s)
-        sclose(s);
+        sfclose(s);
 
     return (code >= 0);
 }
@@ -1981,7 +1981,7 @@ bool pdfi_font_file_exists(pdf_context *ctx, const char *fname, const int fnamel
     stream *s = NULL;
     int code = pdfi_open_font_file_inner(ctx, fname, fnamelen, &s);
     if (s)
-        sclose(s);
+        sfclose(s);
 
     return (code >= 0);
 }
