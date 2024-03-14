@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -514,8 +514,7 @@ psapi_exit(gs_lib_ctx_t *ctx)
     if (ctx == NULL)
         return gs_error_Fatal;
 
-    gs_to_exit(ctx->memory, 0);
-    return 0;
+    return gs_to_exit(ctx->memory, 0);
 }
 
 int
