@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1068,6 +1068,9 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
                 goto exit;
         }
     }
+
+    pdfi_countdown(typedict);
+    typedict = NULL;
 
     if (ctx->current_stream != NULL) {
         pdf_dict *stream_dict = NULL;
