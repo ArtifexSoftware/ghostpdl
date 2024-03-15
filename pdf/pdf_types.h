@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -20,18 +20,53 @@
  * These only emit any text on a debug build and when the relevant
  * flag is set and compiled.
  */
+#ifndef DEBUG_PATTERN
 #define DEBUG_PATTERN 0
+#endif
+
+#ifndef DEBUG_CONTEXT
 #define DEBUG_CONTEXT 0
+#endif
+
+#ifndef DEBUG_GSAVE
 #define DEBUG_GSAVE 0
+#endif
+
+#ifndef DEBUG_IMAGES
 #define DEBUG_IMAGES 0
+#endif
+
+#ifndef DEBUG_TRANSPARENCY
 #define DEBUG_TRANSPARENCY 0
+#endif
+
+#ifndef DEBUG_DEVICE
 #define DEBUG_DEVICE 0
+#endif
+
+#ifndef DEBUG_CACHE
 #define DEBUG_CACHE 0
+#endif
+
+#ifndef DEBUG_CACHE_FREE
 #define DEBUG_CACHE_FREE 0
+#endif
+
+#ifndef PROBE_STREAMS
 #define PROBE_STREAMS 0
+#endif
+
+#ifndef REFCNT_DEBUG
 #define REFCNT_DEBUG 0
+#endif
+
+#ifndef CACHE_STATISTICS
 #define CACHE_STATISTICS 0
+#endif
+
+#ifndef DEBUG_DICT
 #define DEBUG_DICT 0
+#endif
 
 #include "stdint_.h"    /* Various data types */
 #include "scommon.h"    /* for gs_offset_t */
