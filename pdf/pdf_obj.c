@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -360,8 +360,6 @@ int pdfi_stream_to_dict(pdf_context *ctx, pdf_stream *stream, pdf_dict **dict)
         (*dict)->generation_num = stream->generation_num;
     }
 
-    /* This will countdown the dictionary */
-    pdfi_countdown(stream);
     return 0;
 }
 
