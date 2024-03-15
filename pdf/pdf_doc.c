@@ -625,7 +625,7 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
                 goto errorExit;
             }
             pdfi_set_error(ctx, 0, NULL, E_PDF_DICT_IS_STREAM, "pdfi_get_child", NULL);
-            code = pdfi_stream_to_dict(ctx, (pdf_stream *)child, &d1);
+            code = pdfi_get_stream_dict(ctx, (pdf_stream *)child, &d1);
             if (code < 0)
                 goto errorExit;
             pdfi_countdown(child);

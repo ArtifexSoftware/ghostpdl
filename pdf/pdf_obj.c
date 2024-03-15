@@ -349,7 +349,7 @@ int pdfi_obj_dict_to_stream(pdf_context *ctx, pdf_dict *dict, pdf_stream **strea
     return code;
 }
 
-int pdfi_stream_to_dict(pdf_context *ctx, pdf_stream *stream, pdf_dict **dict)
+int pdfi_get_stream_dict(pdf_context *ctx, pdf_stream *stream, pdf_dict **dict)
 {
     *dict = stream->stream_dict;
 
