@@ -1791,24 +1791,25 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
             }
             code = pdf_setup_masked_image_converter(pdev, pdev->memory, &m, &pcvd, need_mask, sx, sy,
                             rect_size.x, rect_size.y, false);
-            pcvd->has_background = gx_dc_pattern2_has_background(pdcolor);
-            stream_puts(pdev->strm, "q\n");
             if (code >= 0) {
                 gs_path_enum cenum;
                 gdev_vector_dopath_state_t state;
+
+                pcvd->has_background = gx_dc_pattern2_has_background(pdcolor);
+                stream_puts(pdev->strm, "q\n");
                 code = pdf_write_path(pdev, (gs_path_enum *)&cenum, &state, (gx_path *)ppath, 0, gx_path_type_clip | gx_path_type_optimize, NULL);
-                if (code >= 0)
+                if (code >= 0) {
                     stream_puts(pdev->strm, (params->rule < 0 ? "W n\n" : "W* n\n"));
+                    pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
+                    cvd.write_matrix = false;
+                    code = gs_shading_do_fill_rectangle(pi.templat.Shading,
+                         NULL, (gx_device *)&cvd.mdev, pgs2, !pi.shfill);
+                    if (code >= 0)
+                        code = pdf_dump_converted_image(pdev, &cvd, 2);
+                }
+                stream_puts(pdev->strm, "Q Q\n");
+                pdf_remove_masked_image_converter(pdev, &cvd, need_mask);
             }
-            pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
-            cvd.write_matrix = false;
-            if (code >= 0)
-                code = gs_shading_do_fill_rectangle(pi.templat.Shading,
-                     NULL, (gx_device *)&cvd.mdev, pgs2, !pi.shfill);
-            if (code >= 0)
-                code = pdf_dump_converted_image(pdev, &cvd, 2);
-            stream_puts(pdev->strm, "Q Q\n");
-            pdf_remove_masked_image_converter(pdev, &cvd, need_mask);
             gs_setmatrix((gs_gstate *)pgs, &save_ctm);
 image_exit:
             gs_gstate_free(pgs2);
