@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -423,8 +423,10 @@ static int pdfi_check_XObject(pdf_context *ctx, pdf_dict *xobject, pdf_dict *pag
                 if (code > 0) {
                     if (ctx->loop_detection && pdf_object_num((pdf_obj *)resource_dict) != 0) {
                         code = pdfi_loop_detector_add_object(ctx, resource_dict->object_num);
-                        if (code < 0)
+                        if (code < 0) {
+                            pdfi_countdown(resource_dict);
                             goto transparency_exit;
+                        }
                     }
                     code = pdfi_check_Resources(ctx, resource_dict, page_dict, tracker);
                     pdfi_countdown(resource_dict);
