@@ -1789,6 +1789,9 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                 cvd.path_offset.x = sx; /* m.tx / scalex */
                 cvd.path_offset.y = sy;
             }
+            if (sx < 0 || sy < 0)
+                return 0;
+
             code = pdf_setup_masked_image_converter(pdev, pdev->memory, &m, &pcvd, need_mask, sx, sy,
                             rect_size.x, rect_size.y, false);
             if (code >= 0) {
