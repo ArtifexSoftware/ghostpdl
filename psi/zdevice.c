@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -92,6 +92,13 @@ zcopydevice2(i_ctx_t *i_ctx_p)
     if (op[-1].value.pdevice == NULL)
         /* This can happen if we invalidated devices on the stack by calling nulldevice after they were pushed */
         return_error(gs_error_undefined);
+
+    if (gs_is_path_control_active((const gs_memory_t *)i_ctx_p->memory.current)) {
+        const gx_device *dev = (const gx_device *)op[-1].value.pdevice->device;
+
+        if (gs_check_device_permission((gs_memory_t *)i_ctx_p->memory.current, dev->dname, strlen(dev->dname)) == 0)
+            return_error(gs_error_invalidaccess);
+    }
 
     code = gs_copydevice2(&new_dev, op[-1].value.pdevice->device, op->value.boolval,
                           imemory);

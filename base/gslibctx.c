@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -57,6 +57,9 @@
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
+
+/* forward declaration */
+static void gs_purge_permitted_devices(const gs_memory_t *mem);
 
 static void
 gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
@@ -442,6 +445,8 @@ void gs_lib_ctx_fin(gs_memory_t *mem)
         gs_purge_control_paths(ctx->core->memory, gs_permit_file_reading);
         gs_purge_control_paths(ctx->core->memory, gs_permit_file_writing);
         gs_purge_control_paths(ctx->core->memory, gs_permit_file_control);
+
+        gs_purge_permitted_devices(ctx->core->memory);
 
         fs = ctx->core->fs;
         while (fs) {
@@ -1075,6 +1080,128 @@ gs_remove_fs(const gs_memory_t *mem,
         } else
             pfs = &(*pfs)->next;
     }
+}
+
+static int gs_add_device_control(gs_memory_t *mem, char *device, int len)
+{
+    gs_lib_ctx_core_t *core;
+    char *buffer;
+    uint rlen, n, i;
+
+    if (mem == NULL || mem->gs_lib_ctx == NULL ||
+        (core = mem->gs_lib_ctx->core) == NULL)
+        return gs_error_unknownerror;
+
+    rlen = len + 1;
+
+    buffer = (char *)gs_alloc_bytes(core->memory, rlen, "gs_add_device");
+    if (buffer == NULL)
+        return gs_error_VMerror;
+
+    memcpy(buffer, device, len);
+    buffer[len] = 0;
+
+    n = core->permitted_devices.num;
+    for (i = 0; i < n; i++)
+    {
+        if (strlen(core->permitted_devices.devices[i]) == len && strncmp(core->permitted_devices.devices[i], buffer, len) == 0) {
+            gs_free_object(core->memory, buffer, "gs_add_device");
+            return 0; /* Already there! */
+        }
+    }
+
+    if (core->permitted_devices.num == core->permitted_devices.max) {
+        char **table;
+
+        n = core->permitted_devices.max * 2;
+        if (n == 0) {
+            n = 2;
+            table = (char **)gs_alloc_bytes(core->memory, sizeof(char *) * n, "gs_add_device_control");
+            if (table == NULL) {
+                gs_free_object(core->memory, buffer, "gs_add_device");
+                return_error(gs_error_VMerror);
+            }
+            memset(table, 0x00, sizeof(char *) * n);
+        } else {
+            table = (char **)gs_resize_object(core->memory, core->permitted_devices.devices,sizeof(char *) * n, "gs_add_device_control");
+            if (table == NULL) {
+                gs_free_object(core->memory, buffer, "gs_add_device");
+                return_error(gs_error_VMerror);
+            }
+            memset(table + core->permitted_devices.max, 0x00, core->permitted_devices.max * sizeof(char *));
+        }
+        core->permitted_devices.devices = table;
+        core->permitted_devices.max = n;
+    }
+    n = core->permitted_devices.num;
+    core->permitted_devices.devices[n] = buffer;
+    core->permitted_devices.num++;
+
+    return 0;
+}
+
+int
+gs_check_device_permission (gs_memory_t *mem, const char *dname, const int len)
+{
+    if (mem->gs_lib_ctx->core->permitted_devices.num != 0) {
+        int i;
+        char *permit_name = NULL;
+
+        for (i=0;i < mem->gs_lib_ctx->core->permitted_devices.num; i++) {
+            permit_name = mem->gs_lib_ctx->core->permitted_devices.devices[i];
+
+            /* Allow * as a wildcard */
+            if (permit_name != NULL && strlen(permit_name) == 1 && permit_name[0] == '*')
+                break;
+
+            if (permit_name != NULL && strlen(permit_name) == len &&
+                strncmp(permit_name, dname, len) == 0)
+                break;
+        }
+        if (i >= mem->gs_lib_ctx->core->permitted_devices.num)
+            return 0;
+        return 1;
+    }
+    return 0;
+}
+
+int
+gs_add_explicit_permitted_device(gs_memory_t *mem, const char *arg)
+{
+    char *p2, *p1 = (char *)arg;
+    const char *lim;
+    int code = 0;
+
+    if (arg == NULL)
+        return 0;
+    lim = arg + strlen(arg);
+    while (code >= 0 && p1 < lim && (p2 = strchr(p1, gp_file_name_list_separator)) != NULL) {
+        code = gs_add_device_control(mem, p1, (int)(p2 - p1));
+        p1 = p2 + 1;
+    }
+    if (p1 < lim)
+        code = gs_add_device_control(mem, p1, (int)(lim - p1));
+    return code;
+}
+
+static void
+gs_purge_permitted_devices(const gs_memory_t *mem)
+{
+    gs_lib_ctx_core_t *core = mem->gs_lib_ctx->core;
+    uint i;
+
+    if (core == NULL)
+        return;
+
+    for (i=0;i < core->permitted_devices.max;i++) {
+        if (core->permitted_devices.devices[i] != NULL)
+            gs_free_object(core->memory, core->permitted_devices.devices[i], "gs_purge_permitted_devices");
+    }
+    if (core->permitted_devices.devices != NULL)
+        gs_free_object(core->memory, core->permitted_devices.devices, "gs_purge_permitted_devices");
+
+    core->permitted_devices.max = core->permitted_devices.num = 0;
+    core->permitted_devices.devices = NULL;
 }
 
 int

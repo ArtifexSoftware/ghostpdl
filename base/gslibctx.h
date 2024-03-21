@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -47,6 +47,12 @@ typedef struct {
     unsigned int             num;
     gs_path_control_entry_t *entry;
 } gs_path_control_set_t;
+
+typedef struct {
+    unsigned int             max;
+    unsigned int             num;
+    char **                  devices;
+} gs_device_control_t;
 
 typedef struct {
     int (*open_file)(const gs_memory_t *mem,
@@ -128,6 +134,7 @@ typedef struct {
     gs_path_control_set_t permit_writing;
     gs_path_control_set_t permit_control;
     gs_fs_list_t *fs;
+    gs_device_control_t permitted_devices;
     /* Ideally this pointer would only be present in CAL builds,
      * but that's too hard to arrange, so we live with it in
      * all builds. */
@@ -312,6 +319,12 @@ gs_add_fs(const gs_memory_t *mem, gs_fs_t *fn, void *secret);
 
 void
 gs_remove_fs(const gs_memory_t *mem, gs_fs_t *fn, void *secret);
+
+int
+gs_add_explicit_permitted_device(gs_memory_t *mem, const char *arg);
+
+int
+gs_check_device_permission(gs_memory_t *mem, const char *dname, const int len);
 
 int
 gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *argv);

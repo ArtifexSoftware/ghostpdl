@@ -475,6 +475,10 @@ run_stdin:
                 code = gs_add_explicit_control_path(minst->heap, arg, gs_permit_file_control);
                 if (code < 0) return code;
                 break;
+            } else if (arg_match(&arg, "permit-devices")) {
+                code = gs_add_explicit_permitted_device(minst->heap, arg);
+                if (code < 0) return code;
+                break;
             }
             if (*arg != 0) {
                 /* Unmatched switch. */
