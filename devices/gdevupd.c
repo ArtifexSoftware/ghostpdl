@@ -1891,6 +1891,16 @@ out on this copies.
       if(!upd_strings[i]) continue;
       UPD_PARAM_READ(param_read_string,upd_strings[i],value,udev->memory);
       if(0 == code) {
+        if (gs_is_path_control_active(udev->memory)) {
+            if (strings[i].size != value.size)
+              error = gs_error_invalidaccess;
+            else {
+                if (strings[i].data && memcmp(strings[i].data, value.data, strings[i].size) != 0)
+                    error = gs_error_invalidaccess;
+            }
+            if (error < 0)
+                goto exit;
+        }
          if(0 <= error) error |= UPD_PUT_STRINGS;
          UPD_MM_DEL_PARAM(udev->memory, strings[i]);
          if(!value.size) {
@@ -1908,6 +1918,26 @@ out on this copies.
       if(!upd_string_a[i]) continue;
       UPD_PARAM_READ(param_read_string_array,upd_string_a[i],value,udev->memory);
       if(0 == code) {
+          if (gs_is_path_control_active(udev->memory)) {
+              if (string_a[i].size != value.size)
+                  error = gs_error_invalidaccess;
+              else {
+                  int loop;
+                  for (loop = 0;loop < string_a[i].size;loop++) {
+                      gs_param_string *tmp1 = (gs_param_string *)&(string_a[i].data[loop]);
+                      gs_param_string *tmp2 = (gs_param_string *)&value.data[loop];
+
+                      if (tmp1->size != tmp2->size)
+                          error = gs_error_invalidaccess;
+                      else {
+                          if (tmp1->data && memcmp(tmp1->data, tmp2->data, tmp1->size) != 0)
+                              error = gs_error_invalidaccess;
+                      }
+                  }
+              }
+            if (error < 0)
+                goto exit;
+          }
          if(0 <= error) error |= UPD_PUT_STRING_A;
          UPD_MM_DEL_APARAM(udev->memory, string_a[i]);
          if(!value.size) {
@@ -2102,6 +2132,7 @@ transferred into the device-structure. In the case of "uniprint", this may
       if(0 > code) error = code;
    }
 
+exit:
    if(0 < error) { /* Actually something loaded without error */
 
       if(!(upd = udev->upd)) {
