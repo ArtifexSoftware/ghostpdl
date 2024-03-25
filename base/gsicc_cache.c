@@ -1469,7 +1469,7 @@ create_named_profile(gs_memory_t *mem, cmm_profile_t *named_profile)
     buffptr = (char*)named_profile->buffer;
     buffer_count = named_profile->buffer_size;
     count = sscanf(buffptr, "%d", &num_entries);
-    if (num_entries < 1 || count == 0) {
+    if (num_entries < 1 || count <= 0) {
         gs_free(mem, namedcolor_table, 1, sizeof(gsicc_namedcolortable_t),
             "create_named_profile");
         return -1;
