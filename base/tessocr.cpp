@@ -600,7 +600,7 @@ ocr_set_bitmap(wrapped_api *wrapped,
     /* Tesseract prefers a border around things, so we add an 8 pixel
      * border all around. */
 #define BORDER_SIZE 8
-    int r = (w+BORDER_SIZE*2+3)&~3;
+    size_t r = ((size_t)w+BORDER_SIZE*2+3)&~3;
     Pix *image = pixCreateHeader(r, h+BORDER_SIZE*2, 8);
     unsigned char *pdata, *d;
     const unsigned char *s;
