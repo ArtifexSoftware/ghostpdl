@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -248,7 +248,7 @@ put_image_copy_planes(gx_device * dev, const byte **base_ptr, int sourcex,
     mem_save_params_t save;
     const gdev_mem_functions *fns;
     int code = 0;
-    uchar plane;
+    int plane;
     const byte *base;
     int last_plane = mdev->num_planar_planes - 1;
 
@@ -306,7 +306,7 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     mem_save_params_t save;
-    uchar pi;
+    int pi;
     int x = fixed2int(rect->p.x);
     int y = fixed2int(rect->p.y);
     int w = fixed2int(rect->q.x) - x;
@@ -341,7 +341,7 @@ mem_planar_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     mem_save_params_t save;
-    uchar pi;
+    int pi;
 
     MEM_SAVE_PARAMS(mdev, save);
     for (pi = 0; pi < mdev->num_planar_planes; ++pi) {
@@ -367,7 +367,7 @@ mem_planar_copy_mono(gx_device * dev, const byte * base, int sourcex,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     mem_save_params_t save;
-    uchar pi;
+    int pi;
 
     MEM_SAVE_PARAMS(mdev, save);
     for (pi = 0; pi < mdev->num_planar_planes; ++pi) {
@@ -867,7 +867,7 @@ mem_planar_copy_color(gx_device * dev, const byte * base, int sourcex,
     } buf;
     int source_depth = dev->color_info.depth;
     mem_save_params_t save;
-    uchar pi;
+    int pi;
 
     /* This routine cannot copy from 3bit chunky data, as 3 bit
      * things don't pack nicely into bytes or words. Accordingly
@@ -980,7 +980,7 @@ mem_planar_copy_planes(gx_device * dev, const byte * base, int sourcex,
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     mem_save_params_t save;
     int code = 0;
-    uchar plane;
+    int plane;
 
     MEM_SAVE_PARAMS(mdev, save);
     for (plane = 0; plane < mdev->num_planar_planes; plane++)
@@ -1010,7 +1010,7 @@ mem_planar_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     mem_save_params_t save;
-    uchar pi;
+    int pi;
 
     MEM_SAVE_PARAMS(mdev, save);
     for (pi = 0; pi < mdev->num_planar_planes; ++pi) {
@@ -1062,7 +1062,7 @@ mem_planar_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     mem_save_params_t save;
-    uchar pi;
+    int pi;
 
     /* We can't split up the transfer if the tile is colored. */
     if (color0 == gx_no_color_index && color1 == gx_no_color_index)
@@ -1934,7 +1934,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
          * convert whole lines of s, but only as many lines as we have to. */
         /* We assume that scolors == NULL here */
         int i;
-        uchar j;
+        int j;
         uint chunky_sraster;
         uint nbytes;
         byte **line_ptrs;
@@ -2041,7 +2041,7 @@ mem_planar_strip_copy_rop2(gx_device * dev,
         /* No T in use, or constant T. */
         if ((!lop_uses_S(lop) || (scolors && (scolors[0] == scolors[1]))) &&
             ((mdev->color_info.num_components == 1) || (mdev->color_info.num_components == 3))) {
-            uchar plane;
+            int plane;
             /* No S in use, or constant S. And either greyscale or rgb,
              * so we can just do the rop on each plane in turn. */
             for (plane=0; plane < mdev->color_info.num_components; plane++)
@@ -2106,7 +2106,7 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     gs_get_bits_options_t options = params->options;
     int x = prect->p.x, w = prect->q.x - x, y = prect->p.y, h = prect->q.y - y;
-    uchar num_planes = mdev->num_planar_planes;
+    int num_planes = mdev->num_planar_planes;
     gs_get_bits_params_t copy_params;
     int code;
 
@@ -2172,13 +2172,13 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
      */
     if (!(~options & (GB_PACKING_PLANAR | GB_SELECT_PLANES))) {
         /* Check that only a single plane is being requested. */
-        uchar pi;
+        int pi;
 
         for (pi = 0; pi < num_planes; ++pi)
             if (params->data[pi] != 0)
                 break;
         if (pi < num_planes) {
-            uchar plane = pi++;
+            int plane = pi++;
 
             for (; pi < num_planes; ++pi)
                 if (params->data[pi] != 0)
