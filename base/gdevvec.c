@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -788,7 +788,7 @@ gdev_vector_write_clip_path(gx_device_vector * vdev,
         prect = list->head;
         if (prect == 0) {
             prect = &list->single;
-            if (prect->xmax <= prect->xmin || prect->ymax <= prect->ymin)
+            if (prect->xmax < prect->xmin || prect->ymax < prect->ymin)
                 return 0;
         }
     }
