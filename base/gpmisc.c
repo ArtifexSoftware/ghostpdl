@@ -1164,8 +1164,8 @@ gp_validate_path_len(const gs_memory_t *mem,
 
             continue;
         }
-        else if (code < 0 && cdirstrl > 0 && prefix_len == 0 && buffer == bufferfull) {
-            buffer = bufferfull + cdirstrl + dirsepstrl;
+        else if (code < 0 && cdirstrl > 0 && prefix_len == 0 && buffer == bufferfull
+            && memcmp(buffer, cdirstr, cdirstrl) && !memcmp(buffer + cdirstrl, dirsepstr, dirsepstrl)) {
             continue;
         }
         break;
