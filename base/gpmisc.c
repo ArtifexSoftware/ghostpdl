@@ -1090,6 +1090,27 @@ gp_validate_path_len(const gs_memory_t *mem,
         rlen = len;
     }
     else {
+        char *test = (char *)path, *test1;
+        uint tlen = len, slen;
+
+        /* Look for any pipe (%pipe% or '|' specifications between path separators
+         * Reject any path spec which has a %pipe% or '|' anywhere except at the start.
+         */
+        while (tlen > 0) {
+            if (test[0] == '|' || (tlen > 5 && memcmp(test, "%pipe", 5) == 0)) {
+                code = gs_note_error(gs_error_invalidfileaccess);
+                goto exit;
+            }
+            test1 = test;
+            slen = search_separator((const char **)&test, path + len, test1, 1);
+            if(slen == 0)
+                break;
+            test += slen;
+            tlen -= test - test1;
+            if (test >= path + len)
+                break;
+        }
+
         rlen = len+1;
         bufferfull = (char *)gs_alloc_bytes(mem->thread_safe_memory, rlen + prefix_len, "gp_validate_path");
         if (bufferfull == NULL)
