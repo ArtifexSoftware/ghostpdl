@@ -1,4 +1,4 @@
-;  Copyright (C) 2001-2023 Artifex Software, Inc.
+;  Copyright (C) 2001-2024 Artifex Software, Inc.
 ;  All Rights Reserved.
 ;
 ;  This software is provided AS-IS with no warranty, either express or
@@ -261,14 +261,19 @@ File /oname=${VCREDIST} .\${VCREDIST}
 !endif
 
 WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}" "GS_DLL" "$INSTDIR\bin\gsdll${WINTYPE}.dll"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Aladdin Ghostscript\${VERSION}" "GS_DLL" "$INSTDIR\bin\gsdll${WINTYPE}.dll"
 
 !if "${COMPILE_INITS}" == "0"
 WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}" "GS_LIB" "$INSTDIR\Resource\Init;$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Aladdin Ghostscript\${VERSION}" "GS_LIB" "$INSTDIR\Resource\Init;$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
 !else
 WriteRegStr HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}" "GS_LIB" "$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Aladdin Ghostscript\${VERSION}" "GS_LIB" "$INSTDIR\bin;$INSTDIR\lib;$INSTDIR\fonts"
 !endif
 
 WriteRegStr HKEY_LOCAL_MACHINE "Software\Artifex\GPL Ghostscript\${VERSION}" "" "$INSTDIR"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Artifex\Aladdin Ghostscript\${VERSION}" "" "$INSTDIR"
+
 WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "DisplayName" "GPL Ghostscript"
 WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "UninstallString" '"$INSTDIR\uninstgs.exe"'
 WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}" "Publisher" "Artifex Software Inc."
@@ -364,8 +369,12 @@ Delete   "$INSTDIR\uninstgs.exe"
     SetRegView 64
 !endif
 DeleteRegKey HKEY_LOCAL_MACHINE "Software\Artifex\GPL Ghostscript\${VERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "Software\Artifex\Aladdin Ghostscript\${VERSION}"
+
 DeleteRegKey HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\GPL Ghostscript ${VERSION}"
+
 DeleteRegKey HKEY_LOCAL_MACHINE "Software\GPL Ghostscript\${VERSION}"
+DeleteRegKey HKEY_LOCAL_MACHINE "Software\Aladdin Ghostscript\${VERSION}"
 RMDir /r "$INSTDIR\doc"
 RMDir /r "$INSTDIR\examples"
 RMDir /r "$INSTDIR\lib"
