@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -118,7 +118,7 @@ struct pdf14_group_color_s {
     gx_color_polarity_t polarity;
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* These are needed for the shading code */
     byte comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
-    byte depth;  /* used in clist writer cmd_put_color */
+    ushort depth;  /* used in clist writer cmd_put_color */
     uint max_gray;  /* Used to determine if device halftones */
     uint max_color; /* Causes issues if these are not maintained */
     const gx_color_map_procs *(*get_cmap_procs)(const gs_gstate *,
