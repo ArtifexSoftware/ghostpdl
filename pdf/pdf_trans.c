@@ -201,22 +201,6 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (code < 0)
             goto exit;
 
-        code = pdfi_dict_knownget_type(ctx, G_stream_dict, "Matte", PDF_ARRAY, (pdf_obj **)&a);
-        if (code > 0) {
-            int ix;
-
-            for (ix = 0; ix < pdfi_array_size(a); ix++) {
-                code = pdfi_array_get_number(ctx, a, (uint64_t)ix, &f);
-                if (code < 0)
-                    break;
-                params.Matte[ix] = f;
-            }
-            if (ix >= pdfi_array_size(a))
-                params.Matte_components = pdfi_array_size(a);
-            else
-                params.Matte_components = 0;
-        }
-
         code = pdfi_dict_knownget_type(ctx, G_stream_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
         if (code < 0)
             goto exit;
