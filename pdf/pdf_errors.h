@@ -1,4 +1,4 @@
-/* Copyright (C) 2022-2023 Artifex Software, Inc.
+/* Copyright (C) 2022-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -82,4 +82,6 @@ PARAM(E_PDF_UCR_ISNAME,                "An ExtGState dictionary has a /UCR key w
 PARAM(E_PDF_TR_NAME_NOT_IDENTITY,      "An ExtGState dictionary has a /TR key with a value which is a name other than /Identity"),
 PARAM(E_PDF_ICC_BAD_N,                 "ICCbased space /N value does not match the number of components in the ICC profile"),
 PARAM(E_PDF_MISSING_BBOX,              "A form is missing the required /BBox key"),
+PARAM(E_PDF_GROUP_BAD_BC_TOO_BIG,      "An SMask has a /BC array with too many components. Ignoring specified BC"),
+PARAM(E_PDF_GROUP_BAD_BC_NO_CS,        "An Smask has a /BC key, but the Group attributes dictionary has no /CS. Ignoring specified BC"),
 #undef PARAM
