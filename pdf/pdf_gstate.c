@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1243,7 +1243,7 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     phtc->params.spot.screen.frequency = f;
     phtc->params.spot.screen.angle = a;
     phtc->params.spot.screen.spot_function = pdfi_spot1_dummy;
-    phtc->params.spot.transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
+    phtc->params.spot.transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_identity_transfer);
     phtc->params.spot.transfer_closure.proc = 0;
     phtc->params.spot.transfer_closure.data = 0;
     phtc->params.spot.accurate_screens = as;
@@ -1849,6 +1849,10 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             if (code < 0)
                 goto error;
 
+            code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
+            if (code < 0)
+                goto error;
+
             code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs), HT_OBJTYPE_DEFAULT);
             if (code < 0)
                 goto error;
@@ -1879,6 +1883,8 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
+            if (code < 0)
+                goto error;
 
             /* Transfer function pdht->order->transfer */
             if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
@@ -1933,6 +1939,8 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
+            if (code < 0)
+                goto error;
 
             /* Transfer function pdht->order->transfer */
             if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
@@ -1987,6 +1995,8 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             pht->params.multiple.get_colorname_string = pdfi_separation_name_from_index;
 
             code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
+            if (code < 0)
+                goto error;
 
             /* Transfer function pdht->order->transfer */
             if (pdfi_dict_knownget(ctx, ((pdf_stream *)halftone_obj)->stream_dict, "TransferFunction", &transfer) > 0) {
