@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1047,7 +1047,7 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     int                     x, y, w, h;
     uchar                   k, j;
     gs_memory_t *           mem = dev->memory;
-    gx_color_index          comps;
+    gx_color_index          comps, comps2;
     gx_color_index          mask;
     int                     shift;
     int                     deep;
@@ -1101,10 +1101,15 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     gb_rect.q.x = x + w;
 
     /* step through the height */
+    comps2 = opdev->op_state == OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
+    /* If we are dealing with tags, and we are writing ANY components, then we want to write the
+     * tag plane too. Should we be */
+    if (comps2 != 0 && opdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS)
+        comps2 |= 1<<(tdev->color_info.num_components-1);
     while (h-- > 0 && code >= 0) {
         gb_rect.p.y = y++;
         gb_rect.q.y = y;
-        comps = opdev->op_state == OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
+        comps = comps2;
         /* And now through each plane */
         for (k = 0; k < tdev->color_info.num_components; k++) {
             /* First set the params to zero for all planes except the one we want */
