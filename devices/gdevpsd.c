@@ -369,6 +369,8 @@ psd_rgbtags_encode_color(gx_device *dev, const gx_color_value colors[])
         color <<= bpc;
         color |= COLROUND_ROUND(colors[i]);
     }
+    /* FIXME: We are writing both tags and colors[ncomp-1] to the lower bits.
+     * Is this really safe? */
     color |= (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
@@ -751,7 +753,7 @@ cmyk_cs_to_psdrgbtags_cm(const gx_device * dev,
     color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
     for(; i>0; i--)			/* Clear spot colors */
         out[2 + i] = 0;
-    out[ncomps - 1] = byte2frac(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+    out[ncomps - 1] = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
 }
 
 /* Color mapping routines for the psdcmyk device */
@@ -813,7 +815,7 @@ cmyk_cs_to_psdcmyktags_cm(const gx_device *dev,
        accordingly, as it goes through the same mappings on
        its way to devn and then eventually to 8 or 16 bit values */
     if (map[ncomps - 1] != GX_DEVICE_COLOR_MAX_COMPONENTS)
-        out[ncomps - 1] = byte2frac(dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+        out[ncomps - 1] = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
 }
 
 static void

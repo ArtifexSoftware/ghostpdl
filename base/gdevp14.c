@@ -8439,7 +8439,7 @@ static	void
 pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
                        gx_device * dev, gs_color_select_t select)
 {
-    int i,ncomps;
+    int i, nc, ncomps;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -8459,13 +8459,19 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
     procs = dev_proc(trans_device, get_color_mapping_procs)(trans_device, &map_dev);
     procs->map_gray(map_dev, gray, cm_comps);
 
+    nc = ncomps;
+    if (device_encodes_tags(trans_device))
+        nc--;
     if (pdf14_state_opaque(trans_device, pgs)) {
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
     } else {
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(cm_comps[i]);
     }
+    /* Copy tags untransformed. */
+    if (nc < ncomps)
+        cv[nc] = cm_comps[nc];
 
     /* If output device supports devn, we need to make sure we send it the
        proper color type.  We now support Gray + spots as devn colors */
@@ -8486,7 +8492,7 @@ static	void
 pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
      const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
-    int i,ncomps;
+    int i, nc, ncomps;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -8505,13 +8511,19 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     procs = dev_proc(trans_device, get_color_mapping_procs)(trans_device, &map_dev);
     procs->map_rgb(map_dev, pgs, r, g, b, cm_comps);
 
+    nc = ncomps;
+    if (device_encodes_tags(trans_device))
+        nc--;
     if (pdf14_state_opaque(trans_device, pgs)) {
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
     } else {
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(cm_comps[i]);
     }
+    /* Copy tags untransformed. */
+    if (nc < ncomps)
+        cv[nc] = cm_comps[nc];
 
     /* If output device supports devn, we need to make sure we send it the
        proper color type.  We now support RGB + spots as devn colors */
@@ -8533,7 +8545,7 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
      const gs_gstate * pgs, gx_device * dev, gs_color_select_t select,
      const gs_color_space *pcs)
 {
-    int i, ncomps;
+    int i, nc, ncomps;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
@@ -8555,13 +8567,19 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     procs = dev_proc(trans_device, get_color_mapping_procs)(trans_device, &map_dev);
     procs->map_cmyk(map_dev, c, m, y, k, cm_comps);
 
+    nc = ncomps;
+    if (device_encodes_tags(trans_device))
+        nc--;
     if (pdf14_state_opaque(trans_device, pgs)) {
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
     } else {
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(cm_comps[i]);
     }
+    /* Copy tags untransformed. */
+    if (nc < ncomps)
+        cv[nc] = cm_comps[nc];
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
@@ -8595,7 +8613,7 @@ static	void
 pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
                  gx_device * dev, gs_color_select_t select, const gs_color_space *pcs)
 {
-    int i, ncomps = dev->color_info.num_components;
+    int i, nc, ncomps = dev->color_info.num_components;
     int num_spots = pdf14_get_num_spots(dev);
     bool additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -8628,20 +8646,26 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
             comp_value[i] = all;
         map_components_to_colorants(comp_value, &(pgs->color_component_map), cm_comps);
     }
+
+    nc = ncomps;
+    if (device_encodes_tags(dev))
+        nc--;
     /* apply the transfer function(s); convert to color values */
     if (additive) {
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
         /* We are in an additive mode (blend space) and drawing with a sep color
         into a sep device.  Make sure we are drawing "white" with the process
         colorants, but only if we are not in an ALL case */
         if (pgs->color_component_map.sep_type != SEP_ALL)
-            for (i = 0; i < ncomps - num_spots; i++)
+            for (i = 0; i < nc - num_spots; i++)
                 cv[i] = gx_max_color_value;
     } else
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs, (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
-
+    /* Copy tags untransformed. */
+    if (nc < ncomps)
+        cv[nc] = cm_comps[nc];
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
@@ -8663,7 +8687,7 @@ pdf14_cmap_devicen_direct(const	frac * pcc,
     gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
     gs_color_select_t select, const gs_color_space *pcs)
 {
-    int i, ncomps = dev->color_info.num_components;
+    int i, nc, ncomps = dev->color_info.num_components;
     int num_spots = pdf14_get_num_spots(dev);
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -8682,19 +8706,27 @@ pdf14_cmap_devicen_direct(const	frac * pcc,
     }
     ncomps = trans_device->color_info.num_components;
     /* map to the color model */
-    map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps);;
+    map_components_to_colorants(pcc, &(pgs->color_component_map), cm_comps);
+
+    nc = ncomps;
+    if (device_encodes_tags(trans_device))
+        nc--;
     /* apply the transfer function(s); convert to color values */
     if (trans_device->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(gx_map_color_frac(pgs, cm_comps[i], effective_transfer[i]));
         /* We are in an additive mode (blend space) and drawing with a sep color
         into a sep device.  Make sure we are drawing "white" with the process
         colorants */
-        for (i = 0; i < ncomps - num_spots; i++)
+        for (i = 0; i < nc - num_spots; i++)
             cv[i] = gx_max_color_value;
     } else
-        for (i = 0; i < ncomps; i++)
+        for (i = 0; i < nc; i++)
             cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs, (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+    /* Copy tags untransformed. */
+    if (nc < ncomps)
+        cv[nc] = cm_comps[nc];
+
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
