@@ -685,7 +685,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
         if (num_spot_changed || pdevn_params->max_separations != max_sep ||
                     pdevn_params->num_separation_order_names != num_order ||
                     pdevn_params->page_spot_colors != page_spot_colors) {
-            int has_tags = !!(pdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS);
+            int has_tags = device_encodes_tags(pdev);
             pdevn_params->separations.num_separations = num_spot;
             pdevn_params->num_separation_order_names = num_order;
             pdevn_params->max_separations = max_sep;

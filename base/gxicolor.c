@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1138,13 +1138,7 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     bits32 test = penum->mask_color.test;
     bool lab_case = false;
 
-    if (device_encodes_tags(dev)) {
-        devc1.tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
-        devc2.tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
-    } else {
-        devc1.tag = 0;
-        devc2.tag = 0;
-    }
+    devc1.tag = devc2.tag = device_current_tag(dev);
 
     if (h == 0)
         return 0;

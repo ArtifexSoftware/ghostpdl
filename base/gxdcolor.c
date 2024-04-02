@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -605,10 +605,7 @@ gx_devn_write_color(
     }
 
     /* Now the tag */
-    if (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS)
-        pdata[num_bytes_temp - 1] = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
-    else
-        pdata[num_bytes_temp - 1] = GS_UNTOUCHED_TAG;
+    pdata[num_bytes_temp - 1] = device_current_tag(dev);
 
     /* Now the data */
     for (i = 0; i < ncomps; i++) {

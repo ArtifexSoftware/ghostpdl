@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -402,7 +402,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
             code = (*remap_color)(&cc, pcs, pdevc, pgs, dev, gs_color_select_source);\
             if (code < 0)\
                 goto err;\
-            pdevc->tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);\
+            pdevc->tag = device_current_tag(dev);\
         }\
     } else if (!color_is_pure(pdevc)) {\
         code = gx_color_load_select(pdevc, pgs, dev, gs_color_select_source);\

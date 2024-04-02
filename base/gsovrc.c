@@ -1103,8 +1103,8 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     /* step through the height */
     comps2 = opdev->op_state == OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
     /* If we are dealing with tags, and we are writing ANY components, then we want to write the
-     * tag plane too. Should we be */
-    if (comps2 != 0 && opdev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS)
+     * tag plane too. */
+    if (comps2 != 0 && device_encodes_tags(dev))
         comps2 |= 1<<(tdev->color_info.num_components-1);
     while (h-- > 0 && code >= 0) {
         gb_rect.p.y = y++;

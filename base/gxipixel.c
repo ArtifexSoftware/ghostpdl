@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -646,8 +646,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
         penum->icolor0 = &(penum->icolor0_val);
         penum->icolor1 = &(penum->icolor1_val);
     }
-    penum->icolor0->tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
-    penum->icolor1->tag = (dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
+    penum->icolor0->tag = penum->icolor1->tag = device_current_tag(dev);
 
     if (masked) {       /* This is imagemask. */
         if (bps != 1 || pcs != NULL || penum->alpha || decode[0] == decode[1]) {

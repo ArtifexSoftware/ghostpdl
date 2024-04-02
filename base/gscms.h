@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -214,7 +214,7 @@ typedef enum {
     GS_IMAGE_TAG = 0x2,
     GS_VECTOR_TAG = 0x4,
     GS_UNKNOWN_TAG = 0x40,
-    GS_DEVICE_ENCODES_TAGS = 0x80
+    GS_DEVICE_ENCODES_TAGS = 0x80000000
 } gs_graphics_type_tag_t;
 
 /* Source profile graphic tag rendering conditions */

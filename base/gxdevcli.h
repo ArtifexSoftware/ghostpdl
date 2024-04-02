@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1624,6 +1624,12 @@ extern_st(st_device_forward);
 static inline bool device_encodes_tags(const gx_device *dev)
 {
     return (dev->graphics_type_tag & GS_DEVICE_ENCODES_TAGS) != 0;
+}
+
+static inline gs_graphics_type_tag_t device_current_tag(const gx_device *dev)
+{
+    gs_graphics_type_tag_t tag = dev->graphics_type_tag;
+    return (tag & GS_DEVICE_ENCODES_TAGS) ? (tag & ~GS_DEVICE_ENCODES_TAGS) : 0;
 }
 
 static inline bool device_is_deep(const gx_device *dev)

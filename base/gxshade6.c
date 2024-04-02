@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1488,11 +1488,7 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
     if (code < 0)
         return code;
 
-    if (device_encodes_tags(pfs->dev)) {
-        dc.tag = (pfs->dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
-    } else {
-        dc.tag = 0;
-    }
+    dc.tag = device_current_tag(pfs->dev);
 
     return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
         le, re, ybot, ytop, swap_axes, &dc, pfs->pgs->log_op);
@@ -2551,11 +2547,7 @@ constant_color_quadrangle_aux(patch_fill_state_t *pfs, const quadrangle_patch *p
     gx_device_color dc;
     bool orient;
 
-    if (device_encodes_tags(pfs->dev)) {
-        dc.tag = (pfs->dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS);
-    } else {
-        dc.tag = 0;
-    }
+    dc.tag = device_current_tag(pfs->dev);
 
     patch_interpolate_color(c[1], p->p[0][0]->c, p->p[0][1]->c, pfs, 0.5);
     patch_interpolate_color(c[2], p->p[1][0]->c, p->p[1][1]->c, pfs, 0.5);
