@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1054,6 +1054,7 @@ gp_validate_path_len(const gs_memory_t *mem,
     /* mem->gs_lib_ctx can be NULL when we're called from mkromfs */
     /* If path == NULL, don't care */
     if (path == NULL || mem->gs_lib_ctx == NULL ||
+        /* Can't use gs_is_path_control_active(mem) here because it fails to build with mkromfs */
         mem->gs_lib_ctx->core->path_control_active == 0)
         return 0;
 

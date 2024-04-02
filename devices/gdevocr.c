@@ -199,7 +199,7 @@ ocr_put_params(gx_device *dev, gs_param_list *plist)
 
     switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
         case 0:
-                if (pdev->memory->gs_lib_ctx->core->path_control_active
+                if (gs_is_path_control_active(pdev->memory)
                 && (strlen(pdev->language) != langstr.size || memcmp(pdev->language, langstr.data, langstr.size) != 0)) {
                 return_error(gs_error_invalidaccess);
             }

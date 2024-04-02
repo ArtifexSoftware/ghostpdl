@@ -50,7 +50,7 @@ pdfocr_put_some_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_string(plist, (param_name = "OCRLanguage"), &langstr)) {
         case 0:
-                if (pdf_dev->memory->gs_lib_ctx->core->path_control_active
+                if (gs_is_path_control_active(pdf_dev->memory)
                 && (strlen(pdf_dev->ocr.language) != langstr.size || memcmp(pdf_dev->ocr.language, langstr.data, langstr.size) != 0)) {
                 return_error(gs_error_invalidaccess);
             }

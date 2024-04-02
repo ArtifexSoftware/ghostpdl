@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -888,7 +888,7 @@ gsijs_initialize_device(gx_device *dev)
     static const char rgb[] = "DeviceRGB";
     gx_device_ijs *ijsdev = (gx_device_ijs *)dev;
 
-    if (ijsdev->memory->gs_lib_ctx->core->path_control_active)
+    if (gs_is_path_control_active(ijsdev->memory))
         return_error(gs_error_invalidaccess);
     if (!ijsdev->ColorSpace) {
         ijsdev->ColorSpace = gs_malloc(ijsdev->memory, sizeof(rgb), 1,
@@ -1328,7 +1328,7 @@ gsijs_put_params(gx_device *dev, gs_param_list *plist)
     if (code >= 0)
         code = gsijs_read_string(plist, "IjsServer",
             ijsdev->IjsServer, sizeof(ijsdev->IjsServer),
-            ijsdev->memory->gs_lib_ctx->core->path_control_active, is_open);
+            gs_is_path_control_active(ijsdev->memory), is_open);
 
     if (code >= 0)
         code = gsijs_read_string_malloc(plist, "DeviceManufacturer",
