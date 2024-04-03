@@ -1393,16 +1393,7 @@ pdf14_initialize_ctx(gx_device* dev, const gs_gstate* pgs)
         "[v]base buf: %d x %d, %d color channels, %d planes, deep=%d\n",
         buf->rect.q.x, buf->rect.q.y, buf->n_chan, buf->n_planes, pdev->ctx->deep);
 
-    /* This check is not really needed */
-    if (buf->data != NULL) {
-        /* Memsetting by 0, so this copes with the deep case too */
-        if (buf->has_tags) {
-            memset(buf->data, 0, (size_t)buf->planestride * (buf->n_planes - 1));
-        }
-        else {
-            memset(buf->data, 0, (size_t)buf->planestride * buf->n_planes);
-        }
-    }
+    memset(buf->data, 0, (size_t)buf->planestride * (buf->n_planes - !!has_tags));
     buf->saved = NULL;
     pdev->ctx->stack = buf;
     pdev->ctx->additive = additive;
