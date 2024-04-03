@@ -162,7 +162,7 @@ struct pdf14_buf_s {
     int rowstride;
     int planestride;
     int n_chan;   /* number of pixel planes including alpha */
-    int n_planes; /* total number of planes including alpha, shape, alpha_g */
+    int n_planes; /* total number of planes including alpha, shape, alpha_g and tags */
     byte *data;
     byte *transfer_fn;
     bool is_ident;

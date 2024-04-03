@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -24,6 +24,12 @@
 #include "gxdevcli.h"
 
 #define RAW_DUMP 0
+
+/* Never enable RAW_DUMP this in the cluster. */
+#ifdef CLUSTER
+#undef RAW_DUMP
+#define RAW_DUMP 0
+#endif
 /* We now dump as PAMs, not raws. This is because it's much easier
  * (for me at least) to view them using:
  *   http://ghostscript.com/~robin/pamview.html
