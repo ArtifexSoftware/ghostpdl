@@ -297,7 +297,7 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                     memcpy(fontfname, fsprefix, fsprefixlen);
                 }
                 else {
-                    if (ctx->args.cidfsubstpath.size + 1 > gp_file_name_sizeof) {
+                    if (ctx->args.cidfsubstpath.size > gp_file_name_sizeof - 1) {
                         code = gs_note_error(gs_error_rangecheck);
                         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_CONFIG, "pdfi_open_CIDFont_substitute_file", "CIDFSubstPath parameter too long");
                         if (ctx->args.pdfstoponwarning != 0) {
@@ -329,11 +329,26 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                         }
                     }
                     else {
-                        memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
+                        if (fsprefixlen + defcidfallacklen > gp_file_name_sizeof - 1) {
+                            code = gs_note_error(gs_error_rangecheck);
+                            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_CONFIG, "pdfi_open_CIDFont_substitute_file", "CIDFSUBSTFONT environment variable too long");
+                            if (ctx->args.pdfstoponwarning != 0) {
+                                goto exit;
+                            }
+                            code = 0;
+                            memcpy(fontfname, defcidfallack, defcidfallacklen);
+                            /* cidfsubstfont should either be a font name we find in the search path(s)
+                               or an absolute path.
+                             */
+                            fsprefixlen = 0;
+                        }
+                        else {
+                            memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
+                        }
                     }
                 }
                 else {
-                    if (ctx->args.cidfsubstfont.size > gp_file_name_sizeof - 1) {
+                    if (ctx->args.cidfsubstfont.size + fsprefixlen > gp_file_name_sizeof - 1) {
                         code = gs_note_error(gs_error_rangecheck);
                         pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_CONFIG, "pdfi_open_CIDFont_substitute_file", "CIDFSubstFont parameter too long");
                         if (ctx->args.pdfstoponwarning != 0) {
@@ -343,12 +358,28 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                         memcpy(fontfname + fsprefixlen, defcidfallack, defcidfallacklen);
                     }
                     else {
-                        memcpy(fontfname, ctx->args.cidfsubstfont.data, ctx->args.cidfsubstfont.size);
-                        defcidfallacklen = ctx->args.cidfsubstfont.size;
-                        /* cidfsubstfont should either be a font name we find in the search path(s)
-                           or an absolute path.
-                         */
-                        fsprefixlen = 0;
+                        if (ctx->args.cidfsubstfont.size > gp_file_name_sizeof - 1) {
+                            code = gs_note_error(gs_error_rangecheck);
+                            pdfi_set_warning(ctx, code, NULL, W_PDF_BAD_CONFIG, "pdfi_open_CIDFont_substitute_file", "CIDFSubstFont parameter too long");
+                            if (ctx->args.pdfstoponwarning != 0) {
+                                goto exit;
+                            }
+                            code = 0;
+                            memcpy(fontfname, defcidfallack, defcidfallacklen);
+                            defcidfallacklen = ctx->args.cidfsubstfont.size;
+                            /* cidfsubstfont should either be a font name we find in the search path(s)
+                               or an absolute path.
+                             */
+                            fsprefixlen = 0;
+                        }
+                        else {
+                            memcpy(fontfname, ctx->args.cidfsubstfont.data, ctx->args.cidfsubstfont.size);
+                            defcidfallacklen = ctx->args.cidfsubstfont.size;
+                            /* cidfsubstfont should either be a font name we find in the search path(s)
+                               or an absolute path.
+                             */
+                            fsprefixlen = 0;
+                        }
                     }
                 }
                 fontfname[fsprefixlen + defcidfallacklen] = '\0';
