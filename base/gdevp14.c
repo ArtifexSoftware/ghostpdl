@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1361,9 +1361,11 @@ pdf14_make_base_group_color(gx_device* dev)
    group push.  At that time, the color space in which
    we are going to be doing the alpha blend will be known. */
 static int
-pdf14_initialize_ctx(gx_device* dev, int n_chan, bool additive, const gs_gstate* pgs)
+pdf14_initialize_ctx(gx_device* dev, const gs_gstate* pgs)
 {
-    pdf14_device* pdev = (pdf14_device*)dev;
+    pdf14_device *pdev = (pdf14_device *)dev;
+    int n_chan = pdev->color_info.num_components;
+    bool additive = pdev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE;
     bool has_tags = device_encodes_tags(dev);
     int num_spots = pdev->ctx->num_spots;
     pdf14_buf* buf;
@@ -4085,8 +4087,7 @@ pdf14_fill_path(gx_device *dev,	const gs_gstate *pgs,
     gs_pattern2_instance_t *pinst = NULL;
     int push_group = 0;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+    code = pdf14_initialize_ctx(dev, pgs);
     if (code < 0)
         return code;
 
@@ -4220,8 +4221,7 @@ pdf14_stroke_path(gx_device *dev, const	gs_gstate	*pgs,
     if (pdcolor == NULL)
        return_error(gs_error_unknownerror);	/* color must be defined */
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+    code = pdf14_initialize_ctx(dev, pgs);
     if (code < 0)
         return code;
 
@@ -4545,8 +4545,7 @@ pdf14_fill_stroke_path(gx_device *dev, const gs_gstate *cpgs, gx_path *ppath,
     path_log2scale.x = 0;
     path_log2scale.y = 0;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+    code = pdf14_initialize_ctx(dev, pgs);
     if (code < 0)
         return code;
 
@@ -5056,8 +5055,7 @@ pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     bool deep = device_is_deep(dev);
     int code;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    code = pdf14_initialize_ctx(dev, NULL);
     if (code < 0)
         return code;
 
@@ -5091,8 +5089,7 @@ pdf14_fill_mask(gx_device * orig_dev,
     if (pdcolor == NULL)
         return_error(gs_error_unknownerror);	/* color must be defined */
 
-    code = pdf14_initialize_ctx(orig_dev, orig_dev->color_info.num_components,
-        orig_dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    code = pdf14_initialize_ctx(orig_dev, NULL);
     if (code < 0)
         return code;
 
@@ -5598,8 +5595,7 @@ pdf14_begin_typed_image(gx_device * dev, const gs_gstate * pgs,
     const gs_image_t *pim = (const gs_image_t *)pic;
     int code;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+    code = pdf14_initialize_ctx(dev, pgs);
     if (code < 0)
         return code;
 
@@ -6389,8 +6385,7 @@ pdf14_text_begin(gx_device * dev, gs_gstate * pgs,
     bool text_stroke = (text_mode == 1 || text_mode == 2 || text_mode == 5 || text_mode == 6);
     bool text_fill = (text_mode == 0 || text_mode == 2 || text_mode == 4 || text_mode == 6);
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, (const gs_gstate*) pgs);
+    code = pdf14_initialize_ctx(dev, pgs);
     if (code < 0)
         return code;
 
@@ -6549,8 +6544,7 @@ pdf14_fill_rectangle_devn(gx_device *dev, int x, int y, int w, int h,
     if (w <= 0 || h <= 0)
         return 0;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    code = pdf14_initialize_ctx(dev, NULL);
     if (code < 0)
         return code;
     buf = pdev->ctx->stack;
@@ -6802,8 +6796,7 @@ pdf14_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap *tiles,
     bool same = false;
     int code;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    code = pdf14_initialize_ctx(dev, NULL);
     if (code < 0)
         return code;
     buf = pdev->ctx->stack;
@@ -6847,8 +6840,7 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
     pdf14_buf fake_tos;
     int deep;
 
-    int code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    int code = pdf14_initialize_ctx(dev, NULL);
     if (code < 0)
         return code;
 
@@ -6917,8 +6909,7 @@ pdf14_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     if (w <= 0 || h <= 0)
         return 0;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, pgs);
+    code = pdf14_initialize_ctx(dev, pgs);
     if (code < 0)
         return code;
     buf = pdev->ctx->stack;
@@ -6942,8 +6933,7 @@ pdf14_fill_rectangle(gx_device * dev,
     if (w <= 0 || h <= 0)
         return 0;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+    code = pdf14_initialize_ctx(dev, NULL);
     if (code < 0)
         return code;
 
@@ -7070,8 +7060,7 @@ pdf14_begin_transparency_group(gx_device* dev,
        to create a buffer for the whole page so that we can handle stuff drawn
        outside this current group (e.g. two non inclusive groups drawn independently) */
     if (pdev->ctx->stack == NULL && !ptgp->page_group) {
-        code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-            dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, NULL);
+        code = pdf14_initialize_ctx(dev, NULL);
         if (code < 0)
             return code;
         pdev->ctx->stack->isolated = true;
@@ -7800,8 +7789,7 @@ pdf14_begin_transparency_mask(gx_device	*dev,
     bool deep = device_is_deep(dev);
     pdf14_group_color_t* group_color_info;
 
-    code = pdf14_initialize_ctx(dev, dev->color_info.num_components,
-        dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, (const gs_gstate*)pgs);
+    code = pdf14_initialize_ctx(dev, pgs);
     if (code < 0)
         return code;
 
@@ -9163,9 +9151,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     p14dev->color_info.anti_alias = target->color_info.anti_alias;
 
     if (pdf14pct->params.is_pattern) {
-        code = pdf14_initialize_ctx((gx_device*)p14dev,
-            p14dev->color_info.num_components,
-            p14dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE, (const gs_gstate*) pgs);
+        code = pdf14_initialize_ctx((gx_device*)p14dev, pgs);
         if (code < 0)
             return code;
     }
