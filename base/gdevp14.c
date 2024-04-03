@@ -1405,7 +1405,6 @@ pdf14_initialize_ctx(gx_device* dev, const gs_gstate* pgs)
     }
     buf->saved = NULL;
     pdev->ctx->stack = buf;
-    pdev->ctx->n_chan = n_chan;
     pdev->ctx->additive = additive;
 
     /* Every buffer needs group color information including the base
@@ -2238,7 +2237,6 @@ pdf14_open(gx_device *dev)
         pdev->ctx->has_tags = has_tags;
         pdev->ctx->num_spots = pdev->color_info.num_components - pdev->num_std_colorants;
         pdev->ctx->additive = (pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE);
-        pdev->ctx->n_chan = pdev->color_info.num_components;
     }
     pdev->free_devicen = true;
     pdev->text_group = PDF14_TEXTGROUP_NO_BT;
