@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -433,12 +433,12 @@ pdf14_encode_color_tag(gx_device *dev, const gx_color_value colors[])
 {
     gx_color_index color;
     uchar i;
-    uchar ncomp = dev->color_info.num_components;
+    uchar ncomp = dev->color_info.num_components - 1;
     COLROUND_VARS;
 
     COLROUND_SETUP(8);
     /* Add in the tag information */
-    color = dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS;
+    color = dev->graphics_type_tag & 255;
     for (i = 0; i < ncomp; i++) {
         color <<= 8;
         color |= COLROUND_ROUND(colors[i]);
@@ -451,12 +451,12 @@ pdf14_encode_color16_tag(gx_device *dev, const gx_color_value colors[])
 {
     gx_color_index color;
     uchar i;
-    uchar ncomp = dev->color_info.num_components;
+    uchar ncomp = dev->color_info.num_components - 1;
     COLROUND_VARS;
 
     COLROUND_SETUP(16);
     /* Add in the tag information */
-    color = dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS;
+    color = dev->graphics_type_tag & 65535;
     for (i = 0; i < ncomp; i++) {
         color <<= 16;
         color |= COLROUND_ROUND(colors[i]);
