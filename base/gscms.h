@@ -214,7 +214,7 @@ typedef enum {
     GS_IMAGE_TAG = 0x2,
     GS_VECTOR_TAG = 0x4,
     GS_UNKNOWN_TAG = 0x40,
-    GS_DEVICE_ENCODES_TAGS = 0x80000000
+    GS_DEVICE_ENCODES_TAGS = (int)0x80000000
 } gs_graphics_type_tag_t;
 
 /* Source profile graphic tag rendering conditions */
