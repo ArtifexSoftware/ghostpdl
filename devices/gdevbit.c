@@ -783,6 +783,22 @@ bittags_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     for (i = 0; i <= line_count; i++, lnum += step) {
         if ((code = gdev_prn_get_bits(pdev, lnum, in, &data)) < 0)
             goto done;
+        {
+            /* The data is written internally as TTRRGGBB, where we want it written as: RRGGBBTT.
+             * Post process that here. */
+            int ls = line_size;
+            byte *d = data;
+            while (ls > 0)
+            {
+                byte t = d[0];
+                d[0] = d[1];
+                d[1] = d[2];
+                d[2] = d[3];
+                d[3] = t;
+                d += 4;
+                ls -= 4;
+            }
+        }
         if (!nul)
             gp_fwrite(data, 1, line_size, prn_stream);
     }
