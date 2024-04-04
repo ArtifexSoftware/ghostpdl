@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -109,7 +109,7 @@ static int zbeginform(i_ctx_t *i_ctx_p)
         box.q.y = float2fixed(ur.y);
 
         if (box.p.x < 0) {
-            if(box.p.x * -1 > box.q.x)
+            if(box.q.x > 0 && box.p.x * -1 > box.q.x)
                 box.q.x = box.p.x * -1;
         } else {
             if (fabs(ur.x) > fabs(ll.x))
@@ -120,7 +120,7 @@ static int zbeginform(i_ctx_t *i_ctx_p)
             }
         }
         if (box.p.y < 0) {
-            if(box.p.y * -1 > box.q.y)
+            if(box.q.y > 0 && box.p.y * -1 > box.q.y)
                 box.q.y = box.p.y * -1;
         } else {
             if (fabs(ur.y) > fabs(ll.y))
