@@ -3127,10 +3127,10 @@ static void untag_bmp(unsigned char *bmp,
         {
             int R, G, B, T, r, g, b;
 
-            T = *bmp++;
             R = *bmp++;
             G = *bmp++;
             B = *bmp++;
+            T = *bmp++;
 
             r = (R>>2);
             g = (G>>2);
