@@ -209,7 +209,7 @@ typedef enum {
     cmd_opv_fill_stroke      = 0xf4,
     cmd_opv_eofill_stroke    = 0xf5,
     cmd_opv_stroke           = 0xf6,
-    /* UNUSED 0xf7 */
+    cmd_opv_graphics_type_tag = 0xf7,
     /* UNUSED 0xf8 */
     cmd_opv_polyfill         = 0xf9,
     /* UNUSED 0xfa */
@@ -221,7 +221,7 @@ typedef enum {
 
 #define cmd_path_op_name_strings\
   "fill", "rgapto", "lock_pattern", "eofill",\
-  "fill_stroke", "eofill_stroke", "stroke", "?f7?",\
+  "fill_stroke", "eofill_stroke", "stroke", "graphics_type_tag",\
   "?f8?", "polyfill", "?fa?", "?fb?",\
   "fill_trapezoid", "?fd?", "?fe?", "?ff?"
 
@@ -436,6 +436,7 @@ dev_proc_copy_planes(clist_copy_planes);
 dev_proc_fill_rectangle_hl_color(clist_fill_rectangle_hl_color);
 dev_proc_copy_alpha_hl_color(clist_copy_alpha_hl_color);
 dev_proc_process_page(clist_process_page);
+dev_proc_set_graphics_type_tag(clist_set_graphics_type_tag);
 
 /* In gxclimag.c */
 dev_proc_fill_mask(clist_fill_mask);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2032,6 +2032,11 @@ idata:                  data_size = 0;
                         code = 0;
                     if (code < 0)
                         goto out;
+                    continue;
+                } else if (op == cmd_opv_graphics_type_tag) {
+                    int tag;
+                    cmd_getw(tag, cbp);
+                    dev_proc(tdev, set_graphics_type_tag)(tdev, (gs_graphics_type_tag_t)tag);
                     continue;
                 } else {
                     gx_path fpath;

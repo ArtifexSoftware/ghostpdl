@@ -462,6 +462,8 @@ clist_close_writer_and_init_reader(gx_device_clist *cldev)
     gs_memory_status_t mem_status;
     int code = 0;
 
+    cldev->common.reading = 1;
+
     /* Initialize for rendering if we haven't done so yet. */
     if (crdev->ymin < 0) {
         code = clist_end_page(&cldev->writer);

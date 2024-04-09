@@ -175,6 +175,7 @@ clist_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, process_page, clist_process_page);
     set_dev_proc(dev, fill_stroke_path, clist_fill_stroke_path);
     set_dev_proc(dev, lock_pattern, clist_lock_pattern);
+    set_dev_proc(dev, set_graphics_type_tag, clist_set_graphics_type_tag);
 }
 
 /*------------------- Choose the implementation -----------------------
@@ -507,6 +508,7 @@ clist_reset(gx_device * dev)
     if (code < 0)
         return (cdev->permanent_error = code);
     /* Now initialize the rest of the state. */
+    cdev->reading = 0;
     cdev->permanent_error = 0;
     nbands = cdev->nbands;
     cdev->ymin = cdev->ymax = -1;       /* render_init not done yet */

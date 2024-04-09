@@ -204,7 +204,8 @@ typedef struct gx_clist_state_s gx_clist_state;
                                            file location. */\
         gsicc_link_cache_t *icc_cache_cl; /* Link cache */\
         int icc_cache_list_len;         /* Length of list of caches, one per rendering thread */\
-        gsicc_link_cache_t **icc_cache_list  /* Link cache list */
+        gsicc_link_cache_t **icc_cache_list; /* Link cache list */\
+        int reading
 
 /* Define a structure to hold where the ICC profiles are stored in the clist
    Profiles are added into psuedo bands of the clist, these are bands that exist beyond

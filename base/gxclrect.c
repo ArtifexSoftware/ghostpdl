@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -312,9 +312,9 @@ clist_fillpage(gx_device * dev, gs_gstate *pgs, gx_drawing_color *pdcolor)
 
     /* flush previous contents */
     if ((code = clist_close_writer_and_init_reader(cldev) < 0))
-        return code;;
+        return code;
     if ((code = clist_finish_page(dev, true)) < 0)
-        return code;;
+        return code;
 
     pcls = cdev->states; /* Use any. */
 
@@ -322,6 +322,33 @@ clist_fillpage(gx_device * dev, gs_gstate *pgs, gx_drawing_color *pdcolor)
     if (code >= 0)
         code = cmd_write_page_rect_cmd(cdev, cmd_op_fill_rect);
     return code;
+}
+
+void
+clist_set_graphics_type_tag(gx_device *dev, gs_graphics_type_tag_t tag)
+{
+    gx_device_clist_writer * const cdev =
+        &((gx_device_clist *)dev)->writer;
+    byte *dp;
+    int rsize;
+    int code;
+
+    if (cdev->permanent_error < 0)
+        return;
+
+    if ((dev->graphics_type_tag & tag) != 0)
+        return;
+    gx_default_set_graphics_type_tag(dev, tag);
+
+    if (cdev->reading)
+        return;
+
+    rsize = 1 + cmd_sizew((int)tag);
+    code = set_cmd_put_all_op(&dp, cdev, cmd_opv_graphics_type_tag, rsize);
+    dp++;
+    cmd_putw(tag, &dp);
+    if (code < 0)
+        cdev->permanent_error = code;
 }
 
 int
