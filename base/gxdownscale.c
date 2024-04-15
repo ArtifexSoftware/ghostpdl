@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3282,8 +3282,9 @@ downscaler_free_fn(void *arg_, gx_device *dev, gs_memory_t *memory, void *buffer
     downscaler_process_page_arg_t *arg = (downscaler_process_page_arg_t *)arg_;
     downscaler_process_page_buffer_t *buffer = (downscaler_process_page_buffer_t *)buffer_;
 
-    arg->orig_options->free_buffer_fn(arg->orig_options->arg, dev, memory,
-                                      buffer->orig_buffer);
+    if (arg->orig_options && arg->orig_options->free_buffer_fn)
+        arg->orig_options->free_buffer_fn(arg->orig_options->arg, dev, memory,
+                                          buffer->orig_buffer);
     if (buffer->bdev)
         dev_proc(dev, close_device)(dev);
     gs_free_object(memory, buffer, "downscaler process_page buffer");
@@ -3357,7 +3358,7 @@ int gx_downscaler_process_page(gx_device                 *dev,
 
     my_options.init_buffer_fn = downscaler_init_fn;
     my_options.process_fn = downscaler_process_fn;
-    my_options.output_fn = downscaler_output_fn;
+    my_options.output_fn = options->output_fn ? downscaler_output_fn : NULL;
     my_options.free_buffer_fn = downscaler_free_fn;
     my_options.arg = &arg;
 

@@ -40,7 +40,65 @@
 
 /* Forward reference prototypes */
 static int clist_start_render_thread(gx_device *dev, int thread_index, int band);
-static void clist_render_thread(void *param);
+static void clist_render_thread(void* param);
+static void clist_render_thread_no_output_fn(void* param);
+
+/*
+        Notes on operation:
+
+        We now have 2 mechanisms for rendering threads.
+
+        Both mechanisms use a process_page procedure set to
+        clist_process_page_mt so control arrives here to render the page
+        for output.
+
+        The interpreter calls the devices print_page function. Devices
+        then call process_page with an options structure that inclues
+        both a process_fn and an output_fn.
+
+        In all cases that we care about here, process_page is set to
+        clist_process_page_mt. For both mechanisms, this function sets
+        up a pool of n worker threads all ready to render different
+        bands of the file.
+
+        This function then causes each worker to render a thread in
+        turn (by calling process_fn, which calls back to getbits, which
+        causes the band to be rendered to a buffer).
+
+        Most devices that are just writing each band to an output file
+        rely on 'in-order' calling. That is to say, they need to output
+        the data from band 0, followed by that from band 1, etc. (or
+        possibly band n-1, followed by band-2, etc).
+
+        Such devices define an 'output_fn', which is called back with
+        the results of each band in turn. We guarantee that this
+        output_fn is called in the order it expects.
+
+        The only downside to this way of working, is that threads can
+        be sat around not working for long periods - especially if the
+        different bands take different lengths of time to render.
+
+        For example, imagine if we are running with 4 workers. We
+        kick off rendering for band 0,1,2,3 at the same time. Whichever
+        order those renderings finish in, we can only ever output them
+        in the order 0,1,2,3.
+
+        This means that if band 3 finishes early (perhaps its contents
+        are less complex than the other bands), it will be sat there
+        idle waiting for all the other bands to finish before it can
+        output, and resume its next rendering.
+
+        For devices that are not dependent on the order in which data
+        becomes available, we therefore offer a second mechanism; by
+        setting output_fn to NULL, we indicate that process_fn will
+        not only render the page, it will 'output' it too, and handle
+        the selection of which band to render next.
+
+        In this mode, the render threads can always be kept busy,
+        modulo any blocking that happens within the process_fn. For
+        devices which can operate in this way, non-trivial speedups
+        can be given.
+*/
 
 /* clone a device and set params and its chunk memory                   */
 /* The chunk_base_mem MUST be thread safe                               */
@@ -428,6 +486,17 @@ clist_setup_render_threads(gx_device *dev, int y, gx_process_page_options_t *opt
         thread->band = -1;              /* a value that won't match any valid band */
         thread->options = options;
         thread->buffer = NULL;
+
+        {
+            gx_device_clist *cldevl = (gx_device_clist *)ndev;
+            gx_device_clist_reader *crdevl = &cldevl->reader;
+
+            /* Both of these are only needed for the output_fn == NULL mode, but are initialized
+             * regardless. */
+            crdevl->curr_render_thread = i;
+            crdevl->orig_clist_device = crdev;
+        }
+
         if (options && options->init_buffer_fn) {
             code = options->init_buffer_fn(options->arg, dev, thread->memory, dev->width, band_height, &thread->buffer);
             if (code < 0)
@@ -662,14 +731,34 @@ clist_start_render_thread(gx_device *dev, int thread_index, int band)
     gx_device_clist *cldev = (gx_device_clist *)dev;
     gx_device_clist_reader *crdev = &cldev->reader;
     int code;
+    gp_thread_creation_callback_t starter;
+    gx_process_page_options_t* options = crdev->render_threads[thread_index].options;
 
     crdev->render_threads[thread_index].band = band;
-    crdev->render_threads[thread_index].status = THREAD_BUSY;
 
     /* Finally, fire it up */
-    code = gp_thread_start(clist_render_thread,
+    if (options && options->output_fn) {
+        /* Traditional mechanism, using output_fn. Each thread will
+         * block after it renders until it has been output 'in-order'
+         * using output_fn. */
+        crdev->render_threads[thread_index].status = THREAD_BUSY;
+
+        starter = clist_render_thread;
+    } else {
+        /* New mechanism, with output_fn == NULL. process_fn is
+         * required to both render and output the data. Less blocking
+         * required, and potentially significant speedups as long as
+         * output does not need to be 'in-order'. */
+        starter = clist_render_thread_no_output_fn;
+
+        /* This could pretty much be an assert. */
+        if (options == NULL || options->process_fn == NULL)
+            return_error(gs_error_rangecheck);
+    }
+    code = gp_thread_start(starter,
                            &(crdev->render_threads[thread_index]),
                            &(crdev->render_threads[thread_index].thread));
+
     gp_thread_label(crdev->render_threads[thread_index].thread, "Band");
 
     return code;
@@ -735,6 +824,81 @@ clist_render_thread(void *data)
      */
     gx_semaphore_signal(thread->sema_group);
     gx_semaphore_signal(thread->sema_this);
+}
+
+/* Used if output_fn == NULL. No blocking required as we no longer need to
+ * serialise the calls to output_fn. */
+static void
+clist_render_thread_no_output_fn(void* data)
+{
+    clist_render_thread_control_t* thread = (clist_render_thread_control_t*)data;
+    gx_device* dev = thread->cdev;
+    gx_device_clist* cldev = (gx_device_clist*)dev;
+    gx_device_clist_reader* crdev = &cldev->reader;
+    gx_device* bdev = thread->bdev;
+    gs_int_rect band_rect;
+    byte* mdata = crdev->data + crdev->page_info.tile_cache_size;
+    byte* mlines = (crdev->page_info.line_ptrs_offset == 0 ? NULL : mdata + crdev->page_info.line_ptrs_offset);
+    uint raster = gx_device_raster_plane(dev, NULL);
+    int code;
+    int band_height = crdev->page_info.band_params.BandHeight;
+    int band_begin_line = thread->band * band_height;
+    int band_end_line = band_begin_line + band_height;
+    int band_num_lines;
+
+#ifdef DEBUG
+    long starttime[2], endtime[2];
+
+    gp_get_usertime(starttime); /* thread start time */
+#endif
+    /*
+      As long there is no need for calling the bands 'in order' we can
+      process multiple bands with one thread while there are free
+      (unprocessed) bands available. The only potential race condition
+      here is where we need to pick a new band to draw when a thread
+      finishes its render task. We delegate the job of doing this to the
+      process_fn itself, enabling devices to make use of less expensive
+      operations (such as fast interlocked exchange with add) that may
+      not be available portably.
+      If there is no more unprocessed band the thread will finish, giving
+      back the control to the main process (obviously after ALL the
+      rendering threads have got finished).
+    */
+
+    while (band_begin_line < dev->height && band_end_line > 0) {
+        band_num_lines = band_end_line - band_begin_line;
+
+        ((gx_device_memory*)bdev)->band_y = band_begin_line; // probably useless, but doesn't hurt
+
+        code = crdev->buf_procs.setup_buf_device
+        (bdev, mdata, raster, (byte**)mlines, 0, band_num_lines, band_num_lines);
+
+        band_rect.p.x = 0;
+        band_rect.p.y = band_begin_line;
+        band_rect.q.x = dev->width;
+        band_rect.q.y = band_end_line;
+
+        if (code >= 0)
+            code = clist_render_rectangle(cldev, &band_rect, bdev, NULL, true);
+
+        if (code >= 0)
+            code = thread->options->process_fn(thread->options->arg, dev, bdev, &band_rect, thread->buffer);
+
+        /* A side effect of the process_fn is that it should select the next
+          * band for this thread to render. It does this by updating
+          * crdev->next_band (that's the thread's own device!), as well as
+          * updating crdev_orig so that other threads won't try to render the
+          * same thread (normally by updating crdev_orig->next_band). */
+        band_begin_line = crdev->next_band * band_height;
+        band_end_line = band_begin_line + band_height;
+    }
+
+
+#ifdef DEBUG
+    gp_get_usertime(endtime);
+    thread->cputime += (endtime[0] - starttime[0]) * 1000 +
+        (endtime[1] - starttime[1]) / 1000000;
+#endif
 }
 
 /*
@@ -1062,26 +1226,45 @@ clist_process_page_mt(gx_device *dev, gx_process_page_options_t *options)
         /* problem setting up the threads, revert to single threaded */
         return clist_process_page(dev, options);
 
-    if (reverse)
-    {
-        for (band = num_bands-1; band > 0; band--)
+    if (options && options->output_fn) {
+        /* Traditional mechanism: The rendering threads are running. We wait for them
+         * to finish in order, call output_fn with the results, and kick off the
+         * next bands rendering. This means that threads block after they finish
+         * rendering until it is their turn to call output_fn. */
+        if (reverse)
         {
-            code = clist_get_band_from_thread(dev, band, options);
-            if (code < 0)
-                goto free_thread_out;
+            for (band = num_bands - 1; band > 0; band--)
+            {
+                code = clist_get_band_from_thread(dev, band, options);
+                if (code < 0)
+                    goto free_thread_out;
+            }
+        }
+        else
+        {
+            for (band = 0; band < num_bands; band++)
+            {
+                code = clist_get_band_from_thread(dev, band, options);
+                if (code < 0)
+                    goto free_thread_out;
+            }
         }
     }
     else
     {
-        for (band = 0; band < num_bands; band++)
-        {
-            code = clist_get_band_from_thread(dev, band, options);
-            if (code < 0)
-                goto free_thread_out;
+        /* New mechanism: The rendering threads are running. Each of them will
+         * automatically loop; rendering the next band necessary, outputting the
+         * results (directly, as there is no output_fn to call), and selecting
+         * the next band to operate on. The threads will exit once there are no
+         * more bands to render/output. All we need do here, therefore, is wait
+         * for them to exit. */
+        for (int i = 0; i < crdev->num_render_threads; i++) {
+            gp_thread_finish(crdev->render_threads[i].thread);
+            crdev->render_threads[i].thread = 0;
         }
     }
 
-    /* Always free up thread stuff before exiting*/
+    /* Always free up thread stuff before exiting */
 free_thread_out:
     clist_teardown_render_threads(dev);
     return code;

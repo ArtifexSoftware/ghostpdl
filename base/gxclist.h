@@ -400,7 +400,10 @@ typedef struct gx_device_clist_reader_s {
     int curr_render_thread;		/* index into array */
     int thread_lookahead_direction;	/* +1 or -1 */
     int next_band;			/* may be < 0 or >= num bands when no more remain to render */
-
+    struct gx_device_clist_reader_s *orig_clist_device;
+                                        /* This is NULL, unless we're in a worker thread for clist
+                                         * rendering, in which case it's a pointer back to the
+                                         * original clist device. */
 } gx_device_clist_reader;
 
 union gx_device_clist_s {
