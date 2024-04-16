@@ -332,13 +332,23 @@ pdf_text_release(gs_text_enum_t *pte, client_name_t cname)
      */
     if (!penum->text_clipped && (penum->text.operation & TEXT_DO_DRAW || penum->pgs->text_rendering_mode == 3))
     {
-        gs_matrix tmat;
+        gs_matrix tmat, fmat;
         gs_point p;
         int i;
         gs_font *font = (gs_font *)penum->current_font;
         gs_text_params_t *const text = &pte->text;
 
-        gs_matrix_multiply(&font->FontMatrix, &ctm_only(penum->pgs), &tmat);
+        /* If we have a CIDFont or type 0 font, then the current font will be the actual
+         * marking font from the FDepVector array of dictionaries. We need to multiply
+         * that font's FontMatrix by the FontMatrix of the original type 0 font.
+         */
+        if (font != penum->orig_font) {
+            gs_matrix_multiply(&font->FontMatrix, &penum->orig_font->FontMatrix, &fmat);
+            gs_matrix_multiply(&fmat, &ctm_only(penum->pgs), &tmat);
+        } else {
+            gs_matrix_multiply(&font->FontMatrix, &ctm_only(penum->pgs), &tmat);
+        }
+
         gs_distance_transform(1, 0, &tmat, &p);
         if (p.x > fabs(p.y))
             i = 0;
