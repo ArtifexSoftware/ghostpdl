@@ -9101,8 +9101,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     /* The number of color planes should not exceed that of the target.
        Unless we are using a blend CS */
     if (!(p14dev->blend_cs_state != PDF14_BLEND_CS_UNSPECIFIED || p14dev->overprint_sim)) {
-        if (p14dev->color_info.num_components > target->color_info.num_components)
-            p14dev->color_info.num_components = target->color_info.num_components;
+        if (p14dev->color_info.num_components > target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)p14dev))
+            p14dev->color_info.num_components = target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)p14dev);
         if (p14dev->color_info.max_components > target->color_info.max_components)
             p14dev->color_info.max_components = target->color_info.max_components;
     }
@@ -10437,8 +10437,8 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     /* If we are not using a blending color space, the number of color planes
        should not exceed that of the target */
     if (!(pdev->blend_cs_state != PDF14_BLEND_CS_UNSPECIFIED || pdev->overprint_sim)) {
-        if (pdev->color_info.num_components > target->color_info.num_components)
-            pdev->color_info.num_components = target->color_info.num_components;
+        if (pdev->color_info.num_components > target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)pdev))
+            pdev->color_info.num_components = target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)pdev);
         if (pdev->color_info.max_components > target->color_info.max_components)
             pdev->color_info.max_components = target->color_info.max_components;
     }
@@ -12225,8 +12225,8 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                     }
                 }
                 /* limit the num_components to the max. */
-                if (p14dev->color_info.num_components > p14dev->color_info.max_components)
-                    p14dev->color_info.num_components = p14dev->color_info.max_components;
+                if (p14dev->color_info.num_components > p14dev->color_info.max_components + device_encodes_tags((gx_device *)p14dev))
+                    p14dev->color_info.num_components = p14dev->color_info.max_components + device_encodes_tags((gx_device *)p14dev);
                 /* Transfer the data for the spot color names
                    But we have to free what may be there before we do this */
                 devn_free_params((gx_device*) p14dev);
