@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3487,7 +3487,7 @@ static const ushort gs_c_known_encoding_reverse_5[] = {
 47,   /* N(5,175): slash*/
 34,   /* N(8,176): quotedbl*/
 32,   /* N(5,180): space*/
-202,   /* N(5,180): space*/
+32,   /* N(5,180): space*/
 169,   /* N(9,180): copyright*/
 193,   /* N(10,180): exclamdown*/
 224,   /* N(9,189): daggerdbl*/

@@ -1,5 +1,5 @@
 %!
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2024 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -150,7 +150,15 @@ const int gs_c_known_encoding_count = ) print
       dup /.notdef eq {
         pop
       } {
-        [ exch estrs 1 index get lenbits bitshift 1 index length add code ] %[/name N code]
+        % The juggling of the 202 and 32 indices based on the /space glyph name is because MacRomanEncoding
+        % has /space at both index 32 AND index 202. Binary searching to speed lookup means we can land on
+        % 202 for space, which is (almost) never what's desired. So we massage the reverse encoding so both
+        % instances of /space yeild index 32.
+        % This is important as this reverse lookup is required for TTF fonts in PDF files with 1,0 cmaps
+        [ exch estrs 1 index get lenbits bitshift 1 index length add
+         1 index /space eq
+         encnames i get /MacRomanEncoding eq and
+         code 202 eq and {32}{code} ifelse ] %[/name N code]
       } ifelse
       /code code 1 add def
     } forall
@@ -332,7 +340,7 @@ estrs readonly pop
 
 
 % Write the initial boilerplate.
-(/* Copyright (C) 2001-2023 Artifex Software, Inc.) =
+(/* Copyright (C) 2001-2024 Artifex Software, Inc.) =
 (   All Rights Reserved.) =
 () =
 (   This software is provided AS-IS with no warranty, either express or) =
