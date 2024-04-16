@@ -2294,7 +2294,9 @@ if test x$with_urf != xno; then
     URF_INCLUDE="\$(I_)\$(URFSRCDIR)\$(_I)"
     URF_DEV="\$(GLD)urfd.dev"
     SURFX_H="\$(URFSRCDIR)\$(D)surfx.h"
-fi
+  else
+    AC_MSG_RESULT([no])
+  fi
 fi
 
 AC_SUBST(ENABLEURF)
@@ -2331,6 +2333,8 @@ if test x$with_so != xno; then
             SO_PDFEXPORT_LIB="\$(SOSRCDIR)/lib/macos/x64/smart-office-lib.a"
         ;;
     esac
+  else
+    AC_MSG_RESULT([no])
   fi
 fi
 
@@ -2340,6 +2344,13 @@ AC_SUBST(SO_PDFEXPORT_LIB)
 
 AC_ARG_WITH([cal], AS_HELP_STRING([--without-cal],
     [do not try to use the CAL library for acceleration]))
+
+if test x"$WHICHLCMS" != x"lcms2mt"; then
+  with_cal=no
+  if test -d $srcdir/cal; then
+    AC_MSG_WARN([CAL dependency lcms2mt missing..... disabling CAL])
+  fi
+fi
 
 CALSRCDIR=$srcdir/cal
 if test x$with_cal != xno; then
