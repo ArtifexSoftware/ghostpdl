@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -641,6 +641,7 @@ check_cmyk_color_model_comps(gx_device * dev)
     /* check the mapping */
     cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
 
+    ncomps -= device_encodes_tags(dev);
     cmprocs->map_cmyk(cmdev, frac_14, frac_0, frac_0, frac_0, out);
     if (!check_single_comp(cyan_c, frac_14, ncomps, out)) {
         pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
