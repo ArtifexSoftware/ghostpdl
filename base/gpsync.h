@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -72,6 +72,9 @@ typedef union {
     double dummy2;
     long dummy3;
     int64_t dummy4;
+#if defined(_WIN32)
+    char dummy[8 + 4 * ARCH_SIZEOF_PTR];
+#endif
 } gp_monitor;
 
 uint gp_monitor_sizeof(void);
