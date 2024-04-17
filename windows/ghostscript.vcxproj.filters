@@ -6641,6 +6641,9 @@
     <ClCompile Include="..\base\gssprintf.c">
       <Filter>base</Filter>
     </ClCompile>
+    <ClCompile Include="..\devices\gdevpppm.c">
+      <Filter>devices</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\base\aes.h">

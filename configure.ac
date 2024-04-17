@@ -2778,7 +2778,7 @@ JPEG_DEVS='jpeg jpeggray jpegcmyk'
 # PNG_DEVS='png16 png16m png256 pngalpha pnggray pngmono'
 
 PCX_DEVS='pcxmono pcxgray pcx16 pcx256 pcx24b pcxcmyk'
-PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam pamcmyk4 pamcmyk32 plan plang planm planc plank'
+PBM_DEVS='pbm pbmraw pgm pgmraw pgnm pgnmraw pnm pnmraw ppm ppmraw pkm pkmraw pksm pksmraw pam pamcmyk4 pamcmyk32 plan plang planm planc plank pppm'
 PS_DEVS='psdf psdcmyk psdrgb psdcmyk16 psdrgb16 psdcmyktags psdrgbtags psdcmyktags16 pdfwrite ps2write eps2write bbox txtwrite inkcov ink_cov psdcmykog fpng pdfimage8 pdfimage24 pdfimage32 PCLm PCLm8'
 
 # Handle --with-extract-dir=EXTRACT_DIR - build extract library and docxwrite

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2024 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -2020,6 +2020,18 @@ $(DEVOBJ)gdevurf.$(OBJ) : $(URFSRCDIR)$(D)gdevurf.c $(AK) $(PDEVH) \
  $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
  $(gsutil_h) $(DEVS_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevurf.$(OBJ) $(C_) $(URFSRCDIR)$(D)gdevurf.c
+
+### --------------- Parallel PPM format device --------------- ###
+
+pppm_=$(DEVOBJ)gdevpppm.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
+
+$(DEVOBJ)gdevpppm.$(OBJ) : $(DEVSRC)gdevpppm.c \
+ $(gdevprn_h) $(gxdevsop_h) $(gdevpccm_h) $(gscdefs_h) $(zlib_h) $(DEVS_MAK) $(MAKEDIRS)
+	$(CC_) $(I_)$(DEVI_) $(II)$(ZI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevpppm.$(OBJ) $(C_) $(DEVSRC)gdevpppm.c
+
+$(DD)pppm.dev : $(pppm_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+	$(SETPDEV2) $(DD)pppm $(pppm_)
+	$(ADDMOD) $(DD)pppm $(pppm_i_)
 
 # Dependencies:
 $(DEVSRC)gxfcopy.h:$(GLSRC)gsfont.h
