@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1043,6 +1043,7 @@ int pdfi_Tj(pdf_context *ctx)
     gs_matrix saved, Trm;
     gs_point initial_point, current_point, pt;
     double linewidth = ctx->pgs->line_params.half_width;
+    int initial_point_valid;
 
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
@@ -1065,7 +1066,7 @@ int pdfi_Tj(pdf_context *ctx)
 
     /* Save the CTM for later restoration */
     saved = ctm_only(ctx->pgs);
-    gs_currentpoint(ctx->pgs, &initial_point);
+    initial_point_valid = (gs_currentpoint(ctx->pgs, &initial_point) >= 0);
 
     Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
     Trm.xy = 0;
@@ -1074,10 +1075,14 @@ int pdfi_Tj(pdf_context *ctx)
     Trm.tx = 0;
     Trm.ty = ctx->pgs->textrise;
 
-    gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+    code = gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+    if (code < 0)
+        goto exit;
 
     if (!ctx->device_state.preserve_tr_mode) {
-        gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
+        code = gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
+        if (code < 0)
+            goto exit;
         ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
     } else {
         /* We have to adjust the stroke width for pdfwrite so that we take into
@@ -1099,40 +1104,56 @@ int pdfi_Tj(pdf_context *ctx)
         if (code < 0)
             goto exit;
 
-        gs_distance_transform(ctx->pgs->line_params.half_width, 0, &matrix, &pt);
+        code = gs_distance_transform(ctx->pgs->line_params.half_width, 0, &matrix, &pt);
+        if (code < 0)
+            goto exit;
         ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
     }
 
-    gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
-    gs_setmatrix(ctx->pgs, &Trm);
+    code = gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
+    if (code < 0)
+        goto exit;
+
+    code = gs_setmatrix(ctx->pgs, &Trm);
+    if (code < 0)
+        goto exit;
 
     code = gs_moveto(ctx->pgs, 0, 0);
     if (code < 0)
         goto Tj_error;
 
     code = pdfi_show(ctx, s);
+    if (code < 0)
+        goto Tj_error;
 
     ctx->pgs->line_params.half_width = linewidth;
     /* Update the Text matrix with the current point, for the next operation
      */
-    gs_currentpoint(ctx->pgs, &current_point);
+    (void)gs_currentpoint(ctx->pgs, &current_point); /* Always valid */
     Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
     Trm.xy = 0;
     Trm.yx = 0;
     Trm.yy = ctx->pgs->PDFfontsize;
     Trm.tx = 0;
     Trm.ty = 0;
-    gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+    code = gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+    if (code < 0)
+        goto Tj_error;
 
-    gs_distance_transform(current_point.x, current_point.y, &Trm, &pt);
+    code = gs_distance_transform(current_point.x, current_point.y, &Trm, &pt);
+    if (code < 0)
+        goto Tj_error;
     ctx->pgs->textmatrix.tx += pt.x;
     ctx->pgs->textmatrix.ty += pt.y;
 
 Tj_error:
     /* Restore the CTM to the saved value */
-    gs_setmatrix(ctx->pgs, &saved);
+    (void)gs_setmatrix(ctx->pgs, &saved);
     /* And restore the currentpoint */
-    gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    if (initial_point_valid)
+        (void)gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    else
+        code = gs_newpath(ctx->pgs);
     /* And the line width */
     ctx->pgs->line_params.half_width = linewidth;
 
@@ -1152,6 +1173,7 @@ int pdfi_TJ(pdf_context *ctx)
     gs_point initial_point, current_point;
     double linewidth = ctx->pgs->line_params.half_width;
     pdf_font *current_font = NULL;
+    int initial_point_valid;
 
     current_font = pdfi_get_current_pdf_font(ctx);
     if (current_font == NULL)
@@ -1177,7 +1199,7 @@ int pdfi_TJ(pdf_context *ctx)
 
     /* Save the CTM for later restoration */
     saved = ctm_only(ctx->pgs);
-    gs_currentpoint(ctx->pgs, &initial_point);
+    initial_point_valid = (gs_currentpoint(ctx->pgs, &initial_point) >= 0);
 
     /* Calculate the text rendering matrix, see section 1.7 PDF Reference
      * page 409, section 5.3.3 Text Space details.
@@ -1189,10 +1211,14 @@ int pdfi_TJ(pdf_context *ctx)
     Trm.tx = 0;
     Trm.ty = ctx->pgs->textrise;
 
-    gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+    code = gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+    if (code < 0)
+        goto exit;
 
     if (!ctx->device_state.preserve_tr_mode) {
-        gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
+        code = gs_distance_transform_inverse(ctx->pgs->line_params.half_width, 0, &Trm, &pt);
+        if (code < 0)
+            goto exit;
         ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
     } else {
         /* We have to adjust the stroke width for pdfwrite so that we take into
@@ -1214,12 +1240,18 @@ int pdfi_TJ(pdf_context *ctx)
         if (code < 0)
             goto exit;
 
-        gs_distance_transform(ctx->pgs->line_params.half_width, 0, &matrix, &pt);
+        code = gs_distance_transform(ctx->pgs->line_params.half_width, 0, &matrix, &pt);
+        if (code < 0)
+            goto exit;
         ctx->pgs->line_params.half_width = sqrt((pt.x * pt.x) + (pt.y * pt.y));
     }
 
-    gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
-    gs_setmatrix(ctx->pgs, &Trm);
+    code = gs_matrix_multiply(&Trm, &ctm_only(ctx->pgs), &Trm);
+    if (code < 0)
+        goto exit;
+    code = gs_setmatrix(ctx->pgs, &Trm);
+    if (code < 0)
+        goto TJ_error;
 
     code = gs_moveto(ctx->pgs, 0, 0);
     if (code < 0)
@@ -1250,25 +1282,32 @@ int pdfi_TJ(pdf_context *ctx)
 
     /* Update the Text matrix with the current point, for the next operation
      */
-    gs_currentpoint(ctx->pgs, &current_point);
+    (void)gs_currentpoint(ctx->pgs, &current_point); /* Always valid */
     Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
     Trm.xy = 0;
     Trm.yx = 0;
     Trm.yy = ctx->pgs->PDFfontsize;
     Trm.tx = 0;
     Trm.ty = 0;
-    gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+    code = gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+    if (code < 0)
+        goto TJ_error;
 
-    gs_distance_transform(current_point.x, current_point.y, &Trm, &pt);
+    code = gs_distance_transform(current_point.x, current_point.y, &Trm, &pt);
+    if (code < 0)
+        goto TJ_error;
     ctx->pgs->textmatrix.tx += pt.x;
     ctx->pgs->textmatrix.ty += pt.y;
 
 TJ_error:
     pdfi_countdown(o);
     /* Restore the CTM to the saved value */
-    gs_setmatrix(ctx->pgs, &saved);
+    (void)gs_setmatrix(ctx->pgs, &saved);
     /* And restore the currentpoint */
-    gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    if (initial_point_valid)
+        (void)gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+    else
+        code = gs_newpath(ctx->pgs);
     /* And the line width */
     ctx->pgs->line_params.half_width = linewidth;
 
