@@ -101,19 +101,11 @@ int pdfi_BT(pdf_context *ctx)
     return code;
 }
 
-int pdfi_ET(pdf_context *ctx)
+static int do_ET(pdf_context *ctx)
 {
     int code = 0;
     gx_clip_path *copy = NULL;
 
-    if (ctx->text.BlockDepth == 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_ETNOTEXTBLOCK, "pdfi_ET", NULL);
-        if (ctx->args.pdfstoponwarning)
-            return_error(gs_error_syntaxerror);
-        return 0;
-    }
-
-    ctx->text.BlockDepth--;
     /* If we have reached the end of a text block (or the outermost block
      * if we have illegally nested text blocks) and we are using a 'clip'
      * text rendering mode, then we need to apply the clip. We also need
@@ -158,6 +150,20 @@ int pdfi_ET(pdf_context *ctx)
     if (!ctx->text.initial_current_point_valid)
         gs_newpath(ctx->pgs);
     return code;
+}
+
+int pdfi_ET(pdf_context *ctx)
+{
+    if (ctx->text.BlockDepth == 0) {
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_ETNOTEXTBLOCK, "pdfi_ET", NULL);
+        if (ctx->args.pdfstoponwarning)
+            return_error(gs_error_syntaxerror);
+        return 0;
+    }
+
+    ctx->text.BlockDepth--;
+
+    return do_ET(ctx);
 }
 
 int pdfi_T_star(pdf_context *ctx)
@@ -824,9 +830,11 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
     int Trmode = 0;
     int initial_gsave_level = ctx->pgs->level;
     pdfi_trans_state_t state;
+    int outside_text_block = 0;
 
     if (ctx->text.BlockDepth == 0) {
         pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_show", NULL);
+        outside_text_block = 1;
     }
 
     if (hypot(ctx->pgs->ctm.xx, ctx->pgs->ctm.xy) == 0.0
@@ -914,6 +922,16 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
      */
     while(ctx->pgs->level > initial_gsave_level)
         gs_grestore(ctx->pgs);
+
+    /* If we were outside a text block when we started this function, then we effectively started
+     * one by calling the show mechanism. Among other things, this can have pushed a transparency
+     * group. We need to ensure that this is properly closed, so do the guts of the 'ET' operator
+     * here (without adjusting the blockDepth, or giving more warnings). See Bug 707753. */
+    if (outside_text_block) {
+        code1 = do_ET(ctx);
+        if (code == 0)
+            code = code1;
+    }
 
 show_error:
     if ((void *)text.data.chars != (void *)s->data)
