@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -76,6 +76,10 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
         pdfi_countdown(o);
         return code;
     }
+    /* Increment the saved gsave_level by 1 to allow for the gsave we've just
+     * done. Otherwise excess 'Q' operators in the stream can cause us to pop
+     * one higher than we should. Bug 707753. */
+    ctx->current_stream_save.gsave_level++;
 
     ctx->encryption.decrypt_strings = false;
     if (pdfi_type_of(o) == PDF_ARRAY) {
@@ -130,6 +134,8 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
             code = gs_note_error(gs_error_typecheck);
     }
 page_error:
+    /* Decrement the stream level to counterbalance the increment above. */
+    ctx->current_stream_save.gsave_level--;
     ctx->encryption.decrypt_strings = true;
     pdfi_clearstack(ctx);
     pdfi_grestore(ctx);
