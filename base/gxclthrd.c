@@ -737,7 +737,7 @@ clist_start_render_thread(gx_device *dev, int thread_index, int band)
     crdev->render_threads[thread_index].band = band;
 
     /* Finally, fire it up */
-    if (options && options->output_fn) {
+    if (options == NULL || options->output_fn) {
         /* Traditional mechanism, using output_fn. Each thread will
          * block after it renders until it has been output 'in-order'
          * using output_fn. */
