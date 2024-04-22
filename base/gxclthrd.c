@@ -891,6 +891,8 @@ clist_render_thread_no_output_fn(void* data)
           * same thread (normally by updating crdev_orig->next_band). */
         band_begin_line = crdev->next_band * band_height;
         band_end_line = band_begin_line + band_height;
+        if (code < 0)
+            break;
     }
 
 
@@ -899,6 +901,10 @@ clist_render_thread_no_output_fn(void* data)
     thread->cputime += (endtime[0] - starttime[0]) * 1000 +
         (endtime[1] - starttime[1]) / 1000000;
 #endif
+    if (code < 0)
+        thread->status = THREAD_ERROR;          /* shouldn't happen */
+    else
+        thread->status = THREAD_DONE;    /* OK */
 }
 
 /*
@@ -1226,7 +1232,7 @@ clist_process_page_mt(gx_device *dev, gx_process_page_options_t *options)
         /* problem setting up the threads, revert to single threaded */
         return clist_process_page(dev, options);
 
-    if (options && options->output_fn) {
+    if (options->output_fn) {
         /* Traditional mechanism: The rendering threads are running. We wait for them
          * to finish in order, call output_fn with the results, and kick off the
          * next bands rendering. This means that threads block after they finish
@@ -1259,10 +1265,15 @@ clist_process_page_mt(gx_device *dev, gx_process_page_options_t *options)
          * more bands to render/output. All we need do here, therefore, is wait
          * for them to exit. */
         int i;
+        int failed = 0;
         for (i = 0; i < crdev->num_render_threads; i++) {
             gp_thread_finish(crdev->render_threads[i].thread);
+            if (crdev->render_threads[i].status == THREAD_ERROR)
+                failed = 1;
             crdev->render_threads[i].thread = 0;
         }
+        if (failed)
+            code = gs_note_error(gs_error_unknownerror);
     }
 
     /* Always free up thread stuff before exiting */

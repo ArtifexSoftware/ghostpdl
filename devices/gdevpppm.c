@@ -157,7 +157,7 @@ static int pppm_process_and_output(void *arg, gx_device *dev, gx_device *bdev, c
         orig_fdev = (gx_device_pppm *)orig_dev;
         offset = orig_fdev->header_len;
     }
-    offset += w * 3 * rect->p.y;
+    offset += ((gs_offset_t)w) * 3 * rect->p.y;
 
     /* Process the data for a single band. */
     params.options = GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_PACKING_CHUNKY | GB_RETURN_POINTER | GB_ALIGN_ANY | GB_OFFSET_0 | GB_RASTER_ANY;
