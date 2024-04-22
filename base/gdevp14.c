@@ -9126,8 +9126,12 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     /* same order as the target device.                                        */
     if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
         code = devn_copy_params(target, (gx_device *)p14dev);
-        if (code < 0)
+        if (code < 0) {
+            *pdev = NULL;
+            gx_device_set_target((gx_device_forward *)p14dev, NULL);
+            rc_decrement(p14dev, "gs_pdf14_device_push");
             return code;
+        }
     }
     /* by definition pdf14_encode _is_ standard */
     p14dev->color_info.separable_and_linear = GX_CINFO_SEP_LIN_STANDARD;
@@ -9159,8 +9163,12 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
 
     if (pdf14pct->params.is_pattern) {
         code = pdf14_initialize_ctx((gx_device*)p14dev, pgs);
-        if (code < 0)
+        if (code < 0) {
+            *pdev = NULL;
+            gx_device_set_target((gx_device_forward *)p14dev, NULL);
+            rc_decrement(p14dev, "gs_pdf14_device_push");
             return code;
+        }
     }
 
     /* We should never go into this when using a blend color space */

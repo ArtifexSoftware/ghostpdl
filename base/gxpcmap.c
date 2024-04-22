@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -253,7 +253,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, gs_memory_t * storage_memory,
     if (force_no_clist ||
         (((size < max_pattern_bitmap && !pinst->is_clist)
            || pinst->templat.PaintType != 1) && !pinst->templat.BM_Not_Normal)) {
-        gx_device_pattern_accum *adev = gs_alloc_struct(mem, gx_device_pattern_accum,
+        gx_device_pattern_accum *adev = gs_alloc_struct_immovable(mem, gx_device_pattern_accum,
                         &st_device_pattern_accum, cname);
         if (adev == 0)
             return 0;
@@ -1648,7 +1648,7 @@ fail:
     }
     dev_proc(adev, close_device)((gx_device *)adev);
     gx_device_set_target(adev, NULL);
-    rc_decrement(adev, "gx_pattern_load");
+    gx_device_retain((gx_device *)adev, false);
     gs_gstate_free_chain(saved);
     return code;
 }
