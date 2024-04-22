@@ -1258,7 +1258,8 @@ clist_process_page_mt(gx_device *dev, gx_process_page_options_t *options)
          * the next band to operate on. The threads will exit once there are no
          * more bands to render/output. All we need do here, therefore, is wait
          * for them to exit. */
-        for (int i = 0; i < crdev->num_render_threads; i++) {
+        int i;
+        for (i = 0; i < crdev->num_render_threads; i++) {
             gp_thread_finish(crdev->render_threads[i].thread);
             crdev->render_threads[i].thread = 0;
         }
