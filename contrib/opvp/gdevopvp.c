@@ -3456,6 +3456,12 @@ _put_params(gx_device *dev, gs_param_list *plist)
     code = param_read_string(plist, pname, &vdps);
     switch (code) {
     case 0:
+        if (gs_is_path_control_active(dev->memory)
+            && (!opdev->globals.vectorDriver || strlen(opdev->globals.vectorDriver) != vdps.size
+                || memcmp(opdev->globals.vectorDriver, vdps.data, vdps.size) != 0)) {
+            param_signal_error(plist, pname, gs_error_invalidaccess);
+            return_error(gs_error_invalidaccess);
+        }
         buff = realloc(buff, vdps.size + 1);
         memcpy(buff, vdps.data, vdps.size);
         buff[vdps.size] = 0;
