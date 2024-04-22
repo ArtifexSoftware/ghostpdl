@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -75,7 +75,7 @@ gx_monitor_t *gx_monitor_label(gx_monitor_t *mon, const char *name);
 #define gx_monitor_label(A,B) (A)
 #endif
 
-#define gx_monitor_enter(sema)  gp_monitor_enter(&(sema)->native)
-#define gx_monitor_leave(sema)  gp_monitor_leave(&(sema)->native)
+#define gx_monitor_enter(mon)  gp_monitor_enter(&(mon)->native)
+#define gx_monitor_leave(mon)  gp_monitor_leave(&(mon)->native)
 
 #endif /* !defined(gxsync_INCLUDED) */

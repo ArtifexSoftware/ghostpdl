@@ -39,7 +39,7 @@ struct gx_device_pppm_s {
     gx_prn_device_common;
     gx_downscaler_params downscale;
     gs_offset_t header_len;
-    gp_monitor monitor;
+    gx_monitor_t *monitor;
 };
 
 static int
@@ -179,13 +179,13 @@ static int pppm_process_and_output(void *arg, gx_device *dev, gx_device *bdev, c
 
     /* If we are running in clist multi-threaded mode, we need to nominate the next band that we should work with. */
     if (orig_dev) {
-        code = gp_monitor_enter(&orig_fdev->monitor);
+        code = gx_monitor_enter(orig_fdev->monitor);
         if (code < 0)
             return code;
 
         clrdev->next_band = orig_dev->next_band;
         orig_dev->next_band += orig_dev->thread_lookahead_direction;
-        code = gp_monitor_leave(&orig_fdev->monitor);
+        code = gx_monitor_leave(orig_fdev->monitor);
         if (code < 0)
             return code;
     }
@@ -223,12 +223,12 @@ pppm_print_page(gx_device_printer *pdev, gp_file *file)
     process.output_fn = NULL;
     process.arg = file;
 
-    code = gp_monitor_open(&fdev->monitor);
-    if (code < 0)
-        return code;
+    fdev->monitor = gx_monitor_alloc(fdev->memory);
+    if (fdev->monitor == NULL)
+        return_error(gs_error_VMerror);
 
     code = gx_downscaler_process_page((gx_device *)fdev, &process, fdev->downscale.downscale_factor);
-    (void)gp_monitor_close(&fdev->monitor);
+    gx_monitor_free(fdev->monitor);
 
     return code;
 }
