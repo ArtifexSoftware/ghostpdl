@@ -707,7 +707,7 @@ gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
 }
 
 gsicc_link_t*
-gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
+gsicc_get_link(const gs_gstate *pgs, gx_device *dev,
                const gs_color_space *pcs_in,
                gs_color_space *output_colorspace,
                gsicc_rendering_param_t *rendering_params, gs_memory_t *memory)
@@ -715,21 +715,15 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
     cmm_profile_t *gs_input_profile;
     cmm_profile_t *gs_srcgtag_profile = NULL;
     cmm_profile_t *gs_output_profile;
-    gs_gstate *pgs = (gs_gstate *)pgs1;
-    gx_device *dev;
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile;
     int code;
     bool devicegraytok;
     gs_color_space *input_colorspace = (gs_color_space*) pcs_in;
 
-    if (dev_in == NULL) {
-        /* Get from the gs_gstate which is going to be a graphic state.
-           This only occurs for the other (non-ps/pdf) interpreters */
-        pgs = (gs_gstate*) pgs;
+    if (dev == NULL) {
+        /* This only occurs for the other (non-ps/pdf) interpreters */
         dev = pgs->device;
-    } else {
-        dev = dev_in;
     }
     if (input_colorspace->cmm_icc_profile_data == NULL) {
         if (input_colorspace->icc_equivalent != NULL) {
@@ -829,14 +823,6 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
         gs_output_profile = output_colorspace->cmm_icc_profile_data;
         devicegraytok = false;
     } else {
-        /* Use the device profile. Only use the rendering intent if it has
-           an override setting.  Also, only use the blackpoint if overide_bp
-           is set. Note that this can conflict with intents set from the source
-           objects so the user needs to understand what options to set. */
-        code = dev_proc(dev, get_profile)(dev,  &dev_profile);
-        if (code < 0)
-            return NULL;
-
         /* Check for unmanaged color case */
         if (gsicc_use_fast_color(gs_input_profile) > 0 && dev_profile->usefastcolor) {
             /* Return a "link" from the source space to the device color space */
@@ -850,6 +836,11 @@ gsicc_get_link(const gs_gstate *pgs1, gx_device *dev_in,
                 return link;
             }
         }
+
+        /* Use the device profile. Only use the rendering intent if it has
+           an override setting.  Also, only use the blackpoint if overide_bp
+           is set. Note that this can conflict with intents set from the source
+           objects so the user needs to understand what options to set. */
         gsicc_extract_profile(dev->graphics_type_tag, dev_profile,
                                &(gs_output_profile), &render_cond);
         /* Check if the incoming rendering intent was source based
