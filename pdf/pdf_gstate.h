@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,7 +19,7 @@
 #define PDF_GSTATE_OPERATORS
 
 /* Interpreter graphics state things (see igstate.h/int_gstate) */
-typedef struct int_gstate_s {
+typedef struct pdfi_int_gstate_s {
     pdf_context *ctx;
     pdf_dict *SMask; /* PDF only, null | dictionary | true */
     gs_gstate *GroupGState; /* gstate associated with the SMask */
