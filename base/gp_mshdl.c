@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -72,19 +72,23 @@ const gx_io_device gs_iodev_handle = {
  * inherited by Ghostscript.
  * Pipes aren't supported under Win32s.
  */
-static long
+static intptr_t
 get_os_handle(const char *name)
 {
-    ulong hfile;	/* This must be as long as the longest handle. */
-                        /* This is correct for Win32, maybe wrong for Win64. */
+    intptr_t hfile;	/* This must be as long as the longest handle. */
     int i, ch;
 
     for (i = 0; (ch = name[i]) != 0; ++i)
         if (!isxdigit(ch))
-            return (long)INVALID_HANDLE_VALUE;
-    if (sscanf(name, "%lx", &hfile) != 1)
-        return (long)INVALID_HANDLE_VALUE;
-    return (long)hfile;
+            return (intptr_t)INVALID_HANDLE_VALUE;
+#if ARCH_SIZEOF_SIZE_T == 4
+    if (sscanf(name, "%x", &hfile) != 1)
+#else
+    if (sscanf(name, "%Ix", (unsigned __int64 *)&hfile) != 1)
+#endif
+        return (intptr_t)INVALID_HANDLE_VALUE;
+
+    return (intptr_t)hfile;
 }
 
 static int
@@ -92,7 +96,7 @@ mswin_handle_fopen(gx_io_device * iodev, const char *fname, const char *access,
                    gp_file ** pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
 {
     int fd;
-    long hfile;	/* Correct for Win32, may be wrong for Win64 */
+    intptr_t hfile;
     gs_lib_ctx_t *ctx = mem->gs_lib_ctx;
     gs_fs_list_t *fs = ctx->core->fs;
     char f[gp_file_name_sizeof];
@@ -138,7 +142,7 @@ mswin_handle_fopen(gx_io_device * iodev, const char *fname, const char *access,
     }
 
     /* associate a C file handle with an OS file handle */
-    fd = _open_osfhandle((long)hfile, 0);
+    fd = _open_osfhandle(hfile, 0);
     if (fd == -1) {
         gp_file_dealloc(*pfile);
         return_error(gs_fopen_errno_to_code(EBADF));
