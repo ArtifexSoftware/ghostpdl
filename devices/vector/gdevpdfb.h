@@ -151,6 +151,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  0,				/* articles */
  0,				/* Dests */
  0,				/* EmbeddedFiles */
+ 0,             /* AF (part of embedded files for PDF/A-3) */
  {0},				/* fileID */
          {0, 0},		/* uuid_time */
  0,				/* global_named_objects */

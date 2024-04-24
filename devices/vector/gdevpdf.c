@@ -124,9 +124,10 @@ ENUM_PTRS_WITH(device_pdfwrite_enum_ptrs, gx_device_pdf *pdev)
  ENUM_PTR(37, gx_device_pdf, vgstack);
  ENUM_PTR(38, gx_device_pdf, outline_levels);
  ENUM_PTR(39, gx_device_pdf, EmbeddedFiles);
- ENUM_PTR(40, gx_device_pdf, pdf_font_dir);
- ENUM_PTR(41, gx_device_pdf, ExtensionMetadata);
- ENUM_PTR(42, gx_device_pdf, PassThroughWriter);
+ ENUM_PTR(40, gx_device_pdf, AF);
+ ENUM_PTR(41, gx_device_pdf, pdf_font_dir);
+ ENUM_PTR(42, gx_device_pdf, ExtensionMetadata);
+ ENUM_PTR(43, gx_device_pdf, PassThroughWriter);
 #define e1(i,elt) ENUM_PARAM_STRING_PTR(i + gx_device_pdf_num_ptrs, gx_device_pdf, elt);
 gx_device_pdf_do_param_strings(e1)
 #undef e1
@@ -177,6 +178,7 @@ static RELOC_PTRS_WITH(device_pdfwrite_reloc_ptrs, gx_device_pdf *pdev)
  RELOC_PTR(gx_device_pdf, Identity_ToUnicode_CMaps[1]);
  RELOC_PTR(gx_device_pdf, vgstack);
  RELOC_PTR(gx_device_pdf, EmbeddedFiles);
+ RELOC_PTR(gx_device_pdf, AF);
  RELOC_PTR(gx_device_pdf, pdf_font_dir);
  RELOC_PTR(gx_device_pdf, ExtensionMetadata);
  RELOC_PTR(gx_device_pdf, PassThroughWriter);
@@ -908,6 +910,7 @@ pdf_open(gx_device * dev)
     pdev->articles = 0;
     pdev->Dests = 0;
     pdev->EmbeddedFiles = 0;
+    pdev->AF = 0;
     /* {global,local}_named_objects was initialized above */
     pdev->PageLabels = 0;
     pdev->PageLabels_current_page = 0;
@@ -3009,6 +3012,10 @@ pdf_close(gx_device * dev)
                 pdf_record_usage(pdev, pdev->EmbeddedFiles->id, resource_usage_part9_structure);
                 cos_write_dict_as_ordered_array((cos_object_t *)pdev->EmbeddedFiles, pdev, resourceEmbeddedFiles);
             }
+            if (pdev->AF) {
+                pdf_record_usage(pdev, pdev->AF->id, resource_usage_part9_structure);
+                COS_WRITE_OBJECT(pdev->AF, pdev, resourceEmbeddedFiles);
+            }
         }
 
         /* Write the PageLabel array */
@@ -3076,6 +3083,8 @@ pdf_close(gx_device * dev)
                     pprintld1(s, "/EmbeddedFiles << /Kids [%ld 0 R]>>\n", pdev->EmbeddedFiles->id);
                 stream_puts(s, ">>\n");
             }
+            if (pdev->AF)
+                pprintld1(s, "/AF %ld 0 R\n", pdev->AF->id);
         }
         if (pdev->PageLabels)
             pprintld1(s, "/PageLabels << /Nums  %ld 0 R >>\n",
@@ -3090,6 +3099,10 @@ pdf_close(gx_device * dev)
         if (pdev->EmbeddedFiles) {
             COS_FREE(pdev->EmbeddedFiles, "pdf_close(EmbeddFiles)");
             pdev->EmbeddedFiles = 0;
+        }
+        if (pdev->AF) {
+            COS_FREE(pdev->AF, "pdf_close(AF)");
+            pdev->AF = 0;
         }
         if (pdev->PageLabels) {
             COS_FREE(pdev->PageLabels, "pdf_close(PageLabels)");
