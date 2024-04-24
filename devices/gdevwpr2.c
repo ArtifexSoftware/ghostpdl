@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -443,6 +443,11 @@ win_pr2_open(gx_device * dev)
 
     if ((code < 0) && wdev->fname[0])
         gp_unlink(wdev->memory, wdev->fname);
+
+    if (phInstance == NULL) {
+        /* If we don't have an instance, we can't create a cancel dialog.... */
+        wdev->nocancel = true;
+    }
 
     if (!wdev->nocancel) {
         /* inform user of progress with dialog box and allow cancel */
