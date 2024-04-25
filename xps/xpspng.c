@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -239,6 +239,7 @@ xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     image->height = png_get_image_height(png, info);
     image->comps = png_get_channels(png, info);
     image->bits = png_get_bit_depth(png, info);
+    image->invert_decode = false;
 
     /* See if we have an icc profile */
 #if PNG_LIBPNG_VER_MINOR >= 5

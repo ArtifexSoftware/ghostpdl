@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -641,6 +641,7 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     image->comps = tiff->samplesperpixel;
     image->bits = tiff->bitspersample;
     image->stride = (image->width * image->comps * image->bits + 7) / 8;
+    image->invert_decode = false;
 
     old_cs = image->colorspace;
     switch (tiff->photometric)

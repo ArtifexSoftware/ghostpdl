@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -263,6 +263,15 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
     gsimage.ImageMatrix.yy = image->yres / 96.0;
 
     gsimage.Interpolate = 1;
+
+    if (image->invert_decode) {
+        int comp = 0;
+
+        for (comp = 0;comp < image->comps;comp++) {
+            gsimage.Decode[(comp * 2)] = 1.0;
+            gsimage.Decode[(comp * 2) + 1] = 0.0;
+        }
+    }
 
     /* FIXME: leak enum in case of error */
     penum = gs_image_enum_alloc(ctx->memory, "xps_parse_image_brush (gs_image_enum_alloc)");

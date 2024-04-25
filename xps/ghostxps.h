@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -230,6 +230,7 @@ struct xps_image_s
     byte *alpha; /* isolated alpha plane */
     byte *profile;
     int profilesize;
+    bool invert_decode;
 };
 
 int xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image);

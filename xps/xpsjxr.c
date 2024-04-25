@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -222,6 +222,7 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
 
     output->xres = (int)jxrc_width_resolution(container, 0);
     output->yres = (int)jxrc_height_resolution(container, 0);
+    output->invert_decode = false;
 
     image = jxr_create_input();
     jxr_set_PROFILE_IDC(image, 111);
