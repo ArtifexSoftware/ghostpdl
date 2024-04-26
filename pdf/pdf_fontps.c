@@ -117,27 +117,6 @@ pdf_ps_end_number_object(int c)
     return (c != '.' && c != 'e' && c != '-' && (c < '0' || c > '9'));
 }
 
-static inline int
-decodehex(char c)
-{
-    int retval = 0;
-
-    if (ishex(c)) {
-        if (c > 0x39) {
-            if (c > 'F') {
-                retval = c - 0x57;
-            }
-            else {
-                retval = c - 0x37;
-            }
-        }
-        else {
-            retval = c - 0x30;
-        }
-    }
-    return retval;
-}
-
 int
 pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
 {
@@ -190,9 +169,9 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
             case '<':          /* hex string */
                 {
                     byte *s = pdfpsbuf;
-                    byte *s2 = s;
-                    int len, i;
-                    byte hbuf[2];
+                    stream_cursor_read pr;
+                    stream_cursor_write pw;
+                    int odd_digit = -1;
 
                     if (pdfpsbuf < buflim && *pdfpsbuf == '<') { /* Dict opening "<<" - we don't care */
                         pdfpsbuf++;
@@ -200,27 +179,14 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                     }
                     while (pdfpsbuf < buflim && *pdfpsbuf != '>')
                         pdfpsbuf++;
-                    len = pdfpsbuf - s;
-                    for (i = 0; i < len; i += 2) {
-                        /* If it's a single digit, see iff we can treat it as a nibble */
-                        if (i + 2 > len) {
-                            hbuf[0] = (byte)'0';
-                            hbuf[1] = s[i];
-                            len++;
-                        }
-                        else {
-                            hbuf[0] = s[i];
-                            hbuf[1] = s[i + 1];
-                        }
-                        if (!ishex(hbuf[0]) || !ishex(hbuf[1])) {
-                            i = len;
-                            break;
-                        }
-                        *s2++ = (decodehex(hbuf[0]) << 4) | decodehex(hbuf[1]);
-                    }
-                    if (i >= len) {
-                        pdfpsbuf++; /* move past the trailing '>' */
-                        code = pdf_ps_stack_push_string(cs, s, len >> 1);
+
+                    pr.ptr = s - 1;
+                    pr.limit = pdfpsbuf - 1;
+                    pw.ptr = s - 1;
+                    pw.limit = pdfpsbuf - 1;
+                    code = s_hex_process(&pr, &pw, &odd_digit, hex_ignore_garbage);
+                    if (code != ERRC && pw.ptr - (s - 1) > 0) {
+                        code = pdf_ps_stack_push_string(cs, s, pw.ptr - (s - 1));
                     }
                 }
                 break;
