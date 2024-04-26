@@ -1065,11 +1065,22 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
     if (code >= 0)
         params.Matte_components = code;
 
+    /* gs_begin_transparency_mask is going to crap all over the current
+     * graphics state. We need to be sure that everything goes back as
+     * it was. So, gsave here, and grestore on the 'end', right? Well
+     * that doesn't work, cos then we throw away the SMask we've just
+     * drawn! We'll do some magic to ensure that doesn't happen. */
+    code = gs_gsave(ctx->pgs);
+    if (code < 0)
+        goto exitSaved;
+
     code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
     if (code < 0)
-        goto exit;
+        goto exitSaved;
     savedoffset = pdfi_tell(ctx->main_stream);
     code = pdfi_gsave(ctx);
+    if (code < 0)
+        goto exitMasked;
 
     /* Disable SMask for inner image */
     pdfi_gstate_smask_free(igs);
@@ -1097,17 +1108,36 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
             break;
         default:
             code = gs_note_error(gs_error_typecheck);
-            goto exit;
+            goto exitSavedTwice;
     }
 
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
 
+exitSavedTwice:
     code1 = pdfi_grestore(ctx);
     if (code < 0)
         code = code1;
+exitMasked:
     code1 = gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
     if (code < 0)
         code = code1;
+exitSaved:
+    /* This is where we have to do some magic. If we just grestore here, then
+     * any SMask we've rendered will be popped away. */
+    {
+        /* Stash the flag that means 'Pop the SMask'. */
+        int flag = ctx->pgs->trans_flags.xstate_change;
+        /* Clear the flag so the SMask will live. */
+        ctx->pgs->trans_flags.xstate_change = 0;
+        code1 = gs_grestore(ctx->pgs);
+        if (code < 0)
+            code = code1;
+        /* Put the flag back 1 level higher. This relies on the fact that
+         * the graphics state we return to does not already have this set.
+         * We ensure that by ensuring that callers have gsaved/grestored
+         * around this. */
+        ctx->pgs->trans_flags.xstate_change = flag;
+    }
 
  exit:
 #if DEBUG_IMAGES
@@ -1670,14 +1700,10 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     uint64_t mask_size = 0;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     bool transparency_group = false;
-    bool op_blend_mode = false;
-    int blend_mode;
     bool need_smask_cleanup = false;
     bool maybe_jpxdecode = false;
     pdfi_trans_state_t trans_state;
-    int saved_intent;
     gs_offset_t stream_offset;
-    float save_strokeconstantalpha = 0.0f, save_fillconstantalpha = 0.0f;
     int trans_required;
 
 #if DEBUG_IMAGES
@@ -1706,8 +1732,15 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             return code;
     }
 
-    /* Save current rendering intent so we can put it back if it is modified */
-    saved_intent = gs_currentrenderingintent(ctx->pgs);
+    /* We want to gsave in here so that any changes made by the rendering
+     * don't affect the wider world. This is particularly important if we
+     * have an SMask here, because that RELIES on this gsave/grestore
+     * level being here. Because we want to handle SMask changes we need
+     * to push/pop the transparency state changes too. The easiest way to
+     * do this is to call 'q' and 'Q'. */
+    code = pdfi_op_q(ctx);
+    if (code < 0)
+        return code;
 
     code = pdfi_get_image_info(ctx, image_stream, page_dict, stream_dict, inline_image, &image_info);
     if (code < 0)
@@ -1906,9 +1939,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (ctx->page.needs_OP) {
             if (pdfi_trans_okOPcs(ctx)) {
                 if (gs_currentfilloverprint(ctx->pgs)) {
-                    blend_mode = gs_currentblendmode(ctx->pgs);
                     code = gs_setblendmode(ctx->pgs, BLEND_MODE_CompatibleOverprint);
-                    op_blend_mode = true;
                     if (code < 0)
                         goto cleanupExit;
                 }
@@ -1930,8 +1961,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     }
 
     if (transparency_group && !ctx->device_state.preserve_smask) {
-        save_strokeconstantalpha = gs_getstrokeconstantalpha(ctx->pgs);
-        save_fillconstantalpha = gs_getfillconstantalpha(ctx->pgs);
         gs_setstrokeconstantalpha(ctx->pgs, 1.0);
         gs_setfillconstantalpha(ctx->pgs, 1.0);
     }
@@ -2154,18 +2183,14 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
     code = 0;  /* suppress errors */
 
     if (transparency_group) {
-        if (!ctx->device_state.preserve_smask) {
-            gs_setstrokeconstantalpha(ctx->pgs, save_strokeconstantalpha);
-            gs_setfillconstantalpha(ctx->pgs, save_fillconstantalpha);
-        }
         pdfi_trans_end_isolated_group(ctx);
         if (need_smask_cleanup)
             pdfi_trans_end_smask_notify(ctx);
     }
 
-    if (op_blend_mode) {
-        code = gs_setblendmode(ctx->pgs, blend_mode);
-    }
+    /* See note above on the pdfi_op_q call. This does a grestore, and
+     * pops the transparency state. */
+    (void)pdfi_op_Q(ctx);
 
     if (new_stream)
         pdfi_close_file(ctx, new_stream);
@@ -2182,9 +2207,6 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
     if (pcs != NULL)
         rc_decrement_only_cs(pcs, "pdfi_do_image");
-
-    /* Restore the rendering intent */
-    gs_setrenderingintent(ctx->pgs, saved_intent);
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image END\n");
@@ -2773,20 +2795,9 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
 
     (void)pdfi_loop_detector_cleartomark(ctx);
-    /* NOTE: Used to have a pdfi_gsave/pdfi_grestore around this, but it actually makes
-     * things render incorrectly (and isn't in the PS code).
-     * It also causes demo.ai.pdf to crash.
-     * I don't really understand... (all transparency related, though, so nothing surprises me...)
-     * (there are some q/Q and gsave/grestore in the code under this)
-     *
-     * Original Comment:
-     * The image or form might change the colour space (or indeed other aspects
-     * of the graphics state, if its a Form XObject. So gsave/grestore round it
-     * to prevent unexpected changes.
-     */
-    //    pdfi_gsave(ctx);
+    /* We used to have a pdfi_gsave/pdfi_grestore around this, this is actually done
+     * for us within the functions that pdfi_do_image_or_form calls now. */
     code = pdfi_do_image_or_form(ctx, stream_dict, page_dict, o);
-    //    pdfi_grestore(ctx);
     pdfi_countdown(n);
     pdfi_countdown(o);
     if (AddedParent == true) {
