@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -698,7 +698,7 @@ image_render_landscape(gx_image_enum * penum, const byte * buffer, int data_x,
     int xinc, xmod;
     byte *row;
     const byte *orig_row = 0;
-    bool y_neg = penum->dxy < 0;
+    bool y_neg = (is_fneg(penum->matrix.xy));
 
     if (is_fneg(penum->matrix.yx))
         ix += iw, iw = -iw, xinc = -1;
