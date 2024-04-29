@@ -630,20 +630,40 @@ systemdict /NEWPDF known {
     } if
   } ifelse
 
-  pop % The box
+  3 1 roll          % <page dict> /BoxName [box dimensions] -> [box dimensions] <page dict> /BoxName
 
   % If we are using the MediaBox (and only the MediaBox) then we
-  % want to clip to the CropBox, if there is one present
+  % want to clip to the CropBox, if there is one present. For every
+  % other case, clip to the given Box.
 
   /MediaBox eq {
     dup /CropBox known {
       /CropBox get
       aload pop 2 index sub exch 3 index sub exch rectclip
+      pop           % [box dimensions] array
     } {
-      pop
+      pop           % <page dict>
+
+      aload         % Load the co-ordinates of the box onto the stack
+      pop           % The array with the box co-ordinates
+                    % llx lly urx ury
+      2 index sub   % ll lly urx (ury - lly)
+      exch          % llx lly height urx
+      3 index sub   % llx lly height (urx - llx)
+      exch          % llx lly width height
+      rectclip
     } ifelse
   } {
-    pop
+    pop             % <page dict>
+
+    aload           % Load the co-ordinates of the box onto the stack
+    pop             % The array with the box co-ordinates
+                    % llx lly urx ury
+    2 index sub     % ll lly urx (ury - lly)
+    exch            % llx lly height urx
+    3 index sub     % llx lly height (urx - llx)
+    exch            % llx lly width height
+    rectclip
   }ifelse
 
   pop
