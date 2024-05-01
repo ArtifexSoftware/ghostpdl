@@ -41,6 +41,7 @@ static dev_proc_strip_copy_rop2(mem_planar_strip_copy_rop2);
 static dev_proc_get_bits_rectangle(mem_planar_get_bits_rectangle);
 static dev_proc_fill_rectangle_hl_color(mem_planar_fill_rectangle_hl_color);
 static dev_proc_put_image(mem_planar_put_image);
+static dev_proc_put_image(mem_planar_put_image_slow);
 
 int
 mem_spec_op(gx_device *pdev, int dev_spec_op,
@@ -147,9 +148,17 @@ gdev_mem_set_planar_interleaved(gx_device_memory * mdev, int num_planes,
            four planes then use the high level color filling procedure.  Also
            make use of the put_image operation to go from the pdf14 device
            directly to the planar buffer. */
-        /* Note this is only valid for contone (8 or more bits per component) */
-        if (num_planes >= 4 && mdev->color_info.depth/num_planes >= 8) {
-            set_dev_proc(mdev, put_image, mem_planar_put_image);
+        if (num_planes >= 4) {
+            /* put_image always gives us our data in bytes (or 16bits) per
+             * component. When we have a suitably deep device we can assume
+             * that this will match our own representation, and use a fast
+             * copy_planes based implementation. If not, we have to fall
+             * back on a slower implementation that does color conversion
+             * (halftoning) for us. */
+            if (mdev->color_info.depth / num_planes >= 8)
+               set_dev_proc(mdev, put_image, mem_planar_put_image);
+            else
+               set_dev_proc(mdev, put_image, mem_planar_put_image_slow);
         }
         set_dev_proc(mdev, fill_rectangle, mem_planar_fill_rectangle);
         set_dev_proc(mdev, copy_alpha_hl_color, gx_default_copy_alpha_hl_color);
@@ -296,6 +305,88 @@ mem_planar_put_image(gx_device *pdev, gx_device *pmdev, const byte **buffers, in
     /* we used all of the data */
     return height;
 }
+
+/* This implementation reads the byte-per-component data, and turns it
+ * into calls to fill_rectangle_hl_color which will halftone for us
+ * as required. This relies on the fill_rectangle_hl_color implementation
+ * not using the pgs that we pass in - this should be fine, as it should
+ * be our own fill_rectangle_hl_color implementation! */
+static int
+mem_planar_put_image_slow(gx_device *dev, gx_device *dev2, const byte **buffers, int num_chan, int x, int y, int w, int h, int row_stride, int alpha_plane_index, int tag_plane_index)
+{
+    gx_device_memory *const mdev = (gx_device_memory *)dev;
+    const byte *src[GS_CLIENT_COLOR_MAX_COMPONENTS];
+    int last_plane = mdev->num_planar_planes - 1;
+    int num_planes = mdev->num_planar_planes;
+    int plane;
+    int code = 0;
+    intptr_t offset = ((intptr_t)y) * row_stride * h + x;
+    intptr_t line_inc = row_stride - w;
+    int h2;
+    gx_device_color devc, devc2;
+    gs_fixed_rect rect;
+
+    if (h <= 0 || w <= 0)
+        return 0;
+
+    devc.type = devc2.type = gx_dc_type_devn;
+    devc.tag = devc2.tag = device_current_tag(dev);
+
+    /* src data is 8bits per sample. If it was 16 bits, then we'd be in
+     * the non-slow function. */
+    for (plane = 0; plane < mdev->num_planar_planes; plane++) {
+        int idx = (plane == last_plane && tag_plane_index) ? tag_plane_index : plane;
+        src[plane] = buffers[idx] + offset;
+    }
+
+    for (h2 = h; h2 > 0; h2--) {
+        int x2 = x;
+        int w2 = w - 1;
+        rect.p.y = int2fixed(y++);
+        rect.q.y = int2fixed(y);
+
+        /* Prime devc2 with the first pixels values. */
+        for (plane = 0; plane < num_planes; plane++) {
+            byte c = *src[plane]++;
+            devc2.colors.devn.values[plane] = c | (c << 8);
+        }
+        /* Now run across the scanline */
+        do {
+            int w3 = 1;
+
+            memcpy(&devc.colors.devn.values, devc2.colors.devn.values, sizeof(devc.colors.devn.values));
+
+            while (w2 > 0) {
+                int diff = 0;
+                /* Try to extend to the right. */
+                for (plane = 0; plane < num_planes; plane++) {
+                        byte c = *src[plane]++;
+                        devc2.colors.devn.values[plane] = c | (c << 8);
+                    if (devc2.colors.devn.values[plane] != devc.colors.devn.values[plane])
+                        diff = 1;
+                }
+                if (diff)
+                    break;
+                w3++; w2--;
+            }
+
+            rect.p.x = int2fixed(x2);
+            x2 += w3;
+            rect.q.x = int2fixed(x2);
+            code = dev_proc(dev, fill_rectangle_hl_color)(dev, &rect, NULL, &devc, NULL);
+            if (code < 0)
+                return code;
+        } while (w2 > 0);
+        if (code < 0)
+            return code;
+        for (plane = 0; plane < num_planes; plane++)
+            src[plane] += line_inc;
+    }
+
+    return h;
+}
+
+
 
 /* Fill a rectangle with a high level color.  This is used for separation
    devices. (e.g. tiffsep, psdcmyk) */
