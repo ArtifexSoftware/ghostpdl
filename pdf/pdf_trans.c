@@ -348,11 +348,12 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         if (saved_gs) {
             code1 = pdfi_gs_setcolorspace(ctx, saved_gs->color[0].color_space);
             if (code >= 0) code = code1;
-            code = gs_setcolor(ctx->pgs, saved_gs->color[0].ccolor);
-            gs_swapcolors_quick(ctx->pgs);
-            code = pdfi_gs_setcolorspace(ctx, saved_gs->color[1].color_space);
+            code1 = gs_setcolor(ctx->pgs, saved_gs->color[0].ccolor);
             if (code >= 0) code = code1;
-            code = gs_setcolor(ctx->pgs, saved_gs->color[1].ccolor);
+            gs_swapcolors_quick(ctx->pgs);
+            code1 = pdfi_gs_setcolorspace(ctx, saved_gs->color[1].color_space);
+            if (code >= 0) code = code1;
+            code1 = gs_setcolor(ctx->pgs, saved_gs->color[1].ccolor);
             if (code >= 0) code = code1;
             gs_swapcolors_quick(ctx->pgs);
         }
