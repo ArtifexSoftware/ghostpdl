@@ -320,9 +320,9 @@ mem_planar_put_image_slow(gx_device *dev, gx_device *dev2, const byte **buffers,
     int num_planes = mdev->num_planar_planes;
     int plane;
     int code = 0;
-    intptr_t offset = ((intptr_t)y) * row_stride * h + x;
     intptr_t line_inc = row_stride - w;
     int h2;
+    int xmax = x + w;
     gx_device_color devc, devc2;
     gs_fixed_rect rect;
 
@@ -336,12 +336,12 @@ mem_planar_put_image_slow(gx_device *dev, gx_device *dev2, const byte **buffers,
      * the non-slow function. */
     for (plane = 0; plane < mdev->num_planar_planes; plane++) {
         int idx = (plane == last_plane && tag_plane_index) ? tag_plane_index : plane;
-        src[plane] = buffers[idx] + offset;
+        src[plane] = buffers[idx];
     }
 
     for (h2 = h; h2 > 0; h2--) {
         int x2 = x;
-        int w2 = w - 1;
+        int to_read = w - 1;
         rect.p.y = int2fixed(y++);
         rect.q.y = int2fixed(y);
 
@@ -352,11 +352,11 @@ mem_planar_put_image_slow(gx_device *dev, gx_device *dev2, const byte **buffers,
         }
         /* Now run across the scanline */
         do {
-            int w3 = 1;
+            int run_len = 1;
 
             memcpy(&devc.colors.devn.values, devc2.colors.devn.values, sizeof(devc.colors.devn.values));
 
-            while (w2 > 0) {
+            while (to_read > 0) {
                 int diff = 0;
                 /* Try to extend to the right. */
                 for (plane = 0; plane < num_planes; plane++) {
@@ -365,18 +365,19 @@ mem_planar_put_image_slow(gx_device *dev, gx_device *dev2, const byte **buffers,
                     if (devc2.colors.devn.values[plane] != devc.colors.devn.values[plane])
                         diff = 1;
                 }
+                to_read--;
                 if (diff)
                     break;
-                w3++; w2--;
+                run_len++;
             }
 
             rect.p.x = int2fixed(x2);
-            x2 += w3;
+            x2 += run_len;
             rect.q.x = int2fixed(x2);
             code = dev_proc(dev, fill_rectangle_hl_color)(dev, &rect, NULL, &devc, NULL);
             if (code < 0)
                 return code;
-        } while (w2 > 0);
+        } while (x2 < xmax);
 
         for (plane = 0; plane < num_planes; plane++)
             src[plane] += line_inc;
