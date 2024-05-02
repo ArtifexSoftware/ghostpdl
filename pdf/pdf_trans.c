@@ -317,7 +317,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
          * gs_end_transparency_mask calls fail, showing diffs. My suspicion is that
          * this actually disables the softmask that we've just rendered!
          */
-        if (code >= 0 && igs->GroupGState) {
+        if (code >= 0) {
             /* Override the colorspace if specified */
             saved_gs = gs_gstate_copy(ctx->pgs, ctx->memory);
             if (saved_gs == NULL)
