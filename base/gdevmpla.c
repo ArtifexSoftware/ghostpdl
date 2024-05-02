@@ -377,8 +377,7 @@ mem_planar_put_image_slow(gx_device *dev, gx_device *dev2, const byte **buffers,
             if (code < 0)
                 return code;
         } while (w2 > 0);
-        if (code < 0)
-            return code;
+
         for (plane = 0; plane < num_planes; plane++)
             src[plane] += line_inc;
     }
