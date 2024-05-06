@@ -522,6 +522,11 @@ enum {
      * cloned for NumRenderingThreads etc. */
     gxdso_adjust_colors,
 
+    /* Called to ask if we are an additive device that would like to support separations
+     * natively. Should return the number of additive process colors in use.
+     */
+    gxdso_is_sep_supporting_additive_device,
+
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

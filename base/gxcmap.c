@@ -1496,6 +1496,14 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
             cv[i] = frac2cv(cm_comps[i]);
         }
+    /* FIXME: For additive devices, we should invert the process colors
+     * here! But how do we know how many process colors we have? For
+     * now we'll have to ask the device using a dso. */
+    if (additive) {
+        int j, n = dev_proc(dev, dev_spec_op)(dev, gxdso_is_sep_supporting_additive_device, NULL, 0);
+        for (j = 0; j < n; j++)
+            cv[j] = 65535 - cv[j];
+    }
     /* Copy tags untransformed. */
     if (nc < ncomps)
         cv[nc] = cm_comps[nc];

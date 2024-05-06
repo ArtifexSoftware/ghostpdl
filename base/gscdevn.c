@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -592,20 +592,39 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
         return 0;
     }
 
-    /*
-     * Always use the alternate color space if the current device is
-     * using an additive color model. The exception is if we have a separation
-     * device and we are doing transparency blending in an additive color
-     * space.  In that case, the spots are kept separated and blended
-     * individually per the PDF specification.  However, if any of the spots are
-     * CMYK process colors, we use the alternate color space.  This matches AR.
+    /* If our device is using an additive color model, then we need to
+     * consider using the alternative color space, as separations are
+     * generally only used with a subtractive color model. There are
+     * exceptions, however.
+     *
+     * If we don't support devn, then we will certainly have to use the
+     * alternative color space.
+     *
+     * If we are a pdf14 device, and we are doing transparency blending
+     * in an additive space, we need to keep the spots separated and
+     * blend them individually as per the PDF specification. Note
+     * however, if the spot is a CMYK process color and we are doing
+     * the blend in an additive color space the alternate color space
+     * is used.  This matches AR.
+     *
+     * Otherwise, we will always use the alternate colorspace, unless
+     * our device specifically claims to be a separation-supporting
+     * additive device. Possibly all additive devn devices should
+     * support this now, but I lack to confidence to make this change
+     * globally. Instead we'll just enable it on a device by device
+     * basis for now.
+     *
+     * This matches logic in check_Separation_component_name.
      */
-    if (!(dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0) &&
-        dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0)) &&
-        dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
-        pcolor_component_map->use_alt_cspace = true;
-        return 0;
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0) == 0 ||
+            (dev_proc(dev, dev_spec_op)(dev, gxdso_is_pdf14_device, NULL, 0) == 0 &&
+             dev_proc(dev, dev_spec_op)(dev, gxdso_is_sep_supporting_additive_device, NULL, 0) == 0)) {
+            pcolor_component_map->use_alt_cspace = true;
+            return 0;
+        }
     }
+
     /*
      * Now check the names of the color components.  If any of the colorants
      * come back as process type (i.e. CMYK) and we are drawing in a pdf14
