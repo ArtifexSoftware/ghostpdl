@@ -402,6 +402,8 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
     int y = fixed2int(rect->p.y);
     int w = fixed2int(rect->q.x) - x;
     int h = fixed2int(rect->q.y) - y;
+    int has_tags = device_encodes_tags(dev);
+    int npp = mdev->num_planar_planes - has_tags;
 
     /* We can only handle devn cases, so use the default if not */
     /* We can get called here from gx_dc_devn_masked_fill_rectangle */
@@ -409,7 +411,7 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         return gx_fill_rectangle_device_rop( x, y, w, h, pdcolor, dev, lop_default);
     }
     MEM_SAVE_PARAMS(mdev, save);
-    for (pi = 0; pi < mdev->num_planar_planes; ++pi) {
+    for (pi = 0; pi < npp; ++pi) {
         int plane_depth = mdev->planes[pi].depth;
         gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
         int shift = 16 - plane_depth;
@@ -419,6 +421,17 @@ mem_planar_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         MEM_SET_PARAMS(mdev, plane_depth);
         fns->fill_rectangle(dev, x, y, w, h,
                             (pdcolor->colors.devn.values[pi]) >> shift & mask);
+        mdev->line_ptrs += mdev->height;
+    }
+    if (has_tags) {
+        int plane_depth = mdev->planes[pi].depth;
+        gx_color_index mask = ((gx_color_index)1 << plane_depth) - 1;
+        const gdev_mem_functions *fns =
+                    gdev_mem_functions_for_bits(plane_depth);
+
+        MEM_SET_PARAMS(mdev, plane_depth);
+        fns->fill_rectangle(dev, x, y, w, h,
+                    (pdcolor->colors.devn.values[pi]) & mask);
         mdev->line_ptrs += mdev->height;
     }
     MEM_RESTORE_PARAMS(mdev, save);
