@@ -163,6 +163,10 @@ psd_spec_op(gx_device *pdev, int op, void *data, int datasize)
         return true;
     }
 
+    if (op == gxdso_is_sep_supporting_additive_device &&
+        pdev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        return 3; /* We must be RGB */
+
     if (op == gxdso_supports_saved_pages)
        return 0;
 
@@ -446,7 +450,10 @@ psdtags_initialize_device_procs(gx_device *dev)
  */
 const psd_device gs_psdrgb_device =
 {
-    psd_device_body(psd_initialize_device_procs, "psdrgb", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    psd_device_body(psd_initialize_device_procs, "psdrgb",
+                    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+                    GX_CINFO_POLARITY_ADDITIVE,
+                    ARCH_SIZEOF_GX_COLOR_INDEX * 8, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceRGBComponents,	/* Names of color model colorants */
@@ -467,7 +474,10 @@ const psd_device gs_psdrgb_device =
 
 const psd_device gs_psdrgb16_device =
 {
-    psd_device_body(psd_initialize_device_procs, "psdrgb16", 3, GX_CINFO_POLARITY_ADDITIVE, 48, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    psd_device_body(psd_initialize_device_procs, "psdrgb16",
+                    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+                    GX_CINFO_POLARITY_ADDITIVE,
+                    ARCH_SIZEOF_GX_COLOR_INDEX * 16, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 16,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceRGBComponents,	/* Names of color model colorants */
@@ -491,7 +501,10 @@ const psd_device gs_psdrgb16_device =
  */
 const psd_device gs_psdrgbtags_device =
 {
-    psd_device_body(psdtags_initialize_device_procs, "psdrgbtags", 4, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    psd_device_body(psdtags_initialize_device_procs, "psdrgbtags",
+                    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+                    GX_CINFO_POLARITY_ADDITIVE,
+                    ARCH_SIZEOF_GX_COLOR_INDEX * 8, 255, 255, GX_CINFO_SEP_LIN, "DeviceRGB"),
     /* devn_params specific parameters */
     { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DevRGBTComponents,	/* Names of color model colorants */
@@ -1181,6 +1194,9 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
 {
     int i;
     int spot_count;
+    psd_device *pdev_psd = (psd_device *)dev;
+    bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT ||
+            pdev_psd->color_model == psd_DEVICE_RGBT);
 
     xc->f = file;
 
@@ -1191,8 +1207,7 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
     }
     xc->base_num_channels = dev->devn_params.num_std_colorant_names;
     xc->num_channels = i;
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE
-        && strcmp(dev->dname, "psdcmykog") != 0) {
+    if (strcmp(dev->dname, "psdcmykog") != 0) {
 
         /* Note: num_separation_order_names is only set if
         SeparationColorNames was setup. If this was not set,
@@ -1243,8 +1258,7 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
         xc->chnl_to_orig_sep[i] = i;
     }
     /* If we had a specify order name, then we may need to adjust things */
-    if (dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE &&
-        strcmp(dev->dname, "psdcmykog") != 0) {
+    if (strcmp(dev->dname, "psdcmykog") != 0) {
         if (dev->devn_params.num_separation_order_names > 0) {
             for (i = 0; i < dev->devn_params.num_separation_order_names; i++) {
                 int sep_order_num = dev->devn_params.separation_order_map[i];
@@ -1272,9 +1286,6 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
 
                 const char *prev = " ";
                 int prev_size = 1;
-                psd_device *pdev_psd = (psd_device*)dev;
-                bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT ||
-                                 pdev_psd->color_model == psd_DEVICE_RGBT);
 
                 xc->num_channels += xc->n_extra_channels;
                 for (i=xc->base_num_channels + has_tags; i < xc->num_channels; i++) {
@@ -1303,6 +1314,10 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
                 }
             }
         }
+    }
+    if (has_tags) {
+        xc->chnl_to_position[xc->num_channels - 1] = dev->color_info.num_components - 1;
+        xc->chnl_to_orig_sep[xc->num_channels - 1] = dev->color_info.num_components - 1;
     }
     return 0;
 }
@@ -1362,7 +1377,7 @@ psd_write_src_spot_names(psd_write_ctx *xc, gx_devn_prn_device *pdev, int chan_i
     const devn_separation_name *separation_name;
 
     for (; chan_idx < xc->num_channels; chan_idx++) {
-        sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS - has_tags;
+        sep_num = xc->chnl_to_orig_sep[chan_idx] - xc->base_num_channels - has_tags;
         separation_name = &(pdev->devn_params.separations.names[sep_num]);
         psd_write_8(xc, (byte)separation_name->size);
         psd_write(xc, separation_name->data, separation_name->size);
@@ -1448,16 +1463,16 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
      *    C=0, M=1, Y=2, K=3, Spot1=4, Spot2=5, ... T=n-1
      */
     /* Channel Names size computation -- this will get the "Tags" name */
-    for (chan_idx = NUM_CMYK_COMPONENTS; chan_idx < xc->num_channels; chan_idx++) {
+    for (chan_idx = xc->base_num_channels; chan_idx < xc->num_channels; chan_idx++) {
         fixed_colorant_name n = pdev->devn_params.std_colorant_names[chan_idx];
         if (n == NULL)
             break;
         chan_names_len += strlen(n) + 1;
     }
-    extra_std_colors = chan_idx - NUM_CMYK_COMPONENTS;
+    extra_std_colors = chan_idx - xc->base_num_channels;
 
     for (; chan_idx < xc->num_channels; chan_idx++) {
-        sep_num = xc->chnl_to_orig_sep[chan_idx] - NUM_CMYK_COMPONENTS - has_tags;
+        sep_num = xc->chnl_to_orig_sep[chan_idx] - xc->base_num_channels - has_tags;
         separation_name = &(pdev->devn_params.separations.names[sep_num]);
         chan_names_len += (separation_name->size + 1);
     }
@@ -1478,14 +1493,14 @@ psd_write_header(psd_write_ctx* xc, gx_devn_prn_device* pdev)
        to add tags to psdcmykog or similar such device that
        has pre-defined spots with the tags plane */
     if (has_tags) {
-        chan_idx = NUM_CMYK_COMPONENTS + extra_std_colors;
+        chan_idx = xc->base_num_channels + extra_std_colors;
         psd_write_src_spot_names(xc, pdev, chan_idx, has_tags);
-        chan_idx = NUM_CMYK_COMPONENTS;
+        chan_idx = xc->base_num_channels;
         psd_write_std_extra_names(xc, pdev, chan_idx);
     } else {
-        chan_idx = NUM_CMYK_COMPONENTS;
+        chan_idx = xc->base_num_channels;
         psd_write_std_extra_names(xc, pdev, chan_idx);
-        chan_idx = NUM_CMYK_COMPONENTS + extra_std_colors;
+        chan_idx = xc->base_num_channels + extra_std_colors;
         psd_write_src_spot_names(xc, pdev, chan_idx, has_tags);
     }
     if (chan_names_len % 2)
@@ -1630,7 +1645,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     int chan_idx;
     byte * unpacked;
     int num_comp = xc->num_channels;
-    gs_get_bits_params_t params;
+    gs_get_bits_params_t params = { 0 };
     gx_downscaler_t ds = { NULL };
     int octets_per_component = bpc >> 3;
     int octets_per_line = xc->width * octets_per_component;
@@ -1645,10 +1660,11 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     sep_line = gs_alloc_bytes(pdev->memory, octets_per_line, "psd_write_sep_line");
 
     for (chan_idx = 0; chan_idx < num_comp; chan_idx++) {
+        int data_pos = xc->chnl_to_position[chan_idx];
         planes[chan_idx] = gs_alloc_bytes(pdev->memory, raster_plane,
                                         "psd_write_sep_line");
-        params.data[chan_idx] = planes[chan_idx];
-        if (params.data[chan_idx] == NULL)
+        params.data[data_pos] = planes[chan_idx];
+        if (params.data[data_pos] == NULL)
             return_error(gs_error_VMerror);
     }
 
@@ -1656,7 +1672,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
         return_error(gs_error_VMerror);
 
     code = gx_downscaler_init_planar(&ds, (gx_device *)pdev,
-                                     bpc, bpc, num_comp,
+                                     bpc, bpc, pdev->color_info.num_components,
                                      &psd_dev->downscale,
                                      &params);
     if (code < 0)
@@ -1673,7 +1689,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 
                 unpacked = params.data[data_pos];
 
-                if (base_num_channels == 3) {
+                if (base_num_channels == 3 && chan_idx < 3) {
                     memcpy(sep_line, unpacked, octets_per_line);
                 } else if (octets_per_component == 1) {
                     for (i = 0; i < xc->width; ++i) {
