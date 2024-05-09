@@ -670,6 +670,19 @@ psd_prn_open(gx_device * pdev)
     pdev_psd->color_replace_warning_given = false;
 #endif
 
+    /* The default code thinks that any number of spots over 4 must mean
+     * that it's a CMYK space. Correct that for psdrgb and psdrgbtags. */
+    if (strcmp(pdev->dname, "psdrgb") == 0 || strcmp(pdev->dname, "psdrgbtags") == 0) {
+        if (pdev->icc_struct &&
+            pdev->icc_struct->device_profile[gsDEFAULTPROFILE]) {
+            rc_decrement(pdev->icc_struct->device_profile[gsDEFAULTPROFILE], "psd_prn_open");
+        }
+        code = gsicc_set_device_profile(pdev, pdev->memory,
+                    (char *)DEFAULT_RGB_ICC, gsDEFAULTPROFILE);
+       if (code < 0)
+           return code;
+    }
+
     /* For the planar device we need to set up the bit depth of each plane.
        For other devices this is handled in check_device_separable where
        we compute the bit shift for the components etc. */
