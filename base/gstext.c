@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -367,9 +367,12 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
         cmm_dev_profile_t* dev_profile;
 
         dev_proc(dev, get_profile)(dev, &dev_profile);
-        if ((dev_profile->overprint_control != gs_overprint_control_disable) &&
-            (dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->data_cs == gsCMYK ||
-             dev_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE]->data_cs == gsNCHANNEL)) {
+        /* Previously, we used to only update overprint here if the devices default
+         * colorspace was CMYK or NCHANNEL. This is at odds with above, where we
+         * always gs_do_set_overprint. This meant that for RGB+Spots devices we
+         * could arrive in overprint_fill_rectangle_hl_color without having set the
+         * op_state to anything, causing an assert. Let's just always update_overprint. */
+        if (dev_profile->overprint_control != gs_overprint_control_disable) {
             if (pgs->text_rendering_mode == 0) {
                 op_params.op_state = OP_STATE_FILL;
                 gs_gstate_update_overprint(pgs, &op_params);
