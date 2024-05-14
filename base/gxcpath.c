@@ -693,13 +693,13 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
                 new_box.q.y = int2fixed(fixed2int_pixround(new_box.q.y + adjust_yu));
             }
             /* Intersect the two rectangles if necessary. */
-            if (old_box.p.x > new_box.p.x)
+            if (old_box.p.x >= new_box.p.x)
                 new_box.p.x = old_box.p.x, ++changed;
-            if (old_box.p.y > new_box.p.y)
+            if (old_box.p.y >= new_box.p.y)
                 new_box.p.y = old_box.p.y, ++changed;
-            if (old_box.q.x < new_box.q.x)
+            if (old_box.q.x <= new_box.q.x)
                 new_box.q.x = old_box.q.x, ++changed;
-            if (old_box.q.y < new_box.q.y)
+            if (old_box.q.y <= new_box.q.y)
                 new_box.q.y = old_box.q.y, ++changed;
             /* Check for a degenerate rectangle. */
             if (new_box.q.x < new_box.p.x || new_box.q.y < new_box.p.y)
