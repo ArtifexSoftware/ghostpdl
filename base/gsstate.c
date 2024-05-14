@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -647,17 +647,14 @@ gs_do_set_overprint(gs_gstate * pgs)
            is in a additive blend mode.  This could
            be written more compactly, but it would be unreadable. */
         if (dev_proc(dev, dev_spec_op)(dev, gxdso_pdf14_sep_device, NULL, 0) &&
-            (dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE) &&
-            (pcs_index == gs_color_space_index_DeviceN ||
-             pcs_index == gs_color_space_index_Separation)) {
+            (dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE)) {
             if (pcs_index == gs_color_space_index_Separation) {
                 if (!(pcs->params.separation.color_type == SEP_MIX ||
                       pcs->params.separation.color_type == SEP_ENUM)) {
                     /* Sep color is not a spot color.  We can't do OP and trans */
                     return code;
                 }
-            }
-            if (pcs_index == gs_color_space_index_DeviceN) {
+            } else if (pcs_index == gs_color_space_index_DeviceN) {
                 if (pcs->params.device_n.color_type != SEP_PURE_SPOT) {
                     /* DeviceN has process colors  We can't do OP and trans. */
                     return code;
