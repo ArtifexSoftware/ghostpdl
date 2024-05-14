@@ -734,7 +734,12 @@ cmyk_cs_to_psdgray_cm(const gx_device * dev, frac c, frac m, frac y, frac k, fra
 static void
 gray_cs_to_psdrgb_cm(const gx_device * dev, frac gray, frac out[])
 {
-    int i = ((psd_device *)dev)->devn_params.separations.num_separations;
+    /* Previous code here has tried to set
+     * int i = ((psd_device *)dev)->devn_params.separations.num_separations;
+     * but during the fillpage at least that's 0, even for pages with
+     * separations on. The psdcmyk code seems to use num_components instead
+     * and that works, so move to that here too. */
+    int i = dev->color_info.num_components - 3;
 
     out[0] = out[1] = out[2] = gray;
     for(; i>0; i--)			/* Clear spot colors */
@@ -745,7 +750,8 @@ static void
 rgb_cs_to_psdrgb_cm(const gx_device * dev, const gs_gstate *pgs,
                                   frac r, frac g, frac b, frac out[])
 {
-    int i = ((psd_device *)dev)->devn_params.separations.num_separations;
+    /* see note above */
+    int i = dev->color_info.num_components - 3;
 
     out[0] = r;
     out[1] = g;
@@ -758,7 +764,8 @@ static void
 cmyk_cs_to_psdrgb_cm(const gx_device * dev,
                         frac c, frac m, frac y, frac k, frac out[])
 {
-    int i = ((psd_device *)dev)->devn_params.separations.num_separations;
+    /* see note above */
+    int i = dev->color_info.num_components - 3;
 
     color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
     for(; i>0; i--)			/* Clear spot colors */
@@ -770,7 +777,8 @@ cmyk_cs_to_psdrgbtags_cm(const gx_device * dev,
                          frac c, frac m, frac y, frac k, frac out[])
 {
     int ncomps = dev->color_info.num_components;
-    int i = ((psd_device *)dev)->devn_params.separations.num_separations;
+    /* see note above */
+    int i = dev->color_info.num_components - 4;
 
     color_cmyk_to_rgb(c, m, y, k, NULL, out, dev->memory);
     for(; i>0; i--)			/* Clear spot colors */
