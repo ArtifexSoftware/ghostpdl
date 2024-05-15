@@ -12441,6 +12441,21 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     */
     comp_index = check_pcm_and_separation_names(dev, pdevn_params, pname,
         name_size, component_type);
+
+    /* Additive devices should NOT have C/M/Y/K Colorants added to them.
+     * This is a decision we take here to avoid problems with PDFI not
+     * counting such colorants as spots. */
+    if (comp_index < 0 && dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+        if (name_size == 5 && strncmp(pname, "Black", 7) == 0)
+            return -1;
+        if (name_size == 4 && strncmp(pname, "Cyan", 4) == 0)
+            return -1;
+        if (name_size == 7 && strncmp(pname, "Magenta", 7) == 0)
+            return -1;
+        if (name_size == 6 && strncmp(pname, "Yellow", 6) == 0)
+            return -1;
+    }
+
     /*
     * Return the colorant number if we know this name.  Note adjustment for
     * compensating of blend color space.

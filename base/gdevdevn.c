@@ -334,6 +334,19 @@ devn_get_color_comp_index(gx_device * dev, gs_devn_params * pdevn_params,
     if (strncmp(pname, "None", name_size) == 0) {
         return -1;
     }
+    /* Additive devices should NOT have C/M/Y/K Colorants added to them.
+     * This is a decision we take here to avoid problems with PDFI not
+     * counting such colorants as spots. */
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+        if (name_size == 5 && strncmp(pname, "Black", 7) == 0)
+            return -1;
+        if (name_size == 4 && strncmp(pname, "Cyan", 4) == 0)
+            return -1;
+        if (name_size == 7 && strncmp(pname, "Magenta", 7) == 0)
+            return -1;
+        if (name_size == 6 && strncmp(pname, "Yellow", 6) == 0)
+            return -1;
+    }
 
     /*
      * Check if we have room for another spot colorant.
