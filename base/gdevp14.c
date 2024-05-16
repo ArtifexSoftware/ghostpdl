@@ -5778,6 +5778,7 @@ pdf14_determine_default_blend_cs(gx_device * pdev, bool use_pdf14_accum,
     pdf14_blend_cs_t temp_cs_state = PDF14_BLEND_CS_UNSPECIFIED;
     int code = dev_proc(pdev, get_profile)(pdev, &dev_profile);
     bool valid_blend_cs = false;
+    int has_tags = device_encodes_tags(pdev);
 
     *blend_cs_state = PDF14_BLEND_CS_UNSPECIFIED;
 
@@ -5846,10 +5847,12 @@ pdf14_determine_default_blend_cs(gx_device * pdev, bool use_pdf14_accum,
                 return PDF14_DeviceCMYK;
             }
         }
-        if (pdev->color_info.num_components == 1)
+        if (pdev->color_info.num_components - has_tags == 1)
             return PDF14_DeviceGray;
-        else
+        else if (pdev->color_info.num_components - has_tags == 3)
             return PDF14_DeviceRGB;
+        else
+            return PDF14_DeviceRGBspot;
     } else {
         /*
          * Check if the device is CMYK only or CMYK plus spot colors. Note
@@ -5988,6 +5991,25 @@ get_pdf14_device_proto(gx_device       *dev,
                 pdevproto->sep_device = true;
             }
             break;
+        case PDF14_DeviceRGBspot:
+            *pdevproto = gs_pdf14_RGBspot_device;
+            /* Need to figure out how we want to handle the device profile
+               for this case */
+            /*
+             * The number of components for the PDF14 device is the sum
+             * of the process components and the number of spot colors
+             * for the page.
+             */
+            if (num_spots >= 0) {
+                pdevproto->color_info.num_components =
+                    pdevproto->devn_params.num_std_colorant_names + num_spots;
+                if (pdevproto->color_info.num_components > GS_CLIENT_COLOR_MAX_COMPONENTS)
+                    pdevproto->color_info.num_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
+                pdevproto->color_info.depth =
+                    pdevproto->color_info.num_components * (8 << deep);
+                pdevproto->sep_device = true;
+            }
+            break;
         case PDF14_DeviceCustom:
             /*
              * We are using the output device's process color model.  The
@@ -6054,6 +6076,9 @@ pdf14_ok_to_optimize(gx_device *dev)
             ok = dev->color_info.max_color == (deep ? 65535 : 255) && dev->color_info.depth == (32<<deep) + tag_depth;
             break;
         case PDF14_DeviceCMYKspot:
+            ok = false;			/* punt for this case */
+            break;
+        case PDF14_DeviceRGBspot:
             ok = false;			/* punt for this case */
             break;
         case PDF14_DeviceCustom:
@@ -10171,7 +10196,6 @@ pdf14_clist_CMYKspot_initialize_device_procs(gx_device *dev)
                            pdf14_cmykspot_get_color_comp_index);
 }
 
-#if 0 /* NOT USED */
 static void
 pdf14_clist_RGBspot_initialize_device_procs(gx_device *dev)
 {
@@ -10180,6 +10204,7 @@ pdf14_clist_RGBspot_initialize_device_procs(gx_device *dev)
                            pdf14_rgbspot_get_color_comp_index);
 }
 
+#if 0 /* NOT USED */
 static int
 pdf14_clist_Grayspot_initialize_device_procs(gx_device *dev)
 {
@@ -10212,6 +10237,32 @@ const pdf14_clist_device pdf14_clist_RGB_device	= {
     NULL,			/* target */
     { 0 },			/* devn_params - not used */
     &rgb_pdf14_procs,
+    &rgb_blending_procs
+};
+
+const pdf14_clist_device pdf14_clist_RGBspot_device = {
+    std_device_part1_(pdf14_device,
+                      pdf14_clist_RGBspot_initialize_device_procs,
+                      "pdf14clistrgbspot",
+                      &st_pdf14_device,
+                      open_init_closed),
+    dci_values_add(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
+    std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
+    offset_margin_values(0, 0, 0, 0, 0, 0),
+    std_device_part3_(),
+    { 0 },			/* Procs */
+    NULL,			/* target */
+    /* DeviceN parameters */
+    { 8,			/* Not used - Bits per color */
+      DeviceRGBComponents,	/* Names of color model colorants */
+      3,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      {0},			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
+    },
+    &rgbspot_pdf14_procs,
     &rgb_blending_procs
 };
 
@@ -10378,6 +10429,33 @@ get_pdf14_clist_device_proto(gx_device          *dev,
                               pdevproto->color_info.max_components;
                 pdevproto->color_info.depth =
                               pdevproto->color_info.num_components * (8<<deep);
+                if (deep && has_tags)
+                    pdevproto->color_info.depth -= 8;
+            }
+            pdevproto->color_info.anti_alias = dev->color_info.anti_alias;
+            pdevproto->sep_device = true;
+            break;
+        case PDF14_DeviceRGBspot:
+            *pdevproto = pdf14_clist_RGBspot_device;
+            /*
+             * The number of components for the PDF14 device is the sum
+             * of the process components and the number of spot colors
+             * for the page. If we are using an NCLR ICC profile at
+             * the output device, those spot colors are skipped. They
+             * do not appear in the transparency buffer, but appear
+             * during put image transform of the page group to the target
+             * color space.
+             */
+            if (num_spots >= 0) {
+                pdevproto->devn_params.page_spot_colors = num_spots;
+                pdevproto->color_info.num_components =
+                    pdevproto->devn_params.num_std_colorant_names + num_spots;
+                if (pdevproto->color_info.num_components >
+                    pdevproto->color_info.max_components)
+                    pdevproto->color_info.num_components =
+                        pdevproto->color_info.max_components;
+                pdevproto->color_info.depth =
+                    pdevproto->color_info.num_components * (8 << deep);
                 if (deep && has_tags)
                     pdevproto->color_info.depth -= 8;
             }
@@ -12414,7 +12492,8 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     /* The pdf14_clist_composite may have set the color procs.
        We need the real target procs, but not if we are doing simulated
        overprint */
-    if (target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index &&
+    if ((target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index ||
+         target_get_color_comp_index == pdf14_rgbspot_get_color_comp_index) &&
         !pdev->overprint_sim)
         target_get_color_comp_index =
             ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;

@@ -31,7 +31,8 @@ typedef enum {
     PDF14_DeviceRGB = 1,
     PDF14_DeviceCMYK = 2,
     PDF14_DeviceCMYKspot = 3,
-    PDF14_DeviceCustom = 4
+    PDF14_DeviceCustom = 4,
+    PDF14_DeviceRGBspot = 5
 } pdf14_default_colorspace_t;
 
 typedef enum {
