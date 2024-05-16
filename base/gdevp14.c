@@ -2544,12 +2544,14 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     int alpha_offset, tag_offset;
     const byte* buf_ptrs[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int rendering_intent_saved;
+    int additive;
 
     /* Nothing was ever drawn. */
     if (buf == NULL)
         return 0;
 
-    bg = buf->group_color_info->isadditive ? 65535 : 0;
+    additive = buf->group_color_info->isadditive;
+
     src_profile = buf->group_color_info->icc_profile;
 
     num_comp = buf->n_chan - 1;
@@ -2656,10 +2658,10 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
         /* We are going out to a device that supports tags */
         if (deep) {
             gx_blend_image_buffer16(buf_ptr, width, height, rowstride,
-                buf->planestride, num_comp, bg, false);
+                buf->planestride, num_comp, additive, false);
         } else {
             gx_blend_image_buffer(buf_ptr, width, height, rowstride,
-                buf->planestride, num_comp, bg >> 8);
+                buf->planestride, num_comp, additive);
         }
 
 #if RAW_DUMP
@@ -2801,8 +2803,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                                   blend_row, num_comp, deep);
 #endif
 
-    if (!deep)
-        bg >>= 8;
+    bg = additive ? (deep ? 65535 : 255) : 0;
     for (y = 0; y < height; y++) {
         gx_image_plane_t planes;
         int rows_used;
@@ -3156,7 +3157,7 @@ static int
 pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     gs_gstate* pgs, pdf14_buf* buf, int planestride_in,
     int rowstride_in, int x0, int y0, int width, int height,
-    int num_comp, uint16_t bg, bool has_tags, gs_int_rect rect_in,
+    int num_comp, int additive, bool has_tags, gs_int_rect rect_in,
     gs_separations* pseparations, bool deep)
 {
     pdf14_device* pdev = (pdf14_device*)dev;
@@ -3217,7 +3218,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
         buf = cm_result;
         src_profile = pgs->icc_manager->default_cmyk;
         num_comp = buf->n_chan - 1;
-        bg = 0;
+        additive = 0;
         tag_offset = has_tags ? num_comp + 1 : 0;
         alpha_offset = num_comp;
 
@@ -3348,10 +3349,10 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
                 bool keep_native = (blend_spots == true);
 
                 gx_blend_image_buffer16(buf_ptr, width, height, rowstride,
-                    planestride, num_comp, bg, keep_native);
+                    planestride, num_comp, additive, keep_native);
             } else {
                 gx_blend_image_buffer(buf_ptr, width, height, rowstride,
-                    planestride, num_comp, bg >> 8);
+                    planestride, num_comp, additive);
             }
         }
 
@@ -3547,14 +3548,12 @@ pdf14_cmykspot_put_image(gx_device *dev, gs_gstate *pgs, gx_device *target)
     int planestride;
     int rowstride;
     bool deep = pdev->ctx->deep;
-    uint16_t bg;
     int num_comp;
 
     /* Nothing was ever drawn. */
     if (buf == NULL)
         return 0;
 
-    bg = buf->group_color_info->isadditive ? 65535 : 0;
     num_comp = buf->n_chan - 1;
     rect = buf->rect;
     planestride = buf->planestride;
@@ -3590,7 +3589,7 @@ pdf14_cmykspot_put_image(gx_device *dev, gs_gstate *pgs, gx_device *target)
 
     return pdf14_put_blended_image_cmykspot(dev, target, pgs,
                       buf, planestride, rowstride,
-                      rect.p.x, rect.p.y, width, height, num_comp, bg,
+                      rect.p.x, rect.p.y, width, height, num_comp, buf->group_color_info->isadditive,
                       buf->has_tags, rect, pseparations, deep);
 }
 

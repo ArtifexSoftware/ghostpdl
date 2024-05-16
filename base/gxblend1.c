@@ -811,131 +811,222 @@ gx_build_blended_image_row16(const byte *gs_restrict buf_ptr_, int planestride,
 
 void
 gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
-                      int planestride, int num_comp, byte bg)
+                      int planestride, int num_comp, int additive)
 {
     int x, y;
     int position;
     byte comp, a;
     int tmp, comp_num;
 
-    for (y = 0; y < height; y++) {
-        position = y * rowstride;
-        for (x = 0; x < width; x++) {
-            /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr[position + planestride * (size_t)num_comp];
-            if ((a + 1) & 0xfe) {
-                a ^= 0xff;
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp  = buf_ptr[position + planestride * (size_t)comp_num];
-                    tmp = ((bg - comp) * a) + 0x80;
-                    comp += (tmp + (tmp >> 8)) >> 8;
-                    buf_ptr[position + planestride * (size_t)comp_num] = comp;
-                }
-            } else if (a == 0) {
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr[position + planestride * (size_t)comp_num] = bg;
+    if (additive) {
+        if (num_comp > 3) {
+            for (y = 0; y < height; y++) {
+                position = y * rowstride;
+                for (x = 0; x < width; x++) {
+                    /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+                    a = buf_ptr[position + planestride * (size_t)num_comp];
+                    if ((a + 1) & 0xfe) {
+                        int b = 0xFF;
+                        a ^= 0xff;
+                        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                            if (comp_num == 3)
+                                b = 0;
+                            comp = buf_ptr[position + planestride * (size_t)comp_num];
+                            tmp = ((b - comp) * a) + 0x80;
+                            comp += (tmp + (tmp >> 8)) >> 8;
+                            buf_ptr[position + planestride * (size_t)comp_num] = comp;
+                        }
+                    } else if (a == 0) {
+                        for (comp_num = 0; comp_num < 3; comp_num++)
+                            buf_ptr[position + planestride * (size_t)comp_num] = 0xFF;
+                        for (; comp_num < num_comp; comp_num++)
+                            buf_ptr[position + planestride * (size_t)comp_num] = 0;
+                    }
+                    position += 1;
                 }
             }
-            position+=1;
+        }
+        else {
+            for (y = 0; y < height; y++) {
+                position = y * rowstride;
+                for (x = 0; x < width; x++) {
+                    /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+                    a = buf_ptr[position + planestride * (size_t)num_comp];
+                    if ((a + 1) & 0xfe) {
+                        a ^= 0xff;
+                        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                            comp = buf_ptr[position + planestride * (size_t)comp_num];
+                            tmp = ((0xFF - comp) * a) + 0x80;
+                            comp += (tmp + (tmp >> 8)) >> 8;
+                            buf_ptr[position + planestride * (size_t)comp_num] = comp;
+                        }
+                    } else if (a == 0) {
+                        for (comp_num = 0; comp_num < num_comp; comp_num++)
+                            buf_ptr[position + planestride * (size_t)comp_num] = 0xFF;
+                    }
+                    position += 1;
+                }
+            }
+        }
+    } else {
+        for (y = 0; y < height; y++) {
+            position = y * rowstride;
+            for (x = 0; x < width; x++) {
+                /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+                a = buf_ptr[position + planestride * (size_t)num_comp];
+                if ((a + 1) & 0xfe) {
+                    a ^= 0xff;
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        comp = buf_ptr[position + planestride * (size_t)comp_num];
+                        tmp = ((- comp) * a) + 0x80;
+                        comp += (tmp + (tmp >> 8)) >> 8;
+                        buf_ptr[position + planestride * (size_t)comp_num] = comp;
+                    }
+                } else if (a == 0) {
+                    for (comp_num = 0; comp_num < num_comp; comp_num++)
+                        buf_ptr[position + planestride * (size_t)comp_num] = 0;
+                }
+                position += 1;
+            }
         }
     }
 }
 
 void
 gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
-                        int planestride, int num_comp, uint16_t bg, bool keep_native)
+                        int planestride, int num_comp, int additive, bool keep_native)
 {
     uint16_t *buf_ptr = (uint16_t *)(void *)buf_ptr_;
     int x, y;
     int position;
     int comp, a;
     int tmp, comp_num;
-    uint16_t bebg;
-
-    /* Convert bg to be */
-    ((byte *)&bebg)[0] = bg >> 8;
-    ((byte *)&bebg)[1] = bg;
 
     /* planestride and rowstride are in bytes, and we want them in shorts */
     planestride >>= 1;
     rowstride >>= 1;
 
-    /* Note that the input here is native endian, and the output must be in big endian! */
-    for (y = 0; y < height; y++) {
-        position = y * rowstride;
-        for (x = 0; x < width; x++) {
-            /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr[position + planestride * (size_t)num_comp];
-            if (a == 0) {
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr[position + planestride * (size_t)comp_num] = bebg;
-                }
-            } else if (a == 0xffff) {
+    if (additive)
+    {
+        if (num_comp > 3) {
+            /* Note that the input here is native endian, and the output must be in big endian! */
+            for (y = 0; y < height; y++) {
+                position = y * rowstride;
+                for (x = 0; x < width; x++) {
+                    /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+                    a = buf_ptr[position + planestride * (size_t)num_comp];
+                    if (a == 0) {
+                        for (comp_num = 0; comp_num < 3; comp_num++)
+                            buf_ptr[position + planestride * (size_t)comp_num] = 65535;
+                        for (; comp_num < num_comp; comp_num++)
+                            buf_ptr[position + planestride * (size_t)comp_num] = 0;
+                    } else if (a == 0xffff) {
 #if ARCH_IS_BIG_ENDIAN
 #else
-                if (!keep_native) {
+                        if (!keep_native) {
+                            for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                                comp = buf_ptr[position + planestride * (size_t)comp_num];
+                                ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp >> 8;
+                                ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
+                            }
+                        }
+#endif
+                    } else {
+                        int b = 65535;
+                        a ^= 0xffff;
+                        a += a >> 15; /* a is now 0 to 0x10000 */
+                        a >>= 1; /* We can only use 15 bits as bg-comp has a sign bit we can't lose */
+                        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                            if (comp_num == 3)
+                                b = 0;
+                            comp = buf_ptr[position + planestride * (size_t)comp_num];
+                            tmp = ((b - comp) * a) + 0x4000;
+                            comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
+                            /* Store as big endian */
+                            ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp >> 8;
+                            ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
+                        }
+                    }
+                    position += 1;
+                }
+            }
+        }
+        else {
+            /* Note that the input here is native endian, and the output must be in big endian! */
+            for (y = 0; y < height; y++) {
+                position = y * rowstride;
+                for (x = 0; x < width; x++) {
+                    /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+                    a = buf_ptr[position + planestride * (size_t)num_comp];
+                    if (a == 0) {
+                        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                            buf_ptr[position + planestride * (size_t)comp_num] = 65535;
+                        }
+                    } else if (a == 0xffff) {
+#if ARCH_IS_BIG_ENDIAN
+#else
+                        if (!keep_native) {
+                            for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                                comp = buf_ptr[position + planestride * (size_t)comp_num];
+                                ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp >> 8;
+                                ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
+                            }
+                        }
+#endif
+                    } else {
+                        a ^= 0xffff;
+                        a += a >> 15; /* a is now 0 to 0x10000 */
+                        a >>= 1; /* We can only use 15 bits as bg-comp has a sign bit we can't lose */
+                        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                            comp = buf_ptr[position + planestride * (size_t)comp_num];
+                            tmp = ((65535 - comp) * a) + 0x4000;
+                            comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
+                            /* Store as big endian */
+                            ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp >> 8;
+                            ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
+                        }
+                    }
+                    position += 1;
+                }
+            }
+        }
+    } else {
+        /* Note that the input here is native endian, and the output must be in big endian! */
+        for (y = 0; y < height; y++) {
+            position = y * rowstride;
+            for (x = 0; x < width; x++) {
+                /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
+                a = buf_ptr[position + planestride * (size_t)num_comp];
+                if (a == 0) {
+                    for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                        buf_ptr[position + planestride * (size_t)comp_num] = 0;
+                    }
+                } else if (a == 0xffff) {
+#if ARCH_IS_BIG_ENDIAN
+#else
+                    if (!keep_native) {
+                        for (comp_num = 0; comp_num < num_comp; comp_num++) {
+                            comp = buf_ptr[position + planestride * (size_t)comp_num];
+                            ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp >> 8;
+                            ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
+                        }
+                    }
+#endif
+                } else {
+                    a ^= 0xffff;
+                    a += a >> 15; /* a is now 0 to 0x10000 */
+                    a >>= 1; /* We can only use 15 bits as -comp has a sign bit we can't lose */
                     for (comp_num = 0; comp_num < num_comp; comp_num++) {
                         comp = buf_ptr[position + planestride * (size_t)comp_num];
+                        tmp = ((- comp) * a) + 0x4000;
+                        comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
+                        /* Store as big endian */
                         ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp >> 8;
                         ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
                     }
                 }
-#endif
-            } else {
-                a ^= 0xffff;
-                a += a>>15; /* a is now 0 to 0x10000 */
-                a >>= 1; /* We can only use 15 bits as bg-comp has a sign bit we can't lose */
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp  = buf_ptr[position + planestride * (size_t)comp_num];
-                    tmp = (((int)bg - comp) * a) + 0x4000;
-                    comp += (tmp >> 15); /* Errors in bit 16 upwards will be ignored */
-                    /* Store as big endian */
-                    ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[0] = comp>>8;
-                    ((byte *)&buf_ptr[position + planestride * (size_t)comp_num])[1] = comp;
-                }
+                position += 1;
             }
-            position+=1;
-        }
-    }
-}
-
-void
-gx_blend_image_buffer8to16(const byte *buf_ptr_in, unsigned short *buf_ptr_out, int width,
-    int height, int rowstride, int planestride, int num_comp, byte bg)
-{
-    int x, y;
-    int position;
-    int comp, a;
-    int tmp, comp_num;
-    int bg_out = bg + (bg << 8);
-
-    for (y = 0; y < height; y++) {
-        position = y * rowstride;
-        for (x = 0; x < width; x++) {
-            /* composite RGBA (or CMYKA, etc.) pixel with over solid background */
-            a = buf_ptr_in[position + planestride * (size_t)num_comp];
-            if (a == 0xff) {
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp = buf_ptr_in[position + planestride * (size_t)comp_num];
-                    buf_ptr_out[position + planestride * (size_t)comp_num] = (comp + (comp << 8));
-                }
-            } else if (a == 0) {
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    buf_ptr_out[position + planestride * (size_t)comp_num] = bg_out;
-                }
-            } else {
-                a ^= 0xff;
-                a += (a << 8);
-                for (comp_num = 0; comp_num < num_comp; comp_num++) {
-                    comp = buf_ptr_in[position + planestride * (size_t)comp_num];
-                    comp += (comp << 8);
-                    tmp = ((bg_out - comp) * a) + 0x8000;
-                    comp += (tmp + (tmp >> 16)) >> 16;
-                    comp = ((comp & 0xff) << 8) + ((comp & 0xff00) >> 8);
-                    buf_ptr_out[position + planestride * (size_t)comp_num] = comp;
-                }
-            }
-            position += 1;
         }
     }
 }

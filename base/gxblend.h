@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -386,11 +386,9 @@ void gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride
 void gx_build_blended_image_row16(const byte *gs_restrict buf_ptr, int planestride,
                                   int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);
 void gx_blend_image_buffer(byte *buf_ptr, int width, int height,
-                      int rowstride, int planestride, int num_comp, byte bg);
+                      int rowstride, int planestride, int num_comp, int additive);
 void gx_blend_image_buffer16(byte *buf_ptr, int width, int height,
-    int rowstride, int planestride, int num_comp, uint16_t bg, bool keep_native);
-void gx_blend_image_buffer8to16(const byte *buf_ptr, unsigned short *buf_ptr_out,
-    int width, int height, int rowstride, int planestride, int num_comp, byte bg);
+    int rowstride, int planestride, int num_comp, int additive, bool keep_native);
 int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
                       int planestride, int rowstride,
                       int x0, int y0, int width, int height, int num_comp, uint16_t bg, bool deep);
