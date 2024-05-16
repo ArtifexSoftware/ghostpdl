@@ -233,7 +233,7 @@ int pdfi_op_Q(pdf_context *ctx)
         gx_device *dev = gs_currentdevice_inline(ctx->pgs);
 
         ctx->text.TextClip = 0;
-        dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, 0, 1);
+        dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
     }
 
     return code;

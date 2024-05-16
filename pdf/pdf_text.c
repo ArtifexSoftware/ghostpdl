@@ -802,7 +802,7 @@ static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
         gx_device *dev = gs_currentdevice_inline(ctx->pgs);
 
         ctx->text.TextClip = true;
-        dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, 1, 1);
+        dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)1, 1);
   }
 
     code = pdfi_show_simple(ctx, text);
