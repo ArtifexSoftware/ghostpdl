@@ -1,26 +1,27 @@
 .TH PS2ASCII 1 "06 March 2024" 10.03.0 "Ghostscript Tools" \" -*- nroff -*-
 .SH NAME
-ps2ascii \- Ghostscript translator from PostScript or PDF to ASCII
+ps2ascii \- Ghostscript translator from PostScript or PDF to text
 .SH SYNOPSIS
 \fBps2ascii\fR [ \fIinput.ps\fR [ \fIoutput.txt\fR ] ]
 .br
 \fBps2ascii\fR \fIinput.pdf\fR [ \fIoutput.txt\fR ]
 .SH DESCRIPTION
-\fBps2ascii\fR uses \fBgs\fR(1) to extract ASCII text from
+\fBps2ascii\fR uses \fBgs\fR(1) to extract text from
 \fBPostScript\fR(tm) or Adobe \fBPortable Document Format\fR (PDF)
 files. If no files are specified on the command line, \fBgs\fR reads from
-standard input; but PDF input must come from an explicitly-named file, not
 standard input.  If no output file is specified, the ASCII text is written
 to standard output.
 .PP
-\fBps2ascii\fR doesn't look at font encoding, and isn't very good at
-dealing with kerning, so for PostScript (but not currently PDF), you might
-consider \fBpstotext\fR (see below).
-.SH FILES
-Run "\fBgs -h\fR" to find the location of Ghostscript documentation on your
-system, from which you can get more details.
+The old \fBps2ascii.ps\fR program was deprecated and removed some years
+ago, the scripts now use the \fBtxtwrite\fR device to extract text from the
+input. This does a generally better job than the old PostScript program
+and can extract Unicode not just ASCII. However it no longer supports the
+\fBCOMPLEX\fR feature.
+
 .SH SEE ALSO
-pstotext(1), http://www.research.digital.com/SRC/virtualpaper/pstotext.html
+Further documentation on the txtwrite device can be found at
+https://ghostscript.readthedocs.io/en/latest/Devices.html#text-output
+
 .SH VERSION
 This document was last revised for Ghostscript version 10.03.0.
 .SH AUTHOR
