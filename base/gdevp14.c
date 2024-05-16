@@ -12403,7 +12403,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
      * Yellow or Black, then we should use the alternate tint transform */
     if (num_process_colors < 4) {
         int k;
-        for (k = 0; k < 4; k++) {
+        for (k = 0; k < pdev->devn_params.num_std_colorant_names; k++) {
             if (strncmp(pname, pdev->devn_params.std_colorant_names[k], name_size) == 0)
                 return -1;
         }
