@@ -46,6 +46,7 @@
 #include "gscolor3.h"       /* For gs_setsmoothness() */
 #include "gzpath.h"
 #include "gspenum.h"
+#include "gxdevsop.h"               /* For special ops */
 
 static const char *blend_mode_names[] = {
     GS_BLEND_MODE_NAMES, 0
@@ -222,7 +223,20 @@ int pdfi_op_Q(pdf_context *ctx)
             return code;
     }
 
-    return pdfi_grestore(ctx);
+    code = pdfi_grestore(ctx);
+
+    /* Special hackery for pdfwrite. If we have started doing text with a clip render mode
+     * and the output is pdfwrite, and the current (restored gstate does not have a text clipping
+     * render mode, then we need to tell pdfwrite that it must emit a 'Q'.
+     */
+    if (code >= 0 && ctx->device_state.preserve_tr_mode && ctx->text.TextClip && gs_currenttextrenderingmode(ctx->pgs) < 4) {
+        gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+        ctx->text.TextClip = 0;
+        dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, 0, 1);
+    }
+
+    return code;
 }
 
 /* We want pdfi_grestore() so we can track and warn of "too many Qs"

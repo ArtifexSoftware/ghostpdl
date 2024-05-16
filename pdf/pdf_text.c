@@ -32,6 +32,7 @@
 #include "gdevbbox.h"
 #include "gspaint.h"        /* For gs_fill() and friends */
 #include "gscoord.h"        /* For gs_setmatrix() */
+#include "gxdevsop.h"               /* For special ops */
 
 static int pdfi_set_TL(pdf_context *ctx, double TL);
 
@@ -55,25 +56,10 @@ int pdfi_BT(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    /* In theory we should not perform the clip (for text rendering modes involving a clip)
-     * when preserving the text rendering mode. However the pdfwrite device requires us to do
-     * so. The reason is that it wraps all text operations in a sequence like 'q BT...ET Q'
-     * and the grestore obviously restores away the clip before any following operation can use it.
-     * The reason pdfwrite does this is historical; originally the PDF graphics state was not
-     * part of the graphics library graphics state, so the only information available to
-     * the device was the CTM, after the text rendering matrix and text line matrix had been
-     * applied. Obviously that had to be undone at the end of the text to avoid polluting
-     * the CTM for following operations.
-     * Now that we track the Trm and Tlm in the graphics state it would be possible to
-     * modify pdfwrite so that it emits those instead of modifying the CTM, which would avoid
-     * the q/Q pair round the text, which would mean we could do away with the separate
-     * clip for text rendering. However this would mean modifying both the pdfwrite device
-     * and the existing PDF interpreter, which would be awkward to do. I will open an
-     * enhancement bug for this, but won't begin work on it until we have completely
-     * deprecated and removed the old PDF interpreter.
-     * In the meantime we have to persist with this kludge.
+    /* We should not perform the clip (for text rendering modes involving a clip)
+     * when preserving the text rendering mode.
      */
-    if (gs_currenttextrenderingmode(ctx->pgs) >= 4 && ctx->text.BlockDepth == 0 /* && !ctx->device_state.preserve_tr_mode*/) {
+    if (gs_currenttextrenderingmode(ctx->pgs) >= 4 && ctx->text.BlockDepth == 0 && !ctx->device_state.preserve_tr_mode) {
         /* Whenever we are doing a 'clip' text rendering mode we need to
          * accumulate a path until we reach ET, and then we need to turn that
          * path into a clip and apply it (along with any existing clip). But
@@ -116,32 +102,34 @@ static int do_ET(pdf_context *ctx)
      */
 
     /* See the note on text rendering modes with clip in pdfi_BT() above */
-    if (ctx->text.BlockDepth == 0 && gs_currenttextrenderingmode(ctx->pgs) >= 4 /*&& !ctx->device_state.preserve_tr_mode*/) {
+    if (ctx->text.BlockDepth == 0 && gs_currenttextrenderingmode(ctx->pgs) >= 4) {
         gs_point initial_point;
 
-        ctx->text.TextClip = false;
-        /* Capture the current position */
-        code = gs_currentpoint(ctx->pgs, &initial_point);
-        if (code >= 0) {
-            gs_point adjust;
+        if  (!ctx->device_state.preserve_tr_mode) {
+            ctx->text.TextClip = false;
+            /* Capture the current position */
+            code = gs_currentpoint(ctx->pgs, &initial_point);
+            if (code >= 0) {
+                gs_point adjust;
 
-            gs_currentfilladjust(ctx->pgs, &adjust);
-            code = gs_setfilladjust(ctx->pgs, (double)0.0, (double)0.0);
-            if (code < 0)
-                return code;
+                gs_currentfilladjust(ctx->pgs, &adjust);
+                code = gs_setfilladjust(ctx->pgs, (double)0.0, (double)0.0);
+                if (code < 0)
+                    return code;
 
-            code = gs_clip(ctx->pgs);
-            if (code >= 0)
-                copy = gx_cpath_alloc_shared(ctx->pgs->clip_path, ctx->memory, "save clip path");
+                code = gs_clip(ctx->pgs);
+                if (code >= 0)
+                    copy = gx_cpath_alloc_shared(ctx->pgs->clip_path, ctx->memory, "save clip path");
 
-            code = gs_setfilladjust(ctx->pgs, adjust.x, adjust.y);
-            if (code < 0)
-                return code;
+                code = gs_setfilladjust(ctx->pgs, adjust.x, adjust.y);
+                if (code < 0)
+                    return code;
 
-            pdfi_grestore(ctx);
-            if (copy != NULL)
-                (void)gx_cpath_assign_free(ctx->pgs->clip_path, copy);
-            code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+                pdfi_grestore(ctx);
+                if (copy != NULL)
+                    (void)gx_cpath_assign_free(ctx->pgs->clip_path, copy);
+                code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+            }
         }
     }
     if (ctx->page.has_transparency && gs_currenttextknockout(ctx->pgs))
@@ -805,19 +793,19 @@ static int pdfi_show_Tr_preserve(pdf_context *ctx, gs_text_params_t *text)
         gs_swapcolors_quick(ctx->pgs);
     }
 
-    code = pdfi_show_simple(ctx, text);
-    if (code < 0)
-        return code;
-
-    /* See the comment in pdfi_BT() aboe regarding  text rendering modes and clipping.
-     * NB regardless of the device, we never apply clipping modes to text in a type 3 font.
+    /* If we've switched to aemitting text with a 'clip' rendering mode then we
+     * tell pdfwrite that here, so that it can emit a 'q', which it can later
+     * (see pdfi_op_Q) restore to with a Q. It's the only way to get the clipping
+     * right.
      */
-    if (Trmode >= 4 && current_font->pdfi_font_type != e_pdf_font_type3) {
-        text->operation &= ~TEXT_DO_DRAW;
+    if (Trmode >= 4 && current_font->pdfi_font_type != e_pdf_font_type3 && ctx->text.TextClip == 0) {
+        gx_device *dev = gs_currentdevice_inline(ctx->pgs);
 
-        gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
-        code = pdfi_show_Tr_7(ctx, text);
-    }
+        ctx->text.TextClip = true;
+        dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, 1, 1);
+  }
+
+    code = pdfi_show_simple(ctx, text);
     return code;
 }
 
@@ -1396,24 +1384,18 @@ int pdfi_Tr(pdf_context *ctx)
     if (mode < 0 || mode > 7)
         return_error(gs_error_rangecheck);
 
-/* See comment regarding text rendering modes involving clip in pdfi_BT() above.
- * The commented out code here will be needed when we enhance pdfwrite so that
- * we don't need to do the clip separately.
- */
-/*
+    /* Detect attempts to switch from a clipping mode to a non-clipping
+     * mode, this is defined as invalid in the spec. (We don't warn if we haven't yet
+     * drawn any text in the clipping mode).
+     */
+    if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4 && ctx->text.BlockDepth != 0 && ctx->text.TextClip)
+        pdfi_set_warning(ctx, 0, NULL, W_PDF_BADTRSWITCH, "pdfi_Tr", NULL);
+
     if (ctx->device_state.preserve_tr_mode) {
         gs_settextrenderingmode(ctx->pgs, mode);
     } else
-*/
     {
         gs_point initial_point;
-
-        /* Detect attempts to switch from a clipping mode to a non-clipping
-         * mode, this is defined as invalid in the spec. (We don't warn if we haven't yet
-         * drawn any text in the clipping mode).
-         */
-        if (gs_currenttextrenderingmode(ctx->pgs) > 3 && mode < 4 && ctx->text.BlockDepth != 0 && ctx->text.TextClip)
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BADTRSWITCH, "pdfi_Tr", NULL);
 
         if (gs_currenttextrenderingmode(ctx->pgs) < 4 && mode >= 4 && ctx->text.BlockDepth != 0) {
             /* If we are switching from a non-clip text rendering mode to a
