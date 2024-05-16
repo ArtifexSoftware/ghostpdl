@@ -540,7 +540,7 @@ const pdf14_device gs_pdf14_RGBspot_device = {
                       "pdf14rgbspot",
                       &st_pdf14_device,
                       open_init_closed),
-    dci_values(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
+    dci_values_add(GX_DEVICE_COLOR_MAX_COMPONENTS,64,255,255,256,256),
     std_device_part2_(XSIZE, YSIZE, X_DPI, Y_DPI),
     offset_margin_values(0, 0, 0, 0, 0, 0),
     std_device_part3_(),

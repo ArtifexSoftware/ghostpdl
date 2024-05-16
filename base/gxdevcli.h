@@ -508,6 +508,14 @@ static inline int colors_are_separable_and_linear(gx_device_color_info *info)
                               mg, mc, dg, dc, ta, ga,       \
                               GX_CINFO_UNKNOWN_SEP_LIN,     \
                               dci_std_cm_name(nc) )
+#define dci_alpha_values_add(nc, depth, mg, mc, dg, dc, ta, ga) \
+    dci_extended_alpha_values(nc, nc,			    \
+                              GX_CINFO_POLARITY_ADDITIVE,   \
+                              depth,                        \
+                              dci_std_gray_index(nc),       \
+                              mg, mc, dg, dc, ta, ga,       \
+                              GX_CINFO_UNKNOWN_SEP_LIN,     \
+                              dci_std_cm_name(nc) )
 
 /*
  * Determine the depth corresponding to a color_bits specification.
@@ -585,6 +593,8 @@ static inline int colors_are_separable_and_linear(gx_device_color_info *info)
 
 #define dci_values(nc,depth,mg,mc,dg,dc)\
   dci_alpha_values(nc, depth, mg, mc, dg, dc, 1, 1)
+#define dci_values_add(nc,depth,mg,mc,dg,dc)\
+  dci_alpha_values_add(nc, depth, mg, mc, dg, dc, 1, 1)
 #define dci_black_and_white dci_std_color(1)
 #define dci_black_and_white_() dci_black_and_white
 #define dci_color(depth,maxv,dither)\
