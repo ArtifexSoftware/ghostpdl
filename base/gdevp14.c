@@ -12464,7 +12464,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     gs_separations *pseparations;
     int comp_index;
     dev_proc_get_color_comp_index(*target_get_color_comp_index);
-    int offset = 4 - num_process_colors;
+    int offset = pdev->devn_params.num_std_colorant_names - num_process_colors;
 
     while (tdev->child) {
         tdev = tdev->child;
