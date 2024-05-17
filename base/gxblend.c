@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2711,6 +2711,10 @@ do_dump_raw_buffer(const gs_memory_t *mem, int num_rows, int width, int n_chan,
     dlprintf2("%02d)%s.pam\n",global_index,filename);dflush();
     gs_snprintf(full_file_name,sizeof(full_file_name),"%02d)%s.pam",global_index,filename);
     fid = gp_fopen(mem,full_file_name,"wb");
+    if (fid == NULL) {
+        dlprintf("FAILED\n");dflush();
+        return;
+    }
     gp_fprintf(fid, "P7\nWIDTH %d\nHEIGHT %d\nDEPTH %d\nMAXVAL %d\nTUPLTYPE %s\nENDHDR\n",
                width, num_rows, n_chan, deep ? 65535 : 255,
                n_chan == 1 ? "GRAYSCALE" :
