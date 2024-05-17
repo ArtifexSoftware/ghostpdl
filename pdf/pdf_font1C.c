@@ -840,6 +840,15 @@ pdfi_read_cff_integer(byte *p, byte *e, int b0, int *val)
     return p;
 }
 
+static inline void
+pdfi_cff_font_priv_defaults(pdfi_gs_cff_font_priv *ptpriv)
+{
+    ptpriv->type1data.BlueScale = 0.039625;
+    ptpriv->type1data.BlueShift = 7;
+    ptpriv->type1data.BlueFuzz = 1;
+    ptpriv->type1data.ExpansionFactor = 0.06;
+}
+
 #define PDFI_CFF_STACK_SIZE 48
 
 static int
@@ -1737,6 +1746,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
         font->NumGlobalSubrs = 0;
     }
     /* Read the top and private dictionaries */
+    pdfi_cff_font_priv_defaults(ptpriv);
     code = pdfi_read_cff_dict(dictp, dicte, ptpriv, &offsets, true);
     if (code < 0)
         return gs_rethrow(code, "cannot read top dictionary");

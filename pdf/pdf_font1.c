@@ -511,6 +511,16 @@ pdfi_t1_font_set_procs(pdf_context *ctx, pdf_font_type1 *font)
     pfont->data.interpret = gs_type1_interpret;
 }
 
+static inline void
+pdfi_type1_font_priv_defaults(ps_font_interp_private *pfpriv)
+{
+    pfpriv->gsu.gst1.data.lenIV = 4;
+    pfpriv->gsu.gst1.data.ExpansionFactor = 0.06;
+    pfpriv->gsu.gst1.data.BlueShift = 7;
+    pfpriv->gsu.gst1.data.BlueFuzz = 1;
+    pfpriv->gsu.gst1.data.BlueScale = 0.039625;
+}
+
 int
 pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict, pdf_dict *page_dict, byte *fbuf, int64_t fbuflen, pdf_font **ppdffont)
 {
@@ -543,10 +553,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
     }
 
     if (code >= 0) {
-        fpriv.gsu.gst1.data.lenIV = 4;
-        fpriv.gsu.gst1.data.ExpansionFactor = 0.06;
-        fpriv.gsu.gst1.data.BlueShift = 7;
-        fpriv.gsu.gst1.data.BlueFuzz = 1;
+        pdfi_type1_font_priv_defaults(&fpriv);
         code = pdfi_read_ps_font(ctx, font_dict, fbuf, fbuflen, &fpriv);
         gs_free_object(ctx->memory, fbuf, "pdfi_read_type1_font");
 
