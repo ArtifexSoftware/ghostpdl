@@ -361,7 +361,7 @@ static int pdfi_type1_add_to_native_map(pdf_context *ctx, stream *f, char *fname
                 while(!pdfi_end_ps_token((int)*enamestr))
                     enamestr++;
                 count = enamestr - namestr > pname_size - 1 ? pname_size - 1 : enamestr - namestr;
-                memcpy(pname, namestr, count);
+                memmove(pname, namestr, count);
                 pname[count] = '\0';
                 buf.data += count + 1;
                 buf.size -= count + 1;
