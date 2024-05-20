@@ -12319,16 +12319,20 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                     pclist_devn_params->pdf14_separations;
                 p14dev->free_devicen = false;  /* to avoid freeing the clist ones */
                 if (num_comp != p14dev->color_info.num_components) {
-                    /* When the pdf14 device is opened it creates a context
-                       and some soft mask related objects.  The push device
-                       compositor action will have already created these but
-                       they are the wrong size.  We must destroy them though
-                       before reopening the device */
-                    if (p14dev->ctx != NULL) {
-                        pdf14_ctx_free(p14dev->ctx);
-                        p14dev->ctx = NULL;
-                    }
-                    dev_proc(tdev, open_device) (tdev);
+                    /* Historically, there has been a comment here:
+                       "When the pdf14 device is opened it creates a context and some
+                       soft mask related objects.  The push device compositor action
+                       will have already created these but they are the wrong size.
+                       We must destroy them though before reopening the device."
+                       I can't see why this is the case, and testing in the cluster
+                       doesn't show ill effects from not doing it. Indeed, Bug 707790
+                       shows that this freeing/NULLing the ctx here causes problems
+                       when the freed ctx is reinserted at the end of clist pattern
+                       files. Accordingly, I'm removing the freeing/NULLing for now
+                       at least. */
+                    int code = dev_proc(tdev, open_device) (tdev);
+                    if (code < 0)
+                        return code;
                 }
             }
             /* Check if we need to swap out the ICC profile for the pdf14
