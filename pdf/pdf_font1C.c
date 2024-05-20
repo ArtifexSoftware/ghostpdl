@@ -898,6 +898,21 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 b0 = 0x100 | *p++;
             }
             switch (b0) {
+                case 1:
+                {
+                    code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &font->notice, font, offsets, args[0].ival);
+                    break;
+                }
+                case 2:
+                {
+                    code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &font->fullname, font, offsets, args[0].ival);
+                    break;
+                }
+                case 3:
+                {
+                    code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &font->familyname, font, offsets, args[0].ival);
+                    break;
+                }
                 case 13: /* UniqueID */
                   break;
 
@@ -1119,6 +1134,12 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 {
                     ptpriv->type1data.StdVW.count = 1;
                     ptpriv->type1data.StdVW.values[0] = args[0].fval;
+                    break;
+                }
+
+                case 256:
+                {
+                    code = pdfi_make_string_from_sid(font->ctx, (pdf_obj **) &font->copyright, font, offsets, args[0].ival);
                     break;
                 }
 
@@ -2468,6 +2489,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->FDArray = cffpriv.pdfcffpriv.FDArray;
                 cffpriv.pdfcffpriv.FDArray = NULL;
 
+                cffcid->copyright = cffpriv.pdfcffpriv.copyright;
+                cffcid->notice = cffpriv.pdfcffpriv.notice;
+                cffcid->fullname = cffpriv.pdfcffpriv.fullname;
+                cffcid->familyname = cffpriv.pdfcffpriv.familyname;
+                cffpriv.pdfcffpriv.copyright = cffpriv.pdfcffpriv.notice \
+                    = cffpriv.pdfcffpriv.fullname = cffpriv.pdfcffpriv.familyname = NULL;
+
                 pfont->cidata.common.CIDCount = cffpriv.pdfcffpriv.cidcount;
 
                 cffcid->cidtogidmap = NULL;
@@ -2633,6 +2661,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffpriv.pdfcffpriv.GlobalSubrs = NULL;
                 fdcfffont->NumGlobalSubrs = cffpriv.pdfcffpriv.NumGlobalSubrs;
 
+                fdcfffont->copyright = cffpriv.pdfcffpriv.copyright;
+                fdcfffont->notice = cffpriv.pdfcffpriv.notice;
+                fdcfffont->fullname = cffpriv.pdfcffpriv.fullname;
+                fdcfffont->familyname = cffpriv.pdfcffpriv.familyname;
+                cffpriv.pdfcffpriv.copyright = cffpriv.pdfcffpriv.notice \
+                    = cffpriv.pdfcffpriv.fullname = cffpriv.pdfcffpriv.familyname = NULL;
+
                 cffcid->CharStrings = fdcfffont->CharStrings;
                 pdfi_countup(cffcid->CharStrings);
                 cffcid->Subrs = fdcfffont->Subrs;
@@ -2789,6 +2824,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cfffont->FontDescriptor = (pdf_dict *) fontdesc;
                 fontdesc = NULL;
 
+                cfffont->copyright = cffpriv.pdfcffpriv.copyright;
+                cfffont->notice = cffpriv.pdfcffpriv.notice;
+                cfffont->fullname = cffpriv.pdfcffpriv.fullname;
+                cfffont->familyname = cffpriv.pdfcffpriv.familyname;
+                cffpriv.pdfcffpriv.copyright = cffpriv.pdfcffpriv.notice \
+                    = cffpriv.pdfcffpriv.fullname = cffpriv.pdfcffpriv.familyname = NULL;
+
                 cfffont->PDF_font = font_dict;
                 pdfi_countup(font_dict);
 
@@ -2905,6 +2947,10 @@ error:
             pdfi_countdown(cffpriv.pdfcffpriv.registry);
             pdfi_countdown(cffpriv.pdfcffpriv.ordering);
             pdfi_countdown(cffpriv.pdfcffpriv.Encoding);
+            pdfi_countdown(cffpriv.pdfcffpriv.copyright);
+            pdfi_countdown(cffpriv.pdfcffpriv.notice);
+            pdfi_countdown(cffpriv.pdfcffpriv.fullname);
+            pdfi_countdown(cffpriv.pdfcffpriv.familyname);
             if (cffpriv.FontType == ft_CID_encrypted) {
                 if (ppdfont != NULL && ppdfont->pfont != NULL) {
                     ((gs_font_cid0 *)ppdfont->pfont)->cidata.FDArray = NULL;
@@ -3054,6 +3100,10 @@ pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pd
     pdfi_countup(font->CharStrings);
     pdfi_countup(font->Subrs);
     pdfi_countup(font->GlobalSubrs);
+    pdfi_countup(font->copyright);
+    pdfi_countup(font->notice);
+    pdfi_countup(font->fullname);
+    pdfi_countup(font->familyname);
 
     if (font->BaseFont != NULL && ((pdf_name *)font->BaseFont)->length <= gs_font_name_max) {
         memcpy(dpfont1->key_name.chars, ((pdf_name *)font->BaseFont)->data, ((pdf_name *)font->BaseFont)->length);
@@ -3179,6 +3229,10 @@ pdfi_free_font_cff(pdf_obj *font)
     pdfi_countdown(pdfontcff->Encoding);
     pdfi_countdown(pdfontcff->ToUnicode);
     pdfi_countdown(pdfontcff->filename);
+    pdfi_countdown(pdfontcff->copyright);
+    pdfi_countdown(pdfontcff->notice);
+    pdfi_countdown(pdfontcff->fullname);
+    pdfi_countdown(pdfontcff->familyname);
 
     gs_free_object(OBJ_MEMORY(font), pdfontcff->Widths, "Type 2 fontWidths");
     gs_free_object(OBJ_MEMORY(font), pdfontcff, "pdfi_free_font_cff(pbfont)");
@@ -3215,6 +3269,10 @@ pdfi_free_font_cidtype0(pdf_obj *font)
     pdfi_countdown(pdfont0->ordering);
     pdfi_countdown(pdfont0->cidtogidmap);
     pdfi_countdown(pdfont0->filename);
+    pdfi_countdown(pdfont0->copyright);
+    pdfi_countdown(pdfont0->notice);
+    pdfi_countdown(pdfont0->fullname);
+    pdfi_countdown(pdfont0->familyname);
 
     gs_free_object(OBJ_MEMORY(font), pdfont0, "pdfi_free_font_cff(pbfont)");
 

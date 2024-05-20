@@ -794,6 +794,10 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
     (void)pdfi_dict_knownget_type(ctx, font_dict, "FontDescriptor", PDF_DICT, (pdf_obj **)&font->FontDescriptor);
 
     pdfi_countup(font->sfnt);
+    pdfi_countup(font->copyright);
+    pdfi_countup(font->notice);
+    pdfi_countup(font->fullname);
+    pdfi_countup(font->familyname);
 
     if (font->BaseFont != NULL && ((pdf_name *)font->BaseFont)->length <= gs_font_name_max) {
         memcpy(dpfont42->key_name.chars, ((pdf_name *)font->BaseFont)->data, ((pdf_name *)font->BaseFont)->length);
@@ -912,6 +916,10 @@ int pdfi_free_font_truetype(pdf_obj *font)
     pdfi_countdown(ttfont->ToUnicode);
     pdfi_countdown(ttfont->filename);
     pdfi_countdown(ttfont->post);
+    pdfi_countdown(ttfont->copyright);
+    pdfi_countdown(ttfont->notice);
+    pdfi_countdown(ttfont->fullname);
+    pdfi_countdown(ttfont->familyname);
 
     gs_free_object(OBJ_MEMORY(ttfont), ttfont, "Free TrueType font");
 

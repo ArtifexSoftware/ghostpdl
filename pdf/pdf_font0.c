@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -324,6 +324,10 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         code = gs_note_error(gs_error_VMerror);
         goto error;
     }
+
+    /* This is the only font type these entries not relevant for */
+    pdft0->copyright = pdft0->notice = pdft0->fullname = pdft0->familyname = NULL;
+
     code = pdfi_array_alloc(ctx, 1, &arr);
     if (code < 0) {
         gs_free_object(ctx->memory, pdft0, "pdfi_read_type0_font(pdft0)");
@@ -520,6 +524,10 @@ pdfi_free_font_type0(pdf_obj *font)
     pdfi_countdown(pdft0->DescendantFonts);
     pdfi_countdown(pdft0->ToUnicode);
     pdfi_countdown(pdft0->filename);
+    pdfi_countdown(pdft0->copyright);
+    pdfi_countdown(pdft0->notice);
+    pdfi_countdown(pdft0->fullname);
+    pdfi_countdown(pdft0->familyname);
 
     gs_free_object(OBJ_MEMORY(pdft0), pfont0->data.Encoding, "pdfi_free_font_type0(data.Encoding)");
     /* We shouldn't need to free the fonts in the FDepVector, that should happen

@@ -89,7 +89,11 @@ typedef enum pdf_font_type_e {
     bool substitute; /* We need to know what a CIDFont is a substitute */ \
     pdf_string *filename;          /* If we read this from disk, this is the file it came from */ \
     font_proc_font_info((*default_font_info)); \
-    font_type orig_FontType
+    font_type orig_FontType; \
+    pdf_string *copyright; \
+    pdf_string *notice; \
+    pdf_string *fullname; \
+    pdf_string *familyname
 
 #define pdf_font_common \
     pdf_font_base;\

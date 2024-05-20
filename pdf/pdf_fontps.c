@@ -436,6 +436,23 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
               }
               break;
 
+          case 6:
+              if (pdf_ps_name_cmp(&s->cur[-1], "Notice")) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
+                      pdf_string *subr_str;
+
+                      code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, (unsigned int)s->cur[0].size, (pdf_obj **)&subr_str);
+                      if (code < 0) {
+                          return code;
+                      }
+                      pdfi_countup(subr_str);
+                      memcpy(subr_str->data, s->cur[0].val.name, s->cur[0].size);
+
+                      pdfi_countdown(priv->u.t1.notice);
+                      priv->u.t1.copyright = subr_str;
+                  }
+              }
+              break;
           case 8:
               if (pdf_ps_name_cmp(&s->cur[-1], "FontName")) {
                   int fnlen = 0;
@@ -590,6 +607,21 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                       }
                   }
               }
+              else if (pdf_ps_name_cmp(&s->cur[-1], "FullName")) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
+                      pdf_string *subr_str;
+
+                      code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, (unsigned int)s->cur[0].size, (pdf_obj **)&subr_str);
+                      if (code < 0) {
+                          return code;
+                      }
+                      pdfi_countup(subr_str);
+                      memcpy(subr_str->data, s->cur[0].val.name, s->cur[0].size);
+
+                      pdfi_countdown(priv->u.t1.fullname);
+                      priv->u.t1.copyright = subr_str;
+                  }
+              }
               break;
 
           case 9:
@@ -636,6 +668,21 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                       priv->gsu.gst1.data.BlueScale = (float)s->cur[0].val.f;
                   }
               }
+              else if (pdf_ps_name_cmp(&s->cur[-1], "Copyright")) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
+                      pdf_string *subr_str;
+
+                      code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, (unsigned int)s->cur[0].size, (pdf_obj **)&subr_str);
+                      if (code < 0) {
+                          return code;
+                      }
+                      pdfi_countup(subr_str);
+                      memcpy(subr_str->data, s->cur[0].val.name, s->cur[0].size);
+
+                      pdfi_countdown(priv->u.t1.copyright);
+                      priv->u.t1.copyright = subr_str;
+                  }
+              }
               break;
 
           case 10:
@@ -680,6 +727,21 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                           }
                       }
                       priv->gsu.gst1.data.BlueValues.count = size;
+                  }
+              }
+              else if (pdf_ps_name_cmp(&s->cur[-1], "FamilyName")) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
+                      pdf_string *subr_str;
+
+                      code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, (unsigned int)s->cur[0].size, (pdf_obj **)&subr_str);
+                      if (code < 0) {
+                          return code;
+                      }
+                      pdfi_countup(subr_str);
+                      memcpy(subr_str->data, s->cur[0].val.name, s->cur[0].size);
+
+                      pdfi_countdown(priv->u.t1.familyname);
+                      priv->u.t1.copyright = subr_str;
                   }
               }
               break;

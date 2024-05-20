@@ -591,6 +591,10 @@ int pdfi_free_font_cidtype2(pdf_obj *font)
     pdfi_countdown(pdfcidf->registry);
     pdfi_countdown(pdfcidf->ordering);
     pdfi_countdown(pdfcidf->filename);
+    pdfi_countdown(pdfcidf->copyright);
+    pdfi_countdown(pdfcidf->notice);
+    pdfi_countdown(pdfcidf->fullname);
+    pdfi_countdown(pdfcidf->familyname);
 
     gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf, "pdfi_free_font_cidtype2(pdfcidf)");
 return 0;

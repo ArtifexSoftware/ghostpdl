@@ -2523,6 +2523,28 @@ int pdfi_default_font_info(gs_font *font, const gs_point *pscale, int members, g
             info->members |= FONT_INFO_EMBEDDED;
         }
     }
+    if (pdff->pdfi_font_type != e_pdf_font_truetype && pdff->pdfi_font_type != e_pdf_cidfont_type2) {
+        if (((members & FONT_INFO_COPYRIGHT) != 0) && pdff->copyright != NULL) {
+            info->Copyright.data = pdff->copyright->data;
+            info->Copyright.size = pdff->copyright->length;
+            info->members |= FONT_INFO_COPYRIGHT;
+        }
+        if (((members & FONT_INFO_NOTICE) != 0) && pdff->notice != NULL) {
+            info->Notice.data = pdff->notice->data;
+            info->Notice.size = pdff->notice->length;
+            info->members |= FONT_INFO_NOTICE;
+        }
+        if (((members & FONT_INFO_FAMILY_NAME) != 0) && pdff->familyname != NULL) {
+            info->FamilyName.data = pdff->familyname->data;
+            info->FamilyName.size = pdff->familyname->length;
+            info->members |= FONT_INFO_FAMILY_NAME;
+        }
+        if (((members & FONT_INFO_FULL_NAME) != 0) && pdff->fullname != NULL) {
+            info->FullName.data = pdff->fullname->data;
+            info->FullName.size = pdff->fullname->length;
+            info->members |= FONT_INFO_FULL_NAME;
+        }
+    }
     return 0;
 }
 
