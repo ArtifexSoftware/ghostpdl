@@ -515,7 +515,6 @@ typedef struct pdf_viewer_state_s {
     float *dash_pattern;
     uint dash_pattern_size;
     gs_id soft_mask_id;
-    bool clipped_text_pending;
 } pdf_viewer_state;
 
 /*
@@ -793,6 +792,10 @@ struct gx_device_pdf_s {
      * redundant clipping paths when PS document generates such ones.
      */
     gx_path *clip_path;
+
+    /* Used for preserving text rendering modes with clip. */
+    bool clipped_text_pending;
+
     /*
      * Page labels.
      */

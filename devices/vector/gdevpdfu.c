@@ -1167,7 +1167,7 @@ stream_to_text(gx_device_pdf * pdev)
      * *NOT* want to save the viewer state as that will write a q/Q round the text
      * which will discard the clip.
      */
-    if (!pdev->vgstack[pdev->vgstack_depth].clipped_text_pending) {
+    if (!pdev->clipped_text_pending) {
         code = pdf_save_viewer_state(pdev, pdev->strm);
         if (code < 0)
             return 0;
@@ -1207,7 +1207,7 @@ text_to_stream(gx_device_pdf * pdev)
      * which will discard the clip. However, we *do* have to undo the 'cm'
      * operation which is done for Acrobat (see stream_to_text above).
      */
-    if (pdev->vgstack[pdev->vgstack_depth].clipped_text_pending)
+    if (pdev->clipped_text_pending)
         pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm\n",
              72.0 / pdev->HWResolution[0], 72.0 / pdev->HWResolution[1]);
     else {

@@ -98,10 +98,6 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     pdev->vgstack[i].line_params = pdev->state.line_params;
     pdev->vgstack[i].line_params.dash.pattern = 0; /* Use pdev->dash_pattern instead. */
     pdev->vgstack[i].soft_mask_id = pdev->state.soft_mask_id; /* Use pdev->dash_pattern instead. */
-    if (i > 0)
-        pdev->vgstack[i].clipped_text_pending = pdev->vgstack[i - 1].clipped_text_pending;
-    else
-        pdev->vgstack[i].clipped_text_pending = 0;
     if (pdev->dash_pattern) {
         if (pdev->vgstack[i].dash_pattern)
             gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "free gstate copy dash");
