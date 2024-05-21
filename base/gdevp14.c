@@ -12468,7 +12468,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     gs_separations *pseparations;
     int comp_index;
     dev_proc_get_color_comp_index(*target_get_color_comp_index);
-    int offset = pdev->devn_params.num_std_colorant_names - num_process_colors;
+    int offset;
 
     while (tdev->child) {
         tdev = tdev->child;
@@ -12478,6 +12478,7 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     /* pointer. Bug 696372.                                                    */
     if (tdev == (gx_device *)pdev)
         pdevn_params = dev_proc(pdev, ret_devn_params)(dev);
+    offset = pdevn_params->num_std_colorant_names - num_process_colors;
     pseparations = &pdevn_params->separations;
     /* If num_process_colors is 3 or 1 (RGB or Gray) then we are in a situation
      * where we are in a blend color space that is RGB or Gray based and we
@@ -12485,8 +12486,8 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
      * Yellow or Black, then we should use the alternate tint transform */
     if (num_process_colors < 4) {
         int k;
-        for (k = 0; k < pdev->devn_params.num_std_colorant_names; k++) {
-            if (strncmp(pname, pdev->devn_params.std_colorant_names[k], name_size) == 0)
+        for (k = 0; k < pdevn_params->num_std_colorant_names; k++) {
+            if (strncmp(pname, pdevn_params->std_colorant_names[k], name_size) == 0)
                 return -1;
         }
     }
