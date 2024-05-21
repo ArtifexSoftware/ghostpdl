@@ -1069,35 +1069,39 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
         nc--;
     /* apply the transfer function(s); convert to color values */
     if (pgs->effective_transfer_non_identity_count == 0) {
+    } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
         for (i = 0; i < nc; i++)
-            cv[i] = frac2cv(cm_comps[i]);
-    } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-        for (i = 0; i < nc; i++) {
-            cm_comps[i] = gx_map_color_frac(pgs,
-                                cm_comps[i], effective_transfer[i]);
-            cv[i] = frac2cv(cm_comps[i]);
-        }
-    else
-        for (i = 0; i < nc; i++) {
+            cm_comps[i] = gx_map_color_frac(pgs, cm_comps[i],
+                                            effective_transfer[i]);
+    } else {
+        for (i = 0; i < nc; i++)
             cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
-            cv[i] = frac2cv(cm_comps[i]);
-        }
-    /* Copy tags untransformed. */
-    if (nc < ncomps)
-        cv[nc] = cm_comps[nc];
-
-    /* encode as a color index */
-    color = dev_proc(dev, encode_color)(dev, cv);
-
-    /* check if the encoding was successful; we presume failure is rare */
-    if (color != gx_no_color_index) {
-        color_set_pure(pdc, color);
-        return;
     }
-    if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
+
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+        for (i = 0; i < nc; i++)
+            pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);
+        if (i < ncomps)
+            pdc->colors.devn.values[i] = cm_comps[i];
+        pdc->type = gx_dc_type_devn;
+    } else {
+        for (i = 0; i < nc; i++)
+            cv[i] = frac2cv(cm_comps[i]);
+        if (i < ncomps)
+            cv[i] = cm_comps[i];
+        /* encode as a color index */
+        color = dev_proc(dev, encode_color)(dev, cv);
+
+        /* check if the encoding was successful; we presume failure is rare */
+        if (color != gx_no_color_index) {
+            color_set_pure(pdc, color);
+            return;
+        }
+        if (gx_render_device_DeviceN(cm_comps, pdc, dev, gx_select_dev_ht(pgs),
                                         &pgs->screen_phase[select]) == 1)
-        gx_color_load_select(pdc, pgs, dev, select);
+            gx_color_load_select(pdc, pgs, dev, select);
+    }
 }
 
 /* ------ Render CMYK color. ------ */
@@ -1174,7 +1178,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
         for (i = 0; i < nc; i++)
             cv[i] = frac2cv(cm_comps[i]);
         if (i < ncomps)
-            pdc->colors.devn.values[i] = cm_comps[i];
+            cv[i] = cm_comps[i];
         color = dev_proc(dev, encode_color)(dev, cv);
         if (color != gx_no_color_index)
             color_set_pure(pdc, color);
