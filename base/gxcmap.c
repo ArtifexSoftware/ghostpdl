@@ -1023,7 +1023,7 @@ static void
 cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
      const gs_gstate * pgs, gx_device * dev, gs_color_select_t select)
 {
-    uchar i, ncomps = dev->color_info.num_components;
+    uchar i, nc, ncomps = dev->color_info.num_components;
     frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
     const gx_device *cmdev;
     const gx_cm_color_map_procs *cmprocs;
@@ -1032,15 +1032,20 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
     cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
     cmprocs->map_rgb(cmdev, pgs, r, g, b, cm_comps);
 
+    nc = ncomps;
+    if (device_encodes_tags(dev))
+        nc--;
     /* apply the transfer function(s); convert to color values */
     if (pgs->effective_transfer_non_identity_count != 0) {
+        int n = 0;
         if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-            for (i = 0; i < ncomps; i++)
-                cm_comps[i] = gx_map_color_frac(pgs,
+            n = nc < 3 ? nc : 3;
+
+        for (i = 0; i < n; i++)
+            cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-        else
-            for (i = 0; i < ncomps; i++)
-                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+        for (; i < n; i++)
+            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
     }
 
@@ -1068,13 +1073,14 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
     if (device_encodes_tags(dev))
         nc--;
     /* apply the transfer function(s); convert to color values */
-    if (pgs->effective_transfer_non_identity_count == 0) {
-    } else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
-        for (i = 0; i < nc; i++)
+    if (pgs->effective_transfer_non_identity_count != 0) {
+        int n = 0;
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+            n = nc < 3 ? nc : 3;
+        for (i = 0; i < n; i++)
             cm_comps[i] = gx_map_color_frac(pgs, cm_comps[i],
                                             effective_transfer[i]);
-    } else {
-        for (i = 0; i < nc; i++)
+        for (; i < nc; i++)
             cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
     }
@@ -1403,13 +1409,14 @@ cmap_separation_halftoned(frac all, gx_device_color * pdc,
 
     /* apply the transfer function(s); convert to color values */
     if (pgs->effective_transfer_non_identity_count != 0) {
+        int n = 0;
         if (additive)
-            for (i = 0; i < ncomps; i++)
-                cm_comps[i] = gx_map_color_frac(pgs,
+            n = ncomps < 3 ? ncomps : 3;
+        for (i = 0; i < n; i++)
+            cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-        else
-            for (i = 0; i < ncomps; i++)
-                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+        for (; i < ncomps; i++)
+            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
     }
 
@@ -1487,22 +1494,20 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
     nc = ncomps;
     if (device_encodes_tags(dev))
         nc--;
-    if (pgs->effective_transfer_non_identity_count == 0)
-        for (i = 0; i < nc; i++)
-            cv[i] = frac2cv(cm_comps[i]);
-    else if (additive)
-        for (i = 0; i < nc; i++) {
+    if (pgs->effective_transfer_non_identity_count != 0) {
+        int n = 0;
+        if (additive)
+            n = nc < 3 ? nc : 3;
+        for (i = 0; i < n; i++)
             cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-            cv[i] = frac2cv(cm_comps[i]);
-        }
-    else
-        for (i = 0; i < nc; i++) {
+        for (; i < nc; i++)
             cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
-            cv[i] = frac2cv(cm_comps[i]);
-        }
-    /* FIXME: For additive devices, we should invert the process colors
+    }
+    for (i = 0; i < nc; i++)
+        cv[i] = frac2cv(cm_comps[i]);
+    /* For additive devices, we should invert the process colors
      * here! But how do we know how many process colors we have? For
      * now we'll have to ask the device using a dso. */
     if (additive) {
@@ -1610,13 +1615,14 @@ cmap_devicen_halftoned(const frac * pcc,
     }
     /* apply the transfer function(s); convert to color values */
     if (pgs->effective_transfer_non_identity_count != 0) {
+        int n = 0;
         if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-            for (i = 0; i < ncomps; i++)
-                cm_comps[i] = gx_map_color_frac(pgs,
+            n = ncomps < 3 ? ncomps : 3;
+        for (i = 0; i < n; i++)
+            cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-        else
-            for (i = 0; i < ncomps; i++)
-                cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
+        for (; i < ncomps; i++)
+            cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
     }
 
@@ -1655,6 +1661,7 @@ cmap_devicen_direct(const frac * pcc,
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
+    int additive = dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE;
 
     if (pcs->params.device_n.all_none == true) {
         color_set_null(pdc);
@@ -1695,21 +1702,37 @@ cmap_devicen_direct(const frac * pcc,
            through the named color mapping.  */
         devicen_sep_icc_cmyk(cm_comps, pgs, pcs, dev);
     }
+    nc = ncomps;
+    if (device_encodes_tags(dev))
+        nc--;
     /* apply the transfer function(s); convert to color values.
        assign directly if output device supports devn */
     if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
         if (pgs->effective_transfer_non_identity_count == 0)
-            for (i = 0; i < ncomps; i++)
+            for (i = 0; i < nc; i++)
                 pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);
-        else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-            for (i = 0; i < ncomps; i++)
+        else {
+            int n = 0;
+            if (additive)
+                n = nc < 3 ? nc : 3;
+            for (i = 0; i < n; i++)
                 pdc->colors.devn.values[i] = frac2cv(gx_map_color_frac(pgs,
                                     cm_comps[i], effective_transfer[i]));
-        else
-            for (i = 0; i < ncomps; i++)
+            for (; i < nc; i++)
                 pdc->colors.devn.values[i] = frac2cv(frac_1 - gx_map_color_frac(pgs,
                             (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
+        }
+        if (i < ncomps)
+            pdc->colors.devn.values[i] = cm_comps[i];
         pdc->type = gx_dc_type_devn;
+        /* For additive devices, we should invert the process colors
+         * here! But how do we know how many process colors we have?
+         * Ask the device using a dso. */
+        if (additive) {
+            int j, n = dev_proc(dev, dev_spec_op)(dev, gxdso_is_sep_supporting_additive_device, NULL, 0);
+            for (j = 0; j < n; j++)
+                pdc->colors.devn.values[j] = 65535 - pdc->colors.devn.values[j];
+        }
 
         /* Let device set the tags if present */
         if (device_encodes_tags(dev))
@@ -1718,26 +1741,31 @@ cmap_devicen_direct(const frac * pcc,
         return;
     }
 
-    nc = ncomps;
-    if (device_encodes_tags(dev))
-        nc--;
-    if (pgs->effective_transfer_non_identity_count == 0)
-        for (i = 0; i < nc; i++)
-            cv[i] = frac2cv(cm_comps[i]);
-    else if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
-        for (i = 0; i < nc; i++) {
+    if (pgs->effective_transfer_non_identity_count != 0) {
+        int n = 0;
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+            n = nc < 3 ? nc : 3;
+        for (i = 0; i < n; i++)
             cm_comps[i] = gx_map_color_frac(pgs,
                                     cm_comps[i], effective_transfer[i]);
-            cv[i] = frac2cv(cm_comps[i]);
-        }
-    else
-        for (i = 0; i < nc; i++) {
+        for (; i < nc; i++)
             cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                             (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
-            cv[i] = frac2cv(cm_comps[i]);
-        }
+    }
     if (nc < ncomps)
         encode_tags(dev, pdc);
+    /* For additive devices, we should invert the process colors
+     * here! But how do we know how many process colors we have?
+     * Ask the device using a dso. */
+    if (additive) {
+        int j, n = dev_proc(dev, dev_spec_op)(dev, gxdso_is_sep_supporting_additive_device, NULL, 0);
+        for (j = 0; j < n; j++)
+            cm_comps[j] = frac_1 - cm_comps[j];
+    }
+    for (i = 0; i < nc; i++)
+        cv[i] = frac2cv(cm_comps[i]);
+    if(i < ncomps)
+        cv[i] = cm_comps[i];
     /* encode as a color index */
     color = dev_proc(dev, encode_color)(dev, cv);
     /* check if the encoding was successful; we presume failure is rare */
