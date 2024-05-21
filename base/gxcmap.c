@@ -1432,6 +1432,7 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
     gsicc_rendering_param_t render_cond;
     cmm_dev_profile_t *dev_profile = NULL;
     cmm_profile_t *des_profile = NULL;
+    int num_additives = additive ? dev_proc(dev, dev_spec_op)(dev, gxdso_is_sep_supporting_additive_device, NULL, 0) : 0;
 
     dev_proc(dev, get_profile)(dev,  &dev_profile);
     gsicc_extract_profile(dev->graphics_type_tag,
@@ -1441,8 +1442,9 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
          * Invert the photometric interpretation for additive
          * color spaces because separations are always subtractive.
          */
-        if (additive)
+        if (additive && num_additives <= 0) {
             comp_value = frac_1 - comp_value;
+        }
 
         /* Use the "all" value for all components */
         for (i = 0; i < pgs->color_component_map.num_colorants; i++)
@@ -1504,8 +1506,8 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
      * here! But how do we know how many process colors we have? For
      * now we'll have to ask the device using a dso. */
     if (additive) {
-        int j, n = dev_proc(dev, dev_spec_op)(dev, gxdso_is_sep_supporting_additive_device, NULL, 0);
-        for (j = 0; j < n; j++)
+        int j;
+        for (j = 0; j < num_additives; j++)
             cv[j] = 65535 - cv[j];
     }
     /* Copy tags untransformed. */
