@@ -3026,7 +3026,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     /* Reset the pending state */
                     pdev->clipped_text_pending = 0;
                     /* Restore to our saved state */
-                    code = pdf_restore_viewer_state(pdev, pdev->strm);
+                    if (pdev->vgstack_depth)
+                        code = pdf_restore_viewer_state(pdev, pdev->strm);
                     if (code < 0)
                         return code;
                     pdf_reset_text(pdev);	/* because of Q */
