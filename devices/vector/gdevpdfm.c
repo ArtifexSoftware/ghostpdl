@@ -2630,6 +2630,42 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
     /* check tag for /Name object syntax */
     if ((pairs[0].data)[0] != '/') return_error(gs_error_rangecheck);
 
+    /* Check for /OC (Optional Content), if it is Optional Content, check the output PDF level is at least 1.5 */
+    if (pairs[0].size == 3 && memcmp(pairs[0].data, "/OC", 3) == 0) {
+        if (pdev->CompatibilityLevel < 1.4999) {
+            if (pdev->PDFA) {
+                switch (pdev->PDFACompatibilityPolicy) {
+                    case 0:
+                        emprintf(pdev->memory,
+                                 "Optional (Marked) Content not valid in this version of PDF, reverting to normal PDF output\n\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                    case 1:
+                        emprintf(pdev->memory,
+                                 "Optional (Marked) Content not valid in this version of PDF. Dropping feature to preserve PDF/A compatibility\n");
+                        return 0;
+                        break;
+                    case 2:
+                        emprintf(pdev->memory,
+                                 "Optional (Marked) Content not valid in this version of PDF,  aborting conversion\n");
+                        return_error (gs_error_typecheck);
+                        break;
+                    default:
+                        emprintf(pdev->memory,
+                                 "Optional (Marked) Content not valid in this version of PDF, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                }
+            } else {
+                emprintf(pdev->memory,
+                         "Optional (Marked) Content not valid in this version of PDF. Dropping feature to preserve compatibility\n");
+                return 0;
+            }
+        }
+    }
+
     /* check propdict for {object name} syntax */
     if (pdf_objname_is_valid(pairs[1].data, pairs[1].size))
     {
@@ -2998,14 +3034,45 @@ pdfmark_OCProperties(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 {
     char *str;
 
-    str = (char *)gs_alloc_bytes(pdev->memory, pairs[0].size + 1, "pdfmark_OCProperties");
-    memset(str, 0x00, pairs[0].size + 1);
-    memcpy(str, pairs[0].data, pairs[0].size);
+    if (pdev->CompatibilityLevel < 1.4999) {
+        if (pdev->PDFA) {
+            switch (pdev->PDFACompatibilityPolicy) {
+                case 0:
+                    emprintf(pdev->memory,
+                             "Optional Content Properties not valid in this version of PDF, reverting to normal PDF output\n\n");
+                    pdev->AbortPDFAX = true;
+                    pdev->PDFA = 0;
+                    break;
+                case 1:
+                    emprintf(pdev->memory,
+                             "Optional Content Properties not valid in this version of PDF. Dropping feature to preserve PDF/A compatibility\n");
+                    break;
+                case 2:
+                    emprintf(pdev->memory,
+                             "Optional Content Properties not valid in this version of PDF,  aborting conversion\n");
+                    return_error (gs_error_typecheck);
+                    break;
+                default:
+                    emprintf(pdev->memory,
+                             "Optional Content Properties not valid in this version of PDF, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                    pdev->AbortPDFAX = true;
+                    pdev->PDFA = 0;
+                    break;
+            }
+        } else {
+            emprintf(pdev->memory,
+                     "Optional Content Properties not valid in this version of PDF. Dropping feature to preserve compatibility\n");
+        }
+    } else {
+        str = (char *)gs_alloc_bytes(pdev->memory, pairs[0].size + 1, "pdfmark_OCProperties");
+        memset(str, 0x00, pairs[0].size + 1);
+        memcpy(str, pairs[0].data, pairs[0].size);
 
-    (void)cos_dict_put_c_key_string(pdev->Catalog, "/OCProperties",
-                                     (byte *)str, strlen(str));
+        (void)cos_dict_put_c_key_string(pdev->Catalog, "/OCProperties",
+                                         (byte *)str, strlen(str));
 
-    gs_free_object(pdev->memory, str, "pdfmark_OCProperties");
+        gs_free_object(pdev->memory, str, "pdfmark_OCProperties");
+    }
     return 0;
 }
 
