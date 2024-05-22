@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -459,6 +459,14 @@ int pdfi_read_bare_object(pdf_context *ctx, pdf_c_stream *s, gs_offset_t stream_
     if (code == 0)
         /* failed to read a token */
         return_error(gs_error_syntaxerror);
+
+    if (pdfi_type_of(ctx->stack_top[-1]) == PDF_FAST_KEYWORD) {
+        keyword = (pdf_key)(uintptr_t)(ctx->stack_top[-1]);
+        if (keyword == TOKEN_ENDOBJ) {
+            ctx->stack_top[-1] = PDF_NULL_OBJ;
+            return 0;
+        }
+    }
 
     do {
         /* move all the saved offsets up by one */
@@ -1007,7 +1015,8 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
 
             if (pdfi_count_stack(ctx) > 0 &&
                 (ctx->stack_top[-1] > PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY) &&
-                (ctx->stack_top[-1])->object_num == obj)) {
+                (ctx->stack_top[-1])->object_num == obj)
+                || ctx->stack_top[-1] == PDF_NULL_OBJ) {
                 *object = ctx->stack_top[-1];
                 pdfi_countup(*object);
                 pdfi_pop(ctx, 1);
