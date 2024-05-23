@@ -680,7 +680,7 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (!pdfi_name_is(tag, "OC"))
         ctx->BDCWasOC = false;
 
-    if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent) {
+    if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && (!ctx->BDCWasOC || ctx->device_state.WantsOptionalContent)) {
         objarray = (pdf_obj **)gs_alloc_bytes(ctx->memory, 2 * sizeof(pdf_obj *), "pdfi_op_BDC");
         if (objarray == NULL) {
             code = gs_note_error(gs_error_VMerror);
@@ -762,7 +762,7 @@ int pdfi_op_EMC(pdf_context *ctx)
 {
     int code, code1 = 0;
 
-    if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent)
+    if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && (!ctx->BDCWasOC || ctx->device_state.WantsOptionalContent))
         code1 = pdfi_pdfmark_from_objarray(ctx, NULL, 0, NULL, "EMC");
 
     code = pdfi_oc_levels_clear(ctx, ctx->OFFlevels, ctx->BMClevel);

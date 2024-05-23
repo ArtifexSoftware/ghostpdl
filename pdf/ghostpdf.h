@@ -303,6 +303,8 @@ typedef struct device_state_s {
     bool annotations_preserved;
     /* Should we pass on PageLabels (using a device param, not a pdfmark) */
     bool WantsPageLabels;
+    /* Is the device capable of handling optional content */
+    bool WantsOptionalContent;
     bool PassUserUnit;
     bool ModifiesPageSize;
     bool ModifiesPageOrder;

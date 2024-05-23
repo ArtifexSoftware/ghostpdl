@@ -831,7 +831,7 @@ int pdfi_separation_name_from_index(gs_gstate *pgs, gs_separation_name index, un
 int pdfi_finish_pdf_file(pdf_context *ctx)
 {
     if (ctx->Root) {
-        if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent) {
+        if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && ctx->device_state.WantsOptionalContent) {
             pdf_obj *o = NULL;
             int code = 0;
 
@@ -852,17 +852,19 @@ int pdfi_finish_pdf_file(pdf_context *ctx)
 int pdfi_close_pdf_file(pdf_context *ctx)
 {
     if (ctx->Root) {
-        pdf_obj *o = NULL;
-        int code = 0;
+        if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && ctx->device_state.WantsOptionalContent) {
+            pdf_obj *o = NULL;
+            int code = 0;
 
-        code = pdfi_dict_knownget(ctx, ctx->Root, "OCProperties", &o);
-        if (code > 0) {
-            // Build and send the OCProperties structure
-            code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "OCProperties");
-            pdfi_countdown(o);
-            if (code < 0)
-                /* Error message ? */
-                ;
+            code = pdfi_dict_knownget(ctx, ctx->Root, "OCProperties", &o);
+            if (code > 0) {
+                // Build and send the OCProperties structure
+                code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "OCProperties");
+                pdfi_countdown(o);
+                if (code < 0)
+                    /* Error message ? */
+                    ;
+            }
         }
     }
 

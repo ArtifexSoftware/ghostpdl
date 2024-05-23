@@ -119,6 +119,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("DetectDuplicateImages", gs_param_type_bool, DetectDuplicateImages),
     pi("AllowIncrementalCFF", gs_param_type_bool, AllowIncrementalCFF),
     pi("WantsToUnicode", gs_param_type_bool, WantsToUnicode),
+    pi("WantsOptionalContent", gs_param_type_bool, WantsOptionalContent),
     pi("PdfmarkCapable", gs_param_type_bool, PdfmarkCapable),
     pi("AllowPSRepeatFunctions", gs_param_type_bool, AllowPSRepeatFunctions),
     pi("IsDistiller", gs_param_type_bool, IsDistiller),
@@ -735,6 +736,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     if (pdev->PDFA == 1 || pdev->PDFX || pdev->CompatibilityLevel < 1.4) {
          pdev->HaveTransparency = false;
          pdev->PreserveSMask = false;
+         pdev->WantsOptionalContent = false;
     }
 
     /*
@@ -784,6 +786,8 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
     if (cl < 1.2) {
         pdev->HaveCFF = false;
     }
+    if (cl < 1.5)
+        pdev->WantsOptionalContent = false;
 
     ecode = param_read_float(plist, "UserUnit", &pdev->UserUnit);
     if (ecode < 0)

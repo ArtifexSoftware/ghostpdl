@@ -924,6 +924,7 @@ struct gx_device_pdf_s {
     bool WantsToUnicode;
     bool PdfmarkCapable;
     bool WantsPageLabels;
+    bool WantsOptionalContent;
     bool AllowPSRepeatFunctions;
     bool IsDistiller;
     bool PreserveSMask;

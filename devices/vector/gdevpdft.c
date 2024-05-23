@@ -166,6 +166,56 @@ pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
     code = cos_dict_put_c_key_object(form_dict, "/BBox", (cos_object_t *)bbox_array);
     if (code < 0)
         return code;
+    if (pdev->PendingOC != 0) {
+        if (pdev->CompatibilityLevel < 1.4999) {
+            if (pdev->PDFA) {
+                switch (pdev->PDFACompatibilityPolicy) {
+                    case 0:
+                        emprintf(pdev->memory,
+                                 "Optional Content not valid in this version of PDF, reverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                    case 1:
+                        emprintf(pdev->memory,
+                                 "Optional Content not valid in this version of PDF. Dropping feature to preserve PDF/A compatibility\n");
+                        break;
+                    case 2:
+                        emprintf(pdev->memory,
+                                 "Optional Content not valid in this version of PDF,  aborting conversion\n");
+                        return_error (gs_error_typecheck);
+                        break;
+                    default:
+                        emprintf(pdev->memory,
+                                 "Optional Content not valid in this version of PDF, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                }
+            } else {
+                emprintf(pdev->memory,
+                         "Optional Content not valid in this version of PDF. Dropping feature to preserve compatibility\n");
+            }
+        } else {
+            char str[256];
+            gs_param_string param;
+            cos_object_t *pco = NULL;
+
+            gs_snprintf(str, sizeof(str), "{Obj%dG0}", pdev->PendingOC);
+            param.data = (const byte *)str;
+            param.size = strlen(str);
+            code = pdf_refer_named(pdev, &param, &pco);
+            if(code < 0)
+                return code;
+
+            gs_snprintf(str, sizeof(str), "%ld 0 R", pco->id);
+            code = cos_dict_put_string_copy(form_dict, "/OC", str);
+            if (code < 0)
+                return code;
+
+            pdev->PendingOC = 0;
+        }
+    }
     return cos_dict_put_c_key_object(form_dict, "/Group", (cos_object_t *)group_dict);
 }
 

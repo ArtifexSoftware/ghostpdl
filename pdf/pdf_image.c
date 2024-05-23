@@ -1751,7 +1751,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         goto cleanupExit;
     /* If there is an OC dictionary, see if we even need to render this */
     if (image_info.OC) {
-        if (!(ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent)) {
+        if (!(ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && ctx->device_state.WantsOptionalContent)) {
             if (!pdfi_oc_is_ocg_visible(ctx, image_info.OC))
                 goto cleanupExit;
         }
@@ -2653,7 +2653,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             return code;
 
         if (pdfi_type_of(OCDict) == PDF_DICT) {
-            if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent) {
+            if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && ctx->device_state.WantsOptionalContent) {
                 code = pdfi_pdfmark_dict(ctx, OCDict);
                 if (code < 0)
                     pdfi_set_warning(ctx, 0, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL);

@@ -3039,6 +3039,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 int64_t *object = data;
                 pdev->PendingOC = *object;
             }
+            return 0;
             break;
         case gxdso_hilevel_text_clip:
             if (data == 0) {
