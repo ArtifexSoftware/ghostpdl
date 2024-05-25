@@ -2387,7 +2387,7 @@ pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size
 static int
 pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
-    if (!pdev->KeyLength || object_id == (gs_id)-1) {
+    if ((!pdev->KeyLength || pdev->WriteObjStms) || object_id == (gs_id)-1) {
         stream_write(pdev->strm, str, size);
         return 0;
     } else
