@@ -1070,7 +1070,7 @@ static int
 gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
 {
     bool have_format = false, field;
-    int width[2], int_width = sizeof(int) * 3, w = 0;
+    uint width[2], int_width = sizeof(int) * 3, w = 0;
     uint i;
 
     /* Scan the file name for a format string, and validate it if present. */
@@ -1099,6 +1099,8 @@ gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
                         default: /* width (field = 0) and precision (field = 1) */
                             if (strchr("0123456789", pfn->fname[i])) {
                                 width[field] = width[field] * 10 + pfn->fname[i] - '0';
+                                if (width[field] > max_int)
+	                                return_error(gs_error_undefinedfilename);
                                 continue;
                             } else if (0 == field && '.' == pfn->fname[i]) {
                                 field++;
@@ -1127,8 +1129,10 @@ gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
         /* Calculate a conservative maximum width. */
         w = max(width[0], width[1]);
         w = max(w, int_width) + 5;
+        if (w > max_int)
+            return_error(gs_error_undefinedfilename);
     }
-    return w;
+    return (int)w;
 }
 
 /*
@@ -1181,10 +1185,15 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
     if (!pfn->fname)
         return 0;
     code = gx_parse_output_format(pfn, pfmt);
-    if (code < 0)
+    if (code < 0) {
         return code;
-    if (strlen(pfn->iodev->dname) + pfn->len + code >= gp_file_name_sizeof)
+    }
+
+    if (pfn->len >= gp_file_name_sizeof - strlen(pfn->iodev->dname) ||
+        code >= gp_file_name_sizeof - strlen(pfn->iodev->dname) - pfn->len) {
         return_error(gs_error_undefinedfilename);
+    }
+
     return 0;
 }
 
