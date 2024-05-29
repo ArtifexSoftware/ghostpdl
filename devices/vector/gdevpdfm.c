@@ -2371,13 +2371,16 @@ pdfmark_PUTSTREAM(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         return_error(gs_error_rangecheck);
     if ((code = pdf_get_named(pdev, &pairs[0], cos_type_stream, &pco)) < 0)
         return code;
-    if (!pco->is_open)
-        return_error(gs_error_rangecheck);
+    if (!pco->is_open) {
+        pdev->pdfmark_dup_stream = true;
+        return 0;
+    }
     for (i = 1; i < count; ++i)
         if (sputs(pco->input_strm, pairs[i].data, pairs[i].size, &l) != 0)
             return_error(gs_error_ioerror);
     if (pco->written)
         return_error(gs_error_rangecheck);
+    pdev->pdfmark_dup_stream = false;
     return code;
 }
 
@@ -2433,8 +2436,9 @@ pdfmark_CLOSE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         return_error(gs_error_rangecheck);
     if ((code = pdf_get_named(pdev, &pairs[0], cos_type_stream, &pco)) < 0)
         return code;
-    if (!pco->is_open)
+    if (!pco->is_open && !pdev->pdfmark_dup_stream)
         return_error(gs_error_rangecheck);
+    pdev->pdfmark_dup_stream = false;
     /* Currently we don't do anything special when closing a stream. */
     pco->is_open = false;
     return 0;

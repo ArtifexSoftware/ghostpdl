@@ -905,6 +905,8 @@ struct gx_device_pdf_s {
     double    image_mask_scale;
     /* Temporary data for soft mask form. */
     pdf_resource_t *pres_soft_mask_dict;
+    /* used to track duplicate stream definitions in pdfmarks */
+    bool pdfmark_dup_stream;
     /* Temporary data for pdfmark_BP. */
     gs_const_string objname;
     int OPDFRead_procset_length;      /* PS2WRITE only. */
