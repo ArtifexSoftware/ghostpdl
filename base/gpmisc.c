@@ -189,16 +189,6 @@ gp_file_name_combine_generic(const char *prefix, uint plen, const char *fname, u
     }
     if (!append(&bp, bpe, &ip, rlen))
         return gp_combine_small_buffer;
-    slen = gs_file_name_check_separator(bp, buffer - bp, bp); /* Backward search. */
-    if (rlen != 0 && slen == 0) {
-        /* Patch it against names like "c:dir" on Windows. */
-        const char *sep = gp_file_name_directory_separator();
-
-        slen = strlen(sep);
-        if (!append(&bp, bpe, &sep, slen))
-            return gp_combine_small_buffer;
-        rlen += slen;
-    }
     for (;;) {
         const char *item = ip;
         uint ilen;
