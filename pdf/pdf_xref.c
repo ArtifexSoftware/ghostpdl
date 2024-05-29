@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -840,7 +840,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     int code = 0;
     pdf_dict *d = NULL;
     uint64_t max_obj = 0;
-    int64_t num;
+    int64_t num, XRefStm = 0;
     int obj_num;
     bool known = false;
 
@@ -871,6 +871,21 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     }
     pdfi_countup(d);
     pdfi_pop(ctx, 1);
+
+    /* We don't want to pollute the Trailer dictionary with any XRefStm key/value pairs
+     * which will happen when we do pdfi_merge_dicts(). So we get any XRefStm here and
+     * if there was one, remove it from the dictionary before we merge with the
+     * primary trailer.
+     */
+    code = pdfi_dict_get_int(ctx, d, "XRefStm", &XRefStm);
+    if (code < 0 && code != gs_error_undefined)
+        goto error;
+
+    if (code == 0) {
+        code = pdfi_dict_delete(ctx, d, "XRefStm");
+        if (code < 0)
+            goto error;
+    }
 
     if (ctx->Trailer == NULL) {
         ctx->Trailer = d;
@@ -949,56 +964,50 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
     }
 
     /* Now check if this is a hybrid file. */
-    if (ctx->Trailer == d) {
-        code = pdfi_dict_get_int(ctx, d, "XRefStm", &num);
-        if (code < 0 && code != gs_error_undefined)
+    if (XRefStm != 0) {
+        ctx->is_hybrid = true;
+
+        if (ctx->args.pdfdebug)
+            dmprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Reading the stream.\n");
+
+
+        if (pdfi_loop_detector_check_object(ctx, XRefStm) == true) {
+            code = gs_note_error(gs_error_circular_reference);
             goto error;
-
-        if (code == 0) {
-            ctx->is_hybrid = true;
-
-            if (ctx->args.pdfdebug)
-                dmprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Reading the stream.\n");
-
-
-            if (pdfi_loop_detector_check_object(ctx, num) == true) {
-                code = gs_note_error(gs_error_circular_reference);
-                goto error;
-            }
-            else {
-                code = pdfi_loop_detector_add_object(ctx, num);
-                if (code < 0)
-                    goto error;
-            }
-
-            code = pdfi_loop_detector_mark(ctx);
+        }
+        else {
+            code = pdfi_loop_detector_add_object(ctx, XRefStm);
             if (code < 0)
                 goto error;
+        }
 
-            /* Because of the way the code works when we read a file which is a pure
-             * xref stream file, we need to read the first integer of 'x y obj'
-             * because the xref stream decoding code expects that to be on the stack.
-             */
-            pdfi_seek(ctx, s, num, SEEK_SET);
+        code = pdfi_loop_detector_mark(ctx);
+        if (code < 0)
+            goto error;
 
-            code = pdfi_read_bare_int(ctx, ctx->main_stream, &obj_num);
-            if (code < 0) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "read_xref", "");
-                pdfi_loop_detector_cleartomark(ctx);
-                goto error;
-            }
+        /* Because of the way the code works when we read a file which is a pure
+         * xref stream file, we need to read the first integer of 'x y obj'
+         * because the xref stream decoding code expects that to be on the stack.
+         */
+        pdfi_seek(ctx, s, XRefStm, SEEK_SET);
 
-            code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream, obj_num);
-            /* We could just fall through to the exit here, but choose not to in order to avoid possible mistakes in future */
-            if (code < 0) {
-                pdfi_loop_detector_cleartomark(ctx);
-                goto error;
-            }
-
+        code = pdfi_read_bare_int(ctx, ctx->main_stream, &obj_num);
+        if (code < 0) {
+            pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "read_xref", "");
             pdfi_loop_detector_cleartomark(ctx);
-        } else
-            code = 0;
-    }
+            goto error;
+        }
+
+        code = pdfi_read_xref_stream_dict(ctx, ctx->main_stream, obj_num);
+        /* We could just fall through to the exit here, but choose not to in order to avoid possible mistakes in future */
+        if (code < 0) {
+            pdfi_loop_detector_cleartomark(ctx);
+            goto error;
+        }
+
+        pdfi_loop_detector_cleartomark(ctx);
+    } else
+        code = 0;
 
 error:
     pdfi_countdown(d);
