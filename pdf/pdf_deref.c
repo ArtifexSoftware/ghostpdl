@@ -942,12 +942,15 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
     if (entry->free) {
         char extra_info[gp_file_name_sizeof];
 
-        gs_snprintf(extra_info, sizeof(extra_info), "Attempt to dereference free object %"PRIu64", trying next object number as offset.\n", entry->object_num);
+        gs_snprintf(extra_info, sizeof(extra_info), "Attempt to dereference free object %"PRIu64", treating as NULL object.\n", entry->object_num);
         pdfi_set_error(ctx, 0, NULL, E_PDF_DEREF_FREE_OBJ, "pdfi_dereference", extra_info);
-    }
-    if (!entry->compressed) {
-        if(entry->u.uncompressed.generation_num != gen)
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_MISMATCH_GENERATION, "pdfi_dereference_main", "");
+        *object = PDF_NULL_OBJ;
+        return 0;
+    }else {
+        if (!entry->compressed) {
+            if(entry->u.uncompressed.generation_num != gen)
+                pdfi_set_warning(ctx, 0, NULL, W_PDF_MISMATCH_GENERATION, "pdfi_dereference_main", "");
+        }
     }
 
     if (ctx->loop_detection) {
