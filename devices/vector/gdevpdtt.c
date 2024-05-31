@@ -517,9 +517,10 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
          * current colour to work for both operations.
          */
         if (!pdev->ForOPDFRead && font->FontType != ft_user_defined && font->FontType != ft_CID_user_defined
-            && font->FontType != ft_PCL_user_defined && font->FontType != ft_GL2_531 && font->FontType != ft_PDF_user_defined) {
+            && font->FontType != ft_PCL_user_defined && font->FontType != ft_GL2_531 && font->FontType != ft_PDF_user_defined
+            && font->FontType != ft_GL2_stick_user_defined) {
             if (pgs->text_rendering_mode != 3 && pgs->text_rendering_mode != 7) {
-                if (font->PaintType == 2 || font->FontType == ft_GL2_stick_user_defined) {
+                if (font->PaintType == 2) {
                     /* Bit awkward, if the PaintType is 2 (or its the PCL stick font, which is stroked)
                      * then we want to set the current ie 'fill' colour, but as a stroke colour because we
                      * will later change the text rendering mode to 1 (stroke).
