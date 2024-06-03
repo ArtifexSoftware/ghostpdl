@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -142,6 +142,7 @@ struct pl_main_instance_s
     bool res_set_on_command_line;
     float res[2];
     bool high_level_device;
+    bool supports_rasterops;
 #ifndef OMIT_SAVED_PAGES_TEST
     bool saved_pages_test_mode;
 #endif
@@ -1429,6 +1430,21 @@ pl_top_create_device(pl_main_instance_t * pti)
             if (code < 0)
                 return code;
         }
+        if (pti->high_level_device) {
+            gs_c_param_list list;
+
+            /* Check if the high level device supports RasterOPs */
+            gs_c_param_list_write(&list, pti->device->memory);
+            code = gs_getdeviceparams(pti->device, (gs_param_list *)&list);
+            if (code >= 0) {
+                gs_c_param_list_read(&list);
+                code = param_read_bool((gs_param_list *)&list, "SupportsRasterOPs", &pti->supports_rasterops);
+            }
+            gs_c_param_list_release(&list);
+            if (code < 0)
+                return code;
+        } else
+            pti->supports_rasterops = true;
 
         if (pti->device->is_open &&
             dev_proc(pti->device, dev_spec_op)(pti->device,
@@ -3025,6 +3041,11 @@ void pl_main_get_forced_geometry(const gs_memory_t *mem, const float **resolutio
 bool pl_main_get_high_level_device(const gs_memory_t *mem)
 {
     return pl_main_get_instance(mem)->high_level_device;
+}
+
+bool pl_main_get_rasterop_support(const gs_memory_t *mem)
+{
+    return pl_main_get_instance(mem)->supports_rasterops;
 }
 
 bool pl_main_get_scanconverter(const gs_memory_t *mem)

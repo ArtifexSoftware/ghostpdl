@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -267,6 +267,8 @@ pxl_impl_init_job(pl_interp_implementation_t * impl,
 
     pxs->interpolate = pl_main_get_interpolate(mem);
     pxs->nocache = pl_main_get_nocache(mem);
+    pxs->high_level_device = pl_main_get_high_level_device(mem);
+    pxs->supports_rasterops = pl_main_get_rasterop_support(mem);
     gs_setscanconverter(pxli->pgs, pl_main_get_scanconverter(mem));
 
     if (pxs->nocache)

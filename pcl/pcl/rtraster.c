@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -641,9 +641,12 @@ process_zero_mask_rows(pcl_raster_t * prast, int nrows)
         code = pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, true);
         if (code < 0)
             return code;
-        code = gs_setrasterop(pcs->pgs, (gs_rop3_t) rop3_know_S_1((int)0xff));
-        if (code < 0)
-            return code;
+        code = check_rasterops(pcs, (gs_rop3_t) rop3_know_S_1((int)0xff));
+        if (code >= 0) {
+            code = gs_setrasterop(pcs->pgs, (gs_rop3_t) rop3_know_S_1((int)0xff));
+            if (code < 0)
+                return code;
+        }
         while ((nrows-- > 0) && (code >= 0))
             code = gs_image_next(pen, prast->mask_buff, nbytes, &dummy);
 
@@ -731,23 +734,32 @@ process_zero_rows(pcl_raster_t * prast, int nrows)
             tmp_rect.q.x = (double)npixels;
             tmp_rect.q.y = (double)nrows;
             if (invert) {
-                code = gs_setrasterop(pgs,
-                               (gs_rop3_t)
-                               rop3_invert_S(gs_currentrasterop(pgs))
-                    );
-                if (code < 0)
-                    return code;
+                code = check_rasterops(prast->pcs, (gs_rop3_t)
+                               rop3_invert_S(gs_currentrasterop(pgs)));
+                if (code >= 0) {
+                    code = gs_setrasterop(pgs,
+                                   (gs_rop3_t)
+                                   rop3_invert_S(gs_currentrasterop(pgs))
+                        );
+                    if (code < 0)
+                        return code;
+                }
 
                 code = gs_rectfill(pgs, &tmp_rect, 1);
                 if (code < 0)
                     return code;
 
-                code = gs_setrasterop(pgs,
-                               (gs_rop3_t)
-                               rop3_invert_S(gs_currentrasterop(pgs))
-                    );
-                if (code < 0)
-                    return code;
+                code = check_rasterops(prast->pcs, (gs_rop3_t)
+                               rop3_invert_S(gs_currentrasterop(pgs)));
+                if (code >= 0) {
+                    code = gs_setrasterop(pgs,
+                                   (gs_rop3_t)
+                                   rop3_invert_S(gs_currentrasterop(pgs))
+                        );
+                    if (code < 0)
+                        return code;
+                } else
+                    code = 0;
             } else {
                 code = gs_rectfill(pgs, &tmp_rect, 1);
                 if (code < 0)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -182,7 +182,9 @@ struct px_state_s
     gs_point            char_scale;
     float               char_bold_value;
     float               char_angle;
-
+    /* For the benefit of pdfwrite and friends */
+    bool high_level_device;
+    bool supports_rasterops;
 };
 
 /* Allocate a px_state_t. */

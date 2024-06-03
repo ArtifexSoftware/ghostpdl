@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1100,6 +1100,13 @@ const byte apxSetROP[] = {
 int
 pxSetROP(px_args_t * par, px_state_t * pxs)
 {
+    /* 252 here is a magic number. It is the default state of RasterOPs which appears to be
+     * fully opaque. Since it's the default, and that seems to work, permit it to be set.
+     */
+    if (pxs->high_level_device && !pxs->supports_rasterops && par->pv[0]->value.i != 252) {
+        outprintf(pxs->memory, "Unsupported use of RasterOP %d detected. Output may not be correct.\n", par->pv[0]->value.i);
+        return 0;
+    }
     gs_setrasterop(pxs->pgs, (gs_rop3_t) (par->pv[0]->value.i));
     return 0;
 }

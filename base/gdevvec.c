@@ -970,7 +970,7 @@ int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
 {
     gs_param_list * plist = (gs_param_list *)list;
     gs_param_string ofns;
-    bool bool_true = 1;
+    bool bool_true = 1, bool_false = 0;
 
     ofns.data = (const byte *)vdev->fname,
         ofns.size = strlen(vdev->fname),
@@ -980,6 +980,9 @@ int gdev_vector_get_param(gx_device *dev, char *Param, void *list)
     }
     if (strcmp(Param, "HighLevelDevice") == 0) {
         return param_write_bool(plist, "HighLevelDevice", &bool_true);
+    }
+    if (strcmp(Param, "SupportsRasterOPs") == 0) {
+        return param_write_bool(plist, "SupportsRasterOPs", &bool_false);
     }
     if (strcmp(Param, "NoInterpolateImagemasks") == 0) {
         return param_write_bool(plist, "NoInterpolateImagemasks", &bool_true);

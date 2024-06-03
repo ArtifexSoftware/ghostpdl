@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -617,8 +617,18 @@ show_char_background(pcl_state_t * pcs, const gs_char * pbuff)
             return code;
         }
     }
+    /* In this case, instead of just ignoring the unsupported rasterop we
+     * abort the operation. Otherwise we end up with lots of black rectangles
+     * over the text. Dropping the background works 'better'.
+     */
+    code = check_rasterops(pcs, (gs_rop3_t) rop3_know_S_1((int)rop));
+    if (code < 0) {
+        (void)pcl_grestore(pcs);
+        return 0;
+    }
     if (((code = gs_setrasterop(pgs, (gs_rop3_t) rop3_know_S_1((int)rop))) < 0) ||
         ((code = gs_currentpoint(pgs, &pt)) < 0)) {
+        (void)pcl_grestore(pcs);
         return code;
     }
 

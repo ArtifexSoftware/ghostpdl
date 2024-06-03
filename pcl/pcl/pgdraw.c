@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1062,9 +1062,12 @@ hpgl_set_drawing_color(hpgl_state_t * pgls, hpgl_rendering_mode_t render_mode)
     }
 
     if (code >= 0) {
-        code = gs_setrasterop(pgls->pgs, hpgl_rop(pgls, render_mode));
-        if (code < 0)
-            return code;
+        code = check_rasterops(pgls, pgls->logical_op);
+        if (code >= 0) {
+            code = gs_setrasterop(pgls->pgs, hpgl_rop(pgls, render_mode));
+            if (code < 0)
+                return code;
+        }
         code = gx_set_dev_color(pgls->pgs);
         if (code == gs_error_Remap_Color)
             code = pixmap_high_level_pattern(pgls->pgs);

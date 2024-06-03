@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -378,10 +378,23 @@ struct pcl_state_s
     bool page_set_on_command_line;
     bool res_set_on_command_line;
     bool high_level_device;
+    bool supports_rasterops;
     /* last entry mode to hpgl/2 */
     int hpgl_mode;
     int scanconverter;
 };
+
+static inline check_rasterops(pcl_state_t * pcs, byte op)
+{
+    /* 252 here is a magic number. It is the default state of RasterOPs which appears to be
+     * fully opaque. Since it's the default, and that seems to work, permit it to be set.
+     */
+    if (pcs->high_level_device && !pcs->supports_rasterops && op != 252) {
+        outprintf(pcs->memory, "Unsupported use of RasterOP %d detected. Output may not be correct.\n", op);
+        return_error(gs_error_undefined);
+    }
+    return 0;
+}
 
 /* accessor functions for the pcl target device.  These live in
    pctop.c for now */

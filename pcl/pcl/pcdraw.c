@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -83,9 +83,12 @@ pcl_set_drawing_color(pcl_state_t * pcs,
     else
         code = (pcl_pattern_get_proc_PCL(type)) (pcs, id, (int)for_image);
     if (code >= 0) {
-        code = gs_setrasterop(pcs->pgs, (gs_rop3_t) pcs->logical_op);
-        if (code < 0)
-            return code;
+        code = check_rasterops(pcs, pcs->logical_op);
+        if (code >= 0) {
+            code = gs_setrasterop(pcs->pgs, (gs_rop3_t) pcs->logical_op);
+            if (code < 0)
+                return code;
+        }
         gs_setfilladjust(pcs->pgs, 0.0, 0.0);
         code = gx_set_dev_color(pcs->pgs);
         if (code == gs_error_Remap_Color)
