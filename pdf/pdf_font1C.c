@@ -2998,10 +2998,10 @@ error:
                 memcpy(fname, fobj->data, fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length);
                 fname[fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length] = '\0';
 
-                pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_cff_font", "Error reading CFF font file %s\n", fname);
+                (void)pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_cff_font", "Error reading CFF font file %s\n", fname);
             }
             else {
-                pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_cff_font", "Error reading embedded Type1C font object %u\n", font_dict->object_num);
+                (void)pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_cff_font", "Error reading embedded Type1C font object %u\n", font_dict->object_num);
             }
         }
         else {

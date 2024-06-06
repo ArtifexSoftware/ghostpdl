@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -618,7 +618,8 @@ int pdfi_pdfmark_modDest(pdf_context *ctx, pdf_dict *link_dict)
                     if (code < 0)
                         goto exit;
                 } else {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_BAD_NAMED_DEST, "pdfi_pdfmark_modDest", NULL);
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefined), NULL, E_PDF_BAD_NAMED_DEST, "pdfi_pdfmark_modDest", NULL)) < 0)
+                        goto exit;
                 }
                 break;
             } else

@@ -466,18 +466,12 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     /* This is bonkers, but... Bug695872.pdf has /W and /H which are real numbers */
     info->Height = (int)temp_f;
     if ((int)temp_f != (int)(temp_f+.5)) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning) {
-            code = gs_note_error(gs_error_rangecheck);
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
-        }
     }
     if (info->Height < 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning) {
-            code = gs_note_error(gs_error_rangecheck);
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
-        }
         info->Height = 0;
     }
 
@@ -487,18 +481,12 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         goto errorExit;
     info->Width = (int)temp_f;
     if ((int)temp_f != (int)(temp_f+.5)) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning) {
-            code = gs_note_error(gs_error_rangecheck);
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
-        }
     }
     if (info->Width < 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning) {
-            code = gs_note_error(gs_error_rangecheck);
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
-        }
         info->Width = 0;
     }
 
@@ -546,16 +534,14 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
          * GS implementation does.
          */
         if (code != gs_error_undefined) {
-           pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-           if (ctx->args.pdfstoponwarning)
-                goto errorExit;
+           if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
+               goto errorExit;
         }
     }
     if (info->Mask != NULL && (pdfi_type_of(info->Mask) != PDF_ARRAY && pdfi_type_of(info->Mask) != PDF_STREAM)) {
         pdfi_countdown(info->Mask);
         info->Mask = NULL;
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning)
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
     }
 
@@ -564,10 +550,8 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (code < 0) {
         if (code != gs_error_undefined) {
             /* Broken SMask, Warn, and ignore the SMask */
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", (char *)"*** Warning: Image has invalid SMask.  Ignoring it");
-            if (ctx->args.pdfstoponwarning)
+            if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", (char *)"*** Warning: Image has invalid SMask.  Ignoring it")) < 0)
                 goto errorExit;
-            code = 0;
         }
     } else {
         if (pdfi_type_of(info->SMask) == PDF_NAME) {
@@ -583,8 +567,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
         if (pdfi_type_of(info->SMask) != PDF_STREAM){
             pdfi_countdown(info->SMask);
             info->SMask = NULL;
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-            if (ctx->args.pdfstoponwarning)
+            if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
                 goto errorExit;
         }
     }
@@ -610,8 +593,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (info->ColorSpace != NULL && (pdfi_type_of(info->ColorSpace) != PDF_NAME && pdfi_type_of(info->ColorSpace) != PDF_ARRAY)) {
         pdfi_countdown(info->ColorSpace);
         info->ColorSpace = NULL;
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning)
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
     }
 
@@ -632,8 +614,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (info->Alternates != NULL && pdfi_type_of(info->Alternates) != PDF_ARRAY) {
         pdfi_countdown(info->Alternates);
         info->Alternates = NULL;
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning)
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
     }
 
@@ -646,8 +627,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (info->Name != NULL && pdfi_type_of(info->Name) != PDF_NAME) {
         pdfi_countdown(info->Name);
         info->Name = NULL;
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGENAME, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning)
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_IMAGENAME, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
     }
 
@@ -668,8 +648,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (info->Decode != NULL && pdfi_type_of(info->Decode) != PDF_ARRAY) {
         pdfi_countdown(info->Decode);
         info->Decode = NULL;
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning)
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
             goto errorExit;
     }
 
@@ -689,9 +668,8 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (info->Filter != NULL && (pdfi_type_of(info->Filter) != PDF_NAME && pdfi_type_of(info->Filter) != PDF_ARRAY)) {
         pdfi_countdown(info->Filter);
         info->Filter = NULL;
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-        if (ctx->args.pdfstoponwarning)
-            goto errorExit;
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
+             goto errorExit;
     }
 
     /* Check and set JPXDecode flag for later */
@@ -710,8 +688,7 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
     if (info->DecodeParms != NULL && (pdfi_type_of(info->DecodeParms) != PDF_DICT && pdfi_type_of(info->DecodeParms) != PDF_ARRAY)) {
         /* null is legal. Pointless but legal. */
         if (pdfi_type_of(info->DecodeParms) != PDF_NULL) {
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL);
-            if (ctx->args.pdfstoponwarning)
+            if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_get_image_info", NULL)) < 0)
                 goto errorExit;
         }
         pdfi_countdown(info->DecodeParms);
@@ -760,10 +737,7 @@ static int pdfi_check_inline_image_keys(pdf_context *ctx, pdf_dict *image_dict)
     return 0;
 
 error_inline_check:
-    pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_INLINEIMAGEKEY, "pdfi_check_inline_image_keys", NULL);
-    if (ctx->args.pdfstoponwarning)
-        return_error(gs_error_syntaxerror);
-    return 0;
+    return pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEIMAGEKEY, "pdfi_check_inline_image_keys", NULL);
 }
 
 /* Render a PDF image
@@ -1267,10 +1241,10 @@ pdfi_image_setup_type4(pdf_context *ctx, pdfi_image_info_t *image_info,
 
  exit:
     if (had_float_error) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", (char *)"*** Error: Some elements of Mask array are not integers");
+        pdfi_set_warning(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", (char *)"*** Error: Some elements of Mask array are not integers");
     }
     if (had_range_error) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", (char *)"*** Error: Some elements of Mask array are out of range");
+        pdfi_set_warning(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_IMAGE_ERROR, "pdfi_image_setup_type4", (char *)"*** Error: Some elements of Mask array are out of range");
     }
     return code;
 }
@@ -1403,11 +1377,15 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                 return 0;
         } else {
             if (image_info->BPC != 1 || image_info->Mask != NULL) {
-                pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, "pdfi_image_get_color", "BitsPerComonent is not 1, so treating as an image");
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, E_IMAGE_MASKWITHCOLOR, "pdfi_image_get_color", "BitsPerComonent is not 1, so treating as an image")) < 0) {
+                    return code;
+                }
                 image_info->ImageMask = 0;
             }
             else {
-                pdfi_set_error(ctx, 0, NULL, E_IMAGE_MASKWITHCOLOR, "pdfi_image_get_color", "BitsPerComonent is 1, so treating as a mask");
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, E_IMAGE_MASKWITHCOLOR, "pdfi_image_get_color", "BitsPerComonent is 1, so treating as a mask")) < 0) {
+                    return code;
+                }
                 pdfi_countdown(image_info->ColorSpace);
                 image_info->ColorSpace = NULL;
                 *comps = 1;
@@ -1508,7 +1486,8 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
             }
         } else {
             /* Assume DeviceRGB colorspace */
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_IMAGEDICT, "pdfi_image_get_color", (char *)"**** Error: image has no /ColorSpace key; assuming /DeviceRGB");
+            if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_undefined), NULL, W_PDF_BAD_IMAGEDICT, "pdfi_image_get_color", (char *)"**** Error: image has no /ColorSpace key; assuming /DeviceRGB")) < 0)
+                goto cleanupExit;
             code = pdfi_name_alloc(ctx, (byte *)"DeviceRGB", strlen("DeviceRGB"), &ColorSpace);
             if (code < 0)
                 goto cleanupExit;
@@ -1858,7 +1837,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
             code = gx_set_dev_color(ctx->pgs);
             if (code < 0) {
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_ICC_PROFILE_LINK, "pdfi_do_image", "Attempting to use profile /N to create a device colour space");
+                if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_BAD_ICC_PROFILE_LINK, "pdfi_do_image", "Attempting to use profile /N to create a device colour space")) < 0)
+                    goto cleanupExit;
+
                 /* Possibly we couldn't create a link profile, soemthing wrong with the ICC profile, try to use a device space */
                 switch(pcs1->cmm_icc_profile_data->num_comps) {
                     case 1:
@@ -1981,7 +1962,8 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
             default:
                 pdfi_countdown(image_info.Mask);
                 image_info.Mask = NULL;
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_MASK_ERROR, "pdfi_do_image", NULL);
+                if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_MASK_ERROR, "pdfi_do_image", NULL)) < 0)
+                    goto cleanupExit;
         }
     }
 
@@ -2027,6 +2009,9 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
         if (mask_array) { /* Type 4 */
             code = pdfi_image_setup_type4(ctx, &image_info, &t4image, mask_array, pcs);
             if (code < 0) {
+                 if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_IMAGE_ERROR, "pdfi_do_image", "")) < 0) {
+                     goto cleanupExit;
+                 }
                 /* If this got an error, setup as a Type 1 image */
                 memset(&t1image, 0, sizeof(t1image));
                 pim = (gs_pixel_image_t *)&t1image;
@@ -2178,9 +2163,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
 
  cleanupExit:
     if (code < 0)
-        pdfi_set_warning(ctx, code, NULL, W_PDF_IMAGE_ERROR, "pdfi_do_image", NULL);
-
-    code = 0;  /* suppress errors */
+        code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_IMAGE_ERROR, "pdfi_do_image", NULL);
 
     if (transparency_group) {
         pdfi_trans_end_isolated_group(ctx);
@@ -2220,8 +2203,10 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_
     int code;
     pdf_stream *image_stream;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_ID", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_ID", NULL)) < 0)
+            return code;
+    }
 
     /* we want to have the indirect_num and indirect_gen of the created dictionary
      * be 0, because we are reading from a stream, and the stream has already
@@ -2250,8 +2235,9 @@ error:
 
 int pdfi_EI(pdf_context *ctx)
 {
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_EI", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        return pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_EI", NULL);
+    }
 
 /*    pdfi_clearstack(ctx);*/
     return 0;
@@ -2407,62 +2393,61 @@ static int pdfi_form_stream_hack(pdf_context *ctx, pdf_dict *form_dict, pdf_stre
 {
     int code = 0;
     pdf_stream *stream_obj = NULL;
+    pdf_obj *Parent = NULL;
+    pdf_dict *d = NULL;
+    pdf_dict *stream_dict = NULL;
 
     *hacked_stream = NULL;
 
     if (pdfi_type_of(form_dict) == PDF_STREAM)
         return 0;
 
-    if (!ctx->args.pdfstoponerror) {
-        pdf_obj *Parent = NULL;
-        pdf_dict *d = NULL;
-        pdf_dict *stream_dict = NULL;
+    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_typecheck), NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL)) < 0) {
+        goto exit;
+    }
 
-        code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_STREAM,
-                                       (pdf_obj **)&stream_obj);
-        if (code < 0 || stream_obj == NULL) {
-            pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
-            code = gs_note_error(gs_error_typecheck);
-            goto exit;
-        }
-
-        d = form_dict;
-        pdfi_countup(d);
-        do {
-            code = pdfi_dict_knownget(ctx, d, "Parent", (pdf_obj **)&Parent);
-            if (code > 0 && pdfi_type_of(Parent) == PDF_DICT) {
-                if (Parent->object_num == stream_obj->object_num) {
-                    pdfi_countdown(d);
-                    pdfi_countdown(Parent);
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
-                    code = gs_note_error(gs_error_undefined);
-                    goto exit;
-                }
-                pdfi_countdown(d);
-                d = (pdf_dict *)Parent;
-            } else {
-                pdfi_countdown(d);
-                break;
-            }
-        } while (1);
-
-        code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
-        if (code < 0) {
-            pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
-            goto exit;
-        }
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_HAS_CONTENTS, "pdfi_form_stream_hack", NULL);
-        code = pdfi_merge_dicts(ctx, stream_dict, form_dict);
-        /* Having merged the dictionaries, we don't want the Contents key in the stream dict.
-         * We do want to leave it in the form dictionary, in case we use this form again.
-         * Leaving the reference in the stream dicttionary leads to a reference counting problem
-         * because stream_dict is contained in stream_obj so stream_obj becomes self-referencing.
-         */
-        pdfi_dict_delete(ctx, stream_dict, "Contents");
-    } else {
+    code = pdfi_dict_knownget_type(ctx, form_dict, "Contents", PDF_STREAM,
+                                   (pdf_obj **)&stream_obj);
+    if (code < 0 || stream_obj == NULL) {
         pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
         code = gs_note_error(gs_error_typecheck);
+        goto exit;
     }
+
+    d = form_dict;
+    pdfi_countup(d);
+    do {
+        code = pdfi_dict_knownget(ctx, d, "Parent", (pdf_obj **)&Parent);
+        if (code > 0 && pdfi_type_of(Parent) == PDF_DICT) {
+            if (Parent->object_num == stream_obj->object_num) {
+                pdfi_countdown(d);
+                pdfi_countdown(Parent);
+                pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
+                code = gs_note_error(gs_error_undefined);
+                goto exit;
+            }
+            pdfi_countdown(d);
+            d = (pdf_dict *)Parent;
+        } else {
+            pdfi_countdown(d);
+            break;
+        }
+    } while (1);
+
+    code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);
+    if (code < 0) {
+        pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAMDICT, "pdfi_form_stream_hack", NULL);
+        goto exit;
+    }
+    pdfi_set_warning(ctx, 0, NULL, W_PDF_STREAM_HAS_CONTENTS, "pdfi_form_stream_hack", NULL);
+    code = pdfi_merge_dicts(ctx, stream_dict, form_dict);
+    /* Having merged the dictionaries, we don't want the Contents key in the stream dict.
+     * We do want to leave it in the form dictionary, in case we use this form again.
+     * Leaving the reference in the stream dicttionary leads to a reference counting problem
+     * because stream_dict is contained in stream_obj so stream_obj becomes self-referencing.
+     */
+    pdfi_dict_delete(ctx, stream_dict, "Contents");
+
     if (code == 0) {
         *hacked_stream = stream_obj;
         pdfi_countup(stream_obj);
@@ -2528,9 +2513,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
         code = pdfi_dict_get_type(ctx, form_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
         if (code < 0) goto exit1;
     } else {
-        pdfi_set_error(ctx, 0, NULL, E_PDF_MISSING_BBOX, "pdfi_do_form", "");
-        if (ctx->args.pdfstoponerror) {
-            code = gs_note_error(gs_error_undefined);
+        if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefined), NULL, E_PDF_MISSING_BBOX, "pdfi_do_form", NULL)) < 0) {
             goto exit;
         }
     }
@@ -2539,8 +2522,9 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     if (code < 0) goto exit1;
 
     if (bbox.q.x - bbox.p.x == 0.0 || bbox.q.y - bbox.p.y == 0.0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_FORM_CLIPPEDOUT, "pdfi_do_form", "");
-        code = 0;
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_FORM_CLIPPEDOUT, "pdfi_do_form", "")) < 0)
+            goto exit1;
+
         if (ctx->PreservePDFForm) {
             code = pdfi_form_highlevel_begin(ctx, form_dict, &CTM, &bbox, &formmatrix);
             if (code >= 0)
@@ -2655,11 +2639,19 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
         if (pdfi_type_of(OCDict) == PDF_DICT) {
             if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && ctx->device_state.WantsOptionalContent) {
                 code = pdfi_pdfmark_dict(ctx, OCDict);
-                if (code < 0)
-                    pdfi_set_warning(ctx, 0, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL);
+                if (code < 0) {
+                    if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL)) < 0) {
+                        pdfi_countdown(OCDict);
+                        return code;
+                    }
+                }
                 code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pending_optional_content, &OCDict->object_num, 0);
-                if (code < 0)
-                    pdfi_set_warning(ctx, 0, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL);
+                if (code < 0) {
+                    if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL)) < 0) {
+                        pdfi_countdown(OCDict);
+                        return code;
+                    }
+                }
             } else {
                 visible = pdfi_oc_is_ocg_visible(ctx, OCDict);
                 if (!visible) {
@@ -2668,7 +2660,8 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
                 }
             }
         } else {
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_OCDICT, "pdfi_do_image_or_form", NULL);
+            if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_typecheck), NULL, W_PDF_BAD_OCDICT, "pdfi_do_image_or_form", NULL)) < 0)
+                return code;
         }
         pdfi_countdown(OCDict);
     }
@@ -2691,10 +2684,10 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             code1 = pdfi_name_alloc(ctx, (byte *)"Form", 4, (pdf_obj **)&n);
             if (code1 == 0) {
                 pdfi_countup(n);
-                pdfi_set_error(ctx, 0, NULL, E_PDF_NO_SUBTYPE, "pdfi_do_image_or_form", "Assuming a Form XObject");
             }
-            if (ctx->args.pdfstoponerror)
+            if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefined), NULL, E_PDF_NO_SUBTYPE, "pdfi_do_image_or_form", NULL)) < 0) {
                 goto exit;
+            }
         }
         else
             goto exit;
@@ -2722,11 +2715,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
          */
         code = pdfi_do_form(ctx, page_dict, (pdf_stream *)xobject_obj);
     } else if (pdfi_name_is(n, "PS")) {
-        pdfi_set_error(ctx, 0, NULL, E_PDF_PS_XOBJECT_IGNORED, "pdfi_do_image_or_form", "");
-        if (ctx->args.pdfstoponerror)
-            code = gs_note_error(gs_error_typecheck);
-        else
-            code = 0; /* Swallow silently */
+        code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_typecheck), NULL, E_PDF_PS_XOBJECT_IGNORED, "pdfi_form_stream_hack", NULL);
     } else {
         code = gs_error_typecheck;
     }
@@ -2760,8 +2749,10 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         goto exit1;
     }
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_Do", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_Do", NULL)) < 0)
+            goto exit1;
+    }
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)

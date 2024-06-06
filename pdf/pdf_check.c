@@ -1127,44 +1127,50 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
      */
     if (tracker->spot_dict != NULL) {
         code = pdfi_dict_knownget_type(ctx, Resources_dict, "ColorSpace", PDF_DICT, &d);
-        if (code == gs_error_typecheck)
-            pdfi_set_error(ctx, 0, NULL, E_PDF_SPOT_CHK_BADTYPE, "pdfi_check_Resources", "");
-        if (code > 0)
-            (void)pdfi_check_ColorSpace_dict(ctx, (pdf_dict *)d, page_dict, tracker);
+        if (code < 0) {
+            if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_SPOT_CHK_BADTYPE, "pdfi_check_Resources", "")) < 0)
+                return code;
+        }
+        (void)pdfi_check_ColorSpace_dict(ctx, (pdf_dict *)d, page_dict, tracker);
 
         pdfi_countdown(d);
         d = NULL;
 
         code = pdfi_dict_knownget_type(ctx, Resources_dict, "Shading", PDF_DICT, &d);
-        if (code == gs_error_typecheck)
-            pdfi_set_error(ctx, 0, NULL, E_PDF_SPOT_CHK_BADTYPE, "pdfi_check_Resources", "");
-        if (code > 0)
-            (void)pdfi_check_Shading_dict(ctx, (pdf_dict *)d, page_dict, tracker);
+        if (code < 0) {
+            if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_SPOT_CHK_BADTYPE, "pdfi_check_Resources", "")) < 0)
+                return code;
+        }
+        (void)pdfi_check_Shading_dict(ctx, (pdf_dict *)d, page_dict, tracker);
         pdfi_countdown(d);
         d = NULL;
     }
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "XObject", PDF_DICT, &d);
-    if (code == gs_error_typecheck)
-        pdfi_set_error(ctx, 0, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "");
-    if (code > 0)
-        (void)pdfi_check_XObject_dict(ctx, (pdf_dict *)d, page_dict, tracker);
+    if (code < 0) {
+        if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "")) < 0)
+            return code;
+    }
+    (void)pdfi_check_XObject_dict(ctx, (pdf_dict *)d, page_dict, tracker);
     pdfi_countdown(d);
     d = NULL;
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "Pattern", PDF_DICT, &d);
-    if (code == gs_error_typecheck)
-        pdfi_set_error(ctx, 0, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "");
-    if (code > 0)
-        (void)pdfi_check_Pattern_dict(ctx, (pdf_dict *)d, page_dict, tracker);
+    if (code < 0) {
+        if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "")) < 0) {
+            return code;
+        }
+    }
+    (void)pdfi_check_Pattern_dict(ctx, (pdf_dict *)d, page_dict, tracker);
     pdfi_countdown(d);
     d = NULL;
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "Font", PDF_DICT, &d);
-    if (code == gs_error_typecheck)
-        pdfi_set_error(ctx, 0, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "");
-    if (code > 0)
-        (void)pdfi_check_Font_dict(ctx, (pdf_dict *)d, page_dict, tracker);
+    if (code < 0) {
+        if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "")) < 0)
+            return code;
+    }
+    (void)pdfi_check_Font_dict(ctx, (pdf_dict *)d, page_dict, tracker);
     /* From this point onwards, if we detect transparency (or have already detected it) we
      * can exit, we have already counted up any spot colours.
      */
@@ -1172,10 +1178,11 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
     d = NULL;
 
     code = pdfi_dict_knownget_type(ctx, Resources_dict, "ExtGState", PDF_DICT, &d);
-    if (code == gs_error_typecheck)
-        pdfi_set_error(ctx, 0, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "");
-    if (code > 0)
-        (void)pdfi_check_ExtGState_dict(ctx, (pdf_dict *)d, page_dict, tracker);
+    if (code < 0) {
+        if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_TRANS_CHK_BADTYPE, "pdfi_check_Resources", "")) < 0)
+            return code;
+    }
+    (void)pdfi_check_ExtGState_dict(ctx, (pdf_dict *)d, page_dict, tracker);
     pdfi_countdown(d);
     d = NULL;
 
@@ -1233,8 +1240,9 @@ static int pdfi_check_annot_for_transparency(pdf_context *ctx, pdf_dict *annot, 
 
     code = pdfi_dict_get_type(ctx, annot, "Subtype", PDF_NAME, (pdf_obj **)&n);
     if (code < 0) {
-        if (ctx->args.pdfstoponerror)
+        if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_BAD_TYPE, "pdfi_check_annot_for_transparency", "")) < 0) {
             return code;
+        }
     } else {
         /* Check #2, Highlight annotations are always preformed with transparency */
         if (pdfi_name_is((const pdf_name *)n, "Highlight")) {
@@ -1303,8 +1311,9 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
         code = pdfi_array_get_type(ctx, annots_array, (uint64_t)i, PDF_DICT, (pdf_obj **)&annot);
         if (code >= 0) {
             code = pdfi_check_annot_for_transparency(ctx, annot, page_dict, tracker);
-            if (code < 0 && ctx->args.pdfstoponerror)
+            if (code < 0 && (code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_INVALID_TRANS_XOBJECT, "pdfi_check_Annots_for_transparency", "")) < 0) {
                 goto exit;
+            }
 
             /* If we've found transparency, and don't need to continue checkign for spot colours
              * just exit as fast as possible.
@@ -1315,9 +1324,9 @@ static int pdfi_check_Annots_for_transparency(pdf_context *ctx, pdf_array *annot
             pdfi_countdown(annot);
             annot = NULL;
         }
-        if (code < 0 && ctx->args.pdfstoponerror)
+        else if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_INVALID_TRANS_XOBJECT, "pdfi_check_Annots_for_transparency", "")) < 0) {
             goto exit;
-        code = 0;
+        }
     }
 exit:
     pdfi_countdown(annot);
@@ -1363,8 +1372,10 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
             code = pdfi_dict_knownget(ctx, Group, "CS", &CS);
             if (code > 0)
                 code = pdfi_check_ColorSpace_for_spots(ctx, CS, Group, page_dict, tracker->spot_dict);
-            if (code < 0 && ctx->args.pdfstoponerror)
+
+            if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_check_page_inner", "")) < 0) {
                 goto exit;
+            }
         }
     }
 
@@ -1372,8 +1383,11 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
     code = pdfi_dict_knownget_type(ctx, page_dict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
     if (code > 0)
         code = pdfi_check_Resources(ctx, Resources, page_dict, tracker);
-    if ((code < 0 && ctx->args.pdfstoponerror) || (code == gs_error_pdf_stackoverflow))
+
+    if (code == gs_error_pdf_stackoverflow || (code < 0 &&
+       (code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_check_page_inner", "")) < 0)) {
         goto exit;
+    }
 
     /* If we are drawing Annotations, check to see if the page uses any Annots */
     if (ctx->args.showannots) {
@@ -1381,8 +1395,11 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
         if (code > 0)
             code = pdfi_check_Annots_for_transparency(ctx, Annots, page_dict,
                                                       tracker);
-        if (code < 0 && ctx->args.pdfstoponerror)
-            goto exit;
+        if (code < 0) {
+            if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_check_page_inner", "")) < 0) {
+               goto exit;
+            }
+        }
     }
 
     code = 0;

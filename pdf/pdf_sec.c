@@ -1392,7 +1392,8 @@ int pdfi_initialise_Decryption(pdf_context *ctx)
             }
             /* Revision 2 is always 40-bit RC4 */
             if (KeyLen != 0 && KeyLen != 40)
-                pdfi_set_error(ctx, 0, NULL, E_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefined), NULL, E_PDF_INVALID_DECRYPT_LEN, "pdfi_initialise_Decryption", NULL)) < 0)
+                    goto done;
             KeyLen = 40;
             if (ctx->encryption.StmF == CRYPT_NONE)
                 ctx->encryption.StmF = CRYPT_V1;

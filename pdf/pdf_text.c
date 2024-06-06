@@ -143,10 +143,8 @@ static int do_ET(pdf_context *ctx)
 int pdfi_ET(pdf_context *ctx)
 {
     if (ctx->text.BlockDepth == 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_ETNOTEXTBLOCK, "pdfi_ET", NULL);
-        if (ctx->args.pdfstoponwarning)
-            return_error(gs_error_syntaxerror);
-        return 0;
+        int code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_ETNOTEXTBLOCK, "pdfi_ET", NULL);
+        return code;
     }
 
     ctx->text.BlockDepth--;
@@ -160,7 +158,9 @@ int pdfi_T_star(pdf_context *ctx)
     gs_matrix m, mat;
 
     if (ctx->text.BlockDepth == 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_TEXTOPNOBT, "pdfi_T_star", NULL);
+        int code;
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_TEXTOPNOBT, "pdfi_T_star", NULL)) < 0)
+            return code;
     }
 
     gs_make_identity(&m);

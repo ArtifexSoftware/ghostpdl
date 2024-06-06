@@ -549,7 +549,6 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num);
 void pdfi_report_errors(pdf_context *ctx);
 void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info);
 void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, const char *extra_info);
-void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info);
 
 static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info)
 {
@@ -562,6 +561,18 @@ static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs
     }
 }
 
+static inline int pdfi_set_error_stop(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info)
+{
+    pdfi_set_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
+    if (ctx->args.pdfstoponerror) {
+        if (gs_error < 0)
+            return gs_error;
+        else
+            return gs_error_unknownerror;
+    }
+    return 0;
+}
+
 static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info)
 {
     /* ignore problems while repairing a file */
@@ -572,9 +583,28 @@ static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *
     }
 }
 
+static inline int pdfi_set_warning_stop(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info)
+{
+    pdfi_set_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
+    if (ctx->args.pdfstoponwarning) {
+        if (gs_error < 0)
+            return gs_error;
+        else
+            return gs_error_unknownerror;
+    }
+    return 0;
+}
+
+static inline void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info)
+{
+    if (!ctx->args.QUIET)
+        outprintf(ctx->memory, "%s", info);
+}
+
+
 /* Variants of the above that work in a printf style. */
-void pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *fmt, ...);
-void pdfi_set_warning_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *fmt, ...);
+int pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *fmt, ...);
+int pdfi_set_warning_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *fmt, ...);
 
 #define PURGE_CACHE_PER_PAGE 0
 

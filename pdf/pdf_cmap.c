@@ -117,10 +117,10 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
 
     /* The following "soft" limit is according to the spec */
     if (numranges > 200) {
-        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endcodespacerange_func", NULL);
-        if (s->pdfi_ctx->args.pdfstoponwarning) {
+        int code;
+        if ((code = pdfi_set_warning_stop(s->pdfi_ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endcodespacerange_func", NULL)) < 0) {
             (void)pdf_ps_stack_pop(s, to_pop);
-            return_error(gs_error_syntaxerror);
+            return code;
         }
     }
 
@@ -191,10 +191,10 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
 
     /* The following "soft" limit is according to the spec */
     if (ncodemaps > 300) {
-        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "general_endcidrange_func", NULL);
-        if (s->pdfi_ctx->args.pdfstoponwarning) {
+        int code;
+        if ((code = pdfi_set_warning_stop(s->pdfi_ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "general_endcidrange_func", NULL)) < 0) {
             (void)pdf_ps_stack_pop(s, to_pop);
-            return_error(gs_error_syntaxerror);
+            return code;
         }
     }
 
@@ -308,10 +308,10 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
     /* The following "soft" limit is according to the spec */
 
     if (ncodemaps > 300) {
-        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endfbrange_func", NULL);
-        if (s->pdfi_ctx->args.pdfstoponwarning) {
+        int code;
+        if ((code = pdfi_set_warning_stop(s->pdfi_ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endfbrange_func", NULL)) < 0) {
             (void)pdf_ps_stack_pop(s, to_pop);
-            return_error(gs_error_syntaxerror);
+            return code;
         }
     }
 
@@ -537,10 +537,10 @@ static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *
     }
 
     if (ncodemaps > 200) {
-        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "general_endcidchar_func", NULL);
-        if (s->pdfi_ctx->args.pdfstoponwarning) {
+        int code;
+        if ((code = pdfi_set_warning_stop(s->pdfi_ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "general_endcidchar_func", NULL)) < 0) {
             (void)pdf_ps_stack_pop(s, to_pop);
-            return_error(gs_error_syntaxerror);
+            return code;
         }
     }
 
@@ -630,10 +630,10 @@ static int cmap_endbfchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byt
 
     /* The following "soft" limit is according to the spec */
     if (ncodemaps > 200) {
-        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfchar_func", NULL);
-        if (s->pdfi_ctx->args.pdfstoponwarning) {
+        int code;
+        if ((code = pdfi_set_warning_stop(s->pdfi_ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfchar_func", NULL)) < 0) {
             (void)pdf_ps_stack_pop(s, ncodemaps);
-            return_error(gs_error_syntaxerror);
+            return code;
         }
     }
 
@@ -765,8 +765,9 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
         else if (!memcmp(s->cur[-1].val.name, CMAP_NAME_AND_LEN("WMode"))) {
             if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
                 if (s->cur[0].val.i != 0) {
-                    if (s->cur[0].val.i != 1)
-                        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_BAD_WMODE, "cmap_def_func", NULL);
+                    if (s->cur[0].val.i != 1) {
+                        code = pdfi_set_warning_stop(s->pdfi_ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_BAD_WMODE, "cmap_def_func", NULL);
+                    }
                     pdficmap->wmode = 1;
                 }
                 else

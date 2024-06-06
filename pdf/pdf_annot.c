@@ -252,12 +252,7 @@ static int pdfi_annot_position_AP(pdf_context *ctx, pdf_dict *annot, pdf_stream 
         yscale = (rect.q.y - rect.p.y) / (bbox.q.y - bbox.p.y);
 
         if (xscale * yscale <= 0) {
-            dbgmprintf(ctx->memory, "ANNOT: Ignoring annotation with scale factor of 0\n");
-            if (ctx->args.pdfstoponerror)
-                code = gs_note_error(gs_error_rangecheck);
-            else
-                code = 0;
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_ZEROSCALE_ANNOT, "pdfi_annot_position_AP", "");
+            code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_ZEROSCALE_ANNOT, "pdfi_annot_position_AP", "ANNOT: Ignoring annotation with scale factor of 0\n");
             goto exit;
         }
 
@@ -286,7 +281,7 @@ static int pdfi_annot_draw_AP(pdf_context *ctx, pdf_dict *annot, pdf_obj *NormAP
     if (pdfi_type_of(NormAP) == PDF_NULL)
         return 0;
     if (pdfi_type_of(NormAP) != PDF_STREAM)
-        return_error(gs_error_typecheck);
+        return pdfi_set_error_stop(ctx, gs_note_error(gs_error_typecheck), NULL, E_PDF_BAD_ANNOTATION, "pdfi_annot_draw_AP", "");
 
     code = pdfi_op_q(ctx);
     if (code < 0)
@@ -509,7 +504,7 @@ static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *
     if (Border)
         size = pdfi_array_size(Border);
     if (Border &&  size < 3) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_ERROR, "pdfi_annot_draw_Border", "WARNING: Annotation Border array invalid");
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_ANNOT_ERROR, "pdfi_annot_draw_Border", "WARNING: Annotation Border array invalid");
         goto exit;
     }
     if (!Border) {
@@ -521,8 +516,10 @@ static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *
         if (size > 3) {
             code = pdfi_array_get_type(ctx, Border, 3, PDF_ARRAY, (pdf_obj **)&dash);
             if (code < 0) {
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_ERROR,
-                                 "pdfi_annot_draw_Border", "WARNING: Annotation Border Dash array invalid");
+                if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_ANNOT_ERROR,
+                                 "pdfi_annot_draw_Border", "WARNING: Annotation Border Dash array invalid")) < 0) {
+                    goto exit;
+                }
                 code = pdfi_array_alloc(ctx, 0, &dash);
                 if (code < 0) goto exit;
                 pdfi_countup(dash);
@@ -1594,7 +1591,8 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
 
     /* Look for /R and /D if there was no /N */
     if (code == 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_AP_ERROR, "pdfi_annot_get_NormAP", "*** Error: Annotation (AP) lacks the mandatory normal (N) appearance");
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_undefined), NULL, W_PDF_ANNOT_AP_ERROR, "pdfi_annot_get_NormAP", "*** Error: Annotation (AP) lacks the mandatory normal (N) appearance")) < 0)
+            goto exit;
 
         code = pdfi_dict_knownget(ctx, AP_dict, "R", (pdf_obj **)&baseAP);
         if (code < 0) goto exit;
@@ -1618,7 +1616,7 @@ static int pdfi_annot_get_NormAP(pdf_context *ctx, pdf_dict *annot, pdf_obj **No
             code = pdfi_dict_knownget_type(ctx, annot, "AS", PDF_NAME, (pdf_obj **)&AS);
             if (code < 0) goto exit;
             if (code == 0) {
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_AP_ERROR, "pdfi_annot_get_NormAP", "WARNING Annotation has non-stream AP but no AS.  Don't know what to render");
+                code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_undefined), NULL, W_PDF_ANNOT_AP_ERROR, "pdfi_annot_get_NormAP", "WARNING Annotation has non-stream AP but no AS.  Don't know what to render");
                 goto exit;
             }
 
@@ -2122,8 +2120,7 @@ static int pdfi_annot_draw_Stamp(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
      * See file tests_private/pdf/uploads/annots-noAP.pdf
      */
     if (!stamp_type->type) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_ERROR, "pdfi_annot_draw_Stamp", "WARNING: Annotation: No AP, unknown Stamp Name, omitting");
-        code = 0;
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_undefined), NULL, W_PDF_ANNOT_ERROR, "pdfi_annot_draw_Stamp", "WARNING: Annotation: No AP, unknown Stamp Name, omitting");
         goto exit;
     }
 
@@ -4598,10 +4595,7 @@ static int pdfi_annot_handle(pdf_context *ctx, pdf_dict *annot)
  exit:
     pdfi_countdown(Subtype);
     if (code < 0) {
-        dbgmprintf(ctx->memory, "WARNING: Error handling annotation\n");
-        pdfi_set_error(ctx, code, NULL, E_PDF_BAD_ANNOTATION, "pdfi_annot_handle", "");
-        if (!ctx->args.pdfstoponerror)
-            code = 0;
+        code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_BAD_ANNOTATION, "pdfi_annot_handle", "Error handling annotation");
     }
     return code;
 }
@@ -4623,13 +4617,15 @@ int pdfi_do_annotations(pdf_context *ctx, pdf_dict *page_dict)
     for (i = 0; i < pdfi_array_size(Annots); i++) {
         code = pdfi_array_get_type(ctx, Annots, i, PDF_DICT, (pdf_obj **)&annot);
         if (code < 0) {
-            if (code == gs_error_typecheck)
-                pdfi_set_warning(ctx, 0, NULL, W_PDF_ANNOT_BAD_TYPE, "pdfi_do_annotations", "");
+            if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_ANNOT_BAD_TYPE, "pdfi_do_annotations", "")) < 0)
+                goto exit;
             continue;
         }
         code = pdfi_annot_handle(ctx, annot);
-        if (code < 0 && ctx->args.pdfstoponerror)
+        if (code < 0 &&
+           ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_BAD_ANNOTATION, "pdfi_annot_handle", "Error handling annotation")) < 0)) {
             goto exit;
+        }
         pdfi_countdown(annot);
         annot = NULL;
     }

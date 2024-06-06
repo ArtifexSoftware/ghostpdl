@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -355,8 +355,8 @@ int pdfi_dict_get_common(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj
             pdfi_countdown(d->list[index].value);
             d->list[index].value = *o;
         } else {
-            pdfi_set_error(ctx, 0, NULL, E_DICT_SELF_REFERENCE, "pdfi_dict_get", NULL);
-            return 0;
+            code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefinedresult), NULL, E_DICT_SELF_REFERENCE, "pdfi_dict_get", NULL);
+            return code;
         }
     }
     *o = d->list[index].value;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -181,14 +181,12 @@ restart:
         } else if (c == '.') {
             goto error;
         } else if (c == 'e' || c == 'E') {
-            pdfi_set_warning(ctx, 0, NULL, W_PDF_NUM_EXPONENT, "pdfi_read_num", NULL);
+            pdfi_log_info(ctx, "pdfi_read_bare_int", (char *)"Invalid number format: scientific notation\n");
             goto error;
         } else if (c == '-') {
             /* Any - sign not at the start of the string indicates a malformed number. */
             if (index != 0 || negative) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
-                if (ctx->args.pdfstoponerror)
-                    return_error(gs_error_syntaxerror);
+                pdfi_log_info(ctx, "pdfi_read_bare_int", (char *)"Invalid number format: sign not at the start\n");
                 goto error;
             }
             negative = 1;
@@ -198,22 +196,19 @@ restart:
                  * of our negation handling for floats. */
                 continue;
             } else {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
-                if (ctx->args.pdfstoponerror)
-                    return_error(gs_error_syntaxerror);
+                pdfi_log_info(ctx, "pdfi_read_bare_int", (char *)"Invalid number format: sign not at the start\n");
                 goto error;
             }
         } else {
             if (index > 0) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", (char *)"Ignoring missing white space while parsing number");
-                if (ctx->args.pdfstoponerror)
-                    return_error(gs_error_syntaxerror);
+                pdfi_log_info(ctx, "pdfi_read_bare_int", (char *)"Invalid number format: Ignoring missing white space while parsing number\n");
+                goto error;
             }
             pdfi_unread_byte(ctx, s, (byte)c);
             goto error;
         }
         if (++index > 255)
-            return_error(gs_error_syntaxerror);
+            goto error;
     } while(1);
 
     *parsed_int = negative ? -int_val : int_val;
@@ -265,14 +260,17 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                 if ((negative && int_val < tenth_max_int) || (!negative && int_val <= tenth_max_uint))
                     int_val = int_val*10 + c - '0';
                 else {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_NUMBEROVERFLOW, "pdfi_read_num", NULL);
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_NUMBEROVERFLOW, "pdfi_read_num", NULL)) < 0) {
+                        return code;
+                    }
                     overflowed = true;
                 }
             }
         } else if (c == '.') {
             if (has_decimal_point == true) {
-                if (ctx->args.pdfstoponerror)
-                    return_error(gs_error_syntaxerror);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL)) < 0) {
+                    return code;
+                }
                 malformed = true;
             } else {
                 has_decimal_point = true;
@@ -283,8 +281,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
              * but gs seems to accept it, so we should also?
              */
             if (has_exponent == true) {
-                if (ctx->args.pdfstoponerror)
-                    return_error(gs_error_syntaxerror);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL)) < 0) {
+                    return code;
+                }
                 malformed = true;
             } else {
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_NUM_EXPONENT, "pdfi_read_num", NULL);
@@ -296,9 +295,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             /* Any - sign not at the start of the string, or just after an exponent
              * indicates a malformed number. */
             if (!(index == 0 || (has_exponent && index == exponent_index+1))) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
-                if (ctx->args.pdfstoponerror)
-                    return_error(gs_error_syntaxerror);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL)) < 0) {
+                    return code;
+                }
                 if (Buffer[index - 1] != '-') {
                     /* We are parsing a number line 123-56. We should continue parsing, but
                      * ignore anything from the second -. */
@@ -317,9 +316,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                  * of our negation handling for floats. */
                 index--;
             } else {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL);
-                if (ctx->args.pdfstoponerror)
-                    return_error(gs_error_syntaxerror);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", NULL)) < 0) {
+                    return code;
+                }
                 if (Buffer[index - 1] != '-') {
                     /* We are parsing a number line 123-56. We should continue parsing, but
                      * ignore anything from the second -. */
@@ -329,9 +328,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                 }
             }
         } else {
-            pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", (char *)"Ignoring missing white space while parsing number");
-            if (ctx->args.pdfstoponerror)
-                return_error(gs_error_syntaxerror);
+            if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MISSINGWHITESPACE, "pdfi_read_num", NULL)) < 0) {
+                return code;
+            }
             pdfi_unread_byte(ctx, s, (byte)c);
             Buffer[index] = 0x00;
             break;
@@ -348,7 +347,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         return code;
 
     if ((malformed && !recovered) || (!real && doubleneg)) {
-        pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed number %s as 0", Buffer);
+        if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed number %s as 0", Buffer)) < 0) {
+            goto exit;
+        }
         num->value.i = 0;
     } else if (has_exponent) {
         float f, exp;
@@ -358,19 +359,25 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             p = strstr((const char *)Buffer, "E");
 
         if (p == NULL) {
-            pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer);
+            if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
+                goto exit;
+            }
             num->value.d = 0;
         } else {
             p++;
 
             if (sscanf((char *)p, "%g", &exp) != 1 || exp > 38) {
-                pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer);
+                if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
+                    goto exit;
+                }
                 num->value.d = 0;
             } else {
                 if (sscanf((char *)Buffer, "%g", &f) == 1) {
                     num->value.d = f;
                 } else {
-                    pdfi_set_error_var(ctx, 0, NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer);
+                    if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
+                        goto exit;
+                    }
                     num->value.d = 0;
                 }
             }
@@ -392,6 +399,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
 
     code = pdfi_push(ctx, (pdf_obj *)num);
 
+exit:
     if (code < 0)
         pdfi_free_object((pdf_obj *)num);
 
@@ -607,8 +615,10 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
         c = pdfi_read_byte(ctx, s);
 
         if (c < 0) {
-            if (nesting > 0)
-                pdfi_set_error(ctx, 0, NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL);
+            if (nesting > 0 && (code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL) < 0)) {
+                gs_free_object(ctx->memory, Buffer, "pdfi_read_string error");
+                return code;
+            }
             Buffer[index] = 0x00;
             break;
         }
@@ -808,7 +818,7 @@ typedef int (*bsearch_comparator)(const void *, const void *);
 int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s)
 {
     byte Buffer[256];
-    int index = 0;
+    int code, index = 0;
     int c;
     void *t;
 
@@ -828,8 +838,9 @@ int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s)
     } while (index < 255);
 
     if (index >= 255 || index == 0) {
-        if (ctx->args.pdfstoponerror)
-            return_error(gs_error_syntaxerror);
+        if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_NOERROR, "pdfi_read_bare_keyword", "")) < 0) {
+            return code;
+        }
         return TOKEN_INVALID_KEY;
     }
 
@@ -893,8 +904,9 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     } while (index < 255);
 
     if (index >= 255 || index == 0) {
-        if (ctx->args.pdfstoponerror)
-            return_error(gs_error_syntaxerror);
+        if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, 0, "pdfi_read_keyword", NULL) < 0)) {
+            return code;
+        }
         key = (index >= 255 ? TOKEN_TOO_LONG : TOKEN_INVALID_KEY);
         index = 0;
         Buffer[0] = 0;
@@ -1039,8 +1051,10 @@ rescan:
                     code = pdfi_mark_stack(ctx, PDF_DICT_MARK);
                     if (code < 0)
                         return code;
-                }else
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL);
+                }
+                else if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_limitcheck), NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL) < 0)) {
+                    return code;
+                }
                 return 1;
             } else if (c == '>') {
                 pdfi_unread_byte(ctx, s, (byte)c);
@@ -1068,7 +1082,9 @@ rescan:
                     if (code < 0)
                         return code;
                 } else {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL);
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_unmatchedmark), NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL) < 0)) {
+                        return code;
+                    }
                     goto rescan;
                 }
                 return 1;
@@ -1092,7 +1108,8 @@ rescan:
                 if (code < 0)
                     return code;
             } else
-                pdfi_set_error(ctx, 0, NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL)) < 0)
+                    return code;
             return 1;
             break;
         case ']':
@@ -1102,7 +1119,9 @@ rescan:
                 if (code < 0)
                     return code;
             } else {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_unmatchedmark), NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL) < 0)) {
+                    return code;
+                }
                 goto rescan;
             }
             break;
@@ -1124,8 +1143,9 @@ rescan:
             break;
         default:
             if (isdelimiter(c)) {
-                if (ctx->args.pdfstoponerror)
-                    return_error(gs_error_syntaxerror);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, 0, "pdfi_read_token", NULL) < 0)) {
+                    return code;
+                }
                 goto rescan;
             }
             pdfi_unread_byte(ctx, s, (byte)c);
@@ -1386,7 +1406,7 @@ match:
     return code;
 
 error_exit:
-    pdfi_set_error(ctx, 0, NULL, E_PDF_TOKENERROR, "split_bogus_operator", NULL);
+    pdfi_set_error(ctx, code, NULL, E_PDF_TOKENERROR, "split_bogus_operator", NULL);
     pdfi_countdown(key1);
     pdfi_countdown(key2);
     pdfi_clearstack(ctx);
@@ -1906,8 +1926,8 @@ pdfi_interpret_inner_content(pdf_context *ctx, pdf_c_stream *content_stream, pdf
 
     cleanup_context_interpretation(ctx, &local_entry_save);
     local_restore_stream_state(ctx, &local_entry_save);
-    if (!ctx->args.pdfstoponerror)
-        code = 0;
+    if (code < 0)
+        code = pdfi_set_error_stop(ctx, code, NULL, 0, "pdfi_interpret_inner_content", NULL);
     return code;
 }
 
@@ -2068,9 +2088,9 @@ pdfi_interpret_content_stream(pdf_context *ctx, pdf_c_stream *content_stream,
         if (code < 0) {
             if (code == gs_error_ioerror || code == gs_error_VMerror || ctx->args.pdfstoponerror) {
                 if (code == gs_error_ioerror) {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_BADSTREAM, "pdfi_interpret_content_stream", (char *)"**** Error reading a content stream.  The page may be incomplete");
+                    pdfi_set_error(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_interpret_content_stream", (char *)"**** Error reading a content stream.  The page may be incomplete");
                 } else if (code == gs_error_VMerror) {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_OUTOFMEMORY, "pdfi_interpret_content_stream", (char *)"**** Error ran out of memory reading a content stream.  The page may be incomplete");
+                    pdfi_set_error(ctx, code, NULL, E_PDF_OUTOFMEMORY, "pdfi_interpret_content_stream", (char *)"**** Error ran out of memory reading a content stream.  The page may be incomplete");
                 }
                 goto exit;
             }
@@ -2094,18 +2114,18 @@ repaired_keyword:
                     break;
                 case TOKEN_ENDOBJ:
                     pdfi_clearstack(ctx);
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL);
-                    if (ctx->args.pdfstoponerror)
-                        code = gs_note_error(gs_error_syntaxerror);
+                    code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL);
                     goto exit;
                     break;
                 case TOKEN_INVALID_KEY:
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_KEYWORDTOOLONG, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_limitcheck), NULL, E_PDF_KEYWORDTOOLONG, "pdfi_interpret_content_stream", NULL)) < 0)
+                        goto exit;
                     break;
                 case TOKEN_TOO_LONG:
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL);
                     pdfi_clearstack(ctx);
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MISSINGENDSTREAM, "pdfi_interpret_content_stream", NULL)) < 0)
+                        goto exit;
                     break;
                 default:
                     goto execute;
@@ -2126,8 +2146,7 @@ execute:
                     goto repaired_keyword;
 
                 if (code < 0) {
-                    pdfi_set_error(ctx, code, NULL, E_PDF_TOKENERROR, "pdf_interpret_content_stream", NULL);
-                    if (ctx->args.pdfstoponerror) {
+                    if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_TOKENERROR, "pdf_interpret_content_stream", NULL)) < 0) {
                         pdfi_clearstack(ctx);
                         goto exit;
                     }

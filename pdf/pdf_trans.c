@@ -143,11 +143,7 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         code = pdfi_dict_knownget_type(ctx, SMask, "G", PDF_STREAM, (pdf_obj **)&G_stream);
         if (code <= 0) {
             pdfi_trans_end_smask_notify(ctx);
-            if (ctx->args.pdfstoponerror)
-                code = gs_note_error(gs_error_undefined);
-            else
-                code = 0;
-            pdfi_set_error(ctx, 0, NULL, E_PDF_SMASK_MISSING_G, "pdfi_trans_set_mask", "");
+            code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_SMASK_MISSING_G, "pdfi_trans_set_mask", "");
             goto exit;
         }
 
@@ -267,13 +263,15 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         /* If there's a BC, put it in the params */
         if (BC) {
             if (params.ColorSpace == NULL) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_GROUP_BAD_BC_NO_CS, "pdfi_trans_set_mask", NULL);
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefined), NULL, E_PDF_GROUP_BAD_BC_NO_CS, "pdfi_trans_set_mask", NULL)) < 0)
+                    goto exit;
             } else {
                 int i, components = pdfi_array_size(BC);
                 double num;
 
                 if (components > GS_CLIENT_COLOR_MAX_COMPONENTS) {
-                    pdfi_set_error(ctx, 0, NULL, E_PDF_GROUP_BAD_BC_TOO_BIG, "pdfi_trans_set_mask", NULL);
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_limitcheck), NULL, E_PDF_GROUP_BAD_BC_TOO_BIG, "pdfi_trans_set_mask", NULL)) < 0)
+                        goto exit;
                 } else {
                     if (gs_color_space_num_components(params.ColorSpace) != components) {
                         pdfi_set_warning(ctx, 0, NULL, W_PDF_GROUP_BAD_BC, "pdfi_trans_set_mask", NULL);

@@ -792,10 +792,10 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
                 memcpy(fname, fobj->data, fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length);
                 fname[fobj->length > gp_file_name_sizeof ? gp_file_name_sizeof : fobj->length] = '\0';
 
-                pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_type1_font", "Error reading Type 1 font file %s\n", fname);
+                (void)pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_type1_font", "Error reading Type 1 font file %s\n", fname);
             }
             else {
-                pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_type1_font", "Error reading embedded Type 1 font object %u\n", font_dict->object_num);
+                (void)pdfi_set_error_var(ctx, code, NULL, E_PDF_BADSTREAM, "pdfi_read_type1_font", "Error reading embedded Type 1 font object %u\n", font_dict->object_num);
             }
         }
         else {

@@ -598,7 +598,7 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_fun
     }
 }
 
-void pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *fmt, ...)
+int pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *fmt, ...)
 {
     if (pdfi_error != 0)
         ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
@@ -612,9 +612,16 @@ void pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_funct
 
         pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
     }
+    if (ctx->args.pdfstoponerror) {
+        if (gs_error < 0)
+            return gs_error;
+        else
+            return gs_error_unknownerror;
+    }
+    return 0;
 }
 
-void pdfi_set_warning_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *fmt, ...)
+int pdfi_set_warning_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *fmt, ...)
 {
     ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
     if (ctx->args.verbose_warnings) {
@@ -627,14 +634,13 @@ void pdfi_set_warning_var(pdf_context *ctx, int gs_error, const char *gs_lib_fun
 
         pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
     }
-}
-
-void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info)
-{
-#ifdef DEBUG
-    if (!ctx->args.QUIET)
-        outprintf(ctx->memory, "%s", info);
-#endif
+    if (ctx->args.pdfstoponwarning) {
+        if (gs_error < 0)
+            return gs_error;
+        else
+            return gs_error_unknownerror;
+    }
+    return 0;
 }
 
 void
@@ -858,7 +864,7 @@ int pdfi_close_pdf_file(pdf_context *ctx)
 
             code = pdfi_dict_knownget(ctx, ctx->Root, "OCProperties", &o);
             if (code > 0) {
-                // Build and send the OCProperties structure
+                /* Build and send the OCProperties structure */
                 code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "OCProperties");
                 pdfi_countdown(o);
                 if (code < 0)
@@ -900,18 +906,15 @@ static int pdfi_process(pdf_context *ctx)
         }
         if (ctx->args.last_page != 0) {
             if (i > ctx->args.last_page - 1)
-                break;;
+                break;
         }
         if (ctx->args.pdfinfo)
             code = pdfi_output_page_info(ctx, i);
         else
             code = pdfi_page_render(ctx, i, true);
 
-        if (code < 0 && ctx->args.pdfstoponerror)
-            goto exit;
-        code = 0;
+        code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_process", NULL);
     }
- exit:
     pdfi_report_errors(ctx);
 
     return code;
@@ -1194,10 +1197,12 @@ static int pdfi_init_file(pdf_context *ctx)
     code = pdfi_read_xref(ctx);
     if (code < 0) {
         if (ctx->is_hybrid) {
+            if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_BADXREFSTREAM, "pdfi_init_file", NULL)) < 0) {
+                goto exit;
+            }
             /* If its a hybrid file, and we failed to read the XrefStm, try
              * again, but this time read the xref table instead.
              */
-            pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "pdfi_init_file", NULL);
             pdfi_countdown(ctx->xref_table);
             ctx->xref_table = NULL;
             ctx->prefer_xrefstm = false;
@@ -1257,7 +1262,8 @@ static int pdfi_init_file(pdf_context *ctx)
 #endif
             } else {
                 if (pdfi_type_of(o) != PDF_NULL)
-                    pdfi_set_error(ctx, code, NULL, E_PDF_BADENCRYPT, "pdfi_init_file", NULL);
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_typecheck), NULL, E_PDF_BADENCRYPT, "pdfi_init_file", NULL)) < 0)
+                        goto exit;
             }
         }
     }
@@ -1270,9 +1276,11 @@ read_root:
              * from a hybrid file, then try again, but this time use the xref table
              */
             if (code == gs_error_undefined && ctx->is_hybrid && ctx->prefer_xrefstm) {
-                pdfi_set_error(ctx, 0, NULL, E_PDF_BADXREFSTREAM, "pdfi_init_file", NULL);
                 pdfi_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;
+                if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_BADXREFSTREAM, "pdfi_init_file", NULL)) < 0)
+                    goto exit;
+
                 ctx->prefer_xrefstm = false;
                 code = pdfi_read_xref(ctx);
                 if (code < 0) {
@@ -1294,7 +1302,7 @@ read_root:
     if (ctx->Trailer) {
         code = pdfi_read_Info(ctx);
         if (code < 0 && code != gs_error_undefined) {
-            if (ctx->args.pdfstoponerror)
+            if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_init_file", NULL)) < 0)
                 goto exit;
             pdfi_clearstack(ctx);
         }
@@ -1324,13 +1332,13 @@ read_root:
 
     if (ctx->args.pdfinfo) {
         code = pdfi_output_metadata(ctx);
-        if (code < 0 && ctx->args.pdfstoponerror)
+        if (code < 0 && (code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_init_file", NULL)) < 0)
             goto exit;
     }
 
 exit:
     if (code < 0)
-        pdfi_set_error(ctx, code, NULL, 0, "pdfi_init_file", NULL);
+        pdfi_set_error(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_init_file", NULL);
     pdfi_countdown(o);
     return code;
 }
@@ -1392,8 +1400,11 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     test = (char *)Buffer;
     bytes_left = bytes;
     s = strstr((char *)test, "%PDF-");
-    if (s == NULL)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_GARBAGE_B4HDR, "pdfi_set_input_stream", "");
+    if (s == NULL) {
+        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_GARBAGE_B4HDR, "pdfi_set_input_stream", "")) < 0) {
+            goto error;
+        }
+    }
     /* Garbage before the header can be anything, including binary and NULL (0x00) characters
      * which can defeat using strstr, so if we fail to find a header, try moving on by the length
      * of the C string + 1 and try again.
@@ -1413,12 +1424,14 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
         else
             gs_snprintf(extra_info, sizeof(extra_info), "%% File does not appear to be a PDF stream (no %%PDF in first 2Kb of stream)\n");
 
-        pdfi_set_error(ctx, 0, NULL, E_PDF_NOHEADER, "pdfi_set_input_stream", extra_info);
+        if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_NOHEADER, "pdfi_set_input_stream", extra_info) ) < 0)
+            goto error;
     } else {
         /* Now extract header version (may be overridden later) */
         if (sscanf(s + 5, "%f", &version) != 1) {
             ctx->HeaderVersion = 0;
-            pdfi_set_error(ctx, 0, NULL, E_PDF_NOHEADERVERSION, "pdfi_set_input_stream", (char *)"%% Unable to read PDF version from header\n");
+            if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_NOHEADERVERSION, "pdfi_set_input_stream", (char *)"%% Unable to read PDF version from header\n")) < 0)
+                goto error;
         }
         else {
             ctx->HeaderVersion = version;
@@ -1430,8 +1443,10 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
                     s++;
                     continue;
                 }
-                if (*s != 0x0A && *s != 0x0D)
-                    pdfi_set_warning(ctx, 0, NULL, W_PDF_VERSION_NO_EOL, "pdfi_set_input_stream", (char *)"%% PDF version not immediately followed with EOL\n");
+                if (*s != 0x0A && *s != 0x0D) {
+                    if ((code = pdfi_set_warning_stop(ctx, 0, NULL, W_PDF_VERSION_NO_EOL, "pdfi_set_input_stream", (char *)"%% PDF version not immediately followed with EOL\n")) < 0)
+                        goto error;
+                }
                 break;
             }
         }
@@ -1453,15 +1468,17 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
         uint32_t read;
 
         if (pdfi_seek(ctx, ctx->main_stream, ctx->main_stream_length - Offset, SEEK_SET) != 0) {
-            emprintf1(ctx->memory, "File is smaller than %"PRIi64" bytes\n", (int64_t)Offset);
-            code = gs_error_ioerror;
+            char msg[128];
+            gs_snprintf(msg, 128, "%% File is smaller than %"PRIi64" bytes\n", (int64_t)Offset);
+            code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_ioerror), NULL, E_PDF_GS_LIB_ERROR, "pdfi_set_input_stream", msg);
             goto error;
         }
         read = pdfi_read_bytes(ctx, Buffer, 1, bytes, ctx->main_stream);
 
         if (read <= 0) {
-            emprintf1(ctx->memory, "Failed to read %"PRIi64" bytes from file\n", (int64_t)bytes);
-            code = gs_error_ioerror;
+            char msg[128];
+            gs_snprintf(msg, 128, "Failed to read %"PRIi64" bytes from file\n", (int64_t)bytes);
+            code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_ioerror), NULL, E_PDF_GS_LIB_ERROR, "pdfi_set_input_stream", msg);
             goto error;
         }
 
@@ -1499,7 +1516,8 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
 
             /* Success! stop now */
             if(sscanf((char *)b, " %"PRIdOFFSET"", &ctx->startxref) != 1) {
-                dmprintf(ctx->memory, "Unable to read offset of xref from PDF file\n");
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_BADSTARTXREF, "pdfi_set_input_stream", "Unable to read offset of xref from PDF file\n")) < 0)
+                    goto error;
             }
             break;
         } else {
@@ -1532,11 +1550,8 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     } while(Offset < ctx->main_stream_length);
 
     if (!found) {
-        pdfi_set_error(ctx, 0, NULL, E_PDF_NOSTARTXREF, "pdfi_set_input_stream", NULL);
-        if (ctx->args.pdfstoponerror) {
-            code = gs_note_error(gs_error_undefined);
+        if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefined), NULL, E_PDF_NOSTARTXREF, "pdfi_set_input_stream", NULL)) < 0)
             goto error;
-        }
     }
 
     code = pdfi_init_file(ctx);
@@ -1625,7 +1640,7 @@ int pdfi_add_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l, b
             for (i = 0; i < ctx->search_paths.num_resource_paths - ctx->search_paths.num_init_resource_paths; i++) {
                 pathstrings[i] = ctx->search_paths.resource_paths[i];
             }
-            /* NO NOT CHANGE "i" BETWEEN HERE....... */
+            /* DO NOT CHANGE "i" BETWEEN HERE....... */
             gs_free_object(ctx->memory, ctx->search_paths.resource_paths, "old array of paths");
             ctx->search_paths.resource_paths = pathstrings;
             ctx->search_paths.num_resource_paths += npaths;

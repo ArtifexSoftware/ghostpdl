@@ -109,8 +109,10 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                     code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o1);
                     pdfi_countdown(r);
                     if (code < 0) {
-                        if (code != gs_error_VMerror || ctx->args.pdfstoponerror == false)
-                            code = 0;
+                        if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_NOERROR, "pdfi_process_page_contents", NULL)) < 0) {
+                            goto page_error;
+                        }
+                        code = 0;
                         goto page_error;
                     }
                     if (pdfi_type_of(o1) != PDF_STREAM) {
@@ -121,8 +123,9 @@ static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
                     code = pdfi_interpret_content_stream(ctx, NULL, (pdf_stream *)o1, page_dict);
                     pdfi_countdown(o1);
                     if (code < 0) {
-                        if (code == gs_error_VMerror || ctx->args.pdfstoponerror == true)
+                        if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_NOERROR, "pdfi_process_page_contents", NULL)) < 0) {
                             goto page_error;
+                        }
                     }
                 }
             }
@@ -901,10 +904,11 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 
         page_dict_error = true;
         gs_snprintf(extra_info, sizeof(extra_info), "*** ERROR: Page %ld has invalid Page dict, skipping\n", page_num+1);
-        pdfi_set_error(ctx, 0, NULL, E_PDF_PAGEDICTERROR, "pdfi_page_render", extra_info);
-        if (code != gs_error_VMerror && !ctx->args.pdfstoponerror)
-            code = 0;
-        goto exit3;
+        if (code == gs_error_VMerror ||
+        ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_PAGEDICTERROR, "pdfi_page_render", extra_info)) < 0)) {
+            goto exit3;
+        }
+        code = 0;
     }
 
     code = pdfi_check_page(ctx, page_dict, NULL, NULL, init_graphics);
@@ -926,8 +930,9 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
      * to handle files such as Bug #705206 where the Group dictionary is a free object in a
      * compressed object stream.
      */
-    if (code < 0)
-        pdfi_set_error(ctx, 0, NULL, E_BAD_GROUP_DICT, "pdfi_page_render", NULL);
+    if (code < 0 && (code = pdfi_set_error_stop(ctx, code, NULL, E_BAD_GROUP_DICT, "pdfi_page_render", NULL)) < 0)
+        goto exit2;
+
     if (group_dict != NULL)
         page_group_known = true;
 

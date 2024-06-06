@@ -1529,17 +1529,11 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
         }
         /* Officially only 3,1 in PDF, but 0,x is Unicode, too */
         else if (plat == 0) {
-            pdfi_set_warning(OBJ_CTX(font), 0, NULL, W_PDF_INVALID_TTF_CMAP, "pdfi_fapi_passfont", NULL);
-            if (OBJ_CTX(font)->args.pdfstoponwarning){
-                code = gs_note_error(gs_error_invalidfont);
-            }
             ttfont->cmap = pdfi_truetype_cmap_31;
+            code = pdfi_set_warning_stop(OBJ_CTX(font), gs_note_error(gs_error_invalidfont), NULL, W_PDF_INVALID_TTF_CMAP, "pdfi_fapi_passfont", NULL);
         }
         else {
-            pdfi_set_warning(OBJ_CTX(font), 0, NULL, W_PDF_INVALID_TTF_CMAP, "pdfi_fapi_passfont", NULL);
-            if (OBJ_CTX(font)->args.pdfstoponwarning){
-                code = gs_note_error(gs_error_invalidfont);
-            }
+            code = pdfi_set_warning_stop(OBJ_CTX(font), gs_note_error(gs_error_invalidfont), NULL, W_PDF_INVALID_TTF_CMAP, "pdfi_fapi_passfont", NULL);
         }
     }
 

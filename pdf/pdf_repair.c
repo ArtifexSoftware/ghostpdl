@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -97,7 +97,9 @@ int pdfi_repair_file(pdf_context *ctx)
     saved_offset = pdfi_unread_tell(ctx);
 
     ctx->repaired = true;
-    pdfi_set_error(ctx, 0, NULL, E_PDF_REPAIRED, "pdfi_repair_file", NULL);
+    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_ioerror), NULL, E_PDF_REPAIRED, "pdfi_repair_file", NULL)) < 0)
+        return code;
+
     ctx->repairing = true;
 
     pdfi_clearstack(ctx);
@@ -401,7 +403,7 @@ int pdfi_repair_file(pdf_context *ctx)
                         }
                         code = pdfi_dict_knownget_type(ctx, d, "Type", PDF_NAME, (pdf_obj **)&n);
                         if (code < 0) {
-                            if (ctx->args.pdfstoponerror || code == gs_error_VMerror) {
+                            if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_UNREPAIRABLE, "pdfi_repair_file", NULL)) < 0) {
                                 pdfi_clearstack(ctx);
                                 goto exit;
                             }
@@ -457,7 +459,7 @@ int pdfi_repair_file(pdf_context *ctx)
                                     pdfi_close_file(ctx, compressed_stream);
                                 }
                                 if (code < 0) {
-                                    if (ctx->args.pdfstoponerror || code == gs_error_VMerror) {
+                                    if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_UNREPAIRABLE, "pdfi_repair_file", NULL)) < 0) {
                                         pdfi_countdown(n);
                                         pdfi_clearstack(ctx);
                                         goto exit;
