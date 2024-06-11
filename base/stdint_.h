@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -145,7 +145,9 @@ UNSUPPORTED
 typedef int64_t gs_offset_t;
 #endif
 
+#if !defined(_AIX) || !defined(__GNUC__) || !defined(_LARGE_FILE_API)
 typedef int64_t off64_t;
+#endif
 
 #if defined(HAVE_INTTYPES_H) && HAVE_INTTYPES_H == 1
 # include <inttypes.h>
