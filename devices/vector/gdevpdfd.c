@@ -840,8 +840,8 @@ make_rect_scaling(const gx_device_pdf *pdev, const gs_fixed_rect *bbox,
         return false;
     }
 
-    bmin = min(bbox->p.x / pdev->scale.x, bbox->p.y / pdev->scale.y) * prescale;
-    bmax = max(bbox->q.x / pdev->scale.x, bbox->q.y / pdev->scale.y) * prescale;
+    bmin = min(fixed2float(bbox->p.x) / pdev->scale.x, fixed2float(bbox->p.y) / pdev->scale.y) * prescale;
+    bmax = max(fixed2float(bbox->q.x) / pdev->scale.x, fixed2float(bbox->q.y) / pdev->scale.y) * prescale;
     if (bmin <= int2fixed(-MAX_USER_COORD) ||
         bmax > int2fixed(MAX_USER_COORD)
         ) {
