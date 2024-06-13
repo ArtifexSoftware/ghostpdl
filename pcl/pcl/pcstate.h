@@ -384,7 +384,7 @@ struct pcl_state_s
     int scanconverter;
 };
 
-static inline check_rasterops(pcl_state_t * pcs, byte op)
+static inline int check_rasterops(pcl_state_t * pcs, byte op)
 {
     /* 252 here is a magic number. It is the default state of RasterOPs which appears to be
      * fully opaque. Since it's the default, and that seems to work, permit it to be set.

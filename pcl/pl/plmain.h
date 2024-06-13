@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -105,6 +105,7 @@ bool pl_main_get_nocache(const gs_memory_t *mem);
 bool pl_main_get_page_set_on_command_line(const gs_memory_t *mem);
 bool pl_main_get_res_set_on_command_line(const gs_memory_t *mem);
 bool pl_main_get_high_level_device(const gs_memory_t *mem);
+bool pl_main_get_rasterop_support(const gs_memory_t *mem);
 void pl_main_get_forced_geometry(const gs_memory_t *mem, const float **resolutions, const long **dimensions);
 int pl_main_get_scanconverter(const gs_memory_t *mem);
 pl_main_instance_t *pl_main_get_instance(const gs_memory_t *mem);
