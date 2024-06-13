@@ -893,6 +893,7 @@ if test x$with_tesseract != xno; then
       else
 
         save_cxxflags="$CXXFLAGS"
+        save_ldflags="$LDFLAGS"
         cxxflags_to_try="-std=c++17 -stdlib=libstdc++"
         CXXFLAGS_TO_USE=""
 
@@ -1003,22 +1004,25 @@ if test x$with_tesseract != xno; then
           fi
 
           AC_MSG_CHECKING([neon support])
-          CXXFLAGS="$save_cxxflags -mfpu=neon -mcpu=cortex-a53"
+          CXXFLAGS="$save_cxxflags"
+          LDFLAGS="$save_ldflags -mfpu=neon -mcpu=cortex-a53"
 
           TESS_NEON=""
           AC_LINK_IFELSE(
            [AC_LANG_PROGRAM([#include "arm_neon.h"],
                             [int32x4_t round = vdupq_n_s32(10);
                              return(0);])],
-           [TESS_NEON="-mfpu=neon -mcpu=cortex-a53 -D__ARM_NEON__"],
+           [TESS_NEON="-D__ARM_NEON__"],
            [TESS_NEON=""])
 
           if test "x$TESS_NEON" != x && test "x$enable_neon" != xno; then
             AC_MSG_RESULT(yes)
             TESS_CXXFLAGS="$TESS_CXXFLAGS -DHAVE_NEON"
+            LDFLAGS="$save_ldflags -mfpu=neon -mcpu=cortex-a53"
           else
             AC_MSG_RESULT(no)
             TESS_NEON=""
+            LDFLAGS="$save_ldflags"
           fi
 
           CXXFLAGS="$save_cxxflags"
