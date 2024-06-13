@@ -2026,7 +2026,7 @@ $(DEVOBJ)gdevurf.$(OBJ) : $(URFSRCDIR)$(D)gdevurf.c $(AK) $(PDEVH) \
 pppm_=$(DEVOBJ)gdevpppm.$(OBJ) $(DEVOBJ)gdevpccm.$(OBJ)
 
 $(DEVOBJ)gdevpppm.$(OBJ) : $(DEVSRC)gdevpppm.c \
- $(gdevprn_h) $(gxdevsop_h) $(gdevpccm_h) $(gscdefs_h) $(zlib_h) $(DEVS_MAK) $(MAKEDIRS)
+ $(gdevprn_h) $(gxdevsop_h) $(gdevpccm_h) $(gscdefs_h) $(ZGEN)zlibe.dev $(DEVS_MAK) $(MAKEDIRS)
 	$(CC_) $(I_)$(DEVI_) $(II)$(ZI_)$(_I) $(PCF_) $(GLF_) $(DEVO_)gdevpppm.$(OBJ) $(C_) $(DEVSRC)gdevpppm.c
 
 $(DD)pppm.dev : $(pppm_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
