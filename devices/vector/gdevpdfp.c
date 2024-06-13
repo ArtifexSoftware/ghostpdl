@@ -739,6 +739,35 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
          pdev->WantsOptionalContent = false;
     }
 
+    /* We cannot guarantee that all page objects have a Group with a /CS (ColorSpace) entry
+     * which is a requirement for PDF/A-2+ when objects are defined in Device Independent Colour.
+     * Try and warn the user.
+     */
+    if (pdev->PDFA > 1 && pdev->params.ColorConversionStrategy == ccs_UseDeviceIndependentColor) {
+        switch (pdev->PDFACompatibilityPolicy) {
+            case 0:
+                emprintf(pdev->memory,
+                 "\n\tpdfwrite cannot guarantee creating a conformant PDF/A-2 file with device-independent colour.\n\tWe recommend converting to a device colour space.\n\tReverting to normal output.\n");
+                pdev->AbortPDFAX = true;
+                pdev->PDFX = 0;
+                break;
+            case 1:
+                emprintf(pdev->memory,
+                 "\n\tpdfwrite cannot guarantee creating a conformant PDF/A-2 file with device-independent colour.\n\tWe recommend converting to a device colour space.\n\tWe cannot ignore this request, reverting to normal output.\n");
+                break;
+            case 2:
+                emprintf(pdev->memory,
+                 "\n\tpdfwrite cannot guarantee creating a conformant PDF/A-2 file with device-independent colour.\n\tWe recommend converting to a device colour space.\n\tAborting.\n");
+                return_error(gs_error_unknownerror);
+                break;
+            default:
+                emprintf(pdev->memory,
+                 "\n\tpdfwrite cannot guarantee creating a conformant PDF/A-2 file with device-independent colour.\n\tWe recommend converting to a device colour space.\n\tReverting to normal output.\n");
+                pdev->AbortPDFAX = true;
+                pdev->PDFX = 0;
+                break;
+        }
+    }
     /*
      * We have to set version to the new value, because the set of
      * legal parameter values for psdf_put_params varies according to
