@@ -3296,7 +3296,7 @@ _get_params(gx_device* dev, gs_param_list *plist)
     /* vector driver name */
     pname = "Driver";
     vdps.data = (byte *)opdev->globals.vectorDriver;
-    vdps.size = (opdev->globals.vectorDriver ? strlen(opdev->globals.vectorDriver) + 1 : 0);
+    vdps.size = (opdev->globals.vectorDriver ? strlen(opdev->globals.vectorDriver) : 0);
     vdps.persistent = false;
     code = param_write_string(plist, pname, &vdps);
     if (code) ecode = code;
