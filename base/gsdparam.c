@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -627,6 +627,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     gs_param_int_array hwsa;
     gs_param_float_array hwma;
     cmm_dev_profile_t *dev_profile;
+    char *colorant_names = NULL;
 
     /* Fill in page device parameters. */
 
@@ -732,14 +733,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         if (dev_profile->spotnames == NULL) {
             param_string_from_string(icc_colorants, null_str);
         } else {
-            char *colorant_names;
-
             code = get_dev_icccolorants_utf8(dev->memory, dev_profile, &colorant_names);
             if (code < 0)
                 return code;
             if (colorant_names != NULL) {
                 param_string_from_transient_string(icc_colorants, colorant_names);
-                gs_free_object(dev->memory, colorant_names, "gx_default_get_param");
             } else {
                 param_string_from_string(icc_colorants, null_str);
             }
@@ -839,7 +837,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
         (code = param_write_size_t(plist, "BufferSpace", &dev->space_params.BufferSpace)) < 0 ||
         (code = param_write_int(plist, "InterpolateControl", &dev->interpolate_control)) < 0
         )
+    {
+        gs_free_object(dev->memory, colorant_names, "gx_default_get_param");
         return code;
+    }
+    gs_free_object(dev->memory, colorant_names, "gx_default_get_param");
     {
         gs_param_string opc_name;
         const char *s = overprint_control_names[(int)overprint_control];

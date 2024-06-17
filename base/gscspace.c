@@ -140,6 +140,7 @@ gs_cspace_alloc_with_id(gs_memory_t *mem, ulong id,
     pcs->ICC_Alternate_space = gs_ICC_Alternate_None;
     pcs->icc_equivalent = NULL;
     pcs->params.device_n.devn_process_space = NULL;
+    pcs->params.device_n.all_none = false;
     return pcs;
 }
 
