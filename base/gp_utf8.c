@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,12 +25,16 @@ decode_utf8(const char **inp, unsigned int i)
     if (i < 0x80) {
     } else if ((i & 0xE0) == 0xC0) {
         i &= 0x1F;
+        if (i == 0)
+            goto fail_overlong;
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
         i = (i<<6) | (c & 0x3f);
     } else if ((i & 0xF0) == 0xE0) {
         i &= 0xF;
+        if (i == 0)
+            goto fail_overlong;
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
@@ -41,6 +45,8 @@ decode_utf8(const char **inp, unsigned int i)
         i = (i<<6) | (c & 0x3f);
     } else if ((i & 0xF8) == 0xF0) {
         i &= 0x7;
+        if (i == 0)
+            goto fail_overlong;
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
@@ -59,6 +65,11 @@ decode_utf8(const char **inp, unsigned int i)
         /* If we fail, unread the last one, and return the unicode replacement char. */
 fail:
        in--;
+fail_overlong:
+       /* If we jump to here it's because we've detected an 'overlong' encoding.
+        * While this seems harmless, it's actually illegal, for good reason;
+        * this is typically an attempt to sneak stuff past security checks, like
+        * "../" in paths. Fail this. */
        i = 0xfffd;
     }
     *inp = in;
