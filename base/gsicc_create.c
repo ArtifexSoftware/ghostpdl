@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2685,6 +2685,8 @@ create_write_table_intent(const gs_gstate *pgs, gsicc_rendering_intents_t intent
     gsicc_clut clut;
 
     link = get_link(pgs, src_profile, des_profile, intent);
+    if (link == NULL)
+        return_error(gs_error_undefined);
     code = create_clut_v2(&clut, link, src_profile->num_comps,
         des_profile->num_comps, table_size, pgs->memory, bit_depth);
     if (code < 0)
@@ -2747,12 +2749,18 @@ gsicc_create_v2input(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_
 
     /* Now the A2B0 Tag */
     link = get_link(pgs, src_profile, lab_profile, gsPERCEPTUAL);
+    if (link == NULL) {
+        gs_free_object(memory, tag_list, "gsicc_create_v2input");
+        gs_free_object(memory, buffer, "gsicc_create_v2input");
+        return;
+    }
 
     /* First create the data */
     code = create_clut_v2(&clut, link, src_profile->num_comps, 3,
         FORWARD_V2_TABLE_SIZE, pgs->memory, 2);
     if (code < 0) {
         gs_free_object(memory, tag_list, "gsicc_create_v2input");
+        gs_free_object(memory, buffer, "gsicc_create_v2input");
         return;
     }
 
@@ -2764,6 +2772,7 @@ gsicc_create_v2input(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_
     gsicc_release_link(link);
     clean_lut(&clut, pgs->memory);
     gs_free_object(memory, tag_list, "gsicc_create_v2input");
+    gs_free_object(memory, buffer, "gsicc_create_v2input");
     /* Save the v2 data */
     src_profile->v2_data = buffer;
     src_profile->v2_size = profile_size;
@@ -2982,6 +2991,12 @@ gsicc_create_v2displaygray(const gs_gstate *pgs, icHeader *header, cmm_profile_t
     /* Now the TRC. First collect the curve data and then write it out */
     /* Get the link between our gray profile and XYZ profile */
     link = get_link(pgs, src_profile, xyz_profile, gsPERCEPTUAL);
+    if (link == NULL) {
+        gs_free_object(memory, tag_list, "gsicc_createv2display_gray");
+        gs_free_object(memory, buffer, "gsicc_createv2display_gray");
+        return;
+    }
+
     /* First get the max value for Y on the range */
     src = 65535;
     (link->procs.map_color)(NULL, link, &src, &(des[0]), 2);
@@ -3000,6 +3015,7 @@ gsicc_create_v2displaygray(const gs_gstate *pgs, icHeader *header, cmm_profile_t
     gsicc_release_link(link);
     gs_free_object(memory, tag_list, "gsicc_createv2display_gray");
     gs_free_object(memory, trc, "gsicc_createv2display_gray");
+    gs_free_object(memory, buffer, "gsicc_createv2display_gray");
     /* Save the v2 data */
     src_profile->v2_data = buffer;
     src_profile->v2_size = profile_size;
@@ -3068,6 +3084,11 @@ gsicc_create_v2displayrgb(const gs_gstate *pgs, icHeader *header, cmm_profile_t 
     /* Now the main colorants. Get them and the TRC data from using the link
         between the source profile and the CIEXYZ profile */
     link = get_link(pgs, src_profile, xyz_profile, gsPERCEPTUAL);
+    if (link == NULL) {
+        gs_free_object(memory, tag_list, "gsicc_create_v2displayrgb");
+        gs_free_object(memory, buffer, "gsicc_create_v2displayrgb");
+        return;
+    }
 
     /* Get the Red, Green and Blue colorants */
     for (k = 0; k < 3; k++) {
@@ -3090,6 +3111,7 @@ gsicc_create_v2displayrgb(const gs_gstate *pgs, icHeader *header, cmm_profile_t 
     gsicc_release_link(link);
     gs_free_object(memory, tag_list, "gsicc_create_v2displayrgb");
     gs_free_object(memory, trc, "gsicc_create_v2displayrgb");
+    gs_free_object(memory, buffer, "gsicc_create_v2displayrgb");
     /* Save the v2 data */
     src_profile->v2_data = buffer;
     src_profile->v2_size = profile_size;
