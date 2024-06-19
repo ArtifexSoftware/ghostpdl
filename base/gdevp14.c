@@ -7167,6 +7167,7 @@ pdf14_pop_color_model(gx_device* dev, pdf14_group_color_t* group_color)
             gsicc_adjust_profile_rc(pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE],
                                     1, "pdf14_pop_color_model");
         }
+        pdev->num_std_colorants = group_color->num_std_colorants;
     }
 }
 
@@ -7336,6 +7337,11 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
             return NULL;
             break;
     }
+
+    /* We might just have changed the colorspace of the device, which means
+     * the number of colorants have changed. */
+    group_color->num_std_colorants = pdev->num_std_colorants;
+    pdev->num_std_colorants = new_num_comps;
 
     if (has_tags)
         new_num_comps++;
@@ -10563,6 +10569,8 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
         pdev->color_info.comp_shift[k] = (pdev->color_info.num_components - 1 - k) * (8<<deep);
     }
     code = dev_proc((gx_device *) pdev, open_device) ((gx_device *) pdev);
+    if (code < 0)
+        return code;
     pdev->pclist_device = target;
 
     code = dev_proc(target, get_profile)(target, &dev_profile);
@@ -12301,7 +12309,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                     } else {
                         /* if page_spot_colors < 0, this will be wrong, so don't update num_components */
                         if (p14dev->devn_params.page_spot_colors >= 0) {
-                            int n = p14dev->devn_params.num_std_colorant_names +
+                            int n = p14dev->num_std_colorants +
                                     p14dev->devn_params.page_spot_colors;
                             if (p14dev->num_planar_planes > 0)
                                 p14dev->num_planar_planes += n - p14dev->color_info.num_components;

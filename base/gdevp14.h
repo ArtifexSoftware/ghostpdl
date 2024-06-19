@@ -115,6 +115,7 @@ typedef struct pdf14_group_color_s pdf14_group_color_t;
 
 struct pdf14_group_color_s {
     int num_components;
+    int num_std_colorants;
     bool isadditive;
     gx_color_polarity_t polarity;
     byte comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS]; /* These are needed for the shading code */
