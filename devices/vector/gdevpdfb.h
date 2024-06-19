@@ -254,7 +254,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  false,                 /* ModifiesPageOrder */
  true,                  /* WriteXRefStm */
  true,                  /* WriteObjStms */
- 0                      /* PendingOC */
+ 0,                     /* PendingOC */
+ true                   /* ToUnicodeForStdEnc */
 };
 
 #else

@@ -985,7 +985,8 @@ struct gx_device_pdf_s {
     bool ModifiesPageOrder;         /* If true, the new PDF interpreter will not preserve Outlines or Dests, because they will refer to the wrong page number */
     bool WriteXRefStm;              /* If true, (the default) use an XRef stream rather than an xref table */
     bool WriteObjStms;              /* If true, (the default) store candidate objects in ObjStms rather than plain text in the PDF file. */
-    int64_t PendingOC;
+    int64_t PendingOC;              /* An OptionalContent object is pending */
+    bool ToUnicodeForStdEnc;        /* Should we emit ToUnicode CMaps when a simple font has only standard glyph names. Defaults to true */
 };
 
 #define is_in_page(pdev)\

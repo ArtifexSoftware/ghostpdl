@@ -137,6 +137,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("ModifiesPageOrder", gs_param_type_bool, ModifiesPageOrder),
     pi("WriteObjStms", gs_param_type_bool, WriteObjStms),
     pi("WriteXRefStm", gs_param_type_bool, WriteXRefStm),
+    pi("ToUnicodeForStdEnc", gs_param_type_bool, ToUnicodeForStdEnc),
 #undef pi
     gs_param_item_end
 };

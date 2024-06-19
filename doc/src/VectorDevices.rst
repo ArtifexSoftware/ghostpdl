@@ -1130,6 +1130,13 @@ The following switches are used for generating metadata according to the Adobe X
 
    Obviously this is all heuristic and undoubtedly there is more we can do to improve the functionality here, but we need concrete examples to work from.
 
+``-dToUnicodeForStdEnc``
+   Controls whether or not :title:`pdfwrite` generates a ``ToUnicode`` CMap for simple fonts (ie not CIDFonts) where all the glyph names can be found in one of hte standard encodings.
+   
+   Because these names are standard a PDF consumer can determine the sense of the text using just the names, a ``ToUnicode`` CMap is redundant. However it seems that some consumers are unable to perform this kind of lookup and only use the ``ToUnicode`` CMap. Accordingly :title:`pdfwrite` now emits ``ToUnicode`` CMaps for these fonts.
+   
+   As this is a change in behaviour, and the inclusion of ``ToUnicode`` CMaps increases the output file size slightly, this control has been added to allow users to restore the old behaviour by setting it to false.
+
 ``-dWriteXRefStm=boolean``
    Controls whether the pdfwrite device will use an XRef stream in the output file instead of a regular xref table. This switch defaults to true, however if the output file is less than PDF 1.5 then XRef streams are not supported, and it will be set to false.
    

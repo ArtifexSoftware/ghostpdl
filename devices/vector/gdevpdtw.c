@@ -108,7 +108,7 @@ pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0)
 
 /* Check for unknown encode (simple fonts only). */
 static bool
-pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
+pdf_simple_font_needs_ToUnicode(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont)
 {
     int ch;
     unsigned char mask = (pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2
@@ -126,26 +126,29 @@ pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
     if (!pdfont->TwoByteToUnicode)
         return false;
 
-    for (ch = 0; ch < 256; ++ch) {
-        pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
-        gs_glyph glyph = pet->glyph;
+    if (!pdev->ToUnicodeForStdEnc) {
+        for (ch = 0; ch < 256; ++ch) {
+            pdf_encoding_element_t *pet = &pdfont->u.simple.Encoding[ch];
+            gs_glyph glyph = pet->glyph;
 
-        if (glyph == GS_NO_GLYPH)
-            continue;
-        if (glyph < gs_c_min_std_encoding_glyph || glyph >= GS_MIN_CID_GLYPH) {
-            if (pet->size == 0)
-                return true;
-            glyph = gs_c_name_glyph(pet->data, pet->size);
             if (glyph == GS_NO_GLYPH)
-                return true;
-        }
-        glyph -= gs_c_min_std_encoding_glyph;
-        if( glyph > GS_C_PDF_MAX_GOOD_GLYPH ||
-           !(gs_c_pdf_glyph_type[glyph >> 2] & (mask << (( glyph & 3 )<<1) )))
-          return true;
+                continue;
+            if (glyph < gs_c_min_std_encoding_glyph || glyph >= GS_MIN_CID_GLYPH) {
+                if (pet->size == 0)
+                    return true;
+                glyph = gs_c_name_glyph(pet->data, pet->size);
+                if (glyph == GS_NO_GLYPH)
+                    return true;
+            }
+            glyph -= gs_c_min_std_encoding_glyph;
+            if( glyph > GS_C_PDF_MAX_GOOD_GLYPH ||
+               !(gs_c_pdf_glyph_type[glyph >> 2] & (mask << (( glyph & 3 )<<1) )))
+              return true;
 
-    }
-    return false;
+        }
+        return false;
+    } else
+        return true;
 }
 
 /* Write Encoding differencrs. */
@@ -582,7 +585,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
                 pdfont->FontType == ft_TrueType || pdfont->FontType == ft_user_defined ||
                 pdfont->FontType == ft_GL2_stick_user_defined || pdfont->FontType == ft_PCL_user_defined ||
                 pdfont->FontType == ft_MicroType || pdfont->FontType == ft_GL2_531) &&
-                pdf_simple_font_needs_ToUnicode(pdfont))
+                pdf_simple_font_needs_ToUnicode(pdev, pdfont))
            ) {
             pdf_resource_t *prcmap;
             int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap, -1);
