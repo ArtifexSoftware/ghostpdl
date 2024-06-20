@@ -8650,9 +8650,15 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
     gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index color;
 
+    nc = ncomps;
+    if (device_encodes_tags(dev))
+        nc--;
+
     if (pgs->color_component_map.sep_type == SEP_ALL) {
         frac comp_value = all;
 
+        for (i = pgs->color_component_map.num_colorants - 1; i >= nc - num_spots; i--)
+            cm_comps[i] = comp_value;
         /*
          * Invert the photometric interpretation for additive
          * color spaces because separations are always subtractive.
@@ -8660,7 +8666,6 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
         if (additive)
             comp_value = frac_1 - comp_value;
         /* Use the "all" value for all components */
-        i = pgs->color_component_map.num_colorants - 1;
         for (; i >= 0; i--)
             cm_comps[i] = comp_value;
     } else {
@@ -8677,9 +8682,6 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
         map_components_to_colorants(comp_value, &(pgs->color_component_map), cm_comps);
     }
 
-    nc = ncomps;
-    if (device_encodes_tags(dev))
-        nc--;
     /* apply the transfer function(s); convert to color values */
     if (additive) {
         for (i = 0; i < nc; i++)
