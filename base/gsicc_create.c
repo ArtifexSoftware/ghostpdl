@@ -2772,7 +2772,6 @@ gsicc_create_v2input(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_
     gsicc_release_link(link);
     clean_lut(&clut, pgs->memory);
     gs_free_object(memory, tag_list, "gsicc_create_v2input");
-    gs_free_object(memory, buffer, "gsicc_create_v2input");
     /* Save the v2 data */
     src_profile->v2_data = buffer;
     src_profile->v2_size = profile_size;
@@ -3015,7 +3014,6 @@ gsicc_create_v2displaygray(const gs_gstate *pgs, icHeader *header, cmm_profile_t
     gsicc_release_link(link);
     gs_free_object(memory, tag_list, "gsicc_createv2display_gray");
     gs_free_object(memory, trc, "gsicc_createv2display_gray");
-    gs_free_object(memory, buffer, "gsicc_createv2display_gray");
     /* Save the v2 data */
     src_profile->v2_data = buffer;
     src_profile->v2_size = profile_size;
@@ -3111,7 +3109,6 @@ gsicc_create_v2displayrgb(const gs_gstate *pgs, icHeader *header, cmm_profile_t 
     gsicc_release_link(link);
     gs_free_object(memory, tag_list, "gsicc_create_v2displayrgb");
     gs_free_object(memory, trc, "gsicc_create_v2displayrgb");
-    gs_free_object(memory, buffer, "gsicc_create_v2displayrgb");
     /* Save the v2 data */
     src_profile->v2_data = buffer;
     src_profile->v2_size = profile_size;
