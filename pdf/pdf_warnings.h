@@ -103,4 +103,5 @@ PARAM(W_PDF_BAD_OCDICT,             "Optional content (/OC) did not reference a 
 PARAM(W_PDF_DO_OC_FAILED,           "Failed to write optional content for an image or form, layers will be incorrect."),
 PARAM(W_PDF_BAD_CONFIG,             "A configuration or command line parameter was invalid or incorrect."),
 PARAM(W_PDF_INVALID_TTF_CMAP,       "A TrueType font contains invalid or no cmap table(s)"),
+PARAM(W_PDF_LIMITCHECK_TYPE0_CMAP,  "A CMap has too many code maps."),
 #undef PARAM

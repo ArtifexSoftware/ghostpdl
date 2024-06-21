@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -108,9 +108,13 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
     /* increment to_pop to cover the mark object */
     numranges = to_pop++;
     while (numranges % 2) numranges--;
+
     if (numranges > 200) {
-        (void)pdf_ps_stack_pop(s, to_pop);
-        return_error(gs_error_syntaxerror);
+        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endcodespacerange_func", NULL);
+        if (s->pdfi_ctx->args.pdfstoponwarning) {
+            (void)pdf_ps_stack_pop(s, to_pop);
+            return_error(gs_error_syntaxerror);
+        }
     }
 
     if (numranges > 0
@@ -171,9 +175,13 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
      * startcode, endcode and basecid
      */
     while (ncodemaps % 3) ncodemaps--;
+
     if (ncodemaps > 300) {
-        (void)pdf_ps_stack_pop(s, to_pop);
-        return_error(gs_error_syntaxerror);
+        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
+        if (s->pdfi_ctx->args.pdfstoponwarning) {
+            (void)pdf_ps_stack_pop(s, to_pop);
+            return_error(gs_error_syntaxerror);
+        }
     }
 
     stobj = &s->cur[-ncodemaps] + 1;
@@ -279,8 +287,11 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
     while (ncodemaps % 3) ncodemaps--;
 
     if (ncodemaps > 300) {
-        (void)pdf_ps_stack_pop(s, to_pop);
-        return_error(gs_error_syntaxerror);
+        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfrange_func", NULL);
+        if (s->pdfi_ctx->args.pdfstoponwarning) {
+            (void)pdf_ps_stack_pop(s, to_pop);
+            return_error(gs_error_syntaxerror);
+        }
     }
 
     stobj = &s->cur[-ncodemaps] + 1;
@@ -500,8 +511,11 @@ static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *
     while (ncodemaps % 2) ncodemaps--;
 
     if (ncodemaps > 200) {
-        (void)pdf_ps_stack_pop(s, to_pop);
-        return_error(gs_error_syntaxerror);
+        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfchar_func", NULL);
+        if (s->pdfi_ctx->args.pdfstoponwarning) {
+            (void)pdf_ps_stack_pop(s, to_pop);
+            return_error(gs_error_syntaxerror);
+        }
     }
 
     stobj = &s->cur[-ncodemaps] + 1;
@@ -583,8 +597,11 @@ static int cmap_endbfchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byt
     int i, j;
 
     if (ncodemaps > 200) {
-        (void)pdf_ps_stack_pop(s, ncodemaps);
-        return_error(gs_error_syntaxerror);
+        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfchar_func", NULL);
+        if (s->pdfi_ctx->args.pdfstoponwarning) {
+            (void)pdf_ps_stack_pop(s, ncodemaps);
+            return_error(gs_error_syntaxerror);
+        }
     }
 
     stobj = &s->cur[-ncodemaps] + 1;

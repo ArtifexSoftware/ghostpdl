@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -192,14 +192,14 @@ static inline int pdf_ps_stack_push(pdf_ps_ctx_t *s)
                 for (i = 0; i < PDF_PS_STACK_GUARDS; i++)
                     nstack[newsize - PDF_PS_STACK_GUARDS + i].type = PDF_PS_OBJ_STACK_TOP;
 
-                for (i = currsize - 2; i < newsize - PDF_PS_STACK_GUARDS; i++) {
+                for (i = currsize - 1; i < newsize - PDF_PS_STACK_GUARDS; i++) {
                     pdf_ps_make_null(&(nstack[i]));
                 }
 
                 gs_free_object(s->pdfi_ctx->memory, s->stack, "pdf_ps_stack_push(s->stack)");
                 s->stack = nstack;
-                s->cur = s->stack + currsize - 1;
-                s->toplim = s->stack + newsize - PDF_PS_STACK_GROW_SIZE;
+                s->cur = s->stack + currsize - 2;
+                s->toplim = s->stack + newsize;
             }
             else {
                 return_error(gs_error_VMerror);
