@@ -192,7 +192,7 @@
     int prev_duplex_mode;\
     int nup;\
     bool faceup;\
-    char mediaType[LIPS_MEDIACHAR_MAX]
+    char mediaType[LIPS_MEDIACHAR_MAX + 1]
 
 int lips_media_selection(int width, int height);
 int lips_packbits_encode(byte * inBuff, byte * outBuff, int Length);
