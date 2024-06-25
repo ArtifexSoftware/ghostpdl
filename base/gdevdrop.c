@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -405,6 +405,9 @@ pack_from_standard(gx_device_memory * dev, int y, int destx, const byte * src,
             vr = (vr >= 0x80 ? vr | chop : vr & ~chop);
             vg = (vg >= 0x80 ? vg | chop : vg & ~chop);
             vb = (vb >= 0x80 ? vb | chop : vb & ~chop);
+            /* Avoid overflow, CID 427553 */
+            if (chop == 0x80)
+                return;
             chop <<= 1;
         }
         if ((shift -= depth) >= 0)
