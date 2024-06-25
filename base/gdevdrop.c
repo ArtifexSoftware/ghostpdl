@@ -490,6 +490,9 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
             vr = (vr >= 0x80 ? vr | chop : vr & ~chop);
             vg = (vg >= 0x80 ? vg | chop : vg & ~chop);
             vb = (vb >= 0x80 ? vb | chop : vb & ~chop);
+            /* Avoid overflow, CID 427561 */
+            if (chop == 0x80)
+                return;
             chop <<= 1;
         }
         switch (depth) {
