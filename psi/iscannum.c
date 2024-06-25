@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -59,7 +59,6 @@ scan_number(const byte * str, const byte * end, int sign,
     int exp10;
     int code = 0;
     int c, d;
-    ps_uint max_scan; /* max signed or unsigned int */
     ps_int max_ps_int_scan, min_ps_int_scan;
     const byte *const decoder = scan_char_decoder;
 #define IS_DIGIT(d, c)\
@@ -103,13 +102,11 @@ scan_number(const byte * str, const byte * end, int sign,
     max_ps_int_scan = scanner_options & SCAN_CPSI_MODE ? MAX_PS_INT32 : MAX_PS_INT;
     min_ps_int_scan = scanner_options & SCAN_CPSI_MODE ? MIN_PS_INT32 : MIN_PS_INT;
 
-    max_scan = scanner_options & SCAN_PDF_UNSIGNED && sign >= 0 ? ~((ps_int)0) : max_ps_int_scan;
-
     for (;; ival = ival * 10 + d) {
         GET_NEXT(c, sp, goto iret);
         if (!IS_DIGIT(d, c))
             break;
-        if (WOULD_OVERFLOW(((ps_uint)ival), d, max_scan)) {
+        if (WOULD_OVERFLOW(((ps_uint)ival), d, max_ps_int_scan)) {
             if (ival == max_ps_int_scan / 10 && d == (max_ps_int_scan % 10) + 1 && sign < 0) {
                 GET_NEXT(c, sp, c = EOFC);
                 dval = -(double)min_ps_int_scan;
