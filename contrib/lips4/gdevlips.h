@@ -177,7 +177,7 @@
 
 #define lips_params_common \
     int cassetFeed;                    /* Input Casset */ \
-    char Username[LIPS_USERNAME_MAX];  /* Display text on printer panel */\
+    char Username[LIPS_USERNAME_MAX + 1];  /* Display text on printer panel */\
     bool pjl; \
     int toner_density;\
     bool toner_saving;\
