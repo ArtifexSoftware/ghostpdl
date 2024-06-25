@@ -1048,6 +1048,7 @@ xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
         return gs_throw(-1, "not a TIFF file, wrong version marker");
 
     /* get offset of IFD */
+
     offset = readlong(tiff);
 
     /*
@@ -1057,6 +1058,9 @@ xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
     tiff->rp = tiff->bp + offset;
 
     count = readshort(tiff);
+
+    if ((offset + 2 + count * 12) > len)
+        return gs_throw(-1, "TIFF IFD offset incorrect");
 
     offset += 2;
     for (i = 0; i < count; i++)
