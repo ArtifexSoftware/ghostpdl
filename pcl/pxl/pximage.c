@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -646,14 +646,21 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
                     uint val = *pin++;
 
                     --avail;
-                    deltarow->row_byte_count--;
-                    deltarow->short_cnt = (val >> 5) + 1;       /* 1 to 8 new bytes to copy */
-                    deltarow->short_offset = val & 0x1f;        /* num to retain from last row, skip */
-                    if (deltarow->short_offset == 0x1f)
-                        deltarow->state = partial_offset;       /* accumulate more offset */
-                    else {
-                        pout += deltarow->short_offset; /* skip keeps old data in row */
-                        deltarow->state = partial_cnt;  /* done with offset do count */
+
+                    if (deltarow->row_byte_count == 0) {
+                        /* duplicate the row */
+                        deltarow->state = next_is_bytecount;
+                        end_of_row = true;
+                    } else {
+                        deltarow->row_byte_count--;
+                        deltarow->short_cnt = (val >> 5) + 1;       /* 1 to 8 new bytes to copy */
+                        deltarow->short_offset = val & 0x1f;        /* num to retain from last row, skip */
+                        if (deltarow->short_offset == 0x1f)
+                            deltarow->state = partial_offset;       /* accumulate more offset */
+                        else {
+                            pout += deltarow->short_offset; /* skip keeps old data in row */
+                            deltarow->state = partial_cnt;  /* done with offset do count */
+                        }
                     }
                     break;
                 }
@@ -662,15 +669,21 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
                     uint offset = *pin++;
 
                     avail--;
-                    deltarow->row_byte_count--;
+                    if (deltarow->row_byte_count == 0) {
+                        /* duplicate the row */
+                        deltarow->state = next_is_bytecount;
+                        end_of_row = true;
+                    } else {
+                        deltarow->row_byte_count--;
 
-                    deltarow->short_offset += offset;
+                        deltarow->short_offset += offset;
 
-                    if (offset == 0xff)
-                        deltarow->state = partial_offset;       /* 0x1f + ff ff ff ff ff + 1 */
-                    else {
-                        pout += deltarow->short_offset; /* skip keeps old data in row */
-                        deltarow->state = partial_cnt;  /* done with offset do count */
+                        if (offset == 0xff)
+                            deltarow->state = partial_offset;       /* 0x1f + ff ff ff ff ff + 1 */
+                        else {
+                            pout += deltarow->short_offset; /* skip keeps old data in row */
+                            deltarow->state = partial_cnt;  /* done with offset do count */
+                        }
                     }
                     break;
                 }
