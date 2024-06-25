@@ -706,7 +706,7 @@ bits_merge(byte *dest, const byte *src, uint nbytes)
 /* Smear a scan line horizontally.  Note that the output is wider than */
 /* the input by the amount of bolding (smear_width). */
 static void
-bits_smear_horizontally(byte *dest, const byte *src, uint width,
+fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width,
   uint smear_width)
 {       uint bits_on = 0;
         const byte *sp = src;
@@ -962,7 +962,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
                             memcpy(line, r + y * rast->line_step, rast->line_step);
                             memset(line + rast->line_step, 0x00, (dest_raster + 1) -  rast->line_step);
 
-                            bits_smear_horizontally(merged_line(y), line, rast->width, bold);
+                            fapi_bits_smear_horizontally(merged_line(y), line, rast->width, bold);
                             /* Now re-establish the invariant -- see below. */
                             kmask = 1;
 
