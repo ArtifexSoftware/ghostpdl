@@ -695,15 +695,20 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
                     else
                         *pout++ = *pin++;   /* copy new data into row */
                     avail--;
-                    deltarow->row_byte_count--;
-                    deltarow->short_cnt--;
-
                     if (deltarow->row_byte_count == 0) {
                         end_of_row = true;
                         deltarow->state = next_is_bytecount;
-                    } else if (deltarow->short_cnt == 0)
-                        deltarow->state = next_is_cmd;
-                    /* else more bytes to copy */
+                    } else {
+                        deltarow->row_byte_count--;
+                        deltarow->short_cnt--;
+
+                        if (deltarow->row_byte_count == 0) {
+                            end_of_row = true;
+                            deltarow->state = next_is_bytecount;
+                        } else if (deltarow->short_cnt == 0)
+                            deltarow->state = next_is_cmd;
+                        /* else more bytes to copy */
+                    }
                     break;
                 }
 
