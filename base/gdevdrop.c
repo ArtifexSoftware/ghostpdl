@@ -406,7 +406,7 @@ pack_from_standard(gx_device_memory * dev, int y, int destx, const byte * src,
             vg = (vg >= 0x80 ? vg | chop : vg & ~chop);
             vb = (vb >= 0x80 ? vb | chop : vb & ~chop);
             /* Avoid overflow, CID 427553 */
-            if (chop == 0x80)
+            if (chop & 0x80)
                 return;
             chop <<= 1;
         }
@@ -491,7 +491,7 @@ pack_planar_from_standard(gx_device_memory * dev, int y, int destx,
             vg = (vg >= 0x80 ? vg | chop : vg & ~chop);
             vb = (vb >= 0x80 ? vb | chop : vb & ~chop);
             /* Avoid overflow, CID 427561 */
-            if (chop == 0x80)
+            if (chop & 0x80)
                 return;
             chop <<= 1;
         }
