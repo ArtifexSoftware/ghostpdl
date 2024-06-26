@@ -1050,6 +1050,8 @@ xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
     /* get offset of IFD */
 
     offset = readlong(tiff);
+    if (offset > len - 2)
+        return gs_throw(-1, "TIFF IFD offset incorrect");
 
     /*
      * Read IFD
