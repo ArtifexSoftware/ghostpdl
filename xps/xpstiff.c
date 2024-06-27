@@ -167,33 +167,65 @@ xps_report_error(stream_state * st, const char *str)
 }
 
 static inline int
-readbyte(xps_tiff_t *tiff)
+readbyte(xps_tiff_t *tiff, unsigned int *v)
 {
-    if (tiff->rp < tiff->ep)
-        return *tiff->rp++;
+    if (tiff->rp < tiff->ep) {
+        *v = *tiff->rp++;
+        return 0;
+    }
     return EOF;
 }
 
-static inline unsigned
-readshort(xps_tiff_t *tiff)
+static inline int
+readshort(xps_tiff_t *tiff, unsigned int *v)
 {
-    unsigned a = readbyte(tiff);
-    unsigned b = readbyte(tiff);
+    int code;
+    unsigned a;
+    unsigned b;
+
+    code = readbyte(tiff, &a);
+    if (code < 0)
+        return code;
+    code = readbyte(tiff, &b);
+    if (code < 0)
+        return code;
+
     if (tiff->order == TII)
-        return (b << 8) | a;
-    return (a << 8) | b;
+        *v = (b << 8) | a;
+    else
+        *v = (a << 8) | b;
+
+    return 0;
 }
 
 static inline unsigned
-readlong(xps_tiff_t *tiff)
+readlong(xps_tiff_t *tiff, unsigned int *v)
 {
-    unsigned a = readbyte(tiff);
-    unsigned b = readbyte(tiff);
-    unsigned c = readbyte(tiff);
-    unsigned d = readbyte(tiff);
+    int code;
+    unsigned a;
+    unsigned b;
+    unsigned c;
+    unsigned d;
+
+    code = readbyte(tiff, &a);
+    if (code < 0)
+        return code;
+    code = readbyte(tiff, &b);
+    if (code < 0)
+        return code;
+    code = readbyte(tiff, &c);
+    if (code < 0)
+        return code;
+    code = readbyte(tiff, &d);
+    if (code < 0)
+        return code;
+
     if (tiff->order == TII)
-        return (d << 24) | (c << 16) | (b << 8) | a;
-    return (a << 24) | (b << 16) | (c << 8) | d;
+        *v = (d << 24) | (c << 16) | (b << 8) | a;
+    else
+        *v = (a << 24) | (b << 16) | (c << 8) | d;
+
+    return 0;
 }
 
 static int
@@ -828,22 +860,30 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     return gs_okay;
 }
 
-static void
+static int
 xps_read_tiff_bytes(unsigned char *p, xps_tiff_t *tiff, unsigned ofs, unsigned n)
 {
+    int code;
     tiff->rp = tiff->bp + ofs;
     if (tiff->rp > tiff->ep)
         tiff->rp = tiff->bp;
 
     while (n--)
     {
-        *p++ = readbyte(tiff);
+        unsigned int v;
+        code = readbyte(tiff, &v);
+        if (code < 0)
+            return code;
+        *p++ = v;
     }
+    return 0;
 }
 
-static void
+static int
 xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned ofs, unsigned n)
 {
+    int code;
+    unsigned int v, u;
     tiff->rp = tiff->bp + ofs;
     if (tiff->rp > tiff->ep)
         tiff->rp = tiff->bp;
@@ -853,21 +893,43 @@ xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned o
         switch (type)
         {
         case TRATIONAL:
-            *p = readlong(tiff);
-            *p = *p / readlong(tiff);
-            p ++;
+            code = readlong(tiff, &v);
+            if (code < 0)
+                return code;
+            code = readlong(tiff, &u);
+            if (code < 0)
+                return code;
+            *p = v / u;
+            p++;
             break;
-        case TBYTE: *p++ = readbyte(tiff); break;
-        case TSHORT: *p++ = readshort(tiff); break;
-        case TLONG: *p++ = readlong(tiff); break;
-        default: *p++ = 0; break;
+        case TBYTE:
+            code = readbyte(tiff, p++);
+            if (code < 0)
+                return code;
+            break;
+        case TSHORT:
+            code = readshort(tiff, p++);
+            if (code < 0)
+                return code;
+            break;
+        case TLONG:
+            code = readlong(tiff, p++);
+            if (code < 0)
+                return code;
+            break;
+        default:
+            *p++ = 0;
+            break;
         }
     }
+    return 0;
 }
+
 
 static int
 xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
 {
+    int code = 0;
     unsigned tag;
     unsigned type;
     unsigned count;
@@ -875,72 +937,81 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
 
     tiff->rp = tiff->bp + offset;
 
-    tag = readshort(tiff);
-    type = readshort(tiff);
-    count = readlong(tiff);
+    code = readshort(tiff, &tag);
+    if (code < 0)
+        return code;
+    code = readshort(tiff, &type);
+    if (code < 0)
+        return code;
+    code = readlong(tiff, &count);
+    if (code < 0)
+        return code;
 
     if ((type == TBYTE && count <= 4) ||
             (type == TSHORT && count <= 2) ||
             (type == TLONG && count <= 1))
         value = tiff->rp - tiff->bp;
-    else
-        value = readlong(tiff);
+    else {
+        code = readlong(tiff, &value);
+        if (code < 0)
+            return code;
+    }
 
     switch (tag)
     {
     case NewSubfileType:
-        xps_read_tiff_tag_value(&tiff->subfiletype, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->subfiletype, tiff, type, value, 1);
         break;
     case ImageWidth:
-        xps_read_tiff_tag_value(&tiff->imagewidth, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->imagewidth, tiff, type, value, 1);
         break;
     case ImageLength:
-        xps_read_tiff_tag_value(&tiff->imagelength, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->imagelength, tiff, type, value, 1);
         break;
     case BitsPerSample:
-        xps_read_tiff_tag_value(&tiff->bitspersample, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->bitspersample, tiff, type, value, 1);
         break;
     case Compression:
-        xps_read_tiff_tag_value(&tiff->compression, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->compression, tiff, type, value, 1);
         break;
     case PhotometricInterpretation:
-        xps_read_tiff_tag_value(&tiff->photometric, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->photometric, tiff, type, value, 1);
         break;
     case FillOrder:
-        xps_read_tiff_tag_value(&tiff->fillorder, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->fillorder, tiff, type, value, 1);
         break;
     case SamplesPerPixel:
-        xps_read_tiff_tag_value(&tiff->samplesperpixel, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->samplesperpixel, tiff, type, value, 1);
         break;
     case RowsPerStrip:
-        xps_read_tiff_tag_value(&tiff->rowsperstrip, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->rowsperstrip, tiff, type, value, 1);
         break;
     case XResolution:
-        xps_read_tiff_tag_value(&tiff->xresolution, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->xresolution, tiff, type, value, 1);
         break;
     case YResolution:
-        xps_read_tiff_tag_value(&tiff->yresolution, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->yresolution, tiff, type, value, 1);
         break;
     case PlanarConfiguration:
-        xps_read_tiff_tag_value(&tiff->planar, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->planar, tiff, type, value, 1);
         break;
     case T4Options:
-        xps_read_tiff_tag_value(&tiff->g3opts, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->g3opts, tiff, type, value, 1);
         break;
     case T6Options:
-        xps_read_tiff_tag_value(&tiff->g4opts, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->g4opts, tiff, type, value, 1);
         break;
     case Predictor:
-        xps_read_tiff_tag_value(&tiff->predictor, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->predictor, tiff, type, value, 1);
         break;
     case ResolutionUnit:
-        xps_read_tiff_tag_value(&tiff->resolutionunit, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->resolutionunit, tiff, type, value, 1);
         break;
     case YCbCrSubSampling:
-        xps_read_tiff_tag_value(tiff->ycbcrsubsamp, tiff, type, value, 2);
+        code = xps_read_tiff_tag_value(tiff->ycbcrsubsamp, tiff, type, value, 2);
         break;
     case ExtraSamples:
-        xps_read_tiff_tag_value(&tiff->extrasamples, tiff, type, value, 1);
+        code = xps_read_tiff_tag_value(&tiff->extrasamples, tiff, type, value, 1);
         break;
     case ICCProfile:
         tiff->profile = xps_alloc(ctx, count);
@@ -948,7 +1019,9 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
             return gs_throw(gs_error_VMerror, "could not allocate embedded icc profile");
         /* ICC profile data type is set to UNDEFINED.
          * TBYTE reading not correct in xps_read_tiff_tag_value */
-        xps_read_tiff_bytes(tiff->profile, tiff, value, count);
+        code = xps_read_tiff_bytes(tiff->profile, tiff, value, count);
+        if (code < 0)
+            return code;
         tiff->profilesize = count;
         break;
 
@@ -961,21 +1034,21 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
         tiff->stripoffsets = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->stripoffsets)
             return gs_throw(gs_error_VMerror, "could not allocate strip offsets");
-        xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
+        code = xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
         break;
 
     case StripByteCounts:
         tiff->stripbytecounts = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->stripbytecounts)
             return gs_throw(gs_error_VMerror, "could not allocate strip byte counts");
-        xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
+        code = xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
         break;
 
     case ColorMap:
         tiff->colormap = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
         if (!tiff->colormap)
             return gs_throw(gs_error_VMerror, "could not allocate color map");
-        xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
+        code = xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
         break;
 
     case TileWidth:
@@ -989,7 +1062,7 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
         break;
     }
 
-    return gs_okay;
+    return code;
 }
 
 static void
@@ -1007,6 +1080,7 @@ xps_swap_byte_order(byte *buf, int n)
 static int
 xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
 {
+    int code;
     unsigned version;
     unsigned offset;
     unsigned count;
@@ -1038,19 +1112,19 @@ xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
 
     /* get byte order marker */
     tiff->order = TII;
-    tiff->order = readshort(tiff);
-    if (tiff->order != TII && tiff->order != TMM)
+    code = readshort(tiff, &tiff->order);
+    if (code < 0 || (tiff->order != TII && tiff->order != TMM))
         return gs_throw(-1, "not a TIFF file, wrong magic marker");
 
     /* check version */
-    version = readshort(tiff);
-    if (version != 42)
+    code = readshort(tiff, &version);
+    if (code < 0 || version != 42)
         return gs_throw(-1, "not a TIFF file, wrong version marker");
 
     /* get offset of IFD */
 
-    offset = readlong(tiff);
-    if (offset > len - 2)
+    code = readlong(tiff, &offset);
+    if (code < 0 || offset > len - 2)
         return gs_throw(-1, "TIFF IFD offset incorrect");
 
     /*
@@ -1059,9 +1133,9 @@ xps_decode_tiff_header(xps_context_t *ctx, xps_tiff_t *tiff, byte *buf, int len)
 
     tiff->rp = tiff->bp + offset;
 
-    count = readshort(tiff);
+    code = readshort(tiff, &count);
 
-    if ((offset + 2 + count * 12) > len)
+    if (code < 0 || (offset > (len - 2 - (count * 12))))
         return gs_throw(-1, "TIFF IFD offset incorrect");
 
     offset += 2;
