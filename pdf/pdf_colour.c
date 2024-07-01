@@ -239,6 +239,10 @@ static int pdfi_check_for_spots_by_array(pdf_context *ctx, pdf_array *color_arra
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
+        if (a == color_array) {
+            code = gs_note_error(gs_error_circular_reference);
+            goto exit;
+        }
 
         /* recursion */
         code = pdfi_check_for_spots_by_array(ctx, a, parent_dict, page_dict, spot_dict);
