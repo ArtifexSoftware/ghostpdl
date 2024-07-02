@@ -169,6 +169,11 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
+    if (to_pop < 0 || to_pop > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
+        return_error(gs_error_syntaxerror);
+    }
+
     /* increment to_pop to cover the mark object */
     ncodemaps = to_pop++;
     /* mapping should have 3 objects on the stack:
@@ -279,6 +284,11 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
     int i, j, k;
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
+
+    if (to_pop < 0 || to_pop > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
+        return_error(gs_error_syntaxerror);
+    }
 
     /* increment to_pop to cover the mark object */
     ncodemaps = to_pop++;
@@ -503,6 +513,11 @@ static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
+    if (to_pop < 0 || to_pop > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
+        return_error(gs_error_syntaxerror);
+    }
+
     /* increment to_pop to cover the mark object */
     ncodemaps = to_pop++;
     /* mapping should have 2 objects on the stack:
@@ -595,6 +610,11 @@ static int cmap_endbfchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byt
     int ncodemaps = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
     pdf_ps_stack_object_t *stobj;
     int i, j;
+
+    if (ncodemaps < 0 || ncodemaps > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
+        return_error(gs_error_syntaxerror);
+    }
 
     if (ncodemaps > 200) {
         pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfchar_func", NULL);

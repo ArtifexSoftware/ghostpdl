@@ -84,4 +84,5 @@ PARAM(E_PDF_ICC_BAD_N,                 "ICCbased space /N value does not match t
 PARAM(E_PDF_MISSING_BBOX,              "A form is missing the required /BBox key"),
 PARAM(E_PDF_GROUP_BAD_BC_TOO_BIG,      "An SMask has a /BC array with too many components. Ignoring specified BC"),
 PARAM(E_PDF_GROUP_BAD_BC_NO_CS,        "An Smask has a /BC key, but the Group attributes dictionary has no /CS. Ignoring specified BC"),
+PARAM(E_PDF_BAD_TYPE0_CMAP,            "CMap unrecoverably broken"),
 #undef PARAM
