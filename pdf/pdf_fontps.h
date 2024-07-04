@@ -42,7 +42,7 @@ typedef struct pdf_ps_stack_object_s pdf_ps_stack_object_t;
 struct pdf_ps_stack_object_s
 {
   pdf_ps_obj_type type;
-  int size;
+  uint32_t size;
   union v {
     int i;
     float f;
@@ -141,19 +141,19 @@ static inline void pdf_ps_make_float(pdf_ps_stack_object_t *obj, float fval)
   obj->size = 0;
   obj->val.f = fval;
 }
-static inline void pdf_ps_make_string(pdf_ps_stack_object_t *obj, byte *str, int len)
+static inline void pdf_ps_make_string(pdf_ps_stack_object_t *obj, byte *str, uint32_t len)
 {
   obj->type = PDF_PS_OBJ_STRING;
   obj->size = len;
   obj->val.string = str;
 }
-static inline void pdf_ps_make_name(pdf_ps_stack_object_t *obj, byte *nm, int len)
+static inline void pdf_ps_make_name(pdf_ps_stack_object_t *obj, byte *nm, uint32_t len)
 {
   obj->type = PDF_PS_OBJ_NAME;
   obj->size = len;
   obj->val.name = nm;
 }
-static inline void pdf_ps_make_array(pdf_ps_stack_object_t *obj, pdf_ps_stack_object_t *obj2, int len)
+static inline void pdf_ps_make_array(pdf_ps_stack_object_t *obj, pdf_ps_stack_object_t *obj2, uint32_t len)
 {
   obj->type = PDF_PS_OBJ_ARRAY;
   obj->size = len;
@@ -291,27 +291,43 @@ static inline int pdf_ps_stack_push_float(pdf_ps_ctx_t *s, float f)
     return 0;
 }
 
-static inline int pdf_ps_stack_push_string(pdf_ps_ctx_t *s, byte *str, int len)
+/* String, name and array have an arbitrary limit of 64k on their size. */
+static inline int pdf_ps_stack_push_string(pdf_ps_ctx_t *s, byte *str, uint32_t len)
 {
-    int code = pdf_ps_stack_push(s);
+    int code;
+
+    if (len > 65535)
+        return gs_error_limitcheck;
+
+    code = pdf_ps_stack_push(s);
     if (code < 0) return code;
 
     pdf_ps_make_string(s->cur, str, len);
     return 0;
 }
 
-static inline int pdf_ps_stack_push_name(pdf_ps_ctx_t *s, byte *nm, int len)
+static inline int pdf_ps_stack_push_name(pdf_ps_ctx_t *s, byte *nm, uint32_t len)
 {
-    int code = pdf_ps_stack_push(s);
+    int code;
+
+    if (len > 65535)
+        return gs_error_limitcheck;
+
+    code = pdf_ps_stack_push(s);
     if (code < 0) return code;
 
     pdf_ps_make_name(s->cur, nm, len);
     return 0;
 }
 
-static inline int pdf_ps_stack_push_array(pdf_ps_ctx_t *s, pdf_ps_stack_object_t *a, int len)
+static inline int pdf_ps_stack_push_array(pdf_ps_ctx_t *s, pdf_ps_stack_object_t *a, uint32_t len)
 {
-    int code = pdf_ps_stack_push(s);
+    int code;
+
+    if (len > 65535)
+        return gs_error_limitcheck;
+
+    code = pdf_ps_stack_push(s);
     if (code < 0) return code;
 
     pdf_ps_make_array(s->cur, a, len);
