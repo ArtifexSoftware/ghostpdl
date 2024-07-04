@@ -66,7 +66,7 @@ gc_mark_string(const byte * ptr, uint size, bool set, const clump_t * cp)
     uint offset = ptr - cp->sbase;
     bword *bp = (bword *) (cp->smark + ((offset & -bword_bits) >> 3));
     uint bn = offset & (bword_bits - 1);
-    bword m = (bword_1s << bn) & bword_1s;
+    bword m = (bword)(((uint64_t)bword_1s << bn) & bword_1s);
     uint left = size;
     bword marks = 0;
 
@@ -84,7 +84,7 @@ gc_mark_string(const byte * ptr, uint size, bool set, const clump_t * cp)
         }
         if (left) {
             bword_swap_bytes(m);
-            m = (m - (m << left)) & bword_1s;
+            m = (bword)(((uint64_t)m - ((uint64_t)m << left)) & bword_1s);
             bword_swap_bytes(m);
             marks |= ~*bp & m;
             *bp |= m;
@@ -105,7 +105,7 @@ gc_mark_string(const byte * ptr, uint size, bool set, const clump_t * cp)
         }
         if (left) {
             bword_swap_bytes(m);
-            m = (m - (m << left)) & bword_1s;
+            m = (bword)(((uint64_t)m - ((uint64_t)m << left)) & bword_1s);
             bword_swap_bytes(m);
             *bp &= ~m;
         }
