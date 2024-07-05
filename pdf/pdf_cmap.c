@@ -109,6 +109,13 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
     numranges = to_pop++;
     while (numranges % 2) numranges--;
 
+    /* The following hard limit is an implementation limit */
+    if (numranges <= 0 || numranges + 1 > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcodespacerange_func", NULL);
+        return_error(gs_error_syntaxerror);
+    }
+
+    /* The following "soft" limit is according to the spec */
     if (numranges > 200) {
         pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endcodespacerange_func", NULL);
         if (s->pdfi_ctx->args.pdfstoponwarning) {
@@ -169,11 +176,6 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
-    if (to_pop < 0 || to_pop > PDF_PS_STACK_MAX) {
-        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
-        return_error(gs_error_syntaxerror);
-    }
-
     /* increment to_pop to cover the mark object */
     ncodemaps = to_pop++;
     /* mapping should have 3 objects on the stack:
@@ -181,8 +183,15 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
      */
     while (ncodemaps % 3) ncodemaps--;
 
+    /* The following hard limit is an implementation limit */
+    if (ncodemaps <= 0 || ncodemaps + 1 > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "general_endcidrange_func", NULL);
+        return_error(gs_error_syntaxerror);
+    }
+
+    /* The following "soft" limit is according to the spec */
     if (ncodemaps > 300) {
-        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
+        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "general_endcidrange_func", NULL);
         if (s->pdfi_ctx->args.pdfstoponwarning) {
             (void)pdf_ps_stack_pop(s, to_pop);
             return_error(gs_error_syntaxerror);
@@ -211,7 +220,7 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
             }
 
             if (preflen > MAX_CMAP_CODE_SIZE || stobj[i].size - preflen > MAX_CMAP_CODE_SIZE || stobj[i + 1].size - preflen > MAX_CMAP_CODE_SIZE
-                || stobj[i].size - preflen < 0 || stobj[i + 1].size - preflen < 0) {
+                || ((int64_t)stobj[i].size) - preflen < 0 || ((int64_t)stobj[i + 1].size) - preflen < 0) {
                 (void)pdf_ps_stack_pop(s, to_pop);
                 return_error(gs_error_syntaxerror);
             }
@@ -285,19 +294,21 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
-    if (to_pop < 0 || to_pop > PDF_PS_STACK_MAX) {
-        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
-        return_error(gs_error_syntaxerror);
-    }
-
     /* increment to_pop to cover the mark object */
     ncodemaps = to_pop++;
     /* mapping should have 3 objects on the stack
      */
     while (ncodemaps % 3) ncodemaps--;
 
+    /* The following hard limit is an implementation limit */
+    if (ncodemaps <= 0 || ncodemaps + 1 > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endfbrange_func", NULL);
+        return_error(gs_error_syntaxerror);
+    }
+    /* The following "soft" limit is according to the spec */
+
     if (ncodemaps > 300) {
-        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfrange_func", NULL);
+        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endfbrange_func", NULL);
         if (s->pdfi_ctx->args.pdfstoponwarning) {
             (void)pdf_ps_stack_pop(s, to_pop);
             return_error(gs_error_syntaxerror);
@@ -360,7 +371,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
                 }
 
                 if (preflen > MAX_CMAP_CODE_SIZE || stobj[i].size - preflen > MAX_CMAP_CODE_SIZE || stobj[i + 1].size - preflen > MAX_CMAP_CODE_SIZE
-                    || stobj[i].size - preflen < 0 || stobj[i + 1].size - preflen < 0) {
+                    || ((int64_t)stobj[i].size) - preflen < 0 || ((int64_t)stobj[i + 1].size) - preflen < 0) {
                     (void)pdf_ps_stack_pop(s, to_pop);
                     return_error(gs_error_syntaxerror);
                 }
@@ -513,11 +524,6 @@ static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
-    if (to_pop < 0 || to_pop > PDF_PS_STACK_MAX) {
-        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
-        return_error(gs_error_syntaxerror);
-    }
-
     /* increment to_pop to cover the mark object */
     ncodemaps = to_pop++;
     /* mapping should have 2 objects on the stack:
@@ -525,8 +531,13 @@ static int general_endcidchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *
      */
     while (ncodemaps % 2) ncodemaps--;
 
+    if (ncodemaps < 0 || ncodemaps + 1 > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "general_endcidchar_func", NULL);
+        return_error(gs_error_syntaxerror);
+    }
+
     if (ncodemaps > 200) {
-        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfchar_func", NULL);
+        pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "general_endcidchar_func", NULL);
         if (s->pdfi_ctx->args.pdfstoponwarning) {
             (void)pdf_ps_stack_pop(s, to_pop);
             return_error(gs_error_syntaxerror);
@@ -611,11 +622,13 @@ static int cmap_endbfchar_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byt
     pdf_ps_stack_object_t *stobj;
     int i, j;
 
-    if (ncodemaps < 0 || ncodemaps > PDF_PS_STACK_MAX) {
-        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcidrange_func", NULL);
+    /* The following hard limit is an implementation limit */
+    if (ncodemaps < 0 || ncodemaps + 1 > PDF_PS_STACK_MAX) {
+        pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endbfchar_func", NULL);
         return_error(gs_error_syntaxerror);
     }
 
+    /* The following "soft" limit is according to the spec */
     if (ncodemaps > 200) {
         pdfi_set_warning(s->pdfi_ctx, 0, NULL, W_PDF_LIMITCHECK_TYPE0_CMAP, "cmap_endbfchar_func", NULL);
         if (s->pdfi_ctx->args.pdfstoponwarning) {
