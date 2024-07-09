@@ -1421,6 +1421,8 @@ clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
                 /* The head and tail elements are dummies.... */
                 gx_clip_rect *curr = rdev->list.head->next;
 
+                /* Our initial scan is done as ints, but we'll convert to
+                 * fixed later. */
                 cbox.p.x = cbox.p.y = max_int;
                 cbox.q.x = cbox.q.y = min_int;
                 /* scan the list for the outer bbox */
@@ -1435,10 +1437,13 @@ clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
                         cbox.q.y = curr->ymax;
                     curr = curr->next;
                 }
-                cbox.p.x = int2fixed(cbox.p.x);
-                cbox.q.x = int2fixed(cbox.q.x);
-                cbox.p.y = int2fixed(cbox.p.y);
-                cbox.q.y = int2fixed(cbox.q.y);
+                /* Clamp the values so they won't overflow when converting to fixed. */
+#define SAFE_CONVERT2FIXED(x)  if (x < fixed2int(min_int)) x = fixed2int(min_int); else if (x > fixed2int(max_int)) x = fixed2int(max_int); else x = int2fixed(x);
+                SAFE_CONVERT2FIXED(cbox.p.x);
+                SAFE_CONVERT2FIXED(cbox.p.y);
+                SAFE_CONVERT2FIXED(cbox.q.x);
+                SAFE_CONVERT2FIXED(cbox.q.y);
+#undef SAFE_CONVERT2FIXED
             }
             if (rdev->list.transpose) {
                 fixed temp = cbox.p.x;
