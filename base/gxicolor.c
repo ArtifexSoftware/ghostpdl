@@ -198,7 +198,7 @@ gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
             v0 = (byte)penum->mask_color.values[2 * i];
             v1 = (byte)penum->mask_color.values[2 * i + 1];
             while ((v0 & match) != (v1 & match))
-                match <<= 1;
+                match = (match<<1) & 0xff;
             mask.v[i] = match;
             test.v[i] = v0 & match;
             exact &= (v0 == match && (v1 | match) == 0xff);
