@@ -293,7 +293,7 @@ image_simple_expand(byte * line, int line_x, uint raster,
     }
 #endif
     {
-        byte stopmask = -stopbit << 1;
+        byte stopmask = (-stopbit << 1) & 0xff;
         byte last = *stop;
 
         if (stop == psrc)	/* only 1 input byte */
