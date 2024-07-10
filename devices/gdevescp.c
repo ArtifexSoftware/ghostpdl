@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -162,7 +162,7 @@ escp2_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         ** margin measured from the *top* of the page:
         */
 
-        fwrite("\033(U\001\0\n\033(C\002\0t\020\033(c\004\0\0\0t\020",
+        gp_fwrite("\033(U\001\0\n\033(C\002\0t\020\033(c\004\0\0\0t\020",
                                                         1, 22, prn_stream);
 #endif
 

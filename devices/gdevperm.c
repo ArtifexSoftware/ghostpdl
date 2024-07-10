@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -146,7 +146,7 @@ perm_print_page(gx_device_printer *pdev, gp_file *pstream)
             cooked_line[x * 3 + 1] = g;
             cooked_line[x * 3 + 2] = b;
         }
-        fwrite(cooked_line, 1, dev->width * 3, pstream);
+        gp_fwrite(cooked_line, 1, dev->width * 3, pstream);
     }
     gs_free_object(pdev->memory, cooked_line, "perm_print_page");
     gs_free_object(pdev->memory, raw_line, "perm_print_page");

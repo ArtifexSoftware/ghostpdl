@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -273,7 +273,7 @@ write_data_run(const byte * data, int count, gp_file * f, byte invert)
             *q++ = hex_digits[b & 0xf];
         }
         *q++ = '\n';
-        fwrite(line, 1, q - line, f);
+        gp_fwrite(line, 1, q - line, f);
         q = line;
     }
 
