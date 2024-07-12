@@ -1374,11 +1374,11 @@ $(GPDLDLL_DLL): $(ECHOGS_XE) $(GSDLL_OBJ).res $(LIBCTR) $(LIB_ALL) $(PCL_DEVS_AL
 !if "$(SO_PDFEXPORT_LIB)"!=""
 	echo $(SO_PDFEXPORT_LIB) >> $(GPDLGEN)gpdlwin.tr
 !endif
-	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
-	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS)c0.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
-	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS)c1.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
-	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS)c2.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
-	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS)c3.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS)c0.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS)c1.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS)c2.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS)c3.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
 	echo /DLL /DEF:$(PLSRCDIR)\$(GPDLDLL).def /OUT:$(GPDLDLL_DLL) > $(GPDLGEN)gpdlwin.rsp
 !if "$(PROFILE)"=="1"
 	echo /Profile >> $(GPDLGEN)gpdlwin.rsp
@@ -1497,7 +1497,7 @@ $(GPDF_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PDF_DEVS_ALL) $(P
                 $(TOP_MAKEFILES)
 	copy $(pdfld_tr) $(PDFGEN)gpdfwin.tr
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(PDF_TOP_OBJS) $(INT_ARCHIVE_SOME) $(XOBJS) >> $(PDFGEN)gpdfwin.tr
-	echo $(PCLOBJ)pdfromfs$(COMPILE_INITS).$(OBJ) >> $(PDFGEN)gpdfwin.tr
+	echo $(GPDLOBJ)pdfromfs$(COMPILE_INITS).$(OBJ) >> $(PDFGEN)gpdfwin.tr
 	echo /SUBSYSTEM:CONSOLE > $(PDFGEN)pdfwin.rsp
         echo /OUT:$(GPDF_XE) >> $(XPSGEN)pdfwin.rsp
 	$(LINK) $(LCT) @$(PDFGEN)pdfwin.rsp @$(PDFGEN)gpdfwin.tr $(LINKLIBPATH) @$(LIBCTR) @$(PDFGEN)pdflib.rsp
@@ -1506,13 +1506,22 @@ $(GPDF_XE): $(ECHOGS_XE) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(PDF_DEVS_ALL) $(P
 
 $(GPDL_XE): $(ECHOGS_XE) $(ld_tr) $(gpdl_tr) $(LIBCTR) $(LIB_ALL) $(WINMAINOBJS) $(XPS_DEVS_ALL) $(PCL_DEVS_ALL) $(PDF_DEVS_ALL) \
 		$(GS_ALL) \
-                $(GPDLGEN)gpdllib.rsp $(GPDLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) \
+		$(GPDLGEN)gpdllib.rsp \
+		$(GPDLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) \
+		$(GPDLOBJ)pdlromfs$(COMPILE_INITS)c0.$(OBJ) \
+		$(GPDLOBJ)pdlromfs$(COMPILE_INITS)c1.$(OBJ) \
+		$(GPDLOBJ)pdlromfs$(COMPILE_INITS)c2.$(OBJ) \
+		$(GPDLOBJ)pdlromfs$(COMPILE_INITS)c3.$(OBJ) \
 		$(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(PDF_TOP_OBJ) \
 		$(MAIN_OBJ) $(XOBJS) $(INT_ARCHIVE_SOME) \
-                $(TOP_MAKEFILES)
+		$(TOP_MAKEFILES)
 	copy $(gpdlld_tr) $(GPDLGEN)gpdlwin.tr
 	echo $(WINMAINOBJS) $(MAIN_OBJ) $(GPDL_PSI_TOP_OBJS) $(PCL_PXL_TOP_OBJS) $(PSI_TOP_OBJ) $(XPS_TOP_OBJ) $(PDF_TOP_OBJ) $(XOBJS) >> $(GPDLGEN)gpdlwin.tr
-	echo $(PCLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS).$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS)c0.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS)c1.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS)c2.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
+	echo $(GPDLOBJ)pdlromfs$(COMPILE_INITS)c3.$(OBJ) >> $(GPDLGEN)gpdlwin.tr
 !if "$(SO_PDFEXPORT_LIB)"!=""
 	echo $(SO_PDFEXPORT_LIB) >> $(GPDLGEN)gpdlwin.tr
 !endif
