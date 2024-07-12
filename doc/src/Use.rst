@@ -1630,7 +1630,7 @@ Also, internally, after setting an parameter with ``-p`` we perform an ``initgra
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 **-r** *number1 x number2*
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-   Equivalent to ``-dDEVICEXRESOLUTION=number1`` and ``-dDEVICEYRESOLUTION=number2``, specifying the device horizontal and vertical resolution in pixels per inch for the benefit of devices such as printers that support multiple X and Y resolutions.
+   Equivalent to ``-dDEVICEXRESOLUTION=number1``, ``-dDEVICEYRESOLUTION=number2`` and ``-dFIXEDRESOLUTION``, specifying the device horizontal and vertical resolution in pixels per inch for the benefit of devices such as printers that support multiple X and Y resolutions. Also preventing the resolution changing due to, for example, a PostScript ``setpagedevice`` operation.
 
 
 
