@@ -1064,7 +1064,7 @@ exit3:
     /* Flush any pattern tiles. We don't want to (potentially) return to PostScript
      * with any pattern tiles referencing our objects, in case the garbager runs.
      */
-    gx_pattern_cache_winnow(gstate_pattern_cache(ctx->pgs), pdfi_pattern_purge_all_proc, NULL);
+    gx_pattern_cache_flush(gstate_pattern_cache(ctx->pgs));
     /* We could be smarter, but for now.. purge for each page */
     pdfi_purge_cache_resource_font(ctx);
 

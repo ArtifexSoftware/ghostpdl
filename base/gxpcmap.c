@@ -913,11 +913,11 @@ gstate_set_pattern_cache(gs_gstate * pgs, gx_pattern_cache * pcache)
 /* This will not free a pattern if it is 'locked' which should only be for */
 /* a stroke pattern during fill_stroke_path.                               */
 static void
-gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
+gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile, bool free_dummy)
 {
     gx_device *temp_device;
 
-    if ((ctile->id != gx_no_bitmap_id) && !ctile->is_dummy && !ctile->is_locked) {
+    if ((ctile->id != gx_no_bitmap_id) && (!ctile->is_dummy || free_dummy) && !ctile->is_locked) {
         gs_memory_t *mem = pcache->memory;
 
         /*
@@ -1043,7 +1043,7 @@ gx_pattern_cache_ensure_space(gs_gstate * pgs, size_t needed)
     while (pcache->bits_used + needed > pcache->max_bits &&
            pcache->bits_used != 0) {
         pcache->next = (pcache->next + 1) % pcache->num_tiles;
-        gx_pattern_cache_free_entry(pcache, &pcache->tiles[pcache->next]);
+        gx_pattern_cache_free_entry(pcache, &pcache->tiles[pcache->next], false);
         /* since a pattern may be temporarily locked (stroke pattern for fill_stroke_path) */
         /* we may not have freed all entries even though we've scanned the entire cache.   */
         /* The following check for wrapping prevents infinite loop if stroke pattern was   */
@@ -1168,7 +1168,7 @@ gx_pattern_cache_add_entry(gs_gstate * pgs,
     }
     id = pinst->id;
     ctile = gx_pattern_cache_find_tile_for_id(pcache, id);
-    gx_pattern_cache_free_entry(pcache, ctile);         /* ensure that this cache slot is empty */
+    gx_pattern_cache_free_entry(pcache, ctile, false);         /* ensure that this cache slot is empty */
     ctile->id = id;
     ctile->num_planar_planes = pinst->num_planar_planes;
     ctile->depth = fdev->color_info.depth;
@@ -1256,7 +1256,7 @@ gx_pattern_cache_get_entry(gs_gstate * pgs, gs_id id, gx_color_tile ** pctile)
         return code;
     pcache = pgs->pattern_cache;
     ctile = gx_pattern_cache_find_tile_for_id(pcache, id);
-    gx_pattern_cache_free_entry(pgs->pattern_cache, ctile);
+    gx_pattern_cache_free_entry(pgs->pattern_cache, ctile, false);
     ctile->id = id;
     *pctile = ctile;
     return 0;
@@ -1283,7 +1283,7 @@ gx_pattern_cache_add_dummy_entry(gs_gstate *pgs,
         return code;
     pcache = pgs->pattern_cache;
     ctile = gx_pattern_cache_find_tile_for_id(pcache, id);
-    gx_pattern_cache_free_entry(pcache, ctile);
+    gx_pattern_cache_free_entry(pcache, ctile, false);
     ctile->id = id;
     ctile->depth = depth;
     ctile->uid = pinst->templat.uid;
@@ -1432,7 +1432,23 @@ gx_pattern_cache_winnow(gx_pattern_cache * pcache,
 
         ctile->is_locked = false;		/* force freeing */
         if (ctile->id != gx_no_bitmap_id && (*proc) (ctile, proc_data))
-            gx_pattern_cache_free_entry(pcache, ctile);
+            gx_pattern_cache_free_entry(pcache, ctile, false);
+    }
+}
+
+void
+gx_pattern_cache_flush(gx_pattern_cache * pcache)
+{
+    uint i;
+
+    if (pcache == 0)            /* no cache created yet */
+        return;
+    for (i = 0; i < pcache->num_tiles; ++i) {
+        gx_color_tile *ctile = &pcache->tiles[i];
+
+        ctile->is_locked = false;		/* force freeing */
+        if (ctile->id != gx_no_bitmap_id)
+            gx_pattern_cache_free_entry(pcache, ctile, true);
     }
 }
 

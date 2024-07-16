@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -329,6 +329,8 @@ bool gx_pattern_cache_lookup(gx_device_color *, const gs_gstate *,
 void gx_pattern_cache_winnow(gx_pattern_cache *,
                              bool (*)(gx_color_tile *, void *),
                              void *);
+
+void gx_pattern_cache_flush(gx_pattern_cache * pcache);
 
 bool gx_pattern_tile_is_clist(gx_color_tile *ptile);
 
