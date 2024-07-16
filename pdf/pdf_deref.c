@@ -1017,9 +1017,9 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
             }
 
             if (pdfi_count_stack(ctx) > 0 &&
-                (ctx->stack_top[-1] > PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY) &&
+                ((ctx->stack_top[-1] > PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY) &&
                 (ctx->stack_top[-1])->object_num == obj)
-                || ctx->stack_top[-1] == PDF_NULL_OBJ) {
+                || ctx->stack_top[-1] == PDF_NULL_OBJ)) {
                 *object = ctx->stack_top[-1];
                 pdfi_countup(*object);
                 pdfi_pop(ctx, 1);
