@@ -564,7 +564,7 @@ static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs
 static inline int pdfi_set_error_stop(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info)
 {
     pdfi_set_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
-    if (ctx->args.pdfstoponerror) {
+    if (ctx->args.pdfstoponerror || gs_error == gs_error_Fatal || gs_error == gs_error_VMerror) {
         if (gs_error < 0)
             return gs_error;
         else
@@ -586,7 +586,7 @@ static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *
 static inline int pdfi_set_warning_stop(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info)
 {
     pdfi_set_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
-    if (ctx->args.pdfstoponwarning) {
+    if (ctx->args.pdfstoponwarning || gs_error == gs_error_Fatal || gs_error == gs_error_VMerror) {
         if (gs_error < 0)
             return gs_error;
         else
@@ -600,7 +600,6 @@ static inline void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, co
     if (!ctx->args.QUIET)
         outprintf(ctx->memory, "%s", info);
 }
-
 
 /* Variants of the above that work in a printf style. */
 int pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *fmt, ...);
