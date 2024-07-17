@@ -2016,10 +2016,10 @@ $(DD)urfcmyk.dev : $(urf) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)urfcmyk $(urf)
 	$(ADDMOD) $(DD)urfcmyk -include $(GLD)page
 
-$(DEVOBJ)gdevurf.$(OBJ) : $(URFSRCDIR)$(D)gdevurf.c $(AK) $(PDEVH) \
+$(DEVOBJ)gdevurf.$(OBJ) : $(DEVSRC)gdevurf.c $(AK) $(PDEVH) \
  $(gsparam_h) $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gxlum_h) $(gxdcconv_h)\
  $(gsutil_h) $(DEVS_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevurf.$(OBJ) $(C_) $(URFSRCDIR)$(D)gdevurf.c
+	$(DEVCC) $(DEVO_)gdevurf.$(OBJ) $(C_) $(DEVSRC)gdevurf.c
 
 ### --------------- Parallel PPM format device --------------- ###
 

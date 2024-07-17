@@ -2297,9 +2297,7 @@ AC_SUBST(SHARE_JPX)
 AC_SUBST(JPXDEVS)
 
 ENABLEURF=
-URF_DEVS=''
 URF_INCLUDE=
-URF_DEV=
 SURFX_H=
 AC_ARG_WITH([urf], AS_HELP_STRING([--without-urf],
     [do not try to include URF support]))
@@ -2309,10 +2307,8 @@ if test x$with_urf != xno; then
   if test -d $srcdir/urf; then
     AC_MSG_RESULT([yes])
     ENABLEURF="\$(D_)URF_INCLUDED\$(_D)"
-    URF_DEVS='urfgray urfrgb urfcmyk'
     GPDL_URF_TOP_OBJ="\$(GPDLOBJ)/\$(GPDL_URF_TOP_OBJ_FILE)"
     URF_INCLUDE="\$(I_)\$(URFSRCDIR)\$(_I)"
-    URF_DEV="\$(GLD)urfd.dev"
     SURFX_H="\$(URFSRCDIR)\$(D)surfx.h"
   else
     AC_MSG_RESULT([no])
@@ -2322,7 +2318,6 @@ fi
 AC_SUBST(ENABLEURF)
 AC_SUBST(GPDL_URF_TOP_OBJ)
 AC_SUBST(URF_INCLUDE)
-AC_SUBST(URF_DEV)
 AC_SUBST(SURFX_H)
 
 ENABLESO=
@@ -2744,6 +2739,7 @@ AC_ARG_WITH(drivers,
                           PNG      = Output to PNG
                           PS       = Output to PostScript/PDF
                           TIFF     = Output to TIFF
+                          URF      = Output to URF
                           You can mix both variants, e.g.
                           --with-drivers=HP,stcolor would build HP drivers and
                           the Epson stcolor driver.
@@ -2793,6 +2789,7 @@ ETS_HALFTONING_DEVS='rinkj'
 
 dnl Known file formats
 BMP_DEVS='bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b'
+URF_DEVS='urfgray urfrgb urfcmyk'
 
 JPEG_DEVS='jpeg jpeggray jpegcmyk'
 # PNG_DEVS='png16 png16m png256 pngalpha pnggray pngmono'
@@ -2846,7 +2843,7 @@ while test -n "$drivers"; do
                 fi
                 ;;
         PRINTERS)
-                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS $URF_DEVS"
+                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS"
                 IJS_DEVS0="$IJSDEVS"
                 if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
                         P_DEVS0="$P_DEVS0 $OPVP_DEVS"
@@ -2855,7 +2852,7 @@ while test -n "$drivers"; do
                 fi
                 ;;
         FILES)
-                F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFFDEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS $XPSDEV"
+                F_DEVS0="$F_DEVS0 $BMP_DEVS $FAX_DEVS $JPEG_DEVS $TIFFDEVS $PCX_DEVS $PBM_DEVS $PS_DEVS $MISC_FDEVS $XPSDEV $URF_DEVS"
                 CUPS_DEVS0="$CUPSDEV"
                 JBIG2_DEVS="$JBIG2FILEDEVS"
                 PNG_DEVS0="$PNGDEVS"
@@ -2956,6 +2953,10 @@ while test -n "$drivers"; do
         X11)
                 # X11 display devices
                 X11_DEVS0="$X_DEVS"
+                ;;
+        URF)
+                # URF file format
+                F_DEVS0="$F_DEVS0 $URF_DEVS"
                 ;;
         opvp)
                 # Open Vector Printing driver...
