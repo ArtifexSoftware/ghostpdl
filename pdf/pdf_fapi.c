@@ -1049,7 +1049,7 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                     /* Not to spec, but... if we get a "uni..." formatted name, use
                        the hex value from that.
                      */
-                    if (GlyphName->length > 5 && !strncmp((char *)GlyphName->data, "uni", 3)) {
+                    if (GlyphName->length == 7 && !strncmp((char *)GlyphName->data, "uni", 3)) {
                         char gnbuf[64];
                         int l = (GlyphName->length - 3) > 63 ? 63 : GlyphName->length - 3;
 
