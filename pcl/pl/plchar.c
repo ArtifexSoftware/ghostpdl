@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -48,6 +48,7 @@
 #include "gxfcache.h"
 #include "gxttf.h"
 #include "gzstate.h"
+#include "gxfapi.h" /* for gx_fapi_bits_smear_horizontally and gx_fapi_bits_merge */
 #include "plchar.h"
 /* include the prototype for pixmap_high_level_pattern */
 #include "gsptype1.h"
@@ -179,112 +180,6 @@ alloc_bold_lines(gs_memory_t * mem, uint width, int bold, client_name_t cname)
                                cname);
 }
 
-/* Merge one (aligned) scan line into another, for vertical smearing. */
-static void
-bits_merge(byte * dest, const byte * src, uint nbytes)
-{
-    long *dp = (long *)dest;
-    const long *sp = (const long *)src;
-    uint n = (nbytes + sizeof(long) - 1) >> ARCH_LOG2_SIZEOF_LONG;
-
-    for (; n >= 4; sp += 4, dp += 4, n -= 4)
-        dp[0] |= sp[0], dp[1] |= sp[1], dp[2] |= sp[2], dp[3] |= sp[3];
-    for (; n; ++sp, ++dp, --n)
-        *dp |= *sp;
-}
-
-/* Smear a scan line horizontally.  Note that the output is wider than */
-/* the input by the amount of bolding (smear_width). */
-static void
-bits_smear_horizontally(byte * dest, const byte * src, uint width,
-                        uint smear_width)
-{
-    uint bits_on = 0;
-    const byte *sp = src;
-    uint sbyte = *sp;
-    byte *dp = dest;
-    uint dbyte = sbyte;
-    uint sdmask = 0x80;
-    const byte *zp = src;
-    uint zmask = 0x80;
-    uint i = 0;
-
-    /* Process the first smear_width bits. */
-    {
-        uint stop = min(smear_width, width);
-
-        for (; i < stop; ++i) {
-            if (sbyte & sdmask)
-                bits_on++;
-            else if (bits_on)
-                dbyte |= sdmask;
-            if ((sdmask >>= 1) == 0)
-                sdmask = 0x80, *dp++ = dbyte, dbyte = sbyte = *++sp;
-        }
-    }
-
-    /* Process all but the last smear_width bits. */
-    {
-        for (; i < width; ++i) {
-            if (sbyte & sdmask)
-                bits_on++;
-            else if (bits_on)
-                dbyte |= sdmask;
-            if (*zp & zmask)
-                --bits_on;
-            if ((sdmask >>= 1) == 0) {
-                sdmask = 0x80;
-                *dp++ = dbyte;
-              on:switch ((dbyte = sbyte = *++sp)) {
-                    case 0xff:
-                        if (width - i <= 8)
-                            break;
-                        *dp++ = 0xff;
-                        bits_on += 8 -
-                            byte_count_bits[(*zp & (zmask - 1)) +
-                                            (zp[1] & -(int)zmask)];
-                        ++zp;
-                        i += 8;
-                        goto on;
-                    case 0:
-                        if (bits_on || width - i <= 8)
-                            break;
-                        *dp++ = 0;
-                        /* We know there can't be any bits to be zeroed, */
-                        /* because bits_on can't go negative. */
-                        ++zp;
-                        i += 8;
-                        goto on;
-                    default:
-                        ;
-                }
-            }
-            if ((zmask >>= 1) == 0)
-                zmask = 0x80, ++zp;
-        }
-    }
-
-    /* Process the last smear_width bits. */
-        /****** WRONG IF width < smear_width ******/
-    {
-        uint stop = width + smear_width;
-
-        for (; i < stop; ++i) {
-            if (bits_on)
-                dbyte |= sdmask;
-            if ((sdmask >>= 1) == 0)
-                sdmask = 0x80, *dp++ = dbyte, dbyte = 0;
-            if (*zp & zmask)
-                --bits_on;
-            if ((zmask >>= 1) == 0)
-                zmask = 0x80, ++zp;
-        }
-    }
-
-    if (sdmask != 0x80)
-        *dp = dbyte;
-}
-
 /* Image a bitmap character, with or without bolding. */
 int
 pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
@@ -321,7 +216,7 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
             int y1 = min(y + 1, src_height);
 
             if (y < src_height) {
-                bits_smear_horizontally(merged_line(y),
+                gx_fapi_bits_smear_horizontally(merged_line(y),
                                         bitmap_data + y * sraster,
                                         src_width, bold);
                 {               /* Now re-establish the invariant -- see below. */
@@ -329,7 +224,7 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
 
                     for (; (y & kmask) == kmask && y - kmask >= y0;
                          kmask = (kmask << 1) + 1)
-                        bits_merge(merged_line(y - kmask),
+                        gx_fapi_bits_merge(merged_line(y - kmask),
                                    merged_line(y - (kmask >> 1)), dest_bytes);
                 }
             }
@@ -357,7 +252,7 @@ pl_image_bitmap_char(gs_image_enum * ienum, const gs_image_t * pim,
                         memcpy(bold_lines, merged_line(iy), dest_bytes);
                         first = false;
                     } else
-                        bits_merge(bold_lines, merged_line(iy), dest_bytes);
+                        gx_fapi_bits_merge(bold_lines, merged_line(iy), dest_bytes);
                 }
             }
 

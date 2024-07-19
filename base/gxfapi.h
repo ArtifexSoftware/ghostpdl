@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -464,4 +464,8 @@ void gs_fapi_finit(gs_memory_t *mem);
 
 
 void gx_fapi_get_ulp_character_data(byte **header, byte **character_data);
+
+void gx_fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width, uint smear_width);
+
+void gx_fapi_bits_merge(byte *dest, const byte *src, uint nbytes);
 #endif /* gxfapi_INCLUDED */

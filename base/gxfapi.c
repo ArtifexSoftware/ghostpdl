@@ -691,8 +691,8 @@ alloc_bold_lines(gs_memory_t *mem, uint width, int bold, client_name_t cname)
 }
 
 /* Merge one (aligned) scan line into another, for vertical smearing. */
-static void
-bits_merge(byte *dest, const byte *src, uint nbytes)
+void
+gx_fapi_bits_merge(byte *dest, const byte *src, uint nbytes)
 {       long *dp = (long *)dest;
         const long *sp = (const long *)src;
         uint n = (nbytes + sizeof(long) - 1) >> ARCH_LOG2_SIZEOF_LONG;
@@ -705,8 +705,8 @@ bits_merge(byte *dest, const byte *src, uint nbytes)
 
 /* Smear a scan line horizontally.  Note that the output is wider than */
 /* the input by the amount of bolding (smear_width). */
-static void
-fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width,
+void
+gx_fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width,
   uint smear_width)
 {       uint bits_on = 0;
         const byte *sp = src;
@@ -962,14 +962,14 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
                             memcpy(line, r + y * rast->line_step, rast->line_step);
                             memset(line + rast->line_step, 0x00, (dest_raster + 1) -  rast->line_step);
 
-                            fapi_bits_smear_horizontally(merged_line(y), line, rast->width, bold);
+                            gx_fapi_bits_smear_horizontally(merged_line(y), line, rast->width, bold);
                             /* Now re-establish the invariant -- see below. */
                             kmask = 1;
 
                             for ( ; (y & kmask) == kmask && y - kmask >= y0;
                                   kmask = (kmask << 1) + 1) {
 
-                                bits_merge(merged_line(y - kmask), merged_line(y - (kmask >> 1)), dest_bytes);
+                                gx_fapi_bits_merge(merged_line(y - kmask), merged_line(y - (kmask >> 1)), dest_bytes);
                             }
                         }
 
@@ -996,7 +996,7 @@ fapi_image_uncached_glyph(gs_font *pfont, gs_gstate *pgs, gs_show_enum *penum,
                             first = false;
                           }
                           else
-                            bits_merge(bold_lines, merged_line(iy), dest_bytes);
+                            gx_fapi_bits_merge(bold_lines, merged_line(iy), dest_bytes);
                         }
                         code = gs_image_next(pie, bold_lines, dest_bytes, &used);
                     }
