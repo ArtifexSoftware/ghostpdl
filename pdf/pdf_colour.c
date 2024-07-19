@@ -689,7 +689,7 @@ int pdfi_setstrokecolor(pdf_context *ctx)
          */
         pdfi_clearstack(ctx);
         pdfi_log_info(ctx, "pdfi_setstrokecolor", "colour operator in a CharProc, following a d1 ignored");
-        return code;
+        return 0;
     }
 
     cc.pattern = 0;
@@ -721,7 +721,7 @@ int pdfi_setfillcolor(pdf_context *ctx)
          */
         pdfi_clearstack(ctx);
         pdfi_log_info(ctx, "pdfi_setfillcolor", "colour operator in a CharProc, following a d1 ignored");
-        return code;
+        return 0;
     }
 
     cc.pattern = 0;
@@ -761,7 +761,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
          */
         pdfi_clearstack(ctx);
         pdfi_log_info(ctx, "pdfi_setcolorN", "colour operator in a CharProc, following a d1 ignored");
-        return code;
+        return 0;
     }
 
     if (!is_fill) {
