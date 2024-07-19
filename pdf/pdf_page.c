@@ -908,7 +908,6 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_PAGEDICTERROR, "pdfi_page_render", extra_info)) < 0)) {
             goto exit3;
         }
-        code = 0;
     }
 
     code = pdfi_check_page(ctx, page_dict, NULL, NULL, init_graphics);
