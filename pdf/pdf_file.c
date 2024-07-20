@@ -885,7 +885,8 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         return code;
     }
 
-    return pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefined), NULL, E_PDF_UNKNOWNFILTER, "pdfi_apply_filter", NULL);
+    pdfi_set_error(ctx, 0, NULL, E_PDF_UNKNOWNFILTER, "pdfi_apply_filter", NULL);
+    return_error(gs_error_undefined);
 }
 
 int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
