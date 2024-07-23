@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -443,7 +443,7 @@ file_continue(i_ctx_t *i_ctx_p)
         if (code == ~(uint) 0) {    /* all done */
             esp -= 6;               /* pop proc, pfen, scratch, devlen, iodev , mark */
             return o_pop_estack;
-        } else if (code > len) {      /* overran string */
+        } else if (code > len - devlen) {      /* overran string */
             return_error(gs_error_rangecheck);
         }
         else if (iodev != iodev_default(imemory)
