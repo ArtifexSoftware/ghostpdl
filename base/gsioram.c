@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -86,8 +86,8 @@ typedef struct gsram_enum_s {
     gs_memory_t *memory;
 } gsram_enum;
 
-gs_private_st_ptrs3(st_gsram_enum, struct gsram_enum_s, "gsram_enum",
-    gsram_enum_enum_ptrs, gsram_enum_reloc_ptrs, pattern, e, memory);
+gs_private_st_ptrs2(st_gsram_enum, struct gsram_enum_s, "gsram_enum",
+    gsram_enum_enum_ptrs, gsram_enum_reloc_ptrs, pattern, memory);
 
 /* could make this runtime configurable later.  It doesn't allocate
    all the blocks in one go so it's not critical */
