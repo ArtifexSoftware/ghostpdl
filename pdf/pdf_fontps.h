@@ -205,6 +205,9 @@ static inline int pdf_ps_stack_push(pdf_ps_ctx_t *s)
                 return_error(gs_error_VMerror);
             }
         }
+        else {
+            return_error(gs_error_stackoverflow);
+        }
     }
     s->cur++;
     if (pdf_ps_obj_has_type(s->cur, PDF_PS_OBJ_STACK_TOP))
