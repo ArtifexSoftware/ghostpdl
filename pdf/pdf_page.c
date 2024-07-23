@@ -876,12 +876,6 @@ static int setup_page_DefaultSpaces(pdf_context *ctx, pdf_dict *page_dict)
     return(pdfi_setup_DefaultSpaces(ctx, page_dict));
 }
 
-static bool
-pdfi_pattern_purge_all_proc(gx_color_tile * ctile, void *proc_data)
-{
-    return true;
-}
-
 int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
 {
     int code, code1=0;
