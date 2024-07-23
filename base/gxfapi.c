@@ -686,29 +686,35 @@ fapi_copy_mono(gx_device *dev1, gs_fapi_raster *rast, int dx, int dy)
 /* Allocate the line buffer for bolding.  We need 2 + bold scan lines. */
 static byte *
 alloc_bold_lines(gs_memory_t *mem, uint width, int bold, client_name_t cname)
-{       return gs_alloc_byte_array(mem, 2 + bold, bitmap_raster(width + bold),
-                                   cname);
+{
+    return gs_alloc_byte_array(mem, 2 + bold, bitmap_raster(width + bold), cname);
 }
 
 /* Merge one (aligned) scan line into another, for vertical smearing. */
 void
 gx_fapi_bits_merge(byte *dest, const byte *src, uint nbytes)
-{       long *dp = (long *)dest;
+{
+        long *dp = (long *)dest;
         const long *sp = (const long *)src;
         uint n = (nbytes + sizeof(long) - 1) >> ARCH_LOG2_SIZEOF_LONG;
 
-        for ( ; n >= 4; sp += 4, dp += 4, n -= 4 )
-          dp[0] |= sp[0], dp[1] |= sp[1], dp[2] |= sp[2], dp[3] |= sp[3];
-        for ( ; n; ++sp, ++dp, --n )
-          *dp |= *sp;
+        for ( ; n >= 4; sp += 4, dp += 4, n -= 4 ) {
+            dp[0] |= sp[0];
+            dp[1] |= sp[1];
+            dp[2] |= sp[2];
+            dp[3] |= sp[3];
+        }
+        for ( ; n; ++sp, ++dp, --n ) {
+            *dp |= *sp;
+        }
 }
 
 /* Smear a scan line horizontally.  Note that the output is wider than */
 /* the input by the amount of bolding (smear_width). */
 void
-gx_fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width,
-  uint smear_width)
-{       uint bits_on = 0;
+gx_fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width, uint smear_width)
+{
+        uint bits_on = 0;
         const byte *sp = src;
         uint sbyte = *sp;
         byte *dp = dest;
@@ -717,77 +723,92 @@ gx_fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width,
         const byte *zp = src;
         uint zmask = 0x80;
         uint i = 0;
+        uint stop;
 
         /* Process the first smear_width bits. */
-        { uint stop = min(smear_width, width);
+        stop = min(smear_width, width);
 
-          for ( ; i < stop; ++i ) {
-            if ( sbyte & sdmask )
+        for ( ; i < stop; ++i ) {
+            if ( sbyte & sdmask ) {
               bits_on++;
-            else if ( bits_on )
+            }
+            else if ( bits_on ) {
               dbyte |= sdmask;
-            if ( (sdmask >>= 1) == 0 )
-              sdmask = 0x80, *dp++ = dbyte, dbyte = sbyte = *++sp;
-          }
+            }
+            if ( (sdmask >>= 1) == 0 ) {
+                sdmask = 0x80;
+                *dp++ = dbyte;
+                dbyte = sbyte = *++sp;
+            }
         }
 
         /* Process all but the last smear_width bits. */
-        { for ( ; i < width; ++i ) {
-            if ( sbyte & sdmask )
-              bits_on++;
-            else if ( bits_on )
-              dbyte |= sdmask;
-            if ( *zp & zmask )
-              --bits_on;
-            if ( (sdmask >>= 1) == 0 ) {
-              sdmask = 0x80;
-              *dp++ = dbyte;
-on:           switch ( (dbyte = sbyte = *++sp) ) {
-                case 0xff:
-                  if ( width - i <= 8 )
-                    break;
-                  *dp++ = 0xff;
-                  bits_on += 8 -
-                    byte_count_bits[(*zp & (zmask - 1)) + (zp[1] & -(int)zmask)];
-                  ++zp;
-                  i += 8;
-                  goto on;
-                case 0:
-                  if ( bits_on || width - i <= 8 )
-                    break;
-                  *dp++ = 0;
-                  /* We know there can't be any bits to be zeroed, */
-                  /* because bits_on can't go negative. */
-                  ++zp;
-                  i += 8;
-                  goto on;
-                default:
-                  ;
-              }
+        for ( ; i < width; ++i ) {
+            if ( sbyte & sdmask ) {
+                bits_on++;
             }
-            if ( (zmask >>= 1) == 0 )
-              zmask = 0x80, ++zp;
-          }
+            else if ( bits_on ) {
+                dbyte |= sdmask;
+            }
+            if ( *zp & zmask ) {
+                --bits_on;
+            }
+            if ( (sdmask >>= 1) == 0 ) {
+                sdmask = 0x80;
+                *dp++ = dbyte;
+on:             switch ( (dbyte = sbyte = *++sp) ) {
+                  case 0xff:
+                    if ( width - i <= 8 )
+                        break;
+                    *dp++ = 0xff;
+                    bits_on += 8 - byte_count_bits[(*zp & (zmask - 1)) + (zp[1] & -(int)zmask)];
+                    ++zp;
+                    i += 8;
+                    goto on;
+                  case 0:
+                    if ( bits_on || width - i <= 8 )
+                      break;
+                    *dp++ = 0;
+                    /* We know there can't be any bits to be zeroed, */
+                    /* because bits_on can't go negative. */
+                    ++zp;
+                    i += 8;
+                    goto on;
+                  default:
+                    ;
+                }
+            }
+            if ( (zmask >>= 1) == 0 ) {
+              zmask = 0x80;
+              ++zp;
+            }
         }
 
         /* Process the last smear_width bits. */
         /****** WRONG IF width < smear_width ******/
-        { uint stop = width + smear_width;
+        stop = width + smear_width;
 
-          for ( ; i < stop; ++i ) {
-            if ( bits_on )
-              dbyte |= sdmask;
-            if ( (sdmask >>= 1) == 0 )
-              sdmask = 0x80, *dp++ = dbyte, dbyte = 0;
-            if ( *zp & zmask )
-              --bits_on;
-            if ( (zmask >>= 1) == 0 )
-              zmask = 0x80, ++zp;
-          }
+        for ( ; i < stop; ++i ) {
+            if ( bits_on ) {
+                dbyte |= sdmask;
+            }
+            if ( (sdmask >>= 1) == 0 ) {
+                sdmask = 0x80;
+                *dp++ = dbyte;
+                dbyte = 0;
+            }
+            if ( *zp & zmask ) {
+                --bits_on;
+            }
+            if ( (zmask >>= 1) == 0 ) {
+                zmask = 0x80;
+                ++zp;
+            }
         }
 
-        if ( sdmask != 0x80 )
+        if ( sdmask != 0x80 ) {
           *dp = dbyte;
+        }
 }
 
 static const int frac_pixel_shift = 4;
