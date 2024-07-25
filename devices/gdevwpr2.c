@@ -439,6 +439,7 @@ win_pr2_open(gx_device * dev)
         windev = (gx_device_win_pr2 *)dev;
 
         windev->original_device = (gx_device_win_pr2 *)dev;
+        wdev = dev;
     }
 
     if ((code < 0) && wdev->fname[0])
