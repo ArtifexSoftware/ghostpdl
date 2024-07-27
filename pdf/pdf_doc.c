@@ -1715,7 +1715,7 @@ static int pdfi_doc_view(pdf_context *ctx)
 {
     int code = 0;
     pdf_dict *tempdict = NULL;
-    pdf_name *Mode = NULL;
+    pdf_name *Mode = NULL, *Layout = NULL;
     pdf_obj *ActionDest = NULL;
 
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageMode", PDF_NAME, (pdf_obj **)&Mode);
@@ -1740,7 +1740,7 @@ static int pdfi_doc_view(pdf_context *ctx)
         tempdict = NULL;
     }
 
-    code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageLayout", PDF_NAME, (pdf_obj **)&Mode);
+    code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageLayout", PDF_NAME, (pdf_obj **)&Layout);
     if (code < 0)
         return code;
 
@@ -1751,7 +1751,7 @@ static int pdfi_doc_view(pdf_context *ctx)
 
         pdfi_countup(tempdict);
 
-        code = pdfi_dict_put(ctx, tempdict, "PageLayout", (pdf_obj *)Mode);
+        code = pdfi_dict_put(ctx, tempdict, "PageLayout", (pdf_obj *)Layout);
         if (code < 0)
             goto exit;
 
@@ -1810,6 +1810,7 @@ static int pdfi_doc_view(pdf_context *ctx)
 
 exit:
     pdfi_countdown(ActionDest);
+    pdfi_countdown(Layout);
     pdfi_countdown(Mode);
     pdfi_countdown(tempdict);
     return code;
