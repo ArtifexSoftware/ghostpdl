@@ -449,7 +449,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                       memcpy(subr_str->data, s->cur[0].val.name, s->cur[0].size);
 
                       pdfi_countdown(priv->u.t1.notice);
-                      priv->u.t1.copyright = subr_str;
+                      priv->u.t1.notice = subr_str;
                   }
               }
               break;
@@ -619,7 +619,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                       memcpy(subr_str->data, s->cur[0].val.name, s->cur[0].size);
 
                       pdfi_countdown(priv->u.t1.fullname);
-                      priv->u.t1.copyright = subr_str;
+                      priv->u.t1.fullname = subr_str;
                   }
               }
               break;
@@ -741,7 +741,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                       memcpy(subr_str->data, s->cur[0].val.name, s->cur[0].size);
 
                       pdfi_countdown(priv->u.t1.familyname);
-                      priv->u.t1.copyright = subr_str;
+                      priv->u.t1.familyname = subr_str;
                   }
               }
               break;
