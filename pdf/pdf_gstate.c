@@ -1855,9 +1855,7 @@ static int pdfi_do_halftone(pdf_context *ctx, pdf_obj *halftone_obj, pdf_dict *p
             if (code < 0)
                 goto error;
 
-            code = gs_sethalftone_prepare(ctx->pgs, pht, pdht);
-            if (code < 0)
-                goto error;
+            /* build_type5_halftone does the work of gs_sethalftone_prepare as well, so we don't need that here */
 
             code = gx_gstate_dev_ht_install(ctx->pgs, pdht, pht->type, gs_currentdevice_inline(ctx->pgs), HT_OBJTYPE_DEFAULT);
             if (code < 0)
