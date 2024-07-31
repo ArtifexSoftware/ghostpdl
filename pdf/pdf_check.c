@@ -287,7 +287,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
 
         code = pdfi_dict_first(ctx, shading_dict, &Key, &Value, &index);
         if (code < 0 || !(pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM))
-            goto error1;
+            goto error2;
 
         i = 1;
         do {
