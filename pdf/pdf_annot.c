@@ -2860,6 +2860,7 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
     bool has_color;
     gs_rect rect, rect2;
     bool need_grestore = false;
+    bool known = false;
 
     /* Render only if open */
     code = pdfi_dict_get_bool(ctx, annot, "Open", &Open);
@@ -2888,13 +2889,23 @@ static int pdfi_annot_draw_Popup(pdf_context *ctx, pdf_dict *annot, pdf_obj *Nor
 
     code = gs_setlinewidth(ctx->pgs, 0.05);
 
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        goto exit;
+
     /* Use Parent to get color */
-    code = pdfi_dict_knownget_type(ctx, annot, "Parent", PDF_DICT, (pdf_obj **)&Parent);
+    /* We must not store the derferenced Parent in the Annot, because the Parent is (or might be)
+     * the Page dictionary, which contains the Annots array. If we replace the indirect reference
+     * to Parent in the Annot then we end up with a circular reference and leak both objects.
+     */
+    code = pdfi_dict_knownget_type_no_store_R(ctx, annot, "Parent", PDF_DICT, (pdf_obj **)&Parent);
     if (code < 0) goto exit;
     if (code == 0) {
-        code = pdfi_dict_knownget_type(ctx, annot, "P", PDF_DICT, (pdf_obj **)&Parent);
+        code = pdfi_dict_knownget_type_no_store_R(ctx, annot, "P", PDF_DICT, (pdf_obj **)&Parent);
         if (code < 0) goto exit;
     }
+    (void)pdfi_loop_detector_cleartomark(ctx);
+
     if (code == 0) {
         /* If no parent, we will use the annotation itself */
         Parent = annot;

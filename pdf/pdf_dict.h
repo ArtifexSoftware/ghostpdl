@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -41,6 +41,7 @@ int pdfi_dict_known(pdf_context *ctx, pdf_dict *d, const char *Key, bool *known)
 int pdfi_dict_known_by_key(pdf_context *ctx, pdf_dict *d, pdf_name *Key, bool *known);
 int pdfi_dict_knownget(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
 int pdfi_dict_knownget_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o);
+int pdfi_dict_knownget_type_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o);
 int pdfi_dict_knownget_number(pdf_context *ctx, pdf_dict *d, const char *Key, double *f);
 int pdfi_dict_knownget_bool(pdf_context *ctx, pdf_dict *d, const char *Key, bool *b);
 int pdfi_merge_dicts(pdf_context *ctx, pdf_dict *target, pdf_dict *source);
@@ -57,6 +58,7 @@ int pdfi_dict_get_no_store_R_key(pdf_context *ctx, pdf_dict *d, const pdf_name *
 int pdfi_dict_get_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj **o);
 int pdfi_dict_get_type2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, pdf_obj_type type, pdf_obj **o);
 int pdfi_dict_get_type(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type t, pdf_obj **o);
+int pdfi_dict_get_type_no_store_R(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_obj_type type, pdf_obj **o);
 int pdfi_dict_get_ref(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_indirect_ref **o);
 int pdfi_dict_get_int2(pdf_context *ctx, pdf_dict *d, const char *Key1, const char *Key2, int64_t *i);
 int pdfi_dict_get_int(pdf_context *ctx, pdf_dict *d, const char *Key, int64_t *i);
