@@ -209,6 +209,8 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
 #endif
         pdfi_countup(ctx->xref_table);
 
+        pdfi_countdown(ctx->Trailer);
+
         ctx->Trailer = sdict;
         pdfi_countup(sdict);
     } else {
