@@ -613,13 +613,7 @@ early_flush:
 static int
 urf_impl_process_end(pl_interp_implementation_t * impl)
 {
-    int code = 0;
-
-    /* FIXME: */
-    if (code == gs_error_InterpreterExit || code == gs_error_NeedInput)
-        code = 0;
-
-    return code;
+    return 0;
 }
 
 /* Not implemented */
