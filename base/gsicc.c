@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -719,15 +719,23 @@ gx_set_overprint_ICC(const gs_color_space * pcs, gs_gstate * pgs)
     /* Possibly do CMYK based overprinting if profile is CMYK based or if we
        are gray source based and doing gray to k mapping
        (Ghent GWG 3.0 Gray Overprint Patch (030_Gray_K_black_OP_x1a.pdf) */
-    cs_ok = ((pcs->cmm_icc_profile_data->data_cs == gsCMYK) ||
-        (pcs->cmm_icc_profile_data->data_cs == gsGRAY && gray_to_k));
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        cs_ok = (pcs->cmm_icc_profile_data->data_cs == gsRGB);
+    else
+        cs_ok = ((pcs->cmm_icc_profile_data->data_cs == gsCMYK) ||
+            (pcs->cmm_icc_profile_data->data_cs == gsGRAY && gray_to_k));
 
     if_debug4m(gs_debug_flag_overprint, pgs->memory,
         "[overprint] gx_set_overprint_ICC. cs_ok = %d is_fill_color = %d overprint = %d stroke_overprint = %d \n",
         cs_ok, pgs->is_fill_color, pgs->overprint, pgs->stroke_overprint);
 
     if (cs_ok)
-        return gx_set_overprint_cmyk(pcs, pgs);
+    {
+        if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+            return gx_set_overprint_rgb(pcs, pgs);
+        else
+            return gx_set_overprint_cmyk(pcs, pgs);
+    }
 
     /* In this case, we still need to maintain any spot
        colorant channels.  Per Table 7.14. */

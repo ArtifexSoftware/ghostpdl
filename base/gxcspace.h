@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -256,8 +256,10 @@ gs_cspace_alloc(gs_memory_t *mem, const gs_color_space_type *pcstype);
 /* Determine if the current color model is a "DeviceCMYK" color model, and */
 /* if so what are its process color components. */
 gx_color_index check_cmyk_color_model_comps(gx_device * dev);
+void check_opmsupported(gx_device * dev);
 
 /* Shared code with ICC overprint */
 int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs);
+int gx_set_overprint_rgb(const gs_color_space * pcs, gs_gstate * pgs);
 
 #endif /* gxcspace_INCLUDED */

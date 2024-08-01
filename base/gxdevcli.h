@@ -1787,7 +1787,7 @@ gx_cm_opmsupported_t gx_get_opmsupported(gx_device *dev)
     if (dev->color_info.opmsupported != GX_CINFO_OPMSUPPORTED_UNKNOWN)
         return dev->color_info.opmsupported;
 
-    (void)check_cmyk_color_model_comps(dev);
+    check_opmsupported(dev);
 
     return dev->color_info.opmsupported;
 }

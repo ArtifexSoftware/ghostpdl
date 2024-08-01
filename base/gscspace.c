@@ -36,6 +36,7 @@
 #include "string_.h"
 #include "strmio.h"         /* needed for sfclose */
 #include "gsicc_cache.h"    /* Needed for gsicc_get_icc_buff_hash */
+#include "gxdevsop.h"
 
 static cs_proc_install_cspace(gx_install_DeviceGray);
 static cs_proc_install_cspace(gx_install_DeviceRGB);
@@ -674,6 +675,89 @@ check_cmyk_color_model_comps(gx_device * dev)
     return process_comps;
 }
 
+void
+check_rgb_color_model_comps(gx_device * dev)
+{
+    gx_device_color_info *          pcinfo = &dev->color_info;
+    uchar                           ncomps = pcinfo->num_components;
+    int                             red_c, green_c, blue_c;
+    frac                            frac_14 = frac_1 / 4;
+    frac                            out[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index                  process_comps;
+    const gx_cm_color_map_procs    *cmprocs;
+    const gx_device                *cmdev;
+
+
+    if (pcinfo->num_components < 3                     ||
+        pcinfo->polarity != GX_CINFO_POLARITY_ADDITIVE ||
+        pcinfo->gray_index == GX_CINFO_COMP_NO_INDEX   ||
+        dev_proc(dev, dev_spec_op)(dev, gxdso_is_sep_supporting_additive_device, NULL, 0) <= 0
+        ) {
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
+        return;
+    }
+
+    /* check for the appropriate components */
+    if ( ncomps < 3                                      ||
+         (red_c = dev_proc(dev, get_color_comp_index)(
+                       dev,
+                       "Red",
+                       sizeof("Red") - 1,
+                       NO_COMP_NAME_TYPE_OP)) < 0        ||
+         red_c == GX_DEVICE_COLOR_MAX_COMPONENTS         ||
+         (green_c = dev_proc(dev, get_color_comp_index)(
+                          dev,
+                          "Green",
+                          sizeof("Green") - 1,
+                          NO_COMP_NAME_TYPE_OP)) < 0     ||
+         green_c == GX_DEVICE_COLOR_MAX_COMPONENTS       ||
+         (blue_c = dev_proc(dev, get_color_comp_index)(
+                        dev,
+                        "Blue",
+                        sizeof("Blue") - 1,
+                        NO_COMP_NAME_TYPE_OP)) < 0       ||
+         blue_c == GX_DEVICE_COLOR_MAX_COMPONENTS)
+    {
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
+        return;
+    }
+
+    /* check the mapping */
+    cmprocs = dev_proc(dev, get_color_mapping_procs)(dev, &cmdev);
+
+    ncomps -= device_encodes_tags(dev);
+    cmprocs->map_rgb(cmdev, NULL, frac_14, frac_0, frac_0, out);
+    if (!check_single_comp(red_c, frac_14, ncomps, out)) {
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
+        return;
+    }
+    cmprocs->map_rgb(cmdev, NULL, frac_0, frac_14, frac_0, out);
+    if (!check_single_comp(green_c, frac_14, ncomps, out)) {
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
+        return;
+    }
+    cmprocs->map_rgb(cmdev, NULL, frac_0, frac_0, frac_14, out);
+    if (!check_single_comp(blue_c, frac_14, ncomps, out)) {
+        pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED_NOT;
+        return;
+    }
+
+    process_comps =  ((gx_color_index)1 << red_c)
+                   | ((gx_color_index)1 << green_c)
+                   | ((gx_color_index)1 << blue_c);
+    pcinfo->opmsupported = GX_CINFO_OPMSUPPORTED;
+    pcinfo->process_comps = process_comps;
+    pcinfo->black_component = 0; /* ? */
+}
+
+void check_opmsupported(gx_device * dev)
+{
+    if (dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE)
+        check_rgb_color_model_comps(dev);
+    else
+        (void)check_cmyk_color_model_comps(dev);
+}
+
 /*
  * This set_overprint method is unique. If overprint is true, overprint
  * mode is set to 1, the process color model has DeviceCMYK behavior (see
@@ -832,6 +916,123 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     return gs_gstate_update_overprint(pgs, &params);
 }
 
+int gx_set_overprint_rgb(const gs_color_space * pcs, gs_gstate * pgs)
+{
+    gx_device *             dev = pgs->device;
+    gx_color_index          drawn_comps = 0;
+    gs_overprint_params_t   params = { 0 };
+    gx_device_color        *pdc;
+    cmm_dev_profile_t      *dev_profile;
+    cmm_profile_t          *output_profile = 0;
+    int                     code;
+    bool                    profile_ok = false;
+    gsicc_rendering_param_t        render_cond;
+    bool                    eop;
+
+    if_debug0m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_rgb\n");
+
+    if (dev) {
+        code = dev_proc(dev, get_profile)(dev, &dev_profile);
+        if (code < 0)
+            return code;
+
+        gsicc_extract_profile(dev->graphics_type_tag, dev_profile, &(output_profile),
+                              &render_cond);
+
+        drawn_comps = gx_get_process_comps(dev);
+    }
+
+    if_debug1m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_rgb. drawn_comps = 0x%x\n", (uint)drawn_comps);
+
+    if (drawn_comps == 0)
+        return gx_spot_colors_set_overprint(pcs, pgs);
+
+    /* correct for any zero'ed color components.  But only if profiles
+       match AND pgs->overprint_mode is true */
+    if (pcs->cmm_icc_profile_data != NULL && output_profile != NULL) {
+        if (gsicc_profiles_equal(output_profile, pcs->cmm_icc_profile_data)) {
+            profile_ok = true;
+        }
+    }
+
+    eop = gs_currentcolor_eopm(pgs);
+
+    if_debug3m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_rgb. is_fill_color = %d, pgs->color[0].effective_opm = %d pgs->color[1].effective_opm = %d\n",
+        pgs->is_fill_color, pgs->color[0].effective_opm, pgs->color[1].effective_opm);
+
+    if (profile_ok && eop) {
+        gx_color_index  nz_comps, one, temp;
+        int             code;
+        int             num_colorant[3], k;
+        bool            colorant_ok;
+        dev_color_proc_get_nonzero_comps((*procp));
+
+        if_debug0m(gs_debug_flag_overprint, pgs->memory,
+            "[overprint] gx_set_overprint_cmyk. color_is_set, profile_ok and eop\n");
+
+        code = gx_set_dev_color(pgs);
+        if (code < 0)
+            return code;
+        pdc = gs_currentdevicecolor_inline(pgs);
+        procp = pdc->type->get_nonzero_comps;
+        if (pdc->ccolor_valid) {
+            /* If we have the source colors, then use those in making the
+               decision as to which ones are non-zero.  Then we avoid
+               accidently looking at small values that get quantized to zero
+               Note that to get here in the code, the source color data color
+               space has to be CMYK. Trick is that we do need to worry about
+               the colorant order on the target device */
+            num_colorant[0] = (dev_proc(dev, get_color_comp_index))\
+                             (dev, "Red", strlen("Red"), NO_COMP_NAME_TYPE_OP);
+            num_colorant[1] = (dev_proc(dev, get_color_comp_index))\
+                             (dev, "Green", strlen("Green"), NO_COMP_NAME_TYPE_OP);
+            num_colorant[2] = (dev_proc(dev, get_color_comp_index))\
+                             (dev, "Blue", strlen("Blue"), NO_COMP_NAME_TYPE_OP);
+            nz_comps = 0;
+            one = 1;
+            colorant_ok = true;
+            for (k = 0; k < 3; k++) {
+                /* Note: AR assumes the value is zero if it
+                   is less than 0.5 out of 255 */
+                if (pdc->ccolor.paint.values[k] > (0.5 / 255.0)) {
+                    if (num_colorant[k] == -1) {
+                        colorant_ok = false;
+                    } else {
+                        temp = one << num_colorant[k];
+                        nz_comps = nz_comps | temp;
+                    }
+                }
+            }
+            /* For some reason we don't have one of the standard colorants */
+            if (!colorant_ok) {
+                if ((code = procp(pdc, dev, &nz_comps)) < 0)
+                    return code;
+            }
+        } else {
+            if ((code = procp(pdc, dev, &nz_comps)) < 0)
+                return code;
+        }
+        drawn_comps &= nz_comps;
+    }
+    params.is_fill_color = pgs->is_fill_color;
+    params.retain_any_comps = true;
+    params.drawn_comps = drawn_comps;
+    params.op_state = OP_STATE_NONE;
+
+    if_debug2m(gs_debug_flag_overprint, pgs->memory,
+        "[overprint] gx_set_overprint_rgb. retain_any_comps = %d, drawn_comps = 0x%x\n",
+        params.retain_any_comps, (uint)(params.drawn_comps));
+
+    /* We are in RGB, the profiles match and overprint is true.  Set effective
+       overprint mode to overprint mode but only if effective has not already
+       been set to 0 */
+    params.effective_opm = pgs->color[0].effective_opm =
+        pgs->overprint_mode && gs_currentcolor_eopm(pgs);
+    return gs_gstate_update_overprint(pgs, &params);
+}
 /* A stub for a color mapping linearity check, when it is inapplicable. */
 int
 gx_cspace_no_linear(const gs_color_space *cs, const gs_gstate * pgs,
