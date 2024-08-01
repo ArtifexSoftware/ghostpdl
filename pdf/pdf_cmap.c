@@ -205,7 +205,10 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
 
         if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_INTEGER)
         &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
-        &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING)){
+        &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING)
+        &&  pdf_ps_obj_size(&(stobj[i + 1])) > 0
+        &&  pdf_ps_obj_size(&(stobj[i])) > 0){
+
             uint cidbase = stobj[i + 2].val.i;
 
             /* First, find the length of the prefix */
@@ -341,7 +344,10 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
 
         if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_ARRAY)
         &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
-        &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING)){
+        &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING)
+        &&  pdf_ps_obj_size(&(stobj[i + 1])) > 0
+        &&  pdf_ps_obj_size(&(stobj[i])) > 0){
+
             uint cidbase;
             int m, size;
 

@@ -165,9 +165,18 @@ static inline void pdf_ps_make_boolean(pdf_ps_stack_object_t *obj, bool b)
   obj->size = 0;
 }
 
-static inline bool pdf_ps_obj_has_type(pdf_ps_stack_object_t *o, pdf_ps_obj_type t)
+static inline int pdf_ps_obj_has_type(pdf_ps_stack_object_t *o, pdf_ps_obj_type t)
 {
     return o->type == t;
+}
+
+static inline uint32_t pdf_ps_obj_size(pdf_ps_stack_object_t *o)
+{
+    uint32_t s = 0;
+    if (o->type == PDF_PS_OBJ_ARRAY || o->type == PDF_PS_OBJ_NAME || o->type == PDF_PS_OBJ_STRING) {
+        s = o->size;
+    }
+    return s;
 }
 
 /* The stack can grow, but doesn't shrink, just gets destroyed
