@@ -172,7 +172,7 @@ static int cmap_insert_map(pdfi_cmap_range_t *cmap_range, pdfi_cmap_range_map_t 
 static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *pdficmap, pdfi_cmap_range_t *cmap_range)
 {
     int ncodemaps, to_pop = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
-    int lim, i0, j;
+    int i, j;
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
@@ -199,11 +199,9 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
     }
 
     stobj = &s->cur[-ncodemaps] + 1;
-    lim = ncodemaps / 3;
 
-    for (i0 = 0; i0 < lim; i0++) {
+    for (i = 0; i < ncodemaps; i += 3) {
         int preflen, valuelen;
-        int i = i0 * 3;
 
         if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_INTEGER)
         &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
@@ -291,8 +289,8 @@ static int cmap_endnotdefrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf
 static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
 {
     pdf_cmap *pdficmap = (pdf_cmap *)s->client_data;
-    int lim, ncodemaps, to_pop = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
-    int i0, j, k;
+    int ncodemaps, to_pop = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
+    int i, j, k;
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
@@ -318,10 +316,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
     }
 
     stobj = &s->cur[-ncodemaps] + 1;
-    lim = ncodemaps/3;
-
-    for (i0 = 0; i0 < lim; i0++) {
-        int i = i0 * 3;
+    for (i = 0; i < ncodemaps; i += 3) {
         /* Lazy: to make the loop below simpler, put single
            values into a one element array
          */
@@ -341,8 +336,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
 
     stobj = &s->cur[-ncodemaps] + 1;
 
-    for (i0 = 0; i0 < lim; i0++) {
-        int i = i0 * 3;
+    for (i = 0; i < ncodemaps; i += 3) {
         int preflen, valuelen;
 
         if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_ARRAY)
