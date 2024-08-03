@@ -1725,7 +1725,7 @@ static int pdfi_doc_view(pdf_context *ctx)
     if (code != 0) {
         code = pdfi_dict_alloc(ctx, 1, &tempdict);
         if (code < 0)
-            return code;
+            goto exit;
 
         pdfi_countup(tempdict);
 
@@ -1742,12 +1742,12 @@ static int pdfi_doc_view(pdf_context *ctx)
 
     code = pdfi_dict_knownget_type(ctx, ctx->Root, "PageLayout", PDF_NAME, (pdf_obj **)&Layout);
     if (code < 0)
-        return code;
+        goto exit;
 
     if (code != 0) {
         code = pdfi_dict_alloc(ctx, 1, &tempdict);
         if (code < 0)
-            return code;
+            goto exit;
 
         pdfi_countup(tempdict);
 
@@ -1764,14 +1764,14 @@ static int pdfi_doc_view(pdf_context *ctx)
 
     code = pdfi_dict_knownget(ctx, ctx->Root, "OpenAction", &ActionDest);
     if (code < 0)
-        return code;
+        goto exit;
 
     if (code != 0) {
         if (pdfi_type_of(ActionDest) == PDF_DICT) {
             /* Dictionary means this is an action */
             code = pdfi_dict_alloc(ctx, 1, &tempdict);
             if (code < 0)
-                return code;
+                goto exit;
 
             pdfi_countup(tempdict);
 
@@ -1788,7 +1788,7 @@ static int pdfi_doc_view(pdf_context *ctx)
                 /* Array means this is a destination */
                 code = pdfi_dict_alloc(ctx, 1, &tempdict);
                 if (code < 0)
-                    return code;
+                    goto exit;
 
                 pdfi_countup(tempdict);
 
