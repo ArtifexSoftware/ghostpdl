@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -300,7 +300,7 @@ gs_type1_endchar(gs_type1_state * pcis)
              * This is like Acrobat Reader behaves.
              */
             char buf0[gs_font_name_max + 1], buf1[30];
-            int l0 = min(pcis->pfont->font_name.size, sizeof(buf0) - 1);
+            int l0 = min(pcis->pfont->font_name.size - 1, sizeof(buf0) - 1);
             int l1 = min(gstr.size, sizeof(buf1) - 1);
 
             memcpy(buf0, pcis->pfont->font_name.chars, l0);
@@ -308,7 +308,7 @@ gs_type1_endchar(gs_type1_state * pcis)
             memcpy(buf1, gstr.data, l1);
             buf1[l1] = 0;
             emprintf2(pfont->memory,
-                      "The font '%s' misses the glyph '%s' . Continue skipping the glyph.",
+                      " Error processing accented character.\n    The font '%s' does not contain the accent glyph '%s'. Skipping the SEAC.\n\n",
                       buf0,
                       buf1);
             return 0;
