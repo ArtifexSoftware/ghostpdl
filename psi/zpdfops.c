@@ -267,7 +267,7 @@ pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
                 /* Detach the PostScript stream from the PDF context, otherwise the
                  * free_context code will close the main stream.
                  */
-                pdfctx->ctx->main_stream = NULL;
+                pdfctx->ctx->main_stream->s = NULL;
             }
             (void)pdfi_free_context(pdfctx->ctx);
             pdfctx->ctx = NULL;
