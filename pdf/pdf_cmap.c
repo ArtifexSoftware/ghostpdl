@@ -172,7 +172,7 @@ static int cmap_insert_map(pdfi_cmap_range_t *cmap_range, pdfi_cmap_range_map_t 
 static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap *pdficmap, pdfi_cmap_range_t *cmap_range)
 {
     int ncodemaps, to_pop = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
-    int i, j;
+    unsigned int i, j;
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
@@ -202,6 +202,9 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
 
     for (i = 0; i < ncodemaps; i += 3) {
         int preflen, valuelen;
+
+        if (i >= PDF_PS_STACK_MAX)
+            break;
 
         if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_INTEGER)
         &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
@@ -293,7 +296,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
 {
     pdf_cmap *pdficmap = (pdf_cmap *)s->client_data;
     int ncodemaps, to_pop = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
-    int i, j, k;
+    unsigned int i, j, k;
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
@@ -341,6 +344,9 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
 
     for (i = 0; i < ncodemaps; i += 3) {
         int preflen, valuelen;
+
+        if (i >= PDF_PS_STACK_MAX)
+            break;
 
         if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_ARRAY)
         &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
