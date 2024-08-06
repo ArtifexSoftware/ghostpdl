@@ -164,8 +164,23 @@ static int Info_check_array(pdf_context *ctx, pdf_array *a)
                         goto error;
                 }
                 code = Info_check_dict(ctx, (pdf_dict *)array_obj);
-                if (code < 0)
+                if (code < 0) {
+                    if (array_obj->object_num != 0) {
+                        pdf_indirect_ref *i_o;
+
+                        code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&i_o);
+                        if (code < 0)
+                            goto error;
+                        i_o->ref_generation_num = array_obj->generation_num;
+                        i_o->ref_object_num = array_obj->object_num;
+                        i_o->indirect_num = array_obj->object_num;
+                        i_o->indirect_gen = array_obj->generation_num;
+                        code = pdfi_array_put(ctx, a, i, (pdf_obj *)i_o);
+                        if (code < 0)
+                            return code;
+                    }
                     goto error;
+                }
                 break;
             case PDF_ARRAY:
                 if (array_obj->object_num != 0) {
@@ -174,8 +189,23 @@ static int Info_check_array(pdf_context *ctx, pdf_array *a)
                         goto error;
                 }
                 code = Info_check_array(ctx, (pdf_array *)array_obj);
-                if (code < 0)
+                if (code < 0) {
+                    if (array_obj->object_num != 0) {
+                        pdf_indirect_ref *i_o;
+
+                        code = pdfi_object_alloc(ctx, PDF_INDIRECT, 0, (pdf_obj **)&i_o);
+                        if (code < 0)
+                            goto error;
+                        i_o->ref_generation_num = array_obj->generation_num;
+                        i_o->ref_object_num = array_obj->object_num;
+                        i_o->indirect_num = array_obj->object_num;
+                        i_o->indirect_gen = array_obj->generation_num;
+                        code = pdfi_array_put(ctx, a, i, (pdf_obj *)i_o);
+                        if (code < 0)
+                            return code;
+                    }
                     goto error;
+                }
                 break;
             default:
                 break;
