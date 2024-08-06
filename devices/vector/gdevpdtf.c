@@ -353,7 +353,7 @@ pdf_clean_standard_fonts(const gx_device_pdf *pdev)
 /* ------ Private ------ */
 
 static int
-pdf_resize_array(gs_memory_t *mem, void **p, int elem_size, int old_size, int new_size)
+pdf_resize_array(gs_memory_t *mem, void **p, int elem_size, uint old_size, uint new_size)
 {
     void *q = gs_alloc_byte_array(mem, new_size, elem_size, "pdf_resize_array");
 
@@ -658,7 +658,7 @@ set_is_MM_instance(pdf_font_resource_t *pdfont, const gs_font_base *pfont)
 
 /* Resize font resource arrays. */
 int
-pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, int chars_count)
+pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, uint chars_count)
 {
     /* This function fixes CID fonts that provide a lesser CIDCount than
        CIDs used in a document. Rather PS requires to print CID=0,
@@ -667,6 +667,10 @@ pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, int 
        viewer application substitutes the font. */
     gs_memory_t *mem = pdev->pdf_memory;
     int code;
+
+    /* Ensure the 'round up' code below doesn't overflow an unsigned int when adding 7 */
+    if (pfres->count >= max_uint - 7 || chars_count > max_uint - 7)
+        return_error(gs_error_rangecheck);
 
     if (chars_count < pfres->count)
         return 0;

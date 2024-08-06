@@ -409,7 +409,7 @@ int font_resource_free(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 
 /* Resize font resource arrays. */
 int pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres,
-        int chars_count);
+        uint chars_count);
 
 /*
  * Return the (copied, subset or complete) font associated with a font resource.
