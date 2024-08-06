@@ -714,7 +714,7 @@ gx_fapi_bits_merge(byte *dest, const byte *src, uint nbytes)
 void
 gx_fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width, uint smear_width)
 {
-        uint bits_on = 0;
+        uint32_t bits_on = 0;
         const byte *sp = src;
         uint sbyte = *sp;
         byte *dp = dest;
@@ -745,13 +745,17 @@ gx_fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width, uint sm
         /* Process all but the last smear_width bits. */
         for ( ; i < width; ++i ) {
             if ( sbyte & sdmask ) {
-                bits_on++;
+                /* In practice, bits_on should never overflow,
+                   but if it doesn, handle it gracefully
+                 */
+                bits_on = (uint32_t)(((uint64_t)bits_on + 1) & 0xffffffff);
             }
             else if ( bits_on ) {
                 dbyte |= sdmask;
             }
             if ( *zp & zmask ) {
-                --bits_on;
+                if (bits_on > 0)
+                    --bits_on;
             }
             if ( (sdmask >>= 1) == 0 ) {
                 sdmask = 0x80;
