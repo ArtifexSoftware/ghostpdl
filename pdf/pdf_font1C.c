@@ -2345,8 +2345,10 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
         code = u16(fbuf + 4, fbuf + fbuflen, &ntables);
 
-        if (code < 0 || ntables > 64)
+        if (code < 0 || ntables > 64) {
+            gs_free_object(ctx->memory, pfbuf, "pdfi_read_cff_font(fbuf)");
             return_error(gs_error_invalidfont);
+        }
 
         for (i = 0; i < ntables; i++) {
             p = fbuf + 12 + i * 16;
