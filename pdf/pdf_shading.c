@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -163,7 +163,8 @@ static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
     }
     code = gs_shading_Fb_init(ppsh, &params, ctx->memory);
     if (code < 0) {
-        gs_free_object(ctx->memory, params.Function, "Function");
+        gs_function_free(params.Function, true, ctx->memory);
+        params.Function = NULL;
         pdfi_countdown(o);
     }
     return code;
@@ -214,6 +215,8 @@ static int pdfi_shading2(pdf_context *ctx, gs_shading_params_t *pcommon,
     }
     code = gs_shading_A_init(ppsh, &params, ctx->memory);
     if (code < 0){
+        gs_function_free(params.Function, true, ctx->memory);
+        params.Function = NULL;
         pdfi_countdown(o);
         return code;
     }
@@ -266,6 +269,8 @@ static int pdfi_shading3(pdf_context *ctx,  gs_shading_params_t *pcommon,
     }
     code = gs_shading_R_init(ppsh, &params, ctx->memory);
     if (code < 0){
+        gs_function_free(params.Function, true, ctx->memory);
+        params.Function = NULL;
         pdfi_countdown(o);
         return code;
     }
@@ -411,7 +416,8 @@ static int pdfi_shading4(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = gs_shading_FfGt_init(ppsh, &params, ctx->memory);
     if (code < 0) {
-        gs_free_object(ctx->memory, params.Function, "Function");
+        gs_function_free(params.Function, true, ctx->memory);
+        params.Function = NULL;
         gs_free_object(ctx->memory, params.Decode, "Decode");
         return code;
     }
@@ -450,7 +456,8 @@ static int pdfi_shading5(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = gs_shading_LfGt_init(ppsh, &params, ctx->memory);
     if (code < 0) {
-        gs_free_object(ctx->memory, params.Function, "Function");
+        gs_function_free(params.Function, true, ctx->memory);
+        params.Function = NULL;
         gs_free_object(ctx->memory, params.Decode, "Decode");
         return code;
     }
@@ -489,7 +496,8 @@ static int pdfi_shading6(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = gs_shading_Cp_init(ppsh, &params, ctx->memory);
     if (code < 0) {
-        gs_free_object(ctx->memory, params.Function, "Function");
+        gs_function_free(params.Function, true, ctx->memory);
+        params.Function = NULL;
         gs_free_object(ctx->memory, params.Decode, "Decode");
         return code;
     }
@@ -528,7 +536,8 @@ static int pdfi_shading7(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = gs_shading_Tpp_init(ppsh, &params, ctx->memory);
     if (code < 0) {
-        gs_free_object(ctx->memory, params.Function, "Function");
+        gs_function_free(params.Function, true, ctx->memory);
+        params.Function = NULL;
         gs_free_object(ctx->memory, params.Decode, "Decode");
         return code;
     }
