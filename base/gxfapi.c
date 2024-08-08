@@ -753,9 +753,8 @@ gx_fapi_bits_smear_horizontally(byte *dest, const byte *src, uint width, uint sm
             else if ( bits_on ) {
                 dbyte |= sdmask;
             }
-            if ( *zp & zmask ) {
-                if (bits_on > 0)
-                    --bits_on;
+            if ( *zp & zmask && bits_on > 0) {
+                --bits_on;
             }
             if ( (sdmask >>= 1) == 0 ) {
                 sdmask = 0x80;
@@ -801,7 +800,7 @@ on:             switch ( (dbyte = sbyte = *++sp) ) {
                 *dp++ = dbyte;
                 dbyte = 0;
             }
-            if ( *zp & zmask ) {
+            if ( *zp & zmask && bits_on > 0) {
                 --bits_on;
             }
             if ( (zmask >>= 1) == 0 ) {
