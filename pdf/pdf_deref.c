@@ -32,6 +32,10 @@
 #include "pdf_repair.h"
 
 /* Start with the object caching functions */
+/* Disable object caching (for easier debugging with reference counting)
+ * by uncommenting the following line
+ */
+/*#define DISABLE CACHE*/
 
 /* given an object, create a cache entry for it. If we have too many entries
  * then delete the leat-recently-used cache entry. Make the new entry be the
@@ -43,6 +47,7 @@
  */
 static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 {
+#ifndef DISABLE_CACHE
     pdf_obj_cache_entry *entry;
 
     if (o < PDF_TOKEN_AS_OBJ(TOKEN__LAST_KEY))
@@ -93,6 +98,7 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
 
     ctx->cache_entries++;
     ctx->xref_table->xref[o->object_num].cache = entry;
+#endif
     return 0;
 }
 
@@ -101,6 +107,7 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
  */
 static void pdfi_promote_cache_entry(pdf_context *ctx, pdf_obj_cache_entry *cache_entry)
 {
+#ifndef DISABLE_CACHE
     if (ctx->cache_MRU && cache_entry != ctx->cache_MRU) {
         if ((pdf_obj_cache_entry *)cache_entry->next != NULL)
             ((pdf_obj_cache_entry *)cache_entry->next)->previous = cache_entry->previous;
@@ -117,6 +124,7 @@ static void pdfi_promote_cache_entry(pdf_context *ctx, pdf_obj_cache_entry *cach
         ctx->cache_MRU->next = cache_entry;
         ctx->cache_MRU = cache_entry;
     }
+#endif
     return;
 }
 
@@ -128,6 +136,7 @@ static void pdfi_promote_cache_entry(pdf_context *ctx, pdf_obj_cache_entry *cach
  */
 int replace_cache_entry(pdf_context *ctx, pdf_obj *o)
 {
+#ifndef DISABLE_CACHE
     xref_entry *entry;
     pdf_obj_cache_entry *cache_entry;
     pdf_obj *old_cached_obj = NULL;
@@ -156,6 +165,7 @@ int replace_cache_entry(pdf_context *ctx, pdf_obj *o)
         /* Now decrement the old cache entry, if any */
         pdfi_countdown(old_cached_obj);
     }
+#endif
     return 0;
 }
 
