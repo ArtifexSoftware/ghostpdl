@@ -2764,6 +2764,7 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
                                gs_color_space **ppcs, bool inline_image)
 {
     int code = 0;
+    gs_id oldid = 0;
 
     if (pdfi_name_is(name, "G") || pdfi_name_is(name, "DeviceGray")) {
         if (pdfi_name_is(name, "G") && !inline_image) {
@@ -2819,14 +2820,17 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
             }
         }
 
+        oldid = ctx->pgs->color[0].color_space->id;
         /* recursion */
         code = pdfi_create_colorspace(ctx, ref_space, stream_dict, page_dict, ppcs, inline_image);
 
         if (code >= 0) {
-            if (ppcs != NULL)
-                pdfi_set_colourspace_name(ctx, *ppcs, name);
-            else
-                pdfi_set_colourspace_name(ctx, ctx->pgs->color[0].color_space, name);
+            if (oldid != ctx->pgs->color[0].color_space->id) {
+                if (ppcs != NULL)
+                    pdfi_set_colourspace_name(ctx, *ppcs, name);
+                else
+                    pdfi_set_colourspace_name(ctx, ctx->pgs->color[0].color_space, name);
+            }
         }
 
         pdfi_countdown(ref_space);
