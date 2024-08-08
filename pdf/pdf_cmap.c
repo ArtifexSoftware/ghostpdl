@@ -203,9 +203,6 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
     for (i = 0; i < ncodemaps; i += 3) {
         int preflen, valuelen;
 
-        if (i >= PDF_PS_STACK_MAX)
-            break;
-
         if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_INTEGER)
         &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
         &&  pdf_ps_obj_has_type(&(stobj[i]), PDF_PS_OBJ_STRING)
@@ -344,9 +341,6 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
 
     for (i = 0; i < ncodemaps; i += 3) {
         int preflen, valuelen;
-
-        if (i >= PDF_PS_STACK_MAX)
-            break;
 
         if (pdf_ps_obj_has_type(&(stobj[i + 2]), PDF_PS_OBJ_ARRAY)
         &&  pdf_ps_obj_has_type(&(stobj[i + 1]), PDF_PS_OBJ_STRING)
