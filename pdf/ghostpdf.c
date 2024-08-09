@@ -1228,6 +1228,11 @@ static int pdfi_init_file(pdf_context *ctx)
             goto exit;
         if (code == 0) {
             if (pdfi_type_of(o) == PDF_DICT) {
+#if USE_PDF_PERMISSIONS
+	            double Permissions = 0;
+	            uint32_t P = 0;
+#endif
+
                 code = pdfi_initialise_Decryption(ctx);
                 if (code < 0)
                     goto exit;
