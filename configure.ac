@@ -869,20 +869,32 @@ if test x$with_tesseract != xno; then
   if test -d $srcdir/tesseract && test -d $srcdir/leptonica; then
     AC_MSG_RESULT([yes])
 
-    case $host in
-      *-aix*)
-        with_tesseract=no
-        AC_MSG_WARN([OCR devices disabled due to incompatibility with IBM AIX])
-        OCR_DEVS_WARNING_LINE1="OCR devices disabled due to incompatibility with IBM AIX"
-        ;;
-      *-sun*|*-solaris*)
-        with_tesseract=no
-        AC_MSG_WARN([OCR devices disabled due to incompatibility with Oracle/Sun Solaris])
-        OCR_DEVS_WARNING_LINE1="OCR devices disabled due to incompatibility with Oracle/Sun Solaris"
-        ;;
-    esac
-
     if test x$with_tesseract != xno; then
+
+      case $host in
+        *-aix*)
+          if test x"$GXX" = x"no" ; then
+            with_tesseract=no
+            AC_MSG_WARN([OCR devices disabled due to incompatibility with IBM AIX])
+            OCR_DEVS_WARNING_LINE1="OCR devices disabled due to incompatibility with IBM AIX"
+          else
+            CXXFLAGS="$CXXFLAGS -pthread"
+            LDFLAGS="$LDFLAGS -pthread"
+          fi
+          ;;
+        *-sun*|*-solaris*)
+          if test x"$GXX" = x"no" ; then
+            with_tesseract=no
+            AC_MSG_WARN([OCR devices disabled due to incompatibility with Oracle/Sun Solaris])
+            OCR_DEVS_WARNING_LINE1="OCR devices disabled due to incompatibility with Oracle/Sun Solaris"
+          else
+            # For some reason, the gnu std lib on Solaris (SPARC) doesn't include (all?) the atomic data
+            # types, so disable their use.
+            CXXFLAGS="$CXXFLAGS -D__STDC_NO_ATOMICS__=1"
+          fi
+          ;;
+      esac
+
       AC_LANG_PUSH(C++)
       AC_PROG_CXX
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[HAVE_CXX_COMPILER=yes; AC_SUBST(CXX)],[HAVE_CXX_COMPILER=no])
