@@ -512,7 +512,7 @@ const char *gs_internal_error_strings[] = {
 #define FIRSTINTERNALERROR gs_error_hit_detected * -1
 #define LASTGSERROR gs_error_handled * -1
 
-void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info)
+void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info, const char *file_line)
 {
     char fallback[] = "unknown graphics library error";
 
@@ -534,9 +534,16 @@ void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_funct
             }
             errprintf(ctx->memory, "Graphics library error %d (%s) in function '%s'", gs_error, error_string, pdfi_function_name);
             if (gs_lib_function != NULL)
-                errprintf(ctx->memory, " from lib routine '%s'.\n", gs_lib_function);
+                errprintf(ctx->memory, " from lib routine '%s'", gs_lib_function);
+
+#if DEBUG_FILE_LINE==1
+            if (file_line != NULL)
+                errprintf(ctx->memory, "%s'.\n", file_line);
             else
                 errprintf(ctx->memory, ".\n");
+#else
+            errprintf(ctx->memory, ".\n");
+#endif
 
             if (pdfi_error != 0)
                 errprintf(ctx->memory, "\tSetting pdfi error %d - %s.\n", pdfi_error, pdf_error_strings[pdfi_error]);
@@ -544,7 +551,14 @@ void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_funct
                 errprintf(ctx->memory, "\t%s\n", extra_info);
         } else {
             if (pdfi_error != 0) {
+#if DEBUG_FILE_LINE==1
+                if (file_line != NULL)
+                    errprintf(ctx->memory, "Function '%s' %s set pdfi error %d - %s.\n", pdfi_function_name, file_line, pdfi_error, pdf_error_strings[pdfi_error]);
+                else
+                    errprintf(ctx->memory, "Function '%s' set pdfi error %d - %s.\n", pdfi_function_name, pdfi_error, pdf_error_strings[pdfi_error]);
+#else
                 errprintf(ctx->memory, "Function '%s' set pdfi error %d - %s.\n", pdfi_function_name, pdfi_error, pdf_error_strings[pdfi_error]);
+#endif
                 if (extra_info != NULL)
                     errprintf(ctx->memory, "\t%s\n", extra_info);
             } else {
@@ -555,7 +569,7 @@ void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_funct
     }
 }
 
-void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, const char *extra_info)
+void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, const char *extra_info, const char *file_line)
 {
     char fallback[] = "unknown graphics library error";
 
@@ -578,16 +592,29 @@ void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_fun
             outprintf(ctx->memory, "Graphics library error %d (%s) in function '%s'", gs_error, error_string, pdfi_function_name);
             if (gs_lib_function != NULL)
                 outprintf(ctx->memory, " from lib routine '%s'.\n", gs_lib_function);
-            else
-                outprintf(ctx->memory, ".\n");
 
+#if DEBUG_FILE_LINE==1
+            if (file_line != NULL)
+                errprintf(ctx->memory, "%s'.\n", file_line);
+            else
+                errprintf(ctx->memory, ".\n");
+#else
+            errprintf(ctx->memory, ".\n");
+#endif
             if (pdfi_warning != 0)
                 outprintf(ctx->memory, "\tsetting pdfi warning %d - %s.\n", pdfi_warning, pdf_warning_strings[pdfi_warning]);
             if (extra_info != NULL)
                 outprintf(ctx->memory, "\t%s\n", extra_info);
         } else {
             if (pdfi_warning != 0) {
+#if DEBUG_FILE_LINE==1
+                if (file_line != NULL)
+                    outprintf(ctx->memory, "Function '%s' %s set pdfi warning %d - %s.\n", pdfi_function_name, file_line, pdfi_warning, pdf_warning_strings[pdfi_warning]);
+                else
+                    outprintf(ctx->memory, "Function '%s' set pdfi warning %d - %s.\n", pdfi_function_name, pdfi_warning, pdf_warning_strings[pdfi_warning]);
+#else
                 outprintf(ctx->memory, "Function '%s' set pdfi warning %d - %s.\n", pdfi_function_name, pdfi_warning, pdf_warning_strings[pdfi_warning]);
+#endif
                 if (extra_info != NULL)
                     errprintf(ctx->memory, "\t%s\n", extra_info);
             } else {
@@ -610,7 +637,7 @@ int pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_functi
         (void)vsnprintf(extra_info, sizeof(extra_info), fmt, args);
         va_end(args);
 
-        pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
+        pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info, NULL);
     }
     if (ctx->args.pdfstoponerror) {
         if (gs_error < 0)
@@ -632,7 +659,7 @@ int pdfi_set_warning_var(pdf_context *ctx, int gs_error, const char *gs_lib_func
         (void)vsnprintf(extra_info, sizeof(extra_info), fmt, args);
         va_end(args);
 
-        pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
+        pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, NULL);
     }
     if (ctx->args.pdfstoponwarning) {
         if (gs_error < 0)

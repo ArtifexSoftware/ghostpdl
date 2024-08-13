@@ -547,23 +547,23 @@ void pdfi_gstate_to_PS(pdf_context *ctx, gs_gstate *pgs, pdfi_switch_t *i_switch
 int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num);
 
 void pdfi_report_errors(pdf_context *ctx);
-void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info);
-void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, const char *extra_info);
+void pdfi_verbose_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_error, const char *pdfi_function_name, const char *extra_info, const char *file_line);
+void pdfi_verbose_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, int pdfi_warning, const char *pdfi_function_name, const char *extra_info, const char *file_line);
 
-static inline void pdfi_set_error(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info)
+static inline void pdfi_set_error_file_line(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info, const char *file_line)
 {
     /* ignore problems while repairing a file */
     if (!ctx->repairing) {
         if (pdfi_error != 0)
             ctx->pdf_errors[pdfi_error / (sizeof(char) * 8)] |= 1 << pdfi_error % (sizeof(char) * 8);
         if (ctx->args.verbose_errors)
-            pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
+            pdfi_verbose_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info, file_line);
     }
 }
 
-static inline int pdfi_set_error_stop(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info)
+static inline int pdfi_set_error_stop_file_line(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *extra_info, const char *file_line)
 {
-    pdfi_set_error(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info);
+    pdfi_set_error_file_line(ctx, gs_error, gs_lib_function, pdfi_error, pdfi_function_name, extra_info, file_line);
     if (ctx->args.pdfstoponerror || gs_error == gs_error_Fatal || gs_error == gs_error_VMerror) {
         if (gs_error < 0)
             return gs_error;
@@ -573,19 +573,19 @@ static inline int pdfi_set_error_stop(pdf_context *ctx, int gs_error, const char
     return 0;
 }
 
-static inline void pdfi_set_warning(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info)
+static inline void pdfi_set_warning_file_line(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info, const char *file_line)
 {
     /* ignore problems while repairing a file */
     if (!ctx->repairing) {
         ctx->pdf_warnings[pdfi_warning / (sizeof(char) * 8)] |= 1 << pdfi_warning % (sizeof(char) * 8);
         if (ctx->args.verbose_warnings)
-            pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
+            pdfi_verbose_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, file_line);
     }
 }
 
-static inline int pdfi_set_warning_stop(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info)
+static inline int pdfi_set_warning_stop_file_line(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_warning pdfi_warning, const char *pdfi_function_name, const char *extra_info, const char *file_line)
 {
-    pdfi_set_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info);
+    pdfi_set_warning_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, file_line);
     if (ctx->args.pdfstoponwarning || gs_error == gs_error_Fatal || gs_error == gs_error_VMerror) {
         if (gs_error < 0)
             return gs_error;
@@ -595,11 +595,27 @@ static inline int pdfi_set_warning_stop(pdf_context *ctx, int gs_error, const ch
     return 0;
 }
 
-static inline void pdfi_log_info(pdf_context *ctx, const char *pdfi_function, const char *info)
+static inline void pdfi_log_info_file_line(pdf_context *ctx, const char *pdfi_function, const char *info)
 {
     if (!ctx->args.QUIET)
         outprintf(ctx->memory, "%s", info);
 }
+
+#if defined(DEBUG) && defined(__FILE__) && defined(__LINE__)
+#define DEBUG_FILE_LINE 1
+#define pdfi_log_info(ctx, pdfi_function, info) pdfi_log_info_file_line(ctx, pdfi_function, info)
+#define pdfi_set_warning_stop(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info) pdfi_set_warning_stop_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, __FILE__"("GS_STRINGIZE(__LINE__)")")
+#define pdfi_set_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info) pdfi_set_warning_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, __FILE__"("GS_STRINGIZE(__LINE__)")")
+#define pdfi_set_error_stop(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info) pdfi_set_error_stop_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, __FILE__"("GS_STRINGIZE(__LINE__)")")
+#define pdfi_set_error(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info) pdfi_set_error_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, __FILE__"("GS_STRINGIZE(__LINE__)")")
+#else
+#define DEBUG_FILE_LINE 0
+#define pdfi_log_info(ctx, pdfi_function, info) pdfi_log_info_file_line(ctx, pdfi_function, info)
+#define pdfi_set_warning_stop(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info) pdfi_set_warning_stop_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, NULL)
+#define pdfi_set_warning(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info) pdfi_set_warning_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, NULL)
+#define pdfi_set_error_stop(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info) pdfi_set_error_stop_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, NULL)
+#define pdfi_set_error(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info) pdfi_set_error_file_line(ctx, gs_error, gs_lib_function, pdfi_warning, pdfi_function_name, extra_info, NULL)
+#endif
 
 /* Variants of the above that work in a printf style. */
 int pdfi_set_error_var(pdf_context *ctx, int gs_error, const char *gs_lib_function, pdf_error pdfi_error, const char *pdfi_function_name, const char *fmt, ...);
