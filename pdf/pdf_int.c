@@ -231,7 +231,8 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     unsigned short exponent_index = 0;
     pdf_num *num;
     int code = 0, malformed = false, doubleneg = false, recovered = false, negative = false, overflowed = false;
-    int int_val = 0, tenth_max_int = max_int / 10, tenth_max_uint = max_uint / 10;
+    unsigned int int_val = 0;
+    int tenth_max_int = max_int / 10, tenth_max_uint = max_uint / 10;
 
     pdfi_skip_white(ctx, s);
 
@@ -386,7 +387,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         num->value.d = acrobat_compatible_atof((char *)Buffer);
     } else {
         /* The doubleneg case is taken care of above. */
-        num->value.i = negative ? -int_val : int_val;
+        num->value.i = negative ? (int64_t)int_val * -1 : (int64_t)int_val;
     }
     if (ctx->args.pdfdebug) {
         if (real)
