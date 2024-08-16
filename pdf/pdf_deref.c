@@ -1030,7 +1030,28 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                 if (code1 == 0)
                     return pdfi_dereference_main(ctx, obj, gen, object, cache);
                 /* Repair failed, just give up and return an error */
-                return code;
+                goto error;
+            }
+
+            /* We only expect a single object back when dereferencing an indirect reference
+             * The only way (I think) we can end up with more than one is if the object initially
+             * appears to be a dictionary or array, but the object terminates (with endobj or
+             * simply reaching EOF) without terminating the array or dictionary. That's clearly
+             * an error. We might, as a future 'improvement' choose to walk back through
+             * the stack looking for unterminated dictionary or array markers, and closing them
+             * so that (hopefully!) we end up with a single 'repaired' object on the stack.
+             * But for now I'm simply going to treat these as errors. We will try a repair on the
+             * file to see if we end up using a different (hopefully intact) object from the file.
+             */
+            if (pdfi_count_stack(ctx) - stack_depth > 1) {
+                int code1 = 0;
+
+                code1 = pdfi_repair_file(ctx);
+                if (code1 == 0)
+                    return pdfi_dereference_main(ctx, obj, gen, object, cache);
+                /* Repair failed, just give up and return an error */
+                code = gs_note_error(gs_error_syntaxerror);
+                goto error;
             }
 
             if (pdfi_count_stack(ctx) > 0 &&
@@ -1050,7 +1071,10 @@ static int pdfi_dereference_main(pdf_context *ctx, uint64_t obj, uint64_t gen, p
                         goto error;
                     }
                 }
-                if (cache) {
+                /* There's really no point in caching an indirect reference and
+                 * I think it could be potentially confusing to later calls.
+                 */
+                if (cache && pdfi_type_of(*object) != PDF_INDIRECT) {
                     code = pdfi_add_to_cache(ctx, *object);
                     if (code < 0) {
                         pdfi_countdown(*object);
