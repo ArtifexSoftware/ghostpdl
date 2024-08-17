@@ -136,6 +136,8 @@ typedef struct cmd_args_s {
     bool pdfstoponwarning;
     bool notransparency;
     bool nocidfallback;
+    int PDFA;
+    int PDFX;
     bool no_pdfmark_outlines; /* can be overridden to true if multi-page output */
     bool no_pdfmark_dests;    /* can be overridden to true if multi-page output */
     bool pdffitpage;

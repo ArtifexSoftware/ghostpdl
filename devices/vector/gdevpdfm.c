@@ -2331,11 +2331,40 @@ pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     /* If this is a stream, and we are doing PDF/A output, and the stream
      * is a Metadata stream, then we must not write it compressed. Bizarrely PDF/A
      * excludes this.
+     * Actually, we cna't write Metadata streams at all. Because we don't know how to extend
+     * the XMP Metadata to include them.
      */
     if (cos_type(pco) == cos_type_stream && pdev->PDFA) {
         for (i=0;i<count;i++) {
             if (pairs[i].size == 9 && strncmp((const char *)pairs[i].data, "/Metadata", 9) == 0) {
                 cos_dict_t *pcd = (cos_dict_t *)pco;
+
+                if (pdev->PDFA) {
+                    switch (pdev->PDFACompatibilityPolicy) {
+                        case 0:
+                            emprintf(pdev->memory,
+                                     "Cannot preserve Marked Content in PDF/A, reverting to normal PDF output\n\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFA = 0;
+                            break;
+                        case 1:
+                            emprintf(pdev->memory,
+                                     "Cannot preserve Marked Content in PDF/A, dropping feature to preserve PDF/A compatibility\n");
+                            return 0;
+                            break;
+                        case 2:
+                            emprintf(pdev->memory,
+                                     "Cannot preserve Marked Content in PDF/A, aborting conversion\n");
+                            return_error (gs_error_typecheck);
+                            break;
+                        default:
+                            emprintf(pdev->memory,
+                                     "Cannot preserve Marked Content in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFA = 0;
+                            break;
+                    }
+                }
 
                 /* Close the compressed stream */
                 gs_free_object(pdev->pdf_memory, pco->input_strm, "free old stream, replacing with new stream");
@@ -2351,10 +2380,10 @@ pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                  */
                 cos_dict_delete_c_key(pcd, "/Filter");
                 cos_dict_delete_c_key(pcd, "/DecodeParams");
+
             }
         }
     }
-
     return pdfmark_put_pairs((cos_dict_t *)pco, pairs + 1, count - 1);
 }
 

@@ -1128,6 +1128,24 @@ static int apply_interpreter_params(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, ref *pdi
         pdfctx->ctx->args.no_pdfmark_outlines = pvalueref->value.boolval;
     }
 
+    if (dict_find_string(pdictref, "PDFA", &pvalueref) > 0) {
+        if (!r_has_type(pvalueref, t_integer))
+            goto error;
+        pdfctx->ctx->args.PDFA = pvalueref->value.intval;
+    }
+
+    if (dict_find_string(pdictref, "PDFX", &pvalueref) > 0) {
+        if (!r_has_type(pvalueref, t_integer))
+            goto error;
+        pdfctx->ctx->args.PDFX = pvalueref->value.intval;
+    }
+
+    if (dict_find_string(pdictref, "PDFACompatibilityPolicy", &pvalueref) > 0) {
+        if (!r_has_type(pvalueref, t_integer))
+            goto error;
+        pdfctx->ctx->args.PDFA = pvalueref->value.intval;
+    }
+
     /* This one can be a boolean OR an integer */
     if (dict_find_string(pdictref, "UsePDFX3Profile", &pvalueref) > 0) {
         if (!r_has_type(pvalueref, t_boolean)) {

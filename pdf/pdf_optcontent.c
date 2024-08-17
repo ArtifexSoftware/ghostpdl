@@ -698,6 +698,39 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
                     code = gs_note_error(gs_error_typecheck);
                     goto exit;
                 }
+                /* If we are producing PDF/A we must not include any Metadata, as that
+                 * requires us to modify the XMP Metadata, which we don't know how to do.
+                 */
+                if (ctx->args.PDFA > 0) {
+                    uint64_t index = 0;
+                    pdf_name *Key = NULL;
+                    pdf_obj *Value = NULL;
+
+                    code = pdfi_dict_first(ctx, oc_dict, (pdf_obj **)&Key, &Value, &index);
+                    if (code < 0) {
+                        if (code == gs_error_undefined)
+                            code = 0;
+                        goto exit;
+                    }
+                    while (code >= 0) {
+                        if (pdfi_name_is(Key, "Metadata")) {
+                            pdfi_dict_delete_pair(ctx, oc_dict, Key);
+                        }
+                        pdfi_countdown(Key);
+                        Key = NULL;
+                        pdfi_countdown(Value);
+                        Value = NULL;
+
+                        code = pdfi_dict_next(ctx, oc_dict, (pdf_obj **)&Key, &Value, &index);
+                        if (code == gs_error_undefined) {
+                            code = 0;
+                            break;
+                        }
+                    }
+                }
+                if (pdfi_dict_entries(oc_dict) == 0)
+                    goto exit;
+
                 code = pdfi_pdfmark_dict(ctx, oc_dict);
                 if (code < 0)
                     goto exit;
