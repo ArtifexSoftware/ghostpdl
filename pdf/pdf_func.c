@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -147,7 +147,7 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
 {
     int code;
     int c;
-    char TokenBuffer[17];
+    char TokenBuffer[TOKENBUFFERSIZE];
     unsigned int Size, IsReal;
     byte *clause = NULL;
     byte *p = (ops ? ops + *size : NULL);
@@ -230,8 +230,13 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                             } else
                                 break;
                         }
-                        if (Size > NUMBERTOKENSIZE)
-                            return_error(gs_error_syntaxerror);
+                        if (Size > NUMBERTOKENSIZE) {
+                            if (IsReal == 1)
+                                /* Just discard decimal places beyond NUMBERTOKENSIZE .... */
+                                Size--;
+                            else
+                                return_error(gs_error_syntaxerror);
+                        }
                     }
                     TokenBuffer[Size] = 0x00;
                     pdfi_unread_byte(ctx, function_stream, (byte)c);
