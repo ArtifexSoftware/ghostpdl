@@ -504,7 +504,8 @@ int pdfi_read_Pages(pdf_context *ctx)
          * each node and add any leaf nodes.
          */
         for (i=0;i < a->size; i++) {
-            code = pdfi_array_get(ctx, a, i, &p);
+            /* We must not allow the entry in the array to be replaced, in case it's a circular reference */
+            code = pdfi_array_get_no_store_R(ctx, a, i, &p);
             if (code < 0)
                 continue;
             if (pdfi_type_of(p) != PDF_DICT) {
@@ -519,9 +520,17 @@ int pdfi_read_Pages(pdf_context *ctx)
             if (p->object_num != 0 && p->object_num == o1->object_num) {
                 pdfi_countdown(p);
                 p = NULL;
+                pdfi_countdown(a);
+                pdfi_countdown(o1);
                 ctx->num_pages = 0;
                 return_error(gs_error_circular_reference);
             }
+            /* Now we've checked for circular reference we can replace the entry in the
+             * array, and add the object to the cache.
+             * These are optimisations, so we don't especially care whether they succeed
+             */
+            (void)pdfi_array_put(ctx, a, i, p);
+            (void)replace_cache_entry(ctx, p);
             code = pdfi_dict_knownget_type(ctx, (pdf_dict *)p, "Type", PDF_NAME, (pdf_obj **)&p1);
             if (code <= 0) {
                 pdfi_countdown(p);
