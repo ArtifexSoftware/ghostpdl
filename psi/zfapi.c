@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -722,7 +722,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             }
         case gs_fapi_font_feature_BlendFontBBox_length:
             {
-                ref *Blend, *bfbbox;
+                ref *Blend, *bfbbox, bfbbox0;
                 if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
                     *ret = 0;
                     break;
@@ -732,7 +732,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     *ret = 0;
                     break;
                 }
-                *ret = (ushort)r_size(bfbbox);
+                if (!r_has_type(bfbbox, t_array) || array_get(ff->memory, bfbbox, 0, &bfbbox0) < 0) {
+                    *ret = 0;
+                    break;
+                }
+                *ret = (ushort)r_size(&bfbbox0);
                 break;
             }
         case gs_fapi_font_feature_BlendFontBBox:

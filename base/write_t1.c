@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -803,10 +803,10 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output, int Wri
         if (code < 0)
             return code;
 
-        for (i = 0; i < x; i++) {
+        for (i = 0; i < 4; i++) {
             int j;
             WRF_wstring(a_fapi_font->memory, a_output, " {");
-            for (j = 0; j < 4; j++) {
+            for (j = 0; j < x; j++) {
                 code = a_fapi_font->get_word(a_fapi_font,
                                   gs_fapi_font_feature_BlendFontBBox,
                                   j + (i * 4), (unsigned short *)&x2);
