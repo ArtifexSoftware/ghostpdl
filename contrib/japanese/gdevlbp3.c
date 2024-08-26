@@ -65,7 +65,7 @@ static	const struct	ppi PaperInfo[] =
                 {2100, 2790, 14}  /* Letter */
         };
 
-static void BoundImage(gx_device_printer *, struct bounding *);
+static int BoundImage(gx_device_printer *, struct bounding *);
 static long CompressImage(gx_device_printer *, struct bounding *, gp_file *, const char *);
 
 static int
@@ -76,9 +76,11 @@ lbp310PrintPage(gx_device_printer *pDev, gp_file *fp)
         long	DataSize;
         struct	bounding	Box;
 
-        BoundImage(pDev, &Box);
+        if ((i = BoundImage(pDev, &Box)) < 0)
+            return i;
 
-        DataSize = CompressImage(pDev, &Box, fp, "\x1b[1;%d;%d;11;%d;.r");
+        if ((DataSize = CompressImage(pDev, &Box, fp, "\x1b[1;%d;%d;11;%d;.r")) < 0)
+             return (int) DataSize;
 
         /* ----==== Set size ====---- */
         gs_snprintf(Buf, sizeof(Buf), "0%ld", DataSize);
@@ -98,7 +100,8 @@ lbp320PrintPage(gx_device_printer *pDev, gp_file *fp)
         long	DataSize;
         struct	bounding	Box;
 
-        BoundImage(pDev, &Box);
+        if ((i = BoundImage(pDev, &Box)) < 0)
+             return i;
 
         /* ----==== fix bounding box 4-byte align ====---- */
         Box.Left &= ~1;
@@ -107,7 +110,8 @@ lbp320PrintPage(gx_device_printer *pDev, gp_file *fp)
         /* ----==== JOB start ??? ====---- */
         gp_fprintf(fp, "\x1b%%-12345X@PJL CJLMODE\n@PJL JOB\n");
 
-        DataSize = CompressImage(pDev, &Box, fp, "\x1b[1;%d;%d;11;%d;.&r");
+        if ((DataSize = CompressImage(pDev, &Box, fp, "\x1b[1;%d;%d;11;%d;.&r")) < 0)
+            return (int) DataSize;
 
         /* ----==== Set size ====---- */
         gs_snprintf(Buf, sizeof(Buf), "000%ld", DataSize);
@@ -120,7 +124,7 @@ lbp320PrintPage(gx_device_printer *pDev, gp_file *fp)
         return(0);
 }
 
-static void
+static int
 BoundImage(gx_device_printer *pDev, struct bounding *pBox)
 {
         int	x, y, flag;
@@ -144,6 +148,9 @@ BoundImage(gx_device_printer *pDev, struct bounding *pBox)
                 LineSize = Xsize*2+1;
         }
         Buf = (byte *)gs_malloc(pDev->memory->non_gc_memory, 1, LineSize, "LineBuffer");
+        if (Buf == NULL)
+            return_error(gs_error_VMerror);
+
         /* ----==== bounding image ====---- */
         Pt = Pb = Pl = Pr = -1;
         for(y=0 ; y<height && y<Ysize ; y++){
@@ -173,6 +180,7 @@ BoundImage(gx_device_printer *pDev, struct bounding *pBox)
         pBox->Left = Pl;
         pBox->Right = Pr;
         gs_free(pDev->memory->non_gc_memory, Buf, 1, LineSize, "LineBuffer");
+        return 0;
 }
 
 static long
@@ -183,6 +191,11 @@ CompressImage(gx_device_printer *pDev, struct bounding *pBox, gp_file *fp, const
         int	LineSize = gdev_mem_bytes_per_scan_line((gx_device *)pDev);
         byte	*Buf, oBuf[128], c_prev = 0, c_cur, c_tmp;
         long	DataSize = 0;
+
+        /* ----==== Allocate momory ====---- */
+        Buf = (byte *)gs_malloc(pDev->memory->non_gc_memory, 1, LineSize, "LineBuffer");
+        if (Buf == NULL)
+            return_error(gs_error_VMerror);
 
         /* ----==== Printer initialize ====---- */
         /* ----==== start TEXT mode ====---- */
@@ -209,8 +222,6 @@ CompressImage(gx_device_printer *pDev, struct bounding *pBox, gp_file *fp, const
         gp_fprintf(fp, format, pBox->Right-pBox->Left+1,
                    Xres, pBox->Bottom-pBox->Top+1);
 
-        /* ----==== Allocate momory ====---- */
-        Buf = (byte *)gs_malloc(pDev->memory->non_gc_memory, 1, LineSize, "LineBuffer");
         /* ----==== transfer raster image ====---- */
         for (y=pBox->Top ; y<=pBox->Bottom ; y++) {
                 gdev_prn_copy_scan_lines(pDev, y, Buf, LineSize);
