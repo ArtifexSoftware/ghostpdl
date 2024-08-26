@@ -1599,8 +1599,6 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
 
     code = dev_proc(dev, get_profile)((gx_device *)dev, &profile_struct);
     if (profile_struct != NULL) {
-        int count = 0;
-
         if (name_str == NULL) {
             /* Create a default name string that we can use */
             int total_len;
@@ -1669,8 +1667,11 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
         curr_entry = &(spot_names->head);
          /* Go ahead and tokenize now */
         pch = gs_strtok(name_str, ",", &last);
-        count = 0;
+
         while (pch != NULL) {
+            if (spot_names->count == GS_CLIENT_COLOR_MAX_COMPONENTS)
+                return gs_throw(gs_error_rangecheck, "Too many spot names");
+
             temp_ptr = pch;
             done = 0;
             /* Remove any leading spaces */
@@ -1687,6 +1688,7 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
                 return gs_throw(gs_error_VMerror, "Insufficient memory for spot name");
             /* Set our current entry to this one */
             *curr_entry = name_entry;
+            spot_names->count += 1;
             name_entry->length = strlen(temp_ptr);
             name_entry->name = (char *) gs_alloc_bytes(mem, name_entry->length,
                                         "gsicc_set_device_profile_colorants");
@@ -1695,10 +1697,8 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             memcpy(name_entry->name, temp_ptr, name_entry->length);
             /* Get the next entry location */
             curr_entry = &((*curr_entry)->next);
-            count += 1;
             pch = gs_strtok(NULL, ",", &last);
         }
-        spot_names->count = count;
         /* Create the color map.  Query the device to find out where these
            colorants are located.   It is possible that the device may
            not be opened yet.  In which case, we need to make sure that
@@ -1710,11 +1710,11 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
                                                    "gsicc_set_device_profile_colorants");
         if (spot_names->color_map == NULL)
             return gs_throw(gs_error_VMerror, "Insufficient memory for spot color map");
-        spot_names->color_map->num_colorants = count;
-        spot_names->color_map->num_components = count;
+        spot_names->color_map->num_colorants = spot_names->count;
+        spot_names->color_map->num_components = spot_names->count;
 
         name_entry = spot_names->head;
-        for (k = 0; k < count; k++) {
+        for (k = 0; k < spot_names->count; k++) {
             int colorant_number = (*dev_proc(dev, get_color_comp_index))
                     (dev, (const char *)name_entry->name, name_entry->length,
                      SEPARATION_NAME);
