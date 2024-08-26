@@ -215,7 +215,7 @@ md50_print_page(gx_device_printer *pdev, gp_file *prn_stream,
   for ( lnum = 0; lnum <= pdev->height; lnum++ ) {
     byte *end_data = data + line_size;
     byte *start_data = data;
-    memset(data, 0, LINE_SIZE);
+
     n = gdev_prn_copy_scan_lines(pdev, lnum,
                              (byte *)data, line_size);
     if (n != 1) {
