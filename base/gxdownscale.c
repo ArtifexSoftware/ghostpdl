@@ -2319,6 +2319,12 @@ int gx_downscaler_init_planar_cm(gx_downscaler_t      *ds,
     ds->pre_cm[0] = gs_alloc_bytes(dev->memory,
                                    (size_t)span * downfactor * num_comps,
                                    "gx_downscaler(planar_data)");
+
+    if (ds->pre_cm[0] == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto cleanup;
+    }
+
     for (i = 1; i < num_comps; i++) {
         ds->pre_cm[i] = ds->pre_cm[i-1] + (size_t)span * downfactor;
     }
