@@ -198,10 +198,15 @@ md50_print_page(gx_device_printer *pdev, gp_file *prn_stream,
   int lnum;
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
   byte *data = (byte *)gs_malloc(pdev->memory->non_gc_memory, 8, line_size, "md50_print_page(data)" );
-  int skipping = 0;
+  int skipping = 0, code = 0;
   int nbyte;
   int nskip;
   int n;
+
+  if (data == NULL) {
+      code = gs_note_error(gs_error_VMerror);
+      goto cleanup;
+  }
 
     /* Load Paper & Select Inc Cartridge */
   gp_fwrite(init_str, sizeof(char), init_size, prn_stream);
@@ -213,8 +218,10 @@ md50_print_page(gx_device_printer *pdev, gp_file *prn_stream,
     memset(data, 0, LINE_SIZE);
     n = gdev_prn_copy_scan_lines(pdev, lnum,
                              (byte *)data, line_size);
-    if (n != 1)
-      return n;
+    if (n != 1) {
+        code = n;
+        goto cleanup;
+    }
 
     /* Remove trailing 0s. */
     while ( end_data > data && end_data[-1] == 0 )
@@ -249,7 +256,10 @@ md50_print_page(gx_device_printer *pdev, gp_file *prn_stream,
   gp_fwrite(end_md, sizeof(char), sizeof(end_md), prn_stream);
   gp_fflush(prn_stream);
 
-  return 0;
+cleanup:
+  gs_free(pdev->memory->non_gc_memory, data, 8, line_size, "md50_print_page(data)" );
+
+  return code;
 }
 
 /* all? MD series monochrome mode print with data compression. */
@@ -260,8 +270,13 @@ md1xm_print_page(gx_device_printer *pdev, gp_file *prn_stream)
   int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
   byte *data = (byte *)gs_malloc(pdev->memory->non_gc_memory, 8, line_size, "md1xm_print_page(data)");
   byte *out_start = (byte *)gs_malloc(pdev->memory->non_gc_memory, 8, line_size, "md1xm_print_page(data)");
-  int skipping = 0;
+  int skipping = 0, code = 0;
   int nbyte;
+
+  if (data == NULL || out_start == NULL) {
+      code = gs_note_error(gs_error_VMerror);
+      goto cleanup;
+  }
 
   /* Load Paper & Select Inc Cartridge */
   gp_fwrite(&init_md13[0], sizeof(char), sizeof(init_md13), prn_stream);
@@ -402,5 +417,9 @@ md1xm_print_page(gx_device_printer *pdev, gp_file *prn_stream)
   gp_fwrite(end_md, sizeof(char), sizeof(end_md), prn_stream);
   gp_fflush(prn_stream);
 
-  return 0;
+cleanup:
+  gs_free(pdev->memory->non_gc_memory, data, 8, line_size, "md1xm_print_page(data)");
+  gs_free(pdev->memory->non_gc_memory, out_start, 8, line_size, "md1xm_print_page(data)");
+
+  return code;
 }
