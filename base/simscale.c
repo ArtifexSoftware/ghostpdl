@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -60,6 +60,8 @@ s_imscale_init(stream_state *st)
     ss->dst_togo = (long long)ss->dst_size * ss->params.HeightIn;
     ss->window = (byte *)gs_alloc_byte_array(mem, ss->src_line_padded, 5, "imscale window");
     ss->dst = (byte *)gs_alloc_bytes(mem, ss->dst_line_padded * 4, "imscale dst");
+    if (ss->window == NULL || ss->dst == NULL)
+        return_error(gs_error_VMerror);
     memset(ss->window, 0xff, ss->src_line_padded * 5);
     return 0;
 }
