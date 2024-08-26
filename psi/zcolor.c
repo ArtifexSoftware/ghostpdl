@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -6237,6 +6237,8 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
         if (!r_has_type(tempref, t_integer))
             return_error(gs_error_typecheck);
         components = tempref->value.intval;
+        if (components < 0 || components > GS_CLIENT_COLOR_MAX_COMPONENTS)
+            return_error(gs_error_rangecheck);
     } else
         return_error(gs_error_typecheck);
     code = dict_find_string(&ICCdict, "DataSource", &tempref);
