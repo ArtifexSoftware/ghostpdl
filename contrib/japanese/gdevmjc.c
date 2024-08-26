@@ -960,12 +960,12 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
   int *errors[2];
   byte *data[4], *plane_data[4][4], *out_data;
   byte *out_row;
-  word *storage;
+  word *storage = NULL;
   uint storage_size_words;
   uint mj_tmp_buf_size;
-  byte* mj_tmp_buf;
+  byte* mj_tmp_buf = NULL;
   int xtalbuff_size;
-  short *xtalbuff;
+  short *xtalbuff = NULL;
   short *Cbar[16];
   short *Mbar[16];
   short *Ybar[16];
@@ -974,6 +974,7 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
   short *Mbuf[2];
   short *Ybuf[2];
   short *Kbuf[2];
+  int code = 0;
 
   /* Tricks and cheats ... */
   if (num_comps == 3) num_comps = 4;            /* print CMYK */
@@ -1002,10 +1003,11 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
 /* NOZ */
   xtalbuff_size = plane_size*8 + 64;
   xtalbuff = (short *) gs_malloc(pdev->memory->non_gc_memory,  xtalbuff_size*(16*4+2*4) , W, "mj_colour_print_barrier");
-  memset(xtalbuff, 0, xtalbuff_size*(16*4+2*4) * W);
-  {
+  if (xtalbuff) {
         int i;
         short *p = xtalbuff + 16;
+
+        memset(xtalbuff, 0, xtalbuff_size*(16*4+2*4) * W);
         for ( i = 0 ; i < 16 ; i++ ) {
                 Cbar[i] = p;
                 p += xtalbuff_size;
@@ -1040,6 +1042,8 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
         p += xtalbuff_size;
         (void) p;
   }
+  else
+      goto cleanup;
 
   storage = (word *) gs_malloc(pdev->memory->non_gc_memory, storage_size_words, W, "mj_colour_print_page");
 
@@ -1066,8 +1070,9 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
    *   plane_data:  4  (scan direction and alternating buffers)
    */
 
-  if (storage == NULL || mj_tmp_buf == NULL) /* can't allocate working area */
-    return_error(gs_error_VMerror);
+  if (storage == NULL || mj_tmp_buf == NULL) { /* can't allocate working area */
+    code = gs_note_error(gs_error_VMerror);
+  }
   else {
     int i;
     byte *p = out_data = out_row = (byte *)storage;
@@ -1396,12 +1401,13 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
     gp_fputs("\f\033@", prn_stream);
     gp_fflush(prn_stream);
   }
+cleanup:
   /* free temporary storage */
   gs_free(pdev->memory->non_gc_memory, (char *) storage, storage_size_words, W, "mj_colour_print_page");
   gs_free(pdev->memory->non_gc_memory, (char *) mj_tmp_buf, mj_tmp_buf_size, W, "mj_raster_buffer");
   gs_free(pdev->memory->non_gc_memory, (char *) xtalbuff , xtalbuff_size*(16*4+2*4) , W, "mj_colour_print_barrier");
 
-  return 0;
+  return code;
 }
 
 static void
