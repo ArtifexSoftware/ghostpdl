@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -99,7 +99,8 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
 
         /* Compare this to the standard profile names */
         for (k = 0; k < GSICC_NUMBER_STANDARD_PROFILES; k++) {
-            if ( strcmp( str, icc_std_profile_keys[k] ) == 0 ) {
+            if ( strlen(icc_std_profile_keys[k]) == size &&
+                 memcmp(icc_std_profile_keys[k], str, size) == 0)  {
                 picc_profile = gsicc_get_profile_handle_file(icc_std_profile_names[k],
                     strlen(icc_std_profile_names[k]), gs_gstate_memory(igs));
                 break;
