@@ -102,6 +102,10 @@ static int zpdfi_populate_search_paths(i_ctx_t *i_ctx_p, pdf_context *ctx)
         code = dict_find_string(systemdict, "FONTPATH", &fpathref);
         if (code >= 0 && r_has_type(fpathref, t_array)) {
             ctx->search_paths.font_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_param_string) * r_size(fpathref), "array of font paths");
+            if (ctx->search_paths.font_paths == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto done;
+            }
             memset(ctx->search_paths.font_paths, 0x00, sizeof(gs_param_string) * r_size(fpathref));
 
             ctx->search_paths.num_font_paths = r_size(fpathref);
@@ -1099,6 +1103,10 @@ static int apply_interpreter_params(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, ref *pdi
         if (!r_has_type(pvalueref, t_string))
             goto error;
         pdfctx->ctx->encryption.Password = (char *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF Password from zpdfops");
+        if (pdfctx->ctx->encryption.Password == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto error;
+        }
         memset(pdfctx->ctx->encryption.Password, 0x00, r_size(pvalueref) + 1);
         memcpy(pdfctx->ctx->encryption.Password, pvalueref->value.const_bytes, r_size(pvalueref));
         pdfctx->ctx->encryption.PasswordLen = r_size(pvalueref);
