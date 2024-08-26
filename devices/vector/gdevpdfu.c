@@ -1799,7 +1799,7 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
     object = cos_object_alloc(pdev, "pdf_alloc_aside(object)");
     if (object == 0)
         return_error(gs_error_VMerror);
-    memset(pres + 1, 0, pst->ssize - sizeof(*pres));
+    memset(pres, 0, pst->ssize);
     pres->object = object;
     if (id < 0) {
         object->id = -1L;
