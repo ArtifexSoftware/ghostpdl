@@ -1683,12 +1683,14 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
             }
             /* Allocate a new name object */
             name_entry = gsicc_new_colorname(mem);
+            if (name_entry == NULL)
+                return gs_throw(gs_error_VMerror, "Insufficient memory for spot name");
             /* Set our current entry to this one */
             *curr_entry = name_entry;
             name_entry->length = strlen(temp_ptr);
             name_entry->name = (char *) gs_alloc_bytes(mem, name_entry->length,
                                         "gsicc_set_device_profile_colorants");
-            if (spot_names->name_str == NULL)
+            if (name_entry->name == NULL)
                 return gs_throw(gs_error_VMerror, "Insufficient memory for spot name");
             memcpy(name_entry->name, temp_ptr, name_entry->length);
             /* Get the next entry location */
