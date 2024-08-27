@@ -1072,6 +1072,7 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
 
   if (storage == NULL || mj_tmp_buf == NULL) { /* can't allocate working area */
     code = gs_note_error(gs_error_VMerror);
+    goto cleanup;
   }
   else {
     int i;
