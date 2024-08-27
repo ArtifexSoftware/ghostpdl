@@ -7913,6 +7913,7 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
             if (pdev->num_planar_planes > 0)
                 pdev->num_planar_planes += group_color->num_components - pdev->color_info.num_components;
             pdev->color_info.num_components = group_color->num_components + has_tags;
+            pdev->num_std_colorants = group_color->num_std_colorants;
             pdev->color_info.depth = group_color->depth;
             pdev->blend_procs = group_color->blend_procs;
             pdev->ctx->additive = group_color->isadditive;
