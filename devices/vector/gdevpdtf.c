@@ -403,8 +403,6 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)&pfres, -1L);
     if (code < 0)
         goto fail;
-    memset((byte *)pfres + sizeof(pdf_resource_t), 0,
-           sizeof(*pfres) - sizeof(pdf_resource_t));
     pfres->FontType = ftype;
     pfres->count = chars_count;
     pfres->Widths = widths;

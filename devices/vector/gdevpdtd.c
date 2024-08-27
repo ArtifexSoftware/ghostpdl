@@ -212,8 +212,6 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
                        "pdf_font_descriptor_alloc(base_font)");
         return code;
     }
-    memset(&pfd->common.values, 0,
-           sizeof(*pfd) - offset_of(pdf_font_descriptor_t, common.values));
     pfd->base_font = pbfont;
     pfd->FontType = font->FontType;
     pfd->embed = embed;
