@@ -5187,7 +5187,7 @@ static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
 static int validatepatternspace(i_ctx_t * i_ctx_p, ref **r)
 {
     int code;
-    ref tref;
+    ref tref, nameref, sref;
 
     /* since makepattern has already been run, we don't need to do much validation */
     if (!r_has_type(*r, t_name)) {
@@ -5196,6 +5196,33 @@ static int validatepatternspace(i_ctx_t * i_ctx_p, ref **r)
                 code = array_get(imemory, *r, 1, &tref);
                 if (code < 0)
                     return code;
+
+                /* If the alternate space is a name then use it */
+                if (!r_has_type(&tref, t_name)) {
+                    /* If its an array we need to check further */
+                    if (r_is_array(&tref) && r_size(&tref) > 0) {
+                        /* Get the first element of the array, for a color space this must be the space name */
+                        code = array_get(imemory, &tref, 0, &nameref);
+                        if (code < 0)
+                            return code;
+                        /* Check its a name */
+                        if (!r_has_type(&nameref, t_name))
+                            return_error(gs_error_typecheck);
+
+                        /* Convert alternate space name to string */
+                        name_string_ref(imemory, &nameref, &sref);
+                    } else
+                        /* The alternate is neither an array nor a name, which is not legal */
+                        return_error(gs_error_typecheck);
+                } else
+                    name_string_ref(imemory, &tref, &sref);
+
+                /* Check its not /Pattern */
+                if (r_size(&sref) == 7) {
+                    if (strncmp((const char *)sref.value.const_bytes, "Pattern", 7) == 0)
+                        return_error(gs_error_typecheck);
+                }
+
                 ref_assign(*r, &tref);
             } else
                 *r = 0;
