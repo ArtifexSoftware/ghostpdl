@@ -268,6 +268,12 @@ GDEVLDFJB2CC=$(CC_) $(I_)$(DEVI_) $(II)$(LDF_JB2I_)$(_I) $(JB2CF_) $(GLF_)
 GDEVLWFJPXCC=$(CC_) $(I_)$(DEVI_) $(II)$(LWF_JPXI_)$(_I) $(JPXCF_) $(GLF_)
 GDEVLWFJB2JPXCC=$(CC_) $(I_)$(DEVI_)  $(II)$(LDF_JB2I_) $(II)$(LWF_JPXI_)$(_I) $(JB2CF_) $(JPXCF_) $(GLF_)
 
+###### ----------------------- OCR core support ----------------------- ######
+
+ocr_=$(DEVOBJ)gdevocr.$(OBJ)
+libocr_dev=$(DEVOBJ)libocr.dev
+ocr_i_=-include $(DEVOBJ)libocr
+
 ###### ----------------------- Device support ----------------------- ######
 
 # Implement dynamic color management for 8-bit mapped color displays.
@@ -736,7 +742,7 @@ $(DD)eps2write.dev : $(DD)pdfwrite.dev $(GDEV) \
 $(DD)pdfwrite.dev : $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
- $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)gsagl.dev $(GLD)sarc4.dev $(DD)pdtext.dev $(GDEV) \
+ $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)gsagl.dev $(GLD)sarc4.dev $(DD)pdtext.dev $(libocr_dev) $(GDEV)\
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
@@ -754,6 +760,7 @@ $(DD)pdfwrite.dev : $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)smd5 $(GLD)szlibe $(GLD)sarc4.dev
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf $(GLD)gsagl
 	$(ADDMOD) $(DD)pdfwrite -include $(DD)pdtext
+	$(ADDMOD) $(DD)pdfwrite $(ocr_i_)
 
 gdevpdfb_h=$(DEVVECSRC)gdevpdfb.h
 gdevpdfc_h=$(DEVVECSRC)gdevpdfc.h
@@ -1453,10 +1460,6 @@ $(DD)pam.dev : $(pxm_) $(GLD)page.dev $(GDEV)  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pam $(pxm_)
 
 ### --------------- OCR device --------------- ###
-
-ocr_=$(DEVOBJ)gdevocr.$(OBJ)
-libocr_dev=$(DEVOBJ)libocr.dev
-ocr_i_=-include $(DEVOBJ)libocr
 
 $(DEVOBJ)gdevocr.$(OBJ) : $(DEVSRC)gdevocr.c\
  $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(ocr__h) $(DEVS_MAK) $(MAKEDIRS)

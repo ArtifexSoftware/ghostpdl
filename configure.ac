@@ -1107,7 +1107,6 @@ AC_SUBST(LEPTONICAINCLUDE)
 AC_SUBST(TESSERACTINCLUDE)
 AC_SUBST(LEPTONICADIR)
 AC_SUBST(TESSERACTDIR)
-AC_SUBST(OCR_DEVS)
 AC_SUBST(OCR_VERSION)
 AC_SUBST(OCR_SHARED)
 AC_SUBST(TESS_AVX)
@@ -2849,9 +2848,9 @@ while test -n "$drivers"; do
         ALL)
                 # ALL = PRINTERS + FILES...
                 if test -z "$drivers"; then
-                        drivers="PRINTERS,FILES,X11"
+                        drivers="PRINTERS,FILES,X11,OCR"
                 else
-                        drivers="$drivers,PRINTERS,FILES,X11"
+                        drivers="$drivers,PRINTERS,FILES,X11,OCR"
                 fi
                 ;;
         PRINTERS)
@@ -2970,6 +2969,10 @@ while test -n "$drivers"; do
                 # URF file format
                 F_DEVS0="$F_DEVS0 $URF_DEVS"
                 ;;
+        OCR)
+                # OCR specific devices
+                OCR_DEVS0="$OCR_DEVS"
+                ;;
         opvp)
                 # Open Vector Printing driver...
                 if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
@@ -3038,6 +3041,7 @@ AC_SUBST(XPS_DEVS)
 AC_SUBST(JBIG2_DEVS)
 AC_SUBST(IJS_DEVS)
 AC_SUBST(PNG_DEVS)
+AC_SUBST(OCR_DEVS0)
 
 # This now gets done after handling --enable-dynamic
 # AC_SUBST(X11_DEVS)

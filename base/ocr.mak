@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2024 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -28,6 +28,10 @@ $(GLGEN)tessocr.$(OBJ) : $(GLSRC)tessocr.cpp $(GLSRC)tessocr.h $(LIBOCR_MAK) \
 	$(OCRCXX) $(D_)OCR_SHARED=$(OCR_SHARED)$(_D) $(D_)LEPTONICA_INTERCEPT_ALLOC=1$(_D) $(I_)$(GLGEN)$(_I) $(GLO_)tessocr.$(OBJ) $(C_) $(D_)TESSDATA="$(TESSDATA)"$(_D) $(GLSRC)tessocr.cpp
 
 # 0_0 = No version.
+# .dev files dont' allow comments, but write a space,
+# just so there is something there
+$(GLGEN)libocr_0_0.dev : $(LIBOCR_MAK) $(ECHOGS_XE) $(MAKEDIRS)
+	$(ECHOGS_XE) -w $(GLGEN)libocr_0_0.dev -n -x 20
 
 # 1_0 = Tesseract/Leptonica (local source)
 $(GLGEN)libocr_1_0.dev : $(LIBOCR_MAK) $(ECHOGS_XE) \
