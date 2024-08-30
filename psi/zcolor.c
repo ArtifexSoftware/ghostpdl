@@ -3815,6 +3815,7 @@ static int septransform(i_ctx_t *i_ctx_p, ref *sepspace, int *usealternate, int 
         code = array_get(imemory, sepspace, 3, &proc);
         if (code < 0)
             return code;
+        check_proc(proc);
         *esp = proc;
         return o_push_estack;
     }
@@ -4630,6 +4631,7 @@ static int devicentransform(i_ctx_t *i_ctx_p, ref *devicenspace, int *usealterna
         code = array_get(imemory, devicenspace, 3, &proc);
         if (code < 0)
             return code;
+        check_proc(proc);
         esp++;
         *esp = proc;
         return o_push_estack;
@@ -5054,6 +5056,7 @@ static int indexedbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage,
             code = array_get(imemory, space, 3, &proc);
             if (code < 0)
                 return code;
+            check_proc(proc);
             *ep = proc;	/* lookup proc */
             return o_push_estack;
         } else {
@@ -5067,6 +5070,9 @@ static int indexedbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *stage,
             if (!r_has_type(op, t_integer))
                 return_error (gs_error_typecheck);
             index = op->value.intval;
+            /* Ensure it is in range. See bug #707990 */
+            if (index < 0 || index > pcs->params.indexed.hival)
+                return_error(gs_error_rangecheck);
             /* And remove it from the stack. */
             ref_stack_pop(&o_stack, 1);
             op = osp;
