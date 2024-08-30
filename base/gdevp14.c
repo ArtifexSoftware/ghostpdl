@@ -1333,6 +1333,7 @@ pdf14_make_base_group_color(gx_device* dev)
         return NULL;
     memset(group_color, 0, sizeof(pdf14_group_color_t));
 
+    group_color->num_std_colorants = pdev->num_std_colorants;
     group_color->blend_procs = pdev->blend_procs;
     group_color->polarity = pdev->color_info.polarity;
     group_color->num_components = pdev->color_info.num_components;
@@ -7340,7 +7341,7 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
 
     /* We might just have changed the colorspace of the device, which means
      * the number of colorants have changed. */
-    group_color->num_std_colorants = pdev->num_std_colorants;
+    group_color->num_std_colorants = new_num_comps;
     pdev->num_std_colorants = new_num_comps;
 
     if (has_tags)
