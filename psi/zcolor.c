@@ -5276,6 +5276,9 @@ static int patterncomponent(i_ctx_t * i_ctx_p, ref *space, int *n)
             code = array_get(imemory, pImpl, 0, &pPatInst);
             if (code < 0)
                 return code;
+
+            if (!r_is_struct(&pPatInst) || (!r_has_stype(&pPatInst, imemory, st_pattern1_instance) && !r_has_stype(&pPatInst, imemory, st_pattern2_instance)))
+                return_error(gs_error_typecheck);
             cc.pattern = r_ptr(&pPatInst, gs_pattern_instance_t);
             if (pattern_instance_uses_base_space(cc.pattern))
                 *n = n_comps;
