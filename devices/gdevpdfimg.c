@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -555,9 +555,8 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
     encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
     if (pdf_dev->ocr.end_page)
         stream_puts(pdf_dev->strm, "q\n");
-    pprintd2(pdf_dev->strm, "%d 0 0 %d 0 0 cm\n/Im1 Do",
-             (int)((width / (pdf_dev->HWResolution[0] / 72)) * factor),
-             (int)((height / (pdf_dev->HWResolution[1] / 72)) * factor));
+    gs_snprintf(Buffer, sizeof(Buffer), "%f 0 0 %f 0 0 cm\n/Im1 Do", ((double)pdf_dev->width / pdf_dev->HWResolution[0]) * 72, ((double)pdf_dev->height / pdf_dev->HWResolution[1]) * 72);
+    stream_puts(pdf_dev->strm, Buffer);
     if (pdf_dev->ocr.end_page) {
         stream_puts(pdf_dev->strm, "\nQ");
         pdf_dev->ocr.end_page(pdf_dev);
