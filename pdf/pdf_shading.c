@@ -153,7 +153,7 @@ static int pdfi_shading1(pdf_context *ctx, gs_shading_params_t *pcommon,
     }
 
     code = fill_matrix_from_dict(ctx, (float *)&params.Matrix, shading_dict);
-    if (code < 0)
+    if (code < 0 && code != gs_error_undefined)
         return code;
 
     code = pdfi_build_shading_function(ctx, &params.Function, (const float *)&params.Domain, 2, (pdf_dict *)shading_dict, page_dict);
