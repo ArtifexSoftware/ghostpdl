@@ -92,10 +92,8 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
     /* Check if we have the /Name entry.  This is used to associate with
        specs that have enumerated types to indicate sRGB sGray etc */
     if (dict_find_string(ICCdict, "Name", &pnameval) > 0 && r_has_type(pnameval, t_string)){
-        uint size = r_size(pnameval);
-        char *str = (char *)gs_alloc_bytes(gs_gstate_memory(igs), size+1, "seticc");
-        memcpy(str, (const char *)pnameval->value.bytes, size);
-        str[size] = 0;
+        const char *str = (const char *)pnameval->value.bytes;
+        size_t size = r_size(pnameval);
 
         /* Compare this to the standard profile names */
         for (k = 0; k < GSICC_NUMBER_STANDARD_PROFILES; k++) {
@@ -106,7 +104,6 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
                 break;
             }
         }
-        gs_free_object(gs_gstate_memory(igs), str, "seticc");
     } else {
         picc_profile = gsicc_profile_new(s, gs_gstate_memory(igs), NULL, 0);
         if (picc_profile == NULL)
