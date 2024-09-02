@@ -53,7 +53,7 @@ static int resize_xref(pdf_context *ctx, uint64_t new_size)
 static int read_xref_stream_entries(pdf_context *ctx, pdf_c_stream *s, int64_t first, int64_t last, int64_t *W)
 {
     uint i, j;
-    uint field_width = 0;
+    uint64_t field_width = 0;
     uint32_t type = 0;
     uint64_t objnum = 0, gen = 0;
     byte *Buffer;
@@ -304,6 +304,24 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
         }
     }
     pdfi_countdown(a);
+
+    /* W[0] is either:
+     * 0 (no type field) or a single byte with the type.
+     * W[1] is either:
+     * The object number of the next free object, the byte offset of this object in the file or the object5 number of the object stream where this object is stored.
+     * W[2] is either:
+     * The generation number to use if this object is used again, the generation number of the object or the index of this object within the object stream.
+     *
+     * Object and generation numbers are limited to unsigned 64-bit values, as are bytes offsets in the file, indexes of objects within the stream likewise (actually
+     * most of these are generally 32-bit max). So we can limit the field widths to 8 bytes, enough to hold a 64-bit number.
+     * Even if a later version of the spec makes these larger (which seems unlikely!) we still cna't cope with integers > 64-bits.
+     */
+    if (W[0] > 1 || W[1] > 8 || W[2] > 8) {
+        pdfi_close_file(ctx, XRefStrm);
+        pdfi_countdown(ctx->xref_table);
+        ctx->xref_table = NULL;
+        return code;
+    }
 
     code = pdfi_dict_get_type(ctx, sdict, "Index", PDF_ARRAY, (pdf_obj **)&a);
     if (code == gs_error_undefined) {
