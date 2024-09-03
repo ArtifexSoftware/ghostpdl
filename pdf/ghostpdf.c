@@ -940,7 +940,8 @@ static int pdfi_process(pdf_context *ctx)
         else
             code = pdfi_page_render(ctx, i, true);
 
-        code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_process", NULL);
+        if (code < 0)
+            code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_process", NULL);
     }
     pdfi_report_errors(ctx);
 
