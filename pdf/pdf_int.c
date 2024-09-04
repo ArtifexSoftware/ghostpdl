@@ -258,7 +258,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
 
         if (c >= '0' && c <= '9') {
             if  (!(malformed && recovered) && !overflowed && !real) {
-                if ((negative && int_val < tenth_max_int) || (!negative && int_val <= tenth_max_uint))
+                if ((negative && int_val <= tenth_max_int) || (!negative && int_val <= tenth_max_uint))
                     int_val = int_val*10 + c - '0';
                 else {
                     if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_NUMBEROVERFLOW, "pdfi_read_num", NULL)) < 0) {
