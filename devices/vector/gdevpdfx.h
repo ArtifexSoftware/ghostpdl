@@ -976,6 +976,7 @@ struct gx_device_pdf_s {
     int *OCRUnicode;                /* Used to pass back the Unicode value from the OCR engine to the text processing */
     gs_char OCR_char_code;          /* Passes the current character code from text processing to the image processing code when rendering glyph bitmaps for OCR */
     gs_glyph OCR_glyph;             /* Passes the current glyph code from text processing to the image processing code when rendering glyph bitmaps for OCR */
+    gs_text_enum_t *OCR_enum;       /* We need this to update the OCR char_code and glyph in gdev_pdf_fill_mask() when rendering a glyph for OCR, when using PDF input */
     ocr_glyph_t *ocr_glyphs;        /* Records bitmaps and other data from text processing when doing OCR */
     gs_gstate **initial_pattern_states;
     bool OmitInfoDate;              /* If true, do not emit CreationDate and ModDate in the Info dictionary and XMP Metadata (must not be true for PDF/X support) */

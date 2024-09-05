@@ -275,21 +275,36 @@ static int OCRText(gx_device_pdf *pdev, gs_glyph glyph, gs_char ch, gs_char *len
          * the stored values returned by the OCR engine.
          */
         if(new_glyph) {
-            *unicode = (byte *)gs_alloc_bytes(pdev->memory, 2 * sizeof(ushort), "temporary Unicode array");
-            if(*unicode == NULL)
-                return_error(gs_error_VMerror);
-            u = (char *)(*unicode);
-            if(new_glyph->is_space) {
-                memset(u, 0x00, 3);
-                u[3] = 0x20;
-            }
-            else {
-                for(ix = 0;ix < 4;ix++) {
-                    u[3 - ix] = (pdev->OCRUnicode[ocr_index] & mask) >> (8 * ix);
-                    mask = mask << 8;
+            if(pdev->OCRUnicode[ocr_index] > 0xFFFF) {
+                *unicode = (byte *)gs_alloc_bytes(pdev->memory, 2 * sizeof(ushort), "temporary Unicode array");
+                if(*unicode == NULL)
+                    return_error(gs_error_VMerror);
+                u = (char *)(*unicode);
+                if(new_glyph->is_space) {
+                    memset(u, 0x00, 3);
+                    u[3] = 0x20;
                 }
+                else{
+                    for(ix = 0;ix < 4;ix++) {
+                        u[3 - ix] = (pdev->OCRUnicode[ocr_index] & mask) >> (8 * ix);
+                        mask = mask << 8;
+                    }
+                }
+                *length = 4;
+            }else{
+                *unicode = (byte *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
+                if(*unicode == NULL)
+                    return_error(gs_error_VMerror);
+                u = (char *)(*unicode);
+                if(new_glyph->is_space) {
+                    memset(u, 0x00, 2);
+                    u[1] = 0x20;
+                }else{
+                    u[0] = (pdev->OCRUnicode[ocr_index] & 0xFF00) >> 8;
+                    u[1] = (pdev->OCRUnicode[ocr_index] & 0xFF);
+                }
+                *length = 2;
             }
-            *length = 4;
         }
     }
     #endif

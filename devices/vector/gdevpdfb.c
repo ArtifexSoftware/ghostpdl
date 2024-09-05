@@ -29,6 +29,7 @@
 #include "gdevpdtf.h"                /* Required to include gdevpdti.h */
 #include "gdevpdti.h"                /* For pdf_charproc_x_offset */
 #include "gsptype1.h"
+#include "gdevpdtt.h"
 
 /* We need this color space type for constructing temporary color spaces. */
 extern const gs_color_space_type gs_color_space_type_Indexed;
@@ -517,6 +518,7 @@ gdev_pdf_fill_mask(gx_device * dev,
                    gs_logical_operation_t lop, const gx_clip_path * pcpath)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    pdf_text_enum_t *penum = (pdf_text_enum_t *)pdev->OCR_enum;
 
     if (width <= 0 || height <= 0)
         return 0;
@@ -542,8 +544,13 @@ gdev_pdf_fill_mask(gx_device * dev,
         new_glyph->raster = raster;
         new_glyph->x = x;
         new_glyph->y = y;
-        new_glyph->char_code = pdev->OCR_char_code;
-        new_glyph->glyph = pdev->OCR_glyph;
+        if (penum != NULL) {
+            new_glyph->char_code = penum->pte_default->returned.current_char;
+            new_glyph->glyph = penum->pte_default->returned.current_glyph;
+        } else {
+            new_glyph->char_code = pdev->OCR_char_code;
+            new_glyph->glyph = pdev->OCR_glyph;
+        }
         new_glyph->next = NULL;
         new_glyph->is_space = true;
         for(index = 0; index < height * raster;index++){

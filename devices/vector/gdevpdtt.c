@@ -3299,12 +3299,14 @@ static int ProcessTextForOCR(gs_text_enum_t *pte)
 
     if (pdev->OCRStage == OCR_Rendering) {
         penum->pte_default->can_cache = 0;
+        pdev->OCR_enum = penum;
         code = gs_text_process(penum->pte_default);
-        pdev->OCR_char_code = penum->pte_default->returned.current_char;
-        pdev->OCR_glyph = penum->pte_default->returned.current_glyph;
         gs_text_enum_copy_dynamic(pte, penum->pte_default, true);
-        if (code == TEXT_PROCESS_RENDER)
+        if (code == TEXT_PROCESS_RENDER) {
+            pdev->OCR_char_code = penum->pte_default->returned.current_char;
+            pdev->OCR_glyph = penum->pte_default->returned.current_glyph;
             return code;
+        }
         if (code != 0) {
             gs_free_object(pdev->memory, pdev->OCRSaved,"saved enumerator for OCR");
             pdev->OCRSaved = NULL;
@@ -3313,6 +3315,7 @@ static int ProcessTextForOCR(gs_text_enum_t *pte)
             penum->pte_default = NULL;
             return code;
         }
+        pdev->OCR_enum = NULL;
         gs_grestore(pte->pgs);
         *pte = *(pdev->OCRSaved);
         gs_text_enum_copy_dynamic(pte, pdev->OCRSaved, true);
