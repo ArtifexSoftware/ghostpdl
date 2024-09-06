@@ -5,12 +5,9 @@
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-<h2><a name="Version10.04.0"></a>Version 10.04.0 (2024-09-02)</h2>
+<h2><a name="Version10.04.0"></a>Version 10.04.0 (2024-09-06)</h2>
 <p> Highlights in this release include:
 <ul>
-<li>
-<p>Fixes for CVE-2024-33869, CVE-2023-52722, CVE-2024-33870, CVE-2024-33871 and CVE-2024-29510
-</li>
 <li>
 <p><b>IMPORTANT:</b> For the 10.04.0 release (fall/autumn 2024) we will be adding protection for
 device selection from PostScript input. This will mean that, by default, only the device specified
@@ -19,23 +16,6 @@ allowing a comma separation list of allowed devices. This will also take a singl
 <p>Any application which relies on allowing PostScript to change devices during a job will have to be aware, and take action
 to deal with this change.
 <p>The exception is &quot;nulldevice&quot;, switching to that requires no special action.
-</li>
-<li>
-<p>A vulnerability was identified in the way Ghostscript/GhostPDL called tesseract for
-the OCR devices, which could allow arbitrary code execution. As as result, we strongly
-urge anyone including the OCR devices in their build to update as soon as possible.
-</li>
-<li>
-<p>As of this release (10.03.1) pdfwrite creates PDF files with XRef streams and
-ObjStm streams. This can result in considerably smaller PDF output files.
-See <a href="https://ghostscript.readthedocs.io/en/latest/VectorDevices.html">Vector Devices</a> for more details.
-</li>
-<li>
-<p>Ghostscript/pdfwrite now supports passing through PDF "Optional Content".
-</li>
-<li>
-<p>Ghostscript/pdfwrite &quot;EmbedAllFonts&quot; behaviour has been revised,
-see <a href="https://ghostscript.readthedocs.io/en/latest/VectorDevices.html">Vector Devices</a> for more details.
 </li>
 <li>
 <p>Our efforts in code hygiene and maintainability continue.
@@ -162,7 +142,7 @@ license.  Refer to licensing information at <a href="https://www.artifex.com">ht
 or contact Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA,
 
 <p>
-<small>Ghostscript version 10.04.0, 02 September 2024
+<small>Ghostscript version 10.04.0, 06 September 2024
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
