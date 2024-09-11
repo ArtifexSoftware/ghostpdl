@@ -162,6 +162,7 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  {0, 0},			/* char_width */
  0,				/* clip_path */
  0,             /* clipped_text_pending */
+ 0,             /* saved_vgstack_depth_for_textclip */
  0,                             /* PageLabels */
  -1,                            /* PageLabels_current_page */
  0,                             /* PageLabels_current_label */

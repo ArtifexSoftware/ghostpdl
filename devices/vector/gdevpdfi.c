@@ -3062,10 +3062,19 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     /* Reset the pending state */
                     pdev->clipped_text_pending = 0;
                     /* Restore to our saved state */
-                    if (pdev->vgstack_depth)
+
+                    /* The saved state in this case is the dpeth of the saved gstate stack at the time we
+                     * started the text clipping.
+                     */
+                    if (pdev->vgstack_bottom)
+                        pdev->vgstack_bottom = pdev->saved_vgstack_depth_for_textclip;
+
+                    while (pdev->vgstack_depth > pdev->vgstack_bottom) {
                         code = pdf_restore_viewer_state(pdev, pdev->strm);
-                    if (code < 0)
-                        return code;
+                        if (code < 0)
+                            return code;
+                    }
+
                     pdf_reset_text(pdev);	/* because of Q */
                 }
             } else {
@@ -3086,6 +3095,19 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     if (code < 0)
                         return code;
                     pdev->clipped_text_pending = 1;
+
+                    /* Save the current 'bottom' of the saved gstate stack, we need to
+                     * restore back to this state when we exit the graphics state
+                     * with a text rendering mode involving a clip.
+                     */
+                    pdev->saved_vgstack_depth_for_textclip = pdev->vgstack_bottom;
+                    /* And push the bottom of the stack up until it is where we are now.
+                     * This is because clip paths, images, and possibly other constructs
+                     * will emit a clip path if the 'depth - bottom' is not zero, to create
+                     * a clip path. We want to make sure that it doesn't try to restore back
+                     * to a point before we established the text clip.
+                     */
+                    pdev->vgstack_bottom = pdev->vgstack_depth;
                 }
             }
             break;

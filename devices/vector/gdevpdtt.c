@@ -510,6 +510,16 @@ pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_text_enum_t *pte)
             code = pdf_put_clip_path(pdev, pcpath);
             if (code < 0)
                 return code;
+
+            /* If we have text in a clipping mode we need to update the saved 'bottom'
+             * of the saved gstate stack. This is the point we will use for potentially
+             * writing out any additional clip path, or clips used by images. We *don't*
+             * update the 'saved bottom' (saved_vgstack_depth_for_textclip) because that's
+             * what we restore back to after we grestore back to a time when the text
+             * rendering mode didn't involve clip.
+             */
+            if (pdev->clipped_text_pending)
+                pdev->vgstack_bottom = pdev->vgstack_depth;
         }
 
         /* For ps2write output, and for any 'type 3' font we need to write both the stroke and fill colours
