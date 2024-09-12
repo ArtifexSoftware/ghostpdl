@@ -527,12 +527,6 @@ enum {
      */
     gxdso_is_sep_supporting_additive_device,
 
-    /* Communicate the start of text with a 'clip' render mode, and the grestore
-     * which restores it away. We send data of 1 for the start of text in a clipping
-     * mode and 0 when we grestore back to a non-clip mode.
-     */
-    gxdso_hilevel_text_clip,
-
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

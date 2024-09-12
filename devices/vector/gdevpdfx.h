@@ -793,9 +793,6 @@ struct gx_device_pdf_s {
      */
     gx_path *clip_path;
 
-    /* Used for preserving text rendering modes with clip. */
-    bool clipped_text_pending;
-
     /*
      * Page labels.
      */

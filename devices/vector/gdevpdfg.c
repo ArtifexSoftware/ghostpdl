@@ -41,8 +41,6 @@
 #include "gsccolor.h"
 #include "gxcdevn.h"
 #include "gscie.h"
-#include "gdevpdtx.h"
-#include "gdevpdts.h"
 
 /* ------ Exported by gdevpdfc.c for gdevpdfg.c ------ */
 int pdf_make_sampled_base_space_function(gx_device_pdf *pdev, gs_function_t **pfn,

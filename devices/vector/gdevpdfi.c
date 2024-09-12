@@ -3046,49 +3046,6 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             }
             return 0;
             break;
-        case gxdso_hilevel_text_clip:
-            if (data == 0) {
-                /* We are exiting a text render mode 'clip' by grestoring back to
-                 *  a time when the clip wasn't active.
-                 * First, check if we have a clip (this should always be true).
-                 */
-                if (pdev->clipped_text_pending) {
-                    /* Get back to the content stream. This will (amongst other things) flush
-                     * any pending text.
-                     */
-                    code = pdf_open_page(pdev, PDF_IN_STREAM);
-                    if (code < 0)
-                        return code;
-                    /* Reset the pending state */
-                    pdev->clipped_text_pending = 0;
-                    /* Restore to our saved state */
-                    if (pdev->vgstack_depth)
-                        code = pdf_restore_viewer_state(pdev, pdev->strm);
-                    if (code < 0)
-                        return code;
-                    pdf_reset_text(pdev);	/* because of Q */
-                }
-            } else {
-                /* We are starting text in a clip mode
-                 * First make sure we aren't already in a clip mode (this shuld never be true)
-                 */
-                if (!pdev->clipped_text_pending) {
-                    /* Return to the content stream, this will (amongst other things) flush
-                     * any pending text.
-                     */
-                    code = pdf_open_page(pdev, PDF_IN_STREAM);
-                    if (code < 0)
-                        return code;
-                    /* Save the current graphics state (or at least that bit which we track) so
-                     * that we can put it back later.
-                     */
-                    code = pdf_save_viewer_state(pdev, pdev->strm);
-                    if (code < 0)
-                        return code;
-                    pdev->clipped_text_pending = 1;
-                }
-            }
-            break;
         case gxdso_get_dev_param:
             {
                 int code;
