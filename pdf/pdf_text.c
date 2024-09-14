@@ -60,15 +60,6 @@ int pdfi_BT(pdf_context *ctx)
      * when preserving the text rendering mode.
      */
     if (gs_currenttextrenderingmode(ctx->pgs) >= 4 && ctx->text.BlockDepth == 0 && !ctx->device_state.preserve_tr_mode) {
-        /* Whenever we are doing a 'clip' text rendering mode we need to
-         * accumulate a path until we reach ET, and then we need to turn that
-         * path into a clip and apply it (along with any existing clip). But
-         * we must not disturb any existing path in the current graphics
-         * state, so we need an extra gsave which we will undo when we get
-         * an ET.
-         */
-        pdfi_gsave(ctx);
-        /* Capture the current position */
         /* Start a new path (so our clip doesn't include any
          * already extant path in the graphics state)
          */
@@ -125,7 +116,6 @@ static int do_ET(pdf_context *ctx)
                 if (code < 0)
                     return code;
 
-                pdfi_grestore(ctx);
                 if (copy != NULL)
                     (void)gx_cpath_assign_free(ctx->pgs->clip_path, copy);
                 code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
@@ -1398,14 +1388,7 @@ int pdfi_Tr(pdf_context *ctx)
         gs_point initial_point;
 
         if (gs_currenttextrenderingmode(ctx->pgs) < 4 && mode >= 4 && ctx->text.BlockDepth != 0) {
-            /* If we are switching from a non-clip text rendering mode to a
-             * mode involving a cip, and we are already inside a text block,
-             * put a gsave in place so that we can accumulate a path for
-             * clipping without disturbing any existing path in the
-             * graphics state.
-             */
             gs_settextrenderingmode(ctx->pgs, mode);
-            pdfi_gsave(ctx);
             /* Capture the current position */
             code = gs_currentpoint(ctx->pgs, &initial_point);
             /* Start a new path (so our clip doesn't include any
