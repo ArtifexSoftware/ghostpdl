@@ -2617,6 +2617,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     pdf_name *n = NULL;
     pdf_dict *xobject_dict;
     bool known = false;
+    gs_offset_t savedoffset;
 
     code = pdfi_dict_from_obj(ctx, xobject_obj, &xobject_dict);
     if (code < 0)
@@ -2698,8 +2699,7 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     }
 
     if (pdfi_name_is(n, "Image")) {
-        gs_offset_t savedoffset;
-
+try_as_image:
         if (pdfi_type_of(xobject_obj) != PDF_STREAM) {
             code = gs_note_error(gs_error_typecheck);
             goto exit;
@@ -2717,7 +2717,9 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
     } else if (pdfi_name_is(n, "PS")) {
         code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_typecheck), NULL, E_PDF_PS_XOBJECT_IGNORED, "pdfi_form_stream_hack", NULL);
     } else {
-        code = gs_error_typecheck;
+        code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_typecheck), NULL, E_PDF_BAD_SUBTYPE, "pdfi_do_image_or_form", NULL);
+        if (code >= 0)
+            goto try_as_image;
     }
 
  exit:
