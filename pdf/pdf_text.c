@@ -470,7 +470,9 @@ static int pdfi_show_Tr_1(pdf_context *ctx, gs_text_params_t *text)
      * We will grestore back to this point after we have stroked the
      * text, which will leave any current path unchanged.
      */
-    pdfi_gsave(ctx);
+    code = pdfi_gsave(ctx);
+    if (code < 0)
+        goto Tr1_error;
 
     /* Start a new path (so our stroke doesn't include any
      * already extant path in the graphics state)
@@ -523,7 +525,7 @@ static int pdfi_show_Tr_1(pdf_context *ctx, gs_text_params_t *text)
 
 Tr1_error:
     /* And grestore back to where we started */
-    pdfi_grestore(ctx);
+    (void)pdfi_grestore(ctx);
     /* If everything went well, then move the current point to the
      * position we captured at the end of the path creation */
     if (code >= 0)
@@ -553,7 +555,9 @@ static int pdfi_show_Tr_2(pdf_context *ctx, gs_text_params_t *text)
      * We will grestore back to this point after we have stroked the
      * text, which will leave any current path unchanged.
      */
-    pdfi_gsave(ctx);
+    code = pdfi_gsave(ctx);
+    if (code < 0)
+        goto Tr1_error;
 
     /* Start a new path (so our stroke doesn't include any
      * already extant path in the graphics state)
@@ -598,7 +602,7 @@ static int pdfi_show_Tr_2(pdf_context *ctx, gs_text_params_t *text)
 
 Tr1_error:
     /* And grestore back to where we started */
-    pdfi_grestore(ctx);
+    (void)pdfi_grestore(ctx);
     /* If everything went well, then move the current point to the
      * position we captured at the end of the path creation */
     if (code >= 0)
