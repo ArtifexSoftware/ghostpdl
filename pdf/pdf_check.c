@@ -1373,8 +1373,10 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
             if (code > 0)
                 code = pdfi_check_ColorSpace_for_spots(ctx, CS, Group, page_dict, tracker->spot_dict);
 
-            if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_check_page_inner", "")) < 0) {
-                goto exit;
+            if (code < 0) {
+                if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_GS_LIB_ERROR, "pdfi_check_page_inner", "")) < 0) {
+                    goto exit;
+                }
             }
         }
     }
