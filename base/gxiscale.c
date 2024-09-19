@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -388,7 +388,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum, irender_proc_t *render_fn)
                                             dh / penum->Width, &overflow);
         iss.LeftMarginOut = safe64fixed2int((int64_t)(penum->rrect.x - penum->rect.x) *
                                             dh / penum->Width, &overflow);
-        iss.TopMarginOut2 = safe64fixed2int((int64_t)penum->rrect.y *
+        iss.TopMarginOut2 = safe64fixed2int((int64_t)penum->rect.y *
                                             dw / penum->Height, &overflow);
         iss.PatchHeightOut2 = safe64fixed2int((int64_t)(penum->rrect.y + penum->rrect.h) *
                                               dw / penum->Height, &overflow)
