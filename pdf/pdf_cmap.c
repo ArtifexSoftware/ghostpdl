@@ -110,7 +110,7 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
     while (numranges % 2) numranges--;
 
     /* The following hard limit is an implementation limit */
-    if (numranges <= 0 || numranges + 1 > PDF_PS_STACK_MAX) {
+    if (numranges < 0 || numranges + 1 > PDF_PS_STACK_MAX) {
         pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endcodespacerange_func", NULL);
         return_error(gs_error_syntaxerror);
     }
@@ -184,7 +184,7 @@ static int general_endcidrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, pdf_cmap 
     while (ncodemaps % 3) ncodemaps--;
 
     /* The following hard limit is an implementation limit */
-    if (ncodemaps <= 0 || ncodemaps + 1 > PDF_PS_STACK_MAX) {
+    if (ncodemaps < 0 || ncodemaps + 1 > PDF_PS_STACK_MAX) {
         pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "general_endcidrange_func", NULL);
         return_error(gs_error_syntaxerror);
     }
@@ -304,7 +304,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
     while (ncodemaps % 3) ncodemaps--;
 
     /* The following hard limit is an implementation limit */
-    if (ncodemaps <= 0 || ncodemaps + 1 > PDF_PS_STACK_MAX) {
+    if (ncodemaps < 0 || ncodemaps + 1 > PDF_PS_STACK_MAX) {
         pdfi_set_error(s->pdfi_ctx, 0, NULL, E_PDF_BAD_TYPE0_CMAP, "cmap_endfbrange_func", NULL);
         return_error(gs_error_syntaxerror);
     }
