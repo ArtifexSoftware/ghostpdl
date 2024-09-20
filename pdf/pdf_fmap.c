@@ -120,7 +120,7 @@ pdf_make_fontmap(pdf_context *ctx, const char *default_fmapname, int cidfmap)
         goto done;
 
     do {
-        if (j < ctx->num_fontmapfiles) {
+        if (j < ctx->num_fontmapfiles && cidfmap == false) {
             memcpy(fmapname, ctx->fontmapfiles[j].data, ctx->fontmapfiles[j].size);
             fmapname[ctx->fontmapfiles[j].size] = '\0';
         }
