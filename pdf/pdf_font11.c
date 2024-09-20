@@ -495,7 +495,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
     obj = NULL;
 
 
-    code = gs_type42_font_init((gs_font_type42 *)font->pfont, 0);
+    code = gs_type42_font_init((gs_font_type42 *)font->pfont, findex);
     if (code < 0) {
         goto error;
     }
@@ -539,7 +539,7 @@ int pdfi_read_cidtype2_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *str
         goto error;
     }
 
-    code = pdfi_fapi_passfont((pdf_font *)font, 0, NULL, NULL, font->sfnt->data, font->sfnt->length);
+    code = pdfi_fapi_passfont((pdf_font *)font, findex, NULL, NULL, font->sfnt->data, font->sfnt->length);
     if (code < 0) {
         goto error;
     }

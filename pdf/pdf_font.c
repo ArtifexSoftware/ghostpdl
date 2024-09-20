@@ -985,7 +985,7 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
     byte *fbuf = NULL;
     int64_t fbuflen = 0;
     int substitute = font_embedded;
-    int findex = -1;
+    int findex = 0;
 
     code = pdfi_dict_get_type(ctx, font_dict, "Type", PDF_NAME, (pdf_obj **)&Type);
     if (code < 0) {

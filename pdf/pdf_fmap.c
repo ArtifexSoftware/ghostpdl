@@ -890,7 +890,7 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname, 
     int code;
     pdf_obj *mname;
 
-    *findex = -1;
+    *findex = 0;
 
     if (ctx->pdffontmap == NULL) {
         const char *fmap_default = "Fontmap.GS";
@@ -973,6 +973,8 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
     int code = 0;
     pdf_obj *cidname = NULL;
     pdf_obj *mname;
+
+    *findex = 0;
 
     if (ctx->pdfcidfmap == NULL) {
         const char *cidfmap_default = "cidfmap";
@@ -1079,7 +1081,7 @@ pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name
 
         *mapname = (pdf_obj *)path;
         (void)pdfi_dict_put(ctx, font_dict, ".Path", (pdf_obj *)path);
-        code = pdfi_dict_get_int(ctx, rec, "Index", &i64);
+        code = pdfi_dict_get_int(ctx, rec, "SubfontID", &i64);
         *findex = (code < 0) ? 0 : (int)i64; /* rangecheck? */
         code = 0;
 
