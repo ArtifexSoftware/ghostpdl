@@ -42,6 +42,6 @@ fi
 
 # Note, we expect 'ps2epsi.ps' to be on one of the search paths which can be seen by: gs -h
 "$GS_EXECUTABLE" -q -dNOOUTERSAVE -dNODISPLAY -dLastPage=1 -sOutputFile="${outfile}" \
-		--permit-file-all="${infile}" -- ps2epsi.ps  "${infile}" 1>&2
+		--permit-file-all="${infile}" --permit-devices="eps2write:bit" -- ps2epsi.ps  "${infile}" 1>&2
 
 exit 0
