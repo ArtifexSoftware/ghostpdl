@@ -515,7 +515,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
         /* gs_c_decode always fails to find .notdef, its always present so
          * don't worry about it
          */
-        if(strncmp(".notdef", (const char *)gname.data, gname.size)) {
+        if(pfd->embed == FONT_EMBED_YES && strncmp(".notdef", (const char *)gname.data, gname.size)) {
             position = gs_c_decode(glyph_known_enc, 0);
             if (position == GS_NO_CHAR) {
                 desc.Flags |= FONT_IS_SYMBOLIC;
