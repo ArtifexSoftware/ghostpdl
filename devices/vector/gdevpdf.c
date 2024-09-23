@@ -2817,7 +2817,7 @@ pdf_close(gx_device * dev)
         int pdepth = 0;
 
         while (pdev->initial_pattern_states[pdepth] != 0x00) {
-            gs_free_object(pdev->pdf_memory->non_gc_memory, pdev->initial_pattern_states[pdepth], "Freeing dangling pattern state");
+            gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdepth], "Freeing dangling pattern state");
             pdev->initial_pattern_states[pdepth] = NULL;
             pdepth++;
         }
