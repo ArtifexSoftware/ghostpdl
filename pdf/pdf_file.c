@@ -1448,6 +1448,9 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *s
                                &decompressed_stream, false);
             if (code >= 0) {
                 code = pdfi_read_bytes(ctx, decompressed_Buffer, 1, decompressed_length, decompressed_stream);
+                if (code >= 0 && code < decompressed_length) {
+                    memset(decompressed_Buffer + code, 0x00, decompressed_length - code);
+                }
                 pdfi_close_file(ctx, decompressed_stream);
                 code = pdfi_close_memory_stream(ctx, *Buffer, *new_pdf_stream);
                 if (code >= 0) {
@@ -1708,7 +1711,10 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
 retry:
     if (ToRead == 0) {
         if (filtered || ctx->encryption.is_encrypted) {
-            code = pdfi_filter(ctx, stream_obj, ctx->main_stream, &stream, false);
+            code = pdfi_apply_SubFileDecode_filter(ctx, 0, "endstream", ctx->main_stream, &SubFileStream, false);
+            if (code < 0)
+                goto exit;
+            code = pdfi_filter(ctx, stream_obj, SubFileStream, &stream, false);
             if (code < 0) {
                 goto exit;
             }
@@ -1718,6 +1724,7 @@ retry:
                 (void)sbufskip(stream->s, sbufavailable(stream->s));
             }
             pdfi_close_file(ctx, stream);
+            pdfi_close_file(ctx, SubFileStream);
         } else {
             buflen = pdfi_stream_length(ctx, stream_obj);
         }
@@ -1750,11 +1757,17 @@ retry:
             pdfi_close_file(ctx, SubFileStream);
             goto exit;
         }
-        read = sfread(Buffer, 1, buflen, stream->s);
+
+        code = sgets(stream->s, Buffer, buflen, (unsigned int *)&read);
+        if (read < buflen) {
+            memset(Buffer + read, 0x00, buflen - read);
+        }
+
         pdfi_close_file(ctx, stream);
         /* Because we opened the SubFileDecode separately to the filter chain, we need to close it separately too */
         pdfi_close_file(ctx, SubFileStream);
-        if (read == ERRC) {
+        if (code == ERRC || code == EOFC) {
+            code = 0;
             /* Error reading the expected number of bytes. If we already calculated the number of
              * bytes in the loop above, then ignore the error and carry on. If, however, we were
              * told how many bytes to expect, and failed to read that many, go back and do this
@@ -1777,22 +1790,29 @@ retry:
         if (code < 0)
             goto exit;
 
-        read = sfread(Buffer, 1, buflen, SubFileStream->s);
+        code = sgets(SubFileStream->s, Buffer, buflen, (unsigned int *)&read);
+        if (read < buflen) {
+            memset(Buffer + read, 0x00, buflen - read);
+        }
+
         pdfi_close_file(ctx, SubFileStream);
-        if (read == ERRC) {
+        if (code == ERRC || code == EOFC) {
+            code = 0;
             /* Error reading the expected number of bytes. If we already calculated the number of
              * bytes in the loop above, then ignore the error and carry on. If, however, we were
              * told how many bytes to expect, and failed to read that many, go back and do this
              * the slow way to determine how many bytes are *really* available.
              */
-            if(ToRead != 0) {
-                buflen = ToRead = 0;
-                code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
-                if (code < 0)
-                    goto exit;
-                gs_free_object(ctx->memory, Buffer, "pdfi_stream_to_buffer (Buffer)");
-                goto retry;
-            }
+            buflen = ToRead = 0;
+            /* Setting filtered to true is a lie, but it forces the code to go through the slow path and check the *real* number of bytes
+             * in the stream. This will be slow, but it should only happen when we get a file which is invalid.
+             */
+            filtered = 1;
+            code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, stream_obj), SEEK_SET);
+            if (code < 0)
+                goto exit;
+            gs_free_object(ctx->memory, Buffer, "pdfi_stream_to_buffer (Buffer)");
+            goto retry;
         }
     }
 
