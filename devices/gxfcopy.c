@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1559,7 +1559,7 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
         const byte *OffsetTable;
         uint numTables;
 
-        code = access_type42_data(font[j], 0, 12, &OffsetTable);
+        code = access_type42_data(font[j], font[j]->data.subfontOffset, 12, &OffsetTable);
         if (code < 0)
             return code;
         numTables = U16(OffsetTable + 4);
@@ -1568,7 +1568,7 @@ same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
             ulong start;
             uint length;
 
-            code = access_type42_data(font[j], 12 + i * 16, 16, &tab);
+            code = access_type42_data(font[j], font[j]->data.subfontOffset + 12 + i * 16, 16, &tab);
             if (code < 0)
                 return code;
             start = get_u32_msb(tab + 8);

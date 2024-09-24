@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -769,6 +769,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
                         const gs_const_string *alt_font_name)
 {
     gs_font *const font = (gs_font *)pfont;
+    gs_type42_data *d0 = &pfont->data;
     gs_const_string font_name;
     byte OffsetTable[12];
     uint numTables_stored, numTables, numTables_out;
@@ -825,12 +826,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 #define W(a,b,c,d)\
   ( ((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
 
-    READ_SFNTS(pfont, 0, 12, OffsetTable);
-    if (u32(OffsetTable) == W('t','t','c','f')) {
-        READ_SFNTS(pfont, 12, 4, OffsetTable);
-        TTCFontOffset = u32(OffsetTable);
-        READ_SFNTS(pfont, TTCFontOffset, 12, OffsetTable);
-    }
+    TTCFontOffset = d0->subfontOffset;
+    READ_SFNTS(pfont, TTCFontOffset, 12, OffsetTable);
     numTables_stored = U16(OffsetTable + 4);
     for (i = numTables = 0; i < numTables_stored; ++i) {
         byte tab[16];

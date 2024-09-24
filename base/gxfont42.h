@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -84,6 +84,8 @@ struct gs_type42_data_s {
     ulong name_offset;		/* offset to name table */
     ulong os2_offset;		/* offset to OS/2 table */
     ulong post_offset;          /* Offset to the post table */
+    ushort subfontID;
+    gs_offset_t subfontOffset;
     /*
      * TrueType fonts specify the number of glyphs in two different ways:
      * the size of the loca table, and an explicit value in maxp.  Currently

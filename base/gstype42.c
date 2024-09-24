@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -198,6 +198,8 @@ gs_type42_font_init(gs_font_type42 * pfont, int subfontID)
         memset(&pfont->data, 0, sizeof(pfont->data));
         pfont->data.string_proc = string_proc;
         pfont->data.proc_data = proc_data;
+        pfont->data.subfontID = (ushort)(subfontID >=0 ? subfontID : 0);
+        pfont->data.subfontOffset = (gs_offset_t)OffsetTableOffset;
     }
     for (i = 0; i < numTables; ++i) {
         const byte *tab = TableDirectory + i * 16;
