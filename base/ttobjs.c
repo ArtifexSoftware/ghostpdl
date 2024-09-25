@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -205,6 +205,7 @@
         (old_count >= count ? 0 : \
           !(free_aux(mem, ptr),   \
             ptr = mem->alloc_bytes(mem, (count) * sizeof(type), "ttobjs.c")))
+
 #define SETMAX(a, b) a = (a > b ? a : b)
 
 static int free_aux(ttfMemory *mem, void *ptr)
@@ -339,6 +340,8 @@ static int free_aux(ttfMemory *mem, void *ptr)
    SETMAX(exec->n_contours, face->maxContours);
    SETMAX(exec->n_points, n_points);
    exec->lock++;
+
+   memset(exec->pts.contours, 0x00, exec->n_contours * sizeof(UShort));
 
    return TT_Err_Ok;
 
