@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -230,6 +230,8 @@ type1_next(gs_type1_state *pcis)
         case c_undef17:
             return_error(gs_error_invalidfont);
         case c_callsubr:
+            if (csp + 1 - &pcis->ostack[0] < 1)
+                return_error(gs_error_invalidfont);
             code = type1_callsubr(pcis, fixed2int_var(*csp) +
                                   pcis->pfont->data.subroutineNumberBias);
             if (code < 0)
@@ -258,6 +260,8 @@ type1_next(gs_type1_state *pcis)
                 c += CE_OFFSET;
                 break;
             case ce1_div:
+                if (csp + 1 - &pcis->ostack[0] < 1)
+                    return_error(gs_error_invalidfont);
                 csp[-1] = float2fixed((double)csp[-1] / (double)*csp);
                 --csp;
                 continue;
@@ -265,6 +269,8 @@ type1_next(gs_type1_state *pcis)
                 CLEAR;
                 continue;
             case ce1_callothersubr:
+                if (csp + 1 - &pcis->ostack[0] < 2)
+                    return_error(gs_error_invalidfont);
                 switch (fixed2int_var(*csp)) {
                 case 0:
                     pcis->ignore_pops = 2;
@@ -505,27 +511,41 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             type1_clear(&cis);
             continue;
         case c1_hsbw:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             gs_type1_sbw(&cis, cis.ostack[0], fixed_0, cis.ostack[1], fixed_0);
             goto clear;
         case cx_hstem:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             type1_stem1(&cis, &hstem_hints, csp - 1, cis.lsb.y, NULL);
             goto clear;
         case cx_vstem:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             type1_stem1(&cis, &vstem_hints, csp - 1, cis.lsb.x, NULL);
             goto clear;
         case CE_OFFSET + ce1_sbw:
+            if (cis.os_count < 4)
+                return_error(gs_error_invalidfont);
             gs_type1_sbw(&cis, cis.ostack[0], cis.ostack[1],
                          cis.ostack[2], cis.ostack[3]);
             goto clear;
         case CE_OFFSET + ce1_vstem3:
+            if (cis.os_count < 6)
+                return_error(gs_error_invalidfont);
             type1_stem3(&cis, &vstem_hints, csp - 5, cis.lsb.x, NULL);
             goto clear;
         case CE_OFFSET + ce1_hstem3:
+            if (cis.os_count < 6)
+                return_error(gs_error_invalidfont);
             type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, NULL);
         clear:
             type1_clear(&cis);
             continue;
         case ce1_callothersubr:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             if (*csp == int2fixed(3))
                 replace_hints = true;
             if (*csp == int2fixed(12) || *csp == int2fixed(13))
@@ -536,6 +556,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             replace_hints = true;
             continue;
         case CE_OFFSET + ce1_seac:
+            if (cis.os_count < 5)
+                return_error(gs_error_invalidfont);
         case cx_endchar:
             break;
         }
@@ -633,18 +655,26 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             type1_clear(&cis);
             continue;
         case cx_hstem:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             type1_stem1(&cis, &hstem_hints, csp - 1, cis.lsb.y, active_hints);
         hint:
             HINTS_CHANGED();
             type1_clear(&cis);
             continue;
         case cx_vstem:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             type1_stem1(&cis, &vstem_hints, csp - 1, cis.lsb.x, active_hints);
             goto hint;
         case CE_OFFSET + ce1_vstem3:
+            if (cis.os_count < 6)
+                return_error(gs_error_invalidfont);
             type1_stem3(&cis, &vstem_hints, csp - 5, cis.lsb.x, active_hints);
             goto hint;
         case CE_OFFSET + ce1_hstem3:
+            if (cis.os_count < 6)
+                return_error(gs_error_invalidfont);
             type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, active_hints);
             goto hint;
         case CE_OFFSET + ce1_dotsection:
@@ -670,12 +700,18 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             }
             continue;
         case cx_vmoveto:
+            if (cis.os_count < 1)
+                return_error(gs_error_invalidfont);
             mx = 0, my = *csp;
             POP(1); goto move;
         case cx_hmoveto:
+            if (cis.os_count < 1)
+                return_error(gs_error_invalidfont);
             mx = *csp, my = 0;
             POP(1); goto move;
         case cx_rmoveto:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             mx = csp[-1], my = *csp;
             POP(2);
         move:
@@ -713,6 +749,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             type1_clear(&cis);
             continue;
         case c1_hsbw:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             gs_type1_sbw(&cis, cis.ostack[0], fixed_0, cis.ostack[1], fixed_0);
             /*
              * Leave the l.s.b. on the operand stack for the initial hint,
@@ -751,6 +789,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             }
             continue;
         case CE_OFFSET + ce1_seac:
+            if (cis.os_count < 5)
+                return_error(gs_error_invalidfont);
             /*
              * It is an undocumented feature of the Type 2 CharString
              * format that endchar + 4 or 5 operands is equivalent to
@@ -770,11 +810,15 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             type2_put_op(s, cx_endchar);
             return 0;
         case CE_OFFSET + ce1_sbw:
+            if (cis.os_count < 4)
+                return_error(gs_error_invalidfont);
             gs_type1_sbw(&cis, cis.ostack[0], cis.ostack[1],
                          cis.ostack[2], cis.ostack[3]);
             cis.ostack[0] = cis.ostack[2];
             goto sbw;
         case ce1_callothersubr:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             CHECK_OP();
             switch (fixed2int_var(*csp)) {
             default:
@@ -816,6 +860,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
              * The remaining cases are strictly for optimization.
              */
         case cx_rlineto:
+            if (cis.os_count < 2)
+                return_error(gs_error_invalidfont);
             if (depth > MAX_STACK - 2)
                 goto copy;
             switch (prev_op) {
@@ -828,12 +874,16 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
                 goto copy;
             }
         case cx_hlineto:  /* hlineto (vlineto hlineto)* [vlineto] => hlineto */
+            if (cis.os_count < 1)
+                return_error(gs_error_invalidfont);
             if (depth > MAX_STACK - 1 ||
                 prev_op != (depth & 1 ? cx_vlineto : cx_hlineto))
                 goto copy;
             c = prev_op;
             goto put;
         case cx_vlineto:  /* vlineto (hlineto vlineto)* [hlineto] => vlineto */
+            if (cis.os_count < 1)
+                return_error(gs_error_invalidfont);
             if (depth > MAX_STACK - 1 ||
                 prev_op != (depth & 1 ? cx_hlineto : cx_vlineto))
                 goto copy;
@@ -841,6 +891,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             goto put;
         case cx_hvcurveto: /* hvcurveto (vhcurveto hvcurveto)* => hvcurveto */
                                 /* (vhcurveto hvcurveto)+ => vhcurveto  */
+            if (cis.os_count < 4)
+                return_error(gs_error_invalidfont);
             /*
              * We have to check (depth & 1) because the last curve might
              * have 5 parameters rather than 4 (see rrcurveto below).
@@ -852,6 +904,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             goto put;
         case cx_vhcurveto: /* vhcurveto (hvcurveto vhcurveto)* => vhcurveto */
                                 /* (hvcurveto vhcurveto)+ => hvcurveto  */
+            if (cis.os_count < 4)
+                return_error(gs_error_invalidfont);
             /* See above re the (depth & 1) check. */
             if ((depth & 1) || depth > MAX_STACK - 4 ||
                 prev_op != (depth & 4 ? cx_hvcurveto : cx_vhcurveto))
@@ -859,6 +913,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             c = prev_op;
             goto put;
         case cx_rrcurveto:
+            if (cis.os_count < 6)
+                return_error(gs_error_invalidfont);
             if (depth == 0) {
                 if (csp[-1] == 0) {
                     /* A|0 B C D 0 F rrcurveto => [A] B C D F vvcurveto */
