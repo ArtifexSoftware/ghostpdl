@@ -156,7 +156,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     pdf_array *a;
     int64_t size;
     int64_t num;
-    int64_t W[3];
+    int64_t W[3] = {0, 0, 0};
     int objnum;
     bool known = false;
 
