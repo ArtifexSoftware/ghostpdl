@@ -282,9 +282,6 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
                   pdf_obj *Shading, pdf_dict *stream_dict, pdf_dict *page_dict)
 {
     int num_decode = 4, code;
-    gs_offset_t savedoffset;
-    gs_offset_t stream_offset;
-    int64_t Length;
     byte *data_source_buffer = NULL;
     pdf_c_stream *shading_stream = NULL;
     int64_t i;
@@ -300,20 +297,8 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
     params->Function = NULL;
     params->Decode = NULL;
 
-    stream_offset = pdfi_stream_offset(ctx, (pdf_stream *)Shading);
-    if (stream_offset == 0)
-        return_error(gs_error_typecheck);
-
-    Length = pdfi_stream_length(ctx, (pdf_stream *)Shading);
-
-    savedoffset = pdfi_tell(ctx->main_stream);
-    code = pdfi_seek(ctx, ctx->main_stream, stream_offset, SEEK_SET);
-    if (code < 0)
-        return code;
-
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, (pdf_stream *)Shading, Length, &data_source_buffer, ctx->main_stream, &shading_stream, false);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, (pdf_stream *)Shading, &data_source_buffer, &shading_stream, false);
     if (code < 0) {
-        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
     }
 
@@ -323,10 +308,6 @@ static int pdfi_build_mesh_shading(pdf_context *ctx, gs_shading_mesh_params_t *p
      * pointed to by the params.DataSource member.
      */
     gs_free_object(ctx->memory, shading_stream, "discard memory stream(pdf_stream)");
-
-    code = pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
-    if (code < 0)
-        goto build_mesh_shading_error;
 
     code = pdfi_build_shading_function(ctx, &params->Function, (const float *)NULL, 1,
                                        shading_dict, page_dict);

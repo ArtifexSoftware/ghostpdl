@@ -1039,7 +1039,6 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
 {
     pdf_c_stream *profile_stream = NULL;
     byte *profile_buffer;
-    gs_offset_t savedoffset;
     int code, code1;
     ulong dictkey = 0;
 
@@ -1070,10 +1069,6 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
         }
     }
 
-    /* Save the current stream position, and move to the start of the profile stream */
-    savedoffset = pdfi_tell(ctx->main_stream);
-    pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, ICC_obj), SEEK_SET);
-
     /* The ICC profile reading code (irritatingly) requires a seekable stream, because it
      * rewinds it to the start, then seeks to the end to find the size, then rewinds the
      * stream again.
@@ -1081,9 +1076,8 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
      * implemented in PostScript (!) so we can't use it. What we can do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, ICC_obj, Length, &profile_buffer, ctx->main_stream, &profile_stream, true);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, ICC_obj, &profile_buffer, &profile_stream, true);
     if (code < 0) {
-        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return code;
     }
 
@@ -1094,8 +1088,6 @@ static int pdfi_create_iccprofile(pdf_context *ctx, pdf_stream *ICC_obj, char *c
 
     if (code == 0)
         code = code1;
-
-    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
 
     return code;
 }
@@ -3168,20 +3160,12 @@ int pdfi_color_setoutputintent(pdf_context *ctx, pdf_dict *intent_dict, pdf_stre
 {
     pdf_c_stream *profile_stream = NULL;
     byte *profile_buffer;
-    gs_offset_t savedoffset;
     int code, code1;
-    int64_t Length;
     pdf_dict *profile_dict;
 
     code = pdfi_dict_from_obj(ctx, (pdf_obj *)profile, &profile_dict);
     if (code < 0)
         return code;
-
-    /* Save the current stream position, and move to the start of the profile stream */
-    savedoffset = pdfi_tell(ctx->main_stream);
-    pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, profile), SEEK_SET);
-
-    Length = pdfi_stream_length(ctx, profile);
 
     /* The ICC profile reading code (irritatingly) requires a seekable stream, because it
      * rewinds it to the start, then seeks to the end to find the size, then rewinds the
@@ -3190,7 +3174,7 @@ int pdfi_color_setoutputintent(pdf_context *ctx, pdf_dict *intent_dict, pdf_stre
      * implemented in PostScript (!) so we can't use it. What we can do is create a
      * string sourced stream in memory, which is at least seekable.
      */
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, profile, Length, &profile_buffer, ctx->main_stream, &profile_stream, true);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, profile, &profile_buffer, &profile_stream, true);
     if (code < 0)
         goto exit;
 
@@ -3203,7 +3187,6 @@ int pdfi_color_setoutputintent(pdf_context *ctx, pdf_dict *intent_dict, pdf_stre
         code = code1;
 
  exit:
-    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     return code;
 }
 

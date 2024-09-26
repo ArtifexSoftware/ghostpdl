@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -96,7 +96,7 @@ int pdfi_apply_SubFileDecode_filter(pdf_context *ctx, int EODCount, const char *
 int pdfi_open_memory_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_stream);
 int pdfi_close_memory_stream(pdf_context *ctx, byte *Buffer, pdf_c_stream *source);
 int pdfi_open_memory_stream_from_stream(pdf_context *ctx, unsigned int size, byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_pdf_stream, bool retain_ownership);
-int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *stream_dict, unsigned int size, byte **Buffer, pdf_c_stream *source, pdf_c_stream **new_pdf_stream, bool retain_ownership);
+int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *stream_dict, byte **Buffer, pdf_c_stream **new_pdf_stream, bool retain_ownership);
 int pdfi_open_memory_stream_from_memory(pdf_context *ctx, unsigned int size, byte *Buffer, pdf_c_stream **new_pdf_stream, bool retain_ownership);
 int pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_dict, byte **buf, int64_t *bufferlen);
 

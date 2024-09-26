@@ -300,11 +300,10 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
     gs_function_PtCr_params_t params;
     pdf_c_stream *function_stream = NULL;
     int code;
-    int64_t Length;
     byte *data_source_buffer;
     byte *ops = NULL;
     unsigned int size;
-    gs_offset_t savedoffset;
+
     memset(&params, 0x00, sizeof(gs_function_PtCr_params_t));
     *(gs_function_params_t *)&params = *mnDR;
     params.ops.data = 0;	/* in case of failure */
@@ -312,14 +311,8 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
 
     if (pdfi_type_of(function_obj) != PDF_STREAM)
         return_error(gs_error_undefined);
-    Length = pdfi_stream_length(ctx, (pdf_stream *)function_obj);
 
-    savedoffset = pdfi_tell(ctx->main_stream);
-    code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, function_obj), SEEK_SET);
-    if (code < 0)
-        return code;
-
-    code = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream, false);
+    code = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, &data_source_buffer, &function_stream, false);
     if (code < 0)
         goto function_4_error;
 
@@ -357,13 +350,11 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
     if (code < 0)
         goto function_4_error;
 
-    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
     return 0;
 
 function_4_error:
     if (function_stream)
         (void)pdfi_close_memory_stream(ctx, data_source_buffer, function_stream);
-    (void)pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
 
     gs_function_PtCr_free_params(&params, ctx->memory);
     if (ops)
@@ -382,7 +373,6 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
     int code = 0;
     int64_t Length, temp;
     byte *data_source_buffer;
-    gs_offset_t savedoffset;
     pdf_dict *function_dict = NULL;
 
     memset(&params, 0x00, sizeof(gs_function_params_t));
@@ -399,20 +389,12 @@ pdfi_build_function_0(pdf_context *ctx, gs_function_params_t * mnDR,
     if (code < 0)
         return code;
 
-    Length = pdfi_stream_length(ctx, (pdf_stream *)function_obj);
-
-    savedoffset = pdfi_tell(ctx->main_stream);
-    pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, function_obj), SEEK_SET);
-
-    Length = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, (unsigned int)Length, &data_source_buffer, ctx->main_stream, &function_stream, false);
+    Length = pdfi_open_memory_stream_from_filtered_stream(ctx, function_obj, &data_source_buffer, &function_stream, false);
     if (Length < 0) {
-        pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
         return Length;
     }
 
     data_source_init_stream(&params.DataSource, function_stream->s);
-
-    pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
 
     /* We need to clear up the PDF stream, but leave the underlying stream alone, that's now
      * pointed to by the params.DataSource member.
