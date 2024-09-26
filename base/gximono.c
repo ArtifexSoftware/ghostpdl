@@ -996,8 +996,7 @@ done:
        set when we actually try to draw with it.
     */
     for (i = 0; i < 256; i++) {
-        if (gx_dc_is_binary_halftone(&penum->clues[i].dev_color))
-            penum->clues[i].dev_color.colors.binary.b_tile = NULL;
+        penum->clues[i].dev_color.colors.binary.b_tile = NULL;
     }
     return code;
 }
