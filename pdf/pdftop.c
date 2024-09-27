@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -716,7 +716,7 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
-        if (argis(param, "CIDSubstFont")) {
+        if (argis(param, "CIDFSubstFont")) {
             code = plist_value_get_string_or_name(ctx, &pvalue, (char **)&ctx->args.cidfsubstfont.data, (int *)&ctx->args.cidfsubstfont.size, &discard_isname);
             if (code < 0)
                 return code;
