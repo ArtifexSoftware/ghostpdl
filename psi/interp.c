@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -508,6 +508,10 @@ gs_call_interp(i_ctx_t **pi_ctx_p, ref * pref, int user_errors,
 
     *pexit_code = 0;
     *gc_signal = 0;
+
+    /* This avoids a valgrind error */
+    doref.tas.type_attrs = error_name.tas.type_attrs = saref.tas.type_attrs = 0;
+
     ialloc_reset_requested(idmemory);
 again:
     /* Avoid a dangling error object that might get traced by a future GC. */

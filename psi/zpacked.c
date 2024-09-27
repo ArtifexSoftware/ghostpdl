@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -47,6 +47,10 @@ zpackedarray(i_ctx_t *i_ctx_p)
     ref parr;
 
     check_type(*op, t_integer);
+
+    /* This avoids a valgrind error */
+    parr.tas.type_attrs = 0;
+
     if (op->value.intval < 0)
         return_error(gs_error_rangecheck);
     if (op->value.intval > op - osbot &&
