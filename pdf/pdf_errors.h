@@ -87,4 +87,5 @@ PARAM(E_PDF_GROUP_BAD_BC_TOO_BIG,      "An SMask has a /BC array with too many c
 PARAM(E_PDF_GROUP_BAD_BC_NO_CS,        "An Smask has a /BC key, but the Group attributes dictionary has no /CS. Ignoring specified BC"),
 PARAM(E_PDF_BAD_TYPE0_CMAP,            "CMap unrecoverably broken"),
 PARAM(E_PDF_BAD_EMBEDDED_FONT,         "An embedded font is invalid"),
+PARAM(E_PDF_BAD_INDEXED_STRING,        "The string data prameter for a /Indexed colour space lookup is too short"),
 #undef PARAM

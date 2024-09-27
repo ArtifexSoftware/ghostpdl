@@ -2504,7 +2504,10 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
         /* This is not legal, but Acrobat seems to accept it */
         pdf_string *lookup_string = (pdf_string *)lookup; /* alias */
 
-        Buffer = gs_alloc_bytes(ctx->memory, lookup_string->length, "pdfi_create_indexed (lookup buffer)");
+        if (num_values > lookup_string->length)
+            Buffer = gs_alloc_bytes(ctx->memory, num_values, "pdfi_create_indexed (lookup buffer)");
+        else
+            Buffer = gs_alloc_bytes(ctx->memory, lookup_string->length, "pdfi_create_indexed (lookup buffer)");
         if (Buffer == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto exit;
@@ -2520,10 +2523,10 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     }
 
     if (num_values > lookup_length) {
-        dmprintf2(ctx->memory, "WARNING: pdfi_create_indexed() got %"PRIi64" values, expected at least %d values\n",
-                  lookup_length, num_values);
-        code = gs_note_error(gs_error_rangecheck);
-        goto exit;
+        code = pdfi_set_error_stop(ctx, gs_error_rangecheck, NULL, E_PDF_BAD_INDEXED_STRING, "pdfi_create_indexed", NULL);
+        if (code < 0)
+            goto exit;
+        memset(&Buffer[lookup_length], 0x00, num_values - lookup_length);
     }
 
     /* If we have a named color profile and the base space is DeviceN or
