@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -91,7 +91,7 @@ get_u32_big_endian(const uint32_t *a)
     uint32_t v;
     const unsigned char *c=(const unsigned char *)a;
 
-    v = (c[0]<<24) | (c[1]<<16) | (c[2]<<8) | c[3];
+    v = (((uint32_t)c[0])<<24) | (((uint32_t)c[1])<<16) | (((uint32_t)c[2])<<8) | c[3];
     return v;
 }
 
