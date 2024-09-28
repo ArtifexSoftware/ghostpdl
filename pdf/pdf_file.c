@@ -1602,7 +1602,8 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
 {
     byte *Buffer = NULL;
     int code = 0;
-    int64_t buflen = 0, read = 0, ToRead = *bufferlen;
+    uint read = 0, buflen = 0;
+    int64_t ToRead = *bufferlen;
     gs_offset_t savedoffset;
     pdf_c_stream *stream = NULL, *SubFileStream = NULL;
     bool filtered;
