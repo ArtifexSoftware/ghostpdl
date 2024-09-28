@@ -867,6 +867,10 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
                 do_embed_as_standard = embed_as_standard(pdev, font, index, pairs, num_glyphs))) {
             if (pdev->ForOPDFRead && has_extension_glyphs(font))
                 return FONT_EMBED_YES;
+
+            if (pdev->ForOPDFRead && embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
+                    return FONT_EMBED_YES;
+
             return FONT_EMBED_STANDARD;
         }
     }
