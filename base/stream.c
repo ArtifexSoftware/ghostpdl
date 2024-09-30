@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -843,7 +843,8 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
                        (uint) (pw->limit - pw->ptr), eof);
             oldpos = pw->ptr;
             status = (*curr->procs.process) (curr->state, pr, pw, eof);
-            pr->limit += left;
+            if (pr->limit != NULL)
+                pr->limit += left;
             if_debug5m('s', s->memory, "[s]after read "PRI_INTPTR", nr=%u, nw=%u, status=%d, position=%"PRId64"\n",
                        (intptr_t) curr, (uint) (pr->limit - pr->ptr),
                        (uint) (pw->limit - pw->ptr), status, s->position);
@@ -1009,7 +1010,8 @@ stream_move(stream_cursor_read * pr, stream_cursor_write * pw)
 static void
 stream_compact(stream * s, bool always)
 {
-    if (s->cursor.r.ptr >= s->cbuf && (always || s->end_status >= 0)) {
+    if (s->cbuf != NULL && s->cursor.r.ptr >= s->cbuf
+        && (always || s->end_status >= 0)) {
         uint dist = s->cursor.r.ptr + 1 - s->cbuf;
 
         memmove(s->cbuf, s->cursor.r.ptr + 1,
