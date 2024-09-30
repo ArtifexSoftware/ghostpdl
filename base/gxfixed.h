@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -124,10 +124,10 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed2float(x) ((x)*(1.0/fixed_scale))
 
 /* Rounding and truncation on fixeds */
-#define fixed_floor(x) ((x)&(-1L<<_fixed_shift))
-#define fixed_rounded(x) (((x)+_fixed_round_v)&(-1L<<_fixed_shift))
-#define fixed_ceiling(x) (((x)+_fixed_fraction_v)&(-1L<<_fixed_shift))
-#define fixed_pixround(x) (((x)+_fixed_pixround_v)&(-1L<<_fixed_shift))
+#define fixed_floor(x) ((x)&(-(1L<<_fixed_shift)))
+#define fixed_rounded(x) (((x)+_fixed_round_v)&(-(1L<<_fixed_shift)))
+#define fixed_ceiling(x) (((x)+_fixed_fraction_v)&(-(1L<<_fixed_shift)))
+#define fixed_pixround(x) (((x)+_fixed_pixround_v)&(-(1L<<_fixed_shift)))
 #define fixed_fraction(x) ((int)(x)&_fixed_fraction_v)
 /* I don't see how to do truncation towards 0 so easily.... */
 #define fixed_truncated(x) ((x) < 0 ? fixed_ceiling(x) : fixed_floor(x))
