@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -113,17 +113,29 @@ typedef union stream_cursor_s {
 static inline void
 stream_cursor_read_init(stream_cursor_read *r, const byte *buf, size_t length)
 {
-    /* starting pos for pointer is always one position back */
-    r->ptr = buf - 1;
-    r->limit = r->ptr + length;
+    if (buf != NULL) {
+        /* starting pos for pointer is always one position back */
+        r->ptr = buf - 1;
+        r->limit = r->ptr + length;
+    }
+    else {
+        r->ptr = NULL;
+        r->limit = NULL;
+    }
 }
 
 static inline void
 stream_cursor_write_init(stream_cursor_write *w, const byte *buf, size_t length)
 {
-    /* starting pos for pointer is always one position back */
-    w->ptr = (byte *)buf - 1;
-    w->limit = (byte *)w->ptr + length;
+    if (buf != NULL) {
+        /* starting pos for pointer is always one position back */
+        w->ptr = (byte *)buf - 1;
+        w->limit = (byte *)w->ptr + length;
+    }
+    else {
+        w->ptr = NULL;
+        w->limit = NULL;
+    }
 }
 #ifdef __GNUC__
 #  pragma GCC diagnostic pop
