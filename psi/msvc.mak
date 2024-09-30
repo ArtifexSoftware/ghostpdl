@@ -469,7 +469,9 @@ MSWINSDKPATH=$(PGMFILESx86)\Microsoft SDKs\Windows\v7.0
 !endif
 !endif
 !endif
-!else
+!endif
+
+!ifndef MSWINSDKPATH
 !if exist ("$(PGMFILES)\Microsoft SDKs\Windows")
 !if exist ("$(PGMFILES)\Microsoft SDKs\Windows\v7.1A")
 MSWINSDKPATH=$(PGMFILES)\Microsoft SDKs\Windows\v7.1A
