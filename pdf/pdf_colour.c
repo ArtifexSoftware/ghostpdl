@@ -2501,13 +2501,9 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
         break;
     case PDF_STRING:
     {
-        /* This is not legal, but Acrobat seems to accept it */
         pdf_string *lookup_string = (pdf_string *)lookup; /* alias */
 
-        if (num_values > lookup_string->length)
-            Buffer = gs_alloc_bytes(ctx->memory, num_values, "pdfi_create_indexed (lookup buffer)");
-        else
-            Buffer = gs_alloc_bytes(ctx->memory, lookup_string->length, "pdfi_create_indexed (lookup buffer)");
+        Buffer = gs_alloc_bytes(ctx->memory, lookup_string->length, "pdfi_create_indexed (lookup buffer)");
         if (Buffer == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto exit;
@@ -2523,10 +2519,21 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     }
 
     if (num_values > lookup_length) {
+        /* This is not legal, but Acrobat seems to accept it */
+        byte *SBuffer = NULL;
+
         code = pdfi_set_error_stop(ctx, gs_error_rangecheck, NULL, E_PDF_BAD_INDEXED_STRING, "pdfi_create_indexed", NULL);
         if (code < 0)
             goto exit;
-        memset(&Buffer[lookup_length], 0x00, num_values - lookup_length);
+        SBuffer = gs_alloc_bytes(ctx->memory, num_values, "pdfi_create_indexed (lookup buffer)");
+        if (SBuffer == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto exit;
+        }
+        memcpy(SBuffer, Buffer, lookup_length);
+        memset(&SBuffer[lookup_length], 0x00, num_values - lookup_length);
+        gs_free_object(ctx->memory, Buffer, "pdfi_create_indexed (lookup buffer)");
+        Buffer = SBuffer;
     }
 
     /* If we have a named color profile and the base space is DeviceN or
