@@ -948,7 +948,7 @@ PNG_CFLAGS=/DExitProcess=exit
 CFLAGS=/DBUILD_PDF=1 /I$(PDFSRCDIR) /I$(ZSRCDIR) $(CFLAGS)
 !endif
 
-CFLAGS=$(CFLAGS) $(XCFLAGS)
+CFLAGS=$(CFLAGS) -DHAVE_LIMITS_H=1 $(XCFLAGS)
 
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.

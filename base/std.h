@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -60,6 +60,49 @@ typedef ulong bits32;
 #endif
 
 /* Minimum and maximum values for the signed types. */
+#if defined(HAVE_LIMITS_H) && HAVE_LIMITS_H == 1
+#include <limits.h>
+
+/* Avoid casts, to make them acceptable to strict ANSI compilers. */
+#if defined(SHRT_MIN) && defined(SHRT_MAX)
+#  define min_short SHRT_MIN
+#  define max_short SHRT_MAX
+#else
+#  define min_short (-1 << (ARCH_SIZEOF_SHORT * 8 - 1))
+#  define max_short (~min_short)
+#endif
+
+#if defined(INT_MIN) && defined(INT_MAX)
+#  define min_int INT_MIN
+#  define max_int INT_MAX
+#else
+#  define min_int (-1 << (ARCH_SIZEOF_INT * 8 - 1))
+#  define max_int (~min_int)
+#endif
+
+#if defined(LONG_MIN) && defined(LONG_MAX)
+#define min_long LONG_MIN
+#define max_long LONG_MAX
+#else
+#  define min_long (-1L << (ARCH_SIZEOF_LONG * 8 - 1))
+#  define max_long (~min_long)
+#endif
+
+#if defined(LLONG_MIN) && defined(LLONG_MAX)
+#  define min_int64_t LLONG_MIN
+#  define max_int64_t LLONG_MAX
+#else
+#  define min_int64_t (-((int64_t)1) << (sizeof(int64_t) * 8 - 1))
+#  define max_int64_t (~min_int64_t)
+#endif
+
+#if defined (ULLONG_MAX)
+#  define max_uint64_t ULLONG_MAX
+#else
+#  define max_uint64_t ((uint64_t)~((uint64_t)0) + (uint64_t)0)
+#endif
+
+#else
 /* Avoid casts, to make them acceptable to strict ANSI compilers. */
 #define min_short (-1 << (ARCH_SIZEOF_SHORT * 8 - 1))
 #define max_short (~min_short)
@@ -71,6 +114,7 @@ typedef ulong bits32;
 #define min_int64_t (-((int64_t)1) << (sizeof(int64_t) * 8 - 1))
 #define max_int64_t (~min_int64_t)
 #define max_uint64_t ((uint64_t)~((uint64_t)0) + (uint64_t)0)
+#endif
 
 /*
  * The maximum values for the unsigned types are defined in arch.h,

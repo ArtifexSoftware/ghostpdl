@@ -563,7 +563,9 @@ dnl Check for headers
 dnl --------------------------------------------------
 
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS([errno.h fcntl.h limits.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h unistd.h dirent.h ndir.h sys/dir.h sys/ndir.h inttypes.h])
+AC_CHECK_HEADERS([errno.h fcntl.h malloc.h memory.h stdlib.h string.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h unistd.h dirent.h ndir.h sys/dir.h sys/ndir.h inttypes.h])
+
+AC_CHECK_HEADER([limits.h], [CFLAGS="$CFLAGS -DHAVE_LIMITS_H=1"])
 
 dnl --------------------------------------------------
 dnl Sun, BSD possibly other makes don't have quite the
