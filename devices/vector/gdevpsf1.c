@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -484,7 +484,7 @@ static int strip_othersubrs(gs_glyph_data_t *gdata, gs_font_type1 *pfont, byte *
                     break;
                 case 10:
                     if (CurrentNumberIndex != 0 && Stack[CurrentNumberIndex - 1] >= 0 &&
-                        Stack[CurrentNumberIndex - 1] < SubrsCount && SubrsWithMM[Stack[CurrentNumberIndex - 1]] != 0)
+                        Stack[CurrentNumberIndex - 1] < SubrsCount && SubrsWithMM != NULL && SubrsWithMM[Stack[CurrentNumberIndex - 1]] != 0)
                     {
                         int index = Stack[CurrentNumberIndex - 1];
                         int StackBase = CurrentNumberIndex - 1 - pfont->data.WeightVector.count * SubrsWithMM[index];
