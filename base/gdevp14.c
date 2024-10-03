@@ -12290,6 +12290,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
             pclist_devn_params = dev_proc(cdev, ret_devn_params)(cdev);
             if (pclist_devn_params != NULL && pclist_devn_params->page_spot_colors > 0) {
                 int num_comp = p14dev->color_info.num_components;
+                int has_tags = device_encodes_tags((gx_device *)p14dev);
                 /*
                  * The number of components for the PDF14 device is the sum
                  * of the process components and the number of spot colors
@@ -12314,7 +12315,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                         /* if page_spot_colors < 0, this will be wrong, so don't update num_components */
                         if (p14dev->devn_params.page_spot_colors >= 0) {
                             int n = p14dev->num_std_colorants +
-                                    p14dev->devn_params.page_spot_colors;
+                                    p14dev->devn_params.page_spot_colors + has_tags;
                             if (p14dev->num_planar_planes > 0)
                                 p14dev->num_planar_planes += n - p14dev->color_info.num_components;
                             p14dev->color_info.num_components = n;
@@ -12322,8 +12323,8 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                     }
                 }
                 /* limit the num_components to the max. */
-                if (p14dev->color_info.num_components > p14dev->color_info.max_components + device_encodes_tags((gx_device *)p14dev))
-                    p14dev->color_info.num_components = p14dev->color_info.max_components + device_encodes_tags((gx_device *)p14dev);
+                if (p14dev->color_info.num_components > p14dev->color_info.max_components + has_tags)
+                    p14dev->color_info.num_components = p14dev->color_info.max_components + has_tags;
                 /* Transfer the data for the spot color names
                    But we have to free what may be there before we do this */
                 devn_free_params((gx_device*) p14dev);
