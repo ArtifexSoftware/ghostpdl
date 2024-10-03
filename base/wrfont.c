@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -22,6 +22,7 @@ Started by Graham Asher, 9th August 2002.
 #include "wrfont.h"
 #include "stdio_.h"
 #include "assert_.h"
+#include "stdint_.h"
 
 #define EEXEC_KEY 55665
 #define EEXEC_FACTOR 52845
@@ -44,8 +45,8 @@ WRF_wbyte(const gs_memory_t *memory, WRF_output * a_output, unsigned char a_byte
         if (a_output->m_encrypt) {
             a_byte ^= (a_output->m_key >> 8);
             a_output->m_key =
-                (unsigned short)((a_output->m_key + a_byte) * EEXEC_FACTOR +
-                                 EEXEC_OFFSET);
+                (unsigned short)((((uint64_t)a_output->m_key + a_byte) * EEXEC_FACTOR +
+                                 EEXEC_OFFSET) & 0xffff);
         }
         *a_output->m_pos++ = a_byte;
     }
