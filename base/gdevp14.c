@@ -3357,6 +3357,26 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             }
         }
 
+        if (deep && has_tags)
+        {
+            /* We still need to convert the tags from Native to BE */
+#if ARCH_IS_BIG_ENDIAN
+#else
+            uint16_t *tags = (uint16_t *)&buf_ptr[tag_offset * planestride];
+            int i, j;
+            for (j = 0; j < height; j++)
+            {
+                for (i = 0; i < width; i++)
+                {
+                    uint16_t tag = *tags++;
+                    ((byte *)tags)[-2] = tag >> 8;
+                    ((byte *)tags)[-1] = tag;
+                }
+                tags += (buf->rowstride>>1) - width;
+            }
+#endif
+        }
+
 #if RAW_DUMP
         dump_raw_buffer_be(target->memory, height, width, buf->n_planes, planestride, rowstride,
             "post_put_image_blend_image", buf_ptr, deep);
