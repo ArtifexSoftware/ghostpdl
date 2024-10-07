@@ -3088,6 +3088,13 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     code = pdf_open_page(pdev, PDF_IN_STREAM);
                     if (code < 0)
                         return code;
+
+                    if (pdf_must_put_clip_path(pdev, NULL)) {
+                       code = pdf_unclip(pdev);
+                        if (code < 0)
+                            return code;
+                    }
+
                     /* Save the current graphics state (or at least that bit which we track) so
                      * that we can put it back later.
                      */
