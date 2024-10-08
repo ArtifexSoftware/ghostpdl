@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2024 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: Ghostscript Release Dates
@@ -15,6 +15,16 @@ Ghostscript Release Dates
 
 Version 10
 -------------------
+
+Version 10.04.0 (2024-09-18)
+
+Version 10.03.1 (2024-05-02)
+
+Version 10.03.0 (2024-03-06)
+
+Version 10.02.1 (2023-11-01)
+
+Version 10.02.0 (2023-09-12)
 
 Version 10.01.2 (2023-06-21)
 
