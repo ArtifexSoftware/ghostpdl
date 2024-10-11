@@ -1586,7 +1586,7 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             return_error(gs_error_VMerror);
         pdev->EmbeddedFiles->id = pdf_obj_ref(pdev);
     }
-    if (pdev->PDFA == 3 && !pdev->AF) {
+    if (pdev->PDFA == 3 && !pdev->AF && !cos_dict_find_c_key(pdev->Catalog, "/AF")) {
         pdev->AF = cos_array_alloc(pdev, "pdfmark_EMBED(EmbeddedFiles)");
         if (pdev->AF == 0)
             return_error(gs_error_VMerror);
@@ -1595,34 +1595,41 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
     for (i = 0; i < count; i += 2) {
         if (pdf_key_eq(&pairs[i], "/FS")) {
-            uint written;
-            cos_value_t v;
-            cos_object_t *object;
-            int64_t id;
-            int code;
+            if (!cos_dict_find_c_key(pdev->Catalog, "/AF")) {
+                uint written;
+                cos_value_t v;
+                cos_object_t *object;
+                int64_t id;
+                int code;
 
-            id = pdf_obj_ref(pdev);
+                {
+                    char written = pairs[i+1].data[pairs[i+1].size];
+                    char *data = (char *)pairs[i+1].data;
 
-            pdf_open_separate(pdev, id, resourceNone);
-            sputs(pdev->strm, pairs[i+1].data, pairs[i+1].size, &written);
-            if (pairs[i+1].data[pairs[i+1].size] != 0x0d && pdev->PDFA != 0)
-                sputc(pdev->strm, 0x0d);
-            pdf_end_separate(pdev, resourceNone);
+                    data[pairs[i+1].size] = 0x00;
+                    code = sscanf(data, "%d 0 R", &id);
+                    data[pairs[i+1].size] = written;
+                    if (code < 1)
+                        return_error(gs_error_rangecheck);
+                }
 
-            object = cos_reference_alloc(pdev, "embedded file");
-            object->id = id;
-            COS_OBJECT_VALUE(&v, object);
-            code = cos_dict_put(pdev->EmbeddedFiles, key.data, key.size, &v);
-            if (code < 0)
-                return code;
-            if (pdev->PDFA == 3) {
                 object = cos_reference_alloc(pdev, "embedded file");
                 object->id = id;
                 COS_OBJECT_VALUE(&v, object);
-                code = cos_array_add(pdev->AF, &v);
+                code = cos_dict_put(pdev->EmbeddedFiles, key.data, key.size, &v);
                 if (code < 0)
                     return code;
+                if (pdev->PDFA == 3) {
+                    object = cos_reference_alloc(pdev, "embedded file");
+                    object->id = id;
+                    COS_OBJECT_VALUE(&v, object);
+                    code = cos_array_add(pdev->AF, &v);
+                    if (code < 0)
+                        return code;
+                }
             }
+            else
+                return cos_dict_put_string(pdev->EmbeddedFiles, key.data, key.size, pairs[i+1].data, pairs[i+1].size);
         }
     }
     return 0;

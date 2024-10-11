@@ -3084,7 +3084,8 @@ pdf_close(gx_device * dev)
                 stream_puts(s, ">>\n");
             }
             if (pdev->AF)
-                pprintld1(s, "/AF %ld 0 R\n", pdev->AF->id);
+                if (!cos_dict_find_c_key(pdev->Catalog, "/AF"))
+                    pprintld1(s, "/AF %ld 0 R\n", pdev->AF->id);
         }
         if (pdev->PageLabels)
             pprintld1(s, "/PageLabels << /Nums  %ld 0 R >>\n",

@@ -1,6 +1,6 @@
 %!PS
 
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2024 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -490,7 +490,14 @@ ZUGFeRDVersion (2p1) eq {
     [ {AFArray} {FSDict} /APPEND pdfmark
 
     % Step 5 Add an entry in the Catalog dictionary containing the AF array
-    [ {Catalog} << /AF {AFArray} >> /PUT pdfmark
+    % Since Ghostscript 10.04.0 this is no longer required, providing the output file is
+    % PDF/A-3 or higher. The PDF/A-3 tech note 0010 (p28) clarifies that the /AF in the Catalog
+    % is mandatory and GS 10.04.0 will emit one itself.
+    %
+    % This line retained for historical reference, and as an example for cases where the output
+    % is not PDF/A-3
+    %
+    %    [ {Catalog} << /AF {AFArray} >> /PUT pdfmark
 
     % Step 6 use the EMBED pdfmark to add the XML file and FS dictionary to the PDF name tree
     [ /Name ZUGFeRDDocumentFileName /FS {FSDict} /EMBED pdfmark
