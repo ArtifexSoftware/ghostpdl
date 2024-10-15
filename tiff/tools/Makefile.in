@@ -463,7 +463,8 @@ top_srcdir = @top_srcdir@
 LIBPORT = $(top_builddir)/port/libport.la
 LIBTIFF = $(top_builddir)/libtiff/libtiff.la
 EXTRA_DIST = \
-	CMakeLists.txt
+	CMakeLists.txt \
+	tif_tools_versioninfo.rc
 
 @HAVE_RPATH_TRUE@AM_LDFLAGS = $(LIBDIR)
 fax2ps_SOURCES = fax2ps.c

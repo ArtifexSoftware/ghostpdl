@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFREADRAWSTRIP" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFReadRawStrip \- return the undecoded contents of a strip of data from an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFREADRAWSTRIP" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFReadRawStrip \- return the undecoded contents of a strip of data from an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -48,7 +48,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .SH DESCRIPTION
 .sp
 Read the contents of the specified strip into the (user supplied) data buffer.
-Note that the value of \fIstrip\fP is a “raw strip number”. That is, the caller
+Note that the value of \fIstrip\fP is a \(dqraw strip number\(dq. That is, the caller
 must take into account whether or not the data is organized in separate planes
 (\fBPlanarConfiguration\fP = 2).
 To read a full strip of data the data buffer should typically be at least as

@@ -101,7 +101,7 @@ if(ZSTD_FOUND)
 
         if(NOT ZSTD_LIBRARY_RELEASE AND NOT ZSTD_LIBRARY_DEBUG)
             set_target_properties(ZSTD::ZSTD PROPERTIES
-                    IMPORTED_LOCATION_RELEASE "${ZSTD_LIBRARY}")
+                    IMPORTED_LOCATION "${ZSTD_LIBRARY}")
         endif()
     endif()
 endif()

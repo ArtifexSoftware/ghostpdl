@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFWRITEENCODEDTILE" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFWriteEncodedTile \- compress and write a tile of data to an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFWRITEENCODEDTILE" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFWriteEncodedTile \- compress and write a tile of data to an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -49,7 +49,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .sp
 Compress \fIsize\fP bytes of raw data from \fIbuf\fP and \fBappend\fP the result
 to the end of the specified tile. Note that the value of \fItile\fP is a
-“raw tile number”.  That is, the caller must take into account whether
+\(dqraw tile number\(dq.  That is, the caller must take into account whether
 or not the data are organized in separate planes
 (\fBPlanarConfiguration\fP = 2).
 \fI\%TIFFComputeTile()\fP automatically does this when converting an
@@ -84,15 +84,15 @@ The image is assumed to be organized in strips because neither of the
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: Must set "ImageWidth" before writing data\fP:
+\fB%s: Must set \(dqImageWidth\(dq before writing data\fP:
 .INDENT 0.0
 .INDENT 3.5
-The image’s width has not been set before the first write. See
+The image\(aqs width has not been set before the first write. See
 \fI\%TIFFSetField()\fP for information on how to do this.
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: Must set "PlanarConfiguration" before writing data\fP:
+\fB%s: Must set \(dqPlanarConfiguration\(dq before writing data\fP:
 .INDENT 0.0
 .INDENT 3.5
 The organization of data has not be defined before the first write.
@@ -100,7 +100,7 @@ See \fI\%TIFFSetField()\fP for information on how to do this.
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: No space for tile arrays"\fP:
+\fB%s: No space for tile arrays\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was not enough space for the arrays that hold tile offsets and

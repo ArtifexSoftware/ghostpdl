@@ -139,9 +139,11 @@ int main(int argc, char *argv[])
             case 'h':
                 usage(EXIT_SUCCESS);
                 /*NOTREACHED*/
+                break;
             case '?':
                 usage(EXIT_FAILURE);
                 /*NOTREACHED*/
+                break;
         }
     filenum = argc - optind;
     if (filenum < 1)

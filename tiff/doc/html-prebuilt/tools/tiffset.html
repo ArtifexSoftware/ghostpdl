@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tiffset &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>tiffset &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tiffsplit" href="tiffsplit.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="tiffmedian.html" title="tiffmedian"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffset</a></li> 
       </ul>
@@ -42,18 +39,18 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffset">
+  <section id="tiffset">
 <h1>tiffset<a class="headerlink" href="#tiffset" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>tiffset</strong> [ <em>options</em> ] <em>filename.tif</em></p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">tiffset</strong> sets the value of a TIFF header to a specified value
 or removes an existing setting.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffset-d">
@@ -86,39 +83,39 @@ supported for ASCII tags only.</p>
 <dd><p>Unset the tag.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="examples">
+</section>
+<section id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
 <p>The following example sets the image description tag (270) of <code class="file docutils literal notranslate"><span class="pre">a.tif</span></code> to
 the contents of the file <code class="file docutils literal notranslate"><span class="pre">descrip</span></code>:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffset -sf <span class="m">270</span> descrip a.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffset<span class="w"> </span>-sf<span class="w"> </span><span class="m">270</span><span class="w"> </span>descrip<span class="w"> </span>a.tif
 </pre></div>
 </div>
 <p>The following example sets the artist tag (315) of <code class="file docutils literal notranslate"><span class="pre">a.tif</span></code> to the string
 <code class="docutils literal notranslate"><span class="pre">Anonymous</span></code>:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffset -s <span class="m">315</span> Anonymous a.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffset<span class="w"> </span>-s<span class="w"> </span><span class="m">315</span><span class="w"> </span>Anonymous<span class="w"> </span>a.tif
 </pre></div>
 </div>
 <p>This example sets the resolution of the file <code class="file docutils literal notranslate"><span class="pre">a.tif</span></code> to 300 dpi:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffset -s <span class="m">296</span> <span class="m">2</span> a.tif
-tiffset -s <span class="m">282</span> <span class="m">300</span>.0 a.tif
-tiffset -s <span class="m">283</span> <span class="m">300</span>.0 a.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffset<span class="w"> </span>-s<span class="w"> </span><span class="m">296</span><span class="w"> </span><span class="m">2</span><span class="w"> </span>a.tif
+tiffset<span class="w"> </span>-s<span class="w"> </span><span class="m">282</span><span class="w"> </span><span class="m">300</span>.0<span class="w"> </span>a.tif
+tiffset<span class="w"> </span>-s<span class="w"> </span><span class="m">283</span><span class="w"> </span><span class="m">300</span>.0<span class="w"> </span>a.tif
 </pre></div>
 </div>
 <p>Set the photometric interpretation of the third page of <code class="file docutils literal notranslate"><span class="pre">a.tif</span></code> to
 min-is-black (ie. inverts it):</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffset -d <span class="m">2</span> -s <span class="m">262</span> <span class="m">1</span> a.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffset<span class="w"> </span>-d<span class="w"> </span><span class="m">2</span><span class="w"> </span>-s<span class="w"> </span><span class="m">262</span><span class="w"> </span><span class="m">1</span><span class="w"> </span>a.tif
 </pre></div>
 </div>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="tiffdump.html"><span class="doc">tiffdump</span></a> (1),
 <a class="reference internal" href="tiffinfo.html"><span class="doc">tiffinfo</span></a> (1),
 <a class="reference internal" href="tiffcp.html"><span class="doc">tiffcp</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -184,14 +181,14 @@ min-is-black (ie. inverts it):</p>
         <li class="right" >
           <a href="tiffmedian.html" title="tiffmedian"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffset</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Changes in TIFF v4.0.9 &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Changes in TIFF v4.0.9 &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Changes in TIFF v4.0.8" href="v4.0.8.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="v4.0.10.html" title="Changes in TIFF v4.0.10"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Release history</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Changes in TIFF v4.0.9</a></li> 
       </ul>
@@ -42,9 +39,9 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="changes-in-tiff-v4-0-9">
+  <section id="changes-in-tiff-v4-0-9">
 <h1>Changes in TIFF v4.0.9<a class="headerlink" href="#changes-in-tiff-v4-0-9" title="Permalink to this heading">¶</a></h1>
-<table class="colwidths-auto docutils align-default" id="id2">
+<table class="docutils align-default" id="id2">
 <caption><span class="caption-text">References</span><a class="headerlink" href="#id2" title="Permalink to this table">¶</a></caption>
 <tbody>
 <tr class="row-odd"><td><p>Current Version</p></td>
@@ -65,17 +62,17 @@
 </tbody>
 </table>
 <p>This document describes the changes made to the software between the
-<em>previous</em> and <em>current</em> versions (see above).  If you don’t
+<em>previous</em> and <em>current</em> versions (see above).  If you don't
 find something listed here, then it was not done in this timeframe, or
 it was not considered important enough to be mentioned.  The following
 information is located here:</p>
-<div class="section" id="major-changes">
+<section id="major-changes">
 <h2>Major changes<a class="headerlink" href="#major-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>None</p></li>
 </ul>
-</div>
-<div class="section" id="software-configuration-changes">
+</section>
+<section id="software-configuration-changes">
 <h2>Software configuration changes<a class="headerlink" href="#software-configuration-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="file docutils literal notranslate"><span class="pre">test/Makefile.am</span></code>: Add some tests for tiff2bw.</p></li>
@@ -107,8 +104,8 @@ to fix <code class="docutils literal notranslate"><span class="pre">make</span> 
 <li><p><code class="file docutils literal notranslate"><span class="pre">nmake.opt</span></code>: support a <code class="docutils literal notranslate"><span class="pre">DEBUG=1</span></code> option, so as to adjust <code class="docutils literal notranslate"><span class="pre">OPTFLAGS</span></code> and use
 <code class="docutils literal notranslate"><span class="pre">/MDd</span></code> runtime in debug mode.</p></li>
 </ul>
-</div>
-<div class="section" id="library-changes">
+</section>
+<section id="library-changes">
 <h2>Library changes<a class="headerlink" href="#library-changes" title="Permalink to this heading">¶</a></h2>
 <ul>
 <li><p><code class="file docutils literal notranslate"><span class="pre">libtiff/tif_color.c</span></code>: <a class="reference internal" href="../functions/TIFFcolor.html#c.TIFFYCbCrToRGBInit" title="TIFFYCbCrToRGBInit"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFYCbCrToRGBInit()</span></code></a>: stricter clamping to avoid
@@ -241,7 +238,7 @@ to myself :-)</p></li>
 <li><p><code class="file docutils literal notranslate"><span class="pre">libtiff/tif_dir.c</span></code>: avoid potential null pointer dereference in
 <code class="xref c c-func docutils literal notranslate"><span class="pre">_TIFFVGetField()</span></code> on corrupted TIFFTAG_NUMBEROFINKS tag instance.
 Fixes <a class="reference external" href="http://bugzilla.maptools.org/show_bug.cgi?id=2713">MapTools bugzilla #2713</a></p></li>
-<li><p><code class="file docutils literal notranslate"><span class="pre">tools/tiff2pdf.c</span></code>: prevent heap buffer overflow write in “Raw”
+<li><p><code class="file docutils literal notranslate"><span class="pre">tools/tiff2pdf.c</span></code>: prevent heap buffer overflow write in &quot;Raw&quot;
 mode on <code class="docutils literal notranslate"><span class="pre">PlanarConfig=Contig</span></code> input images.
 Fixes <a class="reference external" href="http://bugzilla.maptools.org/show_bug.cgi?id=2715">MapTools bugzilla #2715</a>
 Reported by team OWL337</p></li>
@@ -273,12 +270,12 @@ Fixes <a class="reference external" href="https://bugs.chromium.org/p/oss-fuzz/i
 Credit to OSS Fuzz</p></li>
 <li><p><code class="file docutils literal notranslate"><span class="pre">libtiff/tif_read.c</span></code>: add protection against excessive memory
 allocation attempts in <code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFReadDirEntryArray()</span></code> on short files.
-Effective for mmap’ed case. And non-mmap’ed case, but restricted
+Effective for mmap'ed case. And non-mmap'ed case, but restricted
 to 64bit builds.
 Fixes <a class="reference external" href="http://bugzilla.maptools.org/show_bug.cgi?id=2675">MapTools bugzilla #2675</a></p></li>
 <li><p><code class="file docutils literal notranslate"><span class="pre">libtiff/tif_read.c</span></code>: add protection against excessive memory
 allocation attempts in <code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFReadDirEntryArray()</span></code> on short files.
-Effective for mmap’ed case. And non-mmap’ed case, but restricted
+Effective for mmap'ed case. And non-mmap'ed case, but restricted
 to 64bit builds.
 Fixes <a class="reference external" href="http://bugzilla.maptools.org/show_bug.cgi?id=2675">MapTools bugzilla #2675</a></p></li>
 <li><p><code class="file docutils literal notranslate"><span class="pre">libtiff/tif_luv.c</span></code>: <code class="xref c c-func docutils literal notranslate"><span class="pre">LogLuvInitState()</span></code>: avoid excessive memory
@@ -330,11 +327,11 @@ Cf <a class="reference external" href="https://github.com/libjpeg-turbo/libjpeg-
 Fixes <a class="reference external" href="https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=3733">OSS-Fuzz #3733</a>
 Credit to OSS Fuzz</p></li>
 </ul>
-</div>
-<div class="section" id="tools-changes">
+</section>
+<section id="tools-changes">
 <h2>Tools changes<a class="headerlink" href="#tools-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p><code class="file docutils literal notranslate"><span class="pre">tools/tiff2pdf.c</span></code>: prevent heap buffer overflow write in “Raw”
+<li><p><code class="file docutils literal notranslate"><span class="pre">tools/tiff2pdf.c</span></code>: prevent heap buffer overflow write in &quot;Raw&quot;
 mode on <code class="docutils literal notranslate"><span class="pre">PlanarConfig=Contig</span></code> input images.
 Fixes <a class="reference external" href="http://bugzilla.maptools.org/show_bug.cgi?id=2715">MapTools bugzilla #2715</a>
 Reported by team OWL337</p></li>
@@ -355,12 +352,12 @@ program.  This is in response to the report associated with
 <a class="reference external" href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-16232">CVE-2017-16232</a> but does not solve the extremely high memory usage
 with the associated POC file.</p></li>
 </ul>
-</div>
-<div class="section" id="contributed-software-changes">
+</section>
+<section id="contributed-software-changes">
 <h2>Contributed software changes<a class="headerlink" href="#contributed-software-changes" title="Permalink to this heading">¶</a></h2>
 <p>None</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -426,14 +423,14 @@ with the associated POC file.</p></li>
         <li class="right" >
           <a href="v4.0.10.html" title="Changes in TIFF v4.0.10"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >Release history</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Changes in TIFF v4.0.9</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

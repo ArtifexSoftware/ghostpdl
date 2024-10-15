@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TIFFError &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TIFFError &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TIFFFieldDataType" href="TIFFFieldDataType.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="TIFFDeferStrileArrayWriting.html" title="TIFFDeferStrileArrayWriting"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" accesskey="U">TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFError</a></li> 
       </ul>
@@ -42,12 +39,12 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tifferror">
+  <section id="tifferror">
 <h1>TIFFError<a class="headerlink" href="#tifferror" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span><span class="cp"></span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdarg.h&gt;</span><span class="cp"></span>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdarg.h&gt;</span>
 </pre></div>
 </div>
 <dl class="c function">
@@ -90,8 +87,8 @@
 <a class="reference internal" href="#c.TIFFErrorHandlerExt" title="TIFFErrorHandlerExt"><span class="n"><span class="pre">TIFFErrorHandlerExt</span></span></a><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TIFFSetErrorHandlerExt</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#c.TIFFErrorHandlerExt" title="TIFFErrorHandlerExt"><span class="n"><span class="pre">TIFFErrorHandlerExt</span></span></a><span class="w"> </span><span class="n"><span class="pre">handler</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.TIFFSetErrorHandlerExt" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="#c.TIFFError" title="TIFFError"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFError()</span></code></a> invokes the library-wide error handler function
 to (normally) write an error message to <code class="docutils literal notranslate"><span class="pre">stderr</span></code>.
@@ -123,13 +120,15 @@ can be setup when a TIFF file is opened with one of the following functions:
 or <a class="reference internal" href="TIFFOpen.html#c.TIFFClientOpenExt" title="TIFFClientOpenExt"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFClientOpenExt()</span></code></a>.
 Furthermore, a <strong>custom defined data structure</strong> <em>user_data</em> for the
 error handler can be given along.</p>
-</div>
-<div class="section" id="note">
+<p>Please refer to <a class="reference internal" href="TIFFOpenOptions.html"><span class="doc">TIFFOpenOptions</span></a> for how to setup the
+application-specific handler introduced with libtiff 4.5.</p>
+</section>
+<section id="note">
 <h2>Note<a class="headerlink" href="#note" title="Permalink to this heading">¶</a></h2>
 <p>Both functions <a class="reference internal" href="#c.TIFFError" title="TIFFError"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFError()</span></code></a> and <a class="reference internal" href="#c.TIFFErrorExt" title="TIFFErrorExt"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorExt()</span></code></a>
 each attempt to call both handler functions if they are defined.
 First <a class="reference internal" href="#c.TIFFErrorHandler" title="TIFFErrorHandler"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorHandler()</span></code></a> is called and then <a class="reference internal" href="#c.TIFFErrorHandlerExt" title="TIFFErrorHandlerExt"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorHandlerExt()</span></code></a>.
-However, <a class="reference internal" href="#c.TIFFError" title="TIFFError"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFError()</span></code></a> passes a “0” as a file handle to
+However, <a class="reference internal" href="#c.TIFFError" title="TIFFError"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFError()</span></code></a> passes a &quot;0&quot; as a file handle to
 <a class="reference internal" href="#c.TIFFErrorHandlerExt" title="TIFFErrorHandlerExt"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorHandlerExt()</span></code></a>.</p>
 <p><a class="reference internal" href="#c.TIFFErrorExtR" title="TIFFErrorExtR"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorExtR()</span></code></a> tries first to call the per-TIFF handle defined
 error handler. If <a class="reference internal" href="#c.TIFFErrorHandlerExtR" title="TIFFErrorHandlerExtR"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorHandlerExtR()</span></code></a> is not defined or
@@ -137,12 +136,12 @@ returns 0, <a class="reference internal" href="#c.TIFFErrorHandler" title="TIFFE
 are called. From libtiff 4.5 onwards <a class="reference internal" href="#c.TIFFErrorExtR" title="TIFFErrorExtR"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorExtR()</span></code></a> is used
 within the <code class="docutils literal notranslate"><span class="pre">libtiff</span></code> library where the TIFF handle is available.
 Otherwise, <a class="reference internal" href="#c.TIFFErrorExt" title="TIFFErrorExt"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorExt()</span></code></a> is used!</p>
-</div>
-<div class="section" id="return-values">
+</section>
+<section id="return-values">
 <h2>Return values<a class="headerlink" href="#return-values" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="#c.TIFFSetErrorHandler" title="TIFFSetErrorHandler"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFSetErrorHandler()</span></code></a> and <a class="reference internal" href="#c.TIFFSetErrorHandlerExt" title="TIFFSetErrorHandlerExt"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFSetErrorHandlerExt()</span></code></a>
 returns a reference to the previous error handler function.</p>
-<p><a class="reference internal" href="#c.TIFFErrorHandlerExtR" title="TIFFErrorHandlerExtR"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorHandlerExtR()</span></code></a> returns an integer as “stop” to control the call
+<p><a class="reference internal" href="#c.TIFFErrorHandlerExtR" title="TIFFErrorHandlerExtR"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorHandlerExtR()</span></code></a> returns an integer as &quot;stop&quot; to control the call
 of further error handler functions within <a class="reference internal" href="#c.TIFFErrorExtR" title="TIFFErrorExtR"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorExtR()</span></code></a>:</p>
 <blockquote>
 <div><ul class="simple">
@@ -150,15 +149,15 @@ of further error handler functions within <a class="reference internal" href="#c
 <li><p>non-zero: no further error message function is called.</p></li>
 </ul>
 </div></blockquote>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="TIFFWarning.html"><span class="doc">TIFFWarning</span></a> (3tiff),
 <a class="reference internal" href="TIFFOpen.html"><span class="doc">TIFFOpen</span></a> (3tiff),
 <a class="reference internal" href="libtiff.html"><span class="doc">libtiff</span></a> (3tiff),
 printf (3)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -224,14 +223,14 @@ printf (3)</p>
         <li class="right" >
           <a href="TIFFDeferStrileArrayWriting.html" title="TIFFDeferStrileArrayWriting"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" >TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFError</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

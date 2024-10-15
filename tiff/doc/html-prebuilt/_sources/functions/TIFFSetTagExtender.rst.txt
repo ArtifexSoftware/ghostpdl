@@ -19,6 +19,12 @@ Description
 for user defined tags as an extender callback with ``libtiff``.
 A brief description can be found at :ref:`define_application_tags`.
 
+.. note::
+
+    :c:func:`TIFFSetTagExtender` cannot be used to extend custom directories
+    (for example EXIF, GPS or other custom directories).
+    Only the TIFF directory can be extended with additional tags.
+
 See also
 --------
 

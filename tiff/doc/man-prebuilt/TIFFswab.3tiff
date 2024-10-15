@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFSWAB" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFswab \- byte- and bit-swapping routines
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFSWAB" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFswab \- byte- and bit-swapping routines
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -121,7 +121,7 @@ lookup table, which is returned using the \fI\%TIFFGetBitRevTable()\fP
 function.  The \fIreversed\fP parameter specifies which table should be
 returned. Supply \fI1\fP if you want bit reversal table. Supply \fI0\fP to get
 the table that do not reverse bit values. It is a lookup table that can
-be used as an “identity function”; i.e. TIFFNoBitRevTable[n]  ==  n\&.
+be used as an \(dqidentity function\(dq; i.e. TIFFNoBitRevTable[n]  ==  n\&.
 .SH DIAGNOSTICS
 .sp
 None.

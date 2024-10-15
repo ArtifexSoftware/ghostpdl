@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tiff2ps &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>tiff2ps &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tiff2rgba" href="tiff2rgba.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="tiff2pdf.html" title="tiff2pdf"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiff2ps</a></li> 
       </ul>
@@ -42,13 +39,13 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiff2ps">
+  <section id="tiff2ps">
 <h1>tiff2ps<a class="headerlink" href="#tiff2ps" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>tiff2ps</strong> [ <em>options</em> ] <em>input.tif</em> …</p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">tiff2ps</strong> reads TIFF images and writes PostScript™ or Encapsulated
 PostScript™ (EPS) on the standard output. By default <strong class="program">tiff2ps</strong>
@@ -69,8 +66,8 @@ on older PostScript™ printers is also generated.
 Note that this emulation code can be very slow.</p>
 <p>Color images with associated alpha data are composited over
 a white background.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiff2ps-1">
@@ -170,28 +167,28 @@ non-zero to enable.  The default is enabled.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiff2ps-L">
-<span id="cmdoption-tiff2ps-l"></span><span class="sig-name descname"><span class="pre">-L</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2ps-L" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-L</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2ps-L" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the size of overlapping for split images (in inches). Used in
 conjunction with <a class="reference internal" href="#cmdoption-tiff2ps-H"><code class="xref std std-option docutils literal notranslate"><span class="pre">-H</span></code></a> and <a class="reference internal" href="#cmdoption-tiff2ps-W"><code class="xref std std-option docutils literal notranslate"><span class="pre">-W</span></code></a> options.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiff2ps-0">
-<span class="sig-name descname"><span class="pre">-l</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2ps-0" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiff2ps-l">
+<span class="sig-name descname"><span class="pre">-l</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2ps-l" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the left margin for the output (in inches). This does not affect
 the width of the printed image.</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiff2ps-M">
-<span id="cmdoption-tiff2ps-m"></span><span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"> <span class="pre">size</span></span><a class="headerlink" href="#cmdoption-tiff2ps-M" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"> <span class="pre">size</span></span><a class="headerlink" href="#cmdoption-tiff2ps-M" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set maximum memory allocation size (in MiB). The default is 256MiB.
 Set to 0 to disable the limit.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiff2ps-4">
-<span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2ps-4" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiff2ps-m">
+<span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2ps-m" title="Permalink to this definition">¶</a></dt>
 <dd><p>Where possible render using the <code class="docutils literal notranslate"><span class="pre">imagemask</span></code> PostScript™ operator instead of the
 <code class="docutils literal notranslate"><span class="pre">image</span></code> operator.  When this option is specified <strong class="program">tiff2ps</strong> will use
 <code class="docutils literal notranslate"><span class="pre">imagemask</span></code> for rendering 1 bit deep images.  If this option is not specified
@@ -287,23 +284,23 @@ When PostScript™ Level 1 is generated, data is imaged to the entire printed
 page and this option has no affect.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="examples">
+</section>
+<section id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
 <p>The following generates PostScript™ Level 2 for all pages of a facsimile:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2ps <span class="se">\-</span>a2 fax.tif <span class="p">|</span> lpr
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2ps<span class="w"> </span><span class="se">\-</span>a2<span class="w"> </span>fax.tif<span class="w"> </span><span class="p">|</span><span class="w"> </span>lpr
 </pre></div>
 </div>
 <p>Note also that if you have version 2.6.1 or newer of Ghostscript then you
 can efficiently preview facsimile generated with the above command.</p>
 <p>To generate Encapsulated PostScript™ for a the image at directory 2
 of an image use:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2ps <span class="se">\-</span>d <span class="m">1</span> foo.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2ps<span class="w"> </span><span class="se">\-</span>d<span class="w"> </span><span class="m">1</span><span class="w"> </span>foo.tif
 </pre></div>
 </div>
 <p>(Notice that directories are numbered starting at zero.)</p>
 <p>If you have a long image, it may be split in several pages:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2ps <span class="se">\-</span>h11 <span class="se">\-</span>w8.5 <span class="se">\-</span>H14 <span class="se">\-</span>L.5 foo.tif &gt; foo.ps
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2ps<span class="w"> </span><span class="se">\-</span>h11<span class="w"> </span><span class="se">\-</span>w8.5<span class="w"> </span><span class="se">\-</span>H14<span class="w"> </span><span class="se">\-</span>L.5<span class="w"> </span>foo.tif<span class="w"> </span>&gt;<span class="w"> </span>foo.ps
 </pre></div>
 </div>
 <p>The page size is set to 8.5x11 by <a class="reference internal" href="#cmdoption-tiff2ps-w"><code class="xref std std-option docutils literal notranslate"><span class="pre">-w</span></code></a> and <a class="reference internal" href="#cmdoption-tiff2ps-h"><code class="xref std std-option docutils literal notranslate"><span class="pre">-h</span></code></a>
@@ -312,8 +309,8 @@ options. We will accept a small amount of vertical compression, so
 Pages longer than 14 inches are cut off at 11 and continued on the next
 page. The <strong class="command">-L.5</strong>
 option says to repeat a half inch on the next page (to improve readability).</p>
-</div>
-<div class="section" id="bugs">
+</section>
+<section id="bugs">
 <h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this heading">¶</a></h2>
 <p>Because PostScript™ does not support the notion of a colormap,
 8-bit palette images produce 24-bit PostScript™ images.
@@ -322,8 +319,8 @@ bigger than the original image and which takes a long time
 to send to a printer over a serial line.
 Matters are even worse for 4-, 2-, and 1-bit palette images.</p>
 <p>Does not handle tiled images when generating PostScript™ Level I output.</p>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="pal2rgb.html"><span class="doc">pal2rgb</span></a> (1),
 <a class="reference internal" href="tiffinfo.html"><span class="doc">tiffinfo</span></a> (1),
@@ -332,8 +329,8 @@ Matters are even worse for 4-, 2-, and 1-bit palette images.</p>
 <a class="reference internal" href="tiffmedian.html"><span class="doc">tiffmedian</span></a> (1),
 <a class="reference internal" href="tiff2bw.html"><span class="doc">tiff2bw</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff),</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -400,14 +397,14 @@ Matters are even worse for 4-, 2-, and 1-bit palette images.</p>
         <li class="right" >
           <a href="tiff2pdf.html" title="tiff2pdf"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiff2ps</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

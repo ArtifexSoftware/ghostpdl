@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "THUMBNAIL" "1" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-thumbnail \- create a TIFF file with thumbnail images
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "THUMBNAIL" "1" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+thumbnail \- create a TIFF file with thumbnail images
 .SH SYNOPSIS
 .sp
 \fBthumbnail\fP [ \fIoptions\fP ] \fIinput.tif\fP \fIoutput.tif\fP
@@ -39,7 +39,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 \fBSubIFD\fP tag (#330) to store thumbnail images.
 \fBthumbnail\fP
 copies a TIFF Class F facsimile file to the output file
-and for each image an 8\-bit greyscale “thumbnail sketch” is created.
+and for each image an 8\-bit greyscale \(dqthumbnail sketch\(dq is created.
 The output file contains the thumbnail image with the associated
 full\-resolution page linked below with the SubIFD tag.
 .sp

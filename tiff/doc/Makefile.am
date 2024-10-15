@@ -26,79 +26,6 @@
 
 docdir = $(LIBTIFF_DOCDIR)/manual
 
-if TIFF_DOCS
-if SPHINX
-doc-html:
-	$(SPHINX_BUILD) \
-	-D "release=$(LIBTIFF_VERSION)" \
-	-D "version=$(LIBTIFF_MAJOR_VERSION).$(LIBTIFF_MINOR_VERSION)" \
-	-d "$(builddir)/cache" \
-	-b html \
-	"$(srcdir)" "$(builddir)/html"
-
-doc-man:
-	$(SPHINX_BUILD) \
-	-D "release=$(LIBTIFF_VERSION)" \
-	-D "version=$(LIBTIFF_MAJOR_VERSION).$(LIBTIFF_MINOR_VERSION)" \
-	-d "$(builddir)/cache" \
-	-b man \
-	"$(srcdir)" "$(builddir)/man"
-
-man1_MANS = $(TIFF_MAN1_GEN)
-man3_MANS = $(TIFF_MAN3_GEN)
-
-@TIFF_MAN_RULES@
-
-all-local: doc-html doc-man
-
-clean-local:
-	rm -r html
-	rm -r man
-	rm -r cache
-
-html_installdir = html
-else
-# Sphinx not available
-doc-html:
-	echo "HTML documentation generation not configured (sphinx not available)"
-	exit 1
-
-doc-man:
-	echo "Manual page documentation generation not configured (sphinx not available)"
-	exit 1
-
-man1_MANS = $(TIFF_MAN1_PREBUILT)
-man3_MANS = $(TIFF_MAN3_PREBUILT)
-
-html_installdir = $(srcdir)/html-prebuilt
-endif
-
-
-install-data-local: all-local
-	find $(html_installdir) -type d | sed -e 's;^$(html_installdir);;' | while read dir; do \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(docdir)$$dir'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(docdir)$$dir" || exit 1; \
-	done
-	find $(html_installdir) -type f | sed -e 's;^$(html_installdir);;' | while read docfile; do \
-	  docsubdir=$$(dirname $$docfile); \
-	  echo "$(INSTALL_DATA) '$(html_installdir)$$docfile' '$(DESTDIR)$(docdir)$$docsubdir'"; \
-	  $(INSTALL_DATA) "$(html_installdir)$$docfile" "$(DESTDIR)$(docdir)$$docsubdir"; \
-	done
-
-uninstall-local:
-	echo "rm -r $(DESTDIR)$(docdir)"
-	rm -r $(DESTDIR)$(docdir)
-else
-# Documentation generation disabled
-doc-html:
-	echo "HTML documentation generation not configured"
-	exit 1
-
-doc-man:
-	echo "Manual page documentation generation not configured"
-	exit 1
-endif
-
 rst_sources = \
 	index.rst \
 	build.rst \
@@ -129,6 +56,7 @@ rst_sources = \
 	project/acknowledgements.rst \
 	project/bugs.rst \
 	project/mailinglist.rst \
+	project/psc.rst \
 	addingtags.rst \
 	specification/index.rst \
 	specification/bigtiff.rst \
@@ -193,6 +121,12 @@ rst_sources = \
 	releases/v4.0.4.rst \
 	releases/v3.7.2.rst \
 	releases/v4.5.0.rst \
+	releases/v4.5.1.rst \
+	releases/v4.6.0.rst \
+	releases/v4.7.0.rst \
+	rfcs/index.rst \
+	rfcs/rfc1_psc.rst \
+	rfcs/rfc2_restoring_needed_tools.rst \
 	functions.rst \
 	tools.rst \
 	terms.rst \
@@ -257,6 +191,7 @@ rst_sources = \
 	functions/TIFFSetTagExtender.rst \
 	functions/TIFFStrileQuery.rst \
 	libtiff.rst \
+	multi_page.rst \
 	images.rst
 
 EXTRA_DIST = \
@@ -266,8 +201,88 @@ EXTRA_DIST = \
 	images \
 	$(rst_sources)
 
+if TIFF_DOCS
+if SPHINX
+doc-html: $(EXTRA_DIST) ../configure.ac
+	$(SPHINX_BUILD) \
+	-D "release=$(LIBTIFF_VERSION)" \
+	-D "version=$(LIBTIFF_MAJOR_VERSION).$(LIBTIFF_MINOR_VERSION)" \
+	-d "$(builddir)/cache" \
+	-b html \
+	"$(srcdir)" "$(builddir)/html"
+	touch doc-html
+
+doc-man: $(EXTRA_DIST) ../configure.ac
+	$(SPHINX_BUILD) \
+	-D "release=$(LIBTIFF_VERSION)" \
+	-D "version=$(LIBTIFF_MAJOR_VERSION).$(LIBTIFF_MINOR_VERSION)" \
+	-d "$(builddir)/cache" \
+	-b man \
+	"$(srcdir)" "$(builddir)/man"
+	touch doc-man
+
+man1_MANS = $(TIFF_MAN1_GEN)
+man3_MANS = $(TIFF_MAN3_GEN)
+
+@TIFF_MAN_RULES@
+
+all-local: doc-html doc-man
+
+clean-local:
+	rm -rf html
+	rm -rf man
+	rm -rf cache
+	rm -f doc-html
+	rm -f doc-man
+
+html_installdir = html
+else
+# Sphinx not available
+doc-html:
+	echo "HTML documentation generation not configured (sphinx not available)"
+	exit 1
+
+doc-man:
+	echo "Manual page documentation generation not configured (sphinx not available)"
+	exit 1
+
+.PHONY: doc-html doc-man
+
+man1_MANS = $(TIFF_MAN1_PREBUILT)
+man3_MANS = $(TIFF_MAN3_PREBUILT)
+
+html_installdir = $(srcdir)/html-prebuilt
+endif
+
+
+install-data-local: all-local
+	find $(html_installdir) -type d | sed -e 's;^$(html_installdir);;' | while read dir; do \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(docdir)$$dir'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(docdir)$$dir" || exit 1; \
+	done
+	find $(html_installdir) -type f | sed -e 's;^$(html_installdir);;' | while read docfile; do \
+	  docsubdir=$$(dirname $$docfile); \
+	  echo "$(INSTALL_DATA) '$(html_installdir)$$docfile' '$(DESTDIR)$(docdir)$$docsubdir'"; \
+	  $(INSTALL_DATA) "$(html_installdir)$$docfile" "$(DESTDIR)$(docdir)$$docsubdir"; \
+	done
+
+uninstall-local:
+	echo "rm -r $(DESTDIR)$(docdir)"
+	rm -r $(DESTDIR)$(docdir)
+else
+# Documentation generation disabled
+doc-html:
+	echo "HTML documentation generation not configured"
+	exit 1
+
+doc-man:
+	echo "Manual page documentation generation not configured"
+	exit 1
+
+.PHONY: doc-html doc-man
+
+endif
+
 dist-hook: doc-html doc-man
 	cp -r html $(distdir)/html-prebuilt
 	cp -r man $(distdir)/man-prebuilt
-
-.PHONY: doc-html doc-man

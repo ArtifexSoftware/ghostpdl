@@ -1,5 +1,5 @@
-tiff2cmp
-========
+tiffcmp
+=======
 
 .. program:: tiffcmp
 

@@ -66,15 +66,14 @@ unset(Deflate_OLD_FIND_LIBRARY_PREFIXES)
 
 mark_as_advanced(Deflate_INCLUDE_DIR)
 
-if(Deflate_INCLUDE_DIR AND EXISTS "${Deflate_INCLUDE_DIR}/deflate.h")
-    file(STRINGS "${Deflate_INCLUDE_DIR}/libdeflate.h" Deflate_H REGEX "^#define LIBDEFLATE_VERSION_STRING\s+\"[^\"]*\"$")
-
-    string(REGEX REPLACE "^.*Deflate_VERSION \"([0-9]+).*$" "\\1" Deflate_MAJOR_VERSION "${Deflate_H}")
-    string(REGEX REPLACE "^.*Deflate_VERSION \"[0-9]+\\.([0-9]+).*$" "\\1" Deflate_MINOR_VERSION  "${Deflate_H}")
+if(Deflate_INCLUDE_DIR AND EXISTS "${Deflate_INCLUDE_DIR}/libdeflate.h")
+    file(STRINGS "${Deflate_INCLUDE_DIR}/libdeflate.h" Deflate_H REGEX "^#define[\t ]+LIBDEFLATE_VERSION_STRING[\t ]+.*")
+    string(REGEX REPLACE "^.*LIBDEFLATE_VERSION_STRING[\t ]+\"([0-9]+).*$" "\\1" Deflate_MAJOR_VERSION "${Deflate_H}")
+    string(REGEX REPLACE "^.*LIBDEFLATE_VERSION_STRING[\t ]\"[0-9]+\\.([0-9]+).*$" "\\1" Deflate_MINOR_VERSION  "${Deflate_H}")
     set(Deflate_VERSION_STRING "${Deflate_MAJOR_VERSION}.${Deflate_MINOR_VERSION}")
 
-    set(Deflate_MAJOR_VERSION "${Deflate_VERSION_MAJOR}")
-    set(Deflate_MINOR_VERSION "${Deflate_VERSION_MINOR}")
+    set(Deflate_VERSION_MAJOR "${Deflate_MAJOR_VERSION}")
+    set(Deflate_VERSION_MINOR "${Deflate_MINOR_VERSION}")
 endif()
 
 include(FindPackageHandleStandardArgs)
@@ -110,7 +109,7 @@ if(Deflate_FOUND)
 
         if(NOT Deflate_LIBRARY_RELEASE AND NOT Deflate_LIBRARY_DEBUG)
             set_target_properties(Deflate::Deflate PROPERTIES
-                    IMPORTED_LOCATION_RELEASE "${Deflate_LIBRARY}")
+                    IMPORTED_LOCATION "${Deflate_LIBRARY}")
         endif()
     endif()
 endif()

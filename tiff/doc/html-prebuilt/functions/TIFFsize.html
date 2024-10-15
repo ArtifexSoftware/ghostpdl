@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TIFFsize &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TIFFsize &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TIFFStrileQuery" href="TIFFStrileQuery.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="TIFFSetTagExtender.html" title="TIFFSetTagExtender"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" accesskey="U">TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFsize</a></li> 
       </ul>
@@ -42,11 +39,11 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffsize">
+  <section id="tiffsize">
 <h1>TIFFsize<a class="headerlink" href="#tiffsize" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span><span class="cp"></span>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span>
 </pre></div>
 </div>
 <dl class="c function">
@@ -69,8 +66,8 @@
 <span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TIFFScanlineSize64</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">TIFF</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">tif</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.TIFFScanlineSize64" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="#c.TIFFScanlineSize" title="TIFFScanlineSize"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFScanlineSize()</span></code></a> returns the size in bytes of a row of data as
 it would be returned in a call to <a class="reference internal" href="TIFFReadScanline.html#c.TIFFReadScanline" title="TIFFReadScanline"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFReadScanline()</span></code></a>, or as it
@@ -87,18 +84,18 @@ decoded and packed raster scanline. Note that this value may be different
 from the value returned by <a class="reference internal" href="#c.TIFFScanlineSize" title="TIFFScanlineSize"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFScanlineSize()</span></code></a> if data is stored
 as separate planes.
 <a class="reference internal" href="#c.TIFFRasterScanlineSize64" title="TIFFRasterScanlineSize64"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFRasterScanlineSize64()</span></code></a> returns the size as <code class="xref c c-type docutils literal notranslate"><span class="pre">uint64_t</span></code>.</p>
-</div>
-<div class="section" id="diagnostics">
+</section>
+<section id="diagnostics">
 <h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this heading">¶</a></h2>
 <p>None.</p>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="TIFFOpen.html"><span class="doc">TIFFOpen</span></a> (3tiff),
 <a class="reference internal" href="TIFFReadScanline.html"><span class="doc">TIFFReadScanline</span></a> (3tiff),
 <a class="reference internal" href="libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -163,14 +160,14 @@ as separate planes.
         <li class="right" >
           <a href="TIFFSetTagExtender.html" title="TIFFSetTagExtender"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" >TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFsize</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

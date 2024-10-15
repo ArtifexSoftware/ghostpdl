@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFREADSCANLINE" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFReadScanline \- read and decode a scanline of data from an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFREADSCANLINE" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFReadScanline \- read and decode a scanline of data from an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -74,7 +74,7 @@ returned.
 .sp
 All error messages are directed to the \fI\%TIFFErrorExtR()\fP routine.
 .sp
-\fB"Compression algorithm does not support random access"\fP:
+\fB\(dqCompression algorithm does not support random access\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 Data was requested in a non\-sequential order from a file that uses a

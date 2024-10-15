@@ -2,7 +2,7 @@
 # file Copyright.txt or https://cmake.org/licensing for details.
 
 #[=======================================================================[.rst:
-FindLibLZMA
+Findliblzma
 -----------
 
 Find LZMA compression algorithm headers and library.
@@ -13,7 +13,7 @@ Imported Targets
 
 .. versionadded:: 3.14
 
-This module defines :prop_tgt:`IMPORTED` target ``LibLZMA::LibLZMA``, if
+This module defines :prop_tgt:`IMPORTED` target ``liblzma::liblzma``, if
 liblzma has been found.
 
 Result variables
@@ -21,7 +21,7 @@ Result variables
 
 This module will set the following variables in your project:
 
-``LIBLZMA_FOUND``
+``liblzma_FOUND``
   True if liblzma headers and library were found.
 ``LIBLZMA_INCLUDE_DIRS``
   Directory where liblzma headers are located.
@@ -70,7 +70,7 @@ endif()
 if (LIBLZMA_LIBRARY)
   include(CheckLibraryExists)
   set(CMAKE_REQUIRED_QUIET_SAVE ${CMAKE_REQUIRED_QUIET})
-  set(CMAKE_REQUIRED_QUIET ${LibLZMA_FIND_QUIETLY})
+  set(CMAKE_REQUIRED_QUIET ${liblzma_FIND_QUIETLY})
   if(NOT LIBLZMA_LIBRARY_RELEASE AND NOT LIBLZMA_LIBRARY_DEBUG)
     set(LIBLZMA_LIBRARY_check ${LIBLZMA_LIBRARY})
   elseif(LIBLZMA_LIBRARY_RELEASE)
@@ -86,7 +86,7 @@ if (LIBLZMA_LIBRARY)
 endif ()
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LibLZMA  REQUIRED_VARS  LIBLZMA_LIBRARY
+find_package_handle_standard_args(liblzma  REQUIRED_VARS  LIBLZMA_LIBRARY
                                                           LIBLZMA_INCLUDE_DIR
                                                           LIBLZMA_HAS_AUTO_DECODER
                                                           LIBLZMA_HAS_EASY_ENCODER
@@ -95,31 +95,31 @@ find_package_handle_standard_args(LibLZMA  REQUIRED_VARS  LIBLZMA_LIBRARY
                                  )
 mark_as_advanced( LIBLZMA_INCLUDE_DIR LIBLZMA_LIBRARY )
 
-if (LIBLZMA_FOUND)
+if (liblzma_FOUND)
     set(LIBLZMA_LIBRARIES ${LIBLZMA_LIBRARY})
     set(LIBLZMA_INCLUDE_DIRS ${LIBLZMA_INCLUDE_DIR})
-    if(NOT TARGET LibLZMA::LibLZMA)
-        add_library(LibLZMA::LibLZMA UNKNOWN IMPORTED)
-        set_target_properties(LibLZMA::LibLZMA PROPERTIES
+    if(NOT TARGET liblzma::liblzma)
+        add_library(liblzma::liblzma UNKNOWN IMPORTED)
+        set_target_properties(liblzma::liblzma PROPERTIES
                               INTERFACE_INCLUDE_DIRECTORIES ${LIBLZMA_INCLUDE_DIR}
                               IMPORTED_LINK_INTERFACE_LANGUAGES C)
 
         if(LIBLZMA_LIBRARY_RELEASE)
-            set_property(TARGET LibLZMA::LibLZMA APPEND PROPERTY
+            set_property(TARGET liblzma::liblzma APPEND PROPERTY
                 IMPORTED_CONFIGURATIONS RELEASE)
-            set_target_properties(LibLZMA::LibLZMA PROPERTIES
+            set_target_properties(liblzma::liblzma PROPERTIES
                 IMPORTED_LOCATION_RELEASE "${LIBLZMA_LIBRARY_RELEASE}")
         endif()
 
         if(LIBLZMA_LIBRARY_DEBUG)
-            set_property(TARGET LibLZMA::LibLZMA APPEND PROPERTY
+            set_property(TARGET liblzma::liblzma APPEND PROPERTY
                 IMPORTED_CONFIGURATIONS DEBUG)
-            set_target_properties(LibLZMA::LibLZMA PROPERTIES
+            set_target_properties(liblzma::liblzma PROPERTIES
                 IMPORTED_LOCATION_DEBUG "${LIBLZMA_LIBRARY_DEBUG}")
         endif()
 
         if(NOT LIBLZMA_LIBRARY_RELEASE AND NOT LIBLZMA_LIBRARY_DEBUG)
-            set_target_properties(LibLZMA::LibLZMA PROPERTIES
+            set_target_properties(liblzma::liblzma PROPERTIES
                 IMPORTED_LOCATION "${LIBLZMA_LIBRARY}")
         endif()
     endif()

@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFRGBAIMAGE" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFRGBAImage \- read and decode an image into a raster
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFRGBAIMAGE" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFRGBAImage \- read and decode an image into a raster
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -74,7 +74,7 @@ characteristics: bits/sample, samples/pixel, photometric, etc.
 Decoding state is encapsulated in a \fI\%TIFFRGBAImage\fP
 structure making it possible to capture state for multiple images
 and quickly switch between them.
-The target raster format can be customized to a particular application’s
+The target raster format can be customized to a particular application\(aqs
 needs by installing custom routines that manipulate image data
 according to application requirements.
 .sp
@@ -131,7 +131,7 @@ possible data in the image have been requested.
 .sp
 To use the core support for reading and processing  TIFF images, but
 write the resulting raster data in a different format one need only
-override the “put methods” used to store raster data.
+override the \(dqput methods\(dq used to store raster data.
 These methods are are defined in the \fI\%TIFFRGBAImage\fP
 structure and initially setup by \fI\%TIFFRGBAImageBegin()\fP
 to point to routines that pack raster data in the default
@@ -185,7 +185,7 @@ variable \fBputContig\fP\&.)
 .sp
 The \fI\%TIFFRGBAImage()\fP routines support the most commonly
 encountered flavors of TIFF.  It is possible to extend this support by
-overriding the “get method” invoked by \fI\%TIFFRGBAImageGet()\fP
+overriding the \(dqget method\(dq invoked by \fI\%TIFFRGBAImageGet()\fP
 to read TIFF image data.
 Details of doing this are a bit involved, it is best to make a copy
 of an existing get method and modify it to suit the needs of an
@@ -207,21 +207,21 @@ Otherwise, 0 is returned if an error was encountered and
 .sp
 All error messages are directed to the \fI\%TIFFErrorExtR()\fP routine.
 .sp
-\fB"Sorry, can not handle %d\-bit pictures"\fP:
+\fB\(dqSorry, can not handle %d\-bit pictures\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image had \fBBitsPerSample\fP other than 1, 2, 4, 8, or 16.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Sorry, can not handle %d\-channel images"\fP:
+\fB\(dqSorry, can not handle %d\-channel images\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image had \fBSamplesPerPixel\fP other than 1, 3, or 4.
 .UNINDENT
 .UNINDENT
 .sp
-\fBMissing needed "PhotometricInterpretation" tag\fP:
+\fBMissing needed \(dqPhotometricInterpretation\(dq tag\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image did not have a tag that describes how to display
@@ -229,7 +229,7 @@ the data.
 .UNINDENT
 .UNINDENT
 .sp
-\fBNo "PhotometricInterpretation" tag, assuming RGB\fP:
+\fBNo \(dqPhotometricInterpretation\(dq tag, assuming RGB\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image was missing a tag that describes how to display it,
@@ -238,7 +238,7 @@ RGB.
 .UNINDENT
 .UNINDENT
 .sp
-\fBNo "PhotometricInterpretation" tag, assuming min\-is\-black\fP:
+\fBNo \(dqPhotometricInterpretation\(dq tag, assuming min\-is\-black\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image was missing a tag that describes how to display it,
@@ -247,7 +247,7 @@ or bilevel image.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for photometric conversion table"\fP:
+\fB\(dqNo space for photometric conversion table\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory for a table used to convert
@@ -255,28 +255,28 @@ image samples to 8\-bit RGB.
 .UNINDENT
 .UNINDENT
 .sp
-\fBMissing required "Colormap" tag\fP:
+\fBMissing required \(dqColormap\(dq tag\fP:
 .INDENT 0.0
 .INDENT 3.5
 A Palette image did not have a required \fBColormap\fP tag.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for tile buffer"\fP:
+\fB\(dqNo space for tile buffer\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory to allocate an i/o buffer.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for strip buffer"\fP:
+\fB\(dqNo space for strip buffer\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory to allocate an i/o buffer.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Can not handle format"\fP:
+\fB\(dqCan not handle format\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image has a format (combination of \fBBitsPerSample\fP,
@@ -285,7 +285,7 @@ that can not be handled.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for B&W mapping table"\fP:
+\fB\(dqNo space for B&W mapping table\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory to allocate a table used to map
@@ -293,7 +293,7 @@ grayscale data to RGB.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for Palette mapping table"\fP:
+\fB\(dqNo space for Palette mapping table\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory to allocate a table used to map

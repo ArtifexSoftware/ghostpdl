@@ -189,11 +189,9 @@ as possible in two files: :file:`tiffcomp.h` and
 operating system-specific routines to do I/O and I/O-related operations.
 The UNIX (:file:`tif_unix.c`) code has had the most use.
 
-Native CPU byte order is determined on the fly by
-the library and does not need to be specified.
-The :c:macro:`HOST_FILLORDER` and :c:macro:`HOST_BIGENDIAN`
-definitions are not currently used, but may be employed by
-codecs for optimization purposes.
+Native CPU byte order is determined through the :c:macro:`WORDS_BIGENDIAN`
+definition, which must be set to the appropriate value in :file:`tif_config.h`
+by the build system.
 
 The following defines control general portability:
 

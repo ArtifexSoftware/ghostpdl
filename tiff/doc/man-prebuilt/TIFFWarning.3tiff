@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFWARNING" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFWarning \- library warning interface
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFWARNING" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFWarning \- library warning interface
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -115,7 +115,7 @@ warning handler can be given along.
 Both functions \fI\%TIFFWarning()\fP and \fI\%TIFFWarningExt()\fP
 each attempt to call both handler functions if they are defined.
 First \fI\%TIFFWarningHandler()\fP is called and then \fI\%TIFFWarningHandlerExt()\fP\&.
-However, \fI\%TIFFWarning()\fP passes a “0” as a file handle to
+However, \fI\%TIFFWarning()\fP passes a \(dq0\(dq as a file handle to
 \fI\%TIFFWarningHandlerExt()\fP\&.
 .sp
 \fI\%TIFFWarningExtR()\fP tries first to call the per\-TIFF handle defined
@@ -128,7 +128,7 @@ within the \fBlibtiff\fP library.
 \fI\%TIFFSetWarningHandler()\fP and \fI\%TIFFSetWarningHandlerExt()\fP
 returns a reference to the previous warning handler function.
 .sp
-\fI\%TIFFWarningHandlerExtR()\fP returns an integer as “stop” to control the call
+\fI\%TIFFWarningHandlerExtR()\fP returns an integer as \(dqstop\(dq to control the call
 of furhter warning handler functions within \fI\%TIFFWarningExtR()\fP:
 .INDENT 0.0
 .INDENT 3.5

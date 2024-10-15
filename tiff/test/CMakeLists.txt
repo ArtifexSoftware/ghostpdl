@@ -46,7 +46,10 @@ set(TIFFIMAGES
     images/rgb-3c-8b.tiff
     images/quad-lzw-compat.tiff
     images/lzw-single-strip.tiff
-    images/testfax4.tiff)
+    images/testfax4.tiff
+    images/testfax3_bug_513.tiff
+    images/32bpp-None.tiff
+)
 # TIFF images using old-jpeg.  Unused unless JPEG support is enabled.
 set(TIFFIMAGES_OJPEG)
 
@@ -91,6 +94,7 @@ set(UNCOMPRESSEDIMAGES
 set(IMAGES_EXTRA_DIST
     images/README.txt
     images/miniswhite-1c-1b.g3
+    images/32bpp-None-jpeg.tiff
     ${BMPIMAGES}
     ${GIFIMAGES}
     ${PNMIMAGES}
@@ -100,6 +104,7 @@ set(noinst_HEADERS tifftest.h)
 
 set(simple_tests)
 
+# Test programs
 add_executable(test_signed_tags ../placeholder.h)
 target_sources(test_signed_tags PRIVATE test_signed_tags.c)
 target_link_libraries(test_signed_tags PRIVATE tiff tiff_port)
@@ -148,6 +153,16 @@ if(NOT BUILD_SHARED_LIBS)
   target_sources(rational_precision2double PRIVATE rational_precision2double.c)
   target_link_libraries(rational_precision2double PRIVATE tiff tiff_port)
   list(APPEND simple_tests rational_precision2double)
+  
+  add_executable(test_write_read_tags ../placeholder.h)
+  target_sources(test_write_read_tags PRIVATE test_write_read_tags.c)
+  target_link_libraries(test_write_read_tags PRIVATE tiff)
+  list(APPEND simple_tests test_write_read_tags)
+  
+  add_executable(test_transferfunction_write_read ../placeholder.h)
+  target_sources(test_transferfunction_write_read PRIVATE test_transferfunction_write_read.c)
+  target_link_libraries(test_transferfunction_write_read PRIVATE tiff)
+  list(APPEND simple_tests test_transferfunction_write_read)
 endif()
 
 add_executable(custom_dir_EXIF_231 ../placeholder.h)
@@ -169,6 +184,11 @@ add_executable(test_directory ../placeholder.h)
 target_sources(test_directory PRIVATE test_directory.c)
 target_link_libraries(test_directory PRIVATE tiff tiff_port)
 list(APPEND simple_tests test_directory)
+
+add_executable(test_IFD_enlargement ../placeholder.h)
+target_sources(test_IFD_enlargement PRIVATE test_IFD_enlargement.c)
+target_link_libraries(test_IFD_enlargement PRIVATE tiff tiff_port)
+list(APPEND simple_tests test_IFD_enlargement)
 
 add_executable(testtypes ../placeholder.h)
 target_sources(testtypes PRIVATE testtypes.c)
@@ -214,11 +234,14 @@ endif()
 set(TEST_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/output")
 file(MAKE_DIRECTORY "${TEST_OUTPUT}")
 
-set(tiff_test_extra_args
-    "-DTIFFCP=$<TARGET_FILE:tiffcp>"
-    "-DTIFFINFO=$<TARGET_FILE:tiffinfo>"
-    "-DTIFFSPLIT=$<TARGET_FILE:tiffsplit>"
-    "-DLIBTIFF=$<TARGET_FILE:tiff>")
+set(tiff_test_extra_args "-DLIBTIFF=$<TARGET_FILE:tiff>")
+
+if(tiff-tools)
+  list(APPEND tiff_test_extra_args "-DTIFFCP=$<TARGET_FILE:tiffcp>")
+  list(APPEND tiff_test_extra_args "-DTIFFINFO=$<TARGET_FILE:tiffinfo>")
+  list(APPEND tiff_test_extra_args "-DTIFFSPLIT=$<TARGET_FILE:tiffsplit>")
+endif()
+
 if(WIN32)
   list(APPEND tiff_test_extra_args "-DWIN32=${WIN32}")
 endif()
@@ -270,6 +293,39 @@ function(tiff_test_reader name command infile)
            "-DINFILE=${infile}"
            ${tiff_test_extra_args}
            -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffTest.cmake")
+endfunction()
+
+function(add_convert_test_multi_out_in commandname1 commandname2 commandname3
+      categoryname commandargs1 commandargs2 commandargs3
+      image validate)
+  string(REPLACE " " "^" escaped_commandargs1 "${commandargs1}")
+  string(REPLACE " " "^" escaped_commandargs2 "${commandargs2}")
+  string(REPLACE " " "^" escaped_commandargs3 "${commandargs3}")
+  get_filename_component(name "${image}" NAME)
+  get_filename_component(base "${image}" NAME_WE)
+  set(testname "${commandname1}-${categoryname}-${base}")
+  if(commandname1)
+    set(command1
+        "$<TARGET_FILE:${commandname1}>^${escaped_commandargs1}")
+  else()
+    set(command1)
+  endif()
+  if(commandname2)
+    set(command2
+        "$<TARGET_FILE:${commandname2}>^${escaped_commandargs2}")
+  else()
+    set(command2)
+  endif()
+  if(commandname3)
+    set(command3
+        "$<TARGET_FILE:${commandname3}>^${escaped_commandargs3}")
+  else()
+    set(command3)
+  endif()
+  set(infile "${TEST_OUTPUT}/${image}")
+  set(outfile "${TEST_OUTPUT}/${commandname1}-${categoryname}-${base}.tiff")
+  tiff_test_convert("${testname}" "${command1}" "${command2}" "${command3}"
+                    "${infile}" "${outfile}" "${validate}")
 endfunction()
 
 function(add_convert_test_multi commandname1 commandname2 commandname3
@@ -359,79 +415,101 @@ foreach(target IN LISTS simple_tests)
   tiff_test_stdout_noargs("${target}" "${target}")
 endforeach()
 
+if(tiff-tools)
+  # PPM
+  add_convert_test(ppm2tiff miniswhite "" "images/miniswhite-1c-1b.pbm" TRUE)
+  add_convert_test(ppm2tiff minisblack "" "images/minisblack-1c-8b.pgm" TRUE)
+  add_convert_test(ppm2tiff rgb        "" "images/rgb-3c-16b.ppm"       TRUE)
+  add_convert_test(ppm2tiff rgb        "" "images/rgb-3c-8b.ppm"        TRUE)
 
-# PPM
-add_convert_test(ppm2tiff miniswhite "" "images/miniswhite-1c-1b.pbm" TRUE)
-add_convert_test(ppm2tiff minisblack "" "images/minisblack-1c-8b.pgm" TRUE)
-add_convert_test(ppm2tiff rgb        "" "images/rgb-3c-16b.ppm"       TRUE)
-add_convert_test(ppm2tiff rgb        "" "images/rgb-3c-8b.ppm"        TRUE)
+  # tiffcp
+  # Reading / writing TIFF images with different encoding schemes.
+  add_convert_tests(tiffcp TIFFIMG    ""                         TIFFIMAGES TRUE)
 
-# tiffcp
-add_convert_test(tiffcp   g3         "-c g3"         "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g31d       "-c g3:1d"      "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g31dfill   "-c g3:1d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g32d       "-c g3:2d"      "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g32dfill   "-c g3:2d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test(tiffcp   g4         "-c g4"         "images/miniswhite-1c-1b.tiff" FALSE)
-add_convert_test_multi(tiffcp tiffcp "" logluv "-c none" "-c sgilog" ""
-                       "images/logluv-3c-16b.tiff"    FALSE)
-add_convert_test_multi(tiffcp thumbnail "" thumbnail "-c g3:1d" "" ""
-                       "images/miniswhite-1c-1b.tiff"    FALSE)
-add_convert_test(tiffcp   none       "-c none"       "images/quad-lzw-compat.tiff" FALSE)
-add_convert_test(tiffcp   noner1     "-c none -r 1"  "images/lzw-single-strip.tiff" FALSE)
-add_convert_test(tiffcp   float64_lzw_2_le "-c lzw:2"       "images/test_float64_predictor2_le_lzw.tif" FALSE)
-add_convert_test(tiffcp   float64_lzw_2_be "-c lzw:2"       "images/test_float64_predictor2_be_lzw.tif" FALSE)
+  # Convert some images to another coding scheme.
+  add_convert_test(tiffcp   g3         "-c g3"         "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g31d       "-c g3:1d"      "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g31dfill   "-c g3:1d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g32d       "-c g3:2d"      "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g32dfill   "-c g3:2d:fill" "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test(tiffcp   g4         "-c g4"         "images/miniswhite-1c-1b.tiff" FALSE)
+  add_convert_test_multi(tiffcp tiffcp "" logluv "-c none" "-c sgilog" ""
+                         "images/logluv-3c-16b.tiff"    FALSE)
+  add_convert_test_multi(tiffcp thumbnail "" thumbnail "-c g3:1d" "" ""
+                         "images/miniswhite-1c-1b.tiff"    FALSE)
+  add_convert_test(tiffcp   none       "-c none"       "images/quad-lzw-compat.tiff" FALSE)
+  add_convert_test(tiffcp   noner1     "-c none -r 1"  "images/lzw-single-strip.tiff" FALSE)
+  add_convert_test(tiffcp   float64_lzw_2_le "-c lzw:2"       "images/test_float64_predictor2_le_lzw.tif" FALSE)
+  add_convert_test(tiffcp   float64_lzw_2_be "-c lzw:2"       "images/test_float64_predictor2_be_lzw.tif" FALSE)
+  if(WEBP_SUPPORT)
+    add_convert_test(tiffcp   webp_lossless_rgba_alpha_fully_opaque "-c none"    "images/webp_lossless_rgba_alpha_fully_opaque.tif" FALSE)
+  endif()
+  
+  add_convert_test(tiff2rgba 32BPP    "-B 255 -n"     "images/32bpp-None.tiff" TRUE)
+  if(JPEG_SUPPORT)
+    add_convert_test(tiffcp 32BPP-JPEG "-c jpeg"      "images/32bpp-None-jpeg.tiff" TRUE)
+  endif()
 
-# tiffdump
-add_reader_test(tiffdump "" "images/miniswhite-1c-1b.tiff")
+  if(JBIG_SUPPORT)
+    add_convert_test(tiffcp   jbig         "-c jbig"         "images/lzw-single-strip.tiff" TRUE)
+  endif()
+  
+  # Old-JPEG tests
+  #--- tiffcp does not support subsampled images, as the OldJPEG ones are ---
+  #    ToDo: a test for OldJPEG is missing.
+  #add_convert_tests(test_tiffcp OldJPEG    ""                         TIFFIMAGES_OJPEG TRUE)
 
-# tiffinfo
-add_reader_test(tiffinfo "-c -D -d -j -s" "images/custom_dir_EXIF_GPS.tiff")
-add_reader_test(tiffinfo "-c -D -d -j -s" "images/minisblack-1c-16b.tiff")
-add_reader_test(tiffinfo " " "images/tiff_with_subifd_chain.tif")
+  # tiffdump
+  add_reader_test(tiffdump "" "images/miniswhite-1c-1b.tiff")
 
-# tiffcp split/join
-foreach(image ${UNCOMPRESSEDIMAGES})
-  list(APPEND ESCAPED_UNCOMPRESSED "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
-endforeach()
-string(REPLACE ";" "^" ESCAPED_UNCOMPRESSED "${ESCAPED_UNCOMPRESSED}")
-add_test(NAME "tiffcp-split"
-         COMMAND "${CMAKE_COMMAND}"
-         "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
-         "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-conjoined.tiff"
-         "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-split-"
-         ${tiff_test_extra_args}
-         -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
-add_test(NAME "tiffcp-split-join"
-         COMMAND "${CMAKE_COMMAND}"
-         "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
-         "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-join-conjoined.tiff"
-         "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-join-split-"
-         "-DRECONJOINED=${TEST_OUTPUT}/tiffcp-split-join-reconjoined.tiff"
-         ${tiff_test_extra_args}
-         -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
+  # tiffinfo
+  add_reader_test(tiffinfo "-c -D -d -j -s" "images/custom_dir_EXIF_GPS.tiff")
+  add_reader_test(tiffinfo "-c -D -d -j -s" "images/minisblack-1c-16b.tiff")
+  add_reader_test(tiffinfo " " "images/tiff_with_subifd_chain.tif")
 
-# PDF
-add_stdout_test(tiff2pdf "" "" "images/miniswhite-1c-1b.tiff" TRUE)
+  # tiffcp split/join
+  foreach(image ${UNCOMPRESSEDIMAGES})
+    list(APPEND ESCAPED_UNCOMPRESSED "${CMAKE_CURRENT_SOURCE_DIR}/${image}")
+  endforeach()
+  string(REPLACE ";" "^" ESCAPED_UNCOMPRESSED "${ESCAPED_UNCOMPRESSED}")
+  add_test(NAME "tiffcp-split"
+           COMMAND "${CMAKE_COMMAND}"
+           "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
+           "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-conjoined.tiff"
+           "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-split-"
+           ${tiff_test_extra_args}
+           -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
+  add_test(NAME "tiffcp-split-join"
+           COMMAND "${CMAKE_COMMAND}"
+           "-DTESTFILES=${ESCAPED_UNCOMPRESSED}"
+           "-DCONJOINED=${TEST_OUTPUT}/tiffcp-split-join-conjoined.tiff"
+           "-DSPLITFILE=${TEST_OUTPUT}/tiffcp-split-join-split-"
+           "-DRECONJOINED=${TEST_OUTPUT}/tiffcp-split-join-reconjoined.tiff"
+           ${tiff_test_extra_args}
+           -P "${CMAKE_CURRENT_SOURCE_DIR}/TiffSplitTest.cmake")
 
-# PS
-add_stdout_test(tiff2ps "ps-1" "-a -p -1" "images/miniswhite-1c-1b.tiff" TRUE)
-add_stdout_test(tiff2ps "ps-2" "-a -p -2" "images/miniswhite-1c-1b.tiff" TRUE)
-add_stdout_test(tiff2ps "ps-3" "-a -p -3" "images/miniswhite-1c-1b.tiff" TRUE)
-add_stdout_test(tiff2ps "eps-1" "-e -1" "images/miniswhite-1c-1b.tiff" TRUE)
+  # PDF
+  add_stdout_test(tiff2pdf "" "" "images/miniswhite-1c-1b.tiff" TRUE)
 
-# BW
-add_convert_tests(tiff2bw default      ""                         RGBIMAGES TRUE)
+  # PS
+  add_stdout_test(tiff2ps "ps-1" "-a -p -1" "images/miniswhite-1c-1b.tiff" TRUE)
+  add_stdout_test(tiff2ps "ps-2" "-a -p -2" "images/miniswhite-1c-1b.tiff" TRUE)
+  add_stdout_test(tiff2ps "ps-3" "-a -p -3" "images/miniswhite-1c-1b.tiff" TRUE)
+  add_stdout_test(tiff2ps "eps-1" "-e -1" "images/miniswhite-1c-1b.tiff" TRUE)
 
-# RGBA
-add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES TRUE)
-# RGBA (old-jpeg)
-add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES_OJPEG TRUE)
-# Test rotations
-add_convert_tests(tiffcrop  R90        "-R90"                     TIFFIMAGES TRUE)
-# Test flip (mirror)
-add_convert_tests(tiffcrop  doubleflip "-F both"                  TIFFIMAGES TRUE)
-# Test extracting a section 60 pixels wide and 60 pixels high
-add_convert_tests(tiffcrop  extract    "-U px -E top -X 60 -Y 60" TIFFIMAGES TRUE)
-# Test extracting the first and fourth quarters from the left side.
-add_convert_tests(tiffcrop  extractz14 "-E left -Z1:4,2:4"        TIFFIMAGES TRUE)
+  # BW
+  add_convert_tests(tiff2bw default      ""                         RGBIMAGES TRUE)
+
+  # RGBA
+  add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES TRUE)
+  # RGBA (old-jpeg)
+  add_convert_tests(tiff2rgba default    ""                         TIFFIMAGES_OJPEG TRUE)
+  # Test rotations
+  add_convert_tests(tiffcrop  R90        "-R90"                     TIFFIMAGES TRUE)
+  # Test flip (mirror)
+  add_convert_tests(tiffcrop  doubleflip "-F both"                  TIFFIMAGES TRUE)
+  # Test extracting a section 60 pixels wide and 60 pixels high
+  add_convert_tests(tiffcrop  extract    "-U px -E top -X 60 -Y 60" TIFFIMAGES TRUE)
+  # Test extracting the first and fourth quarters from the left side.
+  add_convert_tests(tiffcrop  extractz14 "-E left -Z1:4,2:4"        TIFFIMAGES TRUE)
+endif()

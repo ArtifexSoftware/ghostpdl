@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Changes in TIFF v3.4beta018 &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Changes in TIFF v3.4beta018 &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Changes in TIFF v3.4beta016" href="v3.4beta016.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="v3.4beta024.html" title="Changes in TIFF v3.4beta024"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >Release history</a> &#187;</li>
           <li class="nav-item nav-item-2"><a href="historical.html" accesskey="U">Old release history</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Changes in TIFF v3.4beta018</a></li> 
@@ -43,9 +40,9 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="changes-in-tiff-v3-4beta018">
+  <section id="changes-in-tiff-v3-4beta018">
 <h1>Changes in TIFF v3.4beta018<a class="headerlink" href="#changes-in-tiff-v3-4beta018" title="Permalink to this heading">¶</a></h1>
-<table class="colwidths-auto docutils align-default" id="id1">
+<table class="docutils align-default" id="id1">
 <caption><span class="caption-text">References</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
 <tbody>
 <tr class="row-odd"><td><p>Current Version</p></td>
@@ -61,10 +58,10 @@
 </table>
 <p>This document describes the changes made to the software between the
 <em>previous</em> and <em>current</em> versions (see above).
-If you don’t find something listed here, then it was not done in this
+If you don't find something listed here, then it was not done in this
 timeframe, or it was not considered important enough to be mentioned.
 The following information is located here:</p>
-<div class="section" id="software-configuration-changes">
+<section id="software-configuration-changes">
 <h2>Software configuration changes<a class="headerlink" href="#software-configuration-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>configure now recognizes IRIX 6.x systems</p></li>
@@ -74,8 +71,8 @@ HP/UX with the native C compiler</p></li>
 <li><p>configure now correctly recognizes memory-mapped files are supported
 under AIX</p></li>
 </ul>
-</div>
-<div class="section" id="library-changes">
+</section>
+<section id="library-changes">
 <h2>Library changes<a class="headerlink" href="#library-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">make</span> <span class="pre">install</span></code> now properly installs the include files</p></li>
@@ -86,18 +83,18 @@ the image/tile width</p></li>
 gcc-specific bounds checking software</p></li>
 <li><p>miscellaneous fixes to <a class="reference internal" href="../functions/TIFFPrintDirectory.html#c.TIFFPrintDirectory" title="TIFFPrintDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFPrintDirectory()</span></code></a></p></li>
 <li><p>bug fix to correct a problem where <a class="reference internal" href="../functions/TIFFWriteRawStrip.html#c.TIFFWriteRawStrip" title="TIFFWriteRawStrip"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFWriteRawStrip()</span></code></a>
-could not be used to automatically grow an image’s length</p></li>
+could not be used to automatically grow an image's length</p></li>
 </ul>
-</div>
-<div class="section" id="tools-changes">
+</section>
+<section id="tools-changes">
 <h2>Tools changes<a class="headerlink" href="#tools-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>fixes from Frank Cringle to update <strong class="program">fax2tiff</strong></p></li>
 <li><p>portability fixes to <strong class="program">tiff2bw</strong> and <strong class="program">tiffcmp</strong></p></li>
 <li><p><strong class="program">tiffdump</strong> now uses the byte swapping routines in the library</p></li>
 </ul>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -161,15 +158,15 @@ could not be used to automatically grow an image’s length</p></li>
         <li class="right" >
           <a href="v3.4beta024.html" title="Changes in TIFF v3.4beta024"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >Release history</a> &#187;</li>
           <li class="nav-item nav-item-2"><a href="historical.html" >Old release history</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Changes in TIFF v3.4beta018</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

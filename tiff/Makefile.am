@@ -25,7 +25,7 @@
 
 docdir = $(LIBTIFF_DOCDIR)
 
-AUTOMAKE_OPTIONS = 1.12 dist-zip foreign
+AUTOMAKE_OPTIONS = 1.11 dist-zip foreign
 ACLOCAL_AMFLAGS = -I m4
 
 docfiles = \
@@ -62,10 +62,14 @@ distcheck-hook:
 
 SUBDIRS = port libtiff tools build contrib test doc
 
+
+NEW_LIBTIFF_RELEASE_DATE=$(shell date +"%Y%m%d")
+
 release:
-	(rm -f $(top_srcdir)/RELEASE-DATE && echo $(LIBTIFF_RELEASE_DATE) > $(top_srcdir)/RELEASE-DATE)
+	@(echo --- Setting release date to $(NEW_LIBTIFF_RELEASE_DATE) and release version to $(LIBTIFF_VERSION) ---)
+	(rm -f $(top_srcdir)/RELEASE-DATE && echo $(NEW_LIBTIFF_RELEASE_DATE) > $(top_srcdir)/RELEASE-DATE)
 	(rm -f $(top_srcdir)/VERSION && echo $(LIBTIFF_VERSION) > $(top_srcdir)/VERSION)
-	(rm -f $(top_srcdir)/libtiff/tiffvers.h && sed 's,LIBTIFF_VERSION,$(LIBTIFF_VERSION),;s,LIBTIFF_RELEASE_DATE,$(LIBTIFF_RELEASE_DATE),;s,LIBTIFF_MAJOR_VERSION,$(LIBTIFF_MAJOR_VERSION),;s,LIBTIFF_MINOR_VERSION,$(LIBTIFF_MINOR_VERSION),;s,LIBTIFF_MICRO_VERSION,$(LIBTIFF_MICRO_VERSION),' $(top_srcdir)/libtiff/tiffvers.h.in > $(top_srcdir)/libtiff/tiffvers.h)
+	(rm -f $(top_builddir)/libtiff/tiffvers.h && sed 's,LIBTIFF_VERSION,$(LIBTIFF_VERSION),;s,LIBTIFF_RELEASE_DATE,$(NEW_LIBTIFF_RELEASE_DATE),;s,LIBTIFF_MAJOR_VERSION,$(LIBTIFF_MAJOR_VERSION),;s,LIBTIFF_MINOR_VERSION,$(LIBTIFF_MINOR_VERSION),;s,LIBTIFF_MICRO_VERSION,$(LIBTIFF_MICRO_VERSION),' $(top_srcdir)/libtiff/tiffvers.h.in > $(top_builddir)/libtiff/tiffvers.h && sed -i 's,@,,g' $(top_builddir)/libtiff/tiffvers.h)
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libtiff-4.pc

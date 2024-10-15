@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFFIELDWRITECOUNT" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFFieldWriteCount \- get number of values to be written to field
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFFIELDWRITECOUNT" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFFieldWriteCount \- get number of values to be written to field
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -63,7 +63,7 @@ modern machines, this makes no practical difference, and the \fIcount\fP
 argument can simply be an int in either case.)
 .IP \(bu 2
 \fBTIFF_SPP\fP indicates that the number of arguments must be equal
-to the image’s number of samples per pixel.
+to the image\(aqs number of samples per pixel.
 .UNINDENT
 .sp
 \fIfip\fP is a field information pointer previously returned by
@@ -77,6 +77,12 @@ For most field types, \fI\%TIFFFieldWriteCount()\fP returns the same value as
 \fI\%TIFFFieldWriteCount()\fP returns an integer.
 .SH SEE ALSO
 .sp
+\fI\%TIFFFieldDataType\fP (3tiff),
+\fI\%TIFFFieldName\fP (3tiff),
+\fI\%TIFFFieldPassCount\fP (3tiff),
+\fI\%TIFFFieldQuery\fP (3tiff),
+\fI\%TIFFFieldReadCount\fP (3tiff),
+\fI\%TIFFFieldTag\fP (3tiff),
 \fI\%libtiff\fP (3tiff)
 .SH AUTHOR
 LibTIFF contributors

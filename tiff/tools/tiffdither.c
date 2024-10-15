@@ -273,17 +273,22 @@ int main(int argc, char *argv[])
     if (samplesperpixel != 1)
     {
         fprintf(stderr, "%s: Not a b&w image.\n", argv[0]);
+        TIFFClose(in);
         return (EXIT_FAILURE);
     }
     TIFFGetField(in, TIFFTAG_BITSPERSAMPLE, &bitspersample);
     if (bitspersample != 8)
     {
         fprintf(stderr, " %s: Sorry, only handle 8-bit samples.\n", argv[0]);
+        TIFFClose(in);
         return (EXIT_FAILURE);
     }
     out = TIFFOpen(argv[optind + 1], "w");
     if (out == NULL)
+    {
+        TIFFClose(in);
         return (EXIT_FAILURE);
+    }
     CopyField(TIFFTAG_IMAGEWIDTH, imagewidth);
     TIFFGetField(in, TIFFTAG_IMAGELENGTH, &imagelength);
     TIFFSetField(out, TIFFTAG_IMAGELENGTH, imagelength - 1);

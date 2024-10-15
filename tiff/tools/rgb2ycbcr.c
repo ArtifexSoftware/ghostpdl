@@ -273,7 +273,7 @@ static int cvtRaster(TIFF *tif, uint32_t *raster, uint32_t width,
     uint32_t nrows = (rowsperstrip > rheight ? rheight : rowsperstrip);
     uint32_t rnrows = roundup(nrows, vertSubSampling);
 
-    cc = rnrows * rwidth +
+    cc = (tsize_t)rnrows * rwidth +
          2 * ((rnrows * rwidth) / (horizSubSampling * vertSubSampling));
     buf = (unsigned char *)_TIFFmalloc(cc);
     // FIXME unchecked malloc
@@ -282,7 +282,7 @@ static int cvtRaster(TIFF *tif, uint32_t *raster, uint32_t width,
         uint32_t nr = (y > nrows ? nrows : y);
         cvtStrip(buf, raster + (y - 1) * width, nr, width);
         nr = roundup(nr, vertSubSampling);
-        acc = nr * rwidth +
+        acc = (tsize_t)nr * rwidth +
               2 * ((nr * rwidth) / (horizSubSampling * vertSubSampling));
         if (!TIFFWriteEncodedStrip(tif, strip++, buf, acc))
         {

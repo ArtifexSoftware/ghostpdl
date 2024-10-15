@@ -379,6 +379,39 @@ tsize_t t2p_write_pdf_trailer(T2P *, TIFF *);
             (t2p)->t2p_error = T2P_ERR_ERROR;                                  \
     } while (0)
 
+/* Avoid Coverity issues: Don't add negative error return values to counter of
+ * written bytes. */
+#define add_t2pWriteFile_check(tiff, data, size, modulename, addwrittento)     \
+    do                                                                         \
+    {                                                                          \
+        tmsize_t retwritevalue = t2pWriteFile(tiff, data, size);               \
+        if (retwritevalue < 0)                                                 \
+        {                                                                      \
+            TIFFError(TIFF2PDF_MODULE, "%s", modulename);                      \
+            t2p->t2p_error = T2P_ERR_ERROR;                                    \
+        }                                                                      \
+        else                                                                   \
+        {                                                                      \
+            addwrittento += retwritevalue;                                     \
+        }                                                                      \
+    } while (0)
+
+/* A second macro(with suffix "_2") is necessary because in some subroutines
+ * the parameter "t2p" is not available. */
+#define add_t2pWriteFile_check_2(tiff, data, size, modulename, addwrittento)   \
+    do                                                                         \
+    {                                                                          \
+        tmsize_t retwritevalue = t2pWriteFile(tiff, data, size);               \
+        if (retwritevalue < 0)                                                 \
+        {                                                                      \
+            TIFFError(TIFF2PDF_MODULE, "%s", modulename);                      \
+        }                                                                      \
+        else                                                                   \
+        {                                                                      \
+            addwrittento += retwritevalue;                                     \
+        }                                                                      \
+    } while (0)
+
 static void t2p_disable(TIFF *tif)
 {
     T2P *t2p = (T2P *)TIFFClientdata(tif);
@@ -583,7 +616,7 @@ printf	(-z: compress with Zip/Deflate (requires zlib configured with libtiff));
 #endif
     -q: compression quality
     -n: no compressed data passthrough
-    -d: do not compress (decompress)
+    -d: do not compress (decompress) - except monochrome to CCITT Group 4
     -i: invert colors
     -u: set distance unit, 'i' for inch, 'm' for centimeter
     -x: set x resolution default
@@ -902,7 +935,8 @@ static void usage_info(int code)
 #if defined(JPEG_SUPPORT) || defined(ZIP_SUPPORT)
         " -q: compression quality\n"
         " -n: no compressed data passthrough\n"
-        " -d: do not compress (decompress)\n"
+        " -d: do not compress (decompress) - except monochrome to CCITT Group "
+        "4\n"
 #endif
         " -i: invert colors\n"
         " -u: set distance unit, 'i' for inch, 'm' for centimeter\n"
@@ -1023,7 +1057,7 @@ T2P *t2p_init()
 
 void t2p_free(T2P *t2p)
 {
-    int i = 0;
+    unsigned int i = 0;
 
     if (t2p != NULL)
     {
@@ -2267,11 +2301,11 @@ void t2p_read_tiff_size(T2P *t2p, TIFF *input)
             for (i = 0; i < stripcount; i++)
             {
                 k = checkAdd64(k, sbc[i], t2p);
-                k -= 2; /* don't use EOI of strip */
-                k += 2; /* add space for restart marker */
+                /* Keep next two comments just for information: */
+                /* k -= 2; don't use EOI of strip */
+                /* k += 2; add space for restart marker */
             }
             k = checkAdd64(k, 2, t2p); /* use EOI of last strip */
-            k = checkAdd64(k, 6, t2p); /* for DRI marker of first strip */
             t2p_set_tiff_datasize(t2p, k);
             return;
         }
@@ -2485,6 +2519,8 @@ tsize_t t2p_readwrite_pdf_image(T2P *t2p, TIFF *input, TIFF *output)
     tsize_t striplength = 0;
     uint32_t max_striplength = 0;
 #endif /* ifdef JPEG_SUPPORT */
+    const char mod[] = "t2p_readwrite_pdf_image()";
+    tsize_t tsdummy = 0;
 
     /* Fail if prior error (in particular, can't trust tiff_datasize) */
     if (t2p->t2p_error != T2P_ERR_OK)
@@ -2522,7 +2558,8 @@ tsize_t t2p_readwrite_pdf_image(T2P *t2p, TIFF *input, TIFF *output)
                  */
                 TIFFReverseBits(buffer, t2p->tiff_datasize);
             }
-            t2pWriteFile(output, (tdata_t)buffer, t2p->tiff_datasize);
+            add_t2pWriteFile_check(output, (tdata_t)buffer, t2p->tiff_datasize,
+                                   mod, tsdummy);
             _TIFFfree(buffer);
             return (t2p->tiff_datasize);
         }
@@ -2552,7 +2589,8 @@ tsize_t t2p_readwrite_pdf_image(T2P *t2p, TIFF *input, TIFF *output)
             {
                 TIFFReverseBits(buffer, t2p->tiff_datasize);
             }
-            t2pWriteFile(output, (tdata_t)buffer, t2p->tiff_datasize);
+            add_t2pWriteFile_check(output, (tdata_t)buffer, t2p->tiff_datasize,
+                                   mod, tsdummy);
             _TIFFfree(buffer);
             return (t2p->tiff_datasize);
         }
@@ -2581,7 +2619,8 @@ tsize_t t2p_readwrite_pdf_image(T2P *t2p, TIFF *input, TIFF *output)
                     t2pSeekFile(input, t2p->tiff_dataoffset, SEEK_SET);
                     t2pReadFile(input, (tdata_t)buffer, t2p->tiff_datasize);
                     t2pSeekFile(input, inputoffset, SEEK_SET);
-                    t2pWriteFile(output, (tdata_t)buffer, t2p->tiff_datasize);
+                    add_t2pWriteFile_check(output, (tdata_t)buffer,
+                                           t2p->tiff_datasize, mod, tsdummy);
                     _TIFFfree(buffer);
                     return (t2p->tiff_datasize);
                 }
@@ -2609,18 +2648,28 @@ tsize_t t2p_readwrite_pdf_image(T2P *t2p, TIFF *input, TIFF *output)
                     stripcount = TIFFNumberOfStrips(input);
                     for (i = 0; i < stripcount; i++)
                     {
+                        tsize_t retTIFFReadRawStrip;
                         if (i != 0)
                         {
                             buffer[bufferoffset++] = 0xff;
                             buffer[bufferoffset++] = (0xd0 | ((i - 1) % 8));
                         }
-                        bufferoffset += TIFFReadRawStrip(
+                        retTIFFReadRawStrip = TIFFReadRawStrip(
                             input, i,
                             (tdata_t) &
                                 (((unsigned char *)buffer)[bufferoffset]),
                             -1);
+                        if (retTIFFReadRawStrip < 0)
+                        {
+                            TIFFError(TIFF2PDF_MODULE, "TIFFReadRawStrip()");
+                            _TIFFfree(buffer);
+                            t2p->t2p_error = T2P_ERR_ERROR;
+                            return (0);
+                        }
+                        bufferoffset += retTIFFReadRawStrip;
                     }
-                    t2pWriteFile(output, (tdata_t)buffer, bufferoffset);
+                    add_t2pWriteFile_check(output, (tdata_t)buffer,
+                                           bufferoffset, mod, tsdummy);
                     _TIFFfree(buffer);
                     return (bufferoffset);
                 }
@@ -2672,12 +2721,14 @@ tsize_t t2p_readwrite_pdf_image(T2P *t2p, TIFF *input, TIFF *output)
                     }
                     bufferoffset += retTIFFReadRawStrip;
                 }
-                t2pWriteFile(output, (tdata_t)buffer, bufferoffset);
+                add_t2pWriteFile_check(output, (tdata_t)buffer, bufferoffset,
+                                       mod, tsdummy);
                 if (!((buffer[bufferoffset - 1] == 0xd9) &&
                       (buffer[bufferoffset - 2] == 0xff)))
                 {
-                    t2pWriteFile(output, (tdata_t)jpeg_eof_marker,
-                                 sizeof(jpeg_eof_marker));
+                    add_t2pWriteFile_check(output, (tdata_t)jpeg_eof_marker,
+                                           sizeof(jpeg_eof_marker), mod,
+                                           tsdummy);
                 }
                 _TIFFfree(buffer);
                 return (bufferoffset);
@@ -2763,9 +2814,10 @@ tsize_t t2p_readwrite_pdf_image(T2P *t2p, TIFF *input, TIFF *output)
                     return (0);
                 }
             }
-            t2pWriteFile(output, (tdata_t)buffer, bufferoffset);
-            t2pWriteFile(output, (tdata_t)jpeg_eof_marker,
-                         sizeof(jpeg_eof_marker));
+            add_t2pWriteFile_check(output, (tdata_t)buffer, bufferoffset, mod,
+                                   tsdummy);
+            add_t2pWriteFile_check(output, (tdata_t)jpeg_eof_marker,
+                                   sizeof(jpeg_eof_marker), mod, tsdummy);
             _TIFFfree(stripbuffer);
             _TIFFfree(buffer);
             return (bufferoffset);
@@ -2985,7 +3037,7 @@ dataready:
     TIFFSetField(output, TIFFTAG_IMAGEWIDTH, t2p->tiff_width);
     TIFFSetField(output, TIFFTAG_IMAGELENGTH, t2p->tiff_length);
     TIFFSetField(output, TIFFTAG_ROWSPERSTRIP, t2p->tiff_length);
-    TIFFSetField(output, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(output, TIFFTAG_PLANARCONFIG, t2p->tiff_planar);
     TIFFSetField(output, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 
     switch (t2p->pdf_compression)
@@ -3142,6 +3194,8 @@ tsize_t t2p_readwrite_pdf_image_tile(T2P *t2p, TIFF *input, TIFF *output,
     float *xfloatp;
     uint32_t xuint32 = 0;
 #endif
+    const char mod[] = "t2p_readwrite_pdf_image_tile()";
+    tsize_t tsdummy = 0;
 
     /* Fail if prior error (in particular, can't trust tiff_datasize) */
     if (t2p->t2p_error != T2P_ERR_OK)
@@ -3184,7 +3238,8 @@ tsize_t t2p_readwrite_pdf_image_tile(T2P *t2p, TIFF *input, TIFF *output,
             {
                 TIFFReverseBits(buffer, t2p->tiff_datasize);
             }
-            t2pWriteFile(output, (tdata_t)buffer, t2p->tiff_datasize);
+            add_t2pWriteFile_check(output, (tdata_t)buffer, t2p->tiff_datasize,
+                                   mod, tsdummy);
             _TIFFfree(buffer);
             return (t2p->tiff_datasize);
         }
@@ -3216,7 +3271,8 @@ tsize_t t2p_readwrite_pdf_image_tile(T2P *t2p, TIFF *input, TIFF *output,
             {
                 TIFFReverseBits(buffer, t2p->tiff_datasize);
             }
-            t2pWriteFile(output, (tdata_t)buffer, t2p->tiff_datasize);
+            add_t2pWriteFile_check(output, (tdata_t)buffer, t2p->tiff_datasize,
+                                   mod, tsdummy);
             _TIFFfree(buffer);
             return (t2p->tiff_datasize);
         }
@@ -3284,9 +3340,10 @@ tsize_t t2p_readwrite_pdf_image_tile(T2P *t2p, TIFF *input, TIFF *output,
                 return (0);
             }
             bufferoffset += retTIFFReadRawTile;
-            t2pWriteFile(output, (tdata_t)buffer, bufferoffset);
-            t2pWriteFile(output, (tdata_t)jpeg_eof_marker,
-                         sizeof(jpeg_eof_marker));
+            add_t2pWriteFile_check(output, (tdata_t)buffer, bufferoffset, mod,
+                                   tsdummy);
+            add_t2pWriteFile_check(output, (tdata_t)jpeg_eof_marker,
+                                   sizeof(jpeg_eof_marker), mod, tsdummy);
             _TIFFfree(buffer);
             return (bufferoffset);
         }
@@ -3338,7 +3395,8 @@ tsize_t t2p_readwrite_pdf_image_tile(T2P *t2p, TIFF *input, TIFF *output,
                     buffer[xuint32 - 1] = table_end[1];
                 }
             }
-            t2pWriteFile(output, (tdata_t)buffer, bufferoffset);
+            add_t2pWriteFile_check(output, (tdata_t)buffer, bufferoffset, mod,
+                                   tsdummy);
             _TIFFfree(buffer);
             return (bufferoffset);
         }
@@ -3544,7 +3602,7 @@ tsize_t t2p_readwrite_pdf_image_tile(T2P *t2p, TIFF *input, TIFF *output,
         TIFFSetField(output, TIFFTAG_ROWSPERSTRIP,
                      t2p->tiff_tiles[t2p->pdf_page].tiles_edgetilelength);
     }
-    TIFFSetField(output, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(output, TIFFTAG_PLANARCONFIG, t2p->tiff_planar);
     TIFFSetField(output, TIFFTAG_FILLORDER, FILLORDER_MSB2LSB);
 
     switch (t2p->pdf_compression)
@@ -3953,7 +4011,6 @@ int t2p_process_jpeg_strip(unsigned char *strip, tsize_t *striplength,
     while (i < *striplength)
     {
         tsize_t datalen;
-        uint16_t ri;
         uint16_t v_samp;
         uint16_t h_samp;
         int j;
@@ -4016,25 +4073,10 @@ int t2p_process_jpeg_strip(unsigned char *strip, tsize_t *striplength,
                     }
                     v_samp *= 8;
                     h_samp *= 8;
-                    ri = (((((uint16_t)(buffer[*bufferoffset + 5]) << 8) |
-                            (uint16_t)(buffer[*bufferoffset + 6])) +
-                           v_samp - 1) /
-                          v_samp);
-                    ri *= (((((uint16_t)(buffer[*bufferoffset + 7]) << 8) |
-                             (uint16_t)(buffer[*bufferoffset + 8])) +
-                            h_samp - 1) /
-                           h_samp);
                     buffer[*bufferoffset + 5] =
                         (unsigned char)((height >> 8) & 0xff);
                     buffer[*bufferoffset + 6] = (unsigned char)(height & 0xff);
                     *bufferoffset += datalen + 2;
-                    /* insert a DRI marker */
-                    buffer[(*bufferoffset)++] = 0xff;
-                    buffer[(*bufferoffset)++] = 0xdd;
-                    buffer[(*bufferoffset)++] = 0x00;
-                    buffer[(*bufferoffset)++] = 0x04;
-                    buffer[(*bufferoffset)++] = (ri >> 8) & 0xff;
-                    buffer[(*bufferoffset)++] = ri & 0xff;
                 }
                 break;
             case 0xc4: /* DHT */
@@ -4248,9 +4290,9 @@ tsize_t t2p_sample_rgba_to_rgb(tdata_t data, uint32_t samplecount)
     {
         sample = ((uint32_t *)data)[i];
         alpha = (uint8_t)((255 - ((sample >> 24) & 0xff)));
-        ((uint8_t *)data)[i * 3] = (uint8_t)((sample >> 16) & 0xff) + alpha;
+        ((uint8_t *)data)[i * 3 + 2] = (uint8_t)((sample >> 16) & 0xff) + alpha;
         ((uint8_t *)data)[i * 3 + 1] = (uint8_t)((sample >> 8) & 0xff) + alpha;
-        ((uint8_t *)data)[i * 3 + 2] = (uint8_t)(sample & 0xff) + alpha;
+        ((uint8_t *)data)[i * 3] = (uint8_t)(sample & 0xff) + alpha;
     }
 
     return (i * 3);
@@ -4301,13 +4343,15 @@ tsize_t t2p_write_pdf_header(T2P *t2p, TIFF *output)
     tsize_t written = 0;
     char buffer[16];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_header()";
 
     buflen = snprintf(buffer, sizeof(buffer), "%%PDF-%" PRIu16 ".%" PRIu16 " ",
                       (uint16_t)(t2p->pdf_majorversion & 0xff),
                       (uint16_t)(t2p->pdf_minorversion & 0xff));
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "\n%\342\343\317\323\n", 7);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "\n%\342\343\317\323\n", 7, mod,
+                           written);
 
     return (written);
 }
@@ -4322,11 +4366,12 @@ tsize_t t2p_write_pdf_obj_start(uint32_t number, TIFF *output)
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_obj_start()";
 
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, number);
     check_snprintf_ret((T2P *)NULL, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " 0 obj\n", 7);
+    add_t2pWriteFile_check_2(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check_2(output, (tdata_t) " 0 obj\n", 7, mod, written);
 
     return (written);
 }
@@ -4340,7 +4385,8 @@ tsize_t t2p_write_pdf_obj_end(TIFF *output)
 
     tsize_t written = 0;
 
-    written += t2pWriteFile(output, (tdata_t) "endobj\n", 7);
+    add_t2pWriteFile_check_2(output, (tdata_t) "endobj\n", 7,
+                             "t2p_write_pdf_obj_end()", written);
 
     return (written);
 }
@@ -4357,27 +4403,28 @@ tsize_t t2p_write_pdf_name(const unsigned char *name, TIFF *output)
     char buffer[64];
     uint16_t nextchar = 0;
     size_t namelen = 0;
+    const char mod[] = "t2p_write_pdf_name()";
 
     namelen = strlen((char *)name);
     if (namelen > 126)
     {
         namelen = 126;
     }
-    written += t2pWriteFile(output, (tdata_t) "/", 1);
+    add_t2pWriteFile_check_2(output, (tdata_t) "/", 1, mod, written);
     for (i = 0; i < namelen; i++)
     {
         if (((unsigned char)name[i]) < 0x21)
         {
             snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
             buffer[sizeof(buffer) - 1] = '\0';
-            written += t2pWriteFile(output, (tdata_t)buffer, 3);
+            add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod, written);
             nextchar = 1;
         }
         if (((unsigned char)name[i]) > 0x7E)
         {
             snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
             buffer[sizeof(buffer) - 1] = '\0';
-            written += t2pWriteFile(output, (tdata_t)buffer, 3);
+            add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod, written);
             nextchar = 1;
         }
         if (nextchar == 0)
@@ -4387,65 +4434,77 @@ tsize_t t2p_write_pdf_name(const unsigned char *name, TIFF *output)
                 case 0x23:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x25:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x28:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x29:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x2F:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x3C:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x3E:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x5B:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x5D:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x7B:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 case 0x7D:
                     snprintf(buffer, sizeof(buffer), "#%.2X", name[i]);
                     buffer[sizeof(buffer) - 1] = '\0';
-                    written += t2pWriteFile(output, (tdata_t)buffer, 3);
+                    add_t2pWriteFile_check_2(output, (tdata_t)buffer, 3, mod,
+                                             written);
                     break;
                 default:
-                    written += t2pWriteFile(output, (tdata_t)&name[i], 1);
+                    add_t2pWriteFile_check_2(output, (tdata_t)&name[i], 1, mod,
+                                             written);
             }
         }
         nextchar = 0;
     }
-    written += t2pWriteFile(output, (tdata_t) " ", 1);
+    add_t2pWriteFile_check_2(output, (tdata_t) " ", 1, mod, written);
 
     return (written);
 }
@@ -4460,21 +4519,23 @@ tsize_t t2p_write_pdf_string(const char *pdfstr, TIFF *output)
     uint32_t i = 0;
     char buffer[64];
     size_t len = 0;
+    const char mod[] = "t2p_write_pdf_string()";
 
     len = strlen(pdfstr);
-    written += t2pWriteFile(output, (tdata_t) "(", 1);
+    add_t2pWriteFile_check_2(output, (tdata_t) "(", 1, mod, written);
     for (i = 0; i < len; i++)
     {
         if ((pdfstr[i] & 0x80) || (pdfstr[i] == 127) || (pdfstr[i] < 32))
         {
             snprintf(buffer, sizeof(buffer), "\\%.3o",
                      ((unsigned char)pdfstr[i]));
-            written += t2pWriteFile(output, (tdata_t)buffer, 4);
+            add_t2pWriteFile_check_2(output, (tdata_t)buffer, 4, mod, written);
         }
         else
         {
             switch (pdfstr[i])
             {
+                /* These cases are not reached.  They are handled above.
                 case 0x08:
                     written += t2pWriteFile(output, (tdata_t) "\\b", 2);
                     break;
@@ -4490,21 +4551,26 @@ tsize_t t2p_write_pdf_string(const char *pdfstr, TIFF *output)
                 case 0x0D:
                     written += t2pWriteFile(output, (tdata_t) "\\r", 2);
                     break;
+                */
                 case 0x28:
-                    written += t2pWriteFile(output, (tdata_t) "\\(", 2);
+                    add_t2pWriteFile_check_2(output, (tdata_t) "\\(", 2, mod,
+                                             written);
                     break;
                 case 0x29:
-                    written += t2pWriteFile(output, (tdata_t) "\\)", 2);
+                    add_t2pWriteFile_check_2(output, (tdata_t) "\\)", 2, mod,
+                                             written);
                     break;
                 case 0x5C:
-                    written += t2pWriteFile(output, (tdata_t) "\\\\", 2);
+                    add_t2pWriteFile_check_2(output, (tdata_t) "\\\\", 2, mod,
+                                             written);
                     break;
                 default:
-                    written += t2pWriteFile(output, (tdata_t)&pdfstr[i], 1);
+                    add_t2pWriteFile_check_2(output, (tdata_t)&pdfstr[i], 1,
+                                             mod, written);
             }
         }
     }
-    written += t2pWriteFile(output, (tdata_t) ") ", 1);
+    add_t2pWriteFile_check_2(output, (tdata_t) ") ", 1, mod, written);
 
     return (written);
 }
@@ -4518,7 +4584,8 @@ tsize_t t2p_write_pdf_stream(tdata_t buffer, tsize_t len, TIFF *output)
 
     tsize_t written = 0;
 
-    written += t2pWriteFile(output, (tdata_t)buffer, len);
+    add_t2pWriteFile_check_2(output, (tdata_t)buffer, len,
+                             "t2p_write_pdf_stream", written);
 
     return (written);
 }
@@ -4532,7 +4599,8 @@ tsize_t t2p_write_pdf_stream_start(TIFF *output)
 
     tsize_t written = 0;
 
-    written += t2pWriteFile(output, (tdata_t) "stream\n", 7);
+    add_t2pWriteFile_check_2(output, (tdata_t) "stream\n", 7,
+                             "t2p_write_pdf_stream_start", written);
 
     return (written);
 }
@@ -4546,7 +4614,8 @@ tsize_t t2p_write_pdf_stream_end(TIFF *output)
 
     tsize_t written = 0;
 
-    written += t2pWriteFile(output, (tdata_t) "\nendstream\n", 11);
+    add_t2pWriteFile_check_2(output, (tdata_t) "\nendstream\n", 11,
+                             "t2p_write_pdf_stream_end", written);
 
     return (written);
 }
@@ -4561,8 +4630,9 @@ tsize_t t2p_write_pdf_stream_dict(tsize_t len, uint32_t number, TIFF *output)
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_stream_dict()";
 
-    written += t2pWriteFile(output, (tdata_t) "/Length ", 8);
+    add_t2pWriteFile_check_2(output, (tdata_t) "/Length ", 8, mod, written);
     if (len != 0)
     {
         written += t2p_write_pdf_stream_length(len, output);
@@ -4571,8 +4641,8 @@ tsize_t t2p_write_pdf_stream_dict(tsize_t len, uint32_t number, TIFF *output)
     {
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, number);
         check_snprintf_ret((T2P *)NULL, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R \n", 6);
+        add_t2pWriteFile_check_2(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check_2(output, (tdata_t) " 0 R \n", 6, mod, written);
     }
 
     return (written);
@@ -4588,7 +4658,8 @@ tsize_t t2p_write_pdf_stream_dict_start(TIFF *output)
 
     tsize_t written = 0;
 
-    written += t2pWriteFile(output, (tdata_t) "<< \n", 4);
+    add_t2pWriteFile_check_2(output, (tdata_t) "<< \n", 4,
+                             "t2p_write_pdf_stream_dict_start", written);
 
     return (written);
 }
@@ -4602,7 +4673,8 @@ tsize_t t2p_write_pdf_stream_dict_end(TIFF *output)
 
     tsize_t written = 0;
 
-    written += t2pWriteFile(output, (tdata_t) " >>\n", 4);
+    add_t2pWriteFile_check_2(output, (tdata_t) " >>\n", 4,
+                             "t2p_write_pdf_stream_dict_end", written);
 
     return (written);
 }
@@ -4617,11 +4689,12 @@ tsize_t t2p_write_pdf_stream_length(tsize_t len, TIFF *output)
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_stream_length()";
 
     buflen = snprintf(buffer, sizeof(buffer), "%" TIFF_SSIZE_FORMAT, len);
     check_snprintf_ret((T2P *)NULL, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "\n", 1);
+    add_t2pWriteFile_check_2(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check_2(output, (tdata_t) "\n", 1, mod, written);
 
     return (written);
 }
@@ -4635,20 +4708,23 @@ tsize_t t2p_write_pdf_catalog(T2P *t2p, TIFF *output)
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_catalog()";
 
-    written +=
-        t2pWriteFile(output, (tdata_t) "<< \n/Type /Catalog \n/Pages ", 27);
+    add_t2pWriteFile_check(output, (tdata_t) "<< \n/Type /Catalog \n/Pages ",
+                           27, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_pages);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer,
-                            TIFFmin((size_t)buflen, sizeof(buffer) - 1));
-    written += t2pWriteFile(output, (tdata_t) " 0 R \n", 6);
+    add_t2pWriteFile_check(output, (tdata_t)buffer,
+                           TIFFmin((size_t)buflen, sizeof(buffer) - 1), mod,
+                           written);
+    add_t2pWriteFile_check(output, (tdata_t) " 0 R \n", 6, mod, written);
     if (t2p->pdf_fitwindow)
     {
-        written += t2pWriteFile(
-            output, (tdata_t) "/ViewerPreferences <</FitWindow true>>\n", 39);
+        add_t2pWriteFile_check(
+            output, (tdata_t) "/ViewerPreferences <</FitWindow true>>\n", 39,
+            mod, written);
     }
-    written += t2pWriteFile(output, (tdata_t) ">>\n", 3);
+    add_t2pWriteFile_check(output, (tdata_t) ">>\n", 3, mod, written);
 
     return (written);
 }
@@ -4662,21 +4738,24 @@ tsize_t t2p_write_pdf_info(T2P *t2p, TIFF *input, TIFF *output)
     tsize_t written = 0;
     const char *info;
     char buffer[512];
+    const char mod[] = "t2p_write_pdf_info()";
 
     if (t2p->pdf_datetime[0] == '\0')
         t2p_pdf_tifftime(t2p, input);
     if (strlen(t2p->pdf_datetime) > 0)
     {
-        written += t2pWriteFile(output, (tdata_t) "<< \n/CreationDate ", 18);
+        add_t2pWriteFile_check(output, (tdata_t) "<< \n/CreationDate ", 18, mod,
+                               written);
         written += t2p_write_pdf_string(t2p->pdf_datetime, output);
-        written += t2pWriteFile(output, (tdata_t) "\n/ModDate ", 10);
+        add_t2pWriteFile_check(output, (tdata_t) "\n/ModDate ", 10, mod,
+                               written);
         written += t2p_write_pdf_string(t2p->pdf_datetime, output);
     }
-    written += t2pWriteFile(output, (tdata_t) "\n/Producer ", 11);
+    add_t2pWriteFile_check(output, (tdata_t) "\n/Producer ", 11, mod, written);
     snprintf(buffer, sizeof(buffer), "libtiff / tiff2pdf - %d",
              TIFFLIB_VERSION);
     written += t2p_write_pdf_string(buffer, output);
-    written += t2pWriteFile(output, (tdata_t) "\n", 1);
+    add_t2pWriteFile_check(output, (tdata_t) "\n", 1, mod, written);
     if (!t2p->pdf_creator_set)
     {
         if (TIFFGetField(input, TIFFTAG_SOFTWARE, &info) != 0 && info)
@@ -4687,9 +4766,9 @@ tsize_t t2p_write_pdf_info(T2P *t2p, TIFF *input, TIFF *output)
     }
     if (t2p->pdf_creator[0] != '\0')
     {
-        written += t2pWriteFile(output, (tdata_t) "/Creator ", 9);
+        add_t2pWriteFile_check(output, (tdata_t) "/Creator ", 9, mod, written);
         written += t2p_write_pdf_string(t2p->pdf_creator, output);
-        written += t2pWriteFile(output, (tdata_t) "\n", 1);
+        add_t2pWriteFile_check(output, (tdata_t) "\n", 1, mod, written);
     }
     if (!t2p->pdf_author_set)
     {
@@ -4703,9 +4782,9 @@ tsize_t t2p_write_pdf_info(T2P *t2p, TIFF *input, TIFF *output)
     }
     if (t2p->pdf_author[0] != '\0')
     {
-        written += t2pWriteFile(output, (tdata_t) "/Author ", 8);
+        add_t2pWriteFile_check(output, (tdata_t) "/Author ", 8, mod, written);
         written += t2p_write_pdf_string(t2p->pdf_author, output);
-        written += t2pWriteFile(output, (tdata_t) "\n", 1);
+        add_t2pWriteFile_check(output, (tdata_t) "\n", 1, mod, written);
     }
     if (!t2p->pdf_title_set)
     {
@@ -4717,9 +4796,9 @@ tsize_t t2p_write_pdf_info(T2P *t2p, TIFF *input, TIFF *output)
     }
     if (t2p->pdf_title[0] != '\0')
     {
-        written += t2pWriteFile(output, (tdata_t) "/Title ", 7);
+        add_t2pWriteFile_check(output, (tdata_t) "/Title ", 7, mod, written);
         written += t2p_write_pdf_string(t2p->pdf_title, output);
-        written += t2pWriteFile(output, (tdata_t) "\n", 1);
+        add_t2pWriteFile_check(output, (tdata_t) "\n", 1, mod, written);
     }
     if (!t2p->pdf_subject_set)
     {
@@ -4731,17 +4810,18 @@ tsize_t t2p_write_pdf_info(T2P *t2p, TIFF *input, TIFF *output)
     }
     if (t2p->pdf_subject[0] != '\0')
     {
-        written += t2pWriteFile(output, (tdata_t) "/Subject ", 9);
+        add_t2pWriteFile_check(output, (tdata_t) "/Subject ", 9, mod, written);
         written += t2p_write_pdf_string(t2p->pdf_subject, output);
-        written += t2pWriteFile(output, (tdata_t) "\n", 1);
+        add_t2pWriteFile_check(output, (tdata_t) "\n", 1, mod, written);
     }
     if (t2p->pdf_keywords[0] != '\0')
     {
-        written += t2pWriteFile(output, (tdata_t) "/Keywords ", 10);
+        add_t2pWriteFile_check(output, (tdata_t) "/Keywords ", 10, mod,
+                               written);
         written += t2p_write_pdf_string(t2p->pdf_keywords, output);
-        written += t2pWriteFile(output, (tdata_t) "\n", 1);
+        add_t2pWriteFile_check(output, (tdata_t) "\n", 1, mod, written);
     }
-    written += t2pWriteFile(output, (tdata_t) ">> \n", 4);
+    add_t2pWriteFile_check(output, (tdata_t) ">> \n", 4, mod, written);
 
     return (written);
 }
@@ -4817,27 +4897,27 @@ void t2p_pdf_tifftime(T2P *t2p, TIFF *input)
 /*
  * This function writes a PDF Pages Tree structure to output.
  */
-
 tsize_t t2p_write_pdf_pages(T2P *t2p, TIFF *output)
 {
     tsize_t written = 0;
     tdir_t i = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_pages()";
 
     int page = 0;
-    written +=
-        t2pWriteFile(output, (tdata_t) "<< \n/Type /Pages \n/Kids [ ", 26);
+    add_t2pWriteFile_check(output, (tdata_t) "<< \n/Type /Pages \n/Kids [ ", 26,
+                           mod, written);
     page = t2p->pdf_pages + 1;
     for (i = 0; i < t2p->tiff_pagecount; i++)
     {
         buflen = snprintf(buffer, sizeof(buffer), "%d", page);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R ", 5);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " 0 R ", 5, mod, written);
         if (((i + 1) % 8) == 0)
         {
-            written += t2pWriteFile(output, (tdata_t) "\n", 1);
+            add_t2pWriteFile_check(output, (tdata_t) "\n", 1, mod, written);
         }
         page += 3;
         page += t2p->tiff_pages[i].page_extra;
@@ -4850,11 +4930,11 @@ tsize_t t2p_write_pdf_pages(T2P *t2p, TIFF *output)
             page += 2;
         }
     }
-    written += t2pWriteFile(output, (tdata_t) "] \n/Count ", 10);
+    add_t2pWriteFile_check(output, (tdata_t) "] \n/Count ", 10, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu16, t2p->tiff_pagecount);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " \n>> \n", 6);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " \n>> \n", 6, mod, written);
 
     return (written);
 }
@@ -4862,7 +4942,6 @@ tsize_t t2p_write_pdf_pages(T2P *t2p, TIFF *output)
 /*
         This function writes a PDF Page structure to output.
 */
-
 tsize_t t2p_write_pdf_page(uint32_t object, T2P *t2p, TIFF *output)
 {
 
@@ -4870,105 +4949,115 @@ tsize_t t2p_write_pdf_page(uint32_t object, T2P *t2p, TIFF *output)
     tsize_t written = 0;
     char buffer[256];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_page()";
 
-    written += t2pWriteFile(output, (tdata_t) "<<\n/Type /Page \n/Parent ", 24);
+    add_t2pWriteFile_check(output, (tdata_t) "<<\n/Type /Page \n/Parent ", 24,
+                           mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_pages);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " 0 R \n", 6);
-    written += t2pWriteFile(output, (tdata_t) "/MediaBox [", 11);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " 0 R \n", 6, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "/MediaBox [", 11, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%.4f", t2p->pdf_mediabox.x1);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " ", 1);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " ", 1, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%.4f", t2p->pdf_mediabox.y1);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " ", 1);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " ", 1, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%.4f", t2p->pdf_mediabox.x2);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " ", 1);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " ", 1, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%.4f", t2p->pdf_mediabox.y2);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "] \n", 3);
-    written += t2pWriteFile(output, (tdata_t) "/Contents ", 10);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "] \n", 3, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "/Contents ", 10, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, object + 1u);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " 0 R \n", 6);
-    written += t2pWriteFile(output, (tdata_t) "/Resources << \n", 15);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " 0 R \n", 6, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "/Resources << \n", 15, mod,
+                           written);
     if (t2p->tiff_tiles[t2p->pdf_page].tiles_tilecount != 0)
     {
-        written += t2pWriteFile(output, (tdata_t) "/XObject <<\n", 12);
+        add_t2pWriteFile_check(output, (tdata_t) "/XObject <<\n", 12, mod,
+                               written);
         for (i = 0; i < t2p->tiff_tiles[t2p->pdf_page].tiles_tilecount; i++)
         {
-            written += t2pWriteFile(output, (tdata_t) "/Im", 3);
+            add_t2pWriteFile_check(output, (tdata_t) "/Im", 3, mod, written);
             buflen = snprintf(buffer, sizeof(buffer), "%" PRIu16,
                               (uint16_t)(t2p->pdf_page + 1u));
             check_snprintf_ret(t2p, buflen, buffer);
-            written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-            written += t2pWriteFile(output, (tdata_t) "_", 1);
+            add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                   written);
+            add_t2pWriteFile_check(output, (tdata_t) "_", 1, mod, written);
             buflen = snprintf(buffer, sizeof(buffer), "%u", i + 1u);
             check_snprintf_ret(t2p, buflen, buffer);
-            written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-            written += t2pWriteFile(output, (tdata_t) " ", 1);
+            add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                   written);
+            add_t2pWriteFile_check(output, (tdata_t) " ", 1, mod, written);
             buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                               object + 3u + (2u * i) +
                                   t2p->tiff_pages[t2p->pdf_page].page_extra);
             check_snprintf_ret(t2p, buflen, buffer);
-            written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-            written += t2pWriteFile(output, (tdata_t) " 0 R ", 5);
+            add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                   written);
+            add_t2pWriteFile_check(output, (tdata_t) " 0 R ", 5, mod, written);
             if (i % 4 == 3)
             {
-                written += t2pWriteFile(output, (tdata_t) "\n", 1);
+                add_t2pWriteFile_check(output, (tdata_t) "\n", 1, mod, written);
             }
         }
-        written += t2pWriteFile(output, (tdata_t) ">>\n", 3);
+        add_t2pWriteFile_check(output, (tdata_t) ">>\n", 3, mod, written);
     }
     else
     {
-        written += t2pWriteFile(output, (tdata_t) "/XObject <<\n", 12);
-        written += t2pWriteFile(output, (tdata_t) "/Im", 3);
+        add_t2pWriteFile_check(output, (tdata_t) "/XObject <<\n", 12, mod,
+                               written);
+        add_t2pWriteFile_check(output, (tdata_t) "/Im", 3, mod, written);
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu16,
                           (uint16_t)(t2p->pdf_page + 1u));
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " ", 1);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " ", 1, mod, written);
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                           object + 3u + (2u * i) +
                               t2p->tiff_pages[t2p->pdf_page].page_extra);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R ", 5);
-        written += t2pWriteFile(output, (tdata_t) ">>\n", 3);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " 0 R ", 5, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) ">>\n", 3, mod, written);
     }
     if (t2p->tiff_transferfunctioncount != 0)
     {
-        written += t2pWriteFile(output, (tdata_t) "/ExtGState <<", 13);
-        t2pWriteFile(output, (tdata_t) "/GS1 ", 5);
+        add_t2pWriteFile_check(output, (tdata_t) "/ExtGState <<", 13, mod,
+                               written);
+        add_t2pWriteFile_check(output, (tdata_t) "/GS1 ", 5, mod, written);
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, object + 3u);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R ", 5);
-        written += t2pWriteFile(output, (tdata_t) ">> \n", 4);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " 0 R ", 5, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) ">> \n", 4, mod, written);
     }
-    written += t2pWriteFile(output, (tdata_t) "/ProcSet [ ", 11);
+    add_t2pWriteFile_check(output, (tdata_t) "/ProcSet [ ", 11, mod, written);
     if (t2p->pdf_colorspace & T2P_CS_BILEVEL ||
         t2p->pdf_colorspace & T2P_CS_GRAY)
     {
-        written += t2pWriteFile(output, (tdata_t) "/ImageB ", 8);
+        add_t2pWriteFile_check(output, (tdata_t) "/ImageB ", 8, mod, written);
     }
     else
     {
-        written += t2pWriteFile(output, (tdata_t) "/ImageC ", 8);
+        add_t2pWriteFile_check(output, (tdata_t) "/ImageC ", 8, mod, written);
         if (t2p->pdf_colorspace & T2P_CS_PALETTE)
         {
-            written += t2pWriteFile(output, (tdata_t) "/ImageI ", 8);
+            add_t2pWriteFile_check(output, (tdata_t) "/ImageI ", 8, mod,
+                                   written);
         }
     }
-    written += t2pWriteFile(output, (tdata_t) "]\n>>\n>>\n", 8);
+    add_t2pWriteFile_check(output, (tdata_t) "]\n>>\n>>\n", 8, mod, written);
 
     return (written);
 }
@@ -5401,22 +5490,24 @@ tsize_t t2p_write_pdf_xobject_stream_dict(ttile_t tile, T2P *t2p, TIFF *output)
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_xobject_stream_dict()";
 
     written += t2p_write_pdf_stream_dict(0, t2p->pdf_xrefcount + 1, output);
-    written += t2pWriteFile(
-        output, (tdata_t) "/Type /XObject \n/Subtype /Image \n/Name /Im", 42);
+    add_t2pWriteFile_check(
+        output, (tdata_t) "/Type /XObject \n/Subtype /Image \n/Name /Im", 42,
+        mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu16,
                       (uint16_t)(t2p->pdf_page + 1u));
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
     if (tile != 0)
     {
-        written += t2pWriteFile(output, (tdata_t) "_", 1);
+        add_t2pWriteFile_check(output, (tdata_t) "_", 1, mod, written);
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, tile);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
     }
-    written += t2pWriteFile(output, (tdata_t) "\n/Width ", 8);
+    add_t2pWriteFile_check(output, (tdata_t) "\n/Width ", 8, mod, written);
     if (tile == 0)
     {
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->tiff_width);
@@ -5437,8 +5528,8 @@ tsize_t t2p_write_pdf_xobject_stream_dict(ttile_t tile, T2P *t2p, TIFF *output)
         }
     }
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "\n/Height ", 9);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "\n/Height ", 9, mod, written);
     if (tile == 0)
     {
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->tiff_length);
@@ -5459,16 +5550,19 @@ tsize_t t2p_write_pdf_xobject_stream_dict(ttile_t tile, T2P *t2p, TIFF *output)
         }
     }
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "\n/BitsPerComponent ", 19);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "\n/BitsPerComponent ", 19, mod,
+                           written);
     buflen =
         snprintf(buffer, sizeof(buffer), "%" PRIu16, t2p->tiff_bitspersample);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "\n/ColorSpace ", 13);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "\n/ColorSpace ", 13, mod,
+                           written);
     written += t2p_write_pdf_xobject_cs(t2p, output);
     if (t2p->pdf_image_interpolate)
-        written += t2pWriteFile(output, (tdata_t) "\n/Interpolate true", 18);
+        add_t2pWriteFile_check(output, (tdata_t) "\n/Interpolate true", 18, mod,
+                               written);
     if ((t2p->pdf_switchdecode != 0)
 #ifdef CCITT_SUPPORT
         && !(t2p->pdf_colorspace & T2P_CS_BILEVEL &&
@@ -5509,6 +5603,7 @@ tsize_t t2p_write_pdf_xobject_cs(T2P *t2p, TIFF *output)
     float X_W = 1.0;
     float Y_W = 1.0;
     float Z_W = 1.0;
+    const char mod[] = "t2p_write_pdf_xobject_cs()";
 
     if ((t2p->pdf_colorspace & T2P_CS_ICCBASED) != 0)
     {
@@ -5517,25 +5612,27 @@ tsize_t t2p_write_pdf_xobject_cs(T2P *t2p, TIFF *output)
     }
     if ((t2p->pdf_colorspace & T2P_CS_PALETTE) != 0)
     {
-        written += t2pWriteFile(output, (tdata_t) "[ /Indexed ", 11);
+        add_t2pWriteFile_check(output, (tdata_t) "[ /Indexed ", 11, mod,
+                               written);
         t2p->pdf_colorspace ^= T2P_CS_PALETTE;
         written += t2p_write_pdf_xobject_cs(t2p, output);
         t2p->pdf_colorspace |= T2P_CS_PALETTE;
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                           (uint32_t)(0x1u << t2p->tiff_bitspersample) - 1u);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " ", 1);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " ", 1, mod, written);
         buflen =
             snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_palettecs);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R ]\n", 7);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " 0 R ]\n", 7, mod, written);
         return (written);
     }
     if (t2p->pdf_colorspace & T2P_CS_BILEVEL)
     {
-        written += t2pWriteFile(output, (tdata_t) "/DeviceGray \n", 13);
+        add_t2pWriteFile_check(output, (tdata_t) "/DeviceGray \n", 13, mod,
+                               written);
     }
     if (t2p->pdf_colorspace & T2P_CS_GRAY)
     {
@@ -5545,7 +5642,8 @@ tsize_t t2p_write_pdf_xobject_cs(T2P *t2p, TIFF *output)
         }
         else
         {
-            written += t2pWriteFile(output, (tdata_t) "/DeviceGray \n", 13);
+            add_t2pWriteFile_check(output, (tdata_t) "/DeviceGray \n", 13, mod,
+                                   written);
         }
     }
     if (t2p->pdf_colorspace & T2P_CS_RGB)
@@ -5556,17 +5654,21 @@ tsize_t t2p_write_pdf_xobject_cs(T2P *t2p, TIFF *output)
         }
         else
         {
-            written += t2pWriteFile(output, (tdata_t) "/DeviceRGB \n", 12);
+            add_t2pWriteFile_check(output, (tdata_t) "/DeviceRGB \n", 12, mod,
+                                   written);
         }
     }
     if (t2p->pdf_colorspace & T2P_CS_CMYK)
     {
-        written += t2pWriteFile(output, (tdata_t) "/DeviceCMYK \n", 13);
+        add_t2pWriteFile_check(output, (tdata_t) "/DeviceCMYK \n", 13, mod,
+                               written);
     }
     if (t2p->pdf_colorspace & T2P_CS_LAB)
     {
-        written += t2pWriteFile(output, (tdata_t) "[/Lab << \n", 10);
-        written += t2pWriteFile(output, (tdata_t) "/WhitePoint ", 12);
+        add_t2pWriteFile_check(output, (tdata_t) "[/Lab << \n", 10, mod,
+                               written);
+        add_t2pWriteFile_check(output, (tdata_t) "/WhitePoint ", 12, mod,
+                               written);
         X_W = t2p->tiff_whitechromaticities[0];
         Y_W = t2p->tiff_whitechromaticities[1];
         Z_W = 1.0F - (X_W + Y_W);
@@ -5574,14 +5676,14 @@ tsize_t t2p_write_pdf_xobject_cs(T2P *t2p, TIFF *output)
         buflen = snprintf(buffer, sizeof(buffer), "[%.4f %.4f %.4f] \n", X_W,
                           Y_W, Z_W);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) "/Range ", 7);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) "/Range ", 7, mod, written);
         buflen = snprintf(buffer, sizeof(buffer), "[%d %d %d %d] \n",
                           t2p->pdf_labrange[0], t2p->pdf_labrange[1],
                           t2p->pdf_labrange[2], t2p->pdf_labrange[3]);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) ">>] \n", 5);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) ">>] \n", 5, mod, written);
     }
 
     return (written);
@@ -5593,38 +5695,41 @@ tsize_t t2p_write_pdf_transfer(T2P *t2p, TIFF *output)
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_transfer()";
 
-    written += t2pWriteFile(output, (tdata_t) "<< /Type /ExtGState \n/TR ", 25);
+    add_t2pWriteFile_check(output, (tdata_t) "<< /Type /ExtGState \n/TR ", 25,
+                           mod, written);
     if (t2p->tiff_transferfunctioncount == 1)
     {
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                           t2p->pdf_xrefcount + 1u);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R ", 5);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " 0 R ", 5, mod, written);
     }
     else
     {
-        written += t2pWriteFile(output, (tdata_t) "[ ", 2);
+        add_t2pWriteFile_check(output, (tdata_t) "[ ", 2, mod, written);
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                           t2p->pdf_xrefcount + 1u);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R ", 5);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " 0 R ", 5, mod, written);
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                           t2p->pdf_xrefcount + 2u);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R ", 5);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " 0 R ", 5, mod, written);
         buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                           t2p->pdf_xrefcount + 3u);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) " 0 R ", 5);
-        written += t2pWriteFile(output, (tdata_t) "/Identity ] ", 12);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) " 0 R ", 5, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) "/Identity ] ", 12, mod,
+                               written);
     }
 
-    written += t2pWriteFile(output, (tdata_t) " >> \n", 5);
+    add_t2pWriteFile_check(output, (tdata_t) " >> \n", 5, mod, written);
 
     return (written);
 }
@@ -5636,15 +5741,20 @@ tsize_t t2p_write_pdf_transfer_dict(T2P *t2p, TIFF *output, uint16_t i)
     char buffer[32];
     int buflen = 0;
     (void)i; /* XXX */
+    const char mod[] = "t2p_write_pdf_transfer_dict()";
 
-    written += t2pWriteFile(output, (tdata_t) "/FunctionType 0 \n", 17);
-    written += t2pWriteFile(output, (tdata_t) "/Domain [0.0 1.0] \n", 19);
-    written += t2pWriteFile(output, (tdata_t) "/Range [0.0 1.0] \n", 18);
+    add_t2pWriteFile_check(output, (tdata_t) "/FunctionType 0 \n", 17, mod,
+                           written);
+    add_t2pWriteFile_check(output, (tdata_t) "/Domain [0.0 1.0] \n", 19, mod,
+                           written);
+    add_t2pWriteFile_check(output, (tdata_t) "/Range [0.0 1.0] \n", 18, mod,
+                           written);
     buflen = snprintf(buffer, sizeof(buffer), "/Size [%" PRIu16 "] \n",
                       (uint16_t)(1u << t2p->tiff_bitspersample));
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "/BitsPerSample 16 \n", 19);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "/BitsPerSample 16 \n", 19, mod,
+                           written);
     written += t2p_write_pdf_stream_dict(
         ((tsize_t)1) << (t2p->tiff_bitspersample + 1), 0, output);
 
@@ -5673,6 +5783,7 @@ tsize_t t2p_write_pdf_xobject_calcs(T2P *t2p, TIFF *output)
     tsize_t written = 0;
     char buffer[256];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_xobject_calcs()";
 
     float X_W = 0.0;
     float Y_W = 0.0;
@@ -5699,10 +5810,10 @@ tsize_t t2p_write_pdf_xobject_calcs(T2P *t2p, TIFF *output)
     float G = 1.0;
     float B = 1.0;
 
-    written += t2pWriteFile(output, (tdata_t) "[", 1);
+    add_t2pWriteFile_check(output, (tdata_t) "[", 1, mod, written);
     if (t2p->pdf_colorspace & T2P_CS_CALGRAY)
     {
-        written += t2pWriteFile(output, (tdata_t) "/CalGray ", 9);
+        add_t2pWriteFile_check(output, (tdata_t) "/CalGray ", 9, mod, written);
         X_W = t2p->tiff_whitechromaticities[0];
         Y_W = t2p->tiff_whitechromaticities[1];
         Z_W = 1.0F - (X_W + Y_W);
@@ -5710,7 +5821,7 @@ tsize_t t2p_write_pdf_xobject_calcs(T2P *t2p, TIFF *output)
     }
     if (t2p->pdf_colorspace & T2P_CS_CALRGB)
     {
-        written += t2pWriteFile(output, (tdata_t) "/CalRGB ", 8);
+        add_t2pWriteFile_check(output, (tdata_t) "/CalRGB ", 8, mod, written);
         x_w = t2p->tiff_whitechromaticities[0];
         y_w = t2p->tiff_whitechromaticities[1];
         x_r = t2p->tiff_primarychromaticities[0];
@@ -5737,33 +5848,36 @@ tsize_t t2p_write_pdf_xobject_calcs(T2P *t2p, TIFF *output)
         Z_W = (Z_R * R) + (Z_G * G) + (Z_B * B);
         normalizePoint(X_W, Y_W, Z_W);
     }
-    written += t2pWriteFile(output, (tdata_t) "<< \n", 4);
+    add_t2pWriteFile_check(output, (tdata_t) "<< \n", 4, mod, written);
     if (t2p->pdf_colorspace & T2P_CS_CALGRAY)
     {
-        written += t2pWriteFile(output, (tdata_t) "/WhitePoint ", 12);
+        add_t2pWriteFile_check(output, (tdata_t) "/WhitePoint ", 12, mod,
+                               written);
         buflen = snprintf(buffer, sizeof(buffer), "[%.4f %.4f %.4f] \n", X_W,
                           Y_W, Z_W);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) "/Gamma 2.2 \n", 12);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) "/Gamma 2.2 \n", 12, mod,
+                               written);
     }
     if (t2p->pdf_colorspace & T2P_CS_CALRGB)
     {
-        written += t2pWriteFile(output, (tdata_t) "/WhitePoint ", 12);
+        add_t2pWriteFile_check(output, (tdata_t) "/WhitePoint ", 12, mod,
+                               written);
         buflen = snprintf(buffer, sizeof(buffer), "[%.4f %.4f %.4f] \n", X_W,
                           Y_W, Z_W);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written += t2pWriteFile(output, (tdata_t) "/Matrix ", 8);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) "/Matrix ", 8, mod, written);
         buflen = snprintf(buffer, sizeof(buffer),
                           "[%.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f %.4f] \n",
                           X_R, Y_R, Z_R, X_G, Y_G, Z_G, X_B, Y_B, Z_B);
         check_snprintf_ret(t2p, buflen, buffer);
-        written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-        written +=
-            t2pWriteFile(output, (tdata_t) "/Gamma [2.2 2.2 2.2] \n", 22);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+        add_t2pWriteFile_check(output, (tdata_t) "/Gamma [2.2 2.2 2.2] \n", 22,
+                               mod, written);
     }
-    written += t2pWriteFile(output, (tdata_t) ">>] \n", 5);
+    add_t2pWriteFile_check(output, (tdata_t) ">>] \n", 5, mod, written);
 
     return (written);
 }
@@ -5778,12 +5892,13 @@ tsize_t t2p_write_pdf_xobject_icccs(T2P *t2p, TIFF *output)
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_xobject_icccs()";
 
-    written += t2pWriteFile(output, (tdata_t) "[/ICCBased ", 11);
+    add_t2pWriteFile_check(output, (tdata_t) "[/ICCBased ", 11, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_icccs);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " 0 R] \n", 7);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " 0 R] \n", 7, mod, written);
 
     return (written);
 }
@@ -5794,13 +5909,14 @@ tsize_t t2p_write_pdf_xobject_icccs_dict(T2P *t2p, TIFF *output)
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_xobject_icccs_dict()";
 
-    written += t2pWriteFile(output, (tdata_t) "/N ", 3);
+    add_t2pWriteFile_check(output, (tdata_t) "/N ", 3, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu16 " \n",
                       t2p->tiff_samplesperpixel);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "/Alternate ", 11);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "/Alternate ", 11, mod, written);
     t2p->pdf_colorspace ^= T2P_CS_ICCBASED;
     written += t2p_write_pdf_xobject_cs(t2p, output);
     t2p->pdf_colorspace |= T2P_CS_ICCBASED;
@@ -5846,13 +5962,14 @@ tsize_t t2p_write_pdf_xobject_decode(T2P *t2p, TIFF *output)
 
     tsize_t written = 0;
     int i = 0;
+    const char mod[] = "t2p_write_pdf_xobject_decode()";
 
-    written += t2pWriteFile(output, (tdata_t) "/Decode [ ", 10);
+    add_t2pWriteFile_check(output, (tdata_t) "/Decode [ ", 10, mod, written);
     for (i = 0; i < t2p->tiff_samplesperpixel; i++)
     {
-        written += t2pWriteFile(output, (tdata_t) "1 0 ", 4);
+        add_t2pWriteFile_check(output, (tdata_t) "1 0 ", 4, mod, written);
     }
-    written += t2pWriteFile(output, (tdata_t) "]\n", 2);
+    add_t2pWriteFile_check(output, (tdata_t) "]\n", 2, mod, written);
 
     return (written);
 }
@@ -5869,122 +5986,151 @@ tsize_t t2p_write_pdf_xobject_stream_filter(ttile_t tile, T2P *t2p,
     tsize_t written = 0;
     char buffer[32];
     int buflen = 0;
+    const char mod[] = "t2p_write_pdf_xobject_stream_filter()";
 
     if (t2p->pdf_compression == T2P_COMPRESS_NONE)
     {
         return (written);
     }
-    written += t2pWriteFile(output, (tdata_t) "/Filter ", 8);
+    add_t2pWriteFile_check(output, (tdata_t) "/Filter ", 8, mod, written);
     switch (t2p->pdf_compression)
     {
 #ifdef CCITT_SUPPORT
         case T2P_COMPRESS_G4:
-            written += t2pWriteFile(output, (tdata_t) "/CCITTFaxDecode ", 16);
-            written += t2pWriteFile(output, (tdata_t) "/DecodeParms ", 13);
-            written += t2pWriteFile(output, (tdata_t) "<< /K -1 ", 9);
+            add_t2pWriteFile_check(output, (tdata_t) "/CCITTFaxDecode ", 16,
+                                   mod, written);
+            add_t2pWriteFile_check(output, (tdata_t) "/DecodeParms ", 13, mod,
+                                   written);
+            add_t2pWriteFile_check(output, (tdata_t) "<< /K -1 ", 9, mod,
+                                   written);
             if (tile == 0)
             {
-                written += t2pWriteFile(output, (tdata_t) "/Columns ", 9);
+                add_t2pWriteFile_check(output, (tdata_t) "/Columns ", 9, mod,
+                                       written);
                 buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                                   t2p->tiff_width);
                 check_snprintf_ret(t2p, buflen, buffer);
-                written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-                written += t2pWriteFile(output, (tdata_t) " /Rows ", 7);
+                add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                       written);
+                add_t2pWriteFile_check(output, (tdata_t) " /Rows ", 7, mod,
+                                       written);
                 buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                                   t2p->tiff_length);
                 check_snprintf_ret(t2p, buflen, buffer);
-                written += t2pWriteFile(output, (tdata_t)buffer, buflen);
+                add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                       written);
             }
             else
             {
                 if (t2p_tile_is_right_edge(t2p->tiff_tiles[t2p->pdf_page],
                                            tile - 1) == 0)
                 {
-                    written += t2pWriteFile(output, (tdata_t) "/Columns ", 9);
+                    add_t2pWriteFile_check(output, (tdata_t) "/Columns ", 9,
+                                           mod, written);
                     buflen = snprintf(
                         buffer, sizeof(buffer), "%" PRIu32,
                         t2p->tiff_tiles[t2p->pdf_page].tiles_tilewidth);
                     check_snprintf_ret(t2p, buflen, buffer);
-                    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
+                    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                           written);
                 }
                 else
                 {
-                    written += t2pWriteFile(output, (tdata_t) "/Columns ", 9);
+                    add_t2pWriteFile_check(output, (tdata_t) "/Columns ", 9,
+                                           mod, written);
                     buflen = snprintf(
                         buffer, sizeof(buffer), "%" PRIu32,
                         t2p->tiff_tiles[t2p->pdf_page].tiles_edgetilewidth);
                     check_snprintf_ret(t2p, buflen, buffer);
-                    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
+                    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                           written);
                 }
                 if (t2p_tile_is_bottom_edge(t2p->tiff_tiles[t2p->pdf_page],
                                             tile - 1) == 0)
                 {
-                    written += t2pWriteFile(output, (tdata_t) " /Rows ", 7);
+                    add_t2pWriteFile_check(output, (tdata_t) " /Rows ", 7, mod,
+                                           written);
                     buflen = snprintf(
                         buffer, sizeof(buffer), "%" PRIu32,
                         t2p->tiff_tiles[t2p->pdf_page].tiles_tilelength);
                     check_snprintf_ret(t2p, buflen, buffer);
-                    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
+                    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                           written);
                 }
                 else
                 {
-                    written += t2pWriteFile(output, (tdata_t) " /Rows ", 7);
+                    add_t2pWriteFile_check(output, (tdata_t) " /Rows ", 7, mod,
+                                           written);
                     buflen = snprintf(
                         buffer, sizeof(buffer), "%" PRIu32,
                         t2p->tiff_tiles[t2p->pdf_page].tiles_edgetilelength);
                     check_snprintf_ret(t2p, buflen, buffer);
-                    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
+                    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                           written);
                 }
             }
             if (t2p->pdf_switchdecode == 0)
             {
-                written +=
-                    t2pWriteFile(output, (tdata_t) " /BlackIs1 true ", 16);
+                add_t2pWriteFile_check(output, (tdata_t) " /BlackIs1 true ", 16,
+                                       mod, written);
             }
-            written += t2pWriteFile(output, (tdata_t) ">>\n", 3);
+            add_t2pWriteFile_check(output, (tdata_t) ">>\n", 3, mod, written);
             break;
 #endif
 #ifdef JPEG_SUPPORT
         case T2P_COMPRESS_JPEG:
-            written += t2pWriteFile(output, (tdata_t) "/DCTDecode ", 11);
+            add_t2pWriteFile_check(output, (tdata_t) "/DCTDecode ", 11, mod,
+                                   written);
 
             if (t2p->tiff_photometric != PHOTOMETRIC_YCBCR)
             {
-                written += t2pWriteFile(output, (tdata_t) "/DecodeParms ", 13);
-                written += t2pWriteFile(
-                    output, (tdata_t) "<< /ColorTransform 1 >>\n", 24);
+                add_t2pWriteFile_check(output, (tdata_t) "/DecodeParms ", 13,
+                                       mod, written);
+                add_t2pWriteFile_check(output,
+                                       (tdata_t) "<< /ColorTransform 1 >>\n",
+                                       24, mod, written);
             }
             break;
 #endif
 #ifdef ZIP_SUPPORT
         case T2P_COMPRESS_ZIP:
-            written += t2pWriteFile(output, (tdata_t) "/FlateDecode ", 13);
+            add_t2pWriteFile_check(output, (tdata_t) "/FlateDecode ", 13, mod,
+                                   written);
             if (t2p->pdf_compressionquality % 100)
             {
-                written += t2pWriteFile(output, (tdata_t) "/DecodeParms ", 13);
-                written += t2pWriteFile(output, (tdata_t) "<< /Predictor ", 14);
+                add_t2pWriteFile_check(output, (tdata_t) "/DecodeParms ", 13,
+                                       mod, written);
+                add_t2pWriteFile_check(output, (tdata_t) "<< /Predictor ", 14,
+                                       mod, written);
                 buflen =
                     snprintf(buffer, sizeof(buffer), "%" PRIu16,
                              (uint16_t)(t2p->pdf_compressionquality % 100u));
                 check_snprintf_ret(t2p, buflen, buffer);
-                written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-                written += t2pWriteFile(output, (tdata_t) " /Columns ", 10);
+                add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                       written);
+                add_t2pWriteFile_check(output, (tdata_t) " /Columns ", 10, mod,
+                                       written);
                 buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32,
                                   t2p->tiff_width);
                 check_snprintf_ret(t2p, buflen, buffer);
-                written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-                written += t2pWriteFile(output, (tdata_t) " /Colors ", 9);
+                add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                       written);
+                add_t2pWriteFile_check(output, (tdata_t) " /Colors ", 9, mod,
+                                       written);
                 buflen = snprintf(buffer, sizeof(buffer), "%" PRIu16,
                                   t2p->tiff_samplesperpixel);
                 check_snprintf_ret(t2p, buflen, buffer);
-                written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-                written +=
-                    t2pWriteFile(output, (tdata_t) " /BitsPerComponent ", 19);
+                add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                       written);
+                add_t2pWriteFile_check(output, (tdata_t) " /BitsPerComponent ",
+                                       19, mod, written);
                 buflen = snprintf(buffer, sizeof(buffer), "%" PRIu16,
                                   t2p->tiff_bitspersample);
                 check_snprintf_ret(t2p, buflen, buffer);
-                written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-                written += t2pWriteFile(output, (tdata_t) ">>\n", 3);
+                add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod,
+                                       written);
+                add_t2pWriteFile_check(output, (tdata_t) ">>\n", 3, mod,
+                                       written);
             }
             break;
 #endif
@@ -6006,18 +6152,20 @@ tsize_t t2p_write_pdf_xreftable(T2P *t2p, TIFF *output)
     char buffer[64];
     int buflen = 0;
     uint32_t i = 0;
+    const char mod[] = "t2p_write_pdf_xreftable()";
 
-    written += t2pWriteFile(output, (tdata_t) "xref\n0 ", 7);
+    add_t2pWriteFile_check(output, (tdata_t) "xref\n0 ", 7, mod, written);
     buflen =
         snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_xrefcount + 1u);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " \n0000000000 65535 f \n", 22);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " \n0000000000 65535 f \n", 22,
+                           mod, written);
     for (i = 0; i < t2p->pdf_xrefcount; i++)
     {
         snprintf(buffer, sizeof(buffer), "%.10lu 00000 n \n",
                  (unsigned long)t2p->pdf_xrefoffsets[i]);
-        written += t2pWriteFile(output, (tdata_t)buffer, 20);
+        add_t2pWriteFile_check(output, (tdata_t)buffer, 20, mod, written);
     }
 
     return (written);
@@ -6034,34 +6182,39 @@ tsize_t t2p_write_pdf_trailer(T2P *t2p, TIFF *output)
     char buffer[32];
     int buflen = 0;
     size_t i = 0;
+    const char mod[] = "t2p_write_pdf_trailer()";
 
+    /* Silence CoverityScan warning about bad crypto function */
+    /* coverity[dont_call] */
     for (i = 0; i < sizeof(t2p->pdf_fileid) - 8; i += 8)
         snprintf(t2p->pdf_fileid + i, 9, "%.8X", rand());
 
-    written += t2pWriteFile(output, (tdata_t) "trailer\n<<\n/Size ", 17);
+    add_t2pWriteFile_check(output, (tdata_t) "trailer\n<<\n/Size ", 17, mod,
+                           written);
     buflen =
         snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_xrefcount + 1u);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "\n/Root ", 7);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "\n/Root ", 7, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_catalog);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " 0 R \n/Info ", 12);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " 0 R \n/Info ", 12, mod, written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_info);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) " 0 R \n/ID[<", 11);
-    written += t2pWriteFile(output, (tdata_t)t2p->pdf_fileid,
-                            sizeof(t2p->pdf_fileid) - 1);
-    written += t2pWriteFile(output, (tdata_t) "><", 2);
-    written += t2pWriteFile(output, (tdata_t)t2p->pdf_fileid,
-                            sizeof(t2p->pdf_fileid) - 1);
-    written += t2pWriteFile(output, (tdata_t) ">]\n>>\nstartxref\n", 16);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) " 0 R \n/ID[<", 11, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t)t2p->pdf_fileid,
+                           sizeof(t2p->pdf_fileid) - 1, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "><", 2, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t)t2p->pdf_fileid,
+                           sizeof(t2p->pdf_fileid) - 1, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) ">]\n>>\nstartxref\n", 16, mod,
+                           written);
     buflen = snprintf(buffer, sizeof(buffer), "%" PRIu32, t2p->pdf_startxref);
     check_snprintf_ret(t2p, buflen, buffer);
-    written += t2pWriteFile(output, (tdata_t)buffer, buflen);
-    written += t2pWriteFile(output, (tdata_t) "\n%%EOF\n", 7);
+    add_t2pWriteFile_check(output, (tdata_t)buffer, buflen, mod, written);
+    add_t2pWriteFile_check(output, (tdata_t) "\n%%EOF\n", 7, mod, written);
 
     return (written);
 }

@@ -339,12 +339,6 @@ tiff_requires_private = @tiff_requires_private@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@SPHINX_FALSE@@TIFF_DOCS_TRUE@man1_MANS = $(TIFF_MAN1_PREBUILT)
-@SPHINX_TRUE@@TIFF_DOCS_TRUE@man1_MANS = $(TIFF_MAN1_GEN)
-@SPHINX_FALSE@@TIFF_DOCS_TRUE@man3_MANS = $(TIFF_MAN3_PREBUILT)
-@SPHINX_TRUE@@TIFF_DOCS_TRUE@man3_MANS = $(TIFF_MAN3_GEN)
-@SPHINX_FALSE@@TIFF_DOCS_TRUE@html_installdir = $(srcdir)/html-prebuilt
-@SPHINX_TRUE@@TIFF_DOCS_TRUE@html_installdir = html
 rst_sources = \
 	index.rst \
 	build.rst \
@@ -375,6 +369,7 @@ rst_sources = \
 	project/acknowledgements.rst \
 	project/bugs.rst \
 	project/mailinglist.rst \
+	project/psc.rst \
 	addingtags.rst \
 	specification/index.rst \
 	specification/bigtiff.rst \
@@ -439,6 +434,12 @@ rst_sources = \
 	releases/v4.0.4.rst \
 	releases/v3.7.2.rst \
 	releases/v4.5.0.rst \
+	releases/v4.5.1.rst \
+	releases/v4.6.0.rst \
+	releases/v4.7.0.rst \
+	rfcs/index.rst \
+	rfcs/rfc1_psc.rst \
+	rfcs/rfc2_restoring_needed_tools.rst \
 	functions.rst \
 	tools.rst \
 	terms.rst \
@@ -503,6 +504,7 @@ rst_sources = \
 	functions/TIFFSetTagExtender.rst \
 	functions/TIFFStrileQuery.rst \
 	libtiff.rst \
+	multi_page.rst \
 	images.rst
 
 EXTRA_DIST = \
@@ -512,6 +514,12 @@ EXTRA_DIST = \
 	images \
 	$(rst_sources)
 
+@SPHINX_FALSE@@TIFF_DOCS_TRUE@man1_MANS = $(TIFF_MAN1_PREBUILT)
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@man1_MANS = $(TIFF_MAN1_GEN)
+@SPHINX_FALSE@@TIFF_DOCS_TRUE@man3_MANS = $(TIFF_MAN3_PREBUILT)
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@man3_MANS = $(TIFF_MAN3_GEN)
+@SPHINX_FALSE@@TIFF_DOCS_TRUE@html_installdir = $(srcdir)/html-prebuilt
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@html_installdir = html
 all: all-am
 
 .SUFFIXES:
@@ -715,9 +723,9 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 @TIFF_DOCS_FALSE@uninstall-local:
+@TIFF_DOCS_FALSE@install-data-local:
 @SPHINX_FALSE@clean-local:
 @TIFF_DOCS_FALSE@clean-local:
-@TIFF_DOCS_FALSE@install-data-local:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-local mostlyclean-am
@@ -806,30 +814,34 @@ uninstall-man: uninstall-man1 uninstall-man3
 .PRECIOUS: Makefile
 
 
-@SPHINX_TRUE@@TIFF_DOCS_TRUE@doc-html:
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@doc-html: $(EXTRA_DIST) ../configure.ac
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	$(SPHINX_BUILD) \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	-D "release=$(LIBTIFF_VERSION)" \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	-D "version=$(LIBTIFF_MAJOR_VERSION).$(LIBTIFF_MINOR_VERSION)" \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	-d "$(builddir)/cache" \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	-b html \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	"$(srcdir)" "$(builddir)/html"
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@	touch doc-html
 
-@SPHINX_TRUE@@TIFF_DOCS_TRUE@doc-man:
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@doc-man: $(EXTRA_DIST) ../configure.ac
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	$(SPHINX_BUILD) \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	-D "release=$(LIBTIFF_VERSION)" \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	-D "version=$(LIBTIFF_MAJOR_VERSION).$(LIBTIFF_MINOR_VERSION)" \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	-d "$(builddir)/cache" \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	-b man \
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@	"$(srcdir)" "$(builddir)/man"
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@	touch doc-man
 
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@@TIFF_MAN_RULES@
 
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@all-local: doc-html doc-man
 
 @SPHINX_TRUE@@TIFF_DOCS_TRUE@clean-local:
-@SPHINX_TRUE@@TIFF_DOCS_TRUE@	rm -r html
-@SPHINX_TRUE@@TIFF_DOCS_TRUE@	rm -r man
-@SPHINX_TRUE@@TIFF_DOCS_TRUE@	rm -r cache
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@	rm -rf html
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@	rm -rf man
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@	rm -rf cache
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@	rm -f doc-html
+@SPHINX_TRUE@@TIFF_DOCS_TRUE@	rm -f doc-man
 # Sphinx not available
 @SPHINX_FALSE@@TIFF_DOCS_TRUE@doc-html:
 @SPHINX_FALSE@@TIFF_DOCS_TRUE@	echo "HTML documentation generation not configured (sphinx not available)"
@@ -838,6 +850,8 @@ uninstall-man: uninstall-man1 uninstall-man3
 @SPHINX_FALSE@@TIFF_DOCS_TRUE@doc-man:
 @SPHINX_FALSE@@TIFF_DOCS_TRUE@	echo "Manual page documentation generation not configured (sphinx not available)"
 @SPHINX_FALSE@@TIFF_DOCS_TRUE@	exit 1
+
+@SPHINX_FALSE@@TIFF_DOCS_TRUE@.PHONY: doc-html doc-man
 
 @TIFF_DOCS_TRUE@install-data-local: all-local
 @TIFF_DOCS_TRUE@	find $(html_installdir) -type d | sed -e 's;^$(html_installdir);;' | while read dir; do \
@@ -862,11 +876,11 @@ uninstall-man: uninstall-man1 uninstall-man3
 @TIFF_DOCS_FALSE@	echo "Manual page documentation generation not configured"
 @TIFF_DOCS_FALSE@	exit 1
 
+@TIFF_DOCS_FALSE@.PHONY: doc-html doc-man
+
 dist-hook: doc-html doc-man
 	cp -r html $(distdir)/html-prebuilt
 	cp -r man $(distdir)/man-prebuilt
-
-.PHONY: doc-html doc-man
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

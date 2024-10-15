@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TIFFSetField &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TIFFSetField &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TIFFSetTagExtender" href="TIFFSetTagExtender.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="TIFFSetDirectory.html" title="TIFFSetDirectory"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" accesskey="U">TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFSetField</a></li> 
       </ul>
@@ -42,12 +39,12 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffsetfield">
+  <section id="tiffsetfield">
 <h1>TIFFSetField<a class="headerlink" href="#tiffsetfield" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span><span class="cp"></span>
-<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdarg.h&gt;</span><span class="c1">&quot;</span><span class="cp"></span>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;stdarg.h&gt;</span><span class="c1">&quot;</span>
 </pre></div>
 </div>
 <dl class="c function">
@@ -65,8 +62,8 @@
 <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TIFFUnsetField</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">TIFF</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">tif</span></span>, <span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n"><span class="pre">tag</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.TIFFUnsetField" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="#c.TIFFSetField" title="TIFFSetField"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFSetField()</span></code></a> sets the value of a field or pseudo-tag in the
 current directory associated with the open TIFF file <em>tif</em>.
@@ -88,11 +85,11 @@ structure. If it is a custom field, it is removed from the list of known tags.</
 <p>The tags understood by <strong class="program">libtiff</strong>, the number of parameter values,
 and the expected types for the parameter values are shown below.
 The data types are:</p>
-<table class="colwidths-given docutils align-default" id="id1">
+<table class="docutils align-default" id="id1">
 <caption><span class="caption-text">Tag data types</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 75%" />
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Type</p></th>
@@ -119,13 +116,13 @@ The data types are:</p>
 </table>
 <p>Consult the TIFF specification for information on the meaning of each tag.</p>
 <blockquote>
-<div><table class="colwidths-given docutils align-default" id="id2">
+<div><table class="docutils align-default" id="id2">
 <caption><span class="caption-text">Tag properties</span><a class="headerlink" href="#id2" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 22%" />
-<col style="width: 13%" />
-<col style="width: 22%" />
-<col style="width: 43%" />
+<col style="width: 21.7%" />
+<col style="width: 13.0%" />
+<col style="width: 21.7%" />
+<col style="width: 43.5%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Tag name</p></th>
@@ -499,24 +496,24 @@ otherwise three arrays should be passed.</p>
 </div></blockquote>
 <dl class="simple">
 <dt>*:</dt><dd><p>The contents of this field are quite complex.  See
-“The ICC Profile Format Specification”,
-Annex B.3 “Embedding ICC Profiles in TIFF Files”
+&quot;The ICC Profile Format Specification&quot;,
+Annex B.3 &quot;Embedding ICC Profiles in TIFF Files&quot;
 (available at <a class="reference external" href="http://www.color.org">http://www.color.org</a>) for an explanation.</p>
 </dd>
 </dl>
-</div>
-<div class="section" id="return-values">
+</section>
+<section id="return-values">
 <h2>Return values<a class="headerlink" href="#return-values" title="Permalink to this heading">¶</a></h2>
 <p>1 is returned if the operation was successful.
 Otherwise, 0 is returned if an error was detected.</p>
-</div>
-<div class="section" id="diagnostics">
+</section>
+<section id="diagnostics">
 <h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this heading">¶</a></h2>
 <p>All error messages are directed to the <a class="reference internal" href="TIFFError.html#c.TIFFErrorExtR" title="TIFFErrorExtR"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorExtR()</span></code></a> routine.</p>
 <p><code class="docutils literal notranslate"><span class="pre">%s:</span> <span class="pre">Cannot</span> <span class="pre">modify</span> <span class="pre">tag</span> <span class="pre">&quot;%s&quot;</span> <span class="pre">while</span> <span class="pre">writing</span></code>:</p>
 <blockquote>
 <div><p>Data has already been written to the file, so the
-specified tag’s value can not be changed.
+specified tag's value can not be changed.
 This restriction is applied to all tags that affect
 the format of written data.</p>
 </div></blockquote>
@@ -524,8 +521,8 @@ the format of written data.</p>
 <blockquote>
 <div><p>An invalid value was supplied for the named tag.</p>
 </div></blockquote>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="TIFFOpen.html"><span class="doc">TIFFOpen</span></a> (3tiff),
 <a class="reference internal" href="TIFFGetField.html"><span class="doc">TIFFGetField</span></a> (3tiff),
@@ -533,8 +530,8 @@ the format of written data.</p>
 <a class="reference internal" href="TIFFWriteDirectory.html"><span class="doc">TIFFWriteDirectory</span></a> (3tiff),
 <a class="reference internal" href="TIFFReadDirectory.html"><span class="doc">TIFFReadDirectory</span></a> (3tiff),
 <a class="reference internal" href="libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -600,14 +597,14 @@ the format of written data.</p>
         <li class="right" >
           <a href="TIFFSetDirectory.html" title="TIFFSetDirectory"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" >TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFSetField</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

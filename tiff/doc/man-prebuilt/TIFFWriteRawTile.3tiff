@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFWRITERAWTILE" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFWriteRawTile \- write a tile of raw data to an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFWRITERAWTILE" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFWriteRawTile \- write a tile of raw data to an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -72,15 +72,15 @@ The image is assumed to be organized in strips because neither of the
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: Must set "ImageWidth" before writing data\fP:
+\fB%s: Must set \(dqImageWidth\(dq before writing data\fP:
 .INDENT 0.0
 .INDENT 3.5
-The image’s width has not be set before the first write.
+The image\(aqs width has not be set before the first write.
 See \fI\%TIFFSetField()\fP for information on how to do this.
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: Must set "PlanarConfiguration" before writing data\fP:
+\fB%s: Must set \(dqPlanarConfiguration\(dq before writing data\fP:
 .INDENT 0.0
 .INDENT 3.5
 The organization of data has not be defined before the first write.

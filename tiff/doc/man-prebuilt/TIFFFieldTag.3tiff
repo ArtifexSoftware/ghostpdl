@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFFIELDTAG" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFFieldTag \- get TIFF field tag value from field information
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFFIELDTAG" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFFieldTag \- get TIFF field tag value from field information
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -59,6 +59,12 @@ header files, such as \fBTIFFTAG_IMAGEWIDTH\fP\&.
 \fI\%TIFFFieldTag()\fP returns an integer tag value.
 .SH SEE ALSO
 .sp
+\fI\%TIFFFieldDataType\fP (3tiff),
+\fI\%TIFFFieldName\fP (3tiff),
+\fI\%TIFFFieldPassCount\fP (3tiff),
+\fI\%TIFFFieldQuery\fP (3tiff),
+\fI\%TIFFFieldReadCount\fP (3tiff),
+\fI\%TIFFFieldWriteCount\fP (3tiff),
 \fI\%libtiff\fP (3tiff)
 .SH AUTHOR
 LibTIFF contributors

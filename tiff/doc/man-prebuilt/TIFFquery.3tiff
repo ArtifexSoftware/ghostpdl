@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFQUERY" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFquery \- query routines
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFQUERY" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFquery \- query routines
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -114,30 +114,54 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 The following query routines return status information about the directory
 structure of an open TIFF file.
 .sp
-\fI\%TIFFCurrentDirectory()\fP returns the index of the current directory
-(directories are numbered starting at 0). This number is suitable for
+\fI\%TIFFCurrentDirectory()\fP returns the index of the current
+\fI\%Image File Directory (IFD)\fP\&.
+Directories are numbered starting at 0. This number is suitable for
 use with the \fI\%TIFFSetDirectory()\fP routine.
-A value of 65535 (non\-existing directory) is returned if the directory
-has not yet been written to the file after opening it.
+There are \fI\%IFDs\fP in the file and an \(dqactive\(dq
+\fI\%IFD\fP  in memory, from which fields
+are \(dqset\(dq and \(dqget\(dq. The index of the current directory returned is:
+.INDENT 0.0
+.IP a. 3
+65535 (non\-existing directory) if there is no IFD in the file after opening,
+or the state is unknown,
+or the last read (i.e. TIFFFetchDirectory()) failed,
+or a custom directory was written.
+.IP b. 3
+IFD index of last IFD written in the file.
+In this case the active IFD is a new (empty) one and the current directory offset
+from TIFFCurrentDirOffset() is zero.
+If writing fails, the IFD index is not changed.
+.IP c. 3
+IFD index of IFD read from file into memory (=active IFD),
+even if IFD is corrupt and TIFFReadDirectory() returns 0.
+Then the current directory offset is the offset of the IFD in the file.
+.IP d. 3
+IFD index „0“, whenever a custom directory or an unchained SubIFD
+was read.
+.UNINDENT
 .sp
 \fI\%TIFFCurrentDirOffset()\fP returns the file offset of the current
 directory (instead of an index).
 The file offset is suitable for use with the \fI\%TIFFSetSubDirectory()\fP
 routine. This is required for accessing subdirectories linked through a
-\fBSubIFD\fP tag.
+\fBSubIFD\fP tag. See also \fI\%SubIFD access\fP\&.
 .sp
 \fI\%TIFFLastDirectory()\fP returns a non\-zero value if the current
 directory is the last directory in the file; otherwise zero is returned.
+A new (empty) directory in the memory (after \fI\%TIFFWriteDirectory()\fP
+or \fI\%TIFFCreateDirectory()\fP)
+also counts as the last directory, even if it has not yet been written to a file.
 .sp
 \fI\%TIFFNumberOfDirectories()\fP returns the number of directories in a
-file. Be aware that just created directories, which are not “written” to
+file. Be aware that just created directories, which are not \(dqwritten\(dq to
 file do not count.
 .sp
 \fBNOTE:\fP
 .INDENT 0.0
 .INDENT 3.5
 Be aware that the return value of the above directory query functions
-is not valid until the directory is “written” to file AND read back
+is not valid until the directory is \(dqwritten\(dq to file AND read back
 e.g. \fI\%TIFFSetDirectory()\fP or \fI\%TIFFReadDirectory()\fP\&.
 .UNINDENT
 .UNINDENT

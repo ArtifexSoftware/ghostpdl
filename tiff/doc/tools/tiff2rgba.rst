@@ -59,6 +59,11 @@ Options
   Drop the alpha component from the output file, producing a pure RGB file.
   Currently this does not work if the :option:`-b` flag is also in effect.
 
+.. option:: -B
+
+  Use this value as the background when doing alpha compositing (dropping the
+  alpha component).
+
 .. option:: -M size
 
   Set maximum memory allocation size (in MiB). The default is 256MiB.

@@ -50,17 +50,19 @@ Description
 and returns a handle to be used in subsequent calls to routines in
 :program:`libtiff`.  If the open operation fails, then
 :c:macro:`NULL` (0) is returned.  The *mode* parameter specifies if
-the file is to be opened for reading (``r``), writing (``w``), or
+the file is to be opened for reading (``r``) or (``r+``), writing (``w``), or
 appending (``a``) and, optionally, whether to override certain
-default aspects of library operation (see below).
+default aspects of library operation (see below Options_).
+
+The *mode* (``r``) opens only an **existing** file for reading and (``r+``)
+for reading and writing.
 When a file is opened for appending, existing data will not
 be touched; instead new data will be written as additional subfiles.
 If an existing file is opened for writing, all previous data is
 overwritten.
 
 If a file is opened for reading, the first TIFF directory in the file
-is automatically read (also see :c:func:`TIFFSetDirectory` for reading
-directories other than the first). 
+is automatically read. 
 If a file is opened for writing or appending, a default directory
 is automatically created for writing subsequent data.
 This directory has all the default values specified in TIFF Revision 6.0:
@@ -78,16 +80,13 @@ This directory has all the default values specified in TIFF Revision 6.0:
 To alter these values, or to define values for additional fields,
 :c:func:`TIFFSetField` must be used.
 
-A file can also be opened for reading and writing with *mode* (``r+``).
-In this case, the first TIFF directory in the file is automatically read,
-but calls to :c:func:`TIFFSetField` are put into a fresh directory, which
-will be appended when the file is closed.
-
 :c:func:`TIFFOpenW` opens a TIFF file with a Unicode filename, for read/writing.
 
 :c:func:`TIFFFdOpen` is like :c:func:`TIFFOpen` except that it opens a
 TIFF file given an open file descriptor *fd*.
 The file's name and mode must reflect that of the open descriptor.
+Even for write-only mode, ``libtiff`` needs read permissions because
+some of its functions need to read back the partially written TIFF file.
 The object associated with the file descriptor **must support random access**.
 In order to close a TIFF file opened with :c:func:`TIFFFdOpen`
 first :c:func:`TIFFCleanup` should be called to free the internal
@@ -95,8 +94,9 @@ TIFF structure without closing the file handle and afterwards the
 file should be closed using its file descriptor *fd*.
 
 :c:func:`TIFFOpenExt` (added in libtiff 4.5) is like :c:func:`TIFFOpen`,
-but options, such as re-entrant error and warning handlers may be passed
-with the *opts* argument. The *opts* argument may be NULL. 
+but options, such as re-entrant error and warning handlers and a limit in byte
+that libtiff internal memory allocation functions are allowed to request per call
+may be passed with the *opts* argument. The *opts* argument may be NULL. 
 Refer to :doc:`TIFFOpenOptions` for allocating and filling the *opts* argument
 parameters. The allocated memory for :c:type:`TIFFOpenOptions`
 can be released straight after successful execution of the related
@@ -106,9 +106,7 @@ can be released straight after successful execution of the related
 but opens a TIFF file with a Unicode filename.
 
 :c:func:`TIFFFdOpenExt` (added in libtiff 4.5) is like :c:func:`TIFFFdOpen`,
-but options, such as re-entrant error and warning handlers may be passed
-with the *opts* argument. The *opts* argument may be NULL. 
-Refer to :doc:`TIFFOpenOptions` for filling the *opts* argument.
+but options argument *opts* like for :c:func:`TIFFOpenExt` can be passed.
 
 :c:func:`TIFFSetFileName` sets the file name in the tif-structure
 and returns the old file name.
@@ -154,9 +152,14 @@ Options
 -------
 
 The open mode parameter can include the following flags in
-addition to the ``r``, ``w``, and ``a`` flags.
+addition to the ``r``, ``r+``, ``w``, and ``a`` flags.
 Note however that option flags must follow the read-write-append
 specification.
+
+Note 2: Also for ``w`` the file will be opened with *read access* rights
+because ``libtiff`` needs to read back the partially written TIFF file
+for some of its functions.
+
 
 ``l``:
 
@@ -322,5 +325,5 @@ See also
 
 :doc:`libtiff` (3tiff),
 :doc:`TIFFClose` (3tiff),
-:doc:`TIFFStrileQuery`,
+:doc:`TIFFStrileQuery` (3tiff),
 :doc:`TIFFOpenOptions`

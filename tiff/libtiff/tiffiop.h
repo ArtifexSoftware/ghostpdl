@@ -34,23 +34,6 @@
 #include <fcntl.h>
 #endif
 
-#ifndef O_RDONLY
-#define O_RDONLY _O_RDONLY
-#endif
-#ifndef O_WRONLY
-#define O_WRONLY _O_WRONLY
-#endif
-#ifndef O_RDWR
-#define O_RDWR _O_RDWR
-#endif
-#ifndef O_CREAT
-#define O_CREAT _O_CREAT
-#endif
-#ifndef O_TRUNC
-#define O_TRUNC _O_TRUNC
-#endif
-
-
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -61,14 +44,6 @@
 #include <assert.h>
 #else
 #define assert(x)
-#endif
-
-#if !defined(__WIN32__)
-#if !defined(HAVE_SNPRINTF) && !defined(HAVE__SNPRINTF)
-#undef snprintf
-#define snprintf _TIFF_snprintf_f
-extern int snprintf(char* str, size_t size, const char* format, ...);
-#endif
 #endif
 
 #include "tif_hash_set.h"
@@ -127,6 +102,13 @@ struct TIFFOffsetAndDirNumber
 };
 typedef struct TIFFOffsetAndDirNumber TIFFOffsetAndDirNumber;
 
+typedef union
+{
+    TIFFHeaderCommon common;
+    TIFFHeaderClassic classic;
+    TIFFHeaderBig big;
+} TIFFHeaderUnion;
+
 struct tiff
 {
     char *tif_name; /* name of open file */
@@ -168,31 +150,45 @@ struct tiff
 #define TIFF_CHOPPEDUPARRAYS                                                   \
     0x4000000U /* set when allocChoppedUpStripArrays() has modified strip      \
                   array */
-    uint64_t tif_diroff;      /* file offset of current directory */
-    uint64_t tif_nextdiroff;  /* file offset of following directory */
-    uint64_t tif_lastdiroff;  /* file offset of last directory written so far */
-    uint64_t *tif_dirlistoff; /* list of offsets to already seen directories to
-                                 prevent IFD looping */
+    uint64_t tif_diroff;     /* file offset of current directory */
+    uint64_t tif_nextdiroff; /* file offset of following directory */
+    uint64_t tif_lastdiroff; /* file offset of last directory written so far */
     TIFFHashSet *tif_map_dir_offset_to_number;
     TIFFHashSet *tif_map_dir_number_to_offset;
-    tdir_t tif_dirnumber;  /* number of already seen directories */
-    TIFFDirectory tif_dir; /* internal rep of current directory */
+    int tif_setdirectory_force_absolute; /* switch between relative and absolute
+                                            stepping in TIFFSetDirectory() */
+    TIFFDirectory tif_dir;               /* internal rep of current directory */
     TIFFDirectory
         tif_customdir; /* custom IFDs are separated from the main ones */
-    union
-    {
-        TIFFHeaderCommon common;
-        TIFFHeaderClassic classic;
-        TIFFHeaderBig big;
-    } tif_header;
-    uint16_t tif_header_size;  /* file's header block and its length */
-    uint32_t tif_row;          /* current scanline */
-    tdir_t tif_curdir;         /* current directory (index) */
+    TIFFHeaderUnion tif_header; /* file's header block Classic/BigTIFF union */
+    uint16_t tif_header_size;   /* file's header block and its length */
+    uint32_t tif_row;           /* current scanline */
+
+    /* There are IFDs in the file and an "active" IFD in memory,
+     * from which fields are "set" and "get".
+     * tif_curdir is set to:
+     *   a) TIFF_NON_EXISTENT_DIR_NUMBER if there is no IFD in the file
+     *      or the state is unknown,
+     *      or the last read (i.e. TIFFFetchDirectory()) failed,
+     *      or a custom directory was written.
+     *   b) IFD index of last IFD written in the file. In this case the
+     *      active IFD is a new (empty) one and tif_diroff is zero.
+     *      If writing fails, tif_curdir is not changed.
+     *   c) IFD index of IFD read from file into memory (=active IFD),
+     *      even if IFD is corrupt and TIFFReadDirectory() returns 0.
+     *      Then tif_diroff contains the offset of the IFD in the file.
+     *   d) IFD index 0, whenever a custom directory or an unchained SubIFD
+     *      was read. */
+    tdir_t tif_curdir; /* current directory (index) */
+    /* tif_curdircount: number of directories (main-IFDs) in file:
+     * - TIFF_NON_EXISTENT_DIR_NUMBER means 'dont know number of IFDs'.
+     * - 0 means 'empty file opened for writing, but no IFD written yet' */
+    tdir_t tif_curdircount;
     uint32_t tif_curstrip;     /* current strip for read/write */
     uint64_t tif_curoff;       /* current offset for read/write */
     uint64_t tif_lastvalidoff; /* last valid offset allowed for rewrite in
                                   place. Used only by TIFFAppendToStrip() */
-    uint64_t tif_dataoff;      /* current offset for writing dir */
+    uint64_t tif_dataoff;      /* current offset for writing dir (IFD) */
     /* SubIFD support */
     uint16_t tif_nsubifd;   /* remaining subifds to write */
     uint64_t tif_subifdoff; /* offset for patching SubIFD link */
@@ -259,8 +255,9 @@ struct tiff
     void *tif_errorhandler_user_data;
     TIFFErrorHandlerExtR tif_warnhandler;
     void *tif_warnhandler_user_data;
-    tmsize_t tif_max_single_mem_alloc; /* in bytes. 0 for unlimited */
-	void                *(*get_jpeg_mem_ptr)(thandle_t);
+    tmsize_t tif_max_single_mem_alloc;    /* in bytes. 0 for unlimited */
+    tmsize_t tif_max_cumulated_mem_alloc; /* in bytes. 0 for unlimited */
+    tmsize_t tif_cur_cumulated_mem_alloc; /* in bytes */
 };
 
 struct TIFFOpenOptions
@@ -270,6 +267,7 @@ struct TIFFOpenOptions
     TIFFErrorHandlerExtR warnhandler;  /* may be NULL */
     void *warnhandler_user_data;       /* may be NULL */
     tmsize_t max_single_mem_alloc;     /* in bytes. 0 for unlimited */
+    tmsize_t max_cumulated_mem_alloc;  /* in bytes. 0 for unlimited */
 };
 
 #define isPseudoTag(t) (t > 0xffff) /* is tag value normal or pseudo */
@@ -358,7 +356,7 @@ struct TIFFOpenOptions
 #define ftell(stream, offset, whence) ftello(stream, offset, whence)
 #endif
 #endif
-#if defined(__WIN32__) && !(defined(_MSC_VER) && _MSC_VER < 1400) &&           \
+#if defined(_WIN32) &&                                                         \
     !(defined(__MSVCRT_VERSION__) && __MSVCRT_VERSION__ < 0x800)
 typedef unsigned int TIFFIOSize_t;
 #define _TIFF_lseek_f(fildes, offset, whence)                                  \
@@ -464,11 +462,10 @@ extern "C"
     extern void *_TIFFCheckRealloc(TIFF *, void *, tmsize_t, tmsize_t,
                                    const char *);
 
-    extern double _TIFFUInt64ToDouble(uint64_t);
-    extern float _TIFFUInt64ToFloat(uint64_t);
-
     extern float _TIFFClampDoubleToFloat(double);
     extern uint32_t _TIFFClampDoubleToUInt32(double);
+
+    extern void _TIFFCleanupIFDOffsetAndNumberMaps(TIFF *tif);
 
     extern tmsize_t _TIFFReadEncodedStripAndAllocBuffer(TIFF *tif,
                                                         uint32_t strip,

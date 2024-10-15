@@ -26,16 +26,13 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "tif_config.h"
+
 #include "tif_hash_set.h"
 
 #include <assert.h>
-
-#define GS_TIFF_BUILD
-#ifndef GS_TIFF_BUILD
 #include <stdbool.h>
 #include <stdint.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -92,7 +89,7 @@ static const int anPrimes[] = {
 
 static unsigned long TIFFHashSetHashPointer(const void *elt)
 {
-    return (unsigned long)((void *)(elt));
+    return (unsigned long)(uintptr_t)((void *)(elt));
 }
 
 /************************************************************************/
@@ -149,7 +146,7 @@ TIFFHashSet *TIFFHashSetNew(TIFFHashSetHashFunc fnHashFunc,
     set->fnEqualFunc = fnEqualFunc ? fnEqualFunc : TIFFHashSetEqualPointer;
     set->fnFreeEltFunc = fnFreeEltFunc;
     set->nSize = 0;
-    set->tabList = (TIFFList **)(calloc(sizeof(TIFFList *), 53));
+    set->tabList = (TIFFList **)(calloc(53, sizeof(TIFFList *)));
     if (set->tabList == NULL)
     {
         free(set);
@@ -166,7 +163,6 @@ TIFFHashSet *TIFFHashSetNew(TIFFHashSetHashFunc fnHashFunc,
     return set;
 }
 
-#ifdef notdef
 /************************************************************************/
 /*                          TIFFHashSetSize()                            */
 /************************************************************************/
@@ -186,7 +182,6 @@ int TIFFHashSetSize(const TIFFHashSet *set)
     assert(set != NULL);
     return set->nSize;
 }
-#endif
 
 /************************************************************************/
 /*                       TIFFHashSetGetNewListElt()                      */
@@ -230,17 +225,15 @@ static void TIFFHashSetReturnListElt(TIFFHashSet *set, TIFFList *psList)
 
 static void TIFFHashSetClearInternal(TIFFHashSet *set, bool bFinalize)
 {
-    int i;
     assert(set != NULL);
-    for (i = 0; i < set->nAllocatedSize; i++)
+    for (int i = 0; i < set->nAllocatedSize; i++)
     {
         TIFFList *cur = set->tabList[i];
         while (cur)
         {
-            TIFFList *psNext;
             if (set->fnFreeEltFunc)
                 set->fnFreeEltFunc(cur->pData);
-            psNext = cur->psNext;
+            TIFFList *psNext = cur->psNext;
             if (bFinalize)
                 free(cur);
             else
@@ -348,12 +341,11 @@ void TIFFHashSetClear(TIFFHashSet *set)
 void TIFFHashSetForeach(TIFFHashSet *set, TIFFHashSetIterEltFunc fnIterFunc,
                         void *user_data)
 {
-    int i;
     assert(set != NULL);
     if (!fnIterFunc)
         return;
 
-    for (i = 0; i < set->nAllocatedSize; i++)
+    for (int i = 0; i < set->nAllocatedSize; i++)
     {
         TIFFList *cur = set->tabList[i];
         while (cur)
@@ -373,10 +365,9 @@ void TIFFHashSetForeach(TIFFHashSet *set, TIFFHashSetIterEltFunc fnIterFunc,
 
 static bool TIFFHashSetRehash(TIFFHashSet *set)
 {
-    int i;
     int nNewAllocatedSize = anPrimes[set->nIndiceAllocatedSize];
     TIFFList **newTabList =
-        (TIFFList **)(calloc(sizeof(TIFFList *), nNewAllocatedSize));
+        (TIFFList **)(calloc(nNewAllocatedSize, sizeof(TIFFList *)));
     if (newTabList == NULL)
         return false;
 #ifdef HASH_DEBUG
@@ -387,7 +378,7 @@ static bool TIFFHashSetRehash(TIFFHashSet *set)
               set->nCollisions * 100.0 / set->nSize);
     set->nCollisions = 0;
 #endif
-    for (i = 0; i < set->nAllocatedSize; i++)
+    for (int i = 0; i < set->nAllocatedSize; i++)
     {
         TIFFList *cur = set->tabList[i];
         while (cur)
@@ -448,11 +439,8 @@ static void **TIFFHashSetFindPtr(TIFFHashSet *set, const void *elt)
 
 bool TIFFHashSetInsert(TIFFHashSet *set, void *elt)
 {
-    void **pElt;
-    unsigned long nHashVal;
-    TIFFList *new_elt;
     assert(set != NULL);
-    pElt = TIFFHashSetFindPtr(set, elt);
+    void **pElt = TIFFHashSetFindPtr(set, elt);
     if (pElt)
     {
         if (set->fnFreeEltFunc)
@@ -476,13 +464,13 @@ bool TIFFHashSetInsert(TIFFHashSet *set, void *elt)
         }
     }
 
-    nHashVal = set->fnHashFunc(elt) % set->nAllocatedSize;
+    const unsigned long nHashVal = set->fnHashFunc(elt) % set->nAllocatedSize;
 #ifdef HASH_DEBUG
     if (set->tabList[nHashVal])
         set->nCollisions++;
 #endif
 
-    new_elt = TIFFHashSetGetNewListElt(set);
+    TIFFList *new_elt = TIFFHashSetGetNewListElt(set);
     if (new_elt == NULL)
     {
         if (set->fnFreeEltFunc)
@@ -513,9 +501,8 @@ bool TIFFHashSetInsert(TIFFHashSet *set, void *elt)
 
 void *TIFFHashSetLookup(TIFFHashSet *set, const void *elt)
 {
-    void **pElt;
     assert(set != NULL);
-    pElt = TIFFHashSetFindPtr(set, elt);
+    void **pElt = TIFFHashSetFindPtr(set, elt);
     if (pElt)
         return *pElt;
 
@@ -529,9 +516,6 @@ void *TIFFHashSetLookup(TIFFHashSet *set, const void *elt)
 static bool TIFFHashSetRemoveInternal(TIFFHashSet *set, const void *elt,
                                       bool bDeferRehash)
 {
-    int nHashVal;
-    TIFFList *cur;
-    TIFFList *prev;
     assert(set != NULL);
     if (set->nIndiceAllocatedSize > 0 && set->nSize <= set->nAllocatedSize / 2)
     {
@@ -548,9 +532,9 @@ static bool TIFFHashSetRemoveInternal(TIFFHashSet *set, const void *elt,
         }
     }
 
-    nHashVal = (int)(set->fnHashFunc(elt) % set->nAllocatedSize);
-    cur = set->tabList[nHashVal];
-    prev = NULL;
+    int nHashVal = (int)(set->fnHashFunc(elt) % set->nAllocatedSize);
+    TIFFList *cur = set->tabList[nHashVal];
+    TIFFList *prev = NULL;
     while (cur)
     {
         if (set->fnEqualFunc(cur->pData, elt))

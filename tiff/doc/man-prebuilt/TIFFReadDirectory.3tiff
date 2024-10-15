@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFREADDIRECTORY" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFReadDirectory \- get the contents of the next directory in an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFREADDIRECTORY" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFReadDirectory \- get the contents of the next directory in an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -57,8 +57,8 @@ If the library is compiled with \fBSTRIPCHOP_SUPPORT\fP enabled, then
 images that have a single uncompressed strip or tile of data are
 automatically treated as if they were made up of multiple strips or tiles of
 approximately 8 kilobytes each. This operation is done only in\-memory; it does
-not alter the contents of the file. However, the construction of the “chopped
-strips” is visible to the application through the number of strips [tiles]
+not alter the contents of the file. However, the construction of the \(dqchopped
+strips\(dq is visible to the application through the number of strips [tiles]
 returned by \fI\%TIFFNumberOfStrips()\fP [\fI\%TIFFNumberOfTiles()\fP].
 .SH RETURN VALUES
 .sp
@@ -78,7 +78,7 @@ directory.
 .UNINDENT
 .UNINDENT
 .sp
-\fBWrong data type %d for field "%s"\fP:
+\fBWrong data type %d for field \(dq%s\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The tag entry in the directory had an incorrect data type.
@@ -87,7 +87,7 @@ data type.
 .UNINDENT
 .UNINDENT
 .sp
-\fBTIFF directory is missing required "%s" field\fP:
+\fBTIFF directory is missing required \(dq%s\(dq field\fP:
 .INDENT 0.0
 .INDENT 3.5
 The specified tag is required to be present by the TIFF
@@ -103,15 +103,15 @@ A directory tag has a \fBRATIONAL\fP value whose denominator is zero.
 .UNINDENT
 .UNINDENT
 .sp
-\fBIncorrect count %d for field "%s" (%lu, expecting %lu); tag ignored\fP:
+\fBIncorrect count %d for field \(dq%s\(dq (%lu, expecting %lu); tag ignored\fP:
 .INDENT 0.0
 .INDENT 3.5
-The specified tag’s count field is bad.
+The specified tag\(aqs count field is bad.
 For example, a count other than 1 for a \fBSubFileType\fP tag.
 .UNINDENT
 .UNINDENT
 .sp
-\fBCannot handle different per\-sample values for field "%s"\fP:
+\fBCannot handle different per\-sample values for field \(dq%s\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The tag has \fBSamplesPerPixel\fP values and they are not all the same; e.g.
@@ -119,7 +119,7 @@ The tag has \fBSamplesPerPixel\fP values and they are not all the same; e.g.
 .UNINDENT
 .UNINDENT
 .sp
-\fBCount mismatch for field "%s"; expecting %d, got %d\fP:
+\fBCount mismatch for field \(dq%s\(dq; expecting %d, got %d\fP:
 .INDENT 0.0
 .INDENT 3.5
 The count field in a tag does not agree with the number expected by the
@@ -144,7 +144,7 @@ the library ignores all such tags.
 .UNINDENT
 .UNINDENT
 .sp
-\fBTIFF directory is missing required "ImageLength" field\fP:
+\fBTIFF directory is missing required \(dqImageLength\(dq field\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image violates the specification by not having a necessary field.
@@ -152,7 +152,7 @@ There is no way for the library to recover from this error.
 .UNINDENT
 .UNINDENT
 .sp
-\fBTIFF directory is missing required "PlanarConfig" field\fP:
+\fBTIFF directory is missing required \(dqPlanarConfig\(dq field\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image violates the specification by not having a necessary field.
@@ -160,7 +160,7 @@ There is no way for the library to recover from this error.
 .UNINDENT
 .UNINDENT
 .sp
-\fBTIFF directory is missing required "StripOffsets" field\fP:
+\fBTIFF directory is missing required \(dqStripOffsets\(dq field\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image has multiple strips, but is missing the tag that
@@ -169,7 +169,7 @@ There is no way for the library to recover from this error.
 .UNINDENT
 .UNINDENT
 .sp
-\fBTIFF directory is missing required "TileOffsets" field\fP:
+\fBTIFF directory is missing required \(dqTileOffsets\(dq field\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image has multiple tiles, but is missing the tag that
@@ -178,7 +178,7 @@ There is no way for the library to recover from this error.
 .UNINDENT
 .UNINDENT
 .sp
-\fBTIFF directory is missing required "StripByteCounts" field\fP:
+\fBTIFF directory is missing required \(dqStripByteCounts\(dq field\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image has multiple strips, but is missing the tag that
@@ -187,7 +187,7 @@ There is no way for the library to recover from this error.
 .UNINDENT
 .UNINDENT
 .sp
-\fBTIFF directory is missing required "StripByteCounts" field, calculating from imagelength\fP:
+\fBTIFF directory is missing required \(dqStripByteCounts\(dq field, calculating from imagelength\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image violates the specification by not having a necessary field.
@@ -196,7 +196,7 @@ library will estimate the missing value based on the file size.
 .UNINDENT
 .UNINDENT
 .sp
-\fBBogus "StripByteCounts" field, ignoring and calculating from imagelength\fP:
+\fBBogus \(dqStripByteCounts\(dq field, ignoring and calculating from imagelength\fP:
 .INDENT 0.0
 .INDENT 3.5
 Certain vendors violate the specification by writing zero for
@@ -214,6 +214,7 @@ the missing value based on the file size.
 \fI\%TIFFquery\fP (3tiff),
 \fI\%TIFFWriteDirectory\fP (3tiff),
 \fI\%TIFFSetDirectory\fP (3tiff),
+\fI\%Multi Page / Multi Image TIFF\fP,
 \fI\%libtiff\fP (3tiff)
 .SH AUTHOR
 LibTIFF contributors

@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFERROR" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFError \- library error handling interface
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFERROR" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFError \- library error handling interface
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -110,12 +110,15 @@ can be setup when a TIFF file is opened with one of the following functions:
 or \fI\%TIFFClientOpenExt()\fP\&.
 Furthermore, a \fBcustom defined data structure\fP \fIuser_data\fP for the
 error handler can be given along.
+.sp
+Please refer to \fI\%TIFFOpenOptions\fP for how to setup the
+application\-specific handler introduced with libtiff 4.5.
 .SH NOTE
 .sp
 Both functions \fI\%TIFFError()\fP and \fI\%TIFFErrorExt()\fP
 each attempt to call both handler functions if they are defined.
 First \fI\%TIFFErrorHandler()\fP is called and then \fI\%TIFFErrorHandlerExt()\fP\&.
-However, \fI\%TIFFError()\fP passes a “0” as a file handle to
+However, \fI\%TIFFError()\fP passes a \(dq0\(dq as a file handle to
 \fI\%TIFFErrorHandlerExt()\fP\&.
 .sp
 \fI\%TIFFErrorExtR()\fP tries first to call the per\-TIFF handle defined
@@ -129,7 +132,7 @@ Otherwise, \fI\%TIFFErrorExt()\fP is used!
 \fI\%TIFFSetErrorHandler()\fP and \fI\%TIFFSetErrorHandlerExt()\fP
 returns a reference to the previous error handler function.
 .sp
-\fI\%TIFFErrorHandlerExtR()\fP returns an integer as “stop” to control the call
+\fI\%TIFFErrorHandlerExtR()\fP returns an integer as \(dqstop\(dq to control the call
 of further error handler functions within \fI\%TIFFErrorExtR()\fP:
 .INDENT 0.0
 .INDENT 3.5

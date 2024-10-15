@@ -563,7 +563,7 @@ static void setupStepTables(uint32_t sw)
             }
             rowoff[x] = sx0 >> 3;
             fw = sx - sx0; /* width */
-            b = (fw < 8) ? 0xff << (8 - fw) : 0xff;
+            b = (fw < 8) ? (uint8_t)(0xff << (8 - fw)) : (uint8_t)0xff;
             src0[x] = b >> (sx0 & 7);
             fw -= 8 - (sx0 & 7);
             if (fw < 0)

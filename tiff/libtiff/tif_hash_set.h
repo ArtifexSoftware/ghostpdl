@@ -31,12 +31,7 @@
 #ifndef TIFF_HASH_SET_H_INCLUDED
 #define TIFF_HASH_SET_H_INCLUDED
 
-#define GS_TIFF_BUILD
-#ifdef GS_TIFF_BUILD
-#include "stdpre.h"
-#else
 #include <stdbool.h>
-#endif
 
 /**
  * \file tif_hash_set.h
@@ -76,10 +71,10 @@ extern "C"
 
     void TIFFHashSetDestroy(TIFFHashSet *set);
 
+    int TIFFHashSetSize(const TIFFHashSet *set);
+
 #ifdef notused
     void TIFFHashSetClear(TIFFHashSet *set);
-
-    int TIFFHashSetSize(const TIFFHashSet *set);
 
     /** TIFFHashSetIterEltFunc */
     typedef int (*TIFFHashSetIterEltFunc)(void *elt, void *user_data);

@@ -46,6 +46,32 @@
 #define EXIT_FAILURE 1
 #endif
 
+/*
+  Visual Studio does not support _fseeki64 and _ftelli64 until the 2005 release.
+  Without these interfaces, files over 2GB in size are not supported for
+  Windows.
+  For MinGW, __MSVCRT_VERSION__ must be at least 0x800 to expose these
+  interfaces. The MinGW compiler must support the requested version.  MinGW
+  does not distribute the CRT (it is supplied by Microsoft) so the correct CRT
+  must be available on the target computer in order for the program to run.
+*/
+#if defined(_WIN32) && !(defined(_MSC_VER) && _MSC_VER < 1400) &&              \
+    !(defined(__MSVCRT_VERSION__) && __MSVCRT_VERSION__ < 0x800)
+#define TIFFfseek(stream, offset, whence)                                      \
+    _fseeki64(stream, /* __int64 */ offset, whence)
+#define TIFFftell(stream) /* __int64 */ _ftelli64(stream)
+#pragma message("...... _fseeki64 defined ....")
+#else
+#define TIFFfseek(stream, offset, whence) fseek(stream, offset, whence)
+#define TIFFftell(stream) ftell(stream)
+#endif
+
+#define DEFAULT_MAX_MALLOC (256 * 1024 * 1024)
+
+/* malloc size limit (in bytes)
+ * disabled when set to 0 */
+static tmsize_t maxMalloc = DEFAULT_MAX_MALLOC;
+
 static const char usageMsg[] =
     "Set the value of a TIFF header to a specified value\n\n"
     "usage: tiffset [options] filename\n"
@@ -56,7 +82,10 @@ static const char usageMsg[] =
     " -sd <diroff> set the subdirectory\n"
     " -sf <tagname> <filename>  read the tag value from file (for ASCII tags "
     "only)\n"
-    " -h  this help screen\n";
+    " -m  <size>  set maximum memory allocation size (MiB). 0 to disable "
+    "limit. Must be first parameter.\n"
+    " -h  this help screen\n"
+    " The options can be repeated and are processed sequentially.\n";
 
 static void usage(int code)
 {
@@ -83,6 +112,23 @@ static const TIFFField *GetField(TIFF *tiff, const char *tagname)
     }
 
     return fip;
+}
+
+/**
+ * This custom malloc function enforce a maximum allocation size
+ */
+static void *limitMalloc(tmsize_t s)
+{
+    if (maxMalloc && (s > maxMalloc))
+    {
+        fprintf(stderr,
+                "MemoryLimitError: allocation of %" TIFF_SSIZE_FORMAT
+                " bytes is forbidden. Limit is %" TIFF_SSIZE_FORMAT ".\n",
+                s, maxMalloc);
+        fprintf(stderr, "                  use -m option to change limit.\n");
+        return NULL;
+    }
+    return _TIFFmalloc(s);
 }
 
 int main(int argc, char *argv[])
@@ -236,7 +282,7 @@ int main(int argc, char *argv[])
                             break;
                     }
 
-                    array = _TIFFmalloc(wc * size);
+                    array = limitMalloc((tmsize_t)wc * size);
                     if (!array)
                     {
                         fprintf(stderr, "No space for %s tag\n", tagname);
@@ -383,6 +429,7 @@ int main(int argc, char *argv[])
             char *text;
             size_t len;
             int ret;
+            int64_t fsize;
 
             arg_index++;
             fip = GetField(tiff, argv[arg_index]);
@@ -407,14 +454,34 @@ int main(int argc, char *argv[])
                 continue;
             }
 
-            text = (char *)malloc(1000000);
+            /* Get file size and enlarge it for some space in buffer.
+             * Maximum ASCII tag size is limited by uint32_t count.
+             */
+            TIFFfseek(fp, 0L, SEEK_END);
+            fsize = TIFFftell(fp) + 1;
+            rewind(fp);
+
+            /* for x32 tmsize_t is only int32_t. The - 1 is just here to make
+             * Coverity Scan happy on 64 bit builds where the condition would
+             * be always true otherwise.
+             */
+            if (fsize > TIFF_TMSIZE_T_MAX - 1 || fsize <= 0)
+            {
+                fprintf(
+                    stderr,
+                    "Contents of %s is too large to store in an ASCII tag.\n",
+                    argv[arg_index]);
+                fclose(fp);
+                continue;
+            }
+            text = (char *)limitMalloc((tmsize_t)fsize);
             if (text == NULL)
             {
                 fprintf(stderr, "Memory allocation error\n");
                 fclose(fp);
                 continue;
             }
-            len = fread(text, 1, 999999, fp);
+            len = fread(text, 1, (size_t)(fsize - 1), fp);
             text[len] = '\0';
 
             fclose(fp);
@@ -437,6 +504,11 @@ int main(int argc, char *argv[])
             _TIFFfree(text);
             arg_index++;
         }
+        else if (strcmp(argv[arg_index], "-m") == 0)
+        {
+            arg_index++;
+            maxMalloc = (tmsize_t)strtoul(argv[arg_index], NULL, 0) << 20;
+        }
         else if (strcmp(argv[arg_index], "-h") == 0 ||
                  strcmp(argv[arg_index], "--help") == 0)
         {
@@ -444,7 +516,10 @@ int main(int argc, char *argv[])
         }
         else
         {
-            fprintf(stderr, "Unrecognised option: %s\n", argv[arg_index]);
+            fprintf(stderr,
+                    "Unrecognised option: %s  or too few parameters left "
+                    "for this option.\n",
+                    argv[arg_index]);
             usage(EXIT_FAILURE);
         }
     }

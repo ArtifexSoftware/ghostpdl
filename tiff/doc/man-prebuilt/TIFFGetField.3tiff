@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFGETFIELD" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFGetField \- get the value(s) of a tag in an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFGETFIELD" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFGetField \- get the value(s) of a tag in an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -809,15 +809,15 @@ three arrays are returned.
 .TP
 .B ‡:
 The contents of this field are quite complex.  See
-“The ICC Profile Format Specification”,
-Annex B.3 “Embedding ICC Profiles in TIFF Files” (available at
+\(dqThe ICC Profile Format Specification\(dq,
+Annex B.3 \(dqEmbedding ICC Profiles in TIFF Files\(dq (available at
 \fI\%http://www.color.org\fP) for an explanation.
 .UNINDENT
 .SH AUTOREGISTERED TAGS
 .sp
-If you can’t find the tag in the table above that means this is an unsupported
+If you can\(aqt find the tag in the table above that means this is an unsupported
 tag and is not directly supported by the \fBlibtiff\fP library. You will
-still be able to read it’s value if you know the data type of that tag. For
+still be able to read it\(aqs value if you know the data type of that tag. For
 example, if you want to read the \fBLONG\fP value from the tag 33424
 and \fBASCII\fP string from the tag 36867 you can use the following code:
 .INDENT 0.0
@@ -829,9 +829,9 @@ uint32_t  count;
 void    *data;
 
 TIFFGetField(tiff, 33424, &count, &data);
-printf("Tag %d: %d, count %d\en", 33424, *(uint32_t *)data, count);
+printf(\(dqTag %d: %d, count %d\en\(dq, 33424, *(uint32_t *)data, count);
 TIFFGetField(tiff, 36867, &count, &data);
-printf("Tag %d: %s, count %d\en", 36867, (char *)data, count);
+printf(\(dqTag %d: %s, count %d\en\(dq, 36867, (char *)data, count);
 .ft P
 .fi
 .UNINDENT

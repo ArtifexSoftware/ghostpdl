@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFF2PDF" "1" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-tiff2pdf \- convert a TIFF image to a PDF document
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFF2PDF" "1" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+tiff2pdf \- convert a TIFF image to a PDF document
 .SH SYNOPSIS
 .sp
 \fBtiff2pdf\fP [ \fIoptions\fP ] \fIinput.tiff\fP
@@ -84,7 +84,7 @@ length can be set by the \fI\%\-u\fP option, the default unit is inch.
 .sp
 Various items of the output document information can be set with the
 \fI\%\-e\fP, \fI\%\-c\fP, \fI\%\-a\fP, \fI\%\-t\fP, \fI\%\-s\fP,
-and \fI\%\-k\fP options.  Setting the argument of the option to \fB""\fP for these
+and \fI\%\-k\fP options.  Setting the argument of the option to \fB\(dq\(dq\fP for these
 tags causes the relevant document information field to be not written.  Some
 of the document information values otherwise get their information from the
 input TIFF image, the software, author, document name, and image description.
@@ -128,7 +128,7 @@ Set PDF \fBInterpolate\fP user preference.
 .INDENT 0.0
 .TP
 .B \-d
-Do not compress (decompress).
+Do not compress (decompress) \- except monochrome to CCITT Group 4.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -258,7 +258,7 @@ the \fBFit Window\fP option:
 .sp
 .nf
 .ft C
-tiff2pdf \-p letter \-j \-q 75 \-t "Document" \-f \-o output.pdf input.tiff
+tiff2pdf \-p letter \-j \-q 75 \-t \(dqDocument\(dq \-f \-o output.pdf input.tiff
 .ft P
 .fi
 .UNINDENT

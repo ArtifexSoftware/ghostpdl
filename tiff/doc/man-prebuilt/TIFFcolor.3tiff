@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFCOLOR" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFcolor \- color conversion routines
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFCOLOR" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFcolor \- color conversion routines
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -118,8 +118,8 @@ ycbcr = (TIFFYCbCrToRGB*)
         + 2*256*sizeof(int)
         + 3*256*sizeof(int32_t));
 if (ycbcr == NULL) {
-    TIFFError("YCbCr\->RGB",
-    "No space for YCbCr\->RGB conversion state");
+    TIFFError(\(dqYCbCr\->RGB\(dq,
+    \(dqNo space for YCbCr\->RGB conversion state\(dq);
     exit(0);
 }
 
@@ -251,8 +251,8 @@ float   refWhite[3];
 img\->cielab = (TIFFCIELabToRGB *)
     _TIFFmalloc(sizeof(TIFFCIELabToRGB));
 if (!cielab) {
-    TIFFError("CIE L*a*b*\->RGB",
-        "No space for CIE L*a*b*\->RGB conversion state.");
+    TIFFError(\(dqCIE L*a*b*\->RGB\(dq,
+        \(dqNo space for CIE L*a*b*\->RGB conversion state.\(dq);
     exit(0);
 }
 
@@ -262,8 +262,8 @@ refWhite[0] = whitePoint[0] / whitePoint[1] * refWhite[1];
 refWhite[2] = (1.0F \- whitePoint[0] \- whitePoint[1])
     / whitePoint[1] * refWhite[1];
 if (TIFFCIELabToRGBInit(cielab, &display_sRGB, refWhite) < 0) {
-    TIFFError("CIE L*a*b*\->RGB",
-        "Failed to initialize CIE L*a*b*\->RGB conversion state.");
+    TIFFError(\(dqCIE L*a*b*\->RGB\(dq,
+        \(dqFailed to initialize CIE L*a*b*\->RGB conversion state.\(dq);
     _TIFFfree(cielab);
     exit(0);
 }

@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Building the TIFF Software Distribution &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-    <script src="_static/jquery.js"></script>
-    <script src="_static/underscore.js"></script>
-    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="_static/doctools.js"></script>
-    <script src="_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Building the TIFF Software Distribution &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=9f25de62"></script>
+    <script src="_static/doctools.js?v=888ff710"></script>
+    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Terminology" href="terms.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="images.html" title="TIFF Test Images"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Building the TIFF Software Distribution</a></li> 
       </ul>
     </div>  
@@ -41,14 +38,14 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="building-the-tiff-software-distribution">
+  <section id="building-the-tiff-software-distribution">
 <h1>Building the TIFF Software Distribution<a class="headerlink" href="#building-the-tiff-software-distribution" title="Permalink to this heading">¶</a></h1>
 <a class="reference internal image-reference" href="_images/cramps.gif"><img alt="cramps" src="_images/cramps.gif" style="width: 159px;" /></a>
 <p>This chapter contains step-by-step instructions on how to configure
 and build the TIFF software distribution. The software is most
 easily built on a UNIX system, but with a little bit of work it can
 easily be built and used on other non-UNIX platforms.</p>
-<div class="section" id="building-on-all-systems-with-cmake">
+<section id="building-on-all-systems-with-cmake">
 <h2>Building on all systems with CMake<a class="headerlink" href="#building-on-all-systems-with-cmake" title="Permalink to this heading">¶</a></h2>
 <p>CMake may be used to
 generate build files for most common build systems and IDEs, and
@@ -65,13 +62,13 @@ run <strong class="command">make</strong> (or <strong class="command">gmake</str
 then <strong class="command">make install</strong> to do the installation.  For other build
 systems, you do the equivalent steps with the tool for that system.
 For example, on any UNIX system:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">cd</span> ./tiff-4.0.5
-$ cmake
-    ...lots of messages...
-$ make
-    ...lots of messages...
-$ make <span class="nb">test</span>
-    ...lots of messages...
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>./tiff-4.0.5
+$<span class="w"> </span>cmake
+<span class="w">    </span>...lots<span class="w"> </span>of<span class="w"> </span>messages...
+$<span class="w"> </span>make
+<span class="w">    </span>...lots<span class="w"> </span>of<span class="w"> </span>messages...
+$<span class="w"> </span>make<span class="w"> </span><span class="nb">test</span>
+<span class="w">    </span>...lots<span class="w"> </span>of<span class="w"> </span>messages...
 <span class="c1"># make install</span>
 </pre></div>
 </div>
@@ -85,31 +82,31 @@ targets will always be available:</p>
 <span class="n">make</span> <span class="n">clean</span>      <span class="n">remove</span> <span class="nb">object</span> <span class="n">files</span><span class="p">,</span> <span class="n">executables</span> <span class="ow">and</span> <span class="n">cruft</span>
 </pre></div>
 </div>
-<div class="section" id="build-trees">
+<section id="build-trees">
 <h3>Build Trees<a class="headerlink" href="#build-trees" title="Permalink to this heading">¶</a></h3>
 <p>There are two schemes for configuring and building the software. If
 you intend to build the software for only one target system, you
 can configure the software so that it is built in the same
 directories as the source code.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ gzip -dc tiff-4.0.5.tar.gz <span class="p">|</span> tar -xf -
-$ <span class="nb">cd</span> ./tiff-4.0.5
-$ cmake
-$ make
-$ make <span class="nb">test</span>
-$ make install
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>gzip<span class="w"> </span>-dc<span class="w"> </span>tiff-4.0.5.tar.gz<span class="w"> </span><span class="p">|</span><span class="w"> </span>tar<span class="w"> </span>-xf<span class="w"> </span>-
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>./tiff-4.0.5
+$<span class="w"> </span>cmake
+$<span class="w"> </span>make
+$<span class="w"> </span>make<span class="w"> </span><span class="nb">test</span>
+$<span class="w"> </span>make<span class="w"> </span>install
 </pre></div>
 </div>
 <p>Otherwise, you can configure a build tree that is parallel to
 the source tree hierarchy (or in some completely different place)
 but which contains only configured files and files created during
 the build procedure.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ gzip -dc tiff-4.0.5.tar.gz <span class="p">|</span> tar -xf -
-$ mkdir tiff-4.0.5-build
-$ <span class="nb">cd</span> ./tiff-4.0.5-build
-$ cmake ../tiff-4.0.5
-$ make
-$ make <span class="nb">test</span>
-$ make install
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>gzip<span class="w"> </span>-dc<span class="w"> </span>tiff-4.0.5.tar.gz<span class="w"> </span><span class="p">|</span><span class="w"> </span>tar<span class="w"> </span>-xf<span class="w"> </span>-
+$<span class="w"> </span>mkdir<span class="w"> </span>tiff-4.0.5-build
+$<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>./tiff-4.0.5-build
+$<span class="w"> </span>cmake<span class="w"> </span>../tiff-4.0.5
+$<span class="w"> </span>make
+$<span class="w"> </span>make<span class="w"> </span><span class="nb">test</span>
+$<span class="w"> </span>make<span class="w"> </span>install
 </pre></div>
 </div>
 <p>This second scheme is useful for:</p>
@@ -123,8 +120,8 @@ multiple systems</p></li>
 a <code class="docutils literal notranslate"><span class="pre">distclean</span></code> target, so out of source builds are
 recommended)</p></li>
 </ul>
-</div>
-<div class="section" id="generators">
+</section>
+<section id="generators">
 <h3>Generators<a class="headerlink" href="#generators" title="Permalink to this heading">¶</a></h3>
 <p>The default generator for UNIX is <code class="docutils literal notranslate"><span class="pre">Unix</span> <span class="pre">Makefiles</span></code>, and on Windows is
 <code class="docutils literal notranslate"><span class="pre">NMake</span> <span class="pre">Makefiles</span></code> or <code class="docutils literal notranslate"><span class="pre">MSBuild</span></code> depending upon the setup.
@@ -132,27 +129,27 @@ Run <strong class="command">cmake --help</strong> to list all the
 generators available for your platform.  For example, to use the Ninja
 <a class="reference external" href="https://martine.github.io/ninja/">build system</a> on UNIX or
 Windows:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake -G Ninja
-cmake --build .
-ctest -V
-cmake --build . --target install
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-G<span class="w"> </span>Ninja
+cmake<span class="w"> </span>--build<span class="w"> </span>.
+ctest<span class="w"> </span>-V
+cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--target<span class="w"> </span>install
 </pre></div>
 </div>
 <p>Note that <strong class="command">cmake --build .</strong> is a build-system-independent way
 of building a target; you can always use the build system directly.</p>
 <p>Alternatively, using the MSBuild system on Windows (64-bit Release
 build with VS2013):</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake -G <span class="s2">&quot;Visual Studio 12 2013 Win64&quot;</span>
-cmake --build . --config Release
-ctest -V -C Release
-cmake --build . --config Release --target install
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>cmake<span class="w"> </span>-G<span class="w"> </span><span class="s2">&quot;Visual Studio 12 2013 Win64&quot;</span>
+cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--config<span class="w"> </span>Release
+ctest<span class="w"> </span>-V<span class="w"> </span>-C<span class="w"> </span>Release
+cmake<span class="w"> </span>--build<span class="w"> </span>.<span class="w"> </span>--config<span class="w"> </span>Release<span class="w"> </span>--target<span class="w"> </span>install
 </pre></div>
 </div>
-<p>With the above configuration, it’s also possible to open the generated
+<p>With the above configuration, it's also possible to open the generated
 solution file with the Visual Studio IDE as well as building on the
 command-line.</p>
-</div>
-<div class="section" id="configuration-options">
+</section>
+<section id="configuration-options">
 <h3>Configuration Options<a class="headerlink" href="#configuration-options" title="Permalink to this heading">¶</a></h3>
 <p>The configuration process is critical to the proper compilation,
 installation, and operation of the
@@ -176,11 +173,11 @@ this software package, or <strong class="command">cmake -LAH</strong> to show al
 options in addition. Standard installation related options are shown
 below.</p>
 <blockquote>
-<div><table class="colwidths-given docutils align-default" id="id9">
+<div><table class="docutils align-default" id="id9">
 <caption><span class="caption-text">Installation options</span><a class="headerlink" href="#id9" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 40%" />
-<col style="width: 60%" />
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Option</p></th>
@@ -241,14 +238,14 @@ individual installation locations.</p></td>
 CMake <a class="reference external" href="http://www.cmake.org/cmake/help/latest/">documentation</a>
 for <a class="reference external" href="http://www.cmake.org/cmake/help/latest/manual/cmake-variables.7.html">additional variables</a>
 which may be set.</p>
-</div>
-<div class="section" id="configuring-optional-packages-support">
+</section>
+<section id="configuring-optional-packages-support">
 <h3>Configuring Optional Packages/Support<a class="headerlink" href="#configuring-optional-packages-support" title="Permalink to this heading">¶</a></h3>
 <p>The TIFF software comes with several packages that are installed
 only as needed, or only if specifically configured at the time the
 configure script is run. Packages can be configured via the
 <strong class="program">cmake</strong> commandline parameters.</p>
-<div class="section" id="static-shared-objects-support">
+<section id="static-shared-objects-support">
 <h4>Static/Shared Objects Support<a class="headerlink" href="#static-shared-objects-support" title="Permalink to this heading">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">BUILD_SHARED_LIBS[=ON|OFF]</span></code>:</p>
 <blockquote>
@@ -267,8 +264,8 @@ Linux and FreeBSD) which use the GNU linker. This is needed if
 several major versions of libtiff might be loaded at once into the
 same program.</p>
 </div></blockquote>
-</div>
-<div class="section" id="jpeg-support">
+</section>
+<section id="jpeg-support">
 <h4>JPEG Support<a class="headerlink" href="#jpeg-support" title="Permalink to this heading">¶</a></h4>
 <p><code class="docutils literal notranslate"><span class="pre">jpeg[=ON|OFF]</span></code></p>
 <blockquote>
@@ -290,18 +287,18 @@ The CMake script automatically tries to search for a working IJG JPEG
 installation. If it fails to find library, JPEG support will be
 automatically disabled. If you want specify the exact paths to
 library binary and headers, use above options for that.</p>
-</div>
-<div class="section" id="zip-support">
+</section>
+<section id="zip-support">
 <h4>ZIP Support<a class="headerlink" href="#zip-support" title="Permalink to this heading">¶</a></h4>
 <p>The <code class="docutils literal notranslate"><span class="pre">ZIP</span></code> support enables support for the handling of TIFF
 images with deflate-encoded data (enabled by default if
 available). Support for deflate-encoded data requires the freely
 available <code class="docutils literal notranslate"><span class="pre">zlib</span></code> distribution written by Jean-loup Gailly and
 Mark Adler; this software is available at <a class="reference external" href="http://www.zlib.org/">http://www.zlib.org/</a>.</p>
-</div>
-</div>
-</div>
-<div class="section" id="building-on-a-unix-system-with-autoconf">
+</section>
+</section>
+</section>
+<section id="building-on-a-unix-system-with-autoconf">
 <h2>Building on a UNIX System with Autoconf<a class="headerlink" href="#building-on-a-unix-system-with-autoconf" title="Permalink to this heading">¶</a></h2>
 <p>To build the software on a UNIX system you need to first run the
 <strong class="program">configure</strong> shell script that is located in the top level of the
@@ -310,26 +307,26 @@ necessary tools and functions and constructs a build environment in
 which the software may be compiled. Once configuration is done, you
 simply run <strong class="command">make</strong> (or <strong class="command">gmake</strong>) to build the software
 and then <strong class="command">make install</strong> to do the installation; for example:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>% <span class="nb">cd</span> ./tiff-4.0.5
-% ./configure
-    ...lots of messages...
-% make
-    ...lots of messages...
-% make check
-    ...lots of messages...
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>%<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>./tiff-4.0.5
+%<span class="w"> </span>./configure
+<span class="w">    </span>...lots<span class="w"> </span>of<span class="w"> </span>messages...
+%<span class="w"> </span>make
+<span class="w">    </span>...lots<span class="w"> </span>of<span class="w"> </span>messages...
+%<span class="w"> </span>make<span class="w"> </span>check
+<span class="w">    </span>...lots<span class="w"> </span>of<span class="w"> </span>messages...
 <span class="c1"># make install</span>
 </pre></div>
 </div>
 <p>Supplied Makefiles are dependent on a <strong class="program">make</strong> utility and a C
 (and optionally a C++ compiler), so you will need these tools.</p>
 <p>In general, the software is designed such that the following
-should be “make-able” in each directory:</p>
+should be &quot;make-able&quot; in each directory:</p>
 <blockquote>
-<div><table class="colwidths-given docutils align-default" id="id10">
+<div><table class="docutils align-default" id="id10">
 <caption><span class="caption-text">Make targets</span><a class="headerlink" href="#id10" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 40%" />
-<col style="width: 60%" />
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Target</p></th>
@@ -358,31 +355,31 @@ should be “make-able” in each directory:</p>
 <p>Note that after running <strong class="command">make distclean</strong> the
 <strong class="program">configure</strong> script must be run again to create the <code class="file docutils literal notranslate"><span class="pre">Makefile</span></code>
 and other make-related files.</p>
-<div class="section" id="id1">
+<section id="id1">
 <h3>Build Trees<a class="headerlink" href="#id1" title="Permalink to this heading">¶</a></h3>
 <p>There are two schemes for configuring and building the software. If
 you intend to build the software for only one target system, you
 can configure the software so that it is built in the same
 directories as the source code.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>% gzip -dc tiff-4.0.5.tar.gz <span class="p">|</span> tar -xf -
-% <span class="nb">cd</span> ./tiff-4.0.5
-% ./configure
-% make
-% make check
-% make install
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>%<span class="w"> </span>gzip<span class="w"> </span>-dc<span class="w"> </span>tiff-4.0.5.tar.gz<span class="w"> </span><span class="p">|</span><span class="w"> </span>tar<span class="w"> </span>-xf<span class="w"> </span>-
+%<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>./tiff-4.0.5
+%<span class="w"> </span>./configure
+%<span class="w"> </span>make
+%<span class="w"> </span>make<span class="w"> </span>check
+%<span class="w"> </span>make<span class="w"> </span>install
 </pre></div>
 </div>
 <p>Otherwise, you can configure a build tree that is parallel to
 the source tree hierarchy (or in some completely different place)
 but which contains only configured files and files created during
 the build procedure.</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>% gzip -dc tiff-4.0.5.tar.gz <span class="p">|</span> tar -xf -
-% mkdir tiff-4.0.5-build
-% <span class="nb">cd</span> ./tiff-4.0.5-build
-% ../tiff-4.0.5/configure
-% make
-% make check
-% make install
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>%<span class="w"> </span>gzip<span class="w"> </span>-dc<span class="w"> </span>tiff-4.0.5.tar.gz<span class="w"> </span><span class="p">|</span><span class="w"> </span>tar<span class="w"> </span>-xf<span class="w"> </span>-
+%<span class="w"> </span>mkdir<span class="w"> </span>tiff-4.0.5-build
+%<span class="w"> </span><span class="nb">cd</span><span class="w"> </span>./tiff-4.0.5-build
+%<span class="w"> </span>../tiff-4.0.5/configure
+%<span class="w"> </span>make
+%<span class="w"> </span>make<span class="w"> </span>check
+%<span class="w"> </span>make<span class="w"> </span>install
 </pre></div>
 </div>
 <p>This second scheme is useful for:</p>
@@ -392,8 +389,8 @@ the build procedure.</p>
 <li><p>sharing the source files via a network, but building on
 multiple systems</p></li>
 </ul>
-</div>
-<div class="section" id="id2">
+</section>
+<section id="id2">
 <h3>Configuration Options<a class="headerlink" href="#id2" title="Permalink to this heading">¶</a></h3>
 <p>The configuration process is critical to the proper compilation,
 installation, and operation of the software. The configure script
@@ -540,14 +537,14 @@ for instance <code class="docutils literal notranslate"><span class="pre">--pref
 <dd><p>run <strong class="command">sed</strong> <em>PROGRAM</em> on installed program names</p>
 </dd></dl>
 
-</div>
-<div class="section" id="id3">
+</section>
+<section id="id3">
 <h3>Configuring Optional Packages/Support<a class="headerlink" href="#id3" title="Permalink to this heading">¶</a></h3>
 <p>The TIFF software comes with several packages that are installed
 only as needed, or only if specifically configured at the time the
 configure script is run. Packages can be configured via the
 <strong class="program">configure</strong> script commandline parameters.</p>
-<div class="section" id="id4">
+<section id="id4">
 <h4>Static/Shared Objects Support<a class="headerlink" href="#id4" title="Permalink to this heading">¶</a></h4>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-configure-enable-shared">
@@ -585,8 +582,8 @@ several major versions of libtiff might be loaded at once into the
 same program.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="id5">
+</section>
+<section id="id5">
 <h4>JPEG Support<a class="headerlink" href="#id5" title="Permalink to this heading">¶</a></h4>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-configure-disable-jpeg">
@@ -615,8 +612,8 @@ script automatically tries to search for a working IJG JPEG
 installation. If it fails to find library, JPEG support will be
 automatically disabled. If you want specify the exact paths to
 library binary and headers, use above switches for that.</p>
-</div>
-<div class="section" id="id7">
+</section>
+<section id="id7">
 <h4>ZIP Support<a class="headerlink" href="#id7" title="Permalink to this heading">¶</a></h4>
 <p>The <code class="docutils literal notranslate"><span class="pre">ZIP</span></code> support enables support for the handling of
 TIFF images with deflate-encoded data. Support for deflate-encoded
@@ -624,10 +621,10 @@ data requires the freely available <code class="docutils literal notranslate"><s
 written by Jean-loup Gailly and Mark Adler; this software is
 available at <a class="reference external" href="http://www.zlib.org/">http://www.zlib.org/</a>.  Support will be
 enabled automatically if <code class="docutils literal notranslate"><span class="pre">zlib</span></code> is found.</p>
-</div>
-</div>
-</div>
-<div class="section" id="building-the-software-on-other-systems">
+</section>
+</section>
+</section>
+<section id="building-the-software-on-other-systems">
 <h2>Building the Software on Other Systems<a class="headerlink" href="#building-the-software-on-other-systems" title="Permalink to this heading">¶</a></h2>
 <p>This section contains information that might be useful if you are
 working on a non-UNIX system that is not directly supported. All
@@ -638,10 +635,10 @@ library-related files described below are located in the
 tables for the Group 3 and Group 4 decoders. This file is generated
 by the <strong class="program">mkg3states</strong> program on a UNIX system; for
 example:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> libtiff
-cc -o mkg3states mkg3states.c
-rm -f tif_fax3sm.c
-./mkg3states -c const tif_fax3sm.c
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>libtiff
+cc<span class="w"> </span>-o<span class="w"> </span>mkg3states<span class="w"> </span>mkg3states.c
+rm<span class="w"> </span>-f<span class="w"> </span>tif_fax3sm.c
+./mkg3states<span class="w"> </span>-c<span class="w"> </span>const<span class="w"> </span>tif_fax3sm.c
 </pre></div>
 </div>
 <p>The <code class="docutils literal notranslate"><span class="pre">-c</span></code> option can be used to control whether or not the
@@ -657,10 +654,10 @@ contains the version information returned by the
 <a class="reference internal" href="functions/TIFFquery.html#c.TIFFGetVersion" title="TIFFGetVersion"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFGetVersion()</span></code></a> routine. This file is built on most systems
 using the <code class="file docutils literal notranslate"><span class="pre">mkversion</span></code> program and the contents of the
 <code class="file docutils literal notranslate"><span class="pre">VERSION</span></code> and <code class="file docutils literal notranslate"><span class="pre">tiff.alpha</span></code> files; for example,</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span> libtiff
-cc -o mkversion mkversion.c
-rm -f version.h
-./mkversion -v ../VERSION -a ../dist/tiff.alpha version.h
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>libtiff
+cc<span class="w"> </span>-o<span class="w"> </span>mkversion<span class="w"> </span>mkversion.c
+rm<span class="w"> </span>-f<span class="w"> </span>version.h
+./mkversion<span class="w"> </span>-v<span class="w"> </span>../VERSION<span class="w"> </span>-a<span class="w"> </span>../dist/tiff.alpha<span class="w"> </span>version.h
 </pre></div>
 </div>
 <p>Otherwise, when building the library on a non-UNIX system be
@@ -674,38 +671,38 @@ of the codecs in the library; especially the Group 3 and 4 decoder.
 If you encounter problems try disabling support for a particular
 codec; consult the <a class="reference internal" href="internals.html"><span class="doc">Modifying The TIFF Library</span></a>.</p>
 <p>Programs in the tools directory are written to assume an ANSI C
-compilation environment. There may be a few POSIX’isms as well. The
+compilation environment. There may be a few POSIX'isms as well. The
 code in the <code class="file docutils literal notranslate"><span class="pre">port</span></code> directory is provided to emulate routines
 that may be missing on some systems. On UNIX systems the
 <strong class="program">configure</strong> script automatically figures out which routines
 are not present on a system and enables the use of the equivalent
 emulation routines from the <code class="file docutils literal notranslate"><span class="pre">port</span></code> directory. It may be
 necessary to manually do this work on a non-UNIX system.</p>
-</div>
-<div class="section" id="testing-the-software">
+</section>
+<section id="testing-the-software">
 <h2>Testing the software<a class="headerlink" href="#testing-the-software" title="Permalink to this heading">¶</a></h2>
 <p>Assuming you have working versions of <a class="reference internal" href="tools/tiffgt.html"><span class="doc">tiffgt</span></a>, you can now use
 it to view any of the sample images available for testing, or try
 <a class="reference internal" href="tools/tiffinfo.html"><span class="doc">tiffinfo</span></a> to display the file metadata.  See the
 <a class="reference internal" href="images.html"><span class="doc">TIFF Test Images</span></a> section on obtaining the test images.  Otherwise, you can
 do a cursory check of the library with the <a class="reference internal" href="tools/tiffcp.html"><span class="doc">tiffcp</span></a> and
-<a class="reference internal" href="tools/tiffcmp.html"><span class="doc">tiff2cmp</span></a> programs. For example,</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp -lzw cramps.tif x.tif
-tiffcmp cramps.tif x.tif
+<a class="reference internal" href="tools/tiffcmp.html"><span class="doc">tiffcmp</span></a> programs. For example,</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp<span class="w"> </span>-lzw<span class="w"> </span>cramps.tif<span class="w"> </span>x.tif
+tiffcmp<span class="w"> </span>cramps.tif<span class="w"> </span>x.tif
 </pre></div>
 </div>
 <p>(<strong class="program">tiffcmp</strong> should be silent if the files compare
 correctly).</p>
-</div>
-<div class="section" id="libtiff-source-files">
+</section>
+<section id="libtiff-source-files">
 <h2>LibTIFF source files<a class="headerlink" href="#libtiff-source-files" title="Permalink to this heading">¶</a></h2>
 <p>The following files make up the core library:</p>
 <blockquote>
-<div><table class="colwidths-given docutils align-default" id="id11">
+<div><table class="docutils align-default" id="id11">
 <caption><span class="caption-text">Core library source files</span><a class="headerlink" href="#id11" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 25%" />
-<col style="width: 75%" />
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>File</p></th>
@@ -771,7 +768,7 @@ correctly).</p>
 <td><p>directory writing code</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="file docutils literal notranslate"><span class="pre">libtiff/tif_dumpmode.c</span></code></p></td>
-<td><p>“no” compression codec</p></td>
+<td><p>&quot;no&quot; compression codec</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="file docutils literal notranslate"><span class="pre">libtiff/tif_error.c</span></code></p></td>
 <td><p>library error handler</p></td>
@@ -875,8 +872,8 @@ correctly).</p>
 </tbody>
 </table>
 </div></blockquote>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -963,13 +960,13 @@ correctly).</p>
         <li class="right" >
           <a href="images.html" title="TIFF Test Images"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Building the TIFF Software Distribution</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

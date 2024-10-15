@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFFIELDPASSCOUNT" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFFieldPassCount \- get whether to pass a count to TIFFGetField/TIFFSetField
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFFIELDPASSCOUNT" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFFieldPassCount \- get whether to pass a count to TIFFGetField/TIFFSetField
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -58,15 +58,25 @@ expect a \fBcount\fP value to be passed before the actual data pointer.
 .sp
 When a \fBcount\fP is required, it will be of type \fBuint32_t\fP
 if \fI\%TIFFFieldReadCount()\fP reports \fBTIFF_VARIABLE2\fP,
-and of type \fBuint16_t\fP otherwise.  (This distinction is
+and of type \fBuint16_t\fP otherwise.  Use \fI\%TIFFFieldWriteCount()\fP
+for \fI\%TIFFSetField()\fP, respectively. (This distinction is
 critical for use of \fI\%TIFFGetField()\fP, but normally not so for
 use of \fI\%TIFFSetField()\fP\&.)
+.sp
+An alternative function for the \fBcount\fP value determination
+is \fI\%TIFFFieldSetGetCountSize()\fP\&.
 .SH RETURN VALUES
 .sp
 \fI\%TIFFFieldPassCount()\fP returns an integer that is always 1 (true)
 or 0 (false).
 .SH SEE ALSO
 .sp
+\fI\%TIFFFieldDataType\fP (3tiff),
+\fI\%TIFFFieldName\fP (3tiff),
+\fI\%TIFFFieldQuery\fP (3tiff),
+\fI\%TIFFFieldReadCount\fP (3tiff),
+\fI\%TIFFFieldTag\fP (3tiff),
+\fI\%TIFFFieldWriteCount\fP (3tiff),
 \fI\%libtiff\fP
 .SH AUTHOR
 LibTIFF contributors

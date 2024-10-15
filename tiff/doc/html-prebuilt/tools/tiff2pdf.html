@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tiff2pdf &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>tiff2pdf &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tiff2ps" href="tiff2ps.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="tiff2bw.html" title="tiff2bw"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiff2pdf</a></li> 
       </ul>
@@ -42,13 +39,13 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiff2pdf">
+  <section id="tiff2pdf">
 <h1>tiff2pdf<a class="headerlink" href="#tiff2pdf" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>tiff2pdf</strong> [ <em>options</em> ] <em>input.tiff</em></p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">tiff2pdf</strong> opens a TIFF image and writes a PDF document to standard output.</p>
 <p>The program converts one TIFF file to one PDF file, including multiple page
@@ -96,8 +93,8 @@ of the document information values otherwise get their information from the
 input TIFF image, the software, author, document name, and image description.</p>
 <p>The Portable Document Format (PDF) specification is copyrighted by Adobe
 Systems, Incorporated.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiff2pdf-o">
@@ -141,7 +138,7 @@ data passthrough.</p>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiff2pdf-d">
 <span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2pdf-d" title="Permalink to this definition">¶</a></dt>
-<dd><p>Do not compress (decompress).</p>
+<dd><p>Do not compress (decompress) - except monochrome to CCITT Group 4.</p>
 </dd></dl>
 
 <dl class="std option">
@@ -158,7 +155,7 @@ data passthrough.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiff2pdf-F">
-<span id="cmdoption-tiff2pdf-f"></span><span class="sig-name descname"><span class="pre">-F</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2pdf-F" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-F</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2pdf-F" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cause the tiff to fill the PDF page.</p>
 </dd></dl>
 
@@ -200,8 +197,8 @@ data passthrough.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiff2pdf-0">
-<span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2pdf-0" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiff2pdf-f">
+<span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiff2pdf-f" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set PDF <code class="docutils literal notranslate"><span class="pre">Fit</span> <span class="pre">Window</span></code> user preference.</p>
 </dd></dl>
 
@@ -254,33 +251,33 @@ data passthrough.</p>
 <dd><p>List usage reminder to stderr and exit.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="examples">
+</section>
+<section id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
 <p>The following example would generate the file output.pdf from input.tiff:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2pdf -o output.pdf input.tiff
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2pdf<span class="w"> </span>-o<span class="w"> </span>output.pdf<span class="w"> </span>input.tiff
 </pre></div>
 </div>
 <p>The following example would generate PDF output from input.tiff and write it
 to standard output:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2pdf input.tiff
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2pdf<span class="w"> </span>input.tiff
 </pre></div>
 </div>
 <p>The following example would generate the file output.pdf from input.tiff,
 putting the image pages on a letter sized page, compressing the output
 with JPEG, with JPEG quality 75, setting the title to <code class="docutils literal notranslate"><span class="pre">Document</span></code>, and setting
 the <code class="docutils literal notranslate"><span class="pre">Fit</span> <span class="pre">Window</span></code> option:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2pdf -p letter -j -q <span class="m">75</span> -t <span class="s2">&quot;Document&quot;</span> -f -o output.pdf input.tiff
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiff2pdf<span class="w"> </span>-p<span class="w"> </span>letter<span class="w"> </span>-j<span class="w"> </span>-q<span class="w"> </span><span class="m">75</span><span class="w"> </span>-t<span class="w"> </span><span class="s2">&quot;Document&quot;</span><span class="w"> </span>-f<span class="w"> </span>-o<span class="w"> </span>output.pdf<span class="w"> </span>input.tiff
 </pre></div>
 </div>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="tiffcp.html"><span class="doc">tiffcp</span></a> (1),
 <a class="reference internal" href="tiff2ps.html"><span class="doc">tiff2ps</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff),</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -346,14 +343,14 @@ the <code class="docutils literal notranslate"><span class="pre">Fit</span> <spa
         <li class="right" >
           <a href="tiff2bw.html" title="tiff2bw"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiff2pdf</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

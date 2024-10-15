@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFFIELDREADCOUNT" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFFieldReadCount \- get number of values to be read from field
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFFIELDREADCOUNT" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFFieldReadCount \- get number of values to be read from field
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -61,7 +61,7 @@ pointer \fIdata\fP argument must be supplied to \fI\%TIFFGetField()\fP\&.
 except that the \fIcount\fP argument must have type \fBuint32_t\fP\&.
 .IP \(bu 2
 \fBTIFF_SPP\fP \fB= \-2\fP indicates that the number of arguments is
-equal to the image’s number of samples per pixel.
+equal to the image\(aqs number of samples per pixel.
 .UNINDENT
 .sp
 \fIfip\fP is a field information pointer previously returned by
@@ -72,6 +72,12 @@ equal to the image’s number of samples per pixel.
 \fI\%TIFFFieldReadCount()\fP returns an integer.
 .SH SEE ALSO
 .sp
+\fI\%TIFFFieldDataType\fP (3tiff),
+\fI\%TIFFFieldName\fP (3tiff),
+\fI\%TIFFFieldPassCount\fP (3tiff),
+\fI\%TIFFFieldQuery\fP (3tiff),
+\fI\%TIFFFieldTag\fP (3tiff),
+\fI\%TIFFFieldWriteCount\fP (3tiff),
 \fI\%libtiff\fP (3tiff)
 .SH AUTHOR
 LibTIFF contributors

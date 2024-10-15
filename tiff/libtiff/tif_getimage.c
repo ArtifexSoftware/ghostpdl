@@ -760,6 +760,12 @@ static int gtTileContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
         toskew = -(int32_t)(tw - w);
     }
 
+    if (tw == 0 || th == 0)
+    {
+        TIFFErrorExtR(tif, TIFFFileName(tif), "tile width or height is zero");
+        return (0);
+    }
+
     /*
      *	Leftmost tile is clipped on left side if col_offset > 0.
      */
@@ -768,7 +774,6 @@ static int gtTileContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
     leftmost_toskew = toskew + leftmost_fromskew;
     for (row = 0; ret != 0 && row < h; row += nrow)
     {
-        tmsize_t roffset;
         rowstoread = th - (row + img->row_offset) % th;
         nrow = (row + rowstoread > h ? h - row : rowstoread);
         fromskew = leftmost_fromskew;
@@ -797,7 +802,7 @@ static int gtTileContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
                 this_tw = tw - fromskew;
                 this_toskew = toskew + fromskew;
             }
-            roffset = (tmsize_t)y * w + tocol;
+            tmsize_t roffset = (tmsize_t)y * w + tocol;
             (*put)(img, raster + roffset, tocol, y, this_tw, nrow, fromskew,
                    this_toskew, buf + pos);
             tocol += this_tw;
@@ -917,6 +922,12 @@ static int gtTileSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
             break;
     }
 
+    if (tw == 0 || th == 0)
+    {
+        TIFFErrorExtR(tif, TIFFFileName(tif), "tile width or height is zero");
+        return (0);
+    }
+
     /*
      *	Leftmost tile is clipped on left side if col_offset > 0.
      */
@@ -925,7 +936,6 @@ static int gtTileSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
     leftmost_toskew = toskew + leftmost_fromskew;
     for (row = 0; ret != 0 && row < h; row += nrow)
     {
-        tmsize_t roffset;
         rowstoread = th - (row + img->row_offset) % th;
         nrow = (row + rowstoread > h ? h - row : rowstoread);
         fromskew = leftmost_fromskew;
@@ -1001,7 +1011,7 @@ static int gtTileSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
                 this_tw = tw - fromskew;
                 this_toskew = toskew + fromskew;
             }
-            roffset = (tmsize_t)y * w + tocol;
+            tmsize_t roffset = (tmsize_t)y * w + tocol;
             (*put)(img, raster + roffset, tocol, y, this_tw, nrow, fromskew,
                    this_toskew, p0 + pos, p1 + pos, p2 + pos,
                    (alpha ? (pa + pos) : NULL));
@@ -1094,12 +1104,16 @@ static int gtStripContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
     }
 
     TIFFGetFieldDefaulted(tif, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
+    if (rowsperstrip == 0)
+    {
+        TIFFErrorExtR(tif, TIFFFileName(tif), "rowsperstrip is zero");
+        return (0);
+    }
 
     scanline = TIFFScanlineSize(tif);
     fromskew = (w < imagewidth ? imagewidth - w : 0);
     for (row = 0; row < h; row += nrow)
     {
-        tmsize_t roffset;
         uint32_t temp;
         rowstoread = rowsperstrip - (row + img->row_offset) % rowsperstrip;
         nrow = (row + rowstoread > h ? h - row : rowstoread);
@@ -1125,7 +1139,7 @@ static int gtStripContig(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
 
         pos = ((row + img->row_offset) % rowsperstrip) * scanline +
               ((tmsize_t)img->col_offset * img->samplesperpixel);
-        roffset = (tmsize_t)y * w;
+        tmsize_t roffset = (tmsize_t)y * w;
         (*put)(img, raster + roffset, 0, y, w, nrow, fromskew, toskew,
                buf + pos);
         y += ((flip & FLIP_VERTICALLY) ? -(int32_t)nrow : (int32_t)nrow);
@@ -1219,11 +1233,16 @@ static int gtStripSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
     }
 
     TIFFGetFieldDefaulted(tif, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
+    if (rowsperstrip == 0)
+    {
+        TIFFErrorExtR(tif, TIFFFileName(tif), "rowsperstrip is zero");
+        return (0);
+    }
+
     scanline = TIFFScanlineSize(tif);
     fromskew = (w < imagewidth ? imagewidth - w : 0);
     for (row = 0; row < h; row += nrow)
     {
-        tmsize_t roffset;
         uint32_t temp;
         rowstoread = rowsperstrip - (row + img->row_offset) % rowsperstrip;
         nrow = (row + rowstoread > h ? h - row : rowstoread);
@@ -1295,7 +1314,7 @@ static int gtStripSeparate(TIFFRGBAImage *img, uint32_t *raster, uint32_t w,
 
         pos = ((row + img->row_offset) % rowsperstrip) * scanline +
               ((tmsize_t)img->col_offset * img->samplesperpixel);
-        roffset = (tmsize_t)y * w;
+        tmsize_t roffset = (tmsize_t)y * w;
         (*put)(img, raster + roffset, 0, y, w, nrow, fromskew, toskew, p0 + pos,
                p1 + pos, p2 + pos, (alpha ? (pa + pos) : NULL));
         y += ((flip & FLIP_VERTICALLY) ? -(int32_t)nrow : (int32_t)nrow);
@@ -3217,6 +3236,13 @@ int TIFFReadRGBAStripExt(TIFF *tif, uint32_t row, uint32_t *raster,
     }
 
     TIFFGetFieldDefaulted(tif, TIFFTAG_ROWSPERSTRIP, &rowsperstrip);
+
+    if (rowsperstrip == 0)
+    {
+        TIFFErrorExtR(tif, TIFFFileName(tif), "rowsperstrip is zero");
+        return (0);
+    }
+
     if ((row % rowsperstrip) != 0)
     {
         TIFFErrorExtR(
@@ -3228,6 +3254,13 @@ int TIFFReadRGBAStripExt(TIFF *tif, uint32_t row, uint32_t *raster,
     if (TIFFRGBAImageOK(tif, emsg) &&
         TIFFRGBAImageBegin(&img, tif, stop_on_error, emsg))
     {
+        if (row >= img.height)
+        {
+            TIFFErrorExtR(tif, TIFFFileName(tif),
+                          "Invalid row passed to TIFFReadRGBAStrip().");
+            TIFFRGBAImageEnd(&img);
+            return (0);
+        }
 
         img.row_offset = row;
         img.col_offset = 0;
@@ -3286,6 +3319,13 @@ int TIFFReadRGBATileExt(TIFF *tif, uint32_t col, uint32_t row, uint32_t *raster,
 
     TIFFGetFieldDefaulted(tif, TIFFTAG_TILEWIDTH, &tile_xsize);
     TIFFGetFieldDefaulted(tif, TIFFTAG_TILELENGTH, &tile_ysize);
+    if (tile_xsize == 0 || tile_ysize == 0)
+    {
+        TIFFErrorExtR(tif, TIFFFileName(tif),
+                      "tile_xsize or tile_ysize is zero");
+        return (0);
+    }
+
     if ((col % tile_xsize) != 0 || (row % tile_ysize) != 0)
     {
         TIFFErrorExtR(tif, TIFFFileName(tif),
@@ -3302,6 +3342,14 @@ int TIFFReadRGBATileExt(TIFF *tif, uint32_t col, uint32_t row, uint32_t *raster,
         !TIFFRGBAImageBegin(&img, tif, stop_on_error, emsg))
     {
         TIFFErrorExtR(tif, TIFFFileName(tif), "%s", emsg);
+        return (0);
+    }
+
+    if (col >= img.width || row >= img.height)
+    {
+        TIFFErrorExtR(tif, TIFFFileName(tif),
+                      "Invalid row/col passed to TIFFReadRGBATile().");
+        TIFFRGBAImageEnd(&img);
         return (0);
     }
 

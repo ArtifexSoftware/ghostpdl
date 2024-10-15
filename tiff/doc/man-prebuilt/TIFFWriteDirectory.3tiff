@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFWRITEDIRECTORY" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFWriteDirectory \- write the current directory in an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFWRITEDIRECTORY" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFWriteDirectory \- write the current directory in an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -64,9 +64,12 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .SH DESCRIPTION
 .sp
 \fI\%TIFFWriteDirectory()\fP will write the contents of the current
-directory to the file and setup to create a new subfile in the same
-file. Applications only need to call \fI\%TIFFWriteDirectory()\fP
-when writing multiple subfiles to a single TIFF file.
+directory (IFD) to the file and setup to create a new directory (IFD)
+using \fI\%TIFFCreateDirectory()\fP\&.
+Applications only need to call \fI\%TIFFWriteDirectory()\fP
+when writing multiple subfiles (images) to a single TIFF file.
+This is called \(dqmulti\-page TIFF\(dq or \(dqmulti\-image TIFF\(dq
+(see \fI\%Multi Page / Multi Image TIFF\fP).
 \fI\%TIFFWriteDirectory()\fP is automatically called by
 \fI\%TIFFClose()\fP and \fI\%TIFFFlush()\fP to write a modified
 directory if the file is open for writing.
@@ -75,11 +78,12 @@ The \fI\%TIFFRewriteDirectory()\fP function operates similarly to
 \fI\%TIFFWriteDirectory()\fP, but can be called with directories
 previously read or written that already have an established location
 in the file.  It will rewrite the directory, but instead of placing it
-at its old location (as \fI\%TIFFWriteDirectory()\fP would) it will
+at its old location (as \fI\%TIFFWriteDirectory()\fP would, if the size
+of the directory has not grown) it will
 place them at the end of the file, correcting the pointer from the
-preceding directory or file header to point to it’s new location.  This
+preceding directory or file header to point to it\(aqs new location.  This
 is particularly important in cases where the size of the directory and
-pointed to data has grown, so it won’t fit in the space available at the
+pointed to data has grown, so it won\(aqt fit in the space available at the
 old location.
 .sp
 The \fI\%TIFFCheckpointDirectory()\fP writes the current state of the
@@ -99,7 +103,7 @@ This should only be used to set the offset to a known previous location
 of the file.
 .sp
 The \fI\%TIFFWriteCheck()\fP  verify file is writable and that the directory
-information is setup properly.  In doing the latter we also “freeze”
+information is setup properly.  In doing the latter we also \(dqfreeze\(dq
 the state of the directory so that important information is not changed.
 .SH RETURN VALUES
 .sp
@@ -110,7 +114,7 @@ the directory contents.
 .sp
 All error messages are directed to the \fI\%TIFFErrorExtR()\fP routine.
 .sp
-\fB"Error post\-encoding before directory write"\fP:
+\fB\(dqError post\-encoding before directory write\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 Before writing the contents of the current directory, any pending data are
@@ -118,7 +122,7 @@ flushed. This message indicates that an error occurred while doing this.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Error flushing data before directory write"\fP:
+\fB\(dqError flushing data before directory write\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 Before writing the contents of the current directory, any pending data are
@@ -126,7 +130,7 @@ flushed. This message indicates that an error occurred while doing this.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Cannot write directory, out of space"\fP:
+\fB\(dqCannot write directory, out of space\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was not enough space to allocate a temporary area for the directory
@@ -134,42 +138,42 @@ that was to be written.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Error writing directory count"\fP:
+\fB\(dqError writing directory count\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 A write error occurred when writing the count of fields in the directory.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Error writing directory contents"\fP:
+\fB\(dqError writing directory contents\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 A write error occurred when writing the directory fields.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Error writing directory link"\fP:
+\fB\(dqError writing directory link\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 A write error occurred when writing the link to the next directory.
 .UNINDENT
 .UNINDENT
 .sp
-\fBError writing data for field "%s"\fP:
+\fBError writing data for field \(dq%s\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 A write error occurred when writing indirect data for the specified field.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Error writing TIFF header"\fP:
+\fB\(dqError writing TIFF header\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 A write error occurred when re\-writing header at the front of the file.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Error fetching directory count"\fP:
+\fB\(dqError fetching directory count\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 A read error occurred when fetching the directory count field for
@@ -179,7 +183,7 @@ written.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Error fetching directory link"\fP:
+\fB\(dqError fetching directory link\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 A read error occurred when fetching the directory link field for
@@ -197,6 +201,7 @@ written.
 \fI\%TIFFSetDirectory\fP (3tiff),
 \fI\%TIFFReadDirectory\fP (3tiff),
 \fI\%TIFFError\fP (3tiff),
+\fI\%Multi Page / Multi Image TIFF\fP,
 \fI\%libtiff\fP (3tiff)
 .SH AUTHOR
 LibTIFF contributors
