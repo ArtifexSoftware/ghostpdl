@@ -31,8 +31,11 @@
 #include "tif_hash_set.h"
 
 #include <assert.h>
+#define GS_TIFF_BUILD
+#ifndef GS_TIFF_BUILD
 #include <stdbool.h>
 #include <stdint.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 
