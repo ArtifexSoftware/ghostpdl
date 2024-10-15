@@ -103,9 +103,6 @@
 
 #define CODE_MASK 0x7ff /* 11 bits. */
 
-static float Fltsize;
-static float LogK1, LogK2;
-
 #define REPEAT(n, op)                                                          \
     {                                                                          \
         int i;                                                                 \
@@ -542,6 +539,9 @@ typedef struct
     uint16_t *From14; /* Really for 16-bit data, but we shift down 2 */
     uint16_t *From8;
 
+	float Fltsize;
+	float LogK1, LogK2;
+
 } PixarLogState;
 
 static int PixarLogMakeTables(TIFF *tif, PixarLogState *sp)
@@ -574,8 +574,8 @@ static int PixarLogMakeTables(TIFF *tif, PixarLogState *sp)
     b = exp(-c * ONE); /* multiplicative scale factor [b*exp(c*ONE) = 1] */
     linstep = b * c * exp(1.);
 
-    LogK1 = (float)(1. / c); /* if (v >= 2)  token = k1*log(v*k2) */
-    LogK2 = (float)(1. / b);
+    sp->LogK1 = (float)(1. / c); /* if (v >= 2)  token = k1*log(v*k2) */
+    sp->LogK2 = (float)(1. / b);
     lt2size = (int)(2. / linstep) + 1;
     FromLT2 = (uint16_t *)_TIFFmallocExt(tif, lt2size * sizeof(uint16_t));
     From14 = (uint16_t *)_TIFFmallocExt(tif, 16384 * sizeof(uint16_t));
@@ -658,7 +658,7 @@ static int PixarLogMakeTables(TIFF *tif, PixarLogState *sp)
         From8[i] = (uint16_t)j;
     }
 
-    Fltsize = (float)(lt2size / 2);
+    sp->Fltsize = (float)(lt2size / 2);
 
     sp->ToLinearF = ToLinearF;
     sp->ToLinear16 = ToLinear16;
@@ -1067,13 +1067,13 @@ static void horizontalDifferenceF(float *ip, int n, int stride, uint16_t *wp,
                                   uint16_t *FromLT2)
 {
     int32_t r1, g1, b1, a1, r2, g2, b2, a2, mask;
-    float fltsize = Fltsize;
+    float fltsize = sp->Fltsize;
 
 #define CLAMP(v)                                                               \
     ((v < (float)0.)     ? 0                                                   \
      : (v < (float)2.)   ? FromLT2[(int)(v * fltsize)]                         \
      : (v > (float)24.2) ? 2047                                                \
-                         : LogK1 * log(v * LogK2) + 0.5)
+                         : sp->LogK1 * log(v * sp->LogK2) + 0.5)
 
     mask = CODE_MASK;
     if (n >= stride)
