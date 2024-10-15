@@ -228,8 +228,9 @@ static void TIFFHashSetReturnListElt(TIFFHashSet *set, TIFFList *psList)
 
 static void TIFFHashSetClearInternal(TIFFHashSet *set, bool bFinalize)
 {
+    int i;
     assert(set != NULL);
-    for (int i = 0; i < set->nAllocatedSize; i++)
+    for (i = 0; i < set->nAllocatedSize; i++)
     {
         TIFFList *cur = set->tabList[i];
         while (cur)
@@ -370,6 +371,7 @@ void TIFFHashSetForeach(TIFFHashSet *set, TIFFHashSetIterEltFunc fnIterFunc,
 static bool TIFFHashSetRehash(TIFFHashSet *set)
 {
     int nNewAllocatedSize = anPrimes[set->nIndiceAllocatedSize];
+    int i;
     TIFFList **newTabList =
         (TIFFList **)(calloc(nNewAllocatedSize, sizeof(TIFFList *)));
     if (newTabList == NULL)
@@ -382,7 +384,7 @@ static bool TIFFHashSetRehash(TIFFHashSet *set)
               set->nCollisions * 100.0 / set->nSize);
     set->nCollisions = 0;
 #endif
-    for (int i = 0; i < set->nAllocatedSize; i++)
+    for (i = 0; i < set->nAllocatedSize; i++)
     {
         TIFFList *cur = set->tabList[i];
         while (cur)

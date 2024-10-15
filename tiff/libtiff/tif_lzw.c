@@ -37,7 +37,11 @@
  */
 #include "tif_predict.h"
 
+#define GS_TIFF_BUILD
+#ifndef GS_TIFF_BUILD
 #include <stdbool.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 

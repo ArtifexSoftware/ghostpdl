@@ -22,6 +22,11 @@
  * OF THIS SOFTWARE.
  */
 
+#define GS_TIFF_BUILD
+#ifdef GS_TIFF_BUILD
+#include "stdint_.h"
+#endif
+
 #include "tiffiop.h"
 #ifdef ZIP_SUPPORT
 /*

@@ -854,7 +854,8 @@ static int _TIFFVSetField(TIFF *tif, uint32_t tag, va_list ap)
                         if (tv->info->field_type == TIFF_LONG8)
                         {
                             uint64_t *pui64 = (uint64_t *)tv->value;
-                            for (int i = 0; i < tv->count; i++)
+                            int i;
+                            for (i = 0; i < tv->count; i++)
                             {
                                 if (pui64[i] > 0xffffffffu)
                                 {
@@ -873,7 +874,8 @@ static int _TIFFVSetField(TIFF *tif, uint32_t tag, va_list ap)
                         else if (tv->info->field_type == TIFF_SLONG8)
                         {
                             int64_t *pi64 = (int64_t *)tv->value;
-                            for (int i = 0; i < tv->count; i++)
+                            int i;
+                            for (i = 0; i < tv->count; i++)
                             {
                                 if (pi64[i] > 2147483647 ||
                                     pi64[i] < (-2147483647 - 1))

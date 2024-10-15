@@ -2121,6 +2121,7 @@ static int TIFFWriteDirectoryTagTransferfunction(TIFF *tif, uint32_t *ndir,
     uint16_t n;
     uint16_t *o;
     int p;
+    int i;
     /* TIFFTAG_TRANSFERFUNCTION expects (1 or 3) pointer to arrays with
      *  (1 << BitsPerSample) * uint16_t values.
      */
@@ -2130,7 +2131,7 @@ static int TIFFWriteDirectoryTagTransferfunction(TIFF *tif, uint32_t *ndir,
     /* clang-format on */
 
     /* Check for proper number of transferfunctions */
-    for (int i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
     {
         if (tif->tif_dir.td_transferfunction[i] == NULL)
         {
