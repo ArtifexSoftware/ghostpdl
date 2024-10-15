@@ -82,8 +82,9 @@ void TIFFWarningExtR(TIFF *tif, const char *module, const char *fmt, ...)
     va_list ap;
     if (tif && tif->tif_warnhandler)
     {
+        int stop;
         va_start(ap, fmt);
-        int stop = (*tif->tif_warnhandler)(tif, tif->tif_warnhandler_user_data,
+        stop = (*tif->tif_warnhandler)(tif, tif->tif_warnhandler_user_data,
                                            module, fmt, ap);
         va_end(ap);
         if (stop)

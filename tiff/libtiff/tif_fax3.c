@@ -1548,6 +1548,7 @@ int TIFFInitCCITTFax3(TIFF *tif, int scheme)
  */
 static int Fax4Decode(TIFF *tif, uint8_t *buf, tmsize_t occ, uint16_t s)
 {
+    int start;
     DECLARE_STATE_2D(tif, sp, "Fax4Decode");
     (void)s;
     if (occ % sp->b.rowbytes)
@@ -1564,7 +1565,7 @@ static int Fax4Decode(TIFF *tif, uint8_t *buf, tmsize_t occ, uint16_t s)
         return (-1);
     }
     CACHE_STATE(tif, sp);
-    int start = sp->line;
+    start = sp->line;
     while (occ > 0)
     {
         a0 = 0;

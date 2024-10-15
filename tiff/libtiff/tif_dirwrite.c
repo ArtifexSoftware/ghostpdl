@@ -313,6 +313,7 @@ static int TIFFRewriteDirectorySec(TIFF *tif, int isimage, int imagedone,
                                    uint64_t *pdiroff)
 {
     static const char module[] = "TIFFRewriteDirectory";
+    uint64_t torewritediroff;
 
     /* We don't need to do anything special if it hasn't been written. */
     if (tif->tif_diroff == 0)
@@ -322,7 +323,7 @@ static int TIFFRewriteDirectorySec(TIFF *tif, int isimage, int imagedone,
      * Find and zero the pointer to this directory, so that TIFFLinkDirectory
      * will cause it to be added after this directories current pre-link.
      */
-    uint64_t torewritediroff = tif->tif_diroff;
+    torewritediroff = tif->tif_diroff;
 
     if (!(tif->tif_flags & TIFF_BIGTIFF))
     {
@@ -3109,6 +3110,8 @@ static int TIFFWriteDirectoryTagData(TIFF *tif, uint32_t *ndir,
 static int TIFFLinkDirectory(TIFF *tif)
 {
     static const char module[] = "TIFFLinkDirectory";
+    tdir_t ndir;
+    tdir_t dirn;
 
     tif->tif_diroff = (TIFFSeekFile(tif, 0, SEEK_END) + 1) & (~((toff_t)1));
 
@@ -3170,7 +3173,7 @@ static int TIFFLinkDirectory(TIFF *tif)
     /*
      * Handle main-IFDs
      */
-    tdir_t ndir = 1; /* count current number of main-IFDs */
+    ndir = 1; /* count current number of main-IFDs */
     if (!(tif->tif_flags & TIFF_BIGTIFF))
     {
         uint32_t m;
@@ -3198,7 +3201,7 @@ static int TIFFLinkDirectory(TIFF *tif)
         /*
          * Not the first directory, search to the last and append.
          */
-        tdir_t dirn = 0;
+        dirn = 0;
         if (tif->tif_lastdiroff != 0 &&
             _TIFFGetDirNumberFromOffset(tif, tif->tif_lastdiroff, &dirn))
         {
@@ -3276,7 +3279,7 @@ static int TIFFLinkDirectory(TIFF *tif)
         /*
          * Not the first directory, search to the last and append.
          */
-        tdir_t dirn = 0;
+        dirn = 0;
         if (tif->tif_lastdiroff != 0 &&
             _TIFFGetDirNumberFromOffset(tif, tif->tif_lastdiroff, &dirn))
         {

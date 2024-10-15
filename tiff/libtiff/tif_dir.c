@@ -571,9 +571,9 @@ static int _TIFFVSetField(TIFF *tif, uint32_t tag, va_list ap)
             break;
         case TIFFTAG_INKNAMES:
         {
+            uint16_t ninksinstring;
             v = (uint16_t)va_arg(ap, uint16_vap);
             s = va_arg(ap, char *);
-            uint16_t ninksinstring;
             ninksinstring = countInkNamesString(tif, v, s);
             status = ninksinstring > 0;
             if (ninksinstring > 0)
@@ -771,8 +771,9 @@ static int _TIFFVSetField(TIFF *tif, uint32_t tag, va_list ap)
                 }
                 else
                 {
+                    size_t len;
                     mb = (const char *)va_arg(ap, const char *);
-                    size_t len = strlen(mb) + 1;
+                    len = strlen(mb) + 1;
                     if (len >= 0x80000000U)
                     {
                         status = 0;
@@ -2058,6 +2059,8 @@ int TIFFSetDirectory(TIFF *tif, tdir_t dirn)
     uint64_t nextdiroff;
     tdir_t nextdirnum = 0;
     tdir_t n;
+    tdir_t curdir;
+    int retval;
 
     if (tif->tif_setdirectory_force_absolute)
     {
@@ -2129,9 +2132,9 @@ int TIFFSetDirectory(TIFF *tif, tdir_t dirn)
     else
         tif->tif_curdir--;
 
-    tdir_t curdir = tif->tif_curdir;
+    curdir = tif->tif_curdir;
 
-    int retval = TIFFReadDirectory(tif);
+    retval = TIFFReadDirectory(tif);
 
     if (!retval && tif->tif_curdir == curdir)
     {
