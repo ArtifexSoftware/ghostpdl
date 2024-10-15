@@ -10,7 +10,7 @@ Find the native WebP includes and library.
 IMPORTED Targets
 ^^^^^^^^^^^^^^^^
 
-This module defines :prop_tgt:`IMPORTED` target ``WebP::WebP``, if
+This module defines :prop_tgt:`IMPORTED` target ``WebP::webp``, if
 WebP has been found.
 
 Result Variables
@@ -64,28 +64,28 @@ if(WebP_FOUND)
         set(WebP_LIBRARIES ${WebP_LIBRARY})
     endif()
 
-    if(NOT TARGET WebP::WebP)
-        add_library(WebP::WebP UNKNOWN IMPORTED)
-        set_target_properties(WebP::WebP PROPERTIES
+    if(NOT TARGET WebP::webp)
+        add_library(WebP::webp UNKNOWN IMPORTED)
+        set_target_properties(WebP::webp PROPERTIES
                 INTERFACE_INCLUDE_DIRECTORIES "${WebP_INCLUDE_DIRS}")
 
         if(WebP_LIBRARY_RELEASE)
-            set_property(TARGET WebP::WebP APPEND PROPERTY
+            set_property(TARGET WebP::webp APPEND PROPERTY
                     IMPORTED_CONFIGURATIONS RELEASE)
-            set_target_properties(WebP::WebP PROPERTIES
+            set_target_properties(WebP::webp PROPERTIES
                     IMPORTED_LOCATION_RELEASE "${WebP_LIBRARY_RELEASE}")
         endif()
 
         if(WebP_LIBRARY_DEBUG)
-            set_property(TARGET WebP::WebP APPEND PROPERTY
+            set_property(TARGET WebP::webp APPEND PROPERTY
                     IMPORTED_CONFIGURATIONS DEBUG)
-            set_target_properties(WebP::WebP PROPERTIES
+            set_target_properties(WebP::webp PROPERTIES
                     IMPORTED_LOCATION_DEBUG "${WebP_LIBRARY_DEBUG}")
         endif()
 
         if(NOT WebP_LIBRARY_RELEASE AND NOT WebP_LIBRARY_DEBUG)
-            set_target_properties(WebP::WebP PROPERTIES
-                    IMPORTED_LOCATION_RELEASE "${WebP_LIBRARY}")
+            set_target_properties(WebP::webp PROPERTIES
+                    IMPORTED_LOCATION "${WebP_LIBRARY}")
         endif()
     endif()
 endif()

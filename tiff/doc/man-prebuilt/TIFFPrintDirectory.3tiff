@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFPRINTDIRECTORY" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFPrintDirectory \- print a description of a TIFF directory
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFPRINTDIRECTORY" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFPrintDirectory \- print a description of a TIFF directory
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -49,7 +49,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .sp
 \fI\%TIFFPrintDirectory()\fP prints a description of the current directory
 in the specified TIFF file to the standard I/O output stream \fIfd\fP\&.
-The \fIflags\fP parameter is used to control the “level of detail”
+The \fIflags\fP parameter is used to control the \(dqlevel of detail\(dq
 of the printed information; it is a bitwise\-or of the flags defined in
 \fBtiffio.h\fP:
 .TS

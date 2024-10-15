@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFSPLIT" "1" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-tiffsplit \- split a multi-image TIFF into single-image TIFF files
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFSPLIT" "1" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+tiffsplit \- split a multi-image TIFF into single-image TIFF files
 .SH SYNOPSIS
 .sp
 \fBtiffsplit\fP \fIsrc.tif\fP [ \fIprefix\fP ]
@@ -39,7 +39,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 file and creates one or more single\-directory (page) TIFF
 files from it.
 The output files are given names created by concatenating
-a prefix, a lexically ordered suffix in the range [aaa–zzz],
+a prefix, a lexically ordered suffix in the range [aaa\-\-zzz],
 the suffix \fB\&.tif\fP
 (e.g. \fBxaaa.tif\fP, \fBxaab.tif\fP, \fB…\fP, \fBxzzz.tif\fP).
 If a prefix is not specified on the command line, the default prefix of
@@ -66,7 +66,7 @@ An error occurred either reading the input or writing results.
 .UNINDENT
 .SH BUGS
 .sp
-Only a select set of “known tags” are copied when splitting.
+Only a select set of \(dqknown tags\(dq are copied when splitting.
 .SH SEE ALSO
 .sp
 \fI\%tiffcp\fP (1),

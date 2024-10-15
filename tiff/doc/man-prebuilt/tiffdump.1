@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFDUMP" "1" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-tiffdump \- print verbatim information about TIFF files
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFDUMP" "1" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+tiffdump \- print verbatim information about TIFF files
 .SH SYNOPSIS
 .sp
 \fBtiffdump\fP [ \fIoptions\fP ] \fIname\fP …
@@ -41,7 +41,7 @@ The header of each TIFF file (magic number, version, and first directory offset)
 is displayed, followed by the tag contents of each directory in the file.
 For each tag, the name, data type, count, and value(s) is displayed.
 When the symbolic name for a tag or data type is known, the symbolic
-name is displayed followed by it’s numeric (decimal) value.
+name is displayed followed by it\(aqs numeric (decimal) value.
 Tag values are displayed enclosed in \fB<>\fP characters immediately
 preceded by the value of the count field.
 For example, an \fBImageWidth\fP

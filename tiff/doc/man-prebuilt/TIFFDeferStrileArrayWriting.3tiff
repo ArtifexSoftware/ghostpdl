@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFDEFERSTRILEARRAYWRITING" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFDeferStrileArrayWriting \- defer strile array writing
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFDEFERSTRILEARRAYWRITING" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFDeferStrileArrayWriting \- defer strile array writing
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -58,7 +58,7 @@ effect. Their aim is to control when and where the
 \fBStripOffsets\fP / \fBStripByteCounts\fP or \fBTileOffsets\fP / \fBTileByteCounts\fP
 arrays are written into the file.
 .sp
-The purpose of this is to generate ‘cloud\-optimized geotiff’ files where
+The purpose of this is to generate \(aqcloud\-optimized geotiff\(aq files where
 the first KB of the file only contain the IFD entries without the potentially
 large strile arrays. Those are written afterwards.
 .sp
@@ -94,6 +94,9 @@ TIFFForceStrileArrayWriting(tif) /* emit the arrays at the end of file */
 .sp
 All error messages are directed to the \fI\%TIFFErrorExtR()\fP routine.
 Likewise, warning messages are directed to the \fI\%TIFFWarningExtR()\fP routine.
+.SH NOTE
+.sp
+This functionality was introduced with libtiff 4.1.
 .SH SEE ALSO
 .sp
 \fI\%libtiff\fP (3tiff)

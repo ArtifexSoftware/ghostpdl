@@ -64,6 +64,7 @@ int verbose;
 int stretch;
 uint16_t badfaxrun;
 uint32_t badfaxlines;
+int compression_in;
 
 int copyFaxFile(TIFF *tifin, TIFF *tifout);
 static void usage(int code);
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
     TIFF *out = NULL;
     FAX_Client_Data client_data;
     TIFFErrorHandler whandler = NULL;
-    int compression_in = COMPRESSION_CCITTFAX3;
+    compression_in = COMPRESSION_CCITTFAX3;
     int compression_out = COMPRESSION_CCITTFAX3;
     int fillorder_in = FILLORDER_LSB2MSB;
     int fillorder_out = FILLORDER_LSB2MSB;
@@ -151,6 +152,13 @@ int main(int argc, char *argv[])
                 break;
             case 'X': /* input width */
                 xsize = (uint32_t)atoi(optarg);
+                if (xsize < 1 || xsize > 10000)
+                {
+                    fprintf(stderr,
+                            "%s: The input width %s is not reasonable\n",
+                            argv[0], optarg);
+                    return EXIT_FAILURE;
+                }
                 break;
 
                 /* output-related options */
@@ -230,6 +238,11 @@ int main(int argc, char *argv[])
     refbuf = _TIFFmalloc(TIFFhowmany8(xsize));
     if (rowbuf == NULL || refbuf == NULL)
     {
+        TIFFClose(out);
+        if (rowbuf)
+            _TIFFfree(rowbuf);
+        if (refbuf)
+            _TIFFfree(refbuf);
         fprintf(stderr, "%s: Not enough memory\n", argv[0]);
         return (EXIT_FAILURE);
     }
@@ -240,6 +253,11 @@ int main(int argc, char *argv[])
         if (out == NULL)
         {
             fprintf(stderr, "%s: Can not create fax.tif\n", argv[0]);
+            TIFFClose(out);
+            if (rowbuf)
+                _TIFFfree(rowbuf);
+            if (refbuf)
+                _TIFFfree(refbuf);
             return (EXIT_FAILURE);
         }
     }
@@ -253,6 +271,11 @@ int main(int argc, char *argv[])
     if (faxTIFF == NULL)
     {
         fprintf(stderr, "%s: Can not create fake input file\n", argv[0]);
+        TIFFClose(out);
+        if (rowbuf)
+            _TIFFfree(rowbuf);
+        if (refbuf)
+            _TIFFfree(refbuf);
         return (EXIT_FAILURE);
     }
     TIFFSetMode(faxTIFF, O_RDONLY);
@@ -384,6 +407,7 @@ int copyFaxFile(TIFF *tifin, TIFF *tifout)
     if (!ReadOK(tifin, tifin->tif_rawdata, tifin->tif_rawdatasize))
     {
         TIFFError(tifin->tif_name, "Read error at scanline 0");
+        _TIFFfree(tifin->tif_rawdata);
         return (0);
     }
     tifin->tif_rawcp = tifin->tif_rawdata;
@@ -401,8 +425,14 @@ int copyFaxFile(TIFF *tifin, TIFF *tifout)
     while (tifin->tif_rawcc > 0)
     {
         ok = (*tifin->tif_decoderow)(tifin, (tdata_t)rowbuf, linesize, 0);
-        if (!ok)
+        if (ok < 1)
         {
+            if (compression_in == COMPRESSION_CCITTFAX4)
+            {
+                /* This is probably EOFB, but if it's corrupt data, then we
+                 * can't continue, anyway. */
+                break;
+            }
             badfaxlines++;
             badrun++;
             /* regenerate line from previous good line */
@@ -455,7 +485,9 @@ static const char usage_info[] =
     " -M		input data has MSB2LSB bit order\n"
     " -L		input data has LSB2MSB bit order	[default]\n"
     " -B		input data has min 0 means black\n"
+    " -b		input data has min 0 means black (same as -B)\n"
     " -W		input data has min 0 means white	[default]\n"
+    " -w		input data has min 0 means white (same as -W)\n"
     " -R #		input data has # resolution (lines/inch) [default is "
     "196]\n"
     " -X #		input data has # width			[default is "

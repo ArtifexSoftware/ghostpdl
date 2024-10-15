@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFCREATEDIRECTORY" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFCreateDirectory \- routines to create a directory and retrieve information about directories
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFCREATEDIRECTORY" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFCreateDirectory \- routines to create a directory and retrieve information about directories
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -81,7 +81,7 @@ Directory query functions \fI\%TIFFCurrentDirectory()\fP,
 \fI\%TIFFCurrentDirOffset()\fP, \fI\%TIFFLastDirectory()\fP and
 \fI\%TIFFNumberOfDirectories()\fP retrieve information about directories
 in an open TIFF file. Be aware that until a directory is
-not written to file AND read back, the query functions won’t retrieve
+not written to file AND read back, the query functions won\(aqt retrieve
 the correct information!
 .SH NOTES
 .sp
@@ -89,7 +89,7 @@ Be aware:
 .INDENT 0.0
 .IP \(bu 2
 that until a directory is not written to file AND read back, the
-query functions won’t retrieve the correct information!
+query functions won\(aqt retrieve the correct information!
 .IP \(bu 2
 that the newly created directory will not exist on the file till
 \fI\%TIFFWriteDirectory()\fP, \fI\%TIFFCheckpointDirectory()\fP,
@@ -101,6 +101,10 @@ create a new directory, free the \fB*tif\fP structure and set up a new one.
 that unlike \fI\%TIFFWriteDirectory()\fP, \fI\%TIFFCheckpointDirectory()\fP
 does not free up the directory data structures in memory.
 .UNINDENT
+.sp
+After \fBlibtiff\fP version 4.6.0 \fI\%TIFFCreateDirectory()\fP also releases
+the directory part of the \fItif\fP structure by calling \fI\%TIFFFreeDirectory()\fP,
+which should have been called by the user application before creating a new directory.
 .SH DIAGNOSTICS
 .sp
 All error messages are directed to the \fI\%TIFFErrorExtR()\fP routine.

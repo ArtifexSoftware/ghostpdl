@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFREADRGBAIMAGE" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFReadRGBAImage \- read and decode an image into a fixed-format raster
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFREADRGBAIMAGE" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFReadRGBAImage \- read and decode an image into a fixed-format raster
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -140,21 +140,21 @@ Otherwise, 0 is returned if an error was encountered and
 .sp
 All error messages are directed to the \fI\%TIFFErrorExtR()\fP routine.
 .sp
-\fB"Sorry, can not handle %d\-bit pictures"\fP:
+\fB\(dqSorry, can not handle %d\-bit pictures\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image had \fBBitsPerSample\fP other than 1, 2, 4, 8, or 16.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Sorry, can not handle %d\-channel images"\fP:
+\fB\(dqSorry, can not handle %d\-channel images\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image had \fBSamplesPerPixel\fP other than 1, 3, or 4.
 .UNINDENT
 .UNINDENT
 .sp
-\fBMissing needed "PhotometricInterpretation" tag\fP:
+\fBMissing needed \(dqPhotometricInterpretation\(dq tag\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image did not have a tag that describes how to display
@@ -162,7 +162,7 @@ the data.
 .UNINDENT
 .UNINDENT
 .sp
-\fBNo "PhotometricInterpretation" tag, assuming RGB\fP:
+\fBNo \(dqPhotometricInterpretation\(dq tag, assuming RGB\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image was missing a tag that describes how to display it,
@@ -171,7 +171,7 @@ RGB.
 .UNINDENT
 .UNINDENT
 .sp
-\fBNo "PhotometricInterpretation" tag, assuming min\-is\-black\fP:
+\fBNo \(dqPhotometricInterpretation\(dq tag, assuming min\-is\-black\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image was missing a tag that describes how to display it,
@@ -180,7 +180,7 @@ or bilevel image.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for photometric conversion table"\fP:
+\fB\(dqNo space for photometric conversion table\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory for a table used to convert
@@ -188,28 +188,28 @@ image samples to 8\-bit RGB.
 .UNINDENT
 .UNINDENT
 .sp
-\fBMissing required "Colormap" tag\fP:
+\fBMissing required \(dqColormap\(dq tag\fP:
 .INDENT 0.0
 .INDENT 3.5
 A Palette image did not have a required \fBColormap\fP tag.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for tile buffer"\fP:
+\fB\(dqNo space for tile buffer\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory to allocate an i/o buffer.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for strip buffer"\fP:
+\fB\(dqNo space for strip buffer\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory to allocate an i/o buffer.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Can not handle format"\fP:
+\fB\(dqCan not handle format\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The image has a format (combination of \fBBitsPerSample\fP,
@@ -218,7 +218,7 @@ that \fI\%TIFFReadRGBAImage()\fP can not handle.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for B&W mapping table"\fP:
+\fB\(dqNo space for B&W mapping table\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory to allocate a table used to map
@@ -226,7 +226,7 @@ grayscale data to RGB.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"No space for Palette mapping table"\fP:
+\fB\(dqNo space for Palette mapping table\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was insufficient memory to allocate a table used to map

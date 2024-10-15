@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFSETFIELD" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFSetField \- set the value(s) of a tag in a TIFF file open for writing
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFSETFIELD" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFSetField \- set the value(s) of a tag in a TIFF file open for writing
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -37,7 +37,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .nf
 .ft C
 #include <tiffio.h>
-#include <stdarg.h>"
+#include <stdarg.h>\(dq
 .ft P
 .fi
 .UNINDENT
@@ -828,8 +828,8 @@ otherwise three arrays should be passed.
 .TP
 .B *:
 The contents of this field are quite complex.  See
-“The ICC Profile Format Specification”,
-Annex B.3 “Embedding ICC Profiles in TIFF Files”
+\(dqThe ICC Profile Format Specification\(dq,
+Annex B.3 \(dqEmbedding ICC Profiles in TIFF Files\(dq
 (available at \fI\%http://www.color.org\fP) for an explanation.
 .UNINDENT
 .SH RETURN VALUES
@@ -840,17 +840,17 @@ Otherwise, 0 is returned if an error was detected.
 .sp
 All error messages are directed to the \fI\%TIFFErrorExtR()\fP routine.
 .sp
-\fB%s: Cannot modify tag "%s" while writing\fP:
+\fB%s: Cannot modify tag \(dq%s\(dq while writing\fP:
 .INDENT 0.0
 .INDENT 3.5
 Data has already been written to the file, so the
-specified tag’s value can not be changed.
+specified tag\(aqs value can not be changed.
 This restriction is applied to all tags that affect
 the format of written data.
 .UNINDENT
 .UNINDENT
 .sp
-\fB%d: Bad value for "%s"\fP:
+\fB%d: Bad value for \(dq%s\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 An invalid value was supplied for the named tag.

@@ -100,7 +100,7 @@ Options
 
 .. option:: -d
 
-  Do not compress (decompress).
+  Do not compress (decompress) - except monochrome to CCITT Group 4.
 
 .. option:: -i
 

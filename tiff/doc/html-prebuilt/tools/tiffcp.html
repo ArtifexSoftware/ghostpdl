@@ -1,23 +1,20 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tiffcp &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>tiffcp &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tiffcrop" href="tiffcrop.html" />
-    <link rel="prev" title="tiff2cmp" href="tiffcmp.html" /> 
+    <link rel="prev" title="tiffcmp" href="tiffcmp.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -29,9 +26,9 @@
           <a href="tiffcrop.html" title="tiffcrop"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="tiffcmp.html" title="tiff2cmp"
+          <a href="tiffcmp.html" title="tiffcmp"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffcp</a></li> 
       </ul>
@@ -42,13 +39,13 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffcp">
+  <section id="tiffcp">
 <h1>tiffcp<a class="headerlink" href="#tiffcp" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>tiffcp</strong> [ <em>options</em> ] <em>src1.tif</em> … <em>srcN.tif</em> <em>dst.tif</em></p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">tiffcp</strong> combines one or more files created according
 to the Tag Image File Format, Revision 6.0 into a single TIFF file.
@@ -60,8 +57,8 @@ TIFF directory of an input file to the associated directory in the output file.<
 <p><strong class="program">tiffcp</strong> can be used to reorganize the storage characteristics of data
 in a file, but it is explicitly intended to not alter or convert
 the image data content in any way.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcp-a">
@@ -88,14 +85,14 @@ overwritten and not when it is appended to.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcp-C">
-<span id="cmdoption-tiffcp-c"></span><span class="sig-name descname"><span class="pre">-C</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcp-C" title="Permalink to this definition">¶</a></dt>
-<dd><p>Suppress the use of “strip chopping” when reading images
+<span class="sig-name descname"><span class="pre">-C</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcp-C" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suppress the use of &quot;strip chopping&quot; when reading images
 that have a single strip/tile of uncompressed data.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcp-0">
-<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcp-0" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcp-c">
+<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcp-c" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the compression to use for data written to the output file:
 <strong class="command">-c none</strong> for no compression,
 <strong class="command">-c packbits</strong> for PackBits compression,
@@ -174,7 +171,7 @@ overwritten and not when it is appended to.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcp-M">
-<span id="cmdoption-tiffcp-m"></span><span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcp-M" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcp-M" title="Permalink to this definition">¶</a></dt>
 <dd><p>Suppress the use of memory-mapped files when reading images.</p>
 </dd></dl>
 
@@ -243,8 +240,8 @@ appear in a tile.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcp-1">
-<span id="cmdoption-tiffcp"></span><span class="sig-name descname"><span class="pre">-,</span></span><span class="sig-prename descclassname"><span class="pre">=</span> <span class="pre">character</span></span><a class="headerlink" href="#cmdoption-tiffcp-1" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcp-0">
+<span class="sig-name descname"><span class="pre">-,</span></span><span class="sig-prename descclassname"><span class="pre">=</span> <span class="pre">character</span></span><a class="headerlink" href="#cmdoption-tiffcp-0" title="Permalink to this definition">¶</a></dt>
 <dd><p>substitute <em>character</em> for <code class="docutils literal notranslate"><span class="pre">,</span></code>
 in parsing image directory indices
 in files.  This is necessary if filenames contain commas.
@@ -254,21 +251,21 @@ the special meaning of the <code class="docutils literal notranslate"><span clas
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcp-2">
-<span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"> <span class="pre">size</span></span><a class="headerlink" href="#cmdoption-tiffcp-2" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcp-m">
+<span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"> <span class="pre">size</span></span><a class="headerlink" href="#cmdoption-tiffcp-m" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set maximum memory allocation size (in MiB). The default is 256MiB.
 Set to 0 to disable the limit.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="examples">
+</section>
+<section id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
 <p>The following concatenates two files and writes the result using LZW encoding:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp -c lzw a.tif b.tif result.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp<span class="w"> </span>-c<span class="w"> </span>lzw<span class="w"> </span>a.tif<span class="w"> </span>b.tif<span class="w"> </span>result.tif
 </pre></div>
 </div>
 <p>To convert a G3 1d-encoded TIFF to a single strip of G4-encoded data the following might be used:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp -c g4 -r <span class="m">10000</span> g3.tif g4.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp<span class="w"> </span>-c<span class="w"> </span>g4<span class="w"> </span>-r<span class="w"> </span><span class="m">10000</span><span class="w"> </span>g3.tif<span class="w"> </span>g4.tif
 </pre></div>
 </div>
 <p>(1000 is just a number that is larger than the number of rows in
@@ -277,38 +274,38 @@ the source file.)</p>
 name may be immediately followed by a <code class="docutils literal notranslate"><span class="pre">,</span></code> separated list of image directory
 indices.  The first image is always in directory 0.  Thus, to copy the 1st and
 3rd images of image file <code class="file docutils literal notranslate"><span class="pre">album.tif</span></code> to <code class="file docutils literal notranslate"><span class="pre">result.tif</span></code>:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp album.tif,0,2 result.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp<span class="w"> </span>album.tif,0,2<span class="w"> </span>result.tif
 </pre></div>
 </div>
 <p>A trailing comma denotes remaining images in sequence.  The following command
 will copy all image with except the first one:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp album.tif,1, result.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp<span class="w"> </span>album.tif,1,<span class="w"> </span>result.tif
 </pre></div>
 </div>
 <p>Given file <code class="file docutils literal notranslate"><span class="pre">CCD.tif</span></code> whose first image is a noise bias
 followed by images which include that bias,
 subtract the noise from all those images following it
 (while decompressing) with the command:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp -c none -b CCD.tif CCD.tif,1, result.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp<span class="w"> </span>-c<span class="w"> </span>none<span class="w"> </span>-b<span class="w"> </span>CCD.tif<span class="w"> </span>CCD.tif,1,<span class="w"> </span>result.tif
 </pre></div>
 </div>
 <p>If the file above were named <code class="file docutils literal notranslate"><span class="pre">CCD,X.tif</span></code>, the <code class="docutils literal notranslate"><span class="pre">-,=</span></code>
 option would be required to correctly parse this filename with image numbers,
 as follows:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp -c none -,<span class="o">=</span>% -b CCD,X.tif CCD,X%1%.tif result.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcp<span class="w"> </span>-c<span class="w"> </span>none<span class="w"> </span>-,<span class="o">=</span>%<span class="w"> </span>-b<span class="w"> </span>CCD,X.tif<span class="w"> </span>CCD,X%1%.tif<span class="w"> </span>result.tif
 </pre></div>
 </div>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="pal2rgb.html"><span class="doc">pal2rgb</span></a> (1),
 <a class="reference internal" href="tiffinfo.html"><span class="doc">tiffinfo</span></a> (1),
-<a class="reference internal" href="tiffcmp.html"><span class="doc">tiff2cmp</span></a> (1),
+<a class="reference internal" href="tiffcmp.html"><span class="doc">tiffcmp</span></a> (1),
 <a class="reference internal" href="tiffmedian.html"><span class="doc">tiffmedian</span></a> (1),
 <a class="reference internal" href="tiffsplit.html"><span class="doc">tiffsplit</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -334,7 +331,7 @@ as follows:</p>
   <div>
     <h4>Previous topic</h4>
     <p class="topless"><a href="tiffcmp.html"
-                          title="previous chapter">tiff2cmp</a></p>
+                          title="previous chapter">tiffcmp</a></p>
   </div>
   <div>
     <h4>Next topic</h4>
@@ -372,16 +369,16 @@ as follows:</p>
           <a href="tiffcrop.html" title="tiffcrop"
              >next</a> |</li>
         <li class="right" >
-          <a href="tiffcmp.html" title="tiff2cmp"
+          <a href="tiffcmp.html" title="tiffcmp"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffcp</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

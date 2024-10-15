@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TIFFquery &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TIFFquery &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TIFFReadDirectory" href="TIFFReadDirectory.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="TIFFProcFunctions.html" title="TIFFProcFunctions"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" accesskey="U">TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFquery</a></li> 
       </ul>
@@ -42,11 +39,11 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffquery">
+  <section id="tiffquery">
 <h1>TIFFquery<a class="headerlink" href="#tiffquery" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span><span class="cp"></span>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span>
 </pre></div>
 </div>
 <dl class="c function">
@@ -134,30 +131,50 @@
 <span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">char</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">TIFFGetVersion</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.TIFFGetVersion" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p>The following query routines return status information about the directory
 structure of an open TIFF file.</p>
-<p><a class="reference internal" href="#c.TIFFCurrentDirectory" title="TIFFCurrentDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFCurrentDirectory()</span></code></a> returns the index of the current directory
-(directories are numbered starting at 0). This number is suitable for
+<p><a class="reference internal" href="#c.TIFFCurrentDirectory" title="TIFFCurrentDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFCurrentDirectory()</span></code></a> returns the index of the current
+<a class="reference internal" href="../terms.html#imagefiledirectory"><span class="std std-ref">Image File Directory (IFD)</span></a>.
+Directories are numbered starting at 0. This number is suitable for
 use with the <a class="reference internal" href="TIFFSetDirectory.html#c.TIFFSetDirectory" title="TIFFSetDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFSetDirectory()</span></code></a> routine.
-A value of 65535 (non-existing directory) is returned if the directory
-has not yet been written to the file after opening it.</p>
+There are <a class="reference internal" href="../terms.html#imagefiledirectory"><span class="std std-ref">IFDs</span></a> in the file and an &quot;active&quot;
+<a class="reference internal" href="../terms.html#imagefiledirectory"><span class="std std-ref">IFD</span></a>  in memory, from which fields
+are &quot;set&quot; and &quot;get&quot;. The index of the current directory returned is:</p>
+<ol class="loweralpha simple">
+<li><p>65535 (non-existing directory) if there is no IFD in the file after opening,
+or the state is unknown,
+or the last read (i.e. TIFFFetchDirectory()) failed,
+or a custom directory was written.</p></li>
+<li><p>IFD index of last IFD written in the file.
+In this case the active IFD is a new (empty) one and the current directory offset
+from TIFFCurrentDirOffset() is zero.
+If writing fails, the IFD index is not changed.</p></li>
+<li><p>IFD index of IFD read from file into memory (=active IFD),
+even if IFD is corrupt and TIFFReadDirectory() returns 0.
+Then the current directory offset is the offset of the IFD in the file.</p></li>
+<li><p>IFD index „0“, whenever a custom directory or an unchained SubIFD
+was read.</p></li>
+</ol>
 <p><a class="reference internal" href="#c.TIFFCurrentDirOffset" title="TIFFCurrentDirOffset"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFCurrentDirOffset()</span></code></a> returns the file offset of the current
 directory (instead of an index).
 The file offset is suitable for use with the <a class="reference internal" href="TIFFSetDirectory.html#c.TIFFSetSubDirectory" title="TIFFSetSubDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFSetSubDirectory()</span></code></a>
 routine. This is required for accessing subdirectories linked through a
-<code class="docutils literal notranslate"><span class="pre">SubIFD</span></code> tag.</p>
+<code class="docutils literal notranslate"><span class="pre">SubIFD</span></code> tag. See also <a class="reference internal" href="../multi_page.html#subifdaccess"><span class="std std-ref">SubIFD access</span></a>.</p>
 <p><a class="reference internal" href="#c.TIFFLastDirectory" title="TIFFLastDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFLastDirectory()</span></code></a> returns a non-zero value if the current
-directory is the last directory in the file; otherwise zero is returned.</p>
+directory is the last directory in the file; otherwise zero is returned.
+A new (empty) directory in the memory (after <a class="reference internal" href="TIFFWriteDirectory.html#c.TIFFWriteDirectory" title="TIFFWriteDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFWriteDirectory()</span></code></a>
+or <a class="reference internal" href="TIFFCreateDirectory.html#c.TIFFCreateDirectory" title="TIFFCreateDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFCreateDirectory()</span></code></a>)
+also counts as the last directory, even if it has not yet been written to a file.</p>
 <p><a class="reference internal" href="#c.TIFFNumberOfDirectories" title="TIFFNumberOfDirectories"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFNumberOfDirectories()</span></code></a> returns the number of directories in a
-file. Be aware that just created directories, which are not “written” to
+file. Be aware that just created directories, which are not &quot;written&quot; to
 file do not count.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Be aware that the return value of the above directory query functions
-is not valid until the directory is “written” to file AND read back
+is not valid until the directory is &quot;written&quot; to file AND read back
 e.g. <a class="reference internal" href="TIFFSetDirectory.html#c.TIFFSetDirectory" title="TIFFSetDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFSetDirectory()</span></code></a> or <a class="reference internal" href="TIFFReadDirectory.html#c.TIFFReadDirectory" title="TIFFReadDirectory"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFReadDirectory()</span></code></a>.</p>
 </div>
 <p>The following query routines return information about an open TIFF file
@@ -193,17 +210,17 @@ useful to applications that want to calculate I/O buffer sizes to reflect
 this usage (though the usual strip and tile size routines already do this).</p>
 <p><a class="reference internal" href="#c.TIFFGetVersion" title="TIFFGetVersion"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFGetVersion()</span></code></a> returns an <code class="docutils literal notranslate"><span class="pre">ASCII</span></code> string that has a version
 stamp for the TIFF library software.</p>
-</div>
-<div class="section" id="diagnostics">
+</section>
+<section id="diagnostics">
 <h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this heading">¶</a></h2>
 <p>None.</p>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="libtiff.html"><span class="doc">libtiff</span></a> (3tiff),
 <a class="reference internal" href="TIFFOpen.html"><span class="doc">TIFFOpen</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -268,14 +285,14 @@ stamp for the TIFF library software.</p>
         <li class="right" >
           <a href="TIFFProcFunctions.html" title="TIFFProcFunctions"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" >TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFquery</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

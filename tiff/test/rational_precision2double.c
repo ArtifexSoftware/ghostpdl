@@ -31,7 +31,7 @@
  * Extended and amended version for testing the TIFFSetField() / and
  *TIFFGetField()- interface for custom fields of type RATIONAL when the TIFFLib
  *internal precision is updated from FLOAT to DOUBLE! The external interface of
- *already defined tags schould be kept. This is verified for some of those tags
+ *already defined tags should be kept. This is verified for some of those tags
  *with this test.
  *
  */
@@ -66,8 +66,6 @@
 #include "tiffio.h"
 #include "tiffiop.h"
 #include "tifftest.h"
-
-#include "tif_dirwrite.c"
 
 int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags);
 
@@ -133,7 +131,7 @@ static const TIFFField tifFieldInfo[] = {
 
 #define N(a) (sizeof(a) / sizeof(a[0]))
 
-/*--- Add aditional Rational-Double Tags to TIFF
+/*--- Add additional Rational-Double Tags to TIFF
           ref: html\addingtags.html but with new function _TIFFMergeFields().
 ---*/
 
@@ -205,7 +203,7 @@ int main()
     int ret;
     int errorNo;
 
-    /*-- Initialize TIFF-Extender to add additonal TIFF-Tags --*/
+    /*-- Initialize TIFF-Extender to add additional TIFF-Tags --*/
     _XTIFFInitialize();
 
     fprintf(stderr, "==== Test if Set()/Get() interface for some custom "
@@ -305,15 +303,15 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
     double auxDouble = 0.0;
     uint16_t auxUint16 = 0;
     uint32_t auxUint32 = 0;
-    long auxLong = 0;
+    int32_t auxInt32 = 0;
     void *pVoid;
     int blnIsRational2Double;
 
     int i, j;
-    long nTags;
+    int32_t nTags;
 
     const TIFFFieldArray *tFieldArray;
-    unsigned long tTag;
+    uint32_t tTag;
     TIFFDataType tType;
     short tWriteCount;
     TIFFSetGetFieldType tSetFieldType;
@@ -322,7 +320,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
     char *tFieldName;
 
 #define STRSIZE 1000
-#define N_SIZE 200
+#define N_SIZE 400
 #define VARIABLE_ARRAY_SIZE 6
 
     /* -- Test data for writing -- */
@@ -337,11 +335,11 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
     uint16_t count16 = 0;
     union
     {
-        long Long;
+        int32_t Int32;
         short Short1;
         short Short2[2];
         char Char[4];
-    } auxLongUnion;
+    } auxInt32Union;
     union
     {
         double dbl;
@@ -559,7 +557,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
             goto failure;
         }
 
-        /*- Varable Array:  TIFF_RATIONAL, 0, TIFF_SETGET_C16_FLOAT */
+        /*- Variable Array:  TIFF_RATIONAL, 0, TIFF_SETGET_C16_FLOAT */
         if (!TIFFSetField(tif, TIFFTAG_BLACKLEVEL, 3, auxFloatArrayN1))
         { /* for TIFF_SETGET_C16_FLOAT */
             fprintf(stderr, "Can't set TIFFTAG_BLACKLEVEL tag.\n");
@@ -671,7 +669,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                         {
                             fprintf(stderr,
                                     "WriteCount for .set_field_type %d should "
-                                    "be -1 or greather than 1!  %s\n",
+                                    "be -1 or greater than 1!  %s\n",
                                     tSetFieldType,
                                     tFieldArray->fields[i].field_name);
                         }
@@ -1153,7 +1151,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                             else
                             {
                                 /* Old interface reads TIFF_RATIONAL defined as
-                                 * TIFF_SETGET_DOUBLE alwasy as FLOAT */
+                                 * TIFF_SETGET_DOUBLE always as FLOAT */
                                 auxDouble = (double)auxDblUnion.flt1;
                             }
                         }
@@ -1199,7 +1197,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                         {
                             fprintf(stderr,
                                     "Reading: WriteCount for .set_field_type "
-                                    "%d should be -1 or greather than 1!  %s\n",
+                                    "%d should be -1 or greater than 1!  %s\n",
                                     tSetFieldType,
                                     tFieldArray->fields[i].field_name);
                             GOTOFAILURE
@@ -1223,7 +1221,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                                 }
                                 /* set tWriteCount to number of read samples for
                                  * next steps */
-                                auxLong = tWriteCount;
+                                auxInt32 = tWriteCount;
                             }
                             else
                             {
@@ -1231,7 +1229,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                                 /* Dependent on Cxx, the count parameter is
                                  * char, short or long. Therefore use unionLong!
                                  */
-                                if (!TIFFGetField(tif, tTag, &auxLongUnion,
+                                if (!TIFFGetField(tif, tTag, &auxInt32Union,
                                                   &pVoidArray))
                                 {
                                     fprintf(stderr, "Can't read %s\n",
@@ -1241,7 +1239,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                                 }
                                 /* set tWriteCount to number of read samples for
                                  * next steps */
-                                auxLong = auxLongUnion.Short1;
+                                auxInt32 = auxInt32Union.Short1;
                             }
                             /* Save values from temporary array */
                             if (tSetFieldType == TIFF_SETGET_C0_FLOAT ||
@@ -1249,7 +1247,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                                 tSetFieldType == TIFF_SETGET_C32_FLOAT)
                             {
                                 memcpy(&auxFloatArray, pVoidArray,
-                                       (auxLong * sizeof(auxFloatArray[0])));
+                                       (auxInt32 * sizeof(auxFloatArray[0])));
                                 /* compare read values with written ones */
                                 if (tType == TIFF_RATIONAL ||
                                     tType == TIFF_SRATIONAL)
@@ -1257,7 +1255,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                                         RATIONAL_EPS * auxDoubleArrayW[i];
                                 else
                                     dblDiffLimit = 1e-6;
-                                for (j = 0; j < auxLong; j++)
+                                for (j = 0; j < auxInt32; j++)
                                 {
                                     dblDiff = auxFloatArray[j] -
                                               auxFloatArrayW[i + j];
@@ -1278,7 +1276,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                             else
                             {
                                 memcpy(&auxDoubleArray, pVoidArray,
-                                       (auxLong * sizeof(auxDoubleArray[0])));
+                                       (auxInt32 * sizeof(auxDoubleArray[0])));
                                 /* compare read values with written ones */
                                 if (tType == TIFF_RATIONAL ||
                                     tType == TIFF_SRATIONAL)
@@ -1286,7 +1284,7 @@ int write_test_tiff(TIFF *tif, const char *filenameRead, int blnAllCustomTags)
                                         RATIONAL_EPS * auxDoubleArrayW[i];
                                 else
                                     dblDiffLimit = 1e-6;
-                                for (j = 0; j < auxLong; j++)
+                                for (j = 0; j < auxInt32; j++)
                                 {
                                     dblDiff = auxDoubleArray[j] -
                                               auxDoubleArrayW[i + j];

@@ -142,4 +142,5 @@ See also
 :doc:`TIFFquery` (3tiff),
 :doc:`TIFFWriteDirectory` (3tiff),
 :doc:`TIFFSetDirectory` (3tiff),
+:doc:`/multi_page`,
 :doc:`libtiff` (3tiff)

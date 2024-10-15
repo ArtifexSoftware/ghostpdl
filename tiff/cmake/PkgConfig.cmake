@@ -29,13 +29,13 @@ function(set_libs_private out_var)
     foreach(lib IN LISTS ARGN)
         get_filename_component(name "${lib}" NAME)
         foreach(prefix IN LISTS CMAKE_FIND_LIBRARY_PREFIXES)
-            if(name MATCHES "^${prefix}")
+            if(NOT("${prefix}" STREQUAL "") AND name MATCHES "^${prefix}")
                 string(REGEX REPLACE "^${prefix}" "" name "${name}")
                 break()
             endif()
         endforeach()
         foreach(suffix IN LISTS CMAKE_FIND_LIBRARY_SUFFIXES)
-            if(name MATCHES "${suffix}$")
+            if(NOT("${suffix}" STREQUAL "") AND name MATCHES "${suffix}$")
                 string(REGEX REPLACE "${suffix}$" "" name "${name}")
                 break()
             endif()
@@ -63,5 +63,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/libtiff-4.pc.in
         ${CMAKE_CURRENT_BINARY_DIR}/libtiff-4.pc @ONLY)
 
 # Install pkg-config file
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libtiff-4.pc
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+if (tiff-install)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libtiff-4.pc
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+endif()

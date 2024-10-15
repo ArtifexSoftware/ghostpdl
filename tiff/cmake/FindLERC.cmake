@@ -11,7 +11,7 @@ IMPORTED Targets
 ^^^^^^^^^^^^^^^^
 
 This module defines :prop_tgt:`IMPORTED` target ``LERC::LERC``, if
-CMath has been found.
+LERC has been found.
 
 Result Variables
 ^^^^^^^^^^^^^^^^
@@ -23,6 +23,7 @@ This module defines the following variables:
   LERC_INCLUDE_DIRS   - where to find Lerc_c_api.h, etc.
   LERC_LIBRARIES      - List of libraries when using LERC.
   LERC_FOUND          - True if LERC found.
+  LERC_VERSION_STRING - version number as a string (ex: "4.0.1")
 
 #]=======================================================================]
 
@@ -46,6 +47,19 @@ endif()
 unset(LERC_NAMES)
 
 mark_as_advanced(LERC_INCLUDE_DIR)
+
+if(LERC_INCLUDE_DIR AND EXISTS "${LERC_INCLUDE_DIR}/Lerc_c_api.h")
+    file(STRINGS "${LERC_INCLUDE_DIR}/Lerc_c_api.h" LERC_H  REGEX "^#define[\t ]+LERC_VERSION_[A-Z]+[\t ]+[0-9]+")
+    string(REGEX REPLACE "^.*#define[\t ]+LERC_VERSION_MAJOR[\t ]+([0-9]+).*$" "\\1" LERC_VERSION_MAJOR "${LERC_H}")
+    string(REGEX REPLACE "^.*#define[\t ]+LERC_VERSION_MINOR[\t ]+([0-9]+).*$" "\\1" LERC_VERSION_MINOR "${LERC_H}")
+    string(REGEX REPLACE "^.*#define[\t ]+LERC_VERSION_PATCH[\t ]+([0-9]+).*$" "\\1" LERC_VERSION_PATCH "${LERC_H}")
+    set(LERC_VERSION_STRING "${LERC_VERSION_MAJOR}.${LERC_VERSION_MINOR}.${LERC_VERSION_PATCH}")
+    unset(LERC_H)
+    unset(LERC_VERSION_MAJOR)
+    unset(LERC_VERSION_MINOR)
+    unset(LERC_VERSION_PATCH)
+endif()
+
 
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(LERC
@@ -80,7 +94,7 @@ if(LERC_FOUND)
 
         if(NOT LERC_LIBRARY_RELEASE AND NOT LERC_LIBRARY_DEBUG)
             set_target_properties(LERC::LERC PROPERTIES
-                    IMPORTED_LOCATION_RELEASE "${LERC_LIBRARY}")
+                    IMPORTED_LOCATION "${LERC_LIBRARY}")
         endif()
     endif()
 endif()

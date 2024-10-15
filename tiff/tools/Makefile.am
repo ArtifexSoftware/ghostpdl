@@ -27,7 +27,8 @@ LIBPORT = $(top_builddir)/port/libport.la
 LIBTIFF = $(top_builddir)/libtiff/libtiff.la
 
 EXTRA_DIST = \
-	CMakeLists.txt
+	CMakeLists.txt \
+	tif_tools_versioninfo.rc
 
 if TIFF_TOOLS
 bin_PROGRAMS = \

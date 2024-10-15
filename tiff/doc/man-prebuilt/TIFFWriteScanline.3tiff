@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFWRITESCANLINE" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFWriteScanline \- write a scanline to an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFWRITESCANLINE" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFWriteScanline \- write a scanline to an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -93,7 +93,7 @@ The file was opened for reading, not writing.
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Can not write scanlines to a tiled image"\fP:
+\fB\(dqCan not write scanlines to a tiled image\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 An attempt was made to write a scanline to a tiled image. The image
@@ -102,7 +102,7 @@ is assumed to be organized in tiles because the \fBTileWidth\fP and
 .UNINDENT
 .UNINDENT
 .sp
-\fB"Compression algorithm does not support random access"\fP:
+\fB\(dqCompression algorithm does not support random access\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 Data was written in a non\-sequential order to a file that uses a
@@ -115,15 +115,15 @@ written as entire strips, sequentially by rows, or the value of
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: Must set "ImageWidth" before writing data\fP:
+\fB%s: Must set \(dqImageWidth\(dq before writing data\fP:
 .INDENT 0.0
 .INDENT 3.5
-The image’s width has not be set before the first write.
+The image\(aqs width has not be set before the first write.
 See \fI\%TIFFSetField()\fP for information on how to do this.
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: Must set "PlanarConfiguration" before writing data\fP:
+\fB%s: Must set \(dqPlanarConfiguration\(dq before writing data\fP:
 .INDENT 0.0
 .INDENT 3.5
 The organization of data has not be defined before the first write.
@@ -131,7 +131,7 @@ See \fI\%TIFFSetField()\fP for information on how to do this.
 .UNINDENT
 .UNINDENT
 .sp
-\fBCan not change "ImageLength" when using separate planes\fP:
+\fBCan not change \(dqImageLength\(dq when using separate planes\fP:
 .INDENT 0.0
 .INDENT 3.5
 Separate image planes are being used (\fBPlanarConfiguration\fP = 2),
@@ -141,7 +141,7 @@ are organized in a contiguous manner (\fBPlanarConfiguration\fP = 1).
 .UNINDENT
 .UNINDENT
 .sp
-\fB"%d: Sample out of range, max %d"\fP:
+\fB\(dq%d: Sample out of range, max %d\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The \fIsample\fP parameter was greater than the value of the

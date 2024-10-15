@@ -54,7 +54,7 @@ This structure looks like this:
     Generally the same as field_readcount.  A few built-in exceptions exist, but
     I haven't analysed why they differ.
 
-.. c:member:: TIFFDataType TIFFDataType.field_type
+.. c:member:: TIFFDataType TIFFFieldInfo.field_type
 
     Type of the field.  One of :c:enumerator:`TIFF_BYTE`, :c:enumerator:`TIFF_ASCII`,
     :c:enumerator:`TIFF_SHORT`, :c:enumerator:`TIFF_LONG`,
@@ -63,11 +63,10 @@ This structure looks like this:
     :c:enumerator:`TIFF_SLONG`, :c:enumerator:`TIFF_SRATIONAL`,
     :c:enumerator:`TIFF_FLOAT`, :c:enumerator:`TIFF_DOUBLE` or
     :c:enumerator:`TIFF_IFD`.
-
-.. note::
-
-    Some fields can support more than one type (for
-    instance short and long).  These fields should have multiple TIFFFieldInfos.
+    And for BigTIFF :c:enumerator:`TIFF_LONG8`,
+    :c:enumerator:`TIFF_SLONG8` and :c:enumerator:`TIFF_IFD8`,
+    which are automatically reverted to 4 byte fields in
+    ClassicTIFF.
 
 .. c:member:: unsigned short TIFFFieldInfo.field_bit
 
@@ -95,15 +94,14 @@ This structure looks like this:
     A name for the tag.  Normally mixed case (studly caps)
     like ``StripByteCounts``, and relatively short.
 
-A :c:struct:`TIFFFieldInfo` definition exists for each built-in tag in the
-:file:`tif_dirinfo.c` file.  Some tags which support multiple data types
-have more than one definition, one per data type supported.
+Within :file:`tif_dirinfo.c` file, the built-in TIFF tags are defined with
+:c:struct:`TIFFField` structure that has additional parameters defining the var_arg
+interface of :c:func:`TIFFSetField` and :c:func:`TIFFGetField`.
 
 Various functions exist for getting the internal :c:struct:`TIFFFieldInfo`
 definitions, including :c:func:`_TIFFFindFieldInfo`, and
 :c:func:`_TIFFFindFieldInfoByName`.  See
-:file:`tif_dirinfo.c` for details.  There must be some mechanism to get the whole
-list, though I don't see it off hand.
+:file:`tif_dirinfo.c` for details.
 
 .. _Tag_Auto_registration:
 

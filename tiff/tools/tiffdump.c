@@ -360,7 +360,7 @@ static uint64_t ReadDirectory(int fd, unsigned int ix, uint64_t off)
     {
         n /= direntrysize;
         Error("Could only read %" PRIu32 " of %" PRIu16
-              " entries in directory at offset %#" PRIu64,
+              " entries in directory at offset %" PRIu64,
               n, dircount, off);
         dircount = n;
         nextdiroff = 0;

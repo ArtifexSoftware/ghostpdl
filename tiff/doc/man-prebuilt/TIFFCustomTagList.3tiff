@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFCUSTOMTAGLIST" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFCustomTagList \- returns information about the custom tag list
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFCUSTOMTAGLIST" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFCustomTagList \- returns information about the custom tag list
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -60,7 +60,7 @@ If the \fBtag_index\fP is larger or equal to the number of entries
 in the tag list 0xFFFFFFFF \fI(=(uint32_t(\-1))\fP is returned.
 .SH NOTE
 .sp
-The known tags to \fBlibtiff\fP are define as ‘named’ tags and a lot of them
+The known tags to \fBlibtiff\fP are define as \(aqnamed\(aq tags and a lot of them
 as \fIcustom\fP tags. The custom tag definitions are handled in an internal
 custom tag list. This list can also be extended by adding tag definitions
 to that list, so that \fBlibtiff\fP is aware of those tags.

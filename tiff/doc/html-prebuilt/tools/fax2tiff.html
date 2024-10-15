@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>fax2tiff &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>fax2tiff &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="pal2rgb" href="pal2rgb.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="fax2ps.html" title="fax2ps"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">fax2tiff</a></li> 
       </ul>
@@ -42,16 +39,16 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="fax2tiff">
+  <section id="fax2tiff">
 <h1>fax2tiff<a class="headerlink" href="#fax2tiff" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>fax2tiff</strong> [ <em>options</em> ] [ <strong>-o</strong> <em>output.tif</em> ] <em>input.raw</em></p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">fax2tiff</strong> creates a TIFF file containing  CCITT
-Group 3 or Group 4 encoded data from one or more files containing “raw”
+Group 3 or Group 4 encoded data from one or more files containing &quot;raw&quot;
 Group 3 or Group 4 encoded data (typically obtained directly from a fax modem).
 By default, each row of data in the resultant TIFF
 file is 1-dimensionally encoded and
@@ -63,9 +60,9 @@ The generated file conforms to the TIFF
 Class F (FAX) specification for storing facsimile data.
 This means, in particular, that each page of the data does
 <strong>not</strong> include the trailing
-<em>“return to control”</em> (<code class="docutils literal notranslate"><span class="pre">RTC</span></code>) code; as required
+<em>&quot;return to control&quot;</em> (<code class="docutils literal notranslate"><span class="pre">RTC</span></code>) code; as required
 for transmission by the CCITT Group 3 specifications.
-The old, “classic”, format is created if the
+The old, &quot;classic&quot;, format is created if the
 <a class="reference internal" href="#cmdoption-fax2tiff-c"><code class="xref std std-option docutils literal notranslate"><span class="pre">-c</span></code></a> option is used.
 (The Class F format can also be requested with the
 <a class="reference internal" href="#cmdoption-fax2tiff-f"><code class="xref std std-option docutils literal notranslate"><span class="pre">-f</span></code></a> option.)</p>
@@ -76,8 +73,8 @@ from the same document.
 The order in which input files are specified on the command
 line is the order in which the resultant pages appear in the
 output file.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <p>Options that affect the interpretation of input data are:</p>
 <dl class="std option">
@@ -94,7 +91,7 @@ output file.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-U">
-<span id="cmdoption-fax2tiff-u"></span><span class="sig-name descname"><span class="pre">-U</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-U" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-U</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-U" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assume input data is uncompressed (Group 3 or Group 4).</p>
 </dd></dl>
 
@@ -114,46 +111,46 @@ Group 3 Huffman encoding algorithm.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-P">
-<span id="cmdoption-fax2tiff-p"></span><span class="sig-name descname"><span class="pre">-P</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-P" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-P</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-P" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assume input data is <strong>not</strong>
 EOL-aligned (default). This option has effect with Group 3 encoded input only.</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-A">
-<span id="cmdoption-fax2tiff-a"></span><span class="sig-name descname"><span class="pre">-A</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-A" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-A</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-A" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assume input data is EOL-aligned. This option has effect with Group 3
 encoded input only.</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-M">
-<span id="cmdoption-fax2tiff-m"></span><span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-M" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-M" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treat input data as having bits filled from most significant bit (<code class="docutils literal notranslate"><span class="pre">MSB</span></code>) to most least bit (<code class="docutils literal notranslate"><span class="pre">LSB</span></code>).</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-L">
-<span id="cmdoption-fax2tiff-l"></span><span class="sig-name descname"><span class="pre">-L</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-L" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-L</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-L" title="Permalink to this definition">¶</a></dt>
 <dd><p>Treat input data as having bits filled from least significant bit (<code class="docutils literal notranslate"><span class="pre">LSB</span></code>) to most significant bit
 (<code class="docutils literal notranslate"><span class="pre">MSB</span></code>) (default).</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-B">
-<span id="cmdoption-fax2tiff-b"></span><span class="sig-name descname"><span class="pre">-B</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-B" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-B</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assume input data was encoded with black as 0 and white as 1.</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-W">
-<span id="cmdoption-fax2tiff-w"></span><span class="sig-name descname"><span class="pre">-W</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-W" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-W</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-W" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assume input data was encoded with black as 1 and white as 0 (default).</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-R">
-<span id="cmdoption-fax2tiff-r"></span><span class="sig-name descname"><span class="pre">-R</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-R" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-R</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-R" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the vertical resolution, in lines/inch, of the input images.
 By default input are assumed to have a vertical resolution of 196 lines/inch.
 If images are low resolution facsimile, a value of 98 lines/inch should
@@ -162,7 +159,7 @@ be specified.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-X">
-<span id="cmdoption-fax2tiff-x"></span><span class="sig-name descname"><span class="pre">-X</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-X" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-X</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-X" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the width, in pixels, of the input images.
 By default input are assumed to have a width of 1728 pixels.</p>
 </dd></dl>
@@ -189,8 +186,8 @@ Group 4 Huffman encoding.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-fax2tiff-0">
-<span class="sig-name descname"><span class="pre">-u</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-0" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-fax2tiff-u">
+<span class="sig-name descname"><span class="pre">-u</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-u" title="Permalink to this definition">¶</a></dt>
 <dd><p>Force output to be uncompressed (Group 3 or Group 4).</p>
 </dd></dl>
 
@@ -209,17 +206,17 @@ Group 3 Huffman encoding algorithm (default).</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-fax2tiff-9">
-<span class="sig-name descname"><span class="pre">-a</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-9" title="Permalink to this definition">¶</a></dt>
-<dd><p>Force the last bit of each <em>“End Of Line”</em> (<code class="docutils literal notranslate"><span class="pre">EOL</span></code>)
-code to land on a byte boundary (default). This “zero padding” will
+<dt class="sig sig-object std" id="cmdoption-fax2tiff-a">
+<span class="sig-name descname"><span class="pre">-a</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-a" title="Permalink to this definition">¶</a></dt>
+<dd><p>Force the last bit of each <em>&quot;End Of Line&quot;</em> (<code class="docutils literal notranslate"><span class="pre">EOL</span></code>)
+code to land on a byte boundary (default). This &quot;zero padding&quot; will
 be reflected in the contents of the <code class="docutils literal notranslate"><span class="pre">Group3Options</span></code>
 tag of the resultant TIFF file. This option has effect with Group 3 encoded output only.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-fax2tiff-10">
-<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-10" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-fax2tiff-p">
+<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-p" title="Permalink to this definition">¶</a></dt>
 <dd><p>Do not EOL-align output. This option has effect with Group 3 encoded
 output only.</p>
 </dd></dl>
@@ -227,7 +224,7 @@ output only.</p>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-fax2tiff-c">
 <span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-c" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate “classic” Group 3 TIFF format.</p>
+<dd><p>Generate &quot;classic&quot; Group 3 TIFF format.</p>
 </dd></dl>
 
 <dl class="std option">
@@ -237,22 +234,22 @@ output only.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-fax2tiff-11">
-<span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-11" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-fax2tiff-m">
+<span class="sig-name descname"><span class="pre">-m</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-m" title="Permalink to this definition">¶</a></dt>
 <dd><p>Force output data to have bits filled from most significant bit (<code class="docutils literal notranslate"><span class="pre">MSB</span></code>)
 to most least bit (<code class="docutils literal notranslate"><span class="pre">LSB</span></code>).</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-fax2tiff-12">
-<span class="sig-name descname"><span class="pre">-l</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-12" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-fax2tiff-l">
+<span class="sig-name descname"><span class="pre">-l</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-l" title="Permalink to this definition">¶</a></dt>
 <dd><p>Force output data to have bits filled from least significant bit (<code class="docutils literal notranslate"><span class="pre">LSB</span></code>)
 to most significant bit (<code class="docutils literal notranslate"><span class="pre">MSB</span></code>) (default).</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-fax2tiff-13">
-<span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-13" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-fax2tiff-r">
+<span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-fax2tiff-r" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the number of rows (scanlines) in each strip of data
 written to the output file.
 By default (or when value <code class="docutils literal notranslate"><span class="pre">0</span></code> is specified), <strong class="program">tiffcp</strong>
@@ -284,22 +281,22 @@ to print the number of rows of data it retrieved from the input file.</p>
 <dd><p>Force output to be compressed with the LZW encoding.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="diagnostics">
+</section>
+<section id="diagnostics">
 <h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this heading">¶</a></h2>
 <p>The following warnings and errors come from the decoding
 routines in the library.</p>
-<p><strong>“Warning, %s: Premature EOL at scanline %d (x %d).en”</strong>:</p>
+<p><strong>&quot;Warning, %s: Premature EOL at scanline %d (x %d).en&quot;</strong>:</p>
 <blockquote>
 <div><p>The input data had a row that was shorter than the expected width.
 The row is padded with white.</p>
 </div></blockquote>
-<p><strong>“%s: Premature EOF at scanline %d (x %d).en”</strong>:</p>
+<p><strong>&quot;%s: Premature EOF at scanline %d (x %d).en&quot;</strong>:</p>
 <blockquote>
 <div><p>The decoder ran out of data in the middle of a scanline.
 The resultant row is padded with white.</p>
 </div></blockquote>
-<p><strong>“%s: Bad code word at row %d, x %den”</strong>:</p>
+<p><strong>&quot;%s: Bad code word at row %d, x %den&quot;</strong>:</p>
 <blockquote>
 <div><p>An invalid Group 3 <code class="docutils literal notranslate"><span class="pre">code</span></code>
 was encountered while decoding the input file.
@@ -307,7 +304,7 @@ The row number and horizontal position is given.
 The remainder of the input row is discarded, while
 the corresponding output row is padded with white.</p>
 </div></blockquote>
-<p><strong>“%s: Bad 2D code word at scanline %d.en”</strong>:</p>
+<p><strong>&quot;%s: Bad 2D code word at scanline %d.en&quot;</strong>:</p>
 <blockquote>
 <div><p>An invalid Group 4 or 2D Group 3 <code class="docutils literal notranslate"><span class="pre">code</span></code>
 was encountered while decoding the input file.
@@ -315,25 +312,25 @@ The row number and horizontal position is given.
 The remainder of the input row is discarded, while
 the corresponding output row is padded with white.</p>
 </div></blockquote>
-</div>
-<div class="section" id="bugs">
+</section>
+<section id="bugs">
 <h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this heading">¶</a></h2>
-<p>Input data are assumed to have a a “top left” orientation;
+<p>Input data are assumed to have a a &quot;top left&quot; orientation;
 it should be possible to override this assumption
 from the command line.</p>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
-<p>“CCITT Recommendation T.4”
+<p>&quot;CCITT Recommendation T.4&quot;
 (Standardization of Group 3 Facsimile Apparatus for Document Transmission).</p>
-<p>“The Spirit of TIFF Class F”,
+<p>&quot;The Spirit of TIFF Class F&quot;,
 an appendix to the TIFF 5.0 specification prepared by Cygnet Technologies.</p>
 <p><a class="reference internal" href="tiffinfo.html"><span class="doc">tiffinfo</span></a> (1),
 <a class="reference internal" href="tiffdither.html"><span class="doc">tiffdither</span></a> (1),
 <a class="reference internal" href="tiffgt.html"><span class="doc">tiffgt</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -400,14 +397,14 @@ an appendix to the TIFF 5.0 specification prepared by Cygnet Technologies.</p>
         <li class="right" >
           <a href="fax2ps.html" title="fax2ps"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">fax2tiff</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

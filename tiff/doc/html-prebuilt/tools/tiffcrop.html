@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tiffcrop &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>tiffcrop &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tiffdither" href="tiffdither.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="tiffcp.html" title="tiffcp"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffcrop</a></li> 
       </ul>
@@ -42,13 +39,13 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffcrop">
+  <section id="tiffcrop">
 <h1>tiffcrop<a class="headerlink" href="#tiffcrop" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>tiffcrop</strong> [ <em>options</em> ] <em>src1.tif</em> … <em>srcN.tif</em> <em>dst.tif</em></p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">tiffcrop</strong> processes one or more files created according
 to the Tag Image File Format, Revision 6.0, specification
@@ -65,15 +62,15 @@ from the original input image or images.</p>
 <ol class="arabic simple">
 <li><p>Those that select individual images or sections of images from the input files.
 The options <a class="reference internal" href="#cmdoption-tiffcrop-N"><code class="xref std std-option docutils literal notranslate"><span class="pre">-N</span></code></a> for sequences or lists of individual images in the input files,
-<a class="reference internal" href="#cmdoption-tiffcrop-Z"><code class="xref std std-option docutils literal notranslate"><span class="pre">-Z</span></code></a> for zones, <a class="reference internal" href="#cmdoption-tiffcrop-1"><code class="xref std std-option docutils literal notranslate"><span class="pre">-z</span></code></a> for regions, <a class="reference internal" href="#cmdoption-tiffcrop-X"><code class="xref std std-option docutils literal notranslate"><span class="pre">-X</span></code></a> and <a class="reference internal" href="#cmdoption-tiffcrop-Y"><code class="xref std std-option docutils literal notranslate"><span class="pre">-Y</span></code></a> for fixed sized selections,
+<a class="reference internal" href="#cmdoption-tiffcrop-Z"><code class="xref std std-option docutils literal notranslate"><span class="pre">-Z</span></code></a> for zones, <a class="reference internal" href="#cmdoption-tiffcrop-z"><code class="xref std std-option docutils literal notranslate"><span class="pre">-z</span></code></a> for regions, <a class="reference internal" href="#cmdoption-tiffcrop-X"><code class="xref std std-option docutils literal notranslate"><span class="pre">-X</span></code></a> and <a class="reference internal" href="#cmdoption-tiffcrop-Y"><code class="xref std std-option docutils literal notranslate"><span class="pre">-Y</span></code></a> for fixed sized selections,
 <a class="reference internal" href="#cmdoption-tiffcrop-m"><code class="xref std std-option docutils literal notranslate"><span class="pre">-m</span></code></a> for margins, <a class="reference internal" href="#cmdoption-tiffcrop-U"><code class="xref std std-option docutils literal notranslate"><span class="pre">-U</span></code></a> for units, and <a class="reference internal" href="#cmdoption-tiffcrop-E"><code class="xref std std-option docutils literal notranslate"><span class="pre">-E</span></code></a> for edge reference provide a variety of
 ways to specify portions of the input image.</p></li>
 <li><p>Those that allow the individual images or selections to be exported to one or
 more output files in different groupings and control the organization of the
 data in the output images. The options <a class="reference internal" href="#cmdoption-tiffcrop-P"><code class="xref std std-option docutils literal notranslate"><span class="pre">-P</span></code></a> for page size grouping, <a class="reference internal" href="#cmdoption-tiffcrop-S"><code class="xref std std-option docutils literal notranslate"><span class="pre">-S</span></code></a> for
-subdivision into columns and rows and <a class="reference internal" href="#cmdoption-tiffcrop-0"><code class="xref std std-option docutils literal notranslate"><span class="pre">-e</span></code></a> for export mode options that produce
-one or more files from each input image. The options <a class="reference internal" href="#cmdoption-tiffcrop-7"><code class="xref std std-option docutils literal notranslate"><span class="pre">-r</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-8"><code class="xref std std-option docutils literal notranslate"><span class="pre">-s</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-t"><code class="xref std std-option docutils literal notranslate"><span class="pre">-t</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-w"><code class="xref std std-option docutils literal notranslate"><span class="pre">-w</span></code></a>  control
-strip and tile format and sizes while <a class="reference internal" href="#cmdoption-tiffcrop-B"><code class="xref std std-option docutils literal notranslate"><span class="pre">-B</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-L"><code class="xref std std-option docutils literal notranslate"><span class="pre">-L</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-2"><code class="xref std std-option docutils literal notranslate"><span class="pre">-c</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-3"><code class="xref std std-option docutils literal notranslate"><span class="pre">-f</span></code></a> modify the endian addressing
+subdivision into columns and rows and <a class="reference internal" href="#cmdoption-tiffcrop-e"><code class="xref std std-option docutils literal notranslate"><span class="pre">-e</span></code></a> for export mode options that produce
+one or more files from each input image. The options <a class="reference internal" href="#cmdoption-tiffcrop-r"><code class="xref std std-option docutils literal notranslate"><span class="pre">-r</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-s"><code class="xref std std-option docutils literal notranslate"><span class="pre">-s</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-t"><code class="xref std std-option docutils literal notranslate"><span class="pre">-t</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-w"><code class="xref std std-option docutils literal notranslate"><span class="pre">-w</span></code></a>  control
+strip and tile format and sizes while <a class="reference internal" href="#cmdoption-tiffcrop-B"><code class="xref std std-option docutils literal notranslate"><span class="pre">-B</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-L"><code class="xref std std-option docutils literal notranslate"><span class="pre">-L</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-c"><code class="xref std std-option docutils literal notranslate"><span class="pre">-c</span></code></a>, <a class="reference internal" href="#cmdoption-tiffcrop-f"><code class="xref std std-option docutils literal notranslate"><span class="pre">-f</span></code></a> modify the endian addressing
 scheme, the compression options, and the bit fill sequence of images as they
 are written.</p></li>
 <li><p>Those that perform some action on each image that is selected from the input file.
@@ -105,8 +102,8 @@ options for exporting images and/or segments defined as zones or
 regions of each input image, <strong class="program">tiffcrop</strong> can perform the
 functions of <strong class="program">tiffcp</strong> and <strong class="program">tiffsplit</strong> in a single pass
 while applying multiple operations to individual selections or images.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-h">
@@ -122,7 +119,7 @@ while applying multiple operations to individual selections or images.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-N">
-<span id="cmdoption-tiffcrop-n"></span><span class="sig-name descname"><span class="pre">-N</span></span><span class="sig-prename descclassname"> <span class="pre">odd|even|#,#-#,#|last</span></span><a class="headerlink" href="#cmdoption-tiffcrop-N" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-N</span></span><span class="sig-prename descclassname"> <span class="pre">odd|even|#,#-#,#|last</span></span><a class="headerlink" href="#cmdoption-tiffcrop-N" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify one or more series or range(s) of images within each file to process.
 The words <code class="docutils literal notranslate"><span class="pre">odd</span></code> or <code class="docutils literal notranslate"><span class="pre">even</span></code>
 may be used to specify all odd or even numbered images counting from one.
@@ -139,10 +136,10 @@ to process the 1st, 5th through 7th, and final image in the file.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-E">
-<span id="cmdoption-tiffcrop-e"></span><span class="sig-name descname"><span class="pre">-E</span></span><span class="sig-prename descclassname"> <span class="pre">top|bottom|left|right</span></span><a class="headerlink" href="#cmdoption-tiffcrop-E" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-E</span></span><span class="sig-prename descclassname"> <span class="pre">top|bottom|left|right</span></span><a class="headerlink" href="#cmdoption-tiffcrop-E" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the <code class="docutils literal notranslate"><span class="pre">top</span></code>, <code class="docutils literal notranslate"><span class="pre">bottom</span></code>, <code class="docutils literal notranslate"><span class="pre">left</span></code>, or <code class="docutils literal notranslate"><span class="pre">right</span></code> edge as the reference from
 which to calculate the width and length of crop regions or sequence
-of positions for zones. When used with the <a class="reference internal" href="#cmdoption-tiffcrop-0"><code class="xref std std-option docutils literal notranslate"><span class="pre">-e</span></code></a> option for exporting
+of positions for zones. When used with the <a class="reference internal" href="#cmdoption-tiffcrop-e"><code class="xref std std-option docutils literal notranslate"><span class="pre">-e</span></code></a> option for exporting
 zones or regions, the reference edge determines how composite images
 are arranged. Using <code class="docutils literal notranslate"><span class="pre">-E</span> <span class="pre">left</span></code> or <code class="docutils literal notranslate"><span class="pre">-E</span> <span class="pre">right</span></code> causes successive zones or
 regions to be merged horizontally whereas using <code class="docutils literal notranslate"><span class="pre">-E</span> <span class="pre">top</span></code> or <code class="docutils literal notranslate"><span class="pre">-E</span> <span class="pre">bottom</span></code>
@@ -153,17 +150,17 @@ to the first letter.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-0">
-<span class="sig-name descname"><span class="pre">-e</span></span><span class="sig-prename descclassname"> <span class="pre">combined|divided|image|multiple|separate</span></span><a class="headerlink" href="#cmdoption-tiffcrop-0" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-e">
+<span class="sig-name descname"><span class="pre">-e</span></span><span class="sig-prename descclassname"> <span class="pre">combined|divided|image|multiple|separate</span></span><a class="headerlink" href="#cmdoption-tiffcrop-e" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the export mode for images and selections from input images.
 The final filename on the command line is considered to be the
 destination file or filename stem for automatically generated
 sequences of files. Modes may be abbreviated to the first letter.</p>
-<table class="colwidths-given docutils align-default" id="id1">
+<table class="docutils align-default" id="id1">
 <caption><span class="caption-text">Export modes</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
+<col style="width: 20.0%" />
+<col style="width: 80.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Export mode</p></th>
@@ -196,7 +193,7 @@ with each selection from the image written to a new image</p></td>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-U">
-<span id="cmdoption-tiffcrop-u"></span><span class="sig-name descname"><span class="pre">-U</span></span><span class="sig-prename descclassname"> <span class="pre">in|cm|px</span></span><a class="headerlink" href="#cmdoption-tiffcrop-U" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-U</span></span><span class="sig-prename descclassname"> <span class="pre">in|cm|px</span></span><a class="headerlink" href="#cmdoption-tiffcrop-U" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the type of units to apply to dimensions for margins and
 crop regions for input and output images. Inches or centimeters
 are converted to pixels using the resolution unit specified in the
@@ -214,7 +211,7 @@ removed before any other extractions are computed.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-X">
-<span id="cmdoption-tiffcrop-x"></span><span class="sig-name descname"><span class="pre">-X</span></span><span class="sig-prename descclassname"> <span class="pre">#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-X" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-X</span></span><span class="sig-prename descclassname"> <span class="pre">#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-X" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the horizontal (X-axis) dimension of a region to extract relative to
 the specified origin reference. If the origin is the top or bottom
 edge, the X axis value will be assumed to start at the left edge.</p>
@@ -222,7 +219,7 @@ edge, the X axis value will be assumed to start at the left edge.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-Y">
-<span id="cmdoption-tiffcrop-y"></span><span class="sig-name descname"><span class="pre">-Y</span></span><span class="sig-prename descclassname"> <span class="pre">#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-Y" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-Y</span></span><span class="sig-prename descclassname"> <span class="pre">#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-Y" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the vertical (Y-axis) dimension of a region to extract relative to
 the specified origin reference. If the origin is the left or right
 edge, the Y axis value will be assumed to start at the top.</p>
@@ -230,7 +227,7 @@ edge, the Y axis value will be assumed to start at the top.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-Z">
-<span id="cmdoption-tiffcrop-z"></span><span class="sig-name descname"><span class="pre">-Z</span></span><span class="sig-prename descclassname">&#160; <span class="pre">#:#,#:#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-Z" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-Z</span></span><span class="sig-prename descclassname">&#160; <span class="pre">#:#,#:#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-Z" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify zones of the image designated as position X of Y equal sized portions
 measured from the reference edge,  eg 1:3 would be first third of the
 image starting from the reference edge minus any margins specified
@@ -241,8 +238,8 @@ top quarter and the bottom third of an image you would use
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-1">
-<span class="sig-name descname"><span class="pre">-z</span></span><span class="sig-prename descclassname"> <span class="pre">x1,y1,x2,y2:</span> <span class="pre">...</span> <span class="pre">:xN,yN,xN+1,yN+1</span></span><a class="headerlink" href="#cmdoption-tiffcrop-1" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-z">
+<span class="sig-name descname"><span class="pre">-z</span></span><span class="sig-prename descclassname"> <span class="pre">x1,y1,x2,y2:</span> <span class="pre">...</span> <span class="pre">:xN,yN,xN+1,yN+1</span></span><a class="headerlink" href="#cmdoption-tiffcrop-z" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify a series of coordinates to define regions for processing and exporting.
 The coordinates represent the top left and lower right corners of each region
 in the current units, eg inch, cm, or pixels. Pixels are counted from one to
@@ -256,19 +253,19 @@ the vertical offsets from the top edge.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-F">
-<span id="cmdoption-tiffcrop-f"></span><span class="sig-name descname"><span class="pre">-F</span></span><span class="sig-prename descclassname"> <span class="pre">horiz|vert</span></span><a class="headerlink" href="#cmdoption-tiffcrop-F" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-F</span></span><span class="sig-prename descclassname"> <span class="pre">horiz|vert</span></span><a class="headerlink" href="#cmdoption-tiffcrop-F" title="Permalink to this definition">¶</a></dt>
 <dd><p>Flip, ie mirror, the image or extracted region horizontally or vertically.</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-R">
-<span id="cmdoption-tiffcrop-r"></span><span class="sig-name descname"><span class="pre">-R</span></span><span class="sig-prename descclassname"> <span class="pre">90|180|270</span></span><a class="headerlink" href="#cmdoption-tiffcrop-R" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-R</span></span><span class="sig-prename descclassname"> <span class="pre">90|180|270</span></span><a class="headerlink" href="#cmdoption-tiffcrop-R" title="Permalink to this definition">¶</a></dt>
 <dd><p>Rotate the image or extracted region 90, 180, or 270 degrees clockwise.</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-I">
-<span id="cmdoption-tiffcrop-i"></span><span class="sig-name descname"><span class="pre">-I</span></span><span class="sig-prename descclassname"> <span class="pre">[black|white|data|both]</span></span><a class="headerlink" href="#cmdoption-tiffcrop-I" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-I</span></span><span class="sig-prename descclassname"> <span class="pre">[black|white|data|both]</span></span><a class="headerlink" href="#cmdoption-tiffcrop-I" title="Permalink to this definition">¶</a></dt>
 <dd><p>Invert color space, eg dark to light for bilevel and grayscale images.
 This can be used to modify negative images to positive or to correct
 images that have the <code class="docutils literal notranslate"><span class="pre">PHOTOMETRIC_INTERPRETATION</span></code> tag set incorrectly.
@@ -296,7 +293,7 @@ expressed in the current units.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-J">
-<span id="cmdoption-tiffcrop-j"></span><span class="sig-name descname"><span class="pre">-J</span></span><span class="sig-prename descclassname"> <span class="pre">#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-J" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-J</span></span><span class="sig-prename descclassname"> <span class="pre">#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-J" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the horizontal margin of an output page size to <em>#</em>
 expressed in the current units when sectioning image into <em>columns</em> × <em>rows</em>
 subimages using the <a class="reference internal" href="#cmdoption-tiffcrop-S"><code class="xref std std-option docutils literal notranslate"><span class="pre">-S</span></code></a> <code class="docutils literal notranslate"><span class="pre">cols:rows</span></code> option.</p>
@@ -304,7 +301,7 @@ subimages using the <a class="reference internal" href="#cmdoption-tiffcrop-S"><
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-K">
-<span id="cmdoption-tiffcrop-k"></span><span class="sig-name descname"><span class="pre">-K</span></span><span class="sig-prename descclassname"> <span class="pre">#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-K" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-K</span></span><span class="sig-prename descclassname"> <span class="pre">#</span></span><a class="headerlink" href="#cmdoption-tiffcrop-K" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the vertical margin of an output page size to <em>#</em>
 expressed in the current units when sectioning image into <em>columns</em> × <em>rows</em>
 subimages using the <a class="reference internal" href="#cmdoption-tiffcrop-S"><code class="xref std std-option docutils literal notranslate"><span class="pre">-S</span></code></a> <code class="docutils literal notranslate"><span class="pre">cols:rows</span></code> option.</p>
@@ -312,7 +309,7 @@ subimages using the <a class="reference internal" href="#cmdoption-tiffcrop-S"><
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-O">
-<span id="cmdoption-tiffcrop-o"></span><span class="sig-name descname"><span class="pre">-O</span></span><span class="sig-prename descclassname"> <span class="pre">portrait|landscape|auto</span></span><a class="headerlink" href="#cmdoption-tiffcrop-O" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-O</span></span><span class="sig-prename descclassname"> <span class="pre">portrait|landscape|auto</span></span><a class="headerlink" href="#cmdoption-tiffcrop-O" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the output orientation of the pages or sections.
 Auto will use the arrangement that requires the fewest pages.
 This option is only meaningful in conjunction with the <a class="reference internal" href="#cmdoption-tiffcrop-P"><code class="xref std std-option docutils literal notranslate"><span class="pre">-P</span></code></a>
@@ -321,7 +318,7 @@ option to format an image to fit on a specific paper size.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-P">
-<span id="cmdoption-tiffcrop-p"></span><span class="sig-name descname"><span class="pre">-P</span></span><span class="sig-prename descclassname"> <span class="pre">page</span></span><a class="headerlink" href="#cmdoption-tiffcrop-P" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-P</span></span><span class="sig-prename descclassname"> <span class="pre">page</span></span><a class="headerlink" href="#cmdoption-tiffcrop-P" title="Permalink to this definition">¶</a></dt>
 <dd><p>Format the output images to fit on page size paper. Use
 <code class="docutils literal notranslate"><span class="pre">-P</span> <span class="pre">list</span></code> to show the supported page sizes and dimensions.
 You can define a custom page size by entering the width and length of the
@@ -330,13 +327,13 @@ page in the current units with the following format <code class="docutils litera
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-S">
-<span id="cmdoption-tiffcrop-s"></span><span class="sig-name descname"><span class="pre">-S</span></span><span class="sig-prename descclassname"> <span class="pre">cols:rows</span></span><a class="headerlink" href="#cmdoption-tiffcrop-S" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-S</span></span><span class="sig-prename descclassname"> <span class="pre">cols:rows</span></span><a class="headerlink" href="#cmdoption-tiffcrop-S" title="Permalink to this definition">¶</a></dt>
 <dd><p>Divide each image into cols across and rows down equal sections.</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-B">
-<span id="cmdoption-tiffcrop-b"></span><span class="sig-name descname"><span class="pre">-B</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-B" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-B</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Force output to be written with Big-Endian byte order.
 This option only has an effect when the output file is created or
 overwritten and not when it is appended to.</p>
@@ -344,14 +341,14 @@ overwritten and not when it is appended to.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-C">
-<span id="cmdoption-tiffcrop-c"></span><span class="sig-name descname"><span class="pre">-C</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-C" title="Permalink to this definition">¶</a></dt>
-<dd><p>Suppress the use of “strip chopping” when reading images
+<span class="sig-name descname"><span class="pre">-C</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-C" title="Permalink to this definition">¶</a></dt>
+<dd><p>Suppress the use of &quot;strip chopping&quot; when reading images
 that have a single strip/tile of uncompressed data.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-2">
-<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-2" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-c">
+<span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-c" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the compression to use for data written to the output file:
 <strong class="command">-c none</strong> for no compression,
 <strong class="command">-c packbits</strong> for PackBits compression,
@@ -384,8 +381,8 @@ compression with horizontal differencing.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-3">
-<span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-3" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-f">
+<span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-f" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the bit fill order to use in writing output data.
 By default, <strong class="program">tiffcrop</strong>
 will create a new file with the same fill order as the original.
@@ -398,14 +395,14 @@ tag set to <code class="docutils literal notranslate"><span class="pre">MSB2LSB<
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-4">
-<span class="sig-name descname"><span class="pre">-i</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-4" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-i">
+<span class="sig-name descname"><span class="pre">-i</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-i" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ignore non-fatal read errors and continue processing of the input file.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-5">
-<span class="sig-name descname"><span class="pre">-k</span></span><span class="sig-prename descclassname"> <span class="pre">size</span></span><a class="headerlink" href="#cmdoption-tiffcrop-5" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-k">
+<span class="sig-name descname"><span class="pre">-k</span></span><span class="sig-prename descclassname"> <span class="pre">size</span></span><a class="headerlink" href="#cmdoption-tiffcrop-k" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set maximum memory allocation size (in MiB). The default is 256MiB.
 Set to 0 to disable the limit.</p>
 </dd></dl>
@@ -433,8 +430,8 @@ overwritten and not when it is appended to.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-6">
-<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-6" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-p">
+<span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-p" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the planar configuration to use in writing image data
 that has more than one sample per pixel.
 By default, <strong class="program">tiffcrop</strong>
@@ -448,8 +445,8 @@ will force samples to be written in separate planes.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-7">
-<span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-7" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-r">
+<span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-r" title="Permalink to this definition">¶</a></dt>
 <dd><p>Specify the number of rows (scanlines) in each strip of data
 written to the output file.
 By default (or when value <strong>0</strong> is specified), <strong class="program">tiffcrop</strong>
@@ -460,8 +457,8 @@ will be the one strip in that case.</p>
 </dd></dl>
 
 <dl class="std option">
-<dt class="sig sig-object std" id="cmdoption-tiffcrop-8">
-<span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-8" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object std" id="cmdoption-tiffcrop-s">
+<span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-tiffcrop-s" title="Permalink to this definition">¶</a></dt>
 <dd><p>Force the output file to be written with data organized in strips
 (rather than tiles).</p>
 </dd></dl>
@@ -483,7 +480,7 @@ that no more than 8 kilobytes of data appear in a tile.</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffcrop-D">
-<span id="cmdoption-tiffcrop-d"></span><span class="sig-name descname"><span class="pre">-D</span></span><span class="sig-prename descclassname"> <span class="pre">opt1:value1,opt2:value2,opt3:value3:opt4:value4</span></span><a class="headerlink" href="#cmdoption-tiffcrop-D" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-D</span></span><span class="sig-prename descclassname"> <span class="pre">opt1:value1,opt2:value2,opt3:value3:opt4:value4</span></span><a class="headerlink" href="#cmdoption-tiffcrop-D" title="Permalink to this definition">¶</a></dt>
 <dd><p>Debug and dump facility</p>
 <p>Display program progress and/or dump raw data to non-TIFF files.
 Options include the following and must be joined as a comma
@@ -527,16 +524,16 @@ In no case should the options be applied to a given selection successively.</p>
 <p>Note 2: Any of the -X, -Y, -Z and -z options together with other PAGE_MODE_x options
 such as -H, -V, -P, -J or -K are not supported and may cause buffer overflows.</p>
 </div></blockquote>
-</div>
-<div class="section" id="examples">
+</section>
+<section id="examples">
 <h2>Examples<a class="headerlink" href="#examples" title="Permalink to this heading">¶</a></h2>
 <p>The following concatenates two files and writes the result using LZW
 encoding:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop -c lzw a.tif b.tif result.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop<span class="w"> </span>-c<span class="w"> </span>lzw<span class="w"> </span>a.tif<span class="w"> </span>b.tif<span class="w"> </span>result.tif
 </pre></div>
 </div>
 <p>To convert a G3 1d-encoded TIFF to a single strip of G4-encoded data the following might be used:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop -c g4 -r <span class="m">10000</span> g3.tif g4.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop<span class="w"> </span>-c<span class="w"> </span>g4<span class="w"> </span>-r<span class="w"> </span><span class="m">10000</span><span class="w"> </span>g3.tif<span class="w"> </span>g4.tif
 </pre></div>
 </div>
 <p>(1000 is just a number that is larger than the number of rows in
@@ -544,21 +541,21 @@ the source file.)</p>
 <p>To extract a selected set of images from a multi-image TIFF file
 use the <a class="reference internal" href="#cmdoption-tiffcrop-N"><code class="xref std std-option docutils literal notranslate"><span class="pre">-N</span></code></a> option described above. Thus, to copy the 1st and 3rd
 images of image file <code class="file docutils literal notranslate"><span class="pre">album.tif</span></code> to <code class="file docutils literal notranslate"><span class="pre">result.tif</span></code>:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop -N <span class="m">1</span>,3 album.tif result.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop<span class="w"> </span>-N<span class="w"> </span><span class="m">1</span>,3<span class="w"> </span>album.tif<span class="w"> </span>result.tif
 </pre></div>
 </div>
 <p>Invert a bilevel image scan of a microfilmed document and crop off margins of
 0.25 inches on the left and right, 0.5 inch on the top, and 0.75 inch on the
 bottom. From the remaining portion of the image, select the second and third
 quarters, ie, one half of the area left from the center to each margin:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop -U <span class="k">in</span> -m <span class="m">0</span>.5,0.25,0.75,0.25 -E left -Z <span class="m">2</span>:4,3:4 -I both MicrofilmNegative.tif MicrofilmPostiveCenter.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop<span class="w"> </span>-U<span class="w"> </span><span class="k">in</span><span class="w"> </span>-m<span class="w"> </span><span class="m">0</span>.5,0.25,0.75,0.25<span class="w"> </span>-E<span class="w"> </span>left<span class="w"> </span>-Z<span class="w"> </span><span class="m">2</span>:4,3:4<span class="w"> </span>-I<span class="w"> </span>both<span class="w"> </span>MicrofilmNegative.tif<span class="w"> </span>MicrofilmPostiveCenter.tif
 </pre></div>
 </div>
 <p>Extract only the final image of a large Architectural E sized
 multipage TIFF file and rotate it 90 degrees clockwise while
 reformatting the output to fit on tabloid sized sheets with one
 quarter of an inch on each side:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop -N last -R <span class="m">90</span> -O auto -P tabloid -U <span class="k">in</span> -J <span class="m">0</span>.25 -K <span class="m">0</span>.25 -H <span class="m">300</span> -V <span class="m">300</span> Big-PlatMap.tif BigPlatMap-Tabloid.tif
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop<span class="w"> </span>-N<span class="w"> </span>last<span class="w"> </span>-R<span class="w"> </span><span class="m">90</span><span class="w"> </span>-O<span class="w"> </span>auto<span class="w"> </span>-P<span class="w"> </span>tabloid<span class="w"> </span>-U<span class="w"> </span><span class="k">in</span><span class="w"> </span>-J<span class="w"> </span><span class="m">0</span>.25<span class="w"> </span>-K<span class="w"> </span><span class="m">0</span>.25<span class="w"> </span>-H<span class="w"> </span><span class="m">300</span><span class="w"> </span>-V<span class="w"> </span><span class="m">300</span><span class="w"> </span>Big-PlatMap.tif<span class="w"> </span>BigPlatMap-Tabloid.tif
 </pre></div>
 </div>
 <p>The output images will have a specified resolution of 300 dpi in both
@@ -569,7 +566,7 @@ the image. It breaks each original image into a series of smaller images
 that will fit on the target paper size at the specified resolution.</p>
 <p>Extract two regions 2048 pixels wide by 2048 pixels high from each page of
 a multi-page input file and write each region to a separate output file:</p>
-<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop -U px -z <span class="m">1</span>,1,2048,2048:1,2049,2048,4097 -e separate  CheckScans.tiff Check
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>tiffcrop<span class="w"> </span>-U<span class="w"> </span>px<span class="w"> </span>-z<span class="w"> </span><span class="m">1</span>,1,2048,2048:1,2049,2048,4097<span class="w"> </span>-e<span class="w"> </span>separate<span class="w">  </span>CheckScans.tiff<span class="w"> </span>Check
 </pre></div>
 </div>
 <p>The output file names will use the stem <code class="file docutils literal notranslate"><span class="pre">Check</span></code> with a numeric suffix which is
@@ -577,8 +574,8 @@ incremented for each region of each image, eg <code class="file docutils literal
 <code class="file docutils literal notranslate"><span class="pre">Check-002.tiff</span></code> … <code class="file docutils literal notranslate"><span class="pre">Check-NNN.tiff</span></code>. To produce a unique file for each page
 of the input image with one new image for each region of the input image on that page
 change the export option to <code class="docutils literal notranslate"><span class="pre">-e</span> <span class="pre">multiple</span></code>.</p>
-</div>
-<div class="section" id="notes">
+</section>
+<section id="notes">
 <h2>Notes<a class="headerlink" href="#notes" title="Permalink to this heading">¶</a></h2>
 <p>In general, bilevel, grayscale, palette and RGB(A) data with bit depths
 from 1 to 32 bits should work in both interleaved and separate plane
@@ -617,18 +614,18 @@ one or more buffers at least as large as the largest image to be read are
 required. The design favors large volume document processing uses over
 scientific or graphical manipulation of large datasets as might be found
 in research or remote sensing scenarios.</p>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="pal2rgb.html"><span class="doc">pal2rgb</span></a> (1),
 <a class="reference internal" href="tiffinfo.html"><span class="doc">tiffinfo</span></a> (1),
-<a class="reference internal" href="tiffcmp.html"><span class="doc">tiff2cmp</span></a> (1),
+<a class="reference internal" href="tiffcmp.html"><span class="doc">tiffcmp</span></a> (1),
 <a class="reference internal" href="tiffcp.html"><span class="doc">tiffcp</span></a> (1),
 <a class="reference internal" href="tiffmedian.html"><span class="doc">tiffmedian</span></a> (1),
 <a class="reference internal" href="tiffsplit.html"><span class="doc">tiffsplit</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -695,14 +692,14 @@ in research or remote sensing scenarios.</p>
         <li class="right" >
           <a href="tiffcp.html" title="tiffcp"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffcrop</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

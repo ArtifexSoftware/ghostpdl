@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TIFFRGBAImage &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>TIFFRGBAImage &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="TIFFSetDirectory" href="TIFFSetDirectory.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="TIFFReadTile.html" title="TIFFReadTile"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" accesskey="U">TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFRGBAImage</a></li> 
       </ul>
@@ -42,11 +39,11 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffrgbaimage">
+  <section id="tiffrgbaimage">
 <h1>TIFFRGBAImage<a class="headerlink" href="#tiffrgbaimage" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span><span class="cp"></span>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;tiffio.h&gt;</span>
 </pre></div>
 </div>
 <dl class="c type">
@@ -79,8 +76,8 @@
 <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">TIFFRGBAImageEnd</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="#c.TIFFRGBAImage" title="TIFFRGBAImage"><span class="n"><span class="pre">TIFFRGBAImage</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n"><span class="pre">img</span></span><span class="sig-paren">)</span><a class="headerlink" href="#c.TIFFRGBAImageEnd" title="Permalink to this definition">¶</a><br /></dt>
 <dd></dd></dl>
 
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p>The routines described here provide a high-level interface through which
 TIFF images may be read into memory.
@@ -89,7 +86,7 @@ characteristics: bits/sample, samples/pixel, photometric, etc.
 Decoding state is encapsulated in a <a class="reference internal" href="#c.TIFFRGBAImage" title="TIFFRGBAImage"><code class="xref c c-type docutils literal notranslate"><span class="pre">TIFFRGBAImage</span></code></a>
 structure making it possible to capture state for multiple images
 and quickly switch between them.
-The target raster format can be customized to a particular application’s
+The target raster format can be customized to a particular application's
 needs by installing custom routines that manipulate image data
 according to application requirements.</p>
 <p>The default usage for these routines is:</p>
@@ -132,12 +129,12 @@ encountered while reading the image.  If <em>stopOnError</em> is non-zero,
 then an error will terminate the operation; otherwise
 <a class="reference internal" href="#c.TIFFRGBAImageGet" title="TIFFRGBAImageGet"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFRGBAImageGet()</span></code></a> will continue processing data until all the
 possible data in the image have been requested.</p>
-</div>
-<div class="section" id="alternate-raster-formats">
+</section>
+<section id="alternate-raster-formats">
 <h2>Alternate raster formats<a class="headerlink" href="#alternate-raster-formats" title="Permalink to this heading">¶</a></h2>
 <p>To use the core support for reading and processing  TIFF images, but
 write the resulting raster data in a different format one need only
-override the “put methods” used to store raster data.
+override the &quot;put methods&quot; used to store raster data.
 These methods are are defined in the <a class="reference internal" href="#c.TIFFRGBAImage" title="TIFFRGBAImage"><code class="xref c c-type docutils literal notranslate"><span class="pre">TIFFRGBAImage</span></code></a>
 structure and initially setup by <a class="reference internal" href="#c.TIFFRGBAImageBegin" title="TIFFRGBAImageBegin"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFRGBAImageBegin()</span></code></a>
 to point to routines that pack raster data in the default
@@ -150,8 +147,8 @@ Note that this mechanism can be used to transform the data before
 storing it in the raster.
 For example one can convert data to colormap indices for display on a
 colormap display.</p>
-</div>
-<div class="section" id="simultaneous-raster-store-and-display">
+</section>
+<section id="simultaneous-raster-store-and-display">
 <h2>Simultaneous raster store and display<a class="headerlink" href="#simultaneous-raster-store-and-display" title="Permalink to this heading">¶</a></h2>
 <p>It is simple to display an image as it is being read into memory
 by overriding the put methods as described above for supporting
@@ -161,51 +158,51 @@ Simply keep a reference to the default put methods setup by
 each display operation. For example, the
 <a class="reference internal" href="../tools/tiffgt.html"><span class="doc">tiffgt</span></a> utility uses the following put method to
 update the display as the raster is being filled:</p>
-<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span><span class="w"></span>
-<span class="nf">putContigAndDraw</span><span class="p">(</span><span class="n">TIFFRGBAImage</span><span class="o">*</span><span class="w"> </span><span class="n">img</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="o">*</span><span class="w"> </span><span class="n">raster</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="kt">int32_t</span><span class="w"> </span><span class="n">fromskew</span><span class="p">,</span><span class="w"> </span><span class="kt">int32_t</span><span class="w"> </span><span class="n">toskew</span><span class="p">,</span><span class="w"></span>
-<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">cp</span><span class="p">)</span><span class="w"></span>
-<span class="p">{</span><span class="w"></span>
-<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">putContig</span><span class="p">)(</span><span class="n">img</span><span class="p">,</span><span class="w"> </span><span class="n">raster</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">fromskew</span><span class="p">,</span><span class="w"> </span><span class="n">toskew</span><span class="p">,</span><span class="w"> </span><span class="n">cp</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">w</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">width</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
-<span class="w">        </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">width</span><span class="p">;</span><span class="w"></span>
-<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">img</span><span class="o">-&gt;</span><span class="n">orientation</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ORIENTATION_TOPLEFT</span><span class="p">)</span><span class="w"></span>
-<span class="w">            </span><span class="n">lrectwrite</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="o">-</span><span class="p">(</span><span class="n">h</span><span class="mi">-1</span><span class="p">),</span><span class="w"> </span><span class="n">w</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">raster</span><span class="o">-</span><span class="n">x</span><span class="o">-</span><span class="p">(</span><span class="n">h</span><span class="mi">-1</span><span class="p">)</span><span class="o">*</span><span class="n">w</span><span class="p">);</span><span class="w"></span>
-<span class="w">        </span><span class="k">else</span><span class="w"></span>
-<span class="w">            </span><span class="n">lrectwrite</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="o">+</span><span class="n">h</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="n">raster</span><span class="p">);</span><span class="w"></span>
-<span class="w">    </span><span class="p">}</span><span class="w"></span>
-<span class="p">}</span><span class="w"></span>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">static</span><span class="w"> </span><span class="kt">void</span>
+<span class="nf">putContigAndDraw</span><span class="p">(</span><span class="n">TIFFRGBAImage</span><span class="o">*</span><span class="w"> </span><span class="n">img</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="o">*</span><span class="w"> </span><span class="n">raster</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="kt">uint32_t</span><span class="w"> </span><span class="n">h</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">int32_t</span><span class="w"> </span><span class="n">fromskew</span><span class="p">,</span><span class="w"> </span><span class="kt">int32_t</span><span class="w"> </span><span class="n">toskew</span><span class="p">,</span>
+<span class="w">    </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">char</span><span class="o">*</span><span class="w"> </span><span class="n">cp</span><span class="p">)</span>
+<span class="p">{</span>
+<span class="w">    </span><span class="p">(</span><span class="o">*</span><span class="n">putContig</span><span class="p">)(</span><span class="n">img</span><span class="p">,</span><span class="w"> </span><span class="n">raster</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">fromskew</span><span class="p">,</span><span class="w"> </span><span class="n">toskew</span><span class="p">,</span><span class="w"> </span><span class="n">cp</span><span class="p">);</span>
+<span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">x</span><span class="o">+</span><span class="n">w</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">width</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="n">w</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">width</span><span class="p">;</span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">img</span><span class="o">-&gt;</span><span class="n">orientation</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="n">ORIENTATION_TOPLEFT</span><span class="p">)</span>
+<span class="w">            </span><span class="n">lrectwrite</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="o">-</span><span class="p">(</span><span class="n">h</span><span class="mi">-1</span><span class="p">),</span><span class="w"> </span><span class="n">w</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">raster</span><span class="o">-</span><span class="n">x</span><span class="o">-</span><span class="p">(</span><span class="n">h</span><span class="mi">-1</span><span class="p">)</span><span class="o">*</span><span class="n">w</span><span class="p">);</span>
+<span class="w">        </span><span class="k">else</span>
+<span class="w">            </span><span class="n">lrectwrite</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">w</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="o">+</span><span class="n">h</span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="n">raster</span><span class="p">);</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="p">}</span>
 </pre></div>
 </div>
 <p>(the original routine provided by the library is saved in the
 variable <code class="xref c c-var docutils literal notranslate"><span class="pre">putContig</span></code>.)</p>
-</div>
-<div class="section" id="supporting-additional-tiff-formats">
+</section>
+<section id="supporting-additional-tiff-formats">
 <h2>Supporting additional TIFF formats<a class="headerlink" href="#supporting-additional-tiff-formats" title="Permalink to this heading">¶</a></h2>
 <p>The <a class="reference internal" href="#c.TIFFRGBAImage" title="TIFFRGBAImage"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFRGBAImage()</span></code></a> routines support the most commonly
 encountered flavors of TIFF.  It is possible to extend this support by
-overriding the “get method” invoked by <a class="reference internal" href="#c.TIFFRGBAImageGet" title="TIFFRGBAImageGet"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFRGBAImageGet()</span></code></a>
+overriding the &quot;get method&quot; invoked by <a class="reference internal" href="#c.TIFFRGBAImageGet" title="TIFFRGBAImageGet"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFRGBAImageGet()</span></code></a>
 to read TIFF image data.
 Details of doing this are a bit involved, it is best to make a copy
 of an existing get method and modify it to suit the needs of an
 application.</p>
-</div>
-<div class="section" id="notes">
+</section>
+<section id="notes">
 <h2>Notes<a class="headerlink" href="#notes" title="Permalink to this heading">¶</a></h2>
 <p>Samples must be either 1, 2, 4, 8, or 16 bits.
 Colorimetric samples/pixel must be either 1, 3, or 4 (i.e.
 <code class="docutils literal notranslate"><span class="pre">SamplesPerPixel</span></code> -<code class="docutils literal notranslate"><span class="pre">ExtraSamples</span></code>).</p>
 <p>Palette image colormaps that appear to be incorrectly written
 as 8-bit values are automatically scaled to 16-bits.</p>
-</div>
-<div class="section" id="return-values">
+</section>
+<section id="return-values">
 <h2>Return values<a class="headerlink" href="#return-values" title="Permalink to this heading">¶</a></h2>
 <p>All routines return 1 if the operation was successful.
 Otherwise, 0 is returned if an error was encountered and
 <em>stopOnError</em> is zero.</p>
-</div>
-<div class="section" id="diagnostics">
+</section>
+<section id="diagnostics">
 <h2>Diagnostics<a class="headerlink" href="#diagnostics" title="Permalink to this heading">¶</a></h2>
 <p>All error messages are directed to the <a class="reference internal" href="TIFFError.html#c.TIFFErrorExtR" title="TIFFErrorExtR"><code class="xref c c-func docutils literal notranslate"><span class="pre">TIFFErrorExtR()</span></code></a> routine.</p>
 <p><code class="docutils literal notranslate"><span class="pre">&quot;Sorry,</span> <span class="pre">can</span> <span class="pre">not</span> <span class="pre">handle</span> <span class="pre">%d-bit</span> <span class="pre">pictures&quot;</span></code>:</p>
@@ -266,16 +263,16 @@ grayscale data to RGB.</p>
 <div><p>There was insufficient memory to allocate a table used to map
 data to 8-bit RGB.</p>
 </div></blockquote>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="TIFFOpen.html"><span class="doc">TIFFOpen</span></a> (3tiff),
 <a class="reference internal" href="TIFFReadRGBAImage.html"><span class="doc">TIFFReadRGBAImage</span></a> (3tiff),
 <a class="reference internal" href="TIFFReadRGBAStrip.html"><span class="doc">TIFFReadRGBAStrip</span></a> (3tiff),
 <a class="reference internal" href="TIFFReadRGBATile.html"><span class="doc">TIFFReadRGBATile</span></a> (3tiff),
 <a class="reference internal" href="libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -345,14 +342,14 @@ data to 8-bit RGB.</p>
         <li class="right" >
           <a href="TIFFReadTile.html" title="TIFFReadTile"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../functions.html" >TIFF Functions Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">TIFFRGBAImage</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

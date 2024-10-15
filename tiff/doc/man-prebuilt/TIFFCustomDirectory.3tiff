@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFCUSTOMDIRECTORY" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFCustomDirectory \- routines to create a custom directory
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFCUSTOMDIRECTORY" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFCustomDirectory \- routines to create a custom directory
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -124,7 +124,7 @@ Be aware
 .INDENT 0.0
 .IP \(bu 2
 that until a directory is not written to file AND read back, the query
-functions won’t retrieve the correct information!
+functions won\(aqt retrieve the correct information!
 .IP \(bu 2
 that the newly created directory will not exist on the file till
 \fI\%TIFFWriteDirectory()\fP, \fI\%TIFFCheckpointDirectory()\fP,
@@ -148,6 +148,11 @@ GPS directories, which have a predefined schema within \fBlibtiff\fP, this
 is not necessary. There are some test programmes that briefly demonstrate
 the creation and reading of EXIF, GPS and custom directories.
 See test/custom_dir.c and test/custom_dir_EXIF_231.c
+.sp
+After \fBlibtiff\fP version 4.6.0 \fI\%TIFFCreateCustomDirectory()\fP,
+\fI\%TIFFCreateEXIFDirectory()\fP and \fI\%TIFFCreateGPSDirectory()\fP also
+releases the directory part of the \fItif\fP structure by calling \fI\%TIFFFreeDirectory()\fP,
+which should have been called by the user application before creating a new directory.
 .SH HINTS AND DETAILED INSTRUCTIONS
 .sp
 Writing TIFF files with more than one directory (IFD) is not easy because
@@ -171,7 +176,7 @@ the GPS IFD \- is as follows:
 .IP 1. 3
 Create TIFF file
 .IP 2. 3
-Complete the “normal” metadata
+Complete the \(dqnormal\(dq metadata
 .IP 3. 3
 Set the tag for the custom directory with a “dummy” value in order to
 get the tag reserved. The final value will be inserted lateron. This

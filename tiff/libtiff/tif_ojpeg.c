@@ -207,22 +207,6 @@ static const TIFFField ojpegFields[] = {
 #include <setjmp.h>
 #endif
 
-/* We undefine FAR to avoid conflict with JPEG definition */
-
-#ifdef FAR
-#undef FAR
-#endif
-
-/*
-  Libjpeg's jmorecfg.h defines INT16 and INT32, but only if XMD_H is
-  not defined.  Unfortunately, the MinGW and Borland compilers include
-  a typedef for INT32, which causes a conflict.  MSVC does not include
-  a conflicting typedef given the headers which are included.
-*/
-#if defined(__BORLANDC__) || defined(__MINGW32__)
-#define XMD_H 1
-#endif
-
 /* If we are building for GS, do NOT mess with boolean - we want it to be int on all platforms.
  */
 #define GS_TIFF_BUILD
@@ -242,10 +226,18 @@ typedef unsigned char boolean;
 #include "jmemcust.h"
 #endif
 
+#ifndef TIFF_jpeg_source_mgr_defined
+#define TIFF_jpeg_source_mgr_defined
+typedef struct jpeg_source_mgr jpeg_source_mgr;
+#endif
+
+#ifndef TIFF_jpeg_error_mgr_defined
+#define TIFF_jpeg_error_mgr_defined
 typedef struct jpeg_error_mgr jpeg_error_mgr;
+#endif
+
 typedef struct jpeg_common_struct jpeg_common_struct;
 typedef struct jpeg_decompress_struct jpeg_decompress_struct;
-typedef struct jpeg_source_mgr jpeg_source_mgr;
 
 typedef enum
 {
@@ -783,6 +775,9 @@ static int OJPEGPreDecode(TIFF *tif, uint16_t s)
         if (OJPEGWriteHeaderInfo(tif) == 0)
             return (0);
     }
+
+    sp->subsampling_convert_state = 0;
+
     while (sp->write_curstrile < m)
     {
         if (sp->libjpeg_jpeg_query_style == 0)
@@ -868,12 +863,14 @@ static int OJPEGDecode(TIFF *tif, uint8_t *buf, tmsize_t cc, uint16_t s)
     (void)s;
     if (!sp->decoder_ok)
     {
+        memset(buf, 0, (size_t)cc);
         TIFFErrorExtR(tif, module,
                       "Cannot decode: decoder not correctly initialized");
         return 0;
     }
     if (sp->libjpeg_session_active == 0)
     {
+        memset(buf, 0, (size_t)cc);
         /* This should normally not happen, except that it does when */
         /* using TIFFReadScanline() which calls OJPEGPostDecode() for */
         /* each scanline, which assumes that a whole strile was read */
@@ -887,17 +884,24 @@ static int OJPEGDecode(TIFF *tif, uint8_t *buf, tmsize_t cc, uint16_t s)
     }
     if (sp->error_in_raw_data_decoding)
     {
+        memset(buf, 0, (size_t)cc);
         return 0;
     }
     if (sp->libjpeg_jpeg_query_style == 0)
     {
         if (OJPEGDecodeRaw(tif, buf, cc) == 0)
+        {
+            memset(buf, 0, (size_t)cc);
             return (0);
+        }
     }
     else
     {
         if (OJPEGDecodeScanlines(tif, buf, cc) == 0)
+        {
+            memset(buf, 0, (size_t)cc);
             return (0);
+        }
     }
     return (1);
 }
@@ -1324,7 +1328,6 @@ static int OJPEGReadSecondarySos(TIFF *tif, uint16_t s)
     return (1);
 }
 
-
 #ifdef GS_TIFF_BUILD
 #define TIFF_FROM_CINFO(cinfo) \
 	((TIFF *)GET_CUST_MEM_DATA(cinfo)->priv)
@@ -1426,9 +1429,6 @@ static int OJPEGWriteHeaderInfo(TIFF *tif)
         OJPEGLibjpegJpegErrorMgrOutputMessage;
     sp->libjpeg_jpeg_error_mgr.error_exit = OJPEGLibjpegJpegErrorMgrErrorExit;
     sp->libjpeg_jpeg_decompress_struct.err = &(sp->libjpeg_jpeg_error_mgr);
-    sp->libjpeg_jpeg_decompress_struct.client_data = (void *)tif;
-
-	/* set client_data to avoid UMR warning from tools like Purify */
 #ifdef GS_TIFF_BUILD
 	sp->jmem_parent = tif->get_jpeg_mem_ptr(tif->tif_clientdata);
 	(void)jpeg_cust_mem_init(&sp->jmem, (void *)tif,
@@ -1439,7 +1439,6 @@ static int OJPEGWriteHeaderInfo(TIFF *tif)
 #else
 	sp->libjpeg_jpeg_decompress_struct.client_data=(void*)tif;
 #endif
-
     if (jpeg_create_decompress_encap(
             sp, &(sp->libjpeg_jpeg_decompress_struct)) == 0)
         return (0);
@@ -1471,6 +1470,9 @@ static int OJPEGWriteHeaderInfo(TIFF *tif)
         {
             assert(sp->subsampling_convert_ycbcrbuf == 0);
             assert(sp->subsampling_convert_ycbcrimage == 0);
+            /* Check for division by zero. */
+            if (sp->subsampling_hor == 0 || sp->subsampling_ver == 0)
+                return (0);
             sp->subsampling_convert_ylinelen =
                 ((sp->strile_width + sp->subsampling_hor * 8 - 1) /
                  (sp->subsampling_hor * 8) * sp->subsampling_hor * 8);

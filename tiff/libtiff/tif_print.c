@@ -76,13 +76,13 @@ static void _TIFFPrintField(FILE *fd, const TIFFField *fip,
                             uint32_t value_count, void *raw_data)
 {
     uint32_t j;
-    size_t i;
 
     /* Print a user-friendly name for tags of relatively common use, but */
     /* which aren't registered by libtiff itself. */
     const char *field_name = fip->field_name;
     if (TIFFFieldIsAnonymous(fip))
     {
+        size_t i;
         for (i = 0; i < NTAGS; ++i)
         {
             if (fip->field_tag == tagnames[i].tag)

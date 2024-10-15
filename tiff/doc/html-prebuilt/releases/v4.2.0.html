@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Changes in TIFF v4.2.0 &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Changes in TIFF v4.2.0 &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Changes in TIFF v4.1.0" href="v4.1.0.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="v4.3.0.html" title="Changes in TIFF v4.3.0"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="index.html" accesskey="U">Release history</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Changes in TIFF v4.2.0</a></li> 
       </ul>
@@ -42,9 +39,9 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="changes-in-tiff-v4-2-0">
+  <section id="changes-in-tiff-v4-2-0">
 <h1>Changes in TIFF v4.2.0<a class="headerlink" href="#changes-in-tiff-v4-2-0" title="Permalink to this heading">¶</a></h1>
-<table class="colwidths-auto docutils align-default" id="id1">
+<table class="docutils align-default" id="id1">
 <caption><span class="caption-text">References</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
 <tbody>
 <tr class="row-odd"><td><p>Current Version</p></td>
@@ -71,24 +68,24 @@
 software between the <em>previous</em> and <em>current</em> versions (see
 above). A fully-detailed change summary is provided by the <code class="file docutils literal notranslate"><span class="pre">ChangeLog</span></code> file
 included in the release package and by the Git commit history:</p>
-<div class="section" id="major-changes">
+<section id="major-changes">
 <h2>Major changes<a class="headerlink" href="#major-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Optional support for using libdeflate is added.</p></li>
 <li><p>Many of the tools now support a memory usage limit.</p></li>
 </ul>
-</div>
-<div class="section" id="software-configuration-changes">
+</section>
+<section id="software-configuration-changes">
 <h2>Software configuration changes<a class="headerlink" href="#software-configuration-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
-<li><p>The Microsoft Windows ‘nmake’ build is resuscitated and provides
-a default <code class="docutils literal notranslate"><span class="pre">HAVE_STRTOLL</span></code> setting in ‘nmake.opt’ which is suitable for
-MSVC++ 14.0 (“Visual Studio 2015”) and later but may be disabled in
+<li><p>The Microsoft Windows 'nmake' build is resuscitated and provides
+a default <code class="docutils literal notranslate"><span class="pre">HAVE_STRTOLL</span></code> setting in 'nmake.opt' which is suitable for
+MSVC++ 14.0 (&quot;Visual Studio 2015&quot;) and later but may be disabled in
 order to compile with earlier compiler versions.</p></li>
 <li><p>mingw-w64 cmake build fixes to not add libm</p></li>
 </ul>
-</div>
-<div class="section" id="library-changes">
+</section>
+<section id="library-changes">
 <h2>Library changes<a class="headerlink" href="#library-changes" title="Permalink to this heading">¶</a></h2>
 <ul>
 <li><p>A great many issues discovered by fuzzers (via oss-fuzz and other reports) have been addressed.</p></li>
@@ -128,8 +125,8 @@ will be the default value in that situation).</p>
 <p>Of course, deflate codestreams produced by libdeflate can be read by zlib, and vice-versa.</p>
 </li>
 </ul>
-</div>
-<div class="section" id="tools-changes">
+</section>
+<section id="tools-changes">
 <h2>Tools changes<a class="headerlink" href="#tools-changes" title="Permalink to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>A great many issues discovered by fuzzers (via oss-fuzz and other reports) have been addressed.</p></li>
@@ -137,16 +134,16 @@ will be the default value in that situation).</p>
 <li><p><strong class="program">tiff2ps</strong>, <strong class="program">tiff2rgba</strong>:  A default memory limit is now enforced (256MiB) and a <code class="docutils literal notranslate"><span class="pre">-M</span></code> option is added to allow the user to adjust the limit.</p></li>
 <li><p><strong class="program">tiff2pdf</strong>, <strong class="program">tiffcp</strong>: A default memory limit is now enforced (256MiB) and a <code class="docutils literal notranslate"><span class="pre">-m</span></code> option is added to allow the user to adjust the limit.</p></li>
 <li><p><strong class="program">tiffcrop</strong>: A default memory limit is now enforced (256MiB) and a <code class="docutils literal notranslate"><span class="pre">-k</span></code> option is added to allow the user to adjust the limit.</p></li>
-<li><p><strong class="program">tiff2pdf</strong>: fix “raw” copy of Deflate streams.</p></li>
+<li><p><strong class="program">tiff2pdf</strong>: fix &quot;raw&quot; copy of Deflate streams.</p></li>
 <li><p><strong class="program">tiff2pdf.c</strong>: properly calculate datasize when saving to JPEG YCbCr</p></li>
 <li><p><strong class="program">tiffcp</strong>: disable strip chopping when trying to convert to JBIG compression</p></li>
 </ul>
-</div>
-<div class="section" id="contributed-software-changes">
+</section>
+<section id="contributed-software-changes">
 <h2>Contributed software changes<a class="headerlink" href="#contributed-software-changes" title="Permalink to this heading">¶</a></h2>
 <p>None</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -212,14 +209,14 @@ will be the default value in that situation).</p>
         <li class="right" >
           <a href="v4.3.0.html" title="Changes in TIFF v4.3.0"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="index.html" >Release history</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">Changes in TIFF v4.2.0</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

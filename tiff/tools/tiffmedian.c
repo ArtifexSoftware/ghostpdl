@@ -144,8 +144,13 @@ int main(int argc, char *argv[])
                 num_colors = atoi(optarg);
                 if (num_colors > MAX_CMAP_SIZE)
                 {
-                    fprintf(stderr, "-c: colormap too big, max %d\n",
+                    fprintf(stderr, "-C: colormap too big, max %d\n",
                             MAX_CMAP_SIZE);
+                    usage(EXIT_FAILURE);
+                }
+                if (num_colors < 2)
+                {
+                    fprintf(stderr, "-C: colormap too small, min %d\n", 2);
                     usage(EXIT_FAILURE);
                 }
                 break;
@@ -265,7 +270,10 @@ int main(int argc, char *argv[])
      */
     out = TIFFOpen(argv[optind + 1], "w");
     if (out == NULL)
+    {
+        _TIFFfree(ColorCells);
         return (EXIT_FAILURE);
+    }
 
     CopyField(TIFFTAG_SUBFILETYPE, longv);
     CopyField(TIFFTAG_IMAGEWIDTH, longv);
@@ -315,6 +323,7 @@ int main(int argc, char *argv[])
     }
     TIFFSetField(out, TIFFTAG_COLORMAP, rm, gm, bm);
     (void)TIFFClose(out);
+    _TIFFfree(ColorCells);
     return (EXIT_SUCCESS);
 }
 
@@ -780,7 +789,7 @@ static C_cell *create_colorcell(int red, int green, int blue)
 static void map_colortable(void)
 {
     register uint32_t *histp = &histogram[0][0][0];
-    register C_cell *cell;
+    register C_cell *cell = NULL;
     register int j, tmp, d2, dist;
     int ir, ig, ib, i;
 
@@ -819,6 +828,7 @@ static void map_colortable(void)
                     }
                 }
             }
+    _TIFFfree(cell);
 }
 
 /*

@@ -76,10 +76,10 @@ extern "C"
 
     void TIFFHashSetDestroy(TIFFHashSet *set);
 
+    int TIFFHashSetSize(const TIFFHashSet *set);
+
 #ifdef notused
     void TIFFHashSetClear(TIFFHashSet *set);
-
-    int TIFFHashSetSize(const TIFFHashSet *set);
 
     /** TIFFHashSetIterEltFunc */
     typedef int (*TIFFHashSetIterEltFunc)(void *elt, void *user_data);

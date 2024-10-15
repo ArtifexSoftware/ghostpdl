@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFREADENCODEDTILE" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFReadEncodedTile \- read and decode a tile of data from an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFREADENCODEDTILE" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFReadEncodedTile \- read and decode a tile of data from an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -51,7 +51,7 @@ Read the specified tile of data and place up to \fIsize\fP bytes of decompressed
 information in the (user supplied) data buffer.
 .SH NOTES
 .sp
-The value of \fItile\fP is a “raw tile number”. That is, the caller must take
+The value of \fItile\fP is a \(dqraw tile number\(dq. That is, the caller must take
 into account whether or not the data are organized in separate planes
 (\fBPlanarConfiguration\fP = 2).
 \fI\%TIFFComputeTile()\fP automatically does this when converting an

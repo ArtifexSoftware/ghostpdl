@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "FAX2TIFF" "1" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-fax2tiff \- create a TIFF Class F fax file from raw fax data
 .
 .nr rst2man-indent-level 0
 .
@@ -30,13 +27,16 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "FAX2TIFF" "1" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+fax2tiff \- create a TIFF Class F fax file from raw fax data
 .SH SYNOPSIS
 .sp
 \fBfax2tiff\fP [ \fIoptions\fP ] [ \fB\-o\fP \fIoutput.tif\fP ] \fIinput.raw\fP
 .SH DESCRIPTION
 .sp
 \fBfax2tiff\fP creates a TIFF file containing  CCITT
-Group 3 or Group 4 encoded data from one or more files containing “raw”
+Group 3 or Group 4 encoded data from one or more files containing \(dqraw\(dq
 Group 3 or Group 4 encoded data (typically obtained directly from a fax modem).
 By default, each row of data in the resultant TIFF
 file is 1\-dimensionally encoded and
@@ -48,9 +48,9 @@ The generated file conforms to the TIFF
 Class F (FAX) specification for storing facsimile data.
 This means, in particular, that each page of the data does
 \fBnot\fP include the trailing
-\fI“return to control”\fP (\fBRTC\fP) code; as required
+\fI\(dqreturn to control\(dq\fP (\fBRTC\fP) code; as required
 for transmission by the CCITT Group 3 specifications.
-The old, “classic”, format is created if the
+The old, \(dqclassic\(dq, format is created if the
 \fI\%\-c\fP option is used.
 (The Class F format can also be requested with the
 \fI\%\-f\fP option.)
@@ -178,8 +178,8 @@ Group 3 Huffman encoding algorithm (default).
 .INDENT 0.0
 .TP
 .B \-a
-Force the last bit of each \fI“End Of Line”\fP (\fBEOL\fP)
-code to land on a byte boundary (default). This “zero padding” will
+Force the last bit of each \fI\(dqEnd Of Line\(dq\fP (\fBEOL\fP)
+code to land on a byte boundary (default). This \(dqzero padding\(dq will
 be reflected in the contents of the \fBGroup3Options\fP
 tag of the resultant TIFF file. This option has effect with Group 3 encoded output only.
 .UNINDENT
@@ -192,7 +192,7 @@ output only.
 .INDENT 0.0
 .TP
 .B \-c
-Generate “classic” Group 3 TIFF format.
+Generate \(dqclassic\(dq Group 3 TIFF format.
 .UNINDENT
 .INDENT 0.0
 .TP
@@ -246,7 +246,7 @@ Force output to be compressed with the LZW encoding.
 The following warnings and errors come from the decoding
 routines in the library.
 .sp
-\fB“Warning, %s: Premature EOL at scanline %d (x %d).en”\fP:
+\fB\(dqWarning, %s: Premature EOL at scanline %d (x %d).en\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The input data had a row that was shorter than the expected width.
@@ -254,7 +254,7 @@ The row is padded with white.
 .UNINDENT
 .UNINDENT
 .sp
-\fB“%s: Premature EOF at scanline %d (x %d).en”\fP:
+\fB\(dq%s: Premature EOF at scanline %d (x %d).en\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 The decoder ran out of data in the middle of a scanline.
@@ -262,7 +262,7 @@ The resultant row is padded with white.
 .UNINDENT
 .UNINDENT
 .sp
-\fB“%s: Bad code word at row %d, x %den”\fP:
+\fB\(dq%s: Bad code word at row %d, x %den\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 An invalid Group 3 \fBcode\fP
@@ -273,7 +273,7 @@ the corresponding output row is padded with white.
 .UNINDENT
 .UNINDENT
 .sp
-\fB“%s: Bad 2D code word at scanline %d.en”\fP:
+\fB\(dq%s: Bad 2D code word at scanline %d.en\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 An invalid Group 4 or 2D Group 3 \fBcode\fP
@@ -285,15 +285,15 @@ the corresponding output row is padded with white.
 .UNINDENT
 .SH BUGS
 .sp
-Input data are assumed to have a a “top left” orientation;
+Input data are assumed to have a a \(dqtop left\(dq orientation;
 it should be possible to override this assumption
 from the command line.
 .SH SEE ALSO
 .sp
-“CCITT Recommendation T.4”
+\(dqCCITT Recommendation T.4\(dq
 (Standardization of Group 3 Facsimile Apparatus for Document Transmission).
 .sp
-“The Spirit of TIFF Class F”,
+\(dqThe Spirit of TIFF Class F\(dq,
 an appendix to the TIFF 5.0 specification prepared by Cygnet Technologies.
 .sp
 \fI\%tiffinfo\fP (1),

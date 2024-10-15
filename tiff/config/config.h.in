@@ -68,7 +68,7 @@
 /* Define to 1 if you have the `jbg_newlen' function. */
 #undef HAVE_JBG_NEWLEN
 
-/* libjpeg-turbo >= 2.2 dual mode enabled */
+/* libjpeg-turbo >= 3.0 dual mode enabled */
 #undef HAVE_JPEGTURBO_DUAL_MODE_8_12
 
 /* Define to 1 if you have the <memory.h> header file. */
@@ -122,9 +122,6 @@
 /* Native cpu byte order: 1 if big-endian (Motorola) or 0 if little-endian
    (Intel) */
 #undef HOST_BIGENDIAN
-
-/* Set the native cpu bit order (FILLORDER_LSB2MSB or FILLORDER_MSB2LSB) */
-#undef HOST_FILLORDER
 
 /* Support ISO JBIG compression (requires JBIG-KIT library) */
 #undef JBIG_SUPPORT

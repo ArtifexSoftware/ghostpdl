@@ -57,6 +57,7 @@ static uint16_t compression = COMPRESSION_PACKBITS;
 static uint32_t rowsperstrip = (uint32_t)-1;
 static int process_by_block = 0; /* default is whole image at once */
 static int no_alpha = 0;
+static int background = 0;
 static int bigtiff_output = 0;
 #define DEFAULT_MAX_MALLOC (256 * 1024 * 1024)
 /* malloc size limit (in bytes)
@@ -75,7 +76,7 @@ int main(int argc, char *argv[])
     extern char *optarg;
 #endif
 
-    while ((c = getopt(argc, argv, "c:r:t:bn8hM:")) != -1)
+    while ((c = getopt(argc, argv, "c:r:t:B:bn8hM:")) != -1)
         switch (c)
         {
             case 'M':
@@ -106,6 +107,10 @@ int main(int argc, char *argv[])
 
             case 't':
                 rowsperstrip = atoi(optarg);
+                break;
+
+            case 'B':
+                background = atoi(optarg) & 0xFF;
                 break;
 
             case 'n':
@@ -486,9 +491,15 @@ static int cvt_whole_image(TIFF *in, TIFF *out)
         src = dst = (unsigned char *)raster;
         while (count > 0)
         {
-            *(dst++) = *(src++);
-            *(dst++) = *(src++);
-            *(dst++) = *(src++);
+            /* do alpha compositing */
+            const int src_alpha = src[3];
+            const int background_contribution = background * (0xFF - src_alpha);
+            *(dst++) = (*(src)*src_alpha + background_contribution) / 0xFF;
+            src++;
+            *(dst++) = (*(src)*src_alpha + background_contribution) / 0xFF;
+            src++;
+            *(dst++) = (*(src)*src_alpha + background_contribution) / 0xFF;
+            src++;
             src++;
             count--;
         }
@@ -617,8 +628,10 @@ static const char usage_info[] =
     "\n"
     /* "and the other options are:\n" */
     " -r rows/strip\n"
+    " -t rows/strip (same as -r)\n"
     " -b (progress by block rather than as a whole image)\n"
     " -n don't emit alpha component.\n"
+    " -B use this value as the background when doing alpha compositing\n"
     " -8 write BigTIFF file instead of ClassicTIFF\n"
     " -M set the memory allocation limit in MiB. 0 to disable limit\n";
 

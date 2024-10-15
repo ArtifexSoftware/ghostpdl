@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "RAW2TIFF" "1" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-raw2tiff \- create a TIFF file from a raw data file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "RAW2TIFF" "1" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+raw2tiff \- create a TIFF file from a raw data file
 .SH SYNOPSIS
 .sp
 \fBraw2tiff\fP [ \fIoptions ] *input.raw\fP \fIoutput.tif\fP
@@ -253,8 +253,8 @@ at the image center using several appropriate line sizes and the highest
 absolute value of the coefficient will indicate the right line size. That is
 why you should be cautious with the very large images, because guessing
 process may take a while (depending on your system performance). Of course, the
-utility can’t guess the header size, number of bands and data type, so it
-should be specified manually. If you don’t know anything about your image,
+utility can\(aqt guess the header size, number of bands and data type, so it
+should be specified manually. If you don\(aqt know anything about your image,
 just try with the several combinations of those options.
 .sp
 There is no magic, it is just a mathematical statistics, so it can be wrong

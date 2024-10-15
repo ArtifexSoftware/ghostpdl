@@ -110,7 +110,7 @@ if(JBIG_FOUND)
 
         if(NOT JBIG_LIBRARY_RELEASE AND NOT JBIG_LIBRARY_DEBUG)
             set_target_properties(JBIG::JBIG PROPERTIES
-                    IMPORTED_LOCATION_RELEASE "${JBIG_LIBRARY}")
+                    IMPORTED_LOCATION "${JBIG_LIBRARY}")
         endif()
     endif()
 endif()

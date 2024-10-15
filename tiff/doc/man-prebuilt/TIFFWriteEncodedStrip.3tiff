@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFWRITEENCODEDSTRIP" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFWriteEncodedStrip \- compress and write a strip of data to an open TIFF file
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFWRITEENCODEDSTRIP" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFWriteEncodedStrip \- compress and write a strip of data to an open TIFF file
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -49,7 +49,7 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .sp
 Compress \fIsize\fP bytes of raw data from \fIbuf\fP and write the result to the
 specified strip; replacing any previously written data. Note that the
-value of \fIstrip\fP is a “raw strip number”.  That is, the caller must take
+value of \fIstrip\fP is a \(dqraw strip number\(dq.  That is, the caller must take
 into account whether or not the data are organized in separate planes
 (\fBPlanarConfiguration\fP = 2).
 .SH NOTES
@@ -87,15 +87,15 @@ The image is assumed to be organized in tiles because the
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: Must set "ImageWidth" before writing data\efP\fP:
+\fB%s: Must set \(dqImageWidth\(dq before writing data\efP\fP:
 .INDENT 0.0
 .INDENT 3.5
-The image’s width has not be set before the first write. See
+The image\(aqs width has not be set before the first write. See
 \fI\%TIFFSetField()\fP for information on how to do this.
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: Must set "PlanarConfiguration" before writing data\fP:
+\fB%s: Must set \(dqPlanarConfiguration\(dq before writing data\fP:
 .INDENT 0.0
 .INDENT 3.5
 The organization of data has not be defined before the first
@@ -104,7 +104,7 @@ this.
 .UNINDENT
 .UNINDENT
 .sp
-\fB%s: No space for strip arrays"\fP:
+\fB%s: No space for strip arrays\(dq\fP:
 .INDENT 0.0
 .INDENT 3.5
 There was not enough space for the arrays that hold strip offsets and

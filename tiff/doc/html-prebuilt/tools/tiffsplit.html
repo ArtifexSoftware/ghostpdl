@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tiffsplit &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>tiffsplit &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Contributed TIFF Software" href="../contrib.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="tiffset.html" title="tiffset"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffsplit</a></li> 
       </ul>
@@ -42,29 +39,29 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffsplit">
+  <section id="tiffsplit">
 <h1>tiffsplit<a class="headerlink" href="#tiffsplit" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>tiffsplit</strong> <em>src.tif</em> [ <em>prefix</em> ]</p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">tiffsplit</strong> takes a multi-directory (page) TIFF
 file and creates one or more single-directory (page) TIFF
 files from it.
 The output files are given names created by concatenating
-a prefix, a lexically ordered suffix in the range [aaa–zzz],
+a prefix, a lexically ordered suffix in the range [aaa--zzz],
 the suffix <code class="file docutils literal notranslate"><span class="pre">.tif</span></code>
 (e.g. <code class="file docutils literal notranslate"><span class="pre">xaaa.tif</span></code>, <code class="file docutils literal notranslate"><span class="pre">xaab.tif</span></code>, <code class="file docutils literal notranslate"><span class="pre">…</span></code>, <code class="file docutils literal notranslate"><span class="pre">xzzz.tif</span></code>).
 If a prefix is not specified on the command line, the default prefix of
 <code class="file docutils literal notranslate"><span class="pre">x</span></code> is used.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <p>None.</p>
-</div>
-<div class="section" id="exit-status">
+</section>
+<section id="exit-status">
 <h2>Exit status<a class="headerlink" href="#exit-status" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">tiffsplit</strong> exits with one of the following values:</p>
 <p>0:</p>
@@ -75,18 +72,18 @@ If a prefix is not specified on the command line, the default prefix of
 <blockquote>
 <div><p>An error occurred either reading the input or writing results.</p>
 </div></blockquote>
-</div>
-<div class="section" id="bugs">
+</section>
+<section id="bugs">
 <h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this heading">¶</a></h2>
-<p>Only a select set of “known tags” are copied when splitting.</p>
-</div>
-<div class="section" id="see-also">
+<p>Only a select set of &quot;known tags&quot; are copied when splitting.</p>
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="tiffcp.html"><span class="doc">tiffcp</span></a> (1),
 <a class="reference internal" href="tiffinfo.html"><span class="doc">tiffinfo</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff),</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -153,14 +150,14 @@ If a prefix is not specified on the command line, the default prefix of
         <li class="right" >
           <a href="tiffset.html" title="tiffset"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffsplit</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

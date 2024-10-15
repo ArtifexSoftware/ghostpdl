@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>raw2tiff &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>raw2tiff &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="rgb2ycbcr" href="rgb2ycbcr.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="ppm2tiff.html" title="ppm2tiff"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">raw2tiff</a></li> 
       </ul>
@@ -42,13 +39,13 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="raw2tiff">
+  <section id="raw2tiff">
 <h1>raw2tiff<a class="headerlink" href="#raw2tiff" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>raw2tiff</strong> [ <em>options ] *input.raw</em> <em>output.tif</em></p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">raw2tiff</strong> converts a raw byte sequence into TIFF.
 By default, the TIFF image is created with data samples packed
@@ -56,12 +53,12 @@ By default, the TIFF image is created with data samples packed
 (<code class="docutils literal notranslate"><span class="pre">Compression=32773</span></code>), and with each strip no more than 8 kilobytes.
 These characteristics can overridden, or explicitly specified
 with the options described below.</p>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-raw2tiff-H">
-<span id="cmdoption-raw2tiff-h"></span><span class="sig-name descname"><span class="pre">-H</span></span><span class="sig-prename descclassname"> <span class="pre">number</span></span><a class="headerlink" href="#cmdoption-raw2tiff-H" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-H</span></span><span class="sig-prename descclassname"> <span class="pre">number</span></span><a class="headerlink" href="#cmdoption-raw2tiff-H" title="Permalink to this definition">¶</a></dt>
 <dd><p>Size of input image file header in bytes (0 by default). This amount of data
 just will be skipped from the start of file while reading.</p>
 </dd></dl>
@@ -73,7 +70,7 @@ just will be skipped from the start of file while reading.</p>
 </dd></dl>
 
 <dl class="field-list">
-<dt class="field-odd">option</dt>
+<dt class="field-odd">option<span class="colon">:</span></dt>
 <dd class="field-odd"><p>-b number</p>
 <p>number of bands in input image (1 by default).</p>
 </dd>
@@ -83,10 +80,6 @@ just will be skipped from the start of file while reading.</p>
 <span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"> <span class="pre">datatype</span></span><a class="headerlink" href="#cmdoption-raw2tiff-d" title="Permalink to this definition">¶</a></dt>
 <dd><p>type of samples in input image, where <em>datatype</em> may be one of:</p>
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Data type</p></th>
 <th class="head"><p>Description</p></th>
@@ -126,10 +119,6 @@ just will be skipped from the start of file while reading.</p>
 <span class="sig-name descname"><span class="pre">-i</span></span><span class="sig-prename descclassname"> <span class="pre">config</span></span><a class="headerlink" href="#cmdoption-raw2tiff-i" title="Permalink to this definition">¶</a></dt>
 <dd><p>type of sample interleaving in input image, where <em>config</em> may be one of:</p>
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 29%" />
-<col style="width: 71%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Configuration</p></th>
 <th class="head"><p>Description</p></th>
@@ -152,10 +141,6 @@ just will be skipped from the start of file while reading.</p>
 <dd><p>photometric interpretation (color space) of the input image, where <em>photo</em> may
 be one of:</p>
 <table class="docutils align-default">
-<colgroup>
-<col style="width: 19%" />
-<col style="width: 81%" />
-</colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Photometric</p></th>
 <th class="head"><p>Description</p></th>
@@ -198,13 +183,13 @@ be one of:</p>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-raw2tiff-L">
-<span id="cmdoption-raw2tiff-l"></span><span class="sig-name descname"><span class="pre">-L</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-raw2tiff-L" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-L</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-raw2tiff-L" title="Permalink to this definition">¶</a></dt>
 <dd><p>input data has LSB2MSB bit order (default).</p>
 </dd></dl>
 
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-raw2tiff-M">
-<span id="cmdoption-raw2tiff-m"></span><span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-raw2tiff-M" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">-M</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-raw2tiff-M" title="Permalink to this definition">¶</a></dt>
 <dd><p>input data has MSB2LSB bit order.</p>
 </dd></dl>
 
@@ -219,8 +204,8 @@ be one of:</p>
 <strong class="command">-c lzw</strong> for Lempel-Ziv &amp; Welch.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="guessing-the-image-geometry">
+</section>
+<section id="guessing-the-image-geometry">
 <span id="raw-guess"></span><h2>Guessing the image geometry<a class="headerlink" href="#guessing-the-image-geometry" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">raw2tif</strong> can guess image width and height in case one or both of these parameters are
 not specified. If you omit one of those parameters, the complementary one will
@@ -231,21 +216,21 @@ at the image center using several appropriate line sizes and the highest
 absolute value of the coefficient will indicate the right line size. That is
 why you should be cautious with the very large images, because guessing
 process may take a while (depending on your system performance). Of course, the
-utility can’t guess the header size, number of bands and data type, so it
-should be specified manually. If you don’t know anything about your image,
+utility can't guess the header size, number of bands and data type, so it
+should be specified manually. If you don't know anything about your image,
 just try with the several combinations of those options.</p>
 <p>There is no magic, it is just a mathematical statistics, so it can be wrong
 in some cases. But for most ordinary images guessing method will work fine.</p>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="pal2rgb.html"><span class="doc">pal2rgb</span></a> (1),
 <a class="reference internal" href="tiffinfo.html"><span class="doc">tiffinfo</span></a> (1),
 <a class="reference internal" href="tiffcp.html"><span class="doc">tiffcp</span></a> (1),
 <a class="reference internal" href="tiffmedian.html"><span class="doc">tiffmedian</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -311,14 +296,14 @@ in some cases. But for most ordinary images guessing method will work fine.</p>
         <li class="right" >
           <a href="ppm2tiff.html" title="ppm2tiff"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">raw2tiff</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>

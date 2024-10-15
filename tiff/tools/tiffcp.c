@@ -87,7 +87,7 @@ static uint32_t g3opts;
 static int ignore = FALSE; /* if true, ignore read errors */
 static uint32_t defg3opts = (uint32_t)-1;
 static int quality = 75; /* JPEG quality */
-static int jpegcolormode = JPEGCOLORMODE_RGB;
+static int jpeg_photometric = PHOTOMETRIC_YCBCR;
 static uint16_t defcompression = (uint16_t)-1;
 static uint16_t defpredictor = (uint16_t)-1;
 static int defpreset = -1;
@@ -150,7 +150,7 @@ static int nextSrcImage(TIFF *tif, char **imageSpec)
         }
         if (TIFFSetDirectory(tif, nextImage))
             return 1;
-        fprintf(stderr, "%s%c%" PRIu16 " not found!\n", TIFFFileName(tif),
+        fprintf(stderr, "%s%c%" PRIu32 " not found!\n", TIFFFileName(tif),
                 comma, nextImage);
     }
     return 0;
@@ -493,7 +493,7 @@ static int processCompressOptions(char *opt)
             if (isdigit((int)cp[1]))
                 quality = atoi(cp + 1);
             else if (cp[1] == 'r')
-                jpegcolormode = JPEGCOLORMODE_RAW;
+                jpeg_photometric = PHOTOMETRIC_RGB;
             else
                 usage(EXIT_FAILURE);
 
@@ -812,10 +812,6 @@ static const struct cpTag
     {TIFFTAG_DOTRANGE, 2, TIFF_SHORT},
     {TIFFTAG_TARGETPRINTER, 1, TIFF_ASCII},
     {TIFFTAG_SAMPLEFORMAT, 1, TIFF_SHORT},
-    {TIFFTAG_YCBCRCOEFFICIENTS, (uint16_t)-1, TIFF_RATIONAL},
-    {TIFFTAG_YCBCRSUBSAMPLING, 2, TIFF_SHORT},
-    {TIFFTAG_YCBCRPOSITIONING, 1, TIFF_SHORT},
-    {TIFFTAG_REFERENCEBLACKWHITE, (uint16_t)-1, TIFF_RATIONAL},
     {TIFFTAG_EXTRASAMPLES, (uint16_t)-1, TIFF_SHORT},
     {TIFFTAG_SMINSAMPLEVALUE, 1, TIFF_DOUBLE},
     {TIFFTAG_SMAXSAMPLEVALUE, 1, TIFF_DOUBLE},
@@ -850,6 +846,8 @@ static int tiffcp(TIFF *in, TIFF *out)
     if (!TIFFIsCODECConfigured(compression))
         return FALSE;
     TIFFGetFieldDefaulted(in, TIFFTAG_COMPRESSION, &input_compression);
+    if (!TIFFIsCODECConfigured(input_compression))
+        return FALSE;
     TIFFGetFieldDefaulted(in, TIFFTAG_PHOTOMETRIC, &input_photometric);
     if (input_compression == COMPRESSION_JPEG)
     {
@@ -873,9 +871,29 @@ static int tiffcp(TIFF *in, TIFF *out)
     }
     if (compression == COMPRESSION_JPEG)
     {
-        if (input_photometric == PHOTOMETRIC_RGB &&
-            jpegcolormode == JPEGCOLORMODE_RGB)
-            TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_YCBCR);
+        if (input_photometric == PHOTOMETRIC_RGB ||
+            input_photometric == PHOTOMETRIC_YCBCR)
+        {
+            TIFFSetField(out, TIFFTAG_PHOTOMETRIC, jpeg_photometric);
+            if (jpeg_photometric == PHOTOMETRIC_YCBCR)
+            {
+                uint16_t subsamplinghor = 2, subsamplingver = 2;
+                if (input_compression == COMPRESSION_JPEG &&
+                    input_photometric == PHOTOMETRIC_YCBCR)
+                {
+                    TIFFGetFieldDefaulted(in, TIFFTAG_YCBCRSUBSAMPLING,
+                                          &subsamplinghor, &subsamplingver);
+
+                    float *refBW = NULL;
+                    if (TIFFGetField(in, TIFFTAG_REFERENCEBLACKWHITE, &refBW))
+                    {
+                        TIFFSetField(out, TIFFTAG_REFERENCEBLACKWHITE, refBW);
+                    }
+                }
+                TIFFSetField(out, TIFFTAG_YCBCRSUBSAMPLING, subsamplinghor,
+                             subsamplingver);
+            }
+        }
         else
             TIFFSetField(out, TIFFTAG_PHOTOMETRIC, input_photometric);
     }
@@ -884,14 +902,13 @@ static int tiffcp(TIFF *in, TIFF *out)
         TIFFSetField(out, TIFFTAG_PHOTOMETRIC,
                      samplesperpixel == 1 ? PHOTOMETRIC_LOGL
                                           : PHOTOMETRIC_LOGLUV);
-    else if (input_compression == COMPRESSION_JPEG && samplesperpixel == 3)
-    {
-        /* RGB conversion was forced above
-        hence the output will be of the same type */
-        TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
-    }
     else
-        CopyTag(TIFFTAG_PHOTOMETRIC, 1, TIFF_SHORT);
+    {
+        if (input_photometric == PHOTOMETRIC_YCBCR)
+            TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+        else
+            CopyTag(TIFFTAG_PHOTOMETRIC, 1, TIFF_SHORT);
+    }
     if (fillorder != 0)
         TIFFSetField(out, TIFFTAG_FILLORDER, fillorder);
     else
@@ -956,7 +973,9 @@ static int tiffcp(TIFF *in, TIFF *out)
     {
         case COMPRESSION_JPEG:
             TIFFSetField(out, TIFFTAG_JPEGQUALITY, quality);
-            TIFFSetField(out, TIFFTAG_JPEGCOLORMODE, jpegcolormode);
+            /* For 3 sample images, the input data provided to libtiff is
+             * always RGB, not YCbCr subsampled. */
+            TIFFSetField(out, TIFFTAG_JPEGCOLORMODE, JPEGCOLORMODE_RGB);
             break;
         case COMPRESSION_JBIG:
             CopyTag(TIFFTAG_FAXRECVPARAMS, 1, TIFF_LONG);
@@ -1116,7 +1135,9 @@ static int tiffcp(TIFF *in, TIFF *out)
     }
 
     for (p = tags; p < &tags[NTAGS]; p++)
+    {
         CopyTag(p->tag, p->count, p->type);
+    }
 
     cf = pickCopyFunc(in, out, bitspersample, samplesperpixel);
     return (cf ? (*cf)(in, out, length, width, samplesperpixel) : FALSE);
@@ -1182,11 +1203,11 @@ typedef void biasFn(void *image, void *bias, uint32_t pixels);
     static void subtract##bits(void *i, void *b, uint32_t pixels)              \
     {                                                                          \
         uint##bits##_t *image = i;                                             \
-        uint##bits##_t *bias = b;                                              \
+        uint##bits##_t *biasx = b;                                             \
         while (pixels--)                                                       \
         {                                                                      \
-            *image = *image > *bias ? *image - *bias : 0;                      \
-            image++, bias++;                                                   \
+            *image = *image > *biasx ? *image - *biasx : 0;                    \
+            image++, biasx++;                                                  \
         }                                                                      \
     }
 
@@ -1231,6 +1252,8 @@ DECLAREcpFunc(cpBiasedContig2Contig)
                 uint32_t row;
                 buf = limitMalloc(bufSize);
                 biasBuf = limitMalloc(bufSize);
+                if (!buf || !biasBuf)
+                    goto bad;
                 for (row = 0; row < imagelength; row++)
                 {
                     if (TIFFReadScanline(in, buf, row, 0) < 0 && !ignore)
@@ -1260,8 +1283,10 @@ DECLAREcpFunc(cpBiasedContig2Contig)
                 TIFFSetDirectory(bias, TIFFCurrentDirectory(bias)); /* rewind */
                 return 1;
             bad:
-                _TIFFfree(buf);
-                _TIFFfree(biasBuf);
+                if (buf)
+                    _TIFFfree(buf);
+                if (biasBuf)
+                    _TIFFfree(biasBuf);
                 return 0;
             }
             else
@@ -1273,8 +1298,8 @@ DECLAREcpFunc(cpBiasedContig2Contig)
             }
         }
         TIFFError(TIFFFileName(in),
-                  "Bias image %s,%" PRIu16
-                  "\nis not the same size as %s,%" PRIu16 "\n",
+                  "Bias image %s,%" PRIu32
+                  "\nis not the same size as %s,%" PRIu32 "\n",
                   TIFFFileName(bias), TIFFCurrentDirectory(bias),
                   TIFFFileName(in), TIFFCurrentDirectory(in));
         return 0;
@@ -1282,7 +1307,7 @@ DECLAREcpFunc(cpBiasedContig2Contig)
     else
     {
         TIFFError(TIFFFileName(in),
-                  "Can't bias %s,%" PRIu16 " as it has >1 Sample/Pixel\n",
+                  "Can't bias %s,%" PRIu32 " as it has >1 Sample/Pixel\n",
                   TIFFFileName(in), TIFFCurrentDirectory(in));
         return 0;
     }
@@ -1754,6 +1779,14 @@ DECLAREreadFunc(readSeparateTilesIntoBuffer)
                   "Width * Samples/Pixel)");
         return 0;
     }
+
+    if ((imagew - tilew * spp) > INT_MAX)
+    {
+        TIFFError(TIFFFileName(in),
+                  "Error, image raster scan line size is too large");
+        return 0;
+    }
+
     iskew = imagew - tilew * spp;
     tilebuf = limitMalloc(tilesize);
     if (tilebuf == 0)
@@ -1829,7 +1862,7 @@ done:
 
 DECLAREwriteFunc(writeBufferToContigStrips)
 {
-    uint32_t row, rowsperstrip;
+    uint32_t row;
     tstrip_t strip = 0;
 
     (void)imagewidth;
@@ -1854,7 +1887,6 @@ DECLAREwriteFunc(writeBufferToContigStrips)
 DECLAREwriteFunc(writeBufferToSeparateStrips)
 {
     uint32_t rowsize = imagewidth * spp;
-    uint32_t rowsperstrip;
     tsize_t stripsize = TIFFStripSize(out);
     tdata_t obuf;
     tstrip_t strip = 0;
@@ -1890,7 +1922,7 @@ DECLAREwriteFunc(writeBufferToSeparateStrips)
             uint32_t nrows = (row + rowsperstrip > imagelength)
                                  ? imagelength - row
                                  : rowsperstrip;
-            tsize_t stripsize = TIFFVStripSize(out, nrows);
+            stripsize = TIFFVStripSize(out, nrows);
 
             cpContigBufToSeparateBuf(obuf, (uint8_t *)buf + row * rowsize + s,
                                      nrows, imagewidth, 0, 0, spp,

@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "LIBTIFF" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-libtiff \- introduction to libtiff, a library for reading and writing TIFF files
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "LIBTIFF" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+libtiff \- introduction to libtiff, a library for reading and writing TIFF files
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -54,7 +54,7 @@ cc file.c \-ltiff
 .SH DESCRIPTION
 .sp
 \fBlibtiff\fP is a library for reading and writing data files encoded with the
-\fI“Tag Image File”\fP format, Revision 6.0 (or revision 5.0 or revision 4.0). This file
+\fI\(dqTag Image File\(dq\fP format, Revision 6.0 (or revision 5.0 or revision 4.0). This file
 format is suitable for archiving multi\-color and monochromatic image data.
 .sp
 The library supports several compression algorithms, as indicated by the
@@ -70,7 +70,7 @@ PackBits compression (32773).
 In addition, several nonstandard compression algorithms are supported: the
 4\-bit compression algorithm used by the
 \fIThunderScan\fP program (32809) (decompression only),
-NeXT’s 2\-bit compression algorithm (32766) (decompression only),
+NeXT\(aqs 2\-bit compression algorithm (32766) (decompression only),
 an experimental LZ\-style algorithm known as Deflate (32946),
 and an experimental CIE LogLuv compression scheme designed
 for images with high dynamic range (32845 for LogL and 32845 for LogLuv).
@@ -204,7 +204,7 @@ _
 T{
 \fI\%TIFFClientdata()\fP
 T}	T{
-return open file’s clientdata handle, which represents
+return open file\(aqs clientdata handle, which represents
 the file descriptor used within \fBlibtiff\fP\&.
 T}
 _
@@ -716,6 +716,12 @@ limits the maximum single memory allocation within \fBlibtiff\fP
 T}
 _
 T{
+\fI\%TIFFOpenOptionsSetMaxCumulatedMemAlloc()\fP
+T}	T{
+limits the maximum cumulated memory allocation within \fBlibtiff\fP
+T}
+_
+T{
 \fI\%TIFFOpenOptionsSetErrorHandlerExtR()\fP
 T}	T{
 setup of a user\-specific and per\-TIFF handle (re\-entrant) error handler
@@ -931,7 +937,7 @@ _
 T{
 \fI\%TIFFSetClientdata()\fP
 T}	T{
-set open file’s clientdata (file descriptor/handle),
+set open file\(aqs clientdata (file descriptor/handle),
 and return previous value
 T}
 _
@@ -968,7 +974,7 @@ _
 T{
 \fI\%TIFFSetField()\fP
 T}	T{
-set a tag’s value in the current directory
+set a tag\(aqs value in the current directory
 T}
 _
 T{
@@ -980,7 +986,7 @@ _
 T{
 \fI\%TIFFSetFileno()\fP
 T}	T{
-overwrites a copy of the open file’s I/O descriptor, and return previous value
+overwrites a copy of the open file\(aqs I/O descriptor, and return previous value
 (refer to detailed description)
 T}
 _
@@ -1162,7 +1168,7 @@ _
 T{
 \fI\%TIFFVSetField()\fP
 T}	T{
-set a tag’s value in the current directory
+set a tag\(aqs value in the current directory
 T}
 _
 T{
@@ -1391,748 +1397,9 @@ _
 .TE
 .SH TAG USAGE
 .sp
-The table below lists the TIFF
-tags that are recognized and handled by the library.
-If no use is indicated in the table, then the library
-reads and writes the tag, but does not use it internally.
-Note that some tags are meaningful only when a particular
-compression scheme is being used; e.g. \fBGroup3Options\fP
-is only useful if \fBCompression\fP
-is set to CCITT Group 3 encoding.
-Tags of this sort are considered \fIcodec\-specific\fP
-tags and the library does not recognize them except when the
-\fBCompression\fP
-tag has been previously set to the relevant compression scheme.
-.SH LIBTIFF SUPPORTED TAGS
-.TS
-center;
-|l|l|l|l|.
-_
-T{
-Tag name
-T}	T{
-Value
-T}	T{
-R/W
-T}	T{
-Library Use/Notes
-T}
-_
-T{
-\fBArtist\fP
-T}	T{
-315
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBBadFaxLines\fP
-T}	T{
-326
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBBitsPerSample\fP
-T}	T{
-258
-T}	T{
-R/W
-T}	T{
-lots
-T}
-_
-T{
-\fBCellLength\fP
-T}	T{
-265
-T}	T{
-T}	T{
-parsed but ignored
-T}
-_
-T{
-\fBCellWidth\fP
-T}	T{
-264
-T}	T{
-T}	T{
-parsed but ignored
-T}
-_
-T{
-\fBCleanFaxData\fP
-T}	T{
-327
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBColorMap\fP
-T}	T{
-320
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBColorResponseUnit\fP
-T}	T{
-300
-T}	T{
-T}	T{
-parsed but ignored
-T}
-_
-T{
-\fBCompression\fP
-T}	T{
-259
-T}	T{
-R/W
-T}	T{
-choosing codec
-T}
-_
-T{
-\fBConsecutiveBadFaxLines\fP
-T}	T{
-328
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBCopyright\fP
-T}	T{
-33432
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBDataType\fP
-T}	T{
-32996
-T}	T{
-R
-T}	T{
-obsoleted by \fBSampleFormat\fP tag
-T}
-_
-T{
-\fBDateTime\fP
-T}	T{
-306
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBDocumentName\fP
-T}	T{
-269
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBDotRange\fP
-T}	T{
-336
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBExtraSamples\fP
-T}	T{
-338
-T}	T{
-R/W
-T}	T{
-lots
-T}
-_
-T{
-\fBFaxRecvParams\fP
-T}	T{
-34908
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBFaxSubAddress\fP
-T}	T{
-34909
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBFaxRecvTime\fP
-T}	T{
-34910
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBFillOrder\fP
-T}	T{
-266
-T}	T{
-R/W
-T}	T{
-control bit order
-T}
-_
-T{
-\fBFreeByteCounts\fP
-T}	T{
-289
-T}	T{
-T}	T{
-parsed but ignored
-T}
-_
-T{
-\fBFreeOffsets\fP
-T}	T{
-288
-T}	T{
-T}	T{
-parsed but ignored
-T}
-_
-T{
-\fBGrayResponseCurve\fP
-T}	T{
-291
-T}	T{
-T}	T{
-parsed but ignored
-T}
-_
-T{
-\fBGrayResponseUnit\fP
-T}	T{
-290
-T}	T{
-T}	T{
-parsed but ignored
-T}
-_
-T{
-\fBGroup3Options\fP
-T}	T{
-292
-T}	T{
-R/W
-T}	T{
-used by Group 3 codec
-T}
-_
-T{
-\fBGroup4Options\fP
-T}	T{
-293
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBHostComputer\fP
-T}	T{
-316
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBImageDepth\fP
-T}	T{
-32997
-T}	T{
-R/W
-T}	T{
-tile/strip calculations
-T}
-_
-T{
-\fBImageDescription\fP
-T}	T{
-270
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBImageLength\fP
-T}	T{
-257
-T}	T{
-R/W
-T}	T{
-lots
-T}
-_
-T{
-\fBImageWidth\fP
-T}	T{
-256
-T}	T{
-R/W
-T}	T{
-lots
-T}
-_
-T{
-\fBInkNames\fP
-T}	T{
-333
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBInkSet\fP
-T}	T{
-332
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBJPEGTables\fP
-T}	T{
-347
-T}	T{
-R/W
-T}	T{
-used by JPEG codec
-T}
-_
-T{
-\fBMake\fP
-T}	T{
-271
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBMatteing\fP
-T}	T{
-32995
-T}	T{
-R
-T}	T{
-obsoleted by ExtraSamples tag
-T}
-_
-T{
-\fBMaxSampleValue\fP
-T}	T{
-281
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBMinSampleValue\fP
-T}	T{
-280
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBModel\fP
-T}	T{
-272
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBNewSubFileType\fP
-T}	T{
-254
-T}	T{
-R/W
-T}	T{
-called \fBSubFileType\fP in spec
-T}
-_
-T{
-\fBNumberOfInks\fP
-T}	T{
-334
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBOrientation\fP
-T}	T{
-274
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBPageName\fP
-T}	T{
-285
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBPageNumber\fP
-T}	T{
-297
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBPhotometricInterpretation\fP
-T}	T{
-262
-T}	T{
-R/W
-T}	T{
-used by Group 3 and JPEG codecs
-T}
-_
-T{
-\fBPlanarConfiguration\fP
-T}	T{
-284
-T}	T{
-R/W
-T}	T{
-data i/o
-T}
-_
-T{
-\fBPredictor\fP
-T}	T{
-317
-T}	T{
-R/W
-T}	T{
-used by LZW and Deflate codecs
-T}
-_
-T{
-\fBPrimaryChromacities\fP
-T}	T{
-319
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBReferenceBlackWhite\fP
-T}	T{
-532
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBResolutionUnit\fP
-T}	T{
-296
-T}	T{
-R/W
-T}	T{
-used by Group 3 codec
-T}
-_
-T{
-\fBRowsPerStrip\fP
-T}	T{
-278
-T}	T{
-R/W
-T}	T{
-data i/o
-T}
-_
-T{
-\fBSampleFormat\fP
-T}	T{
-339
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBSamplesPerPixel\fP
-T}	T{
-277
-T}	T{
-R/W
-T}	T{
-lots
-T}
-_
-T{
-\fBSMinSampleValue\fP
-T}	T{
-340
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBSMaxSampleValue\fP
-T}	T{
-341
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBSoftware\fP
-T}	T{
-305
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBStoNits\fP
-T}	T{
-37439
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBStripByteCounts\fP
-T}	T{
-279
-T}	T{
-R/W
-T}	T{
-data i/o
-T}
-_
-T{
-\fBStripOffsets\fP
-T}	T{
-273
-T}	T{
-R/W
-T}	T{
-data i/o
-T}
-_
-T{
-\fBSubFileType\fP
-T}	T{
-255
-T}	T{
-R/W
-T}	T{
-called \fBOSubFileType\fP in spec
-T}
-_
-T{
-\fBTargetPrinter\fP
-T}	T{
-337
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBThresholding\fP
-T}	T{
-263
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBTileByteCounts\fP
-T}	T{
-324
-T}	T{
-R/W
-T}	T{
-data i/o
-T}
-_
-T{
-\fBTileDepth\fP
-T}	T{
-32998
-T}	T{
-R/W
-T}	T{
-tile/strip calculations
-T}
-_
-T{
-\fBTileLength\fP
-T}	T{
-323
-T}	T{
-R/W
-T}	T{
-data i/o
-T}
-_
-T{
-\fBTileOffsets\fP
-T}	T{
-324
-T}	T{
-R/W
-T}	T{
-data i/o
-T}
-_
-T{
-\fBTileWidth\fP
-T}	T{
-322
-T}	T{
-R/W
-T}	T{
-data i/o
-T}
-_
-T{
-\fBTransferFunction\fP
-T}	T{
-301
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBWhitePoint\fP
-T}	T{
-318
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBXPosition\fP
-T}	T{
-286
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBXResolution\fP
-T}	T{
-282
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBYCbCrCoefficients\fP
-T}	T{
-529
-T}	T{
-R/W
-T}	T{
-used by \fBTIFFRGBAImage\fP support
-T}
-_
-T{
-\fBYCbCrPositioning\fP
-T}	T{
-531
-T}	T{
-R/W
-T}	T{
-tile/strip size calculations
-T}
-_
-T{
-\fBYCbCrSubsampling\fP
-T}	T{
-530
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBYPosition\fP
-T}	T{
-286
-T}	T{
-R/W
-T}	T{
-T}
-_
-T{
-\fBYResolution\fP
-T}	T{
-283
-T}	T{
-R/W
-T}	T{
-used by Group 3 codec
-T}
-_
-.TE
-.SH “PSEUDO TAGS”
+For a table of TIFF tags recognized by the library refer to
+\fI\%LibTIFF Coverage of the TIFF 6.0 Specification\fP\&.
+.SH "PSEUDO TAGS"
 .sp
 In addition to the normal TIFF
 tags the library supports a collection of
@@ -2252,7 +1519,7 @@ _
 .INDENT 3.5
 Control the operation of the Group 3 codec.
 Possible values (independent bits that can be combined by
-or’ing them together) are:
+or\(aqing them together) are:
 .sp
 \fBFAXMODE_CLASSIC\fP:
 .INDENT 0.0
@@ -2313,7 +1580,7 @@ packed bilevel data.
 .INDENT 0.0
 .INDENT 3.5
 Tag contains image metadata per the IPTC newsphoto spec: Headline,
-captioning, credit, etc… Used by most wire services.
+captioning, credit, etc... Used by most wire services.
 .UNINDENT
 .UNINDENT
 .sp
@@ -2363,7 +1630,7 @@ The default value is \fBJPEGCOLORMODE_RAW\fP\&.
 .INDENT 3.5
 Control the information written in the \fBJPEGTables\fP tag.
 Possible values (independent bits that can be combined by
-or’ing them together) are:
+or\(aqing them together) are:
 .sp
 \fBJPEGTABLESMODE_QUANT\fP:
 .INDENT 0.0
@@ -2530,16 +1797,16 @@ Warning messages are likewise directed through the
 \fI\%tiffdither\fP,
 \fI\%tiffdump\fP,
 \fI\%tiffcp\fP,
-\fI\%tiff2cmp\fP,
+\fI\%tiffcmp\fP,
 \fI\%tiffgt\fP,
 \fI\%tiffinfo\fP,
 \fI\%tiffmedian\fP,
 \fI\%tiffsplit\fP,
 .sp
-\fB“Tag Image File Format Specification *Revision 6.0*”\fP,
+\fB\(dqTag Image File Format Specification *Revision 6.0*\(dq\fP,
 an Aldus Technical Memorandum.
 .sp
-\fB“The Spirit of TIFF Class F”\fP ,
+\fB\(dqThe Spirit of TIFF Class F\(dq\fP ,
 an appendix to the TIFF 5.0 specification prepared by Cygnet Technologies.
 .SH BUGS
 .INDENT 0.0

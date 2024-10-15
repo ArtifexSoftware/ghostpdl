@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFF2RGBA" "1" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-tiff2rgba \- convert a TIFF image to RGBA color space
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFF2RGBA" "1" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+tiff2rgba \- convert a TIFF image to RGBA color space
 .SH SYNOPSIS
 .sp
 \fBtiff2rgba\fP [ \fIoptions\fP ] \fIinput.tif\fP \fIoutput.tif\fP
@@ -82,6 +82,12 @@ images on systems with limited RAM.
 .B \-n
 Drop the alpha component from the output file, producing a pure RGB file.
 Currently this does not work if the \fI\%\-b\fP flag is also in effect.
+.UNINDENT
+.INDENT 0.0
+.TP
+.B \-B
+Use this value as the background when doing alpha compositing (dropping the
+alpha component).
 .UNINDENT
 .INDENT 0.0
 .TP

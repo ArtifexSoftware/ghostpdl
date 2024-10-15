@@ -103,9 +103,6 @@
 
 #define CODE_MASK 0x7ff /* 11 bits. */
 
-static float Fltsize;
-static float LogK1, LogK2;
-
 #define REPEAT(n, op)                                                          \
     {                                                                          \
         int i;                                                                 \
@@ -542,6 +539,9 @@ typedef struct
     uint16_t *From14; /* Really for 16-bit data, but we shift down 2 */
     uint16_t *From8;
 
+	float Fltsize;
+	float LogK1, LogK2;
+
 } PixarLogState;
 
 static int PixarLogMakeTables(TIFF *tif, PixarLogState *sp)
@@ -574,8 +574,8 @@ static int PixarLogMakeTables(TIFF *tif, PixarLogState *sp)
     b = exp(-c * ONE); /* multiplicative scale factor [b*exp(c*ONE) = 1] */
     linstep = b * c * exp(1.);
 
-    LogK1 = (float)(1. / c); /* if (v >= 2)  token = k1*log(v*k2) */
-    LogK2 = (float)(1. / b);
+    sp->LogK1 = (float)(1. / c); /* if (v >= 2)  token = k1*log(v*k2) */
+    sp->LogK2 = (float)(1. / b);
     lt2size = (int)(2. / linstep) + 1;
     FromLT2 = (uint16_t *)_TIFFmallocExt(tif, lt2size * sizeof(uint16_t));
     From14 = (uint16_t *)_TIFFmallocExt(tif, 16384 * sizeof(uint16_t));
@@ -658,7 +658,7 @@ static int PixarLogMakeTables(TIFF *tif, PixarLogState *sp)
         From8[i] = (uint16_t)j;
     }
 
-    Fltsize = (float)(lt2size / 2);
+    sp->Fltsize = (float)(lt2size / 2);
 
     sp->ToLinearF = ToLinearF;
     sp->ToLinear16 = ToLinear16;
@@ -670,8 +670,8 @@ static int PixarLogMakeTables(TIFF *tif, PixarLogState *sp)
     return 1;
 }
 
-#define DecoderState(tif) ((PixarLogState *)(tif)->tif_data)
-#define EncoderState(tif) ((PixarLogState *)(tif)->tif_data)
+#define PixarLogDecoderState(tif) ((PixarLogState *)(tif)->tif_data)
+#define PixarLogEncoderState(tif) ((PixarLogState *)(tif)->tif_data)
 
 static int PixarLogEncode(TIFF *tif, uint8_t *bp, tmsize_t cc, uint16_t s);
 static int PixarLogDecode(TIFF *tif, uint8_t *op, tmsize_t occ, uint16_t s);
@@ -740,7 +740,7 @@ static int PixarLogSetupDecode(TIFF *tif)
 {
     static const char module[] = "PixarLogSetupDecode";
     TIFFDirectory *td = &tif->tif_dir;
-    PixarLogState *sp = DecoderState(tif);
+    PixarLogState *sp = PixarLogDecoderState(tif);
     tmsize_t tbuf_size;
     uint32_t strip_height;
 
@@ -813,7 +813,7 @@ static int PixarLogSetupDecode(TIFF *tif)
 static int PixarLogPreDecode(TIFF *tif, uint16_t s)
 {
     static const char module[] = "PixarLogPreDecode";
-    PixarLogState *sp = DecoderState(tif);
+    PixarLogState *sp = PixarLogDecoderState(tif);
 
     (void)s;
     assert(sp != NULL);
@@ -835,7 +835,7 @@ static int PixarLogDecode(TIFF *tif, uint8_t *op, tmsize_t occ, uint16_t s)
 {
     static const char module[] = "PixarLogDecode";
     TIFFDirectory *td = &tif->tif_dir;
-    PixarLogState *sp = DecoderState(tif);
+    PixarLogState *sp = PixarLogDecoderState(tif);
     tmsize_t i;
     tmsize_t nsamples;
     int llen;
@@ -859,6 +859,7 @@ static int PixarLogDecode(TIFF *tif, uint8_t *op, tmsize_t occ, uint16_t s)
             TIFFErrorExtR(tif, module,
                           "%" PRIu16 " bit input not supported in PixarLog",
                           td->td_bitspersample);
+            memset(op, 0, (size_t)occ);
             return 0;
     }
 
@@ -879,12 +880,14 @@ static int PixarLogDecode(TIFF *tif, uint8_t *op, tmsize_t occ, uint16_t s)
     if (sp->stream.avail_out != nsamples * sizeof(uint16_t))
     {
         TIFFErrorExtR(tif, module, "ZLib cannot deal with buffers this size");
+        memset(op, 0, (size_t)occ);
         return (0);
     }
     /* Check that we will not fill more than what was allocated */
     if ((tmsize_t)sp->stream.avail_out > sp->tbuf_size)
     {
         TIFFErrorExtR(tif, module, "sp->stream.avail_out > sp->tbuf_size");
+        memset(op, 0, (size_t)occ);
         return (0);
     }
     do
@@ -899,12 +902,14 @@ static int PixarLogDecode(TIFF *tif, uint8_t *op, tmsize_t occ, uint16_t s)
             TIFFErrorExtR(
                 tif, module, "Decoding error at scanline %" PRIu32 ", %s",
                 tif->tif_row, sp->stream.msg ? sp->stream.msg : "(null)");
+            memset(op, 0, (size_t)occ);
             return (0);
         }
         if (state != Z_OK)
         {
             TIFFErrorExtR(tif, module, "ZLib error: %s",
                           sp->stream.msg ? sp->stream.msg : "(null)");
+            memset(op, 0, (size_t)occ);
             return (0);
         }
     } while (sp->stream.avail_out > 0);
@@ -916,6 +921,7 @@ static int PixarLogDecode(TIFF *tif, uint8_t *op, tmsize_t occ, uint16_t s)
                       "Not enough data at scanline %" PRIu32
                       " (short %u bytes)",
                       tif->tif_row, sp->stream.avail_out);
+        memset(op, 0, (size_t)occ);
         return (0);
     }
 
@@ -977,6 +983,7 @@ static int PixarLogDecode(TIFF *tif, uint8_t *op, tmsize_t occ, uint16_t s)
             default:
                 TIFFErrorExtR(tif, module, "Unsupported bits/sample: %" PRIu16,
                               td->td_bitspersample);
+                memset(op, 0, (size_t)occ);
                 return (0);
         }
     }
@@ -988,7 +995,7 @@ static int PixarLogSetupEncode(TIFF *tif)
 {
     static const char module[] = "PixarLogSetupEncode";
     TIFFDirectory *td = &tif->tif_dir;
-    PixarLogState *sp = EncoderState(tif);
+    PixarLogState *sp = PixarLogEncoderState(tif);
     tmsize_t tbuf_size;
 
     assert(sp != NULL);
@@ -1038,7 +1045,7 @@ static int PixarLogSetupEncode(TIFF *tif)
 static int PixarLogPreEncode(TIFF *tif, uint16_t s)
 {
     static const char module[] = "PixarLogPreEncode";
-    PixarLogState *sp = EncoderState(tif);
+    PixarLogState *sp = PixarLogEncoderState(tif);
 
     (void)s;
     assert(sp != NULL);
@@ -1060,13 +1067,13 @@ static void horizontalDifferenceF(float *ip, int n, int stride, uint16_t *wp,
                                   uint16_t *FromLT2)
 {
     int32_t r1, g1, b1, a1, r2, g2, b2, a2, mask;
-    float fltsize = Fltsize;
+    float fltsize = sp->Fltsize;
 
 #define CLAMP(v)                                                               \
     ((v < (float)0.)     ? 0                                                   \
      : (v < (float)2.)   ? FromLT2[(int)(v * fltsize)]                         \
      : (v > (float)24.2) ? 2047                                                \
-                         : LogK1 * log(v * LogK2) + 0.5)
+                         : sp->LogK1 * log(v * sp->LogK2) + 0.5)
 
     mask = CODE_MASK;
     if (n >= stride)
@@ -1294,7 +1301,7 @@ static int PixarLogEncode(TIFF *tif, uint8_t *bp, tmsize_t cc, uint16_t s)
 {
     static const char module[] = "PixarLogEncode";
     TIFFDirectory *td = &tif->tif_dir;
-    PixarLogState *sp = EncoderState(tif);
+    PixarLogState *sp = PixarLogEncoderState(tif);
     tmsize_t i;
     tmsize_t n;
     int llen;
@@ -1401,7 +1408,7 @@ static int PixarLogEncode(TIFF *tif, uint8_t *bp, tmsize_t cc, uint16_t s)
 static int PixarLogPostEncode(TIFF *tif)
 {
     static const char module[] = "PixarLogPostEncode";
-    PixarLogState *sp = EncoderState(tif);
+    PixarLogState *sp = PixarLogEncoderState(tif);
     int state;
 
     sp->stream.avail_in = 0;

@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH "TIFFSTRILEQUERY" "3tiff" "Dec 13, 2022" "4.5" "LibTIFF"
-.SH NAME
-TIFFStrileQuery \- get strile byte count and offset
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "TIFFSTRILEQUERY" "3tiff" "Sep 11, 2024" "4.7" "LibTIFF"
+.SH NAME
+TIFFStrileQuery \- get strile byte count and offset
 .SH SYNOPSIS
 .INDENT 0.0
 .INDENT 3.5
@@ -89,18 +89,21 @@ StripByteCounts array for the specified tile/strile.
 .sp
 \fI\%TIFFGetStrileByteCountWithErr()\fP additionally provides \fIpbErr\fP
 as an \fIint\fP pointer to an error return variable,
-which is set to “0” for successful return or to “1” for an error return.
+which is set to \(dq0\(dq for successful return or to \(dq1\(dq for an error return.
 .sp
 \fI\%TIFFGetStrileOffset()\fP returns the value of the TileOffsets /
 StripOffsets array for the specified tile/strile.
 .sp
 \fI\%TIFFGetStrileOffsetWithErr()\fP additionally provides \fIpbErr\fP
 as an \fIint\fP pointer to an error return variable,
-which is set to “0” for successful return or to “1” for an error return.
+which is set to \(dq0\(dq for successful return or to \(dq1\(dq for an error return.
 .SH DIAGNOSTICS
 .sp
 All error messages are directed to the \fI\%TIFFErrorExtR()\fP routine.
 Likewise, warning messages are directed to the \fI\%TIFFWarningExtR()\fP routine.
+.SH NOTE
+.sp
+This functionality was introduced with libtiff 4.1.
 .SH SEE ALSO
 .sp
 \fI\%libtiff\fP (3tiff),

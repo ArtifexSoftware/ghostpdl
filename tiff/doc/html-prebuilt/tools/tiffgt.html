@@ -1,19 +1,16 @@
-
 <!DOCTYPE html>
 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>tiffgt &#8212; LibTIFF 4.5.0 documentation</title>
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/jquery.js"></script>
-    <script src="../_static/underscore.js"></script>
-    <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>tiffgt &#8212; LibTIFF 4.7.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b849a4e9" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinxdoc.css?v=0a676766" />
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=9f25de62"></script>
+    <script src="../_static/doctools.js?v=888ff710"></script>
+    <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="tiffinfo" href="tiffinfo.html" />
@@ -31,7 +28,7 @@
         <li class="right" >
           <a href="tiffdump.html" title="tiffdump"
              accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" accesskey="U">TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffgt</a></li> 
       </ul>
@@ -42,23 +39,23 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="tiffgt">
+  <section id="tiffgt">
 <h1>tiffgt<a class="headerlink" href="#tiffgt" title="Permalink to this heading">¶</a></h1>
-<div class="section" id="synopsis">
+<section id="synopsis">
 <h2>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this heading">¶</a></h2>
 <p><strong>tiffgt</strong> [ <em>options</em> ] <em>input.tif</em> …</p>
-</div>
-<div class="section" id="description">
+</section>
+<section id="description">
 <h2>Description<a class="headerlink" href="#description" title="Permalink to this heading">¶</a></h2>
 <p><strong class="program">tiffgt</strong> displays one or more images stored using the
 Tag Image File Format, Revision 6.0.</p>
 <p><strong class="program">tiffgt</strong> correctly handles files with any of the following characteristics:</p>
 <blockquote>
-<div><table class="colwidths-given docutils align-default" id="id1">
+<div><table class="docutils align-default" id="id1">
 <caption><span class="caption-text">Supported tag values</span><a class="headerlink" href="#id1" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 20%" />
-<col style="width: 80%" />
+<col style="width: 20.0%" />
+<col style="width: 80.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Tag</p></th>
@@ -105,11 +102,11 @@ The middle mouse button causes the first image in the first file
 specified on the command line to be displayed.
 In addition the following keyboard commands are recognized:</p>
 <blockquote>
-<div><table class="colwidths-given docutils align-default" id="id2">
+<div><table class="docutils align-default" id="id2">
 <caption><span class="caption-text">Action keys</span><a class="headerlink" href="#id2" title="Permalink to this table">¶</a></caption>
 <colgroup>
-<col style="width: 8%" />
-<col style="width: 92%" />
+<col style="width: 8.0%" />
+<col style="width: 92.0%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Key</p></th>
@@ -166,8 +163,8 @@ in the next file</p></td>
 </tbody>
 </table>
 </div></blockquote>
-</div>
-<div class="section" id="options">
+</section>
+<section id="options">
 <h2>Options<a class="headerlink" href="#options" title="Permalink to this heading">¶</a></h2>
 <dl class="std option">
 <dt class="sig sig-object std" id="cmdoption-tiffgt-c">
@@ -240,7 +237,7 @@ tag; the parameter may be one of: <code class="docutils literal notranslate"><sp
 <dd><p>Stop on the first read error.
 By default all errors in the input data are ignored and
 <strong class="program">tiffgt</strong>
-does it’s best to display as much of an image as possible.</p>
+does it's best to display as much of an image as possible.</p>
 </dd></dl>
 
 <dl class="std option">
@@ -261,20 +258,20 @@ index of the image (if non-zero).
 By default, the window type is not shown in the title bar.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="bugs">
+</section>
+<section id="bugs">
 <h2>Bugs<a class="headerlink" href="#bugs" title="Permalink to this heading">¶</a></h2>
 <p>Images wider and taller than the display are silently truncated to avoid
 crashing old versions of the window manager.</p>
-</div>
-<div class="section" id="see-also">
+</section>
+<section id="see-also">
 <h2>See also<a class="headerlink" href="#see-also" title="Permalink to this heading">¶</a></h2>
 <p><a class="reference internal" href="tiffdump.html"><span class="doc">tiffdump</span></a> (1),
 <a class="reference internal" href="tiffinfo.html"><span class="doc">tiffinfo</span></a> (1),
 <a class="reference internal" href="tiffcp.html"><span class="doc">tiffcp</span></a> (1),
 <a class="reference internal" href="../functions/libtiff.html"><span class="doc">libtiff</span></a> (3tiff)</p>
-</div>
-</div>
+</section>
+</section>
 
 
             <div class="clearer"></div>
@@ -340,14 +337,14 @@ crashing old versions of the window manager.</p>
         <li class="right" >
           <a href="tiffdump.html" title="tiffdump"
              >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.5.0 documentation</a> &#187;</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">LibTIFF 4.7.0 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../tools.html" >TIFF Tools Overview</a> &#187;</li>
         <li class="nav-item nav-item-this"><a href="">tiffgt</a></li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">
-        &#169; Copyright 1988-2022, LibTIFF contributors.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 5.2.1.
+    &#169; Copyright 1988-2022, LibTIFF contributors.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.1.2.
     </div>
   </body>
 </html>
