@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Copyright (C) 2020-2023 by
+# Copyright (C) 2020-2024 by
 # David Turner, Robert Wilhelm, and Werner Lemberg.
 #
 # This file is part of the FreeType project, and may only be used, modified,
@@ -97,8 +97,12 @@ def generate_ftmodule(lists):
 
     for module in lists["AUX_MODULES"]:
         if module in ("psaux", "psnames", "otvalid", "gxvalid"):
+            name = {
+                "gxvalid": "gxv",
+                "otvalid": "otv",
+            }.get(module, module)
             result += (
-                "FT_USE_MODULE( FT_Module_Class, %s_module_class )\n" % module
+                "FT_USE_MODULE( FT_Module_Class, %s_module_class )\n" % name
             )
 
     result += "/* EOF */\n"
