@@ -122,7 +122,26 @@ typedef float         OPJ_FLOAT32;
 typedef double        OPJ_FLOAT64;
 typedef unsigned char OPJ_BYTE;
 
+#if !defined(_MSC_VER) || (_MSC_VER > 1900)
 #include <stdint.h>
+#else
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+typedef signed short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+
+#define PRId32 "I32d"
+#define PRId64 "I64d"
+#define PRIi32 "I32i"
+#define PRIi64 "I64i"
+#define PRIu32 "I32u"
+#define PRIu64 "I64u"
+#define PRIx64 "I64x"
+#endif
 
 typedef int8_t   OPJ_INT8;
 typedef uint8_t  OPJ_UINT8;

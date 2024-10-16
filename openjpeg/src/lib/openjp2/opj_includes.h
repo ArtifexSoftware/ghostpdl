@@ -55,8 +55,11 @@
 #include <ctype.h>
 #include <assert.h>
 #include <limits.h>
+
+#if !defined(_MSC_VER) || (_MSC_VER > 1900)
 #include <stdint.h>
 #include <inttypes.h>
+#endif
 
 /*
   Use fseeko() and ftello() if they are available since they use
