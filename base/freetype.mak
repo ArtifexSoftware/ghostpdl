@@ -189,8 +189,7 @@ ft_truetype=\
 	$(FTOBJ)ttpload.$(OBJ) \
 	$(FTOBJ)ttgload.$(OBJ) \
 	$(FTOBJ)ft2ttinterp.$(OBJ) \
-	$(FTOBJ)ttgxvar.$(OBJ) \
-	$(FTOBJ)ttsubpix.$(OBJ)
+	$(FTOBJ)ttgxvar.$(OBJ)
 
 ft_type1=\
 	$(FTOBJ)t1afm.$(OBJ) \
@@ -622,9 +621,6 @@ $(FTOBJ)ttgxvar.$(OBJ) : $(FTSRC)truetype$(D)ttgxvar.c $(FT_MAK) $(GENFTCONFH) $
 
 $(FTOBJ)truetype.$(OBJ) : $(FTSRC)truetype$(D)truetype.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
 	$(FTCC) $(FTO_)truetype.$(OBJ) $(C_) $(FTSRC)truetype$(D)truetype.c
-
-$(FTOBJ)ttsubpix.$(OBJ) : $(FTSRC)truetype$(D)ttsubpix.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
-	$(FTCC) $(FTO_)ttsubpix.$(OBJ) $(C_) $(FTSRC)truetype$(D)ttsubpix.c
 
 $(FTOBJ)t1afm.$(OBJ) : $(FTSRC)type1$(D)t1afm.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
 	$(FTCC) $(FTO_)t1afm.$(OBJ) $(C_) $(FTSRC)type1$(D)t1afm.c
