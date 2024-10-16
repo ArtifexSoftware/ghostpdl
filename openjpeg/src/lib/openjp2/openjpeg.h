@@ -122,7 +122,26 @@ typedef float         OPJ_FLOAT32;
 typedef double        OPJ_FLOAT64;
 typedef unsigned char OPJ_BYTE;
 
-#include "opj_stdint.h"
+#if !defined(_MSC_VER) || (_MSC_VER > 1900)
+#include <stdint.h>
+#else
+typedef signed char int8_t;
+typedef unsigned char uint8_t;
+typedef signed short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+
+#define PRId32 "I32d"
+#define PRId64 "I64d"
+#define PRIi32 "I32i"
+#define PRIi64 "I64i"
+#define PRIu32 "I32u"
+#define PRIu64 "I64u"
+#define PRIx64 "I64x"
+#endif
 
 typedef int8_t   OPJ_INT8;
 typedef uint8_t  OPJ_UINT8;
@@ -137,6 +156,8 @@ typedef int64_t  OPJ_OFF_T; /* 64-bit file offset type */
 
 #include <stdio.h>
 typedef size_t   OPJ_SIZE_T;
+
+#include "opj_config.h"
 
 /* Avoid compile-time warning because parameter is not used */
 #define OPJ_ARG_NOT_USED(x) (void)(x)
@@ -405,7 +426,7 @@ typedef struct opj_cparameters {
     int cp_disto_alloc;
     /** allocation by fixed layer */
     int cp_fixed_alloc;
-    /** add fixed_quality */
+    /** allocation by fixed quality (PSNR) */
     int cp_fixed_quality;
     /** fixed layer */
     int *cp_matrice;
@@ -829,9 +850,9 @@ typedef struct opj_tile_info {
     int pdy[33];
     /** information concerning packets inside tile */
     opj_packet_info_t *packet;
-    /** add fixed_quality */
+    /** number of pixels of the tile */
     int numpix;
-    /** add fixed_quality */
+    /** distortion of the tile */
     double distotile;
     /** number of markers */
     int marknum;

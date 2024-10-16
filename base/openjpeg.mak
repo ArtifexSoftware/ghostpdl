@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2024 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -116,7 +116,7 @@ $(OPEN_JPEG_GEN)openjpeg_0.dev : $(ECHOGS_XE) $(open_jpeg_OBJS) \
 	$(SETMOD) $(OPEN_JPEG_GEN)openjpeg_0 $(open_jpeg_OBJS)
 
 # define our specific compiler
-OPEN_JPEG_CC=$(CC) $(D_)OPJ_STATIC$(_D) $(I_)$(OPEN_JPEG_GEN)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(_I) \
+OPEN_JPEG_CC=$(CC) $(D_)OPJ_STATIC$(_D) $(D_)STANDARD_SLOW_VERSION$(_D) $(I_)$(OPEN_JPEG_GEN)$(_I) $(I_)$(JPX_OPENJPEG_I_)$(_I) \
 $(I_)$(JPX_OPENJPEG_I_)$(D)..$(_I) $(JPXCF_) $(CCFLAGS)
 
 OPEN_JPEG_O=$(O_)$(OPEN_JPEG_OBJ)$(OPEN_JPEG_PREFIX)
