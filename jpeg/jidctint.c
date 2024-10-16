@@ -141,15 +141,6 @@
 #endif
 
 
-/* Clamp DC value to acceptable range for bug 697186 */
-#define CLAMP_DC(dcval)    \
-  {                        \
-    if (dcval < -1024)     \
-      dcval = -1024;       \
-    else if (dcval > 1023) \
-      dcval = 1023;        \
-  }
-
 /* Multiply an INT32 variable by an INT32 constant to yield an INT32 result.
  * For 8-bit samples with the recommended scaling, all the variable
  * and constant values involved are no more than 16 bits wide, so a
@@ -219,10 +210,7 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	inptr[DCTSIZE*5] == 0 && inptr[DCTSIZE*6] == 0 &&
 	inptr[DCTSIZE*7] == 0) {
       /* AC terms all zero */
-      int dcval = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-      if (ctr == DCTSIZE)
-        CLAMP_DC(dcval);
-      dcval <<= PASS1_BITS;
+      int dcval = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]) << PASS1_BITS;
 
       wsptr[DCTSIZE*0] = dcval;
       wsptr[DCTSIZE*1] = dcval;
@@ -244,8 +232,6 @@ jpeg_idct_islow (j_decompress_ptr cinfo, jpeg_component_info * compptr,
      */
 
     z2 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == DCTSIZE)
-      CLAMP_DC(z2);
     z3 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
     z2 <<= CONST_BITS;
     z3 <<= CONST_BITS;
@@ -474,8 +460,6 @@ jpeg_idct_7x7 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp13 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp13);
     tmp13 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp13 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -627,8 +611,6 @@ jpeg_idct_6x6 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp0 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -752,8 +734,6 @@ jpeg_idct_5x5 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp12 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp12);
     tmp12 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp12 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -871,8 +851,6 @@ jpeg_idct_4x4 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
     
     tmp10 = (tmp0 + tmp2) << PASS1_BITS;
@@ -979,8 +957,6 @@ jpeg_idct_3x3 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp0 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -1065,7 +1041,6 @@ jpeg_idct_2x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 
   /* Column 0 */
   tmp4 = DEQUANTIZE(coef_block[DCTSIZE*0], quantptr[DCTSIZE*0]);
-  CLAMP_DC(tmp4);
   tmp5 = DEQUANTIZE(coef_block[DCTSIZE*1], quantptr[DCTSIZE*1]);
   /* Add range center and fudge factor for final descale and range-limit. */
   tmp4 += (((DCTELEM) RANGE_CENTER) << 3) + (1 << 2);
@@ -1109,18 +1084,21 @@ jpeg_idct_1x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	       JCOEFPTR coef_block,
 	       JSAMPARRAY output_buf, JDIMENSION output_col)
 {
-  int dcval;
+  DCTELEM dcval;
   ISLOW_MULT_TYPE * quantptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
-  SHIFT_TEMPS
+  ISHIFT_TEMPS
 
   /* 1x1 is trivial: just take the DC coefficient divided by 8. */
-  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
-  dcval = DEQUANTIZE(coef_block[0], quantptr[0]);
-  CLAMP_DC(dcval);
-  dcval = (int) DESCALE((INT32) dcval, 3);
 
-  output_buf[0][output_col] = range_limit[dcval & RANGE_MASK];
+  quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
+
+  dcval = DEQUANTIZE(coef_block[0], quantptr[0]);
+  /* Add range center and fudge factor for descale and range-limit. */
+  dcval += (((DCTELEM) RANGE_CENTER) << 3) + (1 << 2);
+
+  output_buf[0][output_col] =
+    range_limit[(int) IRIGHT_SHIFT(dcval, 3) & RANGE_MASK];
 }
 
 
@@ -1157,8 +1135,6 @@ jpeg_idct_9x9 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp0 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -1333,8 +1309,6 @@ jpeg_idct_10x10 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     z3 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(z3);
     z3 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     z3 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -1532,8 +1506,6 @@ jpeg_idct_11x11 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp10 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp10);
     tmp10 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp10 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -1730,8 +1702,6 @@ jpeg_idct_12x12 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     z3 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(z3);
     z3 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     z3 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -1950,8 +1920,6 @@ jpeg_idct_13x13 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     z1 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(z1);
     z1 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     z1 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -2182,8 +2150,6 @@ jpeg_idct_14x14 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     z1 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(z1);
     z1 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     z1 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -2412,8 +2378,6 @@ jpeg_idct_15x15 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     z1 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(z1);
     z1 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     z1 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -2658,8 +2622,6 @@ jpeg_idct_16x16 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp0 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -2938,10 +2900,7 @@ jpeg_idct_16x8 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	inptr[DCTSIZE*5] == 0 && inptr[DCTSIZE*6] == 0 &&
 	inptr[DCTSIZE*7] == 0) {
       /* AC terms all zero */
-      int dcval = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-      if (ctr == DCTSIZE)
-        CLAMP_DC(dcval);
-      dcval <<= PASS1_BITS;
+      int dcval = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]) << PASS1_BITS;
 
       wsptr[DCTSIZE*0] = dcval;
       wsptr[DCTSIZE*1] = dcval;
@@ -2963,8 +2922,6 @@ jpeg_idct_16x8 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
      */
 
     z2 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == DCTSIZE)
-      CLAMP_DC(z2);
     z3 = DEQUANTIZE(inptr[DCTSIZE*4], quantptr[DCTSIZE*4]);
     z2 <<= CONST_BITS;
     z3 <<= CONST_BITS;
@@ -3207,8 +3164,6 @@ jpeg_idct_14x7 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp23 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp23);
     tmp23 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp23 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -3408,8 +3363,6 @@ jpeg_idct_12x6 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp10 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp10);
     tmp10 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp10 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -3590,8 +3543,6 @@ jpeg_idct_10x5 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp12 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp12);
     tmp12 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp12 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -3758,8 +3709,6 @@ jpeg_idct_8x4 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
 
     tmp10 = (tmp0 + tmp2) << PASS1_BITS;
@@ -3918,8 +3867,6 @@ jpeg_idct_6x3 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp0 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -4032,8 +3979,6 @@ jpeg_idct_4x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp10 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp10);
 
     /* Odd part */
 
@@ -4105,11 +4050,11 @@ jpeg_idct_2x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	       JCOEFPTR coef_block,
 	       JSAMPARRAY output_buf, JDIMENSION output_col)
 {
-  INT32 tmp0, tmp1;
+  DCTELEM tmp0, tmp1;
   ISLOW_MULT_TYPE * quantptr;
   JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
-  SHIFT_TEMPS
+  ISHIFT_TEMPS
 
   /* Pass 1: empty. */
 
@@ -4121,9 +4066,8 @@ jpeg_idct_2x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
   /* Even part */
 
   tmp0 = DEQUANTIZE(coef_block[0], quantptr[0]);
-  CLAMP_DC(tmp0);
-  /* Add fudge factor here for final descale. */
-  tmp0 += ONE << 2;
+  /* Add range center and fudge factor for final descale and range-limit. */
+  tmp0 += (((DCTELEM) RANGE_CENTER) << 3) + (1 << 2);
 
   /* Odd part */
 
@@ -4131,8 +4075,8 @@ jpeg_idct_2x1 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 
   /* Final output stage */
 
-  outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp0 + tmp1, 3) & RANGE_MASK];
-  outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp0 - tmp1, 3) & RANGE_MASK];
+  outptr[0] = range_limit[(int) IRIGHT_SHIFT(tmp0 + tmp1, 3) & RANGE_MASK];
+  outptr[1] = range_limit[(int) IRIGHT_SHIFT(tmp0 - tmp1, 3) & RANGE_MASK];
 }
 
 
@@ -4171,8 +4115,6 @@ jpeg_idct_8x16 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp0 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -4397,8 +4339,6 @@ jpeg_idct_7x14 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     z1 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(z1);
     z1 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     z1 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -4586,8 +4526,6 @@ jpeg_idct_6x12 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     z3 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(z3);
     z3 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     z3 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -4756,8 +4694,6 @@ jpeg_idct_5x10 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     z3 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(z3);
     z3 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     z3 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -4927,10 +4863,7 @@ jpeg_idct_4x8 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	inptr[DCTSIZE*5] == 0 && inptr[DCTSIZE*6] == 0 &&
 	inptr[DCTSIZE*7] == 0) {
       /* AC terms all zero */
-      int dcval = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-      if (ctr == 4)
-        CLAMP_DC(dcval);
-      dcval <<= PASS1_BITS;
+      int dcval = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]) << PASS1_BITS;
 
       wsptr[4*0] = dcval;
       wsptr[4*1] = dcval;
@@ -5103,8 +5036,6 @@ jpeg_idct_3x6 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp0 <<= CONST_BITS;
     /* Add fudge factor here for final descale. */
     tmp0 += ONE << (CONST_BITS-PASS1_BITS-1);
@@ -5214,8 +5145,6 @@ jpeg_idct_2x4 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
     /* Even part */
 
     tmp0 = DEQUANTIZE(inptr[DCTSIZE*0], quantptr[DCTSIZE*0]);
-    if (ctr == 0)
-      CLAMP_DC(tmp0);
     tmp2 = DEQUANTIZE(inptr[DCTSIZE*2], quantptr[DCTSIZE*2]);
 
     tmp10 = (tmp0 + tmp2) << CONST_BITS;
@@ -5280,34 +5209,31 @@ jpeg_idct_1x2 (j_decompress_ptr cinfo, jpeg_component_info * compptr,
 	       JCOEFPTR coef_block,
 	       JSAMPARRAY output_buf, JDIMENSION output_col)
 {
-  INT32 tmp0, tmp1;
+  DCTELEM tmp0, tmp1;
   ISLOW_MULT_TYPE * quantptr;
-  JSAMPROW outptr;
   JSAMPLE *range_limit = IDCT_range_limit(cinfo);
-  SHIFT_TEMPS
+  ISHIFT_TEMPS
 
-  /* Pass 1: empty. */
-
-  /* Pass 2: process 1 row from input, store into output array. */
+  /* Process 1 column from input, store into output array. */
 
   quantptr = (ISLOW_MULT_TYPE *) compptr->dct_table;
-  outptr = output_buf[0] + output_col;
 
   /* Even part */
 
-  tmp0 = DEQUANTIZE(coef_block[0], quantptr[0]);
-  CLAMP_DC(tmp0);
-  /* Add fudge factor here for final descale. */
-  tmp0 += ONE << 2;
+  tmp0 = DEQUANTIZE(coef_block[DCTSIZE*0], quantptr[DCTSIZE*0]);
+  /* Add range center and fudge factor for final descale and range-limit. */
+  tmp0 += (((DCTELEM) RANGE_CENTER) << 3) + (1 << 2);
 
   /* Odd part */
 
-  tmp1 = DEQUANTIZE(coef_block[1], quantptr[1]);
+  tmp1 = DEQUANTIZE(coef_block[DCTSIZE*1], quantptr[DCTSIZE*1]);
 
   /* Final output stage */
 
-  outptr[0] = range_limit[(int) RIGHT_SHIFT(tmp0 + tmp1, 3) & RANGE_MASK];
-  outptr[1] = range_limit[(int) RIGHT_SHIFT(tmp0 - tmp1, 3) & RANGE_MASK];
+  output_buf[0][output_col] =
+    range_limit[(int) IRIGHT_SHIFT(tmp0 + tmp1, 3) & RANGE_MASK];
+  output_buf[1][output_col] =
+    range_limit[(int) IRIGHT_SHIFT(tmp0 - tmp1, 3) & RANGE_MASK];
 }
 
 #endif /* IDCT_SCALING_SUPPORTED */

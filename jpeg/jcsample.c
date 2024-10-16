@@ -481,9 +481,7 @@ jinit_downsampler (j_compress_ptr cinfo)
   my_downsample_ptr downsample;
   int ci;
   jpeg_component_info * compptr;
-#ifdef INPUT_SMOOTHING_SUPPORTED
   boolean smoothok = TRUE;
-#endif
   int h_in_group, v_in_group, h_out_group, v_out_group;
 
   downsample = (my_downsample_ptr) (*cinfo->mem->alloc_small)
@@ -519,9 +517,7 @@ jinit_downsampler (j_compress_ptr cinfo)
 	downsample->methods[ci] = fullsize_downsample;
     } else if (h_in_group == h_out_group * 2 &&
 	       v_in_group == v_out_group) {
-#ifdef INPUT_SMOOTHING_SUPPORTED
       smoothok = FALSE;
-#endif
       downsample->methods[ci] = h2v1_downsample;
     } else if (h_in_group == h_out_group * 2 &&
 	       v_in_group == v_out_group * 2) {
@@ -534,9 +530,7 @@ jinit_downsampler (j_compress_ptr cinfo)
 	downsample->methods[ci] = h2v2_downsample;
     } else if ((h_in_group % h_out_group) == 0 &&
 	       (v_in_group % v_out_group) == 0) {
-#ifdef INPUT_SMOOTHING_SUPPORTED
       smoothok = FALSE;
-#endif
       downsample->methods[ci] = int_downsample;
       downsample->h_expand[ci] = (UINT8) (h_in_group / h_out_group);
       downsample->v_expand[ci] = (UINT8) (v_in_group / v_out_group);
