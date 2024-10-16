@@ -56,6 +56,11 @@
 #include <assert.h>
 #include <limits.h>
 
+#if !defined(_MSC_VER) || (_MSC_VER > 1900)
+#include <stdint.h>
+#include <inttypes.h>
+#endif
+
 /*
   Use fseeko() and ftello() if they are available since they use
   'off_t' rather than 'long'.  It is wrong to use fseeko() and
@@ -218,7 +223,6 @@ typedef unsigned int OPJ_BITFIELD;
 
 #define OPJ_UNUSED(x) (void)x
 
-#include "opj_inttypes.h"
 #include "opj_clock.h"
 #include "opj_malloc.h"
 #include "event.h"
