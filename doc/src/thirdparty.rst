@@ -42,7 +42,7 @@ The table below details the third party libraries that Ghostscript and/or GhostP
      - MIT/eXpat License
      - http://expat.sourceforge.net/
    * - FreeType
-     - 2.13.0
+     - 2.13.3
      - Font scaling and rendering
 
        for Ghostscript
@@ -64,7 +64,7 @@ The table below details the third party libraries that Ghostscript and/or GhostP
 
      - http://www.ghostscript.com/
    * - libjpeg
-     - 9e with patches
+     - 9f with patches
      - JPEG/DCT decoding/encoding
      - "Free" Can be used in
 
@@ -88,14 +88,14 @@ The table below details the third party libraries that Ghostscript and/or GhostP
      - MIT LICENSE
      - http://www.ghostscript.com/
    * - libpng
-     - 1.6.39
+     - 1.6.44
      - PNG image encoding/decoding
      - libpng license - classified as
 
        "a permissive free software license"
      - http://www.libpng.org/
    * - OpenJPEG
-     - 2.5.0
+     - 2.5.2
      - JPEG2000 image decoding for the
 
        PDF interpreter
@@ -103,14 +103,14 @@ The table below details the third party libraries that Ghostscript and/or GhostP
      - BSD-style
      - http://www.openjpeg.org/
    * - zlib
-     - 1.2.13
+     - 1.3.1
      - (De)Flate compression
      - zlib license - classified as
 
        "a permissive free software license"
      - http://www.zlib.net/
    * - libtiff
-     - 4.5.0
+     - 4.7.0
      - TIFF image encoding/decoding
      - BSD-style
      - http://www.remotesensing.org/libtiff
@@ -130,13 +130,13 @@ The following are optional.
      - License
      - URL
    * - tesseract
-     - 4.1.0
+     - 5.3.4
        with patches
      - Optical Character Recognition (OCR) library
      - Apache License 2.0
      - https://github.com/tesseract-ocr/tesseract
    * - leptonica
-     - 1.80.0 with patches
+     - 1.84.1 with patches
      - Image processing toolkit - support
 
        library for tesseract OCR
