@@ -8,4 +8,4 @@
 /* Version number. */
 #define OPJ_VERSION_MAJOR 2
 #define OPJ_VERSION_MINOR 5
-#define OPJ_VERSION_BUILD 0
+#define OPJ_VERSION_BUILD 2
