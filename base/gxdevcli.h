@@ -1644,9 +1644,7 @@ static inline gs_graphics_type_tag_t device_current_tag(const gx_device *dev)
 
 static inline bool device_is_deep(const gx_device *dev)
 {
-    bool has_tags = device_encodes_tags(dev);
-    int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                         dev->color_info.num_components);
+    int bits_per_comp = (dev->color_info.depth / dev->color_info.num_components);
     if (bits_per_comp > 16)
         return 1;
     if (bits_per_comp == 16 && dev->color_info.num_components > 1)

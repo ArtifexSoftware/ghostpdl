@@ -2217,8 +2217,7 @@ pdf14_open(gx_device *dev)
     /* If we are reenabling the device dont create a new ctx. Bug 697456 */
     if (pdev->ctx == NULL) {
         bool has_tags = device_encodes_tags(dev);
-        int bits_per_comp = ((dev->color_info.depth - has_tags*8) /
-                             dev->color_info.num_components);
+        int bits_per_comp = (dev->color_info.depth / dev->color_info.num_components);
         pdev->ctx = pdf14_ctx_new(dev, bits_per_comp > 8);
         if (pdev->ctx == NULL)
             return_error(gs_error_VMerror);
