@@ -866,6 +866,8 @@ clist_render_thread_no_output_fn(void* data)
     */
 
     while (band_begin_line < dev->height && band_end_line > 0) {
+        if (band_end_line > dev->height)
+            band_end_line = dev->height;
         band_num_lines = band_end_line - band_begin_line;
 
         ((gx_device_memory*)bdev)->band_y = band_begin_line; // probably useless, but doesn't hurt
