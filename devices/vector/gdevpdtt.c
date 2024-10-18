@@ -3309,7 +3309,7 @@ static int ProcessTextForOCR(gs_text_enum_t *pte)
 
     if (pdev->OCRStage == OCR_Rendering) {
         penum->pte_default->can_cache = 0;
-        pdev->OCR_enum = penum;
+        pdev->OCR_enum = (gs_text_enum_t *)penum;
         code = gs_text_process(penum->pte_default);
         gs_text_enum_copy_dynamic(pte, penum->pte_default, true);
         if (code == TEXT_PROCESS_RENDER) {
