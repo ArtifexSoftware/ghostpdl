@@ -4653,7 +4653,7 @@ template_mark_fill_rect(int w, int h, byte *gs_restrict dst_ptr, byte *gs_restri
                                 dst_ptr[k * planestride] = 255 - pdst[k];
                             } else {
                                 /* We need val_new = (val_old * old_alpha) / new_alpha */
-                                uint32_t val = (scale * (255 - pdst[k]) + 128)>>8;
+                                uint32_t val = (scale * dst_ptr[k * planestride] + 128)>>8;
                                 if (val > 255)
                                     val = 255;
                                 dst_ptr[k * planestride] = val;
@@ -5262,7 +5262,7 @@ template_mark_fill_rect16(int w, int h, uint16_t *gs_restrict dst_ptr, uint16_t 
                                 dst_ptr[k * planestride] = 65535 - pdst[k];
                             } else  {
                                 /* We need val_new = (val_old * old_alpha) / new_alpha */
-                                uint64_t val = (scale * (65535 - pdst[k]) + 32768)>>16;
+                                uint64_t val = (scale * dst_ptr[k * planestride] + 32768)>>16;
                                 if (val > 65535)
                                     val = 65535;
                                 dst_ptr[k * planestride] = val;
