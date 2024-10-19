@@ -1616,7 +1616,7 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     char *data = (char *)pairs[i+1].data;
 
                     data[pairs[i+1].size] = 0x00;
-                    code = sscanf(data, "%d 0 R", &id);
+                    code = sscanf(data, "%"PRId64" 0 R", &id);
                     data[pairs[i+1].size] = written;
                     if (code < 1)
                         return_error(gs_error_rangecheck);
