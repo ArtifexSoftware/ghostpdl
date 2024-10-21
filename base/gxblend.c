@@ -2901,7 +2901,7 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
             dst = nos_pixel;
             if (nos_knockout) {
                 /* We need to be knocking out what ever is on the nos, but may
-                   need to combine with it's backdrop */
+                   need to combine with its backdrop */
                 byte tos_shape = 255;
 
                 if (tos_has_shape)
@@ -3663,7 +3663,7 @@ template_compose_group16(uint16_t *gs_restrict tos_ptr, bool tos_isolated,
             dst = nos_pixel;
             if (nos_knockout) {
                 /* We need to be knocking out what ever is on the nos, but may
-                   need to combine with it's backdrop */
+                   need to combine with its backdrop */
                 uint16_t tos_shape = 65535;
 
                 if (tos_has_shape)
