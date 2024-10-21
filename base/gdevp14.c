@@ -2028,7 +2028,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
             /* Dump the current buffer to see what we have. */
             dump_raw_buffer(ctx->memory,
                             tos->rect.q.y-tos->rect.p.y,
-                            tos->rowstride>>tos->deep, tos->n_planes,
+                            tos->rowstride>>tos->deep, 1,
                             tos->planestride, tos->rowstride,
                             "SMask_Pop_Alpha(Mask_Plane1)",tos->data,
                             tos->deep);
@@ -2063,7 +2063,7 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
                 /* Dump the current buffer to see what we have. */
                 dump_raw_buffer(ctx->memory,
                                 tos->rect.q.y-tos->rect.p.y,
-                                tos->rowstride>>tos->deep, tos->n_planes,
+                                tos->rowstride>>tos->deep, 1,
                                 tos->planestride, tos->rowstride,
                                 "SMask_Pop_Lum_Post_Blend",tos->data,
                                 tos->deep);
