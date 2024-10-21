@@ -7024,6 +7024,15 @@ pdf14_compute_group_device_int_rect(const gs_matrix *ctm,
     rect->p.y = (int)floor(dev_bbox.p.y);
     rect->q.x = (int)ceil(dev_bbox.q.x);
     rect->q.y = (int)ceil(dev_bbox.q.y);
+    /* Sanity check rect for insane ctms */
+    if (rect->p.x < 0)
+        rect->p.x = 0;
+    if (rect->q.x < rect->p.x)
+        rect->q.x = rect->p.x;
+    if (rect->p.y < 0)
+        rect->p.y = 0;
+    if (rect->q.y < rect->p.y)
+        rect->q.y = rect->p.y;
     return 0;
 }
 
