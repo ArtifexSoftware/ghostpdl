@@ -394,7 +394,7 @@ if test x"$with_arch_h" = x""; then
             ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/windows-x86-msvc.h"
           ;;
           *-darwin*)
-            ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-ppc-gcc.h"
+            ARCH_CONF_HEADER="\$(GLSRCDIR)/../arch/osx-x86-x86_64-ppc_arm64-gcc.h"
           ;;
           *)
             ARCH_CONF_HEADER=
