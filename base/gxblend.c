@@ -2960,7 +2960,7 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
                                         has_alpha ? tos_ptr[tos_shape_offset] : group_shape,
                                         shape);
             }
-            if (dst)
+            if (dst && dst[n_chan] != 0)
             {
                 /* Complement the results for subtractive color spaces.  Again,
                  * if we are in an additive blending color space, we are not
