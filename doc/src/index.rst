@@ -76,6 +76,7 @@ Welcome to :title:`Ghostscript`
    Psfiles.rst
    Fonts.rst
    GhostscriptColorManagement.rst
+   ZUGFeRD.rst
    Unix-lpr.rst
 
 

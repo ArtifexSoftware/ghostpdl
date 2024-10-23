@@ -1305,6 +1305,7 @@ Here is a sample command line to invoke Ghostscript for generating a PDF/X-3 doc
 Please also see the ``PDFACompatibilityPolicy`` control described under `Creating a PDF/A document`_. The same control is now used to specify the desired behaviour when an input file cannot be converted 'as is' into a PDF/X file.
 
 
+.. _VectorDevices_Creating_PDFA:
 
 Creating a PDF/A document
 ------------------------------
