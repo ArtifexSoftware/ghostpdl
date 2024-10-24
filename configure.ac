@@ -2538,49 +2538,50 @@ X_CFLAGS=""
 X_DEVS=""
 X_LIBS=""
 
-if test x$no_x != xyes; then
-        if test "$x_libraries" = "/usr/lib"; then
-                echo "Ignoring X library directory \"$x_libraries\" requested by configure."
-                x_libraries="NONE"
-        fi
-        if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
-                X_LDFLAGS="-L$x_libraries"
-                case $host in
-                    *-sun*|*-solaris*)
-                        X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
-                    ;;
-                    *)
-                    ;;
-                esac
+if test x"$no_x" != x"yes"; then
+  if test "$x_libraries" = "/usr/lib"; then
+          echo "Ignoring X library directory \"$x_libraries\" requested by configure."
+          x_libraries="NONE"
+  fi
+  if test ! "$x_libraries" = "NONE" -a ! "$x_libraries" = ""; then
+          X_LDFLAGS="-L$x_libraries"
+          case $host in
+              *-sun*|*-solaris*)
+                  X_LDFLAGS="$X_LDFLAGS -R$x_libraries"
+              ;;
+              *)
+              ;;
+          esac
 
-        fi
+  fi
 
-        if test "$x_includes" = "/usr/include"; then
-                echo "Ignoring X include directory \"$x_includes\" requested by configure."
-                x_includes="NONE"
-        fi
-        if test ! "$x_includes" = "NONE" -a ! "$x_includes" = ""; then
-                X_CFLAGS="-I$x_includes"
-        fi
+  if test "$x_includes" = "/usr/include"; then
+          echo "Ignoring X include directory \"$x_includes\" requested by configure."
+          x_includes="NONE"
+  fi
+  if test ! "$x_includes" = "NONE" -a ! "$x_includes" = ""; then
+          X_CFLAGS="-I$x_includes"
+  fi
 
-        SAVELIBS="$LIBS"
-        SAVELDFLAGS="$LDFLAGS"
-        LDFLAGS="$LDFLAGS $X_LDFLAGS"
+  SAVELIBS="$LIBS"
+  SAVELDFLAGS="$LDFLAGS"
+  LDFLAGS="$LDFLAGS $X_LDFLAGS"
 
-        AC_CHECK_LIB(X11,XOpenDisplay)
-        AC_CHECK_LIB(Xext,XdbeQueryExtension)
-        AC_CHECK_LIB(Xt,XtAppCreateShell)
+  AC_CHECK_LIB(X11,XOpenDisplay,[],[no_x=yes])
+  AC_CHECK_LIB(Xext,XdbeQueryExtension,[],[no_x=yes])
+  AC_CHECK_LIB(Xt,XtAppCreateShell,[],[no_x=yes])
 
-        LDFLAGS="$SAVELDFLAGS"
-        LIBS="$SAVELIBS"
+  LDFLAGS="$SAVELDFLAGS"
+  LIBS="$SAVELIBS"
 
-        if test "$ac_cv_lib_Xt_XtAppCreateShell" = yes; then
-                X11DEVS="x11 x11alpha x11cmyk x11mono x11_ x11alt_ x11cmyk2 x11cmyk4 x11cmyk8 x11rg16x x11rg32x x11gray2 x11gray4"
-                X_DEVS=$X11DEVS
-                # the makefile wants a list of just the library names in X_LIBS
-                GS_SPLIT_LIBS([X_LIBS],
-                        [-lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS])
-        fi
+  if test x"$no_x" = x"yes"; then
+    AC_MSG_ERROR([X11 libraries (libX11, libXt, libXext) not available, either install them, or rerun configure with "--without-x"])
+  else
+    X11DEVS="x11 x11alpha x11cmyk x11mono x11_ x11alt_ x11cmyk2 x11cmyk4 x11cmyk8 x11rg16x x11rg32x x11gray2 x11gray4"
+    X_DEVS=$X11DEVS
+    # the makefile wants a list of just the library names in X_LIBS
+    GS_SPLIT_LIBS([X_LIBS], [-lXt $X_PRE_LIBS -lXext -lX11 $X_EXTRA_LIBS])
+  fi
 fi
 
 AC_SUBST(X_LDFLAGS)
