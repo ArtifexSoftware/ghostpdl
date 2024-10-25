@@ -909,7 +909,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                     if ((*page_offset) == page_num) {
                         pdf_dict *page_dict = NULL;
 
-                        code = pdfi_dict_get(ctx, child, "PageRef", (pdf_obj **)&page_dict);
+                        code = pdfi_dict_get_no_store_R(ctx, child, "PageRef", (pdf_obj **)&page_dict);
                         if (code < 0)
                             goto exit;
                         code = pdfi_merge_dicts(ctx, page_dict, inheritable);
@@ -1077,7 +1077,7 @@ int pdfi_find_resource(pdf_context *ctx, unsigned char *Type, pdf_name *name,
                     (void)pdfi_loop_detector_cleartomark(ctx);
                     if (code != gs_error_undefined) {
                         if (dict_is_XObject)
-                            pdfi_set_error(ctx, 0, NULL, E_PDF_INHERITED_STREAM_RESOURCE, "pdfi_find_resource", (char *)"Couldn't find named resource in supplied dictionary, or Parents, or Pages, matching name located in earlier stream Resource");
+                            pdfi_set_warning(ctx, 0, NULL, W_PDF_INHERITED_STREAM_RESOURCE, "pdfi_find_resource", (char *)"Couldn't find named resource in supplied dictionary, matching name located in Page Resource");
                         goto exit;
                     }
                 }
