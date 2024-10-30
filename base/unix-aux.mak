@@ -57,24 +57,24 @@ $(AUX)gp_stdib.$(OBJ): $(GLSRC)gp_stdib.c $(AK)\
 # -------------------------- Auxiliary programs --------------------------- #
 
 $(ECHOGS_XE): $(GLSRC)echogs.c $(AK) $(stdpre_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(ECHOGS_XE) $(GLSRC)echogs.c $(AUXEXTRALIBS)
+	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(ECHOGS_XE) $(GLSRC)echogs.c  $(LDFLAGSAUX) $(AUXEXTRALIBS)
 
 $(PACKPS_XE): $(GLSRC)pack_ps.c $(stdpre_h) $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(PACKPS_XE) $(GLSRC)pack_ps.c $(AUXEXTRALIBS)
+	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(PACKPS_XE) $(GLSRC)pack_ps.c  $(LDFLAGSAUX) $(AUXEXTRALIBS)
 
 # On the RS/6000 (at least), compiling genarch.c with gcc with -O
 # produces a buggy executable.
 $(GENARCH_XE): $(GLSRC)genarch.c $(AK) $(GENARCH_DEPS) $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENARCH_XE) $(GLSRC)genarch.c $(AUXEXTRALIBS)
+	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENARCH_XE) $(GLSRC)genarch.c  $(LDFLAGSAUX) $(AUXEXTRALIBS)
 
 $(GENCONF_XE): $(GLSRC)genconf.c $(AK) $(GENCONF_DEPS) $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENCONF_XE) $(GLSRC)genconf.c $(AUXEXTRALIBS)
+	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENCONF_XE) $(GLSRC)genconf.c  $(LDFLAGSAUX) $(AUXEXTRALIBS)
 
 $(GENDEV_XE): $(GLSRC)gendev.c $(AK) $(GENDEV_DEPS) $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENDEV_XE) $(GLSRC)gendev.c $(AUXEXTRALIBS)
+	$(CCAUX_) $(I_)$(GLSRCDIR)$(_I) $(O_)$(GENDEV_XE) $(GLSRC)gendev.c  $(LDFLAGSAUX) $(AUXEXTRALIBS)
 
 $(GENHT_XE): $(GLSRC)genht.c $(AK) $(GENHT_DEPS) $(UNIX_AUX_MAK) $(MAKEDIRS)
-	$(CCAUX_) $(GENHT_CFLAGS) $(O_)$(GENHT_XE) $(GLSRC)genht.c $(AUXEXTRALIBS)
+	$(CCAUX_) $(GENHT_CFLAGS) $(O_)$(GENHT_XE) $(GLSRC)genht.c  $(LDFLAGSAUX) $(AUXEXTRALIBS)
 
 # To get GS to use the system zlib, you remove/hide the gs/zlib directory
 # which means that the mkromfs build can't find the zlib source it needs.
