@@ -3239,6 +3239,16 @@ case $host in
       fi
       SO_LIB_EXT=".so"
       ;;
+      *-hpux*)
+        DYNAMIC_CFLAGS="+z $DYNAMIC_CFLAGS"
+        GS_DYNAMIC_LDFLAGS="-b -Wl,+h,\$(LDFLAGS_SO_PREFIX)\$(GS_SONAME_MAJOR)"
+        PCL_DYNAMIC_LDFLAGS="-b -Wl,+h,\$(LDFLAGS_SO_PREFIX)\$(PCL_SONAME_MAJOR)"
+        XPS_DYNAMIC_LDFLAGS="-b -Wl,+h,\$(LDFLAGS_SO_PREFIX)\$(XPS_SONAME_MAJOR)"
+        PDL_DYNAMIC_LDFLAGS="-b -Wl,+h,\$(LDFLAGS_SO_PREFIX)\$(GPDL_SONAME_MAJOR)"
+        PDF_DYNAMIC_LDFLAGS="-b -Wl,+h,\$(LDFLAGS_SO_PREFIX)\$(PDF_SONAME_MAJOR)"
+        DYNAMIC_LIBS=""
+        SO_LIB_EXT=".so"
+      ;;
 esac
 
 if test x"$hide_symbols" = x"yes" ; then
