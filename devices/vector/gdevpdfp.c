@@ -138,6 +138,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("WriteObjStms", gs_param_type_bool, WriteObjStms),
     pi("WriteXRefStm", gs_param_type_bool, WriteXRefStm),
     pi("ToUnicodeForStdEnc", gs_param_type_bool, ToUnicodeForStdEnc),
+    pi("EmbedSubstituteFonts", gs_param_type_bool, EmbedSubstituteFonts),
 #undef pi
     gs_param_item_end
 };

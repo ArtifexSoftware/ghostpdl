@@ -870,7 +870,7 @@ Note 16
 
 Note 17
 ^^^^^^^^^
-   When ``EmbedAllFonts`` is false only Fonts (not CIDFonts) which are symbolic will be embedded in the output file. When ``EmbedAllFonts`` is true the behaviour is dependent on the input type. Ordinarily (all interpreters except PDF) all the fonts will be embedded in the output. Fonts which are not embedded in the input will have a substitute assigned and that will be embedded in the output. For PDF input only, if the Font or CIDFont is not embedded in the input then it will not be embedded in the output. This is a change in behaviour with the release of 10.03.0. If you have defined a specific font as a known good substitute in Fontmap.GS or cidfmap then you will also need to add it to the ``AlwaysEmbed`` array in order that it gets embedded.
+   When ``EmbedAllFonts`` is false only Fonts (not CIDFonts) which are symbolic will be embedded in the output file. When ``EmbedAllFonts`` is true the behaviour is dependent on the input type. Ordinarily (all interpreters except PDF) all the fonts will be embedded in the output. Fonts which are not embedded in the input will have a substitute assigned and that will be embedded in the output. For PDF input only, if the Font or CIDFont is not embedded in the input and EmbedSubstituteFonts is false then it will not be embedded in the output. This is a change in behaviour with the release of 10.03.0. If you have defined a specific font as a known good substitute in Fontmap.GS or cidfmap then you will also need to add it to the ``AlwaysEmbed`` array in order that it gets embedded. Or leave EmbedSubstituteFonts set to the default (true).
 
 
 Color Conversion and Management
@@ -1147,6 +1147,9 @@ The following switches are used for generating metadata according to the Adobe X
    
    Using ObjStms can significantly reduce the size of some PDF files, at the cost of somewhat reduced performance. Taking as an exmple the PDF 1.7 Reference Manual; the original file is ~32MB, producing a PDF file from it using pdfwrite without the XRefStm or ObjStms enabled produces a file ~19MB, with both these features enabled the output file is ~13.9MB. This is currently a new feature and can be disabled if problems arise.
 
+``-dEmbedSubstituteFonts=boolean``
+   When the input uses a font, but does not include the font itself, the interpreter selects a substitute font to use in place of the requested one. If ``EmbedSubstituteFonts`` is true (the default), then that substitute font will be embedded in the output file. This can lead to poor quality output, if the workflow includes rendering the output file in a process where the missing font is present then it is preferable not to embed the substitute font and let the later process use the correct font. If ``EmbedSubstituteFonts`` is false then this will be the behaviour. Note that if ``EmbedSubstituteFonts`` is false any explicit substitutions will need to be added to the ``AlwaysEmbed`` array to function.
+   
 ----
 
 

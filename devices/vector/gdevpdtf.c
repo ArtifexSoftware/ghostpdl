@@ -883,12 +883,19 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
         /* Ignore NeverEmbed for a non-standard font with a standard name */
         )
     {
+        /* We always mebed fonts that were embedded in the input, so if we embed substitutes as well then we are embedding everything
+         * which isn't explicitly *not* embedded, via the NeverEmbed test above
+         */
+        if (pdev->EmbedSubstituteFonts)
+            return FONT_EMBED_YES;
+        /* We aren't embedding subsitutes, check the AlwaysEmbed list, which overrides that */
         if (embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
                 return FONT_EMBED_YES;
         if (pdev->params.EmbedAllFonts) {
             if (!(info.members & FONT_INFO_EMBEDDED) || info.FontEmbedded)
                 return FONT_EMBED_YES;
         } else {
+            /* Always embed symbolic fonts (we have to ) */
             if (font_is_symbolic(font))
                 return FONT_EMBED_YES;
         }

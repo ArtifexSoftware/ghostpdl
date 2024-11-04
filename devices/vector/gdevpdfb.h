@@ -257,7 +257,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  true,                  /* WriteXRefStm */
  true,                  /* WriteObjStms */
  0,                     /* PendingOC */
- true                   /* ToUnicodeForStdEnc */
+ true,                  /* ToUnicodeForStdEnc */
+ true                   /* EmbedSubstituteFonts */
 };
 
 #else

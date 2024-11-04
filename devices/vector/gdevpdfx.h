@@ -989,6 +989,7 @@ struct gx_device_pdf_s {
     bool WriteObjStms;              /* If true, (the default) store candidate objects in ObjStms rather than plain text in the PDF file. */
     int64_t PendingOC;              /* An OptionalContent object is pending */
     bool ToUnicodeForStdEnc;        /* Should we emit ToUnicode CMaps when a simple font has only standard glyph names. Defaults to true */
+    bool EmbedSubstituteFonts;      /* When we use a substitute font to replace a missing font, should we embed it in the output */
 };
 
 #define is_in_page(pdev)\
