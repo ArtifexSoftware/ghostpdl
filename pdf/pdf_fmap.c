@@ -45,7 +45,7 @@ static inline bool pdfi_fmap_file_exists(pdf_context *ctx, pdf_string *fname)
 }
 
 static int
-pdf_fontmap_open_file(pdf_context *ctx, const char *mapfilename, byte **buf, int *buflen)
+pdfi_fontmap_open_file(pdf_context *ctx, const char *mapfilename, byte **buf, int *buflen)
 {
     int code = 0;
     stream *s;
@@ -125,7 +125,7 @@ pdf_make_fontmap(pdf_context *ctx, const char *default_fmapname, int cidfmap)
             fmapname[ctx->fontmapfiles[j].size] = '\0';
         }
 
-        code = pdf_fontmap_open_file(ctx, (const char *)fmapname, &fmapbuf, &fmapbuflen);
+        code = pdfi_fontmap_open_file(ctx, (const char *)fmapname, &fmapbuf, &fmapbuflen);
         if (code < 0) {
             if (ctx->args.QUIET != true) {
                 (void)outwrite(ctx->memory, "Warning: ", 9);
@@ -885,7 +885,7 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
 }
 
 int
-pdf_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname, pdf_obj **mapname, int *findex)
+pdfi_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname, pdf_obj **mapname, int *findex)
 {
     int code;
     pdf_obj *mname;
@@ -968,7 +968,7 @@ pdf_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname, 
 }
 
 int
-pdf_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name, pdf_obj **mapname, int *findex)
+pdfi_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *name, pdf_obj **mapname, int *findex)
 {
     int code = 0;
     pdf_obj *cidname = NULL;

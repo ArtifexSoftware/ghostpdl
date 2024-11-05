@@ -269,7 +269,7 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                 code = pdfi_name_alloc(ctx, (byte *)fontfname, strlen(fontfname), (pdf_obj **) &reg_ord);
                 if (code >= 0) {
                     pdfi_countup(reg_ord);
-                    code = pdf_fontmap_lookup_cidfont(ctx, font_dict, reg_ord, (pdf_obj **)&mname, findex);
+                    code = pdfi_fontmap_lookup_cidfont(ctx, font_dict, reg_ord, (pdf_obj **)&mname, findex);
                     pdfi_countdown(reg_ord);
                 }
             }
@@ -279,7 +279,7 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
         pdfi_countdown(csi);
 
         if (mname == NULL || pdfi_type_of(mname) != PDF_STRING)
-            code = pdf_fontmap_lookup_cidfont(ctx, font_dict, NULL, (pdf_obj **)&mname, findex);
+            code = pdfi_fontmap_lookup_cidfont(ctx, font_dict, NULL, (pdf_obj **)&mname, findex);
 
         do {
             if (code < 0 || pdfi_type_of(mname) != PDF_STRING) {
@@ -397,7 +397,7 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                             memcpy(fn->data, fontfname, strlen(fontfname));
                             pdfi_countdown(mname);
                             mname = NULL;
-                            code = pdf_fontmap_lookup_cidfont(ctx, font_dict, fn, (pdf_obj **)&mname, findex);
+                            code = pdfi_fontmap_lookup_cidfont(ctx, font_dict, fn, (pdf_obj **)&mname, findex);
                             pdfi_countdown(fn);
                             if (code < 0)
                                 code = gs_note_error(gs_error_invalidfont);
@@ -843,7 +843,7 @@ static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, 
     }
 
     do {
-        code = pdf_fontmap_lookup_font(ctx, font_dict, (pdf_name *) fontname, &mapname, &findex);
+        code = pdfi_fontmap_lookup_font(ctx, font_dict, (pdf_name *) fontname, &mapname, &findex);
         if (code < 0) {
             if (((pdf_name *)fontname)->length < gp_file_name_sizeof) {
                 memcpy(fontfname, ((pdf_name *)fontname)->data, ((pdf_name *)fontname)->length);
@@ -858,7 +858,7 @@ static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, 
                     pdfi_countup(fontname);
                 }
             }
-            code = pdf_fontmap_lookup_font(ctx, font_dict, (pdf_name *) fontname, &mapname, &findex);
+            code = pdfi_fontmap_lookup_font(ctx, font_dict, (pdf_name *) fontname, &mapname, &findex);
             if (code < 0) {
                 mapname = fontname;
                 pdfi_countup(mapname);
