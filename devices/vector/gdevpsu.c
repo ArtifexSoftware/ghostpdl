@@ -297,7 +297,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
     int width = (int)(dev->width * 72.0 / dev->HWResolution[0] + 0.5);
     int height = (int)(dev->height * 72.0 / dev->HWResolution[1] + 0.5);
 
-    pprintld2(s, "%%%%Page: %ld %ld\n", page, page_ord);
+    pprinti64d2(s, "%%%%Page: %"PRId64" %"PRId64"\n", (int64_t)page, page_ord);
     if (!pdpc->ProduceEPS)
         pprintld2(s, "%%%%PageBoundingBox: 0 0 %ld %ld\n", width, height);
 

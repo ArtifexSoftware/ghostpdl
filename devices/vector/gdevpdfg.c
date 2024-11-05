@@ -2440,7 +2440,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
     if (i < countof(ht_functions))
         pprints1(s, "/SpotFunction/%s", ht_functions[i].fname);
     else
-        pprintld1(s, "/SpotFunction %ld 0 R", spot_id);
+        pprinti64d1(s, "/SpotFunction %"PRId64" 0 R", spot_id);
     if (pdev->CompatibilityLevel <= 1.7)
         stream_puts(s, trs);
     if (psht->accurate_screens)
@@ -2795,7 +2795,7 @@ pdf_end_gstate(gx_device_pdf *pdev, pdf_resource_t *pres)
         code = pdf_add_resource(pdev, pdev->substream_Resources, "/ExtGState", pres);
         if (code < 0)
             return code;
-        pprintld1(pdev->strm, "/R%ld gs\n", pdf_resource_id(pres));
+        pprinti64d1(pdev->strm, "/R%"PRId64" gs\n", pdf_resource_id(pres));
         pres->where_used |= pdev->used_mask;
     }
     return 0;

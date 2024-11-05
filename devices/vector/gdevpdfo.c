@@ -327,7 +327,7 @@ cos_value_write_spaced(const cos_value_t *pcv, gx_device_pdf *pdev,
         return pdf_write_value(pdev, pcv->contents.chars.data,
                         pcv->contents.chars.size, object_id);
     case COS_VALUE_RESOURCE:
-        pprintld1(s, "/R%ld", pcv->contents.object->id);
+        pprinti64d1(s, "/R%"PRId64"", pcv->contents.object->id);
         break;
     case COS_VALUE_OBJECT: {
         cos_object_t *pco = pcv->contents.object;
@@ -344,7 +344,7 @@ cos_value_write_spaced(const cos_value_t *pcv, gx_device_pdf *pdev,
         }
         if (do_space)
             stream_putc(s, ' ');
-        pprintld1(s, "%ld 0 R", pco->id);
+        pprinti64d1(s, "%"PRId64" 0 R", pco->id);
         if (pco->cos_procs == cos_type_reference)
             pco->id = 0;
         break;
@@ -1876,7 +1876,7 @@ cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     }
     stream_puts(s, "<<");
     cos_elements_write(s, pcs->elements, pdev, false, object_id);
-    pprintld1(s, "/Length %ld>>stream\n", cos_stream_length(pcs));
+    pprinti64d1(s, "/Length %"PRId64">>stream\n", cos_stream_length(pcs));
     code = cos_stream_contents_write(pcs, pdev);
     stream_puts(s, "\nendstream\n");
 

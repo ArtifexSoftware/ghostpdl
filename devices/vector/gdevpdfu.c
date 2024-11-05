@@ -837,119 +837,119 @@ pdf_open_obj(gx_device_pdf * pdev, int64_t id, pdf_resource_type_t type)
                 /* We *don't* want resource comments around pages */
                 break;
             case resourceColorSpace:
-                pprintld1(s, "%%%%BeginResource: file (PDF Color Space obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Color Space obj_%"PRId64")\n", id);
                 break;
             case resourceExtGState:
-                pprintld1(s, "%%%%BeginResource: file (PDF Extended Graphics State obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Extended Graphics State obj_%"PRId64")\n", id);
                 break;
             case resourcePattern:
-                pprintld1(s, "%%%%BeginResource: pattern (PDF Pattern obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: pattern (PDF Pattern obj_%"PRId64")\n", id);
                 break;
             case resourceShading:
-                pprintld1(s, "%%%%BeginResource: file (PDF Shading obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Shading obj_%"PRId64")\n", id);
                 break;
             case resourceCIDFont:
             case resourceFont:
                 /* Ought to write the font name here */
-                pprintld1(s, "%%%%BeginResource: procset (PDF Font obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: procset (PDF Font obj_%"PRId64")\n", id);
                 break;
             case resourceCharProc:
-                pprintld1(s, "%%%%BeginResource: file (PDF CharProc obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF CharProc obj_%"PRId64")\n", id);
                 break;
             case resourceCMap:
-                pprintld1(s, "%%%%BeginResource: file (PDF CMap obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF CMap obj_%"PRId64")\n", id);
                 break;
             case resourceFontDescriptor:
-                pprintld1(s, "%%%%BeginResource: file (PDF FontDescriptor obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF FontDescriptor obj_%"PRId64")\n", id);
                 break;
             case resourceGroup:
-                pprintld1(s, "%%%%BeginResource: file (PDF Group obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Group obj_%"PRId64")\n", id);
                 break;
             case resourceFunction:
-                pprintld1(s, "%%%%BeginResource: file (PDF Function obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Function obj_%"PRId64")\n", id);
                 break;
             case resourceEncoding:
-                pprintld1(s, "%%%%BeginResource: encoding (PDF Encoding obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: encoding (PDF Encoding obj_%"PRId64")\n", id);
                 break;
             case resourceCIDSystemInfo:
-                pprintld1(s, "%%%%BeginResource: file (PDF CIDSystemInfo obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF CIDSystemInfo obj_%"PRId64")\n", id);
                 break;
             case resourceHalftone:
-                pprintld1(s, "%%%%BeginResource: file (PDF Halftone obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Halftone obj_%"PRId64")\n", id);
                 break;
             case resourceLength:
-                pprintld1(s, "%%%%BeginResource: file (PDF Length obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Length obj_%"PRId64")\n", id);
                 break;
             case resourceSoftMaskDict:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF SoftMask obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF SoftMask obj_%"PRId64")\n", id);
                 break;
             case resourceXObject:
                 /* This should not be possible, we write these inline */
-                pprintld1(s, "%%%%BeginResource: file (PDF XObject obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF XObject obj_%"PRId64")\n", id);
                 break;
             case resourceStream:
                 /* Possibly we should not add comments to this type */
-                pprintld1(s, "%%%%BeginResource: file (PDF stream obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF stream obj_%"PRId64")\n", id);
                 break;
             case resourceOutline:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Outline obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Outline obj_%"PRId64")\n", id);
                 break;
             case resourceArticle:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Article obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Article obj_%"PRId64")\n", id);
                 break;
             case resourceDests:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Dests obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Dests obj_%"PRId64")\n", id);
                 break;
             case resourceEmbeddedFiles:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF EmbeddedFiles obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF EmbeddedFiles obj_%"PRId64")\n", id);
                 break;
             case resourceLabels:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Page Labels obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Page Labels obj_%"PRId64")\n", id);
                 break;
             case resourceThread:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Thread obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Thread obj_%"PRId64")\n", id);
                 break;
             case resourceCatalog:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Catalog obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Catalog obj_%"PRId64")\n", id);
                 break;
             case resourceEncrypt:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Encryption obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Encryption obj_%"PRId64")\n", id);
                 break;
             case resourcePagesTree:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Pages Tree obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Pages Tree obj_%"PRId64")\n", id);
                 break;
             case resourceMetadata:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Metadata obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Metadata obj_%"PRId64")\n", id);
                 break;
             case resourceICC:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF ICC Profile obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF ICC Profile obj_%"PRId64")\n", id);
                 break;
             case resourceAnnotation:
                 /* This should not be possible, not valid in PostScript */
-                pprintld1(s, "%%%%BeginResource: file (PDF Annotation obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF Annotation obj_%"PRId64")\n", id);
                 break;
             case resourceFontFile:
-                pprintld1(s, "%%%%BeginResource: file (PDF FontFile obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF FontFile obj_%"PRId64")\n", id);
                 break;
             default:
-                pprintld1(s, "%%%%BeginResource: file (PDF object obj_%ld)\n", id);
+                pprinti64d1(s, "%%%%BeginResource: file (PDF object obj_%"PRId64")\n", id);
                 break;
         }
     }
     if (!pdev->WriteObjStms || pdev->strm != pdev->ObjStm.strm)
-        pprintld1(s, "%ld 0 obj\n", id);
+        pprinti64d1(s, "%"PRId64" 0 obj\n", id);
     return id;
 }
 int64_t
@@ -1075,7 +1075,7 @@ none_to_stream(gx_device_pdf * pdev)
         pdev->contents_id = pdf_begin_obj(pdev, resourceStream);
         pdev->contents_length_id = pdf_obj_ref(pdev);
         s = pdev->strm;
-        pprintld1(s, "<</Length %ld 0 R", pdev->contents_length_id);
+        pprinti64d1(s, "<</Length %"PRId64" 0 R", pdev->contents_length_id);
         if (pdev->compression == pdf_compress_Flate) {
             if (pdev->binary_ok)
                 pprints1(s, "/Filter /%s", compression_filter_name);
@@ -1778,7 +1778,7 @@ void
 pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *pres, int64_t id)
 {
     pres->object->id = (id == 0 ? pdf_obj_ref(pdev) : id);
-    gs_snprintf(pres->rname, sizeof(pres->rname), "R%ld", pres->object->id);
+    gs_snprintf(pres->rname, sizeof(pres->rname), "R%"PRId64, pres->object->id);
 }
 
 /* Begin an aside (resource, annotation, ...). */
@@ -1866,7 +1866,7 @@ pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, gs_id rid,
         stream *s = pdev->strm;
 
         pprints1(s, "<</Type%s", pdf_resource_type_names[rtype]);
-        pprintld1(s, "/Name/R%ld", (*ppres)->object->id);
+        pprinti64d1(s, "/Name/R%"PRId64, (*ppres)->object->id);
     }
     return code;
 }
@@ -2055,7 +2055,7 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page, bool clear_usage
                         stream_puts(s, "<<");
                     }
                     pprints1(s, "/%s\n", pres->rname);
-                    pprintld1(s, "%ld 0 R", id);
+                    pprinti64d1(s, "%"PRId64" 0 R", id);
                     pdf_record_usage(pdev, id, pdev->next_page);
                     if (clear_usage)
                         pres->where_used -= pdev->used_mask;
@@ -2765,7 +2765,7 @@ pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
         } else {
             pdw->length_pos = -1;
             pdw->length_id = pdf_obj_ref(pdev);
-            pprintld1(s, "/Length %ld 0 R>>stream\n", pdw->length_id);
+            pprinti64d1(s, "/Length %"PRId64" 0 R>>stream\n", pdw->length_id);
         }
     }
     if (options & DATA_STREAM_ENCRYPT) {

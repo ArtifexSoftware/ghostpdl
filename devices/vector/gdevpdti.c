@@ -178,11 +178,11 @@ pdf_write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
          pcpo = pcpo->char_next
          ) {
         if (pdfont->u.simple.s.type3.bitmap_font)
-            pprintld2(s, "/a%ld %ld 0 R\n", (long)pcpo->char_code,
+            pprinti64d2(s, "/a%"PRId64" %"PRId64" 0 R\n", pcpo->char_code,
                       pdf_char_proc_id(pcpo->char_proc));
         else if (!pcpo-> duplicate_char_name) {
             pdf_put_name(pdev, pcpo->char_name.data, pcpo->char_name.size);
-            pprintld1(s, " %ld 0 R\n", pdf_char_proc_id(pcpo->char_proc));
+            pprinti64d1(s, " %"PRId64" 0 R\n", pdf_char_proc_id(pcpo->char_proc));
         }
         pdf_record_usage_by_parent(pdev, pdf_char_proc_id(pcpo->char_proc), pdfont->object->id);
     }
@@ -1214,7 +1214,7 @@ pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_reso
             if (code < 0)
                 return code;
         }
-        gs_snprintf(buf, sizeof(buf), "%ld 0 R\n", pres->object->id);
+        gs_snprintf(buf, sizeof(buf), "%"PRId64" 0 R\n", pres->object->id);
         if (v != NULL) {
             if (v->value_type != COS_VALUE_OBJECT &&
                 v->value_type != COS_VALUE_RESOURCE)

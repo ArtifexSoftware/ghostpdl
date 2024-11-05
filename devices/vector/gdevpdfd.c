@@ -1390,7 +1390,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
             code = pdf_cs_Pattern_colored(pdev, &v);
         if (code >= 0) {
             cos_value_write(&v, pdev);
-            pprintld1(pdev->strm, " cs /R%ld scn ", pdf_resource_id(pres));
+            pprinti64d1(pdev->strm, " cs /R%"PRId64" scn ", pdf_resource_id(pres));
         }
         if (code >= 0)
             code = write_mask(pdev, cvd->mask, (cvd->write_matrix ? &cvd->m : NULL));

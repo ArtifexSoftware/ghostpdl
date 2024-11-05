@@ -219,7 +219,7 @@ pdf_write_encoding_ref(gx_device_pdf *pdev,
     stream *s = pdev->strm;
 
     if (id != 0) {
-        pprintld1(s, "/Encoding %ld 0 R", id);
+        pprinti64d1(s, "/Encoding %"PRId64" 0 R", id);
         pdf_record_usage_by_parent(pdev, id, pdfont->object->id);
     }
     else if (pdfont->u.simple.BaseEncoding > 0) {
@@ -439,7 +439,7 @@ pdf_write_contents_type0(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
      */
     if (pdfont->u.type0.Encoding_name[0])
         pprints1(s, "/Encoding %s", pdfont->u.type0.Encoding_name);
-    pprintld1(s, "/DescendantFonts[%ld 0 R]",
+    pprinti64d1(s, "/DescendantFonts[%"PRId64" 0 R]",
               pdf_font_id(pdfont->u.type0.DescendantFont));
     stream_puts(s, "/Subtype/Type0>>\n");
     pdf_end_separate(pdev, resourceFont);
@@ -504,7 +504,7 @@ write_contents_cid_common(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
             return code;
     }
     if (pdfont->u.cidfont.CIDSystemInfo_id)
-        pprintld1(s, "/CIDSystemInfo %ld 0 R",
+        pprinti64d1(s, "/CIDSystemInfo %"PRId64" 0 R",
                   pdfont->u.cidfont.CIDSystemInfo_id);
     pprintd1(s, "/Subtype/CIDFontType%d>>\n", subtype);
     pdf_end_separate(pdev, resourceFont);
@@ -533,7 +533,7 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 
         if (gid != cid) {	/* non-identity map */
             map_id = pdf_obj_ref(pdev);
-            pprintld1(pdev->strm, "/CIDToGIDMap %ld 0 R\n", map_id);
+            pprinti64d1(pdev->strm, "/CIDToGIDMap %"PRId64" 0 R\n", map_id);
             break;
         }
     }
@@ -577,7 +577,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     stream *s;
     cos_dict_t *pcd_Resources = NULL;
     char *base14_name = NULL;
-    int id;
+    int64_t id;
 
     if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL)
         if (pdfont->FontType == ft_composite ||
@@ -625,25 +625,25 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     }
     if (pdfont->FontDescriptor) {
         id = pdf_font_descriptor_id(pdfont->FontDescriptor);
-        pprintld1(s, "/FontDescriptor %ld 0 R", id);
+        pprinti64d1(s, "/FontDescriptor %"PRId64" 0 R", id);
         if (pdev->Linearise) {
             pdf_set_font_descriptor_usage(pdev, pdfont->object->id, pdfont->FontDescriptor);
         }
     }
     if (pdfont->res_ToUnicode) {
         id = pdf_resource_id((const pdf_resource_t *)pdfont->res_ToUnicode);
-        pprintld1(s, "/ToUnicode %ld 0 R", id);
+        pprinti64d1(s, "/ToUnicode %"PRId64" 0 R", id);
         pdf_record_usage_by_parent(pdev, id, pdfont->object->id);
     }
     if (pdev->CompatibilityLevel > 1.0)
         stream_puts(s, "/Type/Font\n");
     else
-        pprintld1(s, "/Type/Font/Name/R%ld\n", pdf_font_id(pdfont));
+        pprinti64d1(s, "/Type/Font/Name/R%"PRId64"\n", pdf_font_id(pdfont));
     if (pdev->ForOPDFRead && pdfont->global)
         stream_puts(s, "/.Global true\n");
     if (pcd_Resources != NULL) {
         id = pcd_Resources->id;
-        pprintld1(s, "/Resources %ld 0 R\n", id);
+        pprinti64d1(s, "/Resources %"PRId64" 0 R\n", id);
         pdf_record_usage_by_parent(pdev, id, pdfont->object->id);
     }
     return pdfont->write_contents(pdev, pdfont);

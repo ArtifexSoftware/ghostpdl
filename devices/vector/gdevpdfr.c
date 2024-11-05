@@ -470,7 +470,7 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
 
         size += sname - scan;
         if (pco) {
-            gs_snprintf(ref, sizeof(ref), " %ld 0 R ", pco->id);
+            gs_snprintf(ref, sizeof(ref), " %"PRId64" 0 R ", pco->id);
             size += strlen(ref);
             /* Special 'name' escaping convention (see gs_pdfwr.ps, /.pdf===dict
              * the /nametype procedure). We do not want to write out the NULL
@@ -509,7 +509,7 @@ pdf_replace_names(gx_device_pdf * pdev, const gs_param_string * from,
         memcpy(sto, scan, copy);
         sto += copy;
         if (pco) {
-            gs_snprintf(ref, sizeof(ref), " %ld 0 R ", pco->id);
+            gs_snprintf(ref, sizeof(ref), " %"PRId64" 0 R ", pco->id);
             rlen = strlen(ref);
             if (sname >= (start + 2) && sname[-1] == 0x00 && sname[-2] == 0x00 && next[0] == 0x00) {
                 sto -= 2;

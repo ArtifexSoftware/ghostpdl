@@ -1894,7 +1894,7 @@ use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
     }
 
     if (code >= 0)
-        pprintld1(pdev->strm, "/R%ld Do\n", pdf_resource_id(pres1));
+        pprinti64d1(pdev->strm, "/R%"PRId64" Do\n", pdf_resource_id(pres1));
     pres = pdev->accumulating_substream_resource;
     if (code >= 0)
         code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres1);
@@ -1916,7 +1916,7 @@ use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
     }
     if (code >= 0) {
         cos_value_write(&v, pdev);
-        pprintld1(pdev->strm, " cs /R%ld scn ", pdf_resource_id(pres));
+        pprinti64d1(pdev->strm, " cs /R%"PRId64" scn ", pdf_resource_id(pres));
     }
     if (code >= 0) {
         /* The image offset weas broken in gx_begin_image3_generic,
@@ -2713,7 +2713,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     gs_free_object(pdev->memory->non_gc_memory, pdev->PDFFormName, "free Name of Form for pdfmark");
                     pdev->PDFFormName = 0x00;
                 } else {
-                    pprintld1(pdev->strm, "/R%ld Do Q\n", pdf_resource_id(pres));
+                    pprinti64d1(pdev->strm, "/R%"PRId64" Do Q\n", pdf_resource_id(pres));
                 }
             }
             return 0;

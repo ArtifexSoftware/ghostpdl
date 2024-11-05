@@ -1256,7 +1256,7 @@ pdf_convert_truetype_font(gx_device_pdf *pdev, pdf_resource_t *pres)
                     return 0;
                 pdfont->u.cidfont.CIDSystemInfo_id = pdev->IdentityCIDSystemInfo_id;
                 gs_snprintf(pdfont0->u.type0.Encoding_name, sizeof(pdfont0->u.type0.Encoding_name),
-                            "%ld 0 R", pdf_resource_id(pdev->OneByteIdentityH));
+                            "%"PRId64" 0 R", pdf_resource_id(pdev->OneByteIdentityH));
                 /* Move ToUnicode : */
                 pdfont0->res_ToUnicode = pdfont->res_ToUnicode; pdfont->res_ToUnicode = 0;
                 pdfont0->cmap_ToUnicode = pdfont->cmap_ToUnicode; pdfont->cmap_ToUnicode = 0;

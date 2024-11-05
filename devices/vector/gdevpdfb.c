@@ -654,7 +654,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
         pprintg2(s, "/Matrix[%g 0 0 %g 0 0]", tw / xscale, th / yscale);
         stream_puts(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length ");
         length_id = pdf_obj_ref(pdev);
-        pprintld1(s, "%ld 0 R>>stream\n", length_id);
+        pprinti64d1(s, "%"PRId64" 0 R>>stream\n", length_id);
         start = pdf_stell(pdev);
         code = copy_data(pdev, tiles->data, 0, tiles->raster,
                          tile_id, 0, 0, tw, th, &image, &writer, -1);
@@ -670,7 +670,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
         stream_puts(s, "\nendstream\n");
         pdf_end_resource(pdev, resourcePattern);
         pdf_open_separate(pdev, length_id, resourceNone);
-        pprintld1(pdev->strm, "%ld\n", end - start);
+        pprinti64d1(pdev->strm, "%"PRId64"\n", end - start);
         pdf_end_separate(pdev, resourceNone);
         pres->object->written = true; /* don't write at end of page */
     }
@@ -697,7 +697,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
             pprintg3(s, " %g %g %g", (int)(color1 >> 16) / 255.0,
                      (int)((color1 >> 8) & 0xff) / 255.0,
                      (int)(color1 & 0xff) / 255.0);
-        pprintld1(s, "/R%ld scn", pdf_resource_id(pres));
+        pprinti64d1(s, "/R%"PRId64" scn", pdf_resource_id(pres));
         pprintg4(s, " %g %g %g %g re f Q\n",
                  x / xscale, y / yscale, w / xscale, h / xscale);
     }

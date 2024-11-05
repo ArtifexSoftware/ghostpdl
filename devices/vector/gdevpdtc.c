@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -360,7 +360,7 @@ attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont,
                     (pcmap->WMode ? "/Identity-V" : "/Identity-H"));
         else
             gs_snprintf(pdfont->u.type0.Encoding_name, sizeof(pdfont->u.type0.Encoding_name),
-                        "%ld 0 R", pdf_resource_id(pcmres));
+                        "%"PRId64" 0 R", pdf_resource_id(pcmres));
     } else {
         uint size = 0;
 

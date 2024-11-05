@@ -176,7 +176,7 @@ pdfmark_make_dest(char dstr[MAX_DEST_STRING], gx_device_pdf * pdev,
         code = update_max_page_reference(pdev, &page);
         if (code < 0)
             return code;
-        gs_snprintf(dstr, MAX_DEST_STRING, "[%ld 0 R ", pdf_page_id(pdev, page));
+        gs_snprintf(dstr, MAX_DEST_STRING, "[%"PRId64" 0 R ", pdf_page_id(pdev, page));
     }
     len = strlen(dstr);
     if (len + view_string.size > MAX_DEST_STRING)
@@ -923,7 +923,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
         char dstr[1 + (sizeof(int64_t) * 8 / 3 + 1) + 25 + 1];
         int64_t page_id = pdf_page_id(pdev, pdev->next_page + 1);
 
-        gs_snprintf(dstr, MAX_DEST_STRING, "[%ld 0 R /XYZ null null null]", page_id);
+        gs_snprintf(dstr, MAX_DEST_STRING, "[%"PRId64" 0 R /XYZ null null null]", page_id);
         cos_dict_put_c_key_string(pcd, "/Dest", (const unsigned char*) dstr,
                                   strlen(dstr));
     }
@@ -1261,7 +1261,7 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
     else {
         emprintf1(pdev->memory,
                   "pdfmark error: Outline node %ld has no action or destination.\n",
-                  pnode->id);
+                  (unsigned long)pnode->id);
         code = gs_note_error(gs_error_undefined);
     }
     s = pdev->strm;
@@ -1270,13 +1270,13 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
         cos_dict_elements_write(pnode->action, pdev);
     if (pnode->count)
         pprintd1(s, "/Count %d ", pnode->count);
-    pprintld1(s, "/Parent %ld 0 R\n", pnode->parent_id);
+    pprinti64d1(s, "/Parent %"PRId64" 0 R\n", pnode->parent_id);
     if (pnode->prev_id)
-        pprintld1(s, "/Prev %ld 0 R\n", pnode->prev_id);
+        pprinti64d1(s, "/Prev %"PRId64" 0 R\n", pnode->prev_id);
     if (next_id)
-        pprintld1(s, "/Next %ld 0 R\n", next_id);
+        pprinti64d1(s, "/Next %"PRId64" 0 R\n", next_id);
     if (pnode->first_id)
-        pprintld2(s, "/First %ld 0 R /Last %ld 0 R\n",
+        pprinti64d2(s, "/First %"PRId64" 0 R /Last %"PRId64" 0 R\n",
                   pnode->first_id, pnode->last_id);
     stream_puts(s, ">>\n");
     pdf_end_separate(pdev, resourceOutline);
@@ -1422,10 +1422,10 @@ pdfmark_write_bead(gx_device_pdf * pdev, const pdf_bead_t * pbead)
 
     pdf_open_separate(pdev, pbead->id, resourceArticle);
     s = pdev->strm;
-    pprintld3(s, "<</T %ld 0 R/V %ld 0 R/N %ld 0 R",
+    pprinti64d3(s, "<</T %"PRId64" 0 R/V %"PRId64" 0 R/N %"PRId64" 0 R",
               pbead->article_id, pbead->prev_id, pbead->next_id);
     if (pbead->page_id != 0)
-        pprintld1(s, "/P %ld 0 R", pbead->page_id);
+        pprinti64d1(s, "/P %"PRId64" 0 R", pbead->page_id);
     pdfmark_make_rect(rstr, &pbead->rect);
     pprints1(s, "/R%s>>\n", rstr);
     return pdf_end_separate(pdev, resourceArticle);
@@ -1451,7 +1451,7 @@ pdfmark_write_article(gx_device_pdf * pdev, const pdf_article_t * part)
     pdfmark_write_bead(pdev, &art.first);
     pdf_open_separate(pdev, art.contents->id, resourceArticle);
     s = pdev->strm;
-    pprintld1(s, "<</F %ld 0 R/I<<", art.first.id);
+    pprinti64d1(s, "<</F %"PRId64" 0 R/I<<", art.first.id);
     cos_dict_elements_write(art.contents, pdev);
     stream_puts(s, ">> >>\n");
     return pdf_end_separate(pdev, resourceArticle);
@@ -1853,7 +1853,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         if (code < 0)
             return code;
         pcs->pres->where_used |= pdev->used_mask;
-        pprintld1(pdev->strm, "/R%ld Do\n", pcs->id);
+        pprinti64d1(pdev->strm, "/R%"PRId64" Do\n", pcs->id);
     }
     return 0;
 }
@@ -2242,7 +2242,7 @@ pdfmark_SP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (code < 0)
         return code;
     pdf_put_matrix(pdev, "q ", pctm, "cm");
-    pprintld1(pdev->strm, "/R%ld Do Q\n", pco->id);
+    pprinti64d1(pdev->strm, "/R%"PRId64" Do Q\n", pco->id);
     pco->pres->where_used |= pdev->used_mask;
 
     code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pco->pres);
@@ -2631,7 +2631,7 @@ pdfmark_DP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
     if (code < 0) return code;
 
     pprints1(pdev->strm, "%s", cstring); /* write tag */
-    pprintld1(pdev->strm, "/R%ld DP\n", pco->id);
+    pprinti64d1(pdev->strm, "/R%"PRId64" DP\n", pco->id);
     pco->pres->where_used |= pdev->used_mask;
     if ((code = pdf_add_resource(pdev, pdev->substream_Resources, "/Properties", pco->pres))<0)
         return code;
@@ -2830,7 +2830,7 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
     if (code < 0) return code;
 
     pprints1(pdev->strm, "%s", cstring); /* write tag */
-    pprintld1(pdev->strm, "/R%ld BDC\n", id);
+    pprinti64d1(pdev->strm, "/R%"PRId64" BDC\n", id);
     if (pco != NULL) {
         pco->pres->where_used |= pdev->used_mask;
         if ((code = pdf_add_resource(pdev, pdev->substream_Resources, "/Properties", pco->pres))<0)

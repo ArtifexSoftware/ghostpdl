@@ -535,7 +535,7 @@ pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
             FontFile_key = "/FontFile3";
     }
     stream_puts(s, FontFile_key);
-    pprintld1(s, " %ld 0 R", pbfont->FontFile->id);
+    pprinti64d1(s, " %"PRId64" 0 R", pbfont->FontFile->id);
     return 0;
 }
 

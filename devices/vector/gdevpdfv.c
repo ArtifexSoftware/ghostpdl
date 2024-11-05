@@ -157,7 +157,7 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
         if (pcd_XObject == 0)
             return_error(gs_error_VMerror);
-        gs_snprintf(key, sizeof(key), "/R%ld", pcs_image->id);
+        gs_snprintf(key, sizeof(key), "/R%"PRId64"", pcs_image->id);
         /* This is non-obvious code. Previously we would put the image object (pcs_image)
          * into the Resources dit. When we come to write out the Resources dict
          * that code writes a reference (index 0 R) using the ID from the object.
@@ -203,7 +203,7 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     {
         char buf[MAX_REF_CHARS + 6 + 1]; /* +6 for /R# Do\n */
 
-        gs_snprintf(buf, sizeof(buf), "/R%ld Do\n", pcs_image->id);
+        gs_snprintf(buf, sizeof(buf), "/R%"PRId64" Do\n", pcs_image->id);
         cos_stream_add_bytes(pdev, pcos, (const byte *)buf, strlen(buf));
     }
 
