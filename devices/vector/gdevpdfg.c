@@ -2143,7 +2143,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     gs_function_free(pfn, false, mem);
     if (code < 0)
         return code;
-    gs_snprintf(ids, id_max, "%s%s%ld 0 R", key, (key[0] && key[0] != ' ' ? " " : ""), id);
+    gs_snprintf(ids, id_max, "%s%s%"PRId64" 0 R", key, (key[0] && key[0] != ' ' ? " " : ""), id);
     return 0;
 }
 static int
