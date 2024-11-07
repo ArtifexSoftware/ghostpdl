@@ -251,35 +251,52 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
     if (fallback == true) {
         pdf_string *mname = NULL;
         pdf_dict *csi = NULL;
+        pdf_name *fbname;
+        const char *cidfbstr = "CIDFallBack";
 
-        code = pdfi_dict_get(ctx, font_dict, "CIDSystemInfo", (pdf_obj **)&csi);
-        if (code >= 0 && pdfi_type_of(csi) == PDF_DICT) {
-            pdf_string *csi_reg = NULL, *csi_ord = NULL;
-
-            if (pdfi_dict_get(ctx, csi, "Registry", (pdf_obj **)&csi_reg) >= 0
-             && pdfi_dict_get(ctx, csi, "Ordering", (pdf_obj **)&csi_ord) >= 0
-             && pdfi_type_of(csi_reg) == PDF_STRING && pdfi_type_of(csi_ord) == PDF_STRING
-             && csi_reg->length + csi_ord->length + 1 < gp_file_name_sizeof - 1) {
-                pdf_name *reg_ord;
-                memcpy(fontfname, csi_reg->data, csi_reg->length);
-                memcpy(fontfname + csi_reg->length, "-", 1);
-                memcpy(fontfname + csi_reg->length + 1, csi_ord->data, csi_ord->length);
-                fontfname[csi_reg->length + csi_ord->length + 1] = '\0';
-
-                code = pdfi_name_alloc(ctx, (byte *)fontfname, strlen(fontfname), (pdf_obj **) &reg_ord);
-                if (code >= 0) {
-                    pdfi_countup(reg_ord);
-                    code = pdfi_fontmap_lookup_cidfont(ctx, font_dict, reg_ord, (pdf_obj **)&mname, findex);
-                    pdfi_countdown(reg_ord);
-                }
-            }
-            pdfi_countdown(csi_reg);
-            pdfi_countdown(csi_ord);
+        code = pdfi_object_alloc(ctx, PDF_NAME, strlen(cidfbstr), (pdf_obj **)&fbname);
+        if (code >= 0) {
+            pdfi_countup(fbname);
+            memcpy(fbname->data, cidfbstr, strlen(cidfbstr));
+            code = pdfi_fontmap_lookup_cidfont(ctx, font_dict, fbname, (pdf_obj **)&mname, findex);
+            pdfi_countdown(fbname);
         }
-        pdfi_countdown(csi);
 
-        if (mname == NULL || pdfi_type_of(mname) != PDF_STRING)
+        if (code < 0 || pdfi_type_of(mname) != PDF_STRING) {
+            pdfi_countdown(mname);
+            mname = NULL;
+            code = pdfi_dict_get(ctx, font_dict, "CIDSystemInfo", (pdf_obj **)&csi);
+            if (code >= 0 && pdfi_type_of(csi) == PDF_DICT) {
+                pdf_string *csi_reg = NULL, *csi_ord = NULL;
+
+                if (pdfi_dict_get(ctx, csi, "Registry", (pdf_obj **)&csi_reg) >= 0
+                 && pdfi_dict_get(ctx, csi, "Ordering", (pdf_obj **)&csi_ord) >= 0
+                 && pdfi_type_of(csi_reg) == PDF_STRING && pdfi_type_of(csi_ord) == PDF_STRING
+                 && csi_reg->length + csi_ord->length + 1 < gp_file_name_sizeof - 1) {
+                    pdf_name *reg_ord;
+                    memcpy(fontfname, csi_reg->data, csi_reg->length);
+                    memcpy(fontfname + csi_reg->length, "-", 1);
+                    memcpy(fontfname + csi_reg->length + 1, csi_ord->data, csi_ord->length);
+                    fontfname[csi_reg->length + csi_ord->length + 1] = '\0';
+
+                    code = pdfi_name_alloc(ctx, (byte *)fontfname, strlen(fontfname), (pdf_obj **) &reg_ord);
+                    if (code >= 0) {
+                        pdfi_countup(reg_ord);
+                        code = pdfi_fontmap_lookup_cidfont(ctx, font_dict, reg_ord, (pdf_obj **)&mname, findex);
+                        pdfi_countdown(reg_ord);
+                    }
+                }
+                pdfi_countdown(csi_reg);
+                pdfi_countdown(csi_ord);
+            }
+            pdfi_countdown(csi);
+        }
+
+        if (mname == NULL || pdfi_type_of(mname) != PDF_STRING) {
+            pdfi_countdown(mname);
+            mname = NULL;
             code = pdfi_fontmap_lookup_cidfont(ctx, font_dict, NULL, (pdf_obj **)&mname, findex);
+        }
 
         do {
             if (code < 0 || pdfi_type_of(mname) != PDF_STRING) {

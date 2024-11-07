@@ -973,6 +973,7 @@ pdfi_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *nam
     int code = 0;
     pdf_obj *cidname = NULL;
     pdf_obj *mname;
+    bool cidfmapfallback = false;
 
     *findex = 0;
 
@@ -996,6 +997,8 @@ pdfi_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *nam
         cidname = (pdf_obj *)name;
         pdfi_countup(cidname);
     }
+
+    cidfmapfallback = pdfi_name_is((pdf_name *)cidname, "CIDFallBack");
 
     code = pdfi_dict_get_by_key(ctx, ctx->pdfcidfmap, (pdf_name *)cidname, &mname);
     pdfi_countdown(cidname);
@@ -1038,40 +1041,42 @@ pdfi_fontmap_lookup_cidfont(pdf_context *ctx, pdf_dict *font_dict, pdf_name *nam
             return_error(gs_error_undefined);
         }
 
-        code = pdfi_dict_get(ctx, font_dict, "CIDSystemInfo", (pdf_obj **)&ocsi);
-        if (code < 0 || pdfi_type_of(ocsi) != PDF_DICT) {
-            pdfi_countdown(ocsi);
-            pdfi_countdown(mcsi);
-            pdfi_countdown(rec);
-            return_error(gs_error_undefined);
-        }
-        code = pdfi_dict_get(ctx, ocsi, "Ordering", (pdf_obj **)&ord1);
-        if (code < 0 || pdfi_type_of(ord1) != PDF_STRING) {
-            pdfi_countdown(ord1);
-            pdfi_countdown(ocsi);
-            pdfi_countdown(mcsi);
-            pdfi_countdown(rec);
-            return_error(gs_error_undefined);
-        }
-        code = pdfi_array_get(ctx, mcsi, 0, (pdf_obj **)&ord2);
-        if (code < 0 || pdfi_type_of(ord2) != PDF_STRING) {
+        if (!cidfmapfallback) {
+            code = pdfi_dict_get(ctx, font_dict, "CIDSystemInfo", (pdf_obj **)&ocsi);
+            if (code < 0 || pdfi_type_of(ocsi) != PDF_DICT) {
+                pdfi_countdown(ocsi);
+                pdfi_countdown(mcsi);
+                pdfi_countdown(rec);
+                return_error(gs_error_undefined);
+            }
+            code = pdfi_dict_get(ctx, ocsi, "Ordering", (pdf_obj **)&ord1);
+            if (code < 0 || pdfi_type_of(ord1) != PDF_STRING) {
+                pdfi_countdown(ord1);
+                pdfi_countdown(ocsi);
+                pdfi_countdown(mcsi);
+                pdfi_countdown(rec);
+                return_error(gs_error_undefined);
+            }
+            code = pdfi_array_get(ctx, mcsi, 0, (pdf_obj **)&ord2);
+            if (code < 0 || pdfi_type_of(ord2) != PDF_STRING) {
+                pdfi_countdown(ord1);
+                pdfi_countdown(ord2);
+                pdfi_countdown(ocsi);
+                pdfi_countdown(mcsi);
+                pdfi_countdown(rec);
+                return_error(gs_error_undefined);
+            }
+            if (pdfi_string_cmp(ord1, ord2) != 0) {
+                pdfi_countdown(ord1);
+                pdfi_countdown(ord2);
+                pdfi_countdown(ocsi);
+                pdfi_countdown(mcsi);
+                pdfi_countdown(rec);
+                return_error(gs_error_undefined);
+            }
             pdfi_countdown(ord1);
             pdfi_countdown(ord2);
-            pdfi_countdown(ocsi);
-            pdfi_countdown(mcsi);
-            pdfi_countdown(rec);
-            return_error(gs_error_undefined);
         }
-        if (pdfi_string_cmp(ord1, ord2) != 0) {
-            pdfi_countdown(ord1);
-            pdfi_countdown(ord2);
-            pdfi_countdown(ocsi);
-            pdfi_countdown(mcsi);
-            pdfi_countdown(rec);
-            return_error(gs_error_undefined);
-        }
-        pdfi_countdown(ord1);
-        pdfi_countdown(ord2);
 
         code = pdfi_dict_get(ctx, rec, "Path", (pdf_obj **)&path);
         if (code < 0 || pdfi_type_of(path) != PDF_STRING || !pdfi_fmap_file_exists(ctx, (pdf_string *)path)) {
