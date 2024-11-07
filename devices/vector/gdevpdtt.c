@@ -3827,12 +3827,12 @@ pdf_text_process(gs_text_enum_t *pte)
     if (size <= sizeof(buf)) {
         code = process(pte, buf.bytes, size);
     } else {
-        byte *buf = gs_alloc_string(pte->memory, size, "pdf_text_process");
+        byte *dbuf = gs_alloc_bytes(pte->memory, size, "pdf_text_process");
 
-        if (buf == 0)
+        if (dbuf == 0)
             return_error(gs_error_VMerror);
-        code = process(pte, buf, size);
-        gs_free_string(pte->memory, buf, size, "pdf_text_process");
+        code = process(pte, dbuf, size);
+        gs_free_object(pte->memory, dbuf, "pdf_text_process");
     }
  skip:
     if (code < 0 ||
