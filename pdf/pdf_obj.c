@@ -24,6 +24,7 @@
 #include "pdf_mark.h"
 #include "pdf_file.h" /* for pdfi_stream_to_buffer() */
 #include "pdf_loop_detect.h"
+#include "stream.h"
 
 /***********************************************************************************/
 /* Functions to create the various kinds of 'PDF objects', Created objects have a  */
@@ -484,19 +485,39 @@ static int pdfi_bufstream_write(pdf_context *ctx, pdfi_bufstream_t *stream, byte
 
 
 /* Create a c-string to use as object label
- * Uses the object_num to make it unique
+ * Uses the object_num to make it unique.
  * (don't call this for objects with object_num=0, though I am not going to check that here)
+ *
+ * Bug #708127; just the object number alone is insufficient. Two consecutive input files might use the
+ * same object number for a pdfmark, but with different content, we need to differntiate between the two.
+ * Add a simple hash of the input filename (uses the same dumb but fast hash as pattern ID generation), this gives
+ * the last bytes in the filename more say in the final result so is 'probably' sufficiently unique with the
+ * object number and generation.
  */
 int pdfi_obj_get_label(pdf_context *ctx, pdf_obj *obj, char **label)
 {
-    int code = 0;
+    int code = 0, i;
     int length;
-    const char *template = "{Obj%dG%d}"; /* The '{' and '}' are special to pdfmark/pdfwrite driver */
+    const char *template = "{Obj%dG%dF%d}"; /* The '{' and '}' are special to pdfmark/pdfwrite driver */
     char *string = NULL;
     pdf_indirect_ref *ref = (pdf_indirect_ref *)obj;
+    uint32_t hash = 5381;
+
+    if (ctx->main_stream->s->file_name.data != NULL) {
+        string = (char *)ctx->main_stream->s->file_name.data;
+        length = ctx->main_stream->s->file_name.size;
+
+        for (i=0;i < length;i++) {
+#if ARCH_IS_BIG_ENDIAN
+            hash = ((hash << 5) + hash) + string[length - 1 - i]; /* hash * 33 + c */
+#else
+            hash = ((hash << 5) + hash) + string[i]; /* hash * 33 + c */
+#endif
+        }
+    }
 
     *label = NULL;
-    length = strlen(template)+20;
+    length = strlen(template)+30;
 
     string = (char *)gs_alloc_bytes(ctx->memory, length, "pdf_obj_get_label(label)");
     if (string == NULL) {
@@ -505,9 +526,9 @@ int pdfi_obj_get_label(pdf_context *ctx, pdf_obj *obj, char **label)
     }
 
     if (pdfi_type_of(obj) == PDF_INDIRECT)
-        snprintf(string, length, template, ref->ref_object_num, ref->ref_generation_num);
+        gs_snprintf(string, length, template, ref->ref_object_num, ref->ref_generation_num, hash);
     else
-        snprintf(string, length, template, obj->object_num, obj->generation_num);
+        gs_snprintf(string, length, template, obj->object_num, obj->generation_num, hash);
 
     *label = string;
  exit:
