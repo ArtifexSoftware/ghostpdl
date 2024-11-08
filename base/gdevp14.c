@@ -3485,6 +3485,46 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     /* pcs takes a reference to the profile data it just retrieved. */
     gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "pdf14_put_blended_image_cmykspot");
     gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
+
+    /* If we have more components to write out than are in the des_profile,
+     * then just using a PCS based on des_profile, will result in us dropping
+     * the spot colors.
+     * So, if our target supports devn colors, we instead construct a
+     * DevN device space with colors names taken from the devn_params, and
+     * use that instead. */
+    if (des_profile->num_comps != target->color_info.num_components &&
+        dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0))
+    {
+        int num_std;
+        gs_devn_params *devn_params =  dev_proc(target, ret_devn_params)(target);
+        gs_color_space *pcs2 = pcs;
+        code = gs_cspace_new_DeviceN(&pcs, target->color_info.num_components,
+                                     pcs2, pgs->memory->non_gc_memory);
+        if (code < 0)
+            return code;
+        /* set up a usable DeviceN space with info from the tdev->devn_params */
+        pcs->params.device_n.use_alt_cspace = false;
+        num_std = devn_params->num_std_colorant_names;
+        for (i = 0; i < num_std; i++) {
+            const char *name = devn_params->std_colorant_names[i];
+            size_t len = strlen(name);
+            pcs->params.device_n.names[i] = (char *)gs_alloc_bytes(pgs->memory->non_gc_memory, len + 1, "mem_planar_put_image_very_slow");
+            strcpy(pcs->params.device_n.names[i], name);
+        }
+        for (; i < devn_params->separations.num_separations; i++) {
+            devn_separation_name *name = &devn_params->separations.names[i - num_std];
+            pcs->params.device_n.names[i] = (char *)gs_alloc_bytes(pgs->memory->non_gc_memory, name->size + 1, "mem_planar_put_image_very_slow");
+            memcpy(pcs->params.device_n.names[i], devn_params->separations.names[i - num_std].data, name->size);
+            pcs->params.device_n.names[i][name->size] = 0;
+        }
+        if ((code = pcs->type->install_cspace(pcs, pgs)) < 0) {
+            return code;
+        }
+        /* One last thing -- we need to fudge the pgs->color_component_map */
+        for (i=0; i < dev->color_info.num_components; i++)
+            pgs->color_component_map.color_map[i] = i;	/* enable all components in normal order */
+    }
+
     gs_image_t_init_adjust(&image, pcs, false);
     image.ImageMatrix.xx = (float)width;
     image.ImageMatrix.yy = (float)height;
