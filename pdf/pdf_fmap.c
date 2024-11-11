@@ -75,19 +75,25 @@ pdfi_fontmap_open_file(pdf_context *ctx, const char *mapfilename, byte **buf, in
         if (file_size < 0 || file_size > max_int - poststringlen) {
             code = gs_note_error(gs_error_ioerror);
         } else {
+            byte *dbuf;
             *buflen = (int)file_size;
-            *buf = gs_alloc_bytes(ctx->memory, *buflen + poststringlen, "pdf_cmap_open_file(buf)");
+
+            (*buf) = gs_alloc_bytes(ctx->memory, *buflen + poststringlen, "pdf_cmap_open_file(buf)");
             if (*buf != NULL) {
                 sfread((*buf), 1, *buflen, s);
                 memcpy((*buf) + *buflen, poststring, poststringlen);
                 *buflen += poststringlen;
                 /* This is naff, but works for now
                    When parsing Fontmap in PS, ";" is defined as "def"
+                   Also some people use "cvn" to convert a string to a name.
                    We don't need either, because the dictionary is built from the stack.
                  */
-                for (i = 0; i < *buflen - 1; i++) {
-                    if ((*buf)[i] == ';') {
-                        (*buf)[i] = ' ';
+                for (i = 0, dbuf = *buf; i < *buflen - 1; i++, dbuf++) {
+                    if (*dbuf == ';') {
+                        *dbuf = ' ';
+                    }
+                    if (memcmp(dbuf, "cvn ", 4) == 0) {
+                        dbuf[0] = dbuf[1] = dbuf[2] = 0x20;
                     }
                 }
             }
