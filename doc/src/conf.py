@@ -29,13 +29,17 @@ sys.path.insert(0, os.path.abspath("."))
 extensions = [
     'rst2pdf.pdfbuilder',
     'sphinx.ext.autosectionlabel',
-    'sphinx_copybutton'
+    'sphinx_copybutton',
+    'sphinxcontrib.googleanalytics'
 ]
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
 # The suffix of source filenames.
 source_suffix = ".rst"
+
+# from: pip install sphinxcontrib-googleanalytics
+googleanalytics_id = "G-JZTN4VTL9M"
 
 # The encoding of source files.
 # source_encoding = 'utf-8-sig'
