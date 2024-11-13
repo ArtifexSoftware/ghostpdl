@@ -390,7 +390,7 @@ static inline int check_rasterops(pcl_state_t * pcs, byte op)
      * fully opaque. Since it's the default, and that seems to work, permit it to be set.
      */
     if (pcs->high_level_device && !pcs->supports_rasterops && op != 252) {
-        outprintf(pcs->memory, "Unsupported use of RasterOP %d detected. Output may not be correct.\n", op);
+        errprintf(pcs->memory, "Unsupported use of RasterOP %d detected. Output may not be correct.\n", op);
         return_error(gs_error_undefined);
     }
     return 0;

@@ -1104,7 +1104,7 @@ pxSetROP(px_args_t * par, px_state_t * pxs)
      * fully opaque. Since it's the default, and that seems to work, permit it to be set.
      */
     if (pxs->high_level_device && !pxs->supports_rasterops && par->pv[0]->value.i != 252) {
-        outprintf(pxs->memory, "Unsupported use of RasterOP %d detected. Output may not be correct.\n", par->pv[0]->value.i);
+        errprintf(pxs->memory, "Unsupported use of RasterOP %d detected. Output may not be correct.\n", par->pv[0]->value.i);
         return 0;
     }
     gs_setrasterop(pxs->pgs, (gs_rop3_t) (par->pv[0]->value.i));
