@@ -100,8 +100,9 @@ static int do_ET(pdf_context *ctx)
             ctx->text.TextClip = false;
             /* Capture the current position */
             code = gs_currentpoint(ctx->pgs, &initial_point);
-            if (code >= 0) {
+            if (code >= 0 || code == gs_error_nocurrentpoint) {
                 gs_point adjust;
+                bool nocurrentpoint = code >= 0 ? false : true;
 
                 gs_currentfilladjust(ctx->pgs, &adjust);
                 code = gs_setfilladjust(ctx->pgs, (double)0.0, (double)0.0);
@@ -118,7 +119,9 @@ static int do_ET(pdf_context *ctx)
 
                 if (copy != NULL)
                     (void)gx_cpath_assign_free(ctx->pgs->clip_path, copy);
-                code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+
+                if (nocurrentpoint == false)
+                    code = gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
             }
         }
     }
@@ -1399,7 +1402,9 @@ int pdfi_Tr(pdf_context *ctx)
              * already extant path in the graphics state)
              */
             gs_newpath(ctx->pgs);
-            gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+            if (code >= 0)
+                gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
+            code = 0;
         } else if (gs_currenttextrenderingmode(ctx->pgs) >= 4 && mode < 4 && ctx->text.BlockDepth != 0) {
             /* If we are switching from a clipping mode to a non-clipping
              * mode then behave as if we had an implicit ET to flush the
