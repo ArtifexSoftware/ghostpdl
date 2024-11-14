@@ -1001,6 +1001,8 @@ static enum XML_Error
 callProcessor(XML_Parser parser, const char *start, const char *end,
               const char **endPtr) {
   const size_t have_now = EXPAT_SAFE_PTR_DIFF(end, start);
+  bool enough;
+  enum XML_Error ret;
 
   if (parser->m_reparseDeferralEnabled
       && ! parser->m_parsingStatus.finalBuffer) {
@@ -1016,7 +1018,7 @@ callProcessor(XML_Parser parser, const char *start, const char *end,
     available_buffer
         += EXPAT_SAFE_PTR_DIFF(parser->m_bufferLim, parser->m_bufferEnd);
     // m_lastBufferRequestSize is never assigned a value < 0, so the cast is ok
-    const bool enough
+    enough
         = (have_now >= 2 * had_before)
           || ((size_t)parser->m_lastBufferRequestSize > available_buffer);
 
@@ -1028,7 +1030,7 @@ callProcessor(XML_Parser parser, const char *start, const char *end,
 #if defined(XML_TESTING)
   g_bytesScanned += (unsigned)have_now;
 #endif
-  const enum XML_Error ret = parser->m_processor(parser, start, end, endPtr);
+  ret = parser->m_processor(parser, start, end, endPtr);
   if (ret == XML_ERROR_NONE) {
     // if we consumed nothing, remember what we had on this parse attempt.
     if (*endPtr == start) {
@@ -1924,6 +1926,8 @@ XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt) {
 
 enum XML_Status XMLCALL
 XML_Parse(XML_Parser parser, const char *s, int len, int isFinal) {
+  void *buff;
+
   if ((parser == NULL) || (len < 0) || ((s == NULL) && (len != 0))) {
     if (parser != NULL)
       parser->m_errorCode = XML_ERROR_INVALID_ARGUMENT;
@@ -2023,7 +2027,7 @@ XML_Parse(XML_Parser parser, const char *s, int len, int isFinal) {
     return result;
   }
 #endif /* XML_CONTEXT_BYTES == 0 */
-  void *buff = XML_GetBuffer(parser, len);
+  buff = XML_GetBuffer(parser, len);
   if (buff == NULL)
     return XML_STATUS_ERROR;
   if (len > 0) {
@@ -3555,14 +3559,16 @@ storeAtts(XML_Parser parser, const ENCODING *enc, const char *attStr,
   if (nPrefixes) {
     int j; /* hash table index */
     unsigned long version = parser->m_nsAttsVersion;
+    unsigned int nsAttsSize;
+    unsigned char oldNsAttsPower;
 
     /* Detect and prevent invalid shift */
     if (parser->m_nsAttsPower >= sizeof(unsigned int) * 8 /* bits per byte */) {
       return XML_ERROR_NO_MEMORY;
     }
 
-    unsigned int nsAttsSize = 1u << parser->m_nsAttsPower;
-    unsigned char oldNsAttsPower = parser->m_nsAttsPower;
+    nsAttsSize = 1u << parser->m_nsAttsPower;
+    oldNsAttsPower = parser->m_nsAttsPower;
     /* size of hash table must be at least 2 * (# of prefixed attributes) */
     if ((nPrefixes << 1)
         >> parser->m_nsAttsPower) { /* true for m_nsAttsPower = 0 */
@@ -4007,6 +4013,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
   if (parser->m_freeBindingList) {
     b = parser->m_freeBindingList;
     if (len > b->uriAlloc) {
+      XML_Char *temp;
       /* Detect and prevent integer overflow */
       if (len > INT_MAX - EXPAND_SPARE) {
         return XML_ERROR_NO_MEMORY;
@@ -4022,7 +4029,7 @@ addBinding(XML_Parser parser, PREFIX *prefix, const ATTRIBUTE_ID *attId,
       }
 #endif
 
-      XML_Char *temp = (XML_Char *)REALLOC(
+      temp = (XML_Char *)REALLOC(
           parser, b->uri, sizeof(XML_Char) * (len + EXPAND_SPARE));
       if (temp == NULL)
         return XML_ERROR_NO_MEMORY;
@@ -5414,13 +5421,15 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
               return XML_ERROR_NO_MEMORY;
             }
 
-            char *const new_connector = (char *)REALLOC(
-                parser, parser->m_groupConnector, parser->m_groupSize *= 2);
-            if (new_connector == NULL) {
-              parser->m_groupSize /= 2;
-              return XML_ERROR_NO_MEMORY;
+            {
+               char *const new_connector = (char *)REALLOC(
+                   parser, parser->m_groupConnector, parser->m_groupSize *= 2);
+               if (new_connector == NULL) {
+                 parser->m_groupSize /= 2;
+                 return XML_ERROR_NO_MEMORY;
+               }
+               parser->m_groupConnector = new_connector;
             }
-            parser->m_groupConnector = new_connector;
           }
 
           if (dtd->scaffIndex) {
@@ -6534,6 +6543,7 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
       type->idAtt = attId;
   }
   if (type->nDefaultAtts == type->allocDefaultAtts) {
+    int count;
     if (type->allocDefaultAtts == 0) {
       type->allocDefaultAtts = 8;
       type->defaultAtts = (DEFAULT_ATTRIBUTE *)MALLOC(
@@ -6550,7 +6560,7 @@ defineAttribute(ELEMENT_TYPE *type, ATTRIBUTE_ID *attId, XML_Bool isCdata,
         return 0;
       }
 
-      int count = type->allocDefaultAtts * 2;
+      count = type->allocDefaultAtts * 2;
 
       /* Detect and prevent integer overflow.
        * The preprocessor guard addresses the "always false" warning
@@ -6770,12 +6780,12 @@ getContext(XML_Parser parser) {
 
 static XML_Bool
 setContext(XML_Parser parser, const XML_Char *context) {
+  DTD *const dtd = parser->m_dtd; /* save one level of indirection */
+  const XML_Char *s = context;
   if (context == NULL) {
     return XML_FALSE;
   }
 
-  DTD *const dtd = parser->m_dtd; /* save one level of indirection */
-  const XML_Char *s = context;
 
   while (*context != XML_T('\0')) {
     if (*s == CONTEXT_SEP || *s == XML_T('\0')) {
@@ -7212,6 +7222,9 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
     unsigned long h = hash(parser, name);
     unsigned long mask = (unsigned long)table->size - 1;
     unsigned char step = 0;
+    size_t newSize;
+    unsigned long newMask;
+
     i = h & mask;
     while (table->v[i]) {
       if (keyeq(name, table->v[i]->name))
@@ -7226,22 +7239,24 @@ lookup(XML_Parser parser, HASH_TABLE *table, KEY name, size_t createSize) {
     /* check for overflow (table is half full) */
     if (table->used >> (table->power - 1)) {
       unsigned char newPower = table->power + 1;
+      size_t tsize;
+      NAMED **newV;
 
       /* Detect and prevent invalid shift */
       if (newPower >= sizeof(unsigned long) * 8 /* bits per byte */) {
         return NULL;
       }
 
-      size_t newSize = (size_t)1 << newPower;
-      unsigned long newMask = (unsigned long)newSize - 1;
+      newSize = (size_t)1 << newPower;
+      newMask = (unsigned long)newSize - 1;
 
       /* Detect and prevent integer overflow */
       if (newSize > (size_t)(-1) / sizeof(NAMED *)) {
         return NULL;
       }
 
-      size_t tsize = newSize * sizeof(NAMED *);
-      NAMED **newV = table->mem->malloc_fcn(tsize);
+      tsize = newSize * sizeof(NAMED *);
+      newV = table->mem->malloc_fcn(tsize);
       if (! newV)
         return NULL;
       memset(newV, 0, tsize);
@@ -7652,6 +7667,10 @@ build_model(XML_Parser parser) {
   DTD *const dtd = parser->m_dtd; /* save one level of indirection */
   XML_Content *ret;
   XML_Char *str; /* the current string writing location */
+  size_t allocsize;
+  XML_Content *dest;
+  XML_Content *destLimit;
+  XML_Content *jobDest;
 
   /* Detect and prevent integer overflow.
    * The preprocessor guard addresses the "always false" warning
@@ -7670,7 +7689,7 @@ build_model(XML_Parser parser) {
     return NULL;
   }
 
-  const size_t allocsize = (dtd->scaffCount * sizeof(XML_Content)
+  allocsize = (dtd->scaffCount * sizeof(XML_Content)
                             + (dtd->contentStringLen * sizeof(XML_Char)));
 
   ret = (XML_Content *)MALLOC(parser, allocsize);
@@ -7726,9 +7745,9 @@ build_model(XML_Parser parser) {
    *
    * - The algorithm repeats until all target array indices have been processed.
    */
-  XML_Content *dest = ret; /* tree node writing location, moves upwards */
-  XML_Content *const destLimit = &ret[dtd->scaffCount];
-  XML_Content *jobDest = ret; /* next free writing location in target array */
+  dest = ret; /* tree node writing location, moves upwards */
+  destLimit = &ret[dtd->scaffCount];
+  jobDest = ret; /* next free writing location in target array */
   str = (XML_Char *)&ret[dtd->scaffCount];
 
   /* Add the starting job, the root node (index 0) of the source tree  */
@@ -7837,13 +7856,14 @@ accountingGetCurrentAmplification(XML_Parser rootParser) {
 static void
 accountingReportStats(XML_Parser originParser, const char *epilog) {
   const XML_Parser rootParser = getRootParserOf(originParser, NULL);
+  float amplificationFactor;
   assert(! rootParser->m_parentParser);
 
   if (rootParser->m_accounting.debugLevel == 0u) {
     return;
   }
 
-  const float amplificationFactor
+  amplificationFactor
       = accountingGetCurrentAmplification(rootParser);
   fprintf(stderr,
           "expat: Accounting(%p): Direct " EXPAT_FMT_ULL(
@@ -7863,6 +7883,10 @@ accountingReportDiff(XML_Parser rootParser,
                      unsigned int levelsAwayFromRootParser, const char *before,
                      const char *after, ptrdiff_t bytesMore, int source_line,
                      enum XML_Account account) {
+  const char ellipis[] = "[..]";
+  const size_t ellipsisLength = sizeof(ellipis) /* because compile-time */ - 1;
+  const unsigned int contextLength = 10;
+  char *walker;
   assert(! rootParser->m_parentParser);
 
   fprintf(stderr,
@@ -7870,12 +7894,9 @@ accountingReportDiff(XML_Parser rootParser,
           bytesMore, (account == XML_ACCOUNT_DIRECT) ? "DIR" : "EXP",
           levelsAwayFromRootParser, source_line, 10, "");
 
-  const char ellipis[] = "[..]";
-  const size_t ellipsisLength = sizeof(ellipis) /* because compile-time */ - 1;
-  const unsigned int contextLength = 10;
 
   /* Note: Performance is of no concern here */
-  const char *walker = before;
+  walker = (char *)before;
   if ((rootParser->m_accounting.debugLevel >= 3u)
       || (after - before)
              <= (ptrdiff_t)(contextLength + ellipsisLength + contextLength)) {
@@ -7887,7 +7908,7 @@ accountingReportDiff(XML_Parser rootParser,
       fprintf(stderr, "%s", unsignedCharToPrintable(walker[0]));
     }
     fprintf(stderr, ellipis);
-    walker = after - contextLength;
+    walker = (char *)(after - contextLength);
     for (; walker < after; walker++) {
       fprintf(stderr, "%s", unsignedCharToPrintable(walker[0]));
     }
@@ -7899,6 +7920,15 @@ static XML_Bool
 accountingDiffTolerated(XML_Parser originParser, int tok, const char *before,
                         const char *after, int source_line,
                         enum XML_Account account) {
+  unsigned int levelsAwayFromRootParser;
+  XML_Parser rootParser;
+  int isDirect;
+  ptrdiff_t bytesMore;
+  XmlBigCount *additionTarget;
+  XmlBigCount countBytesOutput;
+  float amplificationFactor;
+  XML_Bool tolerated;
+
   /* Note: We need to check the token type *first* to be sure that
    *       we can even access variable <after>, safely.
    *       E.g. for XML_TOK_NONE <after> may hold an invalid pointer. */
@@ -7913,16 +7943,15 @@ accountingDiffTolerated(XML_Parser originParser, int tok, const char *before,
   if (account == XML_ACCOUNT_NONE)
     return XML_TRUE; /* because these bytes have been accounted for, already */
 
-  unsigned int levelsAwayFromRootParser;
-  const XML_Parser rootParser
+  rootParser
       = getRootParserOf(originParser, &levelsAwayFromRootParser);
   assert(! rootParser->m_parentParser);
 
-  const int isDirect
+  isDirect
       = (account == XML_ACCOUNT_DIRECT) && (originParser == rootParser);
-  const ptrdiff_t bytesMore = after - before;
+  bytesMore = after - before;
 
-  XmlBigCount *const additionTarget
+  additionTarget
       = isDirect ? &rootParser->m_accounting.countBytesDirect
                  : &rootParser->m_accounting.countBytesIndirect;
 
@@ -7931,12 +7960,12 @@ accountingDiffTolerated(XML_Parser originParser, int tok, const char *before,
     return XML_FALSE;
   *additionTarget += bytesMore;
 
-  const XmlBigCount countBytesOutput
+  countBytesOutput
       = rootParser->m_accounting.countBytesDirect
         + rootParser->m_accounting.countBytesIndirect;
-  const float amplificationFactor
+  amplificationFactor
       = accountingGetCurrentAmplification(rootParser);
-  const XML_Bool tolerated
+  tolerated
       = (countBytesOutput < rootParser->m_accounting.activationThresholdBytes)
         || (amplificationFactor
             <= rootParser->m_accounting.maximumAmplificationFactor);
@@ -7967,15 +7996,15 @@ testingAccountingGetCountBytesIndirect(XML_Parser parser) {
 static void
 entityTrackingReportStats(XML_Parser rootParser, ENTITY *entity,
                           const char *action, int sourceLine) {
-  assert(! rootParser->m_parentParser);
-  if (rootParser->m_entity_stats.debugLevel == 0u)
-    return;
-
 #  if defined(XML_UNICODE)
   const char *const entityName = "[..]";
 #  else
   const char *const entityName = entity->name;
 #  endif
+  assert(! rootParser->m_parentParser);
+  if (rootParser->m_entity_stats.debugLevel == 0u)
+    return;
+
 
   fprintf(
       stderr,
@@ -8554,14 +8583,16 @@ unsignedCharToPrintable(unsigned char c) {
 static unsigned long
 getDebugLevel(const char *variableName, unsigned long defaultDebugLevel) {
   const char *const valueOrNull = getenv(variableName);
+  const char *const value = valueOrNull;
+  char *afterValue = NULL;
+  unsigned long debugLevel;
   if (valueOrNull == NULL) {
     return defaultDebugLevel;
   }
-  const char *const value = valueOrNull;
 
   errno = 0;
-  char *afterValue = NULL;
-  unsigned long debugLevel = strtoul(value, &afterValue, 10);
+  afterValue = NULL;
+  debugLevel = strtoul(value, &afterValue, 10);
   if ((errno != 0) || (afterValue == value) || (afterValue[0] != '\0')) {
     errno = 0;
     return defaultDebugLevel;
