@@ -138,11 +138,9 @@ static int pppm_process_and_output(void *arg, gx_device *dev, gx_device *bdev, c
     int w = rect->q.x - rect->p.x;
     int raster = bitmap_raster(bdev->width * 3 * 8);
     int h = rect->q.y - rect->p.y;
-    int x, y;
+    int y;
     unsigned char *p;
     gs_int_rect my_rect;
-    int err;
-    int page_height = gx_downscaler_scale_rounded(dev->height, fdev->downscale.downscale_factor);
     gs_offset_t offset = fdev->header_len;
     gx_device_clist_reader *clrdev = (gx_device_clist_reader *)dev;
     gx_device_clist_reader *orig_dev = NULL;
