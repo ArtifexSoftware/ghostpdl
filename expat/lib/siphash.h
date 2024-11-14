@@ -99,7 +99,14 @@
 #define SIPHASH_H
 
 #include <stddef.h> /* size_t */
+#if _MSC_VER < 1700
+typedef unsigned long long uint64_t;
+typedef unsigned int uint32_t;
+typedef unsigned char uint8_t;
+#else
 #include <stdint.h> /* uint64_t uint32_t uint8_t */
+#endif
+
 
 /*
  * Workaround to not require a C++11 compiler for using ULL suffix

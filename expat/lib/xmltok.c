@@ -50,7 +50,14 @@
 
 #include <stddef.h>
 #include <string.h> /* memcpy */
+
+#if _MSC_VER < 1700
+typedef unsigned char bool;
+#define true (bool)1
+#define false (bool)0
+#else
 #include <stdbool.h>
+#endif
 
 #ifdef _WIN32
 #  include "winconfig.h"

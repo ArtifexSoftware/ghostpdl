@@ -93,14 +93,24 @@
 #  endif
 #endif
 
+#if _MSC_VER < 1700
+typedef unsigned char bool;
+#define true (bool)1
+#define false (bool)0
+#else
 #include <stdbool.h>
+#endif
+
 #include <stddef.h>
 #include <string.h> /* memset(), memcpy() */
 #include <assert.h>
 #include <limits.h> /* UINT_MAX */
 #include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* getenv, rand_s */
+
+#if _MSC_VER >= 1700
 #include <stdint.h> /* uintptr_t */
+#endif
 #include <math.h>   /* isnan */
 
 #ifdef _WIN32
@@ -2622,7 +2632,9 @@ XML_Bool XMLCALL
 XML_SetBillionLaughsAttackProtectionMaximumAmplification(
     XML_Parser parser, float maximumAmplificationFactor) {
   if ((parser == NULL) || (parser->m_parentParser != NULL)
+#if _MSC_VER >= 1700
       || isnan(maximumAmplificationFactor)
+#endif
       || (maximumAmplificationFactor < 1.0f)) {
     return XML_FALSE;
   }
@@ -5433,6 +5445,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
           }
 
           if (dtd->scaffIndex) {
+            int *new_scaff_index;
             /* Detect and prevent integer overflow.
              * The preprocessor guard addresses the "always false" warning
              * from -Wtype-limits on platforms where
@@ -5443,7 +5456,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
             }
 #endif
 
-            int *const new_scaff_index = (int *)REALLOC(
+            new_scaff_index = (int *)REALLOC(
                 parser, dtd->scaffIndex, parser->m_groupSize * sizeof(int));
             if (new_scaff_index == NULL)
               return XML_ERROR_NO_MEMORY;
