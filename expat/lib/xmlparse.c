@@ -93,7 +93,7 @@
 #  endif
 #endif
 
-#if _MSC_VER < 1700
+#if defined(_MSC_VER) && _MSC_VER < 1700
 typedef unsigned char bool;
 #define true (bool)1
 #define false (bool)0
@@ -108,7 +108,7 @@ typedef unsigned char bool;
 #include <stdio.h>  /* fprintf */
 #include <stdlib.h> /* getenv, rand_s */
 
-#if _MSC_VER >= 1700
+#if defined(_MSC_VER) && _MSC_VER < 1700
 #include <stdint.h> /* uintptr_t */
 #endif
 #include <math.h>   /* isnan */
@@ -2632,7 +2632,7 @@ XML_Bool XMLCALL
 XML_SetBillionLaughsAttackProtectionMaximumAmplification(
     XML_Parser parser, float maximumAmplificationFactor) {
   if ((parser == NULL) || (parser->m_parentParser != NULL)
-#if _MSC_VER >= 1700
+#if defined(_MSC_VER) && _MSC_VER < 1700
       || isnan(maximumAmplificationFactor)
 #endif
       || (maximumAmplificationFactor < 1.0f)) {

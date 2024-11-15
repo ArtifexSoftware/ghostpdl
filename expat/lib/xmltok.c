@@ -51,7 +51,7 @@
 #include <stddef.h>
 #include <string.h> /* memcpy */
 
-#if _MSC_VER < 1700
+#if defined(_MSC_VER) && _MSC_VER < 1700
 typedef unsigned char bool;
 #define true (bool)1
 #define false (bool)0

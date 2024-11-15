@@ -99,7 +99,7 @@
 #define SIPHASH_H
 
 #include <stddef.h> /* size_t */
-#if _MSC_VER < 1700
+#if defined(_MSC_VER) && _MSC_VER < 1700
 typedef unsigned long long uint64_t;
 typedef unsigned int uint32_t;
 typedef unsigned char uint8_t;
