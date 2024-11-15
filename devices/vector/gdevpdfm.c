@@ -1605,7 +1605,6 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     for (i = 0; i < count; i += 2) {
         if (pdf_key_eq(&pairs[i], "/FS")) {
             if (!cos_dict_find_c_key(pdev->Catalog, "/AF")) {
-                uint written;
                 cos_value_t v;
                 cos_object_t *object;
                 int64_t id;

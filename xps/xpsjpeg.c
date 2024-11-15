@@ -64,7 +64,7 @@ static inline int read_value(const unsigned char *data, int bytes, int is_big_en
 static int extract_exif_resolution(jpeg_saved_marker_ptr marker,
 	int *xres, int *yres, uint8_t *orientation)
 {
-	int is_big_endian, orient;
+	int is_big_endian;
 	const unsigned char *data;
 	unsigned int offset, ifd_len, res_type = 0;
 	float x_res = 0, y_res = 0;
@@ -94,9 +94,7 @@ static int extract_exif_resolution(jpeg_saved_marker_ptr marker,
 		switch (tag)
 		{
 		case 0x112:
-			if (type == 3 && count == 1) {
-				orient = read_value(data + offset + 8, 2, is_big_endian);
-			}
+            /* Orientation: we don't use this */
 			break;
 		case 0x11A:
 			if (type == 5 && value_off > offset && value_off <= marker->data_length - 8)

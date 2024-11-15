@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -49,6 +49,7 @@ zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_gstate *, double))
     return code;
 }
 
+#if 0 /* Currently unused */
 static int
 zcurrent_real(i_ctx_t *i_ctx_p, double (*current_proc)(const gs_gstate *))
 {
@@ -58,6 +59,7 @@ zcurrent_real(i_ctx_t *i_ctx_p, double (*current_proc)(const gs_gstate *))
     make_real(op, current_proc(igs));
     return 0;
 }
+#endif
 
 static int
 zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(gs_gstate *, bool))
@@ -91,6 +93,7 @@ zset_uint(i_ctx_t *i_ctx_p, void (*set_proc)(gs_gstate *, uint))
     return 0;
 }
 
+#if 0 /* Currently unused */
 static int
 zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_gstate *))
 {
@@ -100,6 +103,7 @@ zcurrent_uint(i_ctx_t *i_ctx_p, uint (*current_proc)(const gs_gstate *))
     make_int(op, current_proc(igs));
     return 0;
 }
+#endif
 
 /* ------ Operations on the entire graphics state ------ */
 

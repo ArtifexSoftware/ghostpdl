@@ -3269,7 +3269,7 @@ get_mediawp(cmm_profile_t *src_profile, byte *mediawhitept)
 {
     byte *buffer = &(src_profile->buffer[128]);
     int num_tags = readint32(buffer);
-    int tag_signature;
+    int tag_signature = -1;
     int offset;
     int k;
 

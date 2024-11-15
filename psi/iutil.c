@@ -537,7 +537,7 @@ other:
             break;
         }
         /* Internal operator, no name. */
-#if DEBUG
+#if defined(DEBUG) && DEBUG != 0
         gs_snprintf(buf, sizeof(buf), "@"PRI_INTPTR, (intptr_t) op->value.opproc);
 #else
         gs_snprintf(buf, sizeof(buf), "@anonymous_operator", (intptr_t) op->value.opproc);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1757,7 +1757,7 @@ transform_pixel_region_render_portrait(gx_device *dev, gx_default_transform_pixe
     const byte *data = buffer[0] + data_x * spp;
     const byte *bufend = NULL;
     int code = 0;
-    const byte *run;
+    const byte *run = NULL;
     int k;
     gx_color_value *conc = &cmapper->conc[0];
     int to_rects;

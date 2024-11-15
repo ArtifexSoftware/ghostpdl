@@ -675,7 +675,7 @@ check_cmyk_color_model_comps(gx_device * dev)
     return process_comps;
 }
 
-void
+static void
 check_rgb_color_model_comps(gx_device * dev)
 {
     gx_device_color_info *          pcinfo = &dev->color_info;
