@@ -1039,8 +1039,9 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
             goto exit1;
         }
 
-        code = gs_pop_pdf14trans_device(ctx->pgs, false);
-        if (code < 0) {
+        code1 = gs_pop_pdf14trans_device(ctx->pgs, false);
+        if (code1 < 0) {
+            code = code1;
             goto exit1;
         }
     }
