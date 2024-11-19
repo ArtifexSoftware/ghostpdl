@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -684,7 +684,16 @@ clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,
             if (tile->id != gx_no_bitmap_id) {
                 code = clist_change_tile(cdev, re.pcls, tile, depth);
                 if (code < 0)
+                {
+                    if (code == gs_error_limitcheck)
+                    {
+                        code = gx_default_strip_tile_rect_devn(dev, tile,
+                                                               rx, re.y, rwidth, re.height,
+                                                               pdcolor0, pdcolor1,
+                                                               px, py);
+                    }
                     return code;
+                }
             } else {
                 return_error(gs_error_unregistered);
             }

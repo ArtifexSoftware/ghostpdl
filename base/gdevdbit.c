@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -594,7 +594,112 @@ gx_default_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tiles,
    int x, int y, int w, int h, const gx_drawing_color * pdcolor0,
    const gx_drawing_color * pdcolor1, int px, int py)
 {
-    return_error(gs_error_unregistered);
+    int width = tiles->size.x;
+    int height = tiles->size.y;
+    int raster = tiles->raster;
+    int rwidth = tiles->rep_width;
+    int rheight = tiles->rep_height;
+    int shift = tiles->shift;
+    gs_id tile_id = tiles->id;
+    int code;
+
+    if (rwidth == 0 || rheight == 0)
+        return_error(gs_error_unregistered); /* Must not happen. */
+    fit_fill_xy(dev, x, y, w, h);
+    if (w == 0 || h == 0)
+        return 0;
+
+    /* Loop over as many tiles as we need vertically */
+    while (1) {
+        int xoff = (shift == 0 ? px :
+                                 px + (y + py) / rheight * tiles->rep_shift);
+        /* irx = x offset within the tile to start copying from */
+        int irx = ((rwidth & (rwidth - 1)) == 0 ?	/* power of 2 */
+                   (x + xoff) & (rwidth - 1) :
+                   (x + xoff) % rwidth);
+        /* ry = y offset within the tile to start copying from */
+        int ry = ((rheight & (rheight - 1)) == 0 ?	/* power of 2 */
+                  (y + py) & (rheight - 1) :
+                  (y + py) % rheight);
+        /* icw = how many bits we can copy before we run out of tile and need to loop */
+        int icw = width - irx;
+        /* ch = how many rows we can copy before we run out of tile and need to loop */
+        int ch = height - ry;
+        byte *row0 = tiles->data + ry * raster;
+
+        /* Loop per line */
+        do {
+            byte *row = row0;
+            int w2 = w;
+            int left_in_tile = icw;
+            int runlen = 0;
+            int bit = 1<<((7-irx) & 7);
+            int x2 = x;
+            if (left_in_tile > w2)
+                left_in_tile = w2;
+
+            /* Loop per row */
+            while (w2) {
+                while (left_in_tile && ((bit & *row) == 0)) {
+                    bit >>= 1;
+                    if (bit == 0)
+                        bit = 128, row++;
+                    left_in_tile--;
+                    runlen++;
+                }
+                if (runlen) {
+                    gs_fixed_rect rect;
+                    rect.p.x = int2fixed(x2);
+                    rect.p.y = int2fixed(y);
+                    rect.q.x = rect.p.x + int2fixed(runlen);
+                    rect.q.y = rect.p.y + int2fixed(1);
+                    /* Pure colours are only used to signal transparency */
+                    if (pdcolor0->type != gx_dc_type_pure) {
+                        code = dev_proc(dev, fill_rectangle_hl_color)(dev, &rect, NULL, pdcolor0, NULL);
+                        if (code < 0)
+                            return code;
+                    }
+                    x2 += runlen;
+                    w2 -= runlen;
+                    runlen = 0;
+                }
+                while (left_in_tile && ((bit & *row) != 0)) {
+                    bit >>= 1;
+                    if (bit == 0)
+                        bit = 128, row++;
+                    left_in_tile--;
+                    runlen++;
+                }
+                if (runlen) {
+                    gs_fixed_rect rect;
+                    rect.p.x = int2fixed(x2);
+                    rect.p.y = int2fixed(y);
+                    rect.q.x = rect.p.x + int2fixed(runlen);
+                    rect.q.y = rect.p.y + int2fixed(1);
+                    /* Pure colours are only used to signal transparency */
+                    if (pdcolor1->type != gx_dc_type_pure) {
+                        code = dev_proc(dev, fill_rectangle_hl_color)(dev, &rect, NULL, pdcolor1, NULL);
+                        if (code < 0)
+                            return code;
+                    }
+                    x2 += runlen;
+                    w2 -= runlen;
+                    runlen = 0;
+                }
+                if (left_in_tile == 0) {
+                    left_in_tile = rwidth;
+                    if (left_in_tile > w2)
+                        left_in_tile = w2;
+                }
+            }
+
+            /* That's a line complete. */
+            y++;
+            if (--h == 0)
+                return 0;
+            row0 += raster;
+        } while (--ch != 0); /* Until we finish a tile vertically */
+    }
 }
 
 /* Default implementation of strip_tile_rectangle */
