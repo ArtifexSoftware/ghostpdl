@@ -169,7 +169,7 @@ typedef struct stream_compr_chooser_state_s {
     uint choice;
     uint width, height, depth, bits_per_sample;
     uint samples_count, bits_left;
-    uint64_t packed_data;
+    uint32_t packed_data;
     byte *sample;
     uint64_t upper_plateaus, lower_plateaus;
     uint64_t gradients;
