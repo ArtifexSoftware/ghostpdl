@@ -587,7 +587,7 @@ npdl_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_c
     int code;
     int maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
 
-    if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, line_size * maxY, sizeof(byte), "npdl_print_page_copies(CompBuf)")))
+    if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, line_size, maxY, "npdl_print_page_copies(CompBuf)")))
         return_error(gs_error_VMerror);
 
         /* Initialize printer */
@@ -683,7 +683,7 @@ npdl_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_c
     /* Form Feed */
     gp_fputs("\014", prn_stream);
 
-    gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, line_size * maxY, sizeof(byte), "npdl_print_page_copies(CompBuf)");
+    gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, line_size, maxY, "npdl_print_page_copies(CompBuf)");
     return 0;
 }
 
