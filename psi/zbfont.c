@@ -253,7 +253,7 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u, u
                     if (l > length)
                         return l;
 
-                    memcpy(unicode_return, v->value.const_bytes, l * sizeof(short));
+                    memcpy(unicode_return, v->value.const_bytes, l);
                     return l;
                 }
                 if (r_type(v) == t_integer) {
