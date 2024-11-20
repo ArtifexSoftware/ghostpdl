@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -890,6 +890,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
     int old_width = dev->width;
     int old_height = dev->height;
     int old_format = ddev->nFormat;
+    int old_npp = ddev->num_planar_planes;
     void *old_handle = ddev->pHandle;
     gs_devn_params *pdevn_params = &ddev->devn_params;
     equivalent_cmyk_color_params *pequiv_colors = &ddev->equiv_cmyk_colors;
@@ -1062,6 +1063,8 @@ display_put_params(gx_device * dev, gs_param_list * plist)
                 n = ddev->color_info.max_components;
             ddev->color_info.num_components = n;
             ddev->color_info.depth = n * 8;
+            if (ddev->num_planar_planes)
+                ddev->num_planar_planes = ddev->color_info.num_components;
             is_open = ddev->is_open;
         }
         else
@@ -1089,6 +1092,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
         ddev->pHandle = old_handle;
         dev->width = old_width;
         dev->height = old_height;
+        dev->num_planar_planes = old_npp;
         return ecode;
     }
 
@@ -1116,6 +1120,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
             ddev->pHandle = old_handle;
             ddev->width = old_width;
             ddev->height = old_height;
+            dev->num_planar_planes = old_npp;
             return_error(gs_error_rangecheck);
         }
 
@@ -1138,6 +1143,7 @@ display_put_params(gx_device * dev, gs_param_list * plist)
             ddev->nFormat = old_format;
             dev->width = old_width;
             dev->height = old_height;
+            dev->num_planar_planes = old_npp;
             ecode = display_alloc_bitmap(ddev, dev);
             if (ecode < 0) {
                 emprintf(dev->memory, "*** Fatal error in display_put_params, could not allocate bitmap ***\n");
@@ -2050,6 +2056,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     int bpp;	/* bits per pixel */
     int maxvalue;
     int align;
+    int npp;
 
     switch (nFormat & DISPLAY_DEPTH_MASK) {
         case DISPLAY_DEPTH_1:
@@ -2122,10 +2129,10 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     switch (nFormat & (DISPLAY_PLANAR | DISPLAY_PLANAR_INTERLEAVED))
     {
         case DISPLAY_CHUNKY:
-            ddev->num_planar_planes = 0;
+            npp = 0;
             break;
         default:
-            ddev->num_planar_planes = ddev->color_info.num_components;
+            npp = 1;
             break;
     }
 
@@ -2266,6 +2273,7 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
     /* restore old anti_alias info */
     dci.anti_alias = ddev->color_info.anti_alias;
     ddev->color_info = dci;
+    ddev->num_planar_planes = npp ? ddev->color_info.num_components : 0;
     check_device_separable(pdev);
     switch (nFormat & DISPLAY_COLORS_MASK) {
         case DISPLAY_COLORS_NATIVE:
