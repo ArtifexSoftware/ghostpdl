@@ -821,7 +821,7 @@ int default_subclass_strip_tile_rect_devn(gx_device *dev, const gx_strip_bitmap 
     if (dev->child)
         return dev_proc(dev->child, strip_tile_rect_devn)(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
     /* else */
-    return gx_default_strip_tile_rect_devn(dev->child, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
+    return gx_default_strip_tile_rect_devn(dev, tiles, x, y, width, height, pdcolor0, pdcolor1, phase_x, phase_y);
 }
 
 int default_subclass_copy_alpha_hl_color(gx_device *dev, const byte *data, int data_x,
