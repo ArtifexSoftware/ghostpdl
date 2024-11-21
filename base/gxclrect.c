@@ -691,6 +691,8 @@ clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,
                                                                rx, re.y, rwidth, re.height,
                                                                pdcolor0, pdcolor1,
                                                                px, py);
+                        if (code <= 0)
+                            goto loop;
                     }
                     return code;
                 }
@@ -717,6 +719,7 @@ clist_strip_tile_rect_devn(gx_device * dev, const gx_strip_bitmap * tile,
         }
         if (code < 0)
             return code;
+loop:
         re.y += re.height;
     } while (re.y < re.yend);
     return 0;
