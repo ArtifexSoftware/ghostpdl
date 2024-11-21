@@ -479,7 +479,7 @@ int txt_get_unicode(gx_device *dev, gs_font *font, gs_glyph glyph, gs_char ch, u
                     }
                     if (strlen(dentry->Glyph) == gnstr.size) {
                         if(memcmp(gnstr.data, dentry->Glyph, gnstr.size) == 0) {
-                            memcpy(Buffer, dentry->Unicode, 2);
+                            memcpy(Buffer, dentry->Unicode, 2 * sizeof(unsigned short));
                             return 2;
                         }
                     }
@@ -497,7 +497,7 @@ int txt_get_unicode(gx_device *dev, gs_font *font, gs_glyph glyph, gs_char ch, u
                     }
                     if (strlen(tentry->Glyph) == gnstr.size) {
                         if(memcmp(gnstr.data, tentry->Glyph, gnstr.size) == 0) {
-                            memcpy(Buffer, tentry->Unicode, 3);
+                            memcpy(Buffer, tentry->Unicode, 3 * sizeof(unsigned short));
                             return 3;
                         }
                     }
@@ -515,7 +515,7 @@ int txt_get_unicode(gx_device *dev, gs_font *font, gs_glyph glyph, gs_char ch, u
                     }
                     if (strlen(qentry->Glyph) == gnstr.size) {
                         if(memcmp(gnstr.data, qentry->Glyph, gnstr.size) == 0) {
-                            memcpy(Buffer, qentry->Unicode, 4);
+                            memcpy(Buffer, qentry->Unicode, 4 * sizeof(unsigned short));
                             return 4;
                         }
                     }
@@ -527,12 +527,16 @@ int txt_get_unicode(gx_device *dev, gs_font *font, gs_glyph glyph, gs_char ch, u
         return 1;
     } else {
         char *b, *u;
-        int l = length - 1;
+        int l;
 
         /* Real Unicode values should be at least 2 bytes. In fact I think the code assumes exactly
          * 2 bytes. If we got an odd number, give up and return the character code.
+         *
+         * The magic number here is due to the clients calling this code. Currently txtwrite and docxwrite
+         * allow up to 4 Unicode values per character/glyph, if the length would exceed that we can't
+         * write it. For now, again, fall back to the character code.
          */
-        if (length & 1) {
+        if (length & 1 || length > 4 * sizeof(unsigned short)) {
             *Buffer = fallback;
             return 1;
         }
