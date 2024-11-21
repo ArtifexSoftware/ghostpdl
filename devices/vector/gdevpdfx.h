@@ -795,6 +795,7 @@ struct gx_device_pdf_s {
 
     /* Used for preserving text rendering modes with clip. */
     bool clipped_text_pending;
+    int saved_vgstack_bottom_for_textclip;
     int saved_vgstack_depth_for_textclip;
 
     /*

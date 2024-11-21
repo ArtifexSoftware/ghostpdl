@@ -3064,7 +3064,9 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     /* Restore to our saved state */
 
                     /* The saved state in this case is the dpeth of the saved gstate stack at the time we
-                     * started the text clipping.
+                     * started the text clipping. Note; we cannot restore back past the 'bottom' of the
+                     * stack, which is why we alter vgstack_bottom here, rather than just using the saved
+                     * level in the loop below.
                      */
                     if (pdev->vgstack_bottom)
                         pdev->vgstack_bottom = pdev->saved_vgstack_depth_for_textclip;
@@ -3075,9 +3077,11 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                             return code;
                     }
 
+                    pdev->vgstack_bottom = pdev->saved_vgstack_bottom_for_textclip;
                     pdf_reset_text(pdev);	/* because of Q */
                 }
             } else {
+                gs_gstate *pgs = (gs_gstate *)data;
                 /* We are starting text in a clip mode
                  * First make sure we aren't already in a clip mode (this shuld never be true)
                  */
@@ -3089,11 +3093,16 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     if (code < 0)
                         return code;
 
-                    if (pdf_must_put_clip_path(pdev, NULL)) {
+                    if (pdf_must_put_clip_path(pdev, pgs->clip_path)) {
                        code = pdf_unclip(pdev);
                         if (code < 0)
                             return code;
+                        code = pdf_put_clip_path(pdev, pgs->clip_path);
+                        if (code < 0)
+                            return code;
                     }
+
+                    pdev->saved_vgstack_depth_for_textclip = pdev->vgstack_depth;
 
                     /* Save the current graphics state (or at least that bit which we track) so
                      * that we can put it back later.
@@ -3107,7 +3116,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                      * restore back to this state when we exit the graphics state
                      * with a text rendering mode involving a clip.
                      */
-                    pdev->saved_vgstack_depth_for_textclip = pdev->vgstack_bottom;
+                    pdev->saved_vgstack_bottom_for_textclip = pdev->vgstack_bottom;
                     /* And push the bottom of the stack up until it is where we are now.
                      * This is because clip paths, images, and possibly other constructs
                      * will emit a clip path if the 'depth - bottom' is not zero, to create
