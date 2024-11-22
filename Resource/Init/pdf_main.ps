@@ -243,10 +243,19 @@ systemdict /NEWPDF known {
       }
       {
         270 rotate
-        dup neg 0 translate                     % move 0,0 to bottom right of media to account for rotation
+        dup neg 0 translate                     % move 0,0 to top right of media to account for rotation
         exch                                    % swap media width/height for scaling calculation
       } ifelse
-    }if
+    }{
+      % If we are not rotating the content to better fit the media, then the only existing Rotate
+      % value we need to care about is a 180 rotation, because anything else will cause the content
+      % not to fit the media.
+      7 index dup /Rotate known {/Rotate get}{pop 0}ifelse
+      180 eq {
+        180 rotate
+        2 copy neg exch neg exch translate      % move 0,0 to top right of media to account for rotation
+      } if
+    }ifelse
 
     % Now use the box and media values to calculate the required x/y scale factors
     4 copy                              % Stack - box boxwidth boxheight mediawidth mediaheight boxwidth boxheight mediawidth mediaheight
