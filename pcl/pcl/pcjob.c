@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2024 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -372,7 +372,7 @@ pcjob_do_reset(pcl_state_t * pcs, pcl_reset_type_t type)
             return code;
     }
 
-    if (type & (pcl_reset_initial ^ pcl_reset_cold))
+    if (type & (pcl_reset_initial ^ pcl_reset_cold ^ pcl_reset_printer))
     {
         pjl_envvar_t *pres;
 
