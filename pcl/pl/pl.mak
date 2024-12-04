@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -358,8 +358,8 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(std_h) $(ctype__h) $(string__h)\
 # Real top level; provides main that just calls pl_main
 # On Windows this also sets up the display device so that we
 # can view the output.
-$(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c $(PL_MAK) $(MAKEDIRS) \
- $(string__h) $(plapi_h) $(gserrors_h)
+$(PLOBJ)$(REALMAIN_SRC).$(OBJ): $(PLSRC)$(REALMAIN_SRC).c $(PL_MAK) \
+ $(string__h) $(plapi_h) $(gserrors_h) $(locale__h)  $(MAKEDIRS)
 	$(PLATCCC) $(PLSRC)$(REALMAIN_SRC).c $(PLO_)$(REALMAIN_SRC).$(OBJ)
 
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,6 +17,7 @@
 #include "string_.h"
 #include "plapi.h"
 #include "gserrors.h"
+#include "locale_.h"
 
 #define PJL_UEL "\033%-12345X"
 
@@ -27,10 +28,32 @@ main(int argc, char *argv[])
     void *minst = NULL;
     size_t uel_len = strlen(PJL_UEL);
     int dummy;
+    char *curlocale;
 
+    /*
+     * Call setlocale(LC_CTYPE), so that we can convert PDF passwords
+     * from the locale character set to UTF-8 if necessary.  Note that
+     * we only do this when running as a standalone application -- we
+     * can't use setlocale at all if ghostscript is built as a library,
+     * because it would affect the rest of the program.  Applications
+     * that use ghostscript as a library are responsible for setting
+     * the locale themselves.
+     *
+     * For now, we ignore the return value of setlocale, since there's
+     * not much we can do here if it fails.  It might be nice to set
+     * a flag instead, so we could warn the user if they later enter
+     * a non-ASCII PDF password that doesn't work.
+     */
+    curlocale = setlocale(LC_CTYPE, "");
     code = gsapi_new_instance(&minst, (void *)0);
     if (code < 0)
         return EXIT_FAILURE;
+
+    if (curlocale == NULL || strstr(curlocale, "UTF-8") != NULL || strstr(curlocale, "utf8") != NULL)
+        code = gsapi_set_arg_encoding(minst, 1); /* PS_ARG_ENCODING_UTF8 = 1 */
+    else {
+        code = gsapi_set_arg_encoding(minst, 0); /* PS_ARG_ENCODING_LOCAL = 0 */
+    }
 
     code = gsapi_init_with_args(minst, argc, argv);
     if (code >= 0)

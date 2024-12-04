@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -214,6 +214,19 @@ gsapi_get_default_device_list(void *instance, char **list, int *listlen)
     return gs_lib_ctx_get_default_device_list(ctx->memory, list, listlen);
 }
 
+static int ascii_get_codepoint(stream *s, const char **astr)
+{
+    if (s)
+        return spgetc(s);
+    else {
+        int rune = **astr;
+        (*astr)++;
+        if (rune != 0)
+            return rune;
+    }
+    return EOF;
+}
+
 static int utf16le_get_codepoint(stream *s, const char **astr)
 {
     int c;
@@ -308,7 +321,7 @@ gsapi_set_arg_encoding(void *instance, int encoding)
          */
         pl_main_set_arg_decode(pl_main_get_instance(ctx->memory), gp_local_arg_encoding_get_codepoint);
 #else
-        pl_main_set_arg_decode(pl_main_get_instance(ctx->memory), NULL);
+        pl_main_set_arg_decode(pl_main_get_instance(ctx->memory), ascii_get_codepoint);
 #endif /* WIN32 */
         return 0;
     }

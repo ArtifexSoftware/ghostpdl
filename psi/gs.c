@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -69,6 +69,7 @@ main(int argc, char *argv[])
 {
     int exit_status, code;
     void *minst = NULL;
+    char *curlocale;
 
 #ifdef NEED_COMMIT_STACK   /* hack for bug in gcc 2.96 */
     commit_stack_pages();
@@ -88,12 +89,19 @@ main(int argc, char *argv[])
      * a flag instead, so we could warn the user if they later enter
      * a non-ASCII PDF password that doesn't work.
      */
-    (void)setlocale(LC_CTYPE, "");
+    curlocale = setlocale(LC_CTYPE, "");
     code = gsapi_new_instance(&minst, NULL);
 
-    if (code >= 0)
-        code = gsapi_init_with_args(minst, argc, argv);
+    if (code >= 0) {
+        if (curlocale == NULL || strstr(curlocale, "UTF-8") != NULL || strstr(curlocale, "utf8") != NULL)
+            code = gsapi_set_arg_encoding(minst, 1); /* PS_ARG_ENCODING_UTF8 = 1 */
+        else {
+            code = gsapi_set_arg_encoding(minst, 0); /* PS_ARG_ENCODING_LOCAL = 0 */
+        }
+    }
 
+    if (code >= 0)
+      code = gsapi_init_with_args(minst, argc, argv);
 #ifdef RUN_STRINGS
     {				/* Run a list of strings (for testing). */
         const char **pstr = run_strings;

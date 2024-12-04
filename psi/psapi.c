@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -165,6 +165,19 @@ psapi_delete_instance(gs_lib_ctx_t *ctx)
         --gsapi_instance_counter;
 }
 
+static int ascii_get_codepoint(stream *s, const char **astr)
+{
+    if (s)
+        return spgetc(s);
+    else {
+        int rune = **astr;
+        (*astr)++;
+        if (rune != 0)
+            return rune;
+    }
+    return EOF;
+}
+
 static int utf16le_get_codepoint(stream *s, const char **astr)
 {
     int c;
@@ -257,7 +270,7 @@ psapi_set_arg_encoding(gs_lib_ctx_t *ctx, int encoding)
          */
         gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), gp_local_arg_encoding_get_codepoint);
 #else
-        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), NULL);
+        gs_main_inst_arg_decode(get_minst_from_memory(ctx->memory), ascii_get_codepoint);
 #endif /* WIN32 */
         return 0;
     }

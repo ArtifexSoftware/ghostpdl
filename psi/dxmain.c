@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -37,6 +37,7 @@
 #include "ierrors.h"
 #include "iapi.h"
 #include "gdevdsp.h"
+#include "locale_.h"
 
 const char start_string[] = "systemdict /start get exec\n";
 
@@ -1192,9 +1193,10 @@ int main(int argc, char *argv[])
     char *default_devs = NULL;
     char *our_default_devs = NULL;
     int len;
+    char *curlocale;
 
     /* Gtk initialisation */
-    setlocale(LC_ALL, "");
+    curlocale = setlocale(LC_ALL, "");
     use_gui = gtk_init_check(&argc, &argv);
 
     /* insert display device parameters as first arguments */
@@ -1210,6 +1212,13 @@ int main(int argc, char *argv[])
     /* run Ghostscript */
     if ((code = gsapi_new_instance(&instance, NULL)) == 0) {
         gsapi_set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
+
+        if (curlocale == NULL || strstr(curlocale, "UTF-8") != NULL || strstr(curlocale, "utf8") != NULL)
+            code = gsapi_set_arg_encoding(instance, 1); /* PS_ARG_ENCODING_UTF8 = 1 */
+        else {
+            code = gsapi_set_arg_encoding(instance, 0); /* PS_ARG_ENCODING_LOCAL = 0 */
+        }
+
         if (use_gui) {
             gsapi_set_display_callback(instance, &display);
 
