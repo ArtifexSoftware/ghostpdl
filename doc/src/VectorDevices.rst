@@ -1251,7 +1251,11 @@ In addition EPS files may only contain a single page and may not contain device-
 Creating a PDF/X-3 document
 ----------------------------------
 
-To create a PDF/X-3 document from a Postscript or a PDF file, you should :
+.. warning::
+
+  Ghostscript only supports creation of PDF/X-3 formats, other formats of PDF/X are *not supported*.
+
+To create a document from a Postscript or a PDF file, you should :
 
 - Specify the :title:`pdfwrite` device or use the ``ps2pdf`` script.
 
@@ -1313,7 +1317,12 @@ Please also see the ``PDFACompatibilityPolicy`` control described under `Creatin
 Creating a PDF/A document
 ------------------------------
 
-To create a PDF/A document, please follow the instructions for `Creating a PDF/X-3 document`_, with the following exceptions :
+.. warning::
+
+  Ghostscript only supports creation of PDF/A versions 1-3 and `conformance level b <https://en.wikipedia.org/wiki/PDF/A#Conformance_levels_and_versions>`_, other formats of PDF/A are *not supported*.
+
+
+To create a document, please follow the instructions for `Creating a PDF/X-3 document`_, with the following exceptions :
 
 - Specify the :title:`pdfwrite` device or use the ``ps2pdf`` script.
 
