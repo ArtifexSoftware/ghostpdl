@@ -359,7 +359,7 @@ int pdfi_gs_setgray(pdf_context *ctx, double d)
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
-        pdfi_log_info(ctx, "pdfi_gs_setgray", "colour operator in a CharProc, following a d1 ignored");
+        pdfi_log_info(ctx, "pdfi_gs_setgray", "colour operator in a CharProc, following a d1 ignored\n");
         return 0;
     }
 
@@ -397,7 +397,7 @@ int pdfi_gs_setrgbcolor(pdf_context *ctx, double r, double g, double b)
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
-        pdfi_log_info(ctx, "pdfi_gs_setrgbcolor", "colour operator in a CharProc, following a d1 ignored");
+        pdfi_log_info(ctx, "pdfi_gs_setrgbcolor", "colour operator in a CharProc, following a d1 ignored\n");
         return 0;
     }
 
@@ -437,7 +437,7 @@ static int pdfi_gs_setcmykcolor(pdf_context *ctx, double c, double m, double y, 
 
     /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
     if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
-        pdfi_log_info(ctx, "pdfi_gs_setcmykcolor", "colour operator in a CharProc, following a d1 ignored");
+        pdfi_log_info(ctx, "pdfi_gs_setcmykcolor", "colour operator in a CharProc, following a d1 ignored\n");
         return 0;
     }
 
@@ -481,7 +481,7 @@ int pdfi_gs_setcolorspace(pdf_context *ctx, gs_color_space *pcs)
     if (ctx->pgs->color[0].color_space->id != pcs->id) {
         /* PDF Reference 1.7 p423, any colour operators in a CharProc, following a d1, should be ignored */
         if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
-            pdfi_log_info(ctx, "pdfi_gs_setcolorspace", "colour operator in a CharProc, following a d1 ignored");
+            pdfi_log_info(ctx, "pdfi_gs_setcolorspace", "colour operator in a CharProc, following a d1 ignored\n");
             return 0;
         }
 
@@ -689,7 +689,7 @@ int pdfi_setstrokecolor(pdf_context *ctx)
          * Just clear the stack and hope for the best.
          */
         pdfi_clearstack(ctx);
-        pdfi_log_info(ctx, "pdfi_setstrokecolor", "colour operator in a CharProc, following a d1 ignored");
+        pdfi_log_info(ctx, "pdfi_setstrokecolor", "colour operator in a CharProc, following a d1 ignored\n");
         return 0;
     }
 
@@ -721,7 +721,7 @@ int pdfi_setfillcolor(pdf_context *ctx)
          * Just clear the stack and hope for the best.
          */
         pdfi_clearstack(ctx);
-        pdfi_log_info(ctx, "pdfi_setfillcolor", "colour operator in a CharProc, following a d1 ignored");
+        pdfi_log_info(ctx, "pdfi_setfillcolor", "colour operator in a CharProc, following a d1 ignored\n");
         return 0;
     }
 
@@ -761,7 +761,7 @@ pdfi_setcolorN(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, boo
          * Just clear the stack and hope for the best.
          */
         pdfi_clearstack(ctx);
-        pdfi_log_info(ctx, "pdfi_setcolorN", "colour operator in a CharProc, following a d1 ignored");
+        pdfi_log_info(ctx, "pdfi_setcolorN", "colour operator in a CharProc, following a d1 ignored\n");
         return 0;
     }
 
@@ -2928,7 +2928,7 @@ int pdfi_setstrokecolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict 
 
     if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
         pdfi_pop(ctx, 1);
-        pdfi_log_info(ctx, "pdfi_setstrokecolor_space", "colour operator in a CharProc, following a d1 ignored");
+        pdfi_log_info(ctx, "pdfi_setstrokecolor_space", "colour operator in a CharProc, following a d1 ignored\n");
         return 0;
     }
 
@@ -2958,7 +2958,7 @@ int pdfi_setfillcolor_space(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *p
 
     if (ctx->text.inside_CharProc && ctx->text.CharProc_d_type != pdf_type3_d0) {
         pdfi_pop(ctx, 1);
-        pdfi_log_info(ctx, "pdfi_setfillcolor_space", "colour operator in a CharProc, following a d1 ignored");
+        pdfi_log_info(ctx, "pdfi_setfillcolor_space", "colour operator in a CharProc, following a d1 ignored\n");
         return 0;
     }
 
