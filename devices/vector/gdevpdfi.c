@@ -3047,7 +3047,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             return 0;
             break;
         case gxdso_hilevel_text_clip:
-            if (data == 0) {
+            if (data == 0 && !pdev->accumulating_charproc) {
                 /* We are exiting a text render mode 'clip' by grestoring back to
                  *  a time when the clip wasn't active.
                  * First, check if we have a clip (this should always be true).
@@ -3081,49 +3081,51 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     pdf_reset_text(pdev);	/* because of Q */
                 }
             } else {
-                gs_gstate *pgs = (gs_gstate *)data;
-                /* We are starting text in a clip mode
-                 * First make sure we aren't already in a clip mode (this shuld never be true)
-                 */
-                if (!pdev->clipped_text_pending) {
-                    /* Return to the content stream, this will (amongst other things) flush
-                     * any pending text.
+                if (!pdev->accumulating_charproc) {
+                    gs_gstate *pgs = (gs_gstate *)data;
+                    /* We are starting text in a clip mode
+                     * First make sure we aren't already in a clip mode (this should never be true)
                      */
-                    code = pdf_open_page(pdev, PDF_IN_STREAM);
-                    if (code < 0)
-                        return code;
+                    if (!pdev->clipped_text_pending) {
+                        /* Return to the content stream, this will (amongst other things) flush
+                         * any pending text.
+                         */
+                        code = pdf_open_page(pdev, PDF_IN_STREAM);
+                        if (code < 0)
+                            return code;
 
-                    if (pdf_must_put_clip_path(pdev, pgs->clip_path)) {
-                       code = pdf_unclip(pdev);
+                        if (pdf_must_put_clip_path(pdev, pgs->clip_path)) {
+                           code = pdf_unclip(pdev);
+                            if (code < 0)
+                                return code;
+                            code = pdf_put_clip_path(pdev, pgs->clip_path);
+                            if (code < 0)
+                                return code;
+                        }
+
+                        pdev->saved_vgstack_depth_for_textclip = pdev->vgstack_depth;
+
+                        /* Save the current graphics state (or at least that bit which we track) so
+                         * that we can put it back later.
+                         */
+                        code = pdf_save_viewer_state(pdev, pdev->strm);
                         if (code < 0)
                             return code;
-                        code = pdf_put_clip_path(pdev, pgs->clip_path);
-                        if (code < 0)
-                            return code;
+                        pdev->clipped_text_pending = 1;
+
+                        /* Save the current 'bottom' of the saved gstate stack, we need to
+                         * restore back to this state when we exit the graphics state
+                         * with a text rendering mode involving a clip.
+                         */
+                        pdev->saved_vgstack_bottom_for_textclip = pdev->vgstack_bottom;
+                        /* And push the bottom of the stack up until it is where we are now.
+                         * This is because clip paths, images, and possibly other constructs
+                         * will emit a clip path if the 'depth - bottom' is not zero, to create
+                         * a clip path. We want to make sure that it doesn't try to restore back
+                         * to a point before we established the text clip.
+                         */
+                        pdev->vgstack_bottom = pdev->vgstack_depth;
                     }
-
-                    pdev->saved_vgstack_depth_for_textclip = pdev->vgstack_depth;
-
-                    /* Save the current graphics state (or at least that bit which we track) so
-                     * that we can put it back later.
-                     */
-                    code = pdf_save_viewer_state(pdev, pdev->strm);
-                    if (code < 0)
-                        return code;
-                    pdev->clipped_text_pending = 1;
-
-                    /* Save the current 'bottom' of the saved gstate stack, we need to
-                     * restore back to this state when we exit the graphics state
-                     * with a text rendering mode involving a clip.
-                     */
-                    pdev->saved_vgstack_bottom_for_textclip = pdev->vgstack_bottom;
-                    /* And push the bottom of the stack up until it is where we are now.
-                     * This is because clip paths, images, and possibly other constructs
-                     * will emit a clip path if the 'depth - bottom' is not zero, to create
-                     * a clip path. We want to make sure that it doesn't try to restore back
-                     * to a point before we established the text clip.
-                     */
-                    pdev->vgstack_bottom = pdev->vgstack_depth;
                 }
             }
             break;
