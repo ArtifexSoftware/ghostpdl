@@ -1589,7 +1589,31 @@ int pdfi_d1(pdf_context *ctx)
         goto d1_error;
     }
 
+#if 0
+    /* This code stops us caching the bitmap and filling it. This is required if the 'pdf-differences'
+     * test Type3WordSpacing/Type3Test.pdf is to be rendered with a red stroke. Currently the cache
+     * results in a bitmap which is filled with the current fill colour, stroke colours are not
+     * implemented. I believe that, since the spec references the PLRM implementation of 'd1' that
+     * this is correct. I further suspect that the authors of the test used viewers which do not implement
+     * a cache at all, and redraw the glyph every time it is used. This has implications for other parts
+     * of the graphics state, such as dash patterns, line joins and caps etc.
+     *
+     * The change in rendering results in many small differences, particularly at low resolution and PDF generated
+     * by pdfwrite from PCL input.
+     *
+     * We need to clip the glyph description to the bounding box, because that's how the cache works with
+     * a bitmap, if we don't do this then some glyphs are fully rendered which should only be partially
+     * rendered. However, adding this causes two test files to render incorrectly (PostScript files
+     * converted to PDF via pdfwrite). This is what decided me to revert this code.
+     */
+    code = gs_rectclip(ctx->pgs, (const gs_rect *)&wbox[2], 1);
+    if (code < 0)
+        goto d1_error;
+
+    code = gs_text_setcharwidth(ctx->text.current_enum, wbox);
+#else
     code = gs_text_setcachedevice(ctx->text.current_enum, wbox);
+#endif
 
     /* See the comment immediately after gs_text_setcachedvice() in pdfi_d0 above */
     if (ctx->pgs->level > gsave_level)
@@ -2403,7 +2427,7 @@ int pdfi_font_create_widths(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font
         }
     }
     else {
-        font->MissingWidth = 1000.0 * scale;
+        font->MissingWidth = 0;
     }
 
     code = pdfi_dict_knownget_type(ctx, fontdict, "Widths", PDF_ARRAY, (pdf_obj **)&obj);
