@@ -703,6 +703,20 @@ int pdfi_setstrokecolor(pdf_context *ctx)
     }
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code == 0) {
+        if (pcs->type == &gs_color_space_type_Indexed) {
+            /* Special handling for floating point colour values
+             * PostScript doesn't specify what should happen with a float
+             * lookup value. PDF says 'nearest integer' and round 0.5 up.
+             * Doing this in the graphics library caused some (tiny) differences
+             * in output files, so instead perform that check here.
+             * The out of range clamping is already correct in the graphics library.
+             */
+            int index = (int)floor(cc.paint.values[0]);
+
+            if(cc.paint.values[0] - index > 0.49999)
+                index++;
+            cc.paint.values[0] = (float)index;
+        }
         code = gs_setcolor(ctx->pgs, &cc);
     }
     gs_swapcolors_quick(ctx->pgs);
@@ -731,6 +745,20 @@ int pdfi_setfillcolor(pdf_context *ctx)
         return_error(gs_error_syntaxerror);
     code = pdfi_get_color_from_stack(ctx, &cc, ncomps);
     if (code == 0) {
+        if (pcs->type == &gs_color_space_type_Indexed) {
+            /* Special handling for floating point colour values
+             * PostScript doesn't specify what should happen with a float
+             * lookup value. PDF says 'nearest integer' and round 0.5 up.
+             * Doing this in the graphics library caused some (tiny) differences
+             * in output files, so instead perform that check here.
+             * The out of range clamping is already correct in the graphics library.
+             */
+            int index = (int)floor(cc.paint.values[0]);
+
+            if(cc.paint.values[0] - index > 0.49999)
+                index++;
+            cc.paint.values[0] = (float)index;
+        }
         code = gs_setcolor(ctx->pgs, &cc);
     }
     return code;
