@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3272,22 +3272,50 @@ get_mediawp(cmm_profile_t *src_profile, byte *mediawhitept)
     int tag_signature = -1;
     int offset;
     int k;
+    int buffer_left = src_profile->buffer_size;
+
+    if (buffer_left < 128)
+        return false;
+    buffer_left -= 128;
+
+    if (buffer_left < 4)
+        return false;
 
     buffer += 4;
+    buffer_left -= 4;
 
     /* Get to the tag table */
     for (k = 0; k < num_tags; k++) {
+        if (buffer_left < 12)
+            return false;
+
         tag_signature = readint32(buffer);
         if (tag_signature == icSigMediaWhitePointTag)
             break;
         buffer += 12;
+        buffer_left -= 12;
     }
     if (tag_signature != icSigMediaWhitePointTag)
         return false;
+
+    if (buffer_left < 4)
+        return false;
+
     buffer += 4;
+    buffer_left -= 4;
+
     offset = readint32(buffer);
+
+    if (buffer_left < offset + 8)
+        return false;
+
     buffer = &(src_profile->buffer[offset + 8]);  /* Add offset of 8 for XYZ tag and padding */
+    buffer_left = src_profile->buffer_size - (offset + 8);
+
     /* Data is already in the proper format. Just get the bytes */
+    if (buffer_left < 12)
+        return false;
+
     memcpy(mediawhitept, buffer, 12);
     return true;
 }
