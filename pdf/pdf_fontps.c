@@ -760,8 +760,9 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
           case 12:
               if (pdf_ps_name_cmp(&s->cur[-1], "WeightVector")) {
                   if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
-                      int i;
-                      for (i = 0; i < s->cur[0].size; i++) {
+                      int i, size = s->cur[0].size > 16 ? 16 : s->cur[0].size;
+
+                      for (i = 0; i < size; i++) {
                           if (pdf_ps_obj_has_type(&s->cur[0].val.arr[i], PDF_PS_OBJ_INTEGER)) {
                               priv->gsu.gst1.data.WeightVector.values[i] = (float)s->cur[0].val.arr[i].val.i;
                           }
