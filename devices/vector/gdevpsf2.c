@@ -1624,6 +1624,9 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     int num_fonts = pfont->cidata.FDArray_size;
     int code;
 
+    if (num_fonts > 256)
+        return_error(gs_error_invalidfont);
+
     memset(&subrs_count, 0x00, 256 * sizeof(uint));
     memset(&subrs_size, 0x00, 256 * sizeof(uint));
 
