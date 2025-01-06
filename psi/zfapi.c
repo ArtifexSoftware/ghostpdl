@@ -302,13 +302,18 @@ sfnts_copy_except_glyf(sfnts_reader *r, sfnts_writer *w)
     {
         byte tag[4];
         ulong checkSum, offset, offset_new, length;
-    } tables[30];
+    } tables[40];
     const ushort alignment = 4; /* Not sure, maybe 2 */
     ulong version = r->rlong(r);
     ushort num_tables = r->rword(r);
     ushort i, num_tables_new = 0;
     ushort searchRange, entrySelector = 0, rangeShift, v;
     ulong size_new = 12;
+
+    if (num_tables > countof(tables)) {
+        r->error = gs_note_error(gs_error_invalidfont);
+        return r->error;
+    }
 
     r->rword(r);                /* searchRange */
     if (r->error < 0)
