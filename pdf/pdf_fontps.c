@@ -1177,6 +1177,9 @@ pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 int inx = s->cur[-1].val.i;
 
                 size = s->cur[0].val.i;
+                if (size < 0)
+                    return_error(gs_error_invalidfont);
+
                 buf++;
                 if (buf + size < bufend) {
                     pdf_string *subr_str;
@@ -1201,6 +1204,9 @@ pdf_ps_RD_oper_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                 pdf_obj *key = NULL;
 
                 size = s->cur[0].val.i;
+                if (size < 0)
+                    return_error(gs_error_invalidfont);
+
                 buf++;
                 code = pdfi_name_alloc(s->pdfi_ctx, (byte *) s->cur[-1].val.name, s->cur[-1].size, &key);
                 if (code < 0) {
