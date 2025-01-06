@@ -657,7 +657,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                               priv->gsu.gst1.data.StemSnapV.values[i] = s->cur[0].val.arr[i].val.f;
                           }
                       }
-                      priv->gsu.gst1.data.StemSnapH.count = size;
+                      priv->gsu.gst1.data.StemSnapV.count = size;
                   }
               }
               else if (pdf_ps_name_cmp(&s->cur[-1], "BlueScale")) {
