@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2024 Artifex Software, Inc.
+/* Copyright (C) 2020-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -368,7 +368,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
 
           case 4:
               if (pdf_ps_name_cmp(&s->cur[-1], "XUID")) {
-                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY)) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY) && uid_is_valid(&priv->gsu.gst1.UID) == false) {
                       int i, size = s->cur[0].size;
                       long *xvals = (long *)gs_alloc_bytes(mem, size *sizeof(long), "ps_font_def_func(xuid vals)");
 
@@ -437,7 +437,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
               break;
 
           case 6:
-              if (pdf_ps_name_cmp(&s->cur[-1], "Notice")) {
+              if (pdf_ps_name_cmp(&s->cur[-1], "Notice") && priv->u.t1.notice == NULL) {
                   if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
                       pdf_string *subr_str;
 
@@ -466,7 +466,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                       fnlen = s->cur[0].size > gs_font_name_max ? gs_font_name_max : s->cur[0].size;
                       pname = (char *)s->cur[0].val.string;
                   }
-                  if (pname) {
+                  if (pname && priv->gsu.gst1.key_name.chars[0] == '\0') {
                       memcpy(priv->gsu.gst1.key_name.chars, pname, fnlen);
                       priv->gsu.gst1.key_name.chars[fnlen] = '\0';
                       priv->gsu.gst1.key_name.size = fnlen;
@@ -599,7 +599,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                       }
                   }
               }
-              else if (pdf_ps_name_cmp(&s->cur[-1], "UniqueID")) {
+              else if (pdf_ps_name_cmp(&s->cur[-1], "UniqueID") && uid_is_valid(&priv->gsu.gst1.UID) == false) {
                   /* Ignore UniqueID if we already have a XUID */
                   if (priv->gsu.gst1.UID.id >= 0) {
                       if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_INTEGER)) {
@@ -608,7 +608,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                   }
               }
               else if (pdf_ps_name_cmp(&s->cur[-1], "FullName")) {
-                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING) && priv->u.t1.fullname == NULL) {
                       pdf_string *subr_str;
 
                       code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, (unsigned int)s->cur[0].size, (pdf_obj **)&subr_str);
@@ -687,7 +687,8 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
 
           case 10:
               if (pdf_ps_name_cmp(&s->cur[-1], "FontMatrix")) {
-                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY) && s->cur[0].size >= 6) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY) && s->cur[0].size >= 6
+                    && (priv->gsu.gst1.FontMatrix.xx * priv->gsu.gst1.FontMatrix.yy - priv->gsu.gst1.FontMatrix.yx * priv->gsu.gst1.FontMatrix.xy == 0)) {
                       int i;
                       double fmat[6] = { 0.001, 0, 0, 0.001, 0, 0 };
                       for (i = 0; i < 6; i++) {
@@ -730,7 +731,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
                   }
               }
               else if (pdf_ps_name_cmp(&s->cur[-1], "FamilyName")) {
-                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
+                  if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING) && priv->u.t1.familyname == NULL) {
                       pdf_string *subr_str;
 
                       code = pdfi_object_alloc(s->pdfi_ctx, PDF_STRING, (unsigned int)s->cur[0].size, (pdf_obj **)&subr_str);
