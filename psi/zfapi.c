@@ -694,7 +694,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     /* When reading the real proc, we add a space between each entry */
                     length++;
                     if (array_get(ff->memory, DBlend, i, &Element) < 0) {
-                        *ret = 0;
+                        length = 0;
                         break;
                     }
                     switch (r_btype(&Element)) {
@@ -721,7 +721,12 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                         default:
                             break;
                     }
-                }
+
+                    if (length > max_ushort) {
+                        length = 0;
+                        break;
+                    }
+                 }
                 *ret = length;
                 break;
             }
