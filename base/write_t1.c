@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -628,6 +628,7 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output, int Wri
     WRF_wbyte(a_fapi_font->memory, a_output, '\n');
     if (is_MM_font(a_fapi_font)) {
         short x, x2;
+        unsigned short ux;
         float x1;
         uint i, j, entries;
         char Buffer[255];
@@ -759,16 +760,16 @@ write_main_dictionary(gs_fapi_font * a_fapi_font, WRF_output * a_output, int Wri
          */
         code = a_fapi_font->get_word(a_fapi_font,
                                    gs_fapi_font_feature_DollarBlend_length,
-                                   0, (unsigned short *)&x);
+                                   0, &ux);
         if (code < 0)
             return code;
 
-        if (x > 0) {
+        if (ux > 0) {
             int len;
             WRF_wstring(a_fapi_font->memory, a_output, "/$Blend {");
 
             if (a_output->m_count)
-                a_output->m_count += x;
+                a_output->m_count += ux;
             len = a_fapi_font->get_proc(a_fapi_font,
                                       gs_fapi_font_feature_DollarBlend, 0,
                                       (char *)a_output->m_pos);
