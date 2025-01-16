@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -61,34 +61,34 @@
  */
 typedef struct PS_colour_space_s PS_colour_space_t;
 struct PS_colour_space_s {
-    char *name;					/* C string representing the name of the space */
+    char *name;					                /* C string representing the name of the space */
     int (*setproc)(i_ctx_t * i_ctx_p, ref *r,	/* Routine to set the color space, if CIESubst */
         int *stage, int *cont, int CIESubst);	/* is true then we are already doing CIE substitution */
-    int (*validateproc)(i_ctx_t * i_ctx_p,	/* Validates the color space operands */
+    int (*validateproc)(i_ctx_t * i_ctx_p,	    /* Validates the color space operands */
         ref **r);
-    int (*alternateproc)(i_ctx_t * i_ctx_p,	/* Retrieve the alternate color space (if any) */
+    int (*alternateproc)(i_ctx_t * i_ctx_p,	    /* Retrieve the alternate color space (if any) */
         ref *space, ref **r, int *CIESubst);	/* If CIESubst comes back true, then don't do further CIE substitution */
-    int (*numcomponents)(i_ctx_t * i_ctx_p,	/* Returns the number of components in the space */
+    int (*numcomponents)(i_ctx_t * i_ctx_p,	    /* Returns the number of components in the space */
         ref *space, int *n);
     int (*range)(i_ctx_t * i_ctx_p, ref *space, /* Returns 'components' pairs of values which represent */
-        float *ptr);				/* the valid ranges of values for this space */
-    int (*domain)(i_ctx_t * i_ctx_p,		/* Returns 'components' pairs of values which represent */
-        ref *space, float *ptr);		/* the domain over which values are valid */
-    int (*basecolorproc)(i_ctx_t * i_ctx_p,	/* convert the current color values into device space */
-        ref *space, int base, int *stage,	/* values. 'base' is the requested base space, 0=gray */
-        int *cont, int *stack_depth);		/* 1 = HSB, 2 = RGB, 3 = CMYK. Separation and DeviceN */
+        float *ptr);				            /* the valid ranges of values for this space */
+    int (*domain)(i_ctx_t * i_ctx_p,		    /* Returns 'components' pairs of values which represent */
+        ref *space, float *ptr);		        /* the domain over which values are valid */
+    int (*basecolorproc)(i_ctx_t * i_ctx_p,	    /* convert the current color values into device space */
+        ref *space, int base,                   /* values. 'base' is the requested base space, 0=gray */
+        int *cont);                 		    /* 1 = HSB, 2 = RGB, 3 = CMYK. Separation and DeviceN */
                                                 /* spaces will return default values if they are not using */
                                                 /* the alternate space, and will convert the components */
                                                 /* into values in the alternate otherwise, by executing */
                                                 /* the tint transform procedure */
     int (*runtransformproc)(i_ctx_t *i_ctx_p,	/* executes the tint transform for this space */
         ref *space, int *usealternate,
-        int *stage, int *stack_depth);
+        int *stage);
     int (*validatecomponents)(i_ctx_t *i_ctx_p, /* Check the components supplied as an argument to setcolor */
-        ref *space, float *values,		/* are valid */
+        ref *space, float *values,		        /* are valid */
         int num_comps);
-    int (*compareproc)(i_ctx_t *i_ctx_p,	/* Compare two color spaces of this type, to see if they */
-        ref *space, ref *testspace);		/* are the same */
+    int (*compareproc)(i_ctx_t *i_ctx_p,	    /* Compare two color spaces of this type, to see if they */
+        ref *space, ref *testspace);		    /* are the same */
     int (*initialcolorproc)(i_ctx_t *i_ctx_p,	/* Set the appropriate initial color for this space */
         ref *space);
 };

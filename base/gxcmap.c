@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1806,7 +1806,10 @@ gs_identity_transfer(double value, const gx_transfer_map * pmap)
 float
 gs_mapped_transfer(double value, const gx_transfer_map * pmap)
 {
-    return gx_map_color_float(pmap, value);
+    int index = (int)((value) * (transfer_map_size) + 0.5);
+    if (index > transfer_map_size - 1)
+        index = transfer_map_size - 1;
+    return frac2float(pmap->values[index]);
 }
 
 /* Set a transfer map to the identity map. */

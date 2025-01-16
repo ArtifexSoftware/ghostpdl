@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -101,6 +101,7 @@ typedef struct ref_colorspace_s {
     ref array;			/* color space (array), only relevant if */
                                 /* the current color space has parameters */
                                 /* associated with it. */
+    ref orig_array_copy;    /* Copy of the original array, in case the program alers it */
     ref_color_procs procs;	/* associated procedures/parameters, */
                                 /* only relevant for DeviceN, CIE, */
                                 /* Separation, Indexed/CIE, */
