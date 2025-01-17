@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1122,8 +1122,9 @@ static int write_key_as_string_encrypted(const gx_device_pdf *pdev, const byte *
     stream_state so;
     byte bufo[100], *buffer;
     stream_arcfour_state sarc4;
+    int i, j = 0;
 
-    buffer = gs_alloc_bytes(pdev->pdf_memory, size, "encryption buffer");
+    buffer = gs_alloc_bytes(pdev->pdf_memory, size * 2, "encryption buffer");
     if (buffer == 0L)
         return 0;
 
@@ -1138,9 +1139,13 @@ static int write_key_as_string_encrypted(const gx_device_pdf *pdev, const byte *
     s_init_state(&so, &s_PSSE_template, NULL);
     s_init_filter(&sout, &so, bufo, sizeof(bufo), pdev->strm);
     stream_putc(pdev->strm, '(');
-    memcpy(buffer, str, size);
-    s_arcfour_process_buffer(&sarc4, buffer, size);
-    stream_write(&sout, buffer, size);
+    for (i = 0;i < size;i++) {
+        if (str[i] == '(' || str[i] == ')' || str[i] == '\\')
+            buffer[j++] = '\\';
+        buffer[j++] = str[i];
+    }
+    s_arcfour_process_buffer(&sarc4, buffer, j);
+    stream_write(&sout, buffer, j);
     /* Another case where we use sclose() and not s_close_filters(), because the
      * buffer we supplied to s_init_filter is a heap based C object, so we
      * must not free it.
@@ -1172,8 +1177,16 @@ static int write_key_as_string(const gx_device_pdf *pdev, stream *s, const cos_d
         offset++;
         length--;
         if (!pdev->KeyLength || object_id == (gs_id)-1) {
+            int i = 0;
+
             spputc(s, '(');
-            stream_write(s, &element->key.data[offset], length);
+            /* We need to escape some character codes */
+            for (i = 0;i < length;i++) {
+                if (element->key.data[offset + i] == '(' || element->key.data[offset + i] == ')' ||
+                    element->key.data[offset + i] == '\\')
+                    spputc(s, '\\');
+                spputc(s, element->key.data[offset + i]);
+            }
             spputc(s, ')');
         }
         else
