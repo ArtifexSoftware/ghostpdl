@@ -153,6 +153,9 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
     byte *p = (ops ? ops + *size : NULL);
 
     while (1) {
+        if (*size > max_uint / 2)
+            return gs_note_error(gs_error_VMerror);
+
         c = pdfi_read_byte(ctx, function_stream);
         if (c < 0)
             break;
@@ -320,6 +323,11 @@ pdfi_build_function_4(pdf_context *ctx, gs_function_params_t * mnDR,
     code = pdfi_parse_type4_func_stream(ctx, function_stream, 0, NULL, &size);
     if (code < 0)
         goto function_4_error;
+
+    if (size > max_uint - 1) {
+        code = gs_note_error(gs_error_VMerror);
+        goto function_4_error;
+    }
 
     ops = gs_alloc_string(ctx->memory, size + 1, "pdfi_build_function_4(ops)");
     if (ops == NULL) {
@@ -824,6 +832,11 @@ int pdfi_build_halftone_function(pdf_context *ctx, gs_function_t ** ppfn, byte *
     code = pdfi_parse_type4_func_stream(ctx, function_stream, 0, NULL, &size);
     if (code < 0)
         goto halftone_function_error;
+
+    if (size > max_uint - 1) {
+        code = gs_note_error(gs_error_VMerror);
+        goto halftone_function_error;
+    }
 
     ops = gs_alloc_string(ctx->memory, size + 1, "pdfi_build_halftone_function(ops)");
     if (ops == NULL) {
