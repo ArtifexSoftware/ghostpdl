@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -324,7 +324,7 @@ encode(gx_device *pdev, stream **s, const stream_template *t, gs_memory_t *mem)
         jcdp->Picky = 0;
         jcdp->Relax = 0;
         jcdp->cinfo.image_width = gx_downscaler_scale(pdf_dev->width, pdf_dev->downscale.downscale_factor);
-        jcdp->cinfo.image_height = pdf_dev->StripHeight;
+        jcdp->cinfo.image_height = gx_downscaler_scale(pdf_dev->height, pdf_dev->downscale.downscale_factor);
         switch (pdf_dev->color_info.depth) {
             case 32:
                 jcdp->cinfo.input_components = 4;
