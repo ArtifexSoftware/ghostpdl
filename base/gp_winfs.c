@@ -44,8 +44,12 @@ gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
     if (uni == NULL)
         return NULL;
     gp_utf8_to_uint16(uni, fname);
-    gp_utf8_to_uint16(wmode, mode);
-    file = _wfopen(uni, wmode);
+
+    len = gp_utf8_to_uint16(NULL, mode);
+    if (len >= 0) {
+        gp_utf8_to_uint16(wmode, mode);
+        file = _wfopen(uni, wmode);
+    }
     gs_free_object(mem, uni, "gs_fopen_impl");
 
     return file;

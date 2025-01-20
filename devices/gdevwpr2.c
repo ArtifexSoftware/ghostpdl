@@ -1079,7 +1079,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     HANDLE hprinter = NULL;
 
     /* fall back to prompting user */
-    int result = FALSE;
+    int result = FALSE, size;
 
     WCHAR* unidev = NULL;
     WCHAR* unidriver = NULL;
@@ -1103,7 +1103,10 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         wchar_t *devices;
         wchar_t *p;
         int devices_size = 128, returned_length = 0;
-        unidev = malloc(gp_utf8_to_uint16(NULL, device)*sizeof(wchar_t));
+
+        size = gp_utf8_to_uint16(NULL, device);
+        if (size >= 0)
+            unidev = malloc(size*sizeof(wchar_t));
         if (unidev == NULL)
             goto cleanup;
         gp_utf8_to_uint16(unidev, device);
@@ -1144,12 +1147,16 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     driver = gs_strtok(driverbuf, ",", &dbuflast);
     output = gs_strtok(NULL, ",", &dbuflast);
 
-    unidriver = malloc(gp_utf8_to_uint16(NULL, driver) * sizeof(wchar_t));
+    size = gp_utf8_to_uint16(NULL, driver);
+    if (size >= 0)
+        unidriver = malloc(size * sizeof(wchar_t));
     if (unidriver == NULL)
         goto cleanup;
     gp_utf8_to_uint16(unidriver, driver);
 
-    unioutput = malloc(gp_utf8_to_uint16(NULL, output) * sizeof(wchar_t));
+    size = gp_utf8_to_uint16(NULL, output);
+    if (size >= 0)
+        unioutput = malloc(size * sizeof(wchar_t));
     if (unioutput == NULL)
         goto cleanup;
     gp_utf8_to_uint16(unioutput, output);

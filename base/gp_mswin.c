@@ -365,12 +365,20 @@ BOOL gp_OpenPrinter(char *port, LPHANDLE printer)
 #ifdef METRO
     return FALSE;
 #else
-    BOOL opened;
-    wchar_t *uni = malloc(gp_utf8_to_uint16(NULL, port) * sizeof(wchar_t));
-    if (uni)
+    BOOL opened = false;
+    wchar_t *uni = NULL;
+    int size = 0;
+
+    size = gp_utf8_to_uint16(NULL, port);
+    if (size <= 0)
+        return opened;
+
+    uni = malloc(size * sizeof(wchar_t));
+    if (uni) {
         gp_utf8_to_uint16(uni, port);
-    opened = OpenPrinterW(uni, printer, NULL);
-    free(uni);
+        opened = OpenPrinterW(uni, printer, NULL);
+        free(uni);
+    }
     return opened;
 #endif
 }
@@ -515,8 +523,11 @@ FILE *mswin_popen(const char *cmd, const char *mode)
     siStartInfo.hStdError = hChildStderrWr;
 
     if (handle == 0) {
-        command = (wchar_t *)malloc(sizeof(wchar_t)*gp_utf8_to_uint16(NULL, cmd));
-        if (command)
+        int size = gp_utf8_to_uint16(NULL, cmd);
+
+        if (size > 0)
+            command = (wchar_t *)malloc(sizeof(wchar_t)*size);
+        if (command != NULL)
             gp_utf8_to_uint16(command, cmd);
         else
             handle = -1;
@@ -566,6 +577,18 @@ FILE *mswin_popen(const char *cmd, const char *mode)
 
 /* ------ File naming and accessing ------ */
 
+static int limited_uint16_to_utf8(char* out, const unsigned short* in, size_t outlen)
+{
+    int len = gp_uint16_to_utf8(NULL, in);
+    return (len < 0 || len > outlen) ? -1 : gp_uint16_to_utf8(out, in);
+}
+
+static int limited_utf8_to_uint16(unsigned short* out, const char* in, size_t outlen)
+{
+    int len = gp_utf8_to_uint16(NULL, in);
+    return (len < 0 || len > outlen) ? -1 : gp_utf8_to_uint16(out, in);
+}
+
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
@@ -599,9 +622,15 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
              * local encoding. */
             l = GetTempPathWRT(_MAX_PATH, wTempDir);
 #else
-            GetTempPathW(_MAX_PATH, wTempDir);
+            l = GetTempPathW(_MAX_PATH, wTempDir);
 #endif
-            l = gp_uint16_to_utf8(sTempDir, wTempDir);
+            if (l == 0 || l > _MAX_PATH)
+                return NULL;
+
+            l = limited_uint16_to_utf8(sTempDir, wTempDir, _MAX_PATH);
+            /* gp_uint16_to_utf8 returns a count including the terminator */
+            if (l < 1)
+                return NULL;
         } else
             l = strlen(sTempDir);
     } else {
@@ -614,14 +643,17 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
         sTempDir[l-1] = '\\';		/* What Windoze prefers */
 
     if (l <= _MAX_PATH) {
-        gp_utf8_to_uint16(wTempDir, sTempDir);
-        gp_utf8_to_uint16(wPrefix, prefix);
+        if (limited_utf8_to_uint16(wTempDir, sTempDir, _MAX_PATH) < 0)
+            return NULL;
+        if (limited_utf8_to_uint16(wPrefix, prefix, _MAX_PATH) < 0)
+            return NULL;
+
 #ifdef METRO
         n = GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
 #else
-        GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
+        n = GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
 #endif
-        n = gp_uint16_to_utf8(sTempFileName, wTempFileName);
+
         if (n == 0) {
             /* If 'prefix' is not a directory, it is a path prefix. */
             int l = strlen(sTempDir), i;
@@ -636,38 +668,32 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
                 }
             }
             if (i > 0) {
-                gp_utf8_to_uint16(wPrefix, sTempDir + i);
+                if (limited_utf8_to_uint16(wTempDir, sTempDir, _MAX_PATH) < 0)
+                    return NULL;
+                if (limited_utf8_to_uint16(wPrefix, sTempDir + i, _MAX_PATH) < 0)
+                    return NULL;
 #ifdef METRO
-                GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
+                n = GetTempFileNameWRT(wTempDir, wPrefix, wTempFileName);
 #else
-                GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
+                n = GetTempFileNameW(wTempDir, wPrefix, 0, wTempFileName);
 #endif
-                n = gp_uint16_to_utf8(sTempFileName, wTempFileName);
             }
         }
-        if (n != 0) {
-            int len = gp_utf8_to_uint16(NULL, sTempFileName);
-            wchar_t *uni = (len > 0 ? malloc(sizeof(wchar_t)*len) : NULL);
-            if (uni == NULL)
-                hfile = INVALID_HANDLE_VALUE;
-            else {
-                gp_utf8_to_uint16(uni, sTempFileName);
+        if (n > 0) {
 #ifdef METRO
-                hfile = CreateFile2(uni,
-                                    GENERIC_READ | GENERIC_WRITE | DELETE,
-                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                    CREATE_ALWAYS | (remove ? FILE_FLAG_DELETE_ON_CLOSE : 0),
-                                    NULL);
+            hfile = CreateFile2(wTempFileName,
+                                GENERIC_READ | GENERIC_WRITE | DELETE,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                CREATE_ALWAYS | (remove ? FILE_FLAG_DELETE_ON_CLOSE : 0),
+                                NULL);
 #else
-                hfile = CreateFileW(uni,
-                                    GENERIC_READ | GENERIC_WRITE | DELETE,
-                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                    NULL, CREATE_ALWAYS,
-                                    FILE_ATTRIBUTE_NORMAL | (remove ? FILE_FLAG_DELETE_ON_CLOSE : 0),
-                                    NULL);
+            hfile = CreateFileW(wTempFileName,
+                                GENERIC_READ | GENERIC_WRITE | DELETE,
+                                FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                NULL, CREATE_ALWAYS,
+                                FILE_ATTRIBUTE_NORMAL | (remove ? FILE_FLAG_DELETE_ON_CLOSE : 0),
+                                NULL);
 #endif
-                free(uni);
-            }
         }
     }
     if (hfile != INVALID_HANDLE_VALUE) {
@@ -681,7 +707,8 @@ gp_open_scratch_file_impl(const gs_memory_t *mem,
         }
     }
     if (f != NULL) {
-        if ((strlen(sTempFileName) < gp_file_name_sizeof))
+        l = limited_uint16_to_utf8(sTempFileName, wTempFileName, _MAX_PATH);
+        if (l >= 0 && (strlen(sTempFileName) < gp_file_name_sizeof))
             strncpy(fname, sTempFileName, gp_file_name_sizeof - 1);
         else {
             /* The file name is too long. */
