@@ -751,7 +751,7 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
                         int nl = u16(rec + 8);
                         int noffs = u16(rec + 10);
 
-                        if (nl + noffs + storageOffset > table_len) {
+                        if (nl + noffs + storageOffset > table_len || nl >= pname_size) {
                             break;
                         }
                         memcpy(pname, namet + storageOffset + noffs, nl);
@@ -789,7 +789,7 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
                             int nl = u16(rec + 8);
                             int noffs = u16(rec + 10);
 
-                            if (nl + noffs + storageOffset > table_len) {
+                            if (nl + noffs + storageOffset > table_len || nl >= pname_size) {
                                 break;
                             }
                             memcpy(pname, namet + storageOffset + noffs, nl);
