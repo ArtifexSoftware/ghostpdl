@@ -39,8 +39,8 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
     LONG rc;
     wchar_t *wptr;
     wchar_t *wp = NULL;
-    wchar_t *wname;
-    int l = -1;
+    wchar_t *wname = NULL;
+    int l = -1, size = 0;
 
     if (*plen) {
         wp = malloc((*plen)*sizeof(wchar_t));
@@ -49,7 +49,10 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
     }
     wptr = wp;
 
-    wname = malloc(gp_utf8_to_uint16(NULL, name)*sizeof(wchar_t));
+    size = gp_utf8_to_uint16(NULL, name);
+    if (size >= 0)
+        wname = malloc(size*sizeof(wchar_t));
+
     if (wname == NULL) {
         if (wp)
             free(wp);
@@ -113,10 +116,13 @@ gp_getenv_registry(HKEY hkeyroot, const wchar_t *key, const char *name,
 int
 gp_getenv(const char *name, char *ptr, int *plen)
 {
-    wchar_t *wname;
+    wchar_t *wname = NULL;
     wchar_t *str;
+    int size;
 
-    wname = malloc(gp_utf8_to_uint16(NULL, name)*sizeof(wchar_t));
+    size = gp_utf8_to_uint16(NULL, name);
+    if (size >= 0)
+        wname = malloc(size*sizeof(wchar_t));
     if (wname == NULL) {
         return -1;
     }

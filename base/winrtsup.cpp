@@ -78,7 +78,7 @@ extern "C" UINT GetTempFileNameWRT(LPCWSTR lpPathName, LPCWSTR lpPrefixString, L
            path.push_back('\\');
 
        if (path.length() > _MAX_PATH - 14)
-           return ERROR_BUFFER_OVERFLOW;
+           return 0;
 
        GetSystemTimeAsFileTime(&systemTimeAsFileTime);
 
@@ -110,11 +110,11 @@ extern "C" UINT GetTempFileNameWRT(LPCWSTR lpPathName, LPCWSTR lpPrefixString, L
            time++;
        }
 
-       return ERROR_BUFFER_OVERFLOW;
+       return 0;
     }
     catch(...)
     {
-        return ERROR_BUFFER_OVERFLOW;
+        return 0;
     }
 }
 

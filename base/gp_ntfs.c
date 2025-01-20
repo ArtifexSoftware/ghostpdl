@@ -231,7 +231,7 @@ gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uin
 {
     directory_enum *new_denum = NULL, *pden = pfen->current;
     int code = 0;
-    uint len;
+    uint len, outsize = (sizeof(pden->find_data.cFileName)*3+1)/2;
     char outfname[(sizeof(pden->find_data.cFileName)*3+1)/2];
 
     if (pfen->illegal) {
@@ -241,8 +241,12 @@ gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uin
 
     for(;;) {
         if (pden->first_time) {
-            wchar_t *pat;
-            pat = malloc(gp_utf8_to_uint16(NULL, pden->pattern)*sizeof(wchar_t));
+            wchar_t *pat = NULL;
+            int size = 0;
+
+            size = gp_utf8_to_uint16(NULL, pden->pattern);
+            if (size > 0)
+                pat = malloc(size*sizeof(wchar_t));
             if (pat == NULL) {
                 code = -1;
                 break;
@@ -319,6 +323,10 @@ gp_enumerate_files_next_impl(gs_memory_t * mem, file_enum * pfen, char *ptr, uin
         gp_enumerate_files_close(mem, pfen);
         return ~(uint) 0;
     }
+    len = gp_uint16_to_utf8(outfname, pden->find_data.cFileName);
+    if (len >= outsize)
+        return ~(uint) 0;
+
     gp_uint16_to_utf8(outfname, pden->find_data.cFileName);
     len = strlen(outfname);
 

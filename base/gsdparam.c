@@ -1532,7 +1532,7 @@ gx_default_put_icc_colorants(gs_param_string *colorants, gx_device * dev)
     char *tempstr;
     int code;
     int len;
-    unsigned short *tempstr2;
+    unsigned short *tempstr2 = NULL;
     unsigned short *s;
     char *d;
 
@@ -1554,7 +1554,8 @@ gx_default_put_icc_colorants(gs_param_string *colorants, gx_device * dev)
      * UTF-8 chars that do not decode to 8 bits will be flagged up as a rangecheck.
      */
     len = gp_utf8_to_uint16(NULL, tempstr);
-    tempstr2 = (unsigned short *)gs_alloc_bytes(dev->memory, len * sizeof(unsigned short),
+    if (len >= 0)
+        tempstr2 = (unsigned short *)gs_alloc_bytes(dev->memory, len * sizeof(unsigned short),
                                                 "gx_default_put_icc_colorants");
     if (tempstr2 == NULL)
     {
