@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -630,15 +630,6 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
                 }
                 stream_puts(s, "10 dict dup begin\n");
                 stream_puts(s, "/DSC_OPDFREAD false def\n");
-                code = copy_procsets(s, pdev->HaveTrueTypes, true);
-                if (code < 0)
-                    return code;
-                if (!pdev->CompressEntireFile) {
-                    status = s_close_filters(&s, pdev->strm);
-                    if (status < 0)
-                        return_error(gs_error_ioerror);
-                } else
-                    pdev->strm = s;
                 if (!pdev->Eps2Write)
                     stream_puts(s, "/EPS2Write false def\n");
                 if(pdev->SetPageSize)
@@ -650,6 +641,15 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
                 if(pdev->CenterPages)
                     stream_puts(s, "/CenterPages true def\n");
                 stream_puts(s, "end\n");
+                code = copy_procsets(s, pdev->HaveTrueTypes, true);
+                if (code < 0)
+                    return code;
+                if (!pdev->CompressEntireFile) {
+                    status = s_close_filters(&s, pdev->strm);
+                    if (status < 0)
+                        return_error(gs_error_ioerror);
+                } else
+                    pdev->strm = s;
                 pdev->OPDFRead_procset_length = stell(s);
             }
         }
