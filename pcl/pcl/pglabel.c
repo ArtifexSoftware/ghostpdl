@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1203,6 +1203,7 @@ hpgl_process_buffer(hpgl_state_t * pgls, gs_point * offset)
     hpgl_real_t label_length = 0.0, label_height = 0.0;
     bool vertical = hpgl_text_is_vertical(pgls->g.character.text_path);
     int i, inc;
+    const pcl_font_selection_t *pfs =&pgls->g.font_selection[pgls->g.font_selected];
 
     /* a peculiar side effect of LABEL parsing double byte characters
        is it leaves an extra byte in the buffer - fix that now, and
@@ -1268,7 +1269,25 @@ hpgl_process_buffer(hpgl_state_t * pgls, gs_point * offset)
                         break;
                 }
             hpgl_call(hpgl_ensure_font(pgls));
-            hpgl_get_char_width(pgls, ch, &width);
+            /* Hackery... I believe that this *ought* to be handled by resizing every character in the
+             * proportional font as it is drawn, so that it is the size of mandated character (from the SI operator).
+             * This would mean that the calculation of the width would be correct (num characters * character width)
+             * which is what gets returned in label_length above.
+             * But that isn't what hpgl_print_char does. It does use the scale returned by hpgl_current_scale()
+             * to resize each character as it is drawn, which works perfectly well for a fixed pitch font, but
+             * results in each character being potentially a different size with a proportional font.
+             * Ideally I'd fix hpgl_print_char, but I can't see how to do that. It would mean moving a lot of
+             * logic from here into hpgl_print_char() I think.
+             * So here, pretend that we are not writing in absolute mode, that means the length returned
+             * in label_length will be the actual width of the (unscaled) characters.
+             * Then see below....
+             */
+            if (pgls->g.character.size_mode == hpgl_size_absolute && pfs->params.proportional_spacing) {
+                pgls->g.character.size_mode = hpgl_size_not_set;
+                hpgl_get_char_width(pgls, ch, &width);
+                pgls->g.character.size_mode = hpgl_size_absolute;
+            } else
+                hpgl_get_char_width(pgls, ch, &width);
           acc_ht:hpgl_call(hpgl_get_current_cell_height
                       (pgls, &height));
             if (vertical) {
@@ -1285,6 +1304,23 @@ hpgl_process_buffer(hpgl_state_t * pgls, gs_point * offset)
             }
         }
         hpgl_select_font_pri_alt(pgls, save_index);
+    }
+    /* The second part of the hackery. We've calculated the width of the string using 'ordinary'
+     * drawing. We now find out what scaling will be used when drawing the text in 'absolute' mode.
+     * Then we revert back to 'not set' mode, and retrieve that scaling. That gives us the scaling
+     * that ws used (see above) to retrieve label_length.
+     * Now we know the two scalings, we can adjust label_length so that it will be the actual width
+     * of the string we draw. We can then use that to adjust the starting position so that it is
+     * correct.
+     */
+    if (pgls->g.character.size_mode == hpgl_size_absolute && pfs->params.proportional_spacing) {
+        gs_point unset_scale, absolute_scale;
+
+        pgls->g.character.size_mode = hpgl_size_not_set;
+        absolute_scale = hpgl_current_char_scale(pgls);
+        pgls->g.character.size_mode = hpgl_size_absolute;
+        unset_scale = hpgl_current_char_scale(pgls);
+        label_length = label_length * (unset_scale.x / absolute_scale.x);
     }
     hpgl_call(hpgl_get_character_origin_offset(pgls, pgls->g.label.origin,
                                                label_length, label_height,
