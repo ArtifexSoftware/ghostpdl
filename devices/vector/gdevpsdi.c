@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -309,8 +309,25 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     } else if ((templat == &s_LZWE_template ||
                 templat == &s_zlibE_template) &&
                pdev->version >= psdf_version_ll3) {
+        int Effort = -1, Predictor = 15;
+
+        if (templat == &s_zlibE_template) {
+            gs_c_param_list *param = pdip->Dict;
+
+            if (pdip->AutoFilter)
+                param = pdip->ACSDict;
+
+            if (param != NULL) {
+                code = param_read_int((gs_param_list *)param, "Effort", &Effort);
+                if (code == 0) {
+                    stream_zlib_state *const ss = (stream_zlib_state *)st;
+                    ss->level = Effort;
+                }
+                code = param_read_int((gs_param_list *)param, "Predictor", &Predictor);
+            }
+        }
         /* If not Indexed, add a PNGPredictor filter. */
-        if (!Indexed) {
+        if (!Indexed && Predictor >= 10) {
             code = psdf_encode_binary(pbw, templat, st);
             if (code < 0)
                 goto fail;
@@ -328,6 +345,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 
                 ss->Colors = Colors;
                 ss->Columns = pim->Width;
+                ss->Predictor = Predictor;
             }
         }
     } else if (templat == &s_DCTE_template) {

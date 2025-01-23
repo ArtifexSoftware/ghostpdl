@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: High Level Devices
@@ -773,6 +773,9 @@ The default image parameter dictionary is:
 
    << /QFactor 0.9 /Blend 1 /HSamples [2 1 1 2] /VSamples [2 1 1 2] >>
 
+The Acrobat Distiller parameters do not offer any means to set the parameters for image compression other than JPEG or, in recent versions JPX, compression. We don't support JPEG2000 (JPX) compression, but we would like ot be able to configure Flate compression which Distiller does not, apparently, permit. Rather than adding another dictionary, as per Distiller, we have noted that the JPEG key names in the (Gray|Color)ImageDict and (Gray|Color)ACSImageDict do not conflict with the standard Flate key names and so have added these keys to the (Gray|Color)ImageDict and (Gray|Color)ACSImageDict. Supported keys for Flate compression are /Predictor and /Effort. Please see the PostScript Language Reference Manual for details of thsse parameters. The pdfwrite device will look for, and use, the appropriate parameters for the compression selected; this allows a single (Gray|Color)ACSImageDict to configure both Flate and JPEG compression and leave the selection of the compression type to the auto-chooser.
+Default values are the default Flate value (normally 6, configurable at compile-time) for Effort and 15 (allow encoder to select) for /Predictor.
+
 .. _DistillerParameters_note_8:
 
 Note 8
@@ -782,6 +785,9 @@ The printer ACS image parameter dictionary is:
    .. code-block:: bash
 
       << /QFactor 0.4 /Blend 1 /ColorTransform 1 /HSamples [1 1 1 1] /VSamples [1 1 1 1] >>
+
+The Acrobat Distiller parameters do not offer any means to set the parameters for image compression other than JPEG or, in recent versions JPX, compression. We don't support JPEG2000 (JPX) compression, but we would like ot be able to configure Flate compression which Distiller does not, apparently, permit. Rather than adding another dictionary, as per Distiller, we have noted that the JPEG key names in the (Gray|Color)ImageDict and (Gray|Color)ACSImageDict do not conflict with the standard Flate key names and so have added these keys to the (Gray|Color)ImageDict and (Gray|Color)ACSImageDict. Supported keys for Flate compression are /Predictor and /Effort. Please see the PostScript Language Reference Manual for details of thsse parameters. The pdfwrite device will look for, and use, the appropriate parameters for the compression selected; this allows a single (Gray|Color)ACSImageDict to configure both Flate and JPEG compression and leave the selection of the compression type to the auto-chooser.
+Default values are the default Flate value (normally 6, configurable at compile-time) for Effort and 15 (allow encoder to select) for /Predictor.
 
 .. _DistillerParameters_note_9:
 
