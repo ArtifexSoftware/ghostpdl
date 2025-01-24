@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2023 Artifex Software, Inc.
+# Copyright (C) 2018-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -121,12 +121,19 @@ $(PDFOBJ)pdf_font11.$(OBJ): $(PDFSRC)pdf_font11.c $(PDFINCLUDES) $(gxfont42_h) \
 	$(gxfcid_h) $(gsutil_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_font11.c $(PDFO_)pdf_font11.$(OBJ)
 
+$(PDFOBJ)pdf_fontmt.$(OBJ): $(PDFSRC)pdf_fontmt.c $(PDFINCLUDES) \
+	$(PDF_MAK) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_fontmt.c $(PDFO_)pdf_fontmt.$(OBJ)
+
+$(PDFOBJ)pdf_fontdec.$(OBJ): $(PDFSRC)pdf_fontdec.c $(PDFINCLUDES) $(MAKEDIRS)
+	$(PDFCCC) $(PDFSRC)pdf_fontdec.c $(PDFO_)pdf_fontdec.$(OBJ)
+
 $(PDFOBJ)pdf_cmap.$(OBJ): $(PDFSRC)pdf_cmap.c $(PDFINCLUDES) \
 	$(strmio_h) $(stream_h) $(scanchar_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_cmap.c $(PDFO_)pdf_cmap.$(OBJ)
 
 $(PDFOBJ)pdf_fmap.$(OBJ): $(PDFSRC)pdf_fmap.c $(PDFINCLUDES) \
-	$(strmio_h) $(stream_h) $(scanchar_h) $(PDF_MAK) $(MAKEDIRS)
+	$(strmio_h) $(stream_h) $(scanchar_h) $(gsstrl_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_fmap.c $(PDFO_)pdf_fmap.$(OBJ)
 
 $(PDFOBJ)pdf_text.$(OBJ): $(PDFSRC)pdf_text.c $(PDFINCLUDES) \
@@ -314,6 +321,8 @@ PDF_OBJS=\
     $(PDFOBJ)pdf_fontTT.$(OBJ)\
     $(PDFOBJ)pdf_font9.$(OBJ)\
     $(PDFOBJ)pdf_font11.$(OBJ)\
+    $(PDFOBJ)pdf_fontmt.$(OBJ)\
+    $(PDFOBJ)pdf_fontdec.$(OBJ)\
     $(PDFOBJ)pdf_cmap.$(OBJ)\
     $(PDFOBJ)pdf_fmap.$(OBJ)\
     $(PDFOBJ)pdf_text.$(OBJ)\

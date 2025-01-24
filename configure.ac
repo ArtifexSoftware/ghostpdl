@@ -1334,6 +1334,7 @@ if test x"$enable_fapi" != xno; then
   if test x"$with_ufst" != xno; then
     if test -d $with_ufst; then
       INSERT_UFST_BRIDGE_EQUAL_ONE="UFST_BRIDGE=1"
+      CFLAGS="$CFLAGS -DUFST_BRIDGE=1"
       case $with_ufst in
         /*) UFST_ROOT=$with_ufst ;;
          *) UFST_ROOT=`pwd`/$with_ufst ;;

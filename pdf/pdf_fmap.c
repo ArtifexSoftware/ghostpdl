@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2024 Artifex Software, Inc.
+/* Copyright (C) 2020-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,14 +17,18 @@
 #include "strmio.h"
 #include "stream.h"
 #include "scanchar.h"
+#include "gsstrl.h"
 
 #include "pdf_int.h"
 #include "pdf_types.h"
+#include "pdf_font_types.h"
 #include "pdf_array.h"
 #include "pdf_dict.h"
 #include "pdf_stack.h"
 #include "pdf_file.h"
 #include "pdf_misc.h"
+#include "pdf_font.h"
+#include "pdf_fontmt.h"
 #include "pdf_fmap.h"
 
 typedef struct
@@ -104,6 +108,130 @@ pdfi_fontmap_open_file(pdf_context *ctx, const char *mapfilename, byte **buf, in
         sfclose(s);
     }
     return code;
+}
+
+#ifdef UFST_BRIDGE
+/* we know fco_path is null terminated */
+static pdf_string *pdfi_make_fco_path_string(pdf_context *ctx, char *fco_path)
+{
+    pdf_string *fp;
+    int code = pdfi_object_alloc(ctx, PDF_STRING, strlen(fco_path), (pdf_obj **)&fp);
+    if (code < 0)
+        return NULL;
+    pdfi_countup(fp);
+    memcpy(fp->data, fco_path, strlen(fco_path));
+
+    return fp;
+}
+#endif /* UFST_BRIDGE */
+
+static inline int pdfi_populate_ufst_fontmap(pdf_context *ctx)
+{
+#ifdef UFST_BRIDGE
+    int status = 0;
+    int bSize, i;
+    char pthnm[gp_file_name_sizeof];
+    char *ufst_root_dir;
+    char *fco;
+    char *fco_start, *fco_lim;
+    size_t ufst_root_dir_len;
+
+    if (pdfi_fapi_ufst_available(ctx->memory) == false) {
+        return (0);
+    }
+
+    ufst_root_dir = (char *)pdfi_fapi_ufst_get_font_dir(ctx->memory);
+    ufst_root_dir_len = strlen(ufst_root_dir);
+    if (ufst_root_dir_len >= gp_file_name_sizeof) {
+        return gs_error_Fatal;
+    }
+    fco_start = fco = (char *)pdfi_fapi_ufst_get_fco_list(ctx->memory);
+    fco_lim = fco_start + strlen(fco_start) + 1;
+    while (fco < fco_lim && status == 0) {
+        pdf_string *fco_str;
+        status = 0;
+        /* build and open (get handle) for the k'th fco file name */
+        gs_strlcpy((char *)pthnm, ufst_root_dir, sizeof pthnm);
+
+        for (i = 2; fco[i] != gp_file_name_list_separator && (&fco[i]) < fco_lim - 1; i++)
+            ;
+
+        if (i + ufst_root_dir_len >= gp_file_name_sizeof) {
+            return gs_error_Fatal;
+        }
+        strncat(pthnm, fco, i);
+        fco += (i + 1);
+        fco_str = pdfi_make_fco_path_string(ctx, pthnm);
+        if (fco_str == NULL) {
+            return gs_error_Fatal;
+        }
+
+        /* enumerate the files in this fco */
+        for (i = 0; status == 0; i++) {
+            char *pname = NULL;
+            pdf_font_microtype *pdffont = NULL;
+            int font_number = 0;
+
+            status = pdfi_alloc_mt_font(ctx, fco_str, i, &pdffont);
+            if (status < 0)
+                break;
+            status = pdfi_fapi_passfont((pdf_font *)pdffont, i, (char *)"UFST", pthnm, NULL, 0);
+            if (status < 0){
+#ifdef DEBUG
+                dmprintf1(ctx->memory, "CGIFfco_Access error %d\n", status);
+#endif
+                pdfi_countdown(pdffont);
+                break;
+            }
+
+            /* For Microtype fonts, once we get here, these
+             * pl_fapi_get*() calls cannot fail, so we can
+             * safely ignore the return value
+             */
+            (void)pdfi_fapi_get_mtype_font_name((gs_font *)pdffont->pfont, NULL, &bSize);
+
+            pname = (char *)gs_alloc_bytes(ctx->memory, bSize, "pdfi: mt font name buffer");
+            if (!pname) {
+                pdfi_countdown(pdffont);
+                dmprintf1(ctx->memory, "VM Error for built-in font %d", i);
+                continue;
+            }
+
+            (void)pdfi_fapi_get_mtype_font_name((gs_font *)pdffont->pfont, (byte *) pname, &bSize);
+            (void)pdfi_fapi_get_mtype_font_number((gs_font *)pdffont->pfont, &font_number);
+
+            if (bSize < gs_font_name_max) {
+                memcpy(pdffont->pfont->key_name.chars, pname, bSize);
+                pdffont->pfont->key_name.chars[bSize] = 0;
+                pdffont->pfont->key_name.size = bSize;
+                memcpy(pdffont->pfont->font_name.chars, pname, bSize);
+                pdffont->pfont->font_name.chars[bSize] = 0;
+                pdffont->pfont->font_name.size = bSize;
+            }
+            status = gs_definefont(ctx->font_dir, (gs_font *) pdffont->pfont);
+            if (status < 0) {
+                pdfi_countdown(pdffont);
+                status = 0;
+                continue;
+            }
+            gs_notify_release(&pdffont->pfont->notify_list);
+            status = pdfi_fapi_passfont((pdf_font *)pdffont, i, (char *)"UFST", pthnm, NULL, 0);
+            if (status < 0) {
+                pdfi_countdown(pdffont);
+                status = 0;
+                continue;
+            }
+            status = pdfi_dict_put(ctx, ctx->pdffontmap, pname, (pdf_obj *)pdffont);
+            pdfi_countdown(pdffont);
+            if (status < 0) {
+                status = 0;
+                continue;
+            }
+        }
+        pdfi_countdown(fco_str);
+    }
+#endif /* UFST_BRIDGE */
+    return 0;
 }
 
 static int
@@ -222,6 +350,9 @@ done:
             code = pdfi_dict_alloc(ctx, 0, &ctx->pdffontmap);
             pdfi_countup(ctx->pdffontmap);
         }
+    }
+    if (code >= 0) {
+        code = pdfi_populate_ufst_fontmap(ctx);
     }
     pdfi_clearstack(ctx);
     return code;
@@ -950,6 +1081,9 @@ pdfi_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname,
              */
             while(1) {
                 pdf_obj *mname2;
+                if (pdfi_type_of(mname) == PDF_FONT) {
+                    break;
+                }
                 code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
                 if (code < 0) break;
                 pdfi_countdown(mname);
@@ -962,7 +1096,7 @@ pdfi_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname,
         (void)pdfi_dict_put(ctx, font_dict, ".Path", mname);
         code = 0;
     }
-    else if (mname != NULL && pdfi_type_of(mname) == PDF_NAME) { /* If we map to a name, we assume (for now) we have the font as a "built-in" */
+    else if (mname != NULL && (pdfi_type_of(mname) == PDF_NAME || pdfi_type_of(mname) == PDF_FONT)) { /* If we map to a name, we assume (for now) we have the font as a "built-in" */
         *mapname = mname;
         code = 0;
     }

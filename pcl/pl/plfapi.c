@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -653,6 +653,7 @@ pl_fapi_passfont(pl_font_t * plfont, int subfont, char *fapi_request,
     code =
         gs_fapi_passfont(pfont, subfont, (char *)file_name, &fdata,
                          (char *)fapi_request, NULL, (char **)&fapi_id,
+                         NULL,
                          (gs_fapi_get_server_param_callback)
                          pl_get_server_param);
 

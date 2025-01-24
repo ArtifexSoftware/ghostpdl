@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -75,6 +75,7 @@ typedef enum pdf_font_type_e {
     e_pdf_cidfont_type2,
     e_pdf_cidfont_type4 = 32,
     e_pdf_font_truetype = 42,
+    e_pdf_font_microtype = 51 /* MicroType 51 is arbitrary, to match graphics lib */
 } pdf_font_type;
 
 #define pdf_font_base \
@@ -150,6 +151,19 @@ typedef struct pdfi_cid_subst_nwp_table_s {
     struct pdfi_cid_subst_nwp_rec_s subst[32];
 } pdfi_cid_subst_nwp_table_t;
 
+typedef struct pdfi_font_decoding_entry_s {
+  const char *glyph_name;
+  const int32_t glyph_name_len;
+  int32_t code_point;
+} pdfi_font_decoding_entry_t;
+
+typedef struct pdfi_font_decoding_s {
+  const char *dec_name;
+  const int32_t dec_name_len;
+  const int32_t nentries;
+  const pdfi_font_decoding_entry_t entries[3376];
+} pdfi_font_decoding_t;
+
 typedef struct pdf_font_type0_s {
     pdf_font_base;                  /* For this font type, the FontDescriptor will be NULL, as will the pfont, (we use the DescendantFont) */
 
@@ -224,5 +238,11 @@ typedef struct pdf_cidfont_type2_s {
     pdf_cid_font_common;
     pdf_buffer *sfnt;
 } pdf_cidfont_type2;
+
+typedef struct pdf_font_microtype_s {
+    pdf_font_common;
+    int32_t fco_index;
+    char *DecodingID;
+} pdf_font_microtype;
 
 #endif

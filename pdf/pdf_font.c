@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -31,6 +31,7 @@
 #include "pdf_font1C.h"
 #include "pdf_font3.h"
 #include "pdf_fontTT.h"
+#include "pdf_fontmt.h"
 #include "pdf_font0.h"
 #include "pdf_fmap.h"
 #include "gscencs.h"            /* For gs_c_known_encode and gs_c_glyph_name */
@@ -754,6 +755,9 @@ static int pdfi_copy_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_d
         case e_pdf_font_truetype:
           code = pdfi_copy_truetype_font(ctx, spdffont, font_dict, tpdffont);
           break;
+        case e_pdf_font_microtype:
+          code = pdfi_copy_microtype_font(ctx, spdffont, font_dict, tpdffont);
+          break;
         default:
             return_error(gs_error_invalidfont);
     }
@@ -887,6 +891,11 @@ static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, 
                 pdfi_countup(mapname);
                 code = 0;
             }
+        }
+        if (pdfi_type_of(mapname) == PDF_FONT) {
+            pdffont = (pdf_font *)mapname;
+            pdfi_countup(pdffont);
+            break;
         }
         if (pdfi_type_of(mapname) == PDF_NAME || pdfi_type_of(mapname) == PDF_STRING) {
             pdf_name *mname = (pdf_name *) mapname;
@@ -1682,6 +1691,9 @@ int pdfi_free_font(pdf_obj *font)
         case e_pdf_font_truetype:
             return pdfi_free_font_truetype((pdf_obj *)font);
             break;
+        case e_pdf_font_microtype:
+            return pdfi_free_font_microtype((pdf_obj *)font);
+            break;
         case e_pdf_cidfont_type2:
             return pdfi_free_font_cidtype2((pdf_obj *)font);
             break;
@@ -1746,18 +1758,20 @@ static inline int pdfi_encoding_name_to_index(pdf_name *name)
     if (pdfi_type_of(name) == PDF_NAME) {
         if (pdfi_name_is(name, "StandardEncoding")) {
             ind = ENCODING_INDEX_STANDARD;
-        } else {
-            if (pdfi_name_is(name, "WinAnsiEncoding")){
-                ind = ENCODING_INDEX_WINANSI;
-            } else {
-                if (pdfi_name_is(name, "MacRomanEncoding")){
-                    ind = ENCODING_INDEX_MACROMAN;
-                } else {
-                    if (pdfi_name_is(name, "MacExpertEncoding")){
-                        ind = ENCODING_INDEX_MACEXPERT;
-                    }
-                }
-            }
+        } else if (pdfi_name_is(name, "WinAnsiEncoding")) {
+            ind = ENCODING_INDEX_WINANSI;
+        }
+        else if (pdfi_name_is(name, "MacRomanEncoding")) {
+            ind = ENCODING_INDEX_MACROMAN;
+        }
+        else if (pdfi_name_is(name, "MacExpertEncoding")) {
+            ind = ENCODING_INDEX_MACEXPERT;
+        }
+        else if (pdfi_name_is(name, "SymbolEncoding")) {
+            ind = ENCODING_INDEX_SYMBOL;
+        }
+        else if (pdfi_name_is(name, "DingbatsEncoding")) {
+            ind = ENCODING_INDEX_DINGBATS;
         }
     }
     return ind;
@@ -1954,6 +1968,7 @@ gs_glyph pdfi_encode_char(gs_font * pfont, gs_char chr, gs_glyph_space_t not_use
 
     if (pfont->FontType == ft_encrypted || pfont->FontType == ft_encrypted2
      || pfont->FontType == ft_user_defined || pfont->FontType == ft_TrueType
+     || pfont->FontType == ft_MicroType
      || pfont->FontType == ft_PDF_user_defined) {
         pdf_font *font = (pdf_font *)pfont->client_data;
         pdf_context *ctx = (pdf_context *)font->ctx;

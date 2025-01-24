@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1818,14 +1818,14 @@ gs_fapi_get_font_info(gs_font *pfont, gs_fapi_font_info item, int index,
 int
 gs_fapi_passfont(gs_font *pfont, int subfont, char *font_file_path,
                  gs_string *full_font_buf, char *fapi_request, char *xlatmap,
-                 char **fapi_id, gs_fapi_get_server_param_callback get_server_param_cb)
+                 char **fapi_id, char **decodingID, gs_fapi_get_server_param_callback get_server_param_cb)
 {
     gs_font_base *pbfont;
     int code = 0;
     gs_fapi_server *I, **list;
     bool free_params = false;
     gs_memory_t *mem = pfont->memory;
-    const char *decodingID = NULL;
+    const char *ldecodingID = NULL;
     bool do_restart = false;
 
     list = gs_fapi_get_server_list(mem);
@@ -1898,8 +1898,10 @@ gs_fapi_passfont(gs_font *pfont, int subfont, char *font_file_path,
         pbfont->FAPI = I;       /* we need the FAPI server during this stage */
         code =
             gs_fapi_prepare_font(pfont, I, subfont, font_file_path,
-                                 full_font_buf, xlatmap, &decodingID);
+                                 full_font_buf, xlatmap, &ldecodingID);
         if (code >= 0) {
+            if (decodingID != NULL)
+                *decodingID = (char *)ldecodingID;
             (*fapi_id) = (char *)I->ig.d->subtype;
             return 0;
         }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -41,7 +41,26 @@
 #include "gxfont1.h"        /* for gs_font_type1_s */
 #include "gscrypt1.h"       /* for crypt_c1 */
 
+#ifdef UFST_BRIDGE
+static const char *UFSTFONTDIR = "";    /* A bogus linux location */
+#ifndef __WIN32__
+static const char *UFSTFCOS = "%rom%fontdata/mtfonts/pclps2/mt3/pclp2_xj.fco:%rom%fontdata/mtfonts/pcl45/mt3/wd____xh.fco";
+#else
+static const char *UFSTFCOS = "%rom%fontdata/mtfonts/pclps2/mt3/pclp2_xj.fco;%rom%fontdata/mtfonts/pcl45/mt3/wd____xh.fco";
+#endif
+static const char *UFSTPLUGINS = "%rom%fontdata/mtfonts/pcl45/mt3/plug__xi.fco";
+
+static const char *UFSTDIRPARM = "UFST_SSdir=";
+
+static const char *UFSTPLUGINPARM = "UFST_PlugIn=";
+
+extern const char gp_file_name_list_separator;
+#endif /* UFST_BRIDGE */
+
 extern single_glyph_list_t SingleGlyphList[];
+
+
+static void pdfi_get_server_param(gs_fapi_server * I, const char *subtype, char **server_param, int *server_param_size);
 
 
 /* forward declarations for the pdfi_ff_stub definition */
@@ -1101,12 +1120,30 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
             return 0;
         }
     }
-    else if (pbfont->FontType == ft_encrypted) {
+    else if (pbfont->FontType == ft_encrypted || pbfont->FontType == ft_MicroType) {
         gs_const_string gname;
         code = (*ctx->get_glyph_name)((gs_font *)pbfont, ccode, &gname);
-        I->ff.char_data = enc_char_name->data = (byte *)gname.data;
-        I->ff.char_data_len = enc_char_name->size = gname.size;
+        I->ff.char_data = cr->char_name = enc_char_name->data = (byte *)gname.data;
+        I->ff.char_data_len = cr->char_name_length = enc_char_name->size = gname.size;
         cr->is_glyph_index = false;
+#ifdef UFST_BRIDGE
+        if (pbfont->FontType == ft_MicroType) {
+             pdf_font_microtype *mtf = (pdf_font_microtype *)pbfont->client_data;
+             int64_t charcode;
+             /* Slightly naff, but we have to explicitly check for .notdef */
+             if (cr->char_name_length == 7 && memcmp(cr->char_name, ".notdef", cr->char_name_length) == 0) {
+                 code = 0;
+                 charcode = 0;
+             }
+             else {
+                 code = pdfi_lookup_fco_char_code(mtf->DecodingID, strlen(mtf->DecodingID), (const char *)cr->char_name, cr->char_name_length, &charcode);
+             }
+             if (code == 0) {
+                 cr->char_codes[0] = (int)charcode;
+                 cr->is_glyph_index = false;
+             }
+        }
+#endif /* UFST_BRIDGE */
     }
     return code;
 }
@@ -1422,20 +1459,23 @@ pdfi_fapi_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
        ours back before trying to interpret the glyph.
     */
     if (((gs_fapi_server *)pbfont1->FAPI)->ff.get_glyphname_or_cid != pdfi_fapi_get_glyphname_or_cid) {
-        code = pdfi_fapi_passfont((pdf_font *)pbfont1->client_data, 0, NULL, NULL, NULL, 0);
+        if (pbfont1->FontType == ft_MicroType) {
+            pdf_font_microtype *pdffont = (pdf_font_microtype *)pbfont1->client_data;
+            char pathnm[gp_file_name_sizeof];
+            memcpy(pathnm, pdffont->filename->data, pdffont->filename->length);
+            pathnm[pdffont->filename->length] = '\0';
+
+            code = pdfi_fapi_passfont((pdf_font *)pdffont, pdffont->fco_index, (char *)"UFST", pathnm, NULL, 0);
+        }
+        else {
+            code = pdfi_fapi_passfont((pdf_font *)pbfont1->client_data, 0, NULL, NULL, NULL, 0);
+        }
     }
 
     if (code >= 0)
         code = gs_fapi_do_char((gs_font *)pbfont1, pgs, (gs_text_enum_t *) penum, NULL, false, NULL, NULL, chr, glyph, 0);
 
     return (code);
-}
-
-static void
-pdfi_get_server_param(gs_fapi_server * I, const char *subtype,
-                    char **server_param, int *server_param_size)
-{
-    return;
 }
 
 #if 0
@@ -1469,11 +1509,30 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     gs_fapi_ttf_cmap_request symbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{3, 0}, {1, 0}, {3, 1}, {3, 10}, {-1, -1}};
     gs_fapi_ttf_cmap_request nonsymbolic_req[GS_FAPI_NUM_TTF_CMAP_REQ] = {{3, 1}, {1, 0}, {3, 0}, {-1, -1}, {-1, -1}};
     int plat, enc;
+    const char *xlatmapu = (char *)"Microtype\000\000*\000FCO_Unicode";
+    const char *xlatmaps = (char *)"Microtype\000\000*\000FCO_Symbol";
+    const char *xlatmapd = (char *)"Microtype\000\000*\000FCO_Dingbats";
+    char *xlatmap = NULL;
+    char *decodingID = NULL;
 
     if (!gs_fapi_available(pbfont->memory, NULL)) {
         return (code);
     }
 
+    if (font->pdfi_font_type == e_pdf_font_microtype) {
+        switch (((pdf_font_microtype *)font)->fco_index) {
+            case 27:
+            case 76:
+                xlatmap = (char *)xlatmaps;
+                break;
+            case 82:
+                xlatmap = (char *)xlatmapd;
+                break;
+            default:
+                xlatmap = (char *)xlatmapu;
+                break;
+        }
+    }
     if (font->pdfi_font_type == e_pdf_font_truetype) {
         fdatap = NULL;
     }
@@ -1501,7 +1560,8 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
 
     code =
         gs_fapi_passfont((gs_font *)pbfont, subfont, (char *)file_name, fdatap,
-                         (char *)fapi_request, NULL, (char **)&fapi_id,
+                         (char *)fapi_request, xlatmap, (char **)&fapi_id,
+                         &decodingID,
                          (gs_fapi_get_server_param_callback)
                          pdfi_get_server_param);
 
@@ -1536,7 +1596,9 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
             code = pdfi_set_warning_stop(OBJ_CTX(font), gs_note_error(gs_error_invalidfont), NULL, W_PDF_INVALID_TTF_CMAP, "pdfi_fapi_passfont", NULL);
         }
     }
-
+    if (font->pdfi_font_type == e_pdf_font_microtype) {
+        ((pdf_font_microtype *)font)->DecodingID = decodingID;
+    }
     pbfont->procs.build_char = pdfi_fapi_build_char;
 
     return (code);
@@ -1560,3 +1622,113 @@ pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint cid, uint *gid)
     }
     return_error(gs_error_invalidfont);
 }
+
+#ifdef UFST_BRIDGE
+bool
+pdfi_fapi_ufst_available(gs_memory_t * mem)
+{
+    gs_fapi_server *serv = NULL;
+    int code = gs_fapi_find_server(mem, (char *)"UFST", &serv,
+                                   (gs_fapi_get_server_param_callback)
+                                   pdfi_get_server_param);
+
+    if (code == 0 && serv != NULL) {
+        return (true);
+    } else {
+        return (false);
+    }
+}
+/* FIXME: environment variables.... */
+const char *
+pdfi_fapi_ufst_get_fco_list(gs_memory_t * mem)
+{
+    return (UFSTFCOS);
+}
+
+const char *
+pdfi_fapi_ufst_get_font_dir(gs_memory_t * mem)
+{
+    return (UFSTFONTDIR);
+}
+static inline int
+pdfi_fapi_get_mtype_font_info(gs_font * pfont, gs_fapi_font_info item,
+                            void *data, int *size)
+{
+    return (gs_fapi_get_font_info(pfont, item, 0, data, size));
+}
+
+int
+pdfi_fapi_get_mtype_font_name(gs_font * pfont, byte * data, int *size)
+{
+    return (pdfi_fapi_get_mtype_font_info
+            (pfont, gs_fapi_font_info_name, data, size));
+}
+
+int
+pdfi_fapi_get_mtype_font_number(gs_font * pfont, int *font_number)
+{
+    int size = (int)sizeof(*font_number);
+
+    return (pdfi_fapi_get_mtype_font_info
+            (pfont, gs_fapi_font_info_uid, font_number, &size));
+}
+
+#if 0
+int
+pdfi_fapi_get_mtype_font_spaceBand(gs_font * pfont, uint * spaceBand)
+{
+    int size = (int)sizeof(*spaceBand);
+
+    return (pdfi_fapi_get_mtype_font_info
+            (pfont, gs_fapi_font_info_pitch, spaceBand, &size));
+}
+
+int
+pdfi_fapi_get_mtype_font_scaleFactor(gs_font * pfont, uint * scaleFactor)
+{
+    int size = (int)sizeof(*scaleFactor);
+
+    return (pdfi_fapi_get_mtype_font_info
+            (pfont, gs_fapi_font_info_design_units, scaleFactor, &size));
+}
+#endif
+
+
+static void
+pdfi_get_server_param(gs_fapi_server * I, const char *subtype,
+                    char **server_param, int *server_param_size)
+{
+    int length = 0;
+    char SEPARATOR_STRING[2];
+
+    SEPARATOR_STRING[0] = (char)gp_file_name_list_separator;
+    SEPARATOR_STRING[1] = '\0';
+
+    length += strlen(UFSTDIRPARM);
+    length += strlen(UFSTFONTDIR);
+    length += strlen(SEPARATOR_STRING);
+    length += strlen(UFSTPLUGINPARM);
+    length += strlen(UFSTPLUGINS);
+    length++;
+
+    if ((*server_param) != NULL && (*server_param_size) >= length) {
+        strcpy((char *)*server_param, (char *)UFSTDIRPARM);
+        strcat((char *)*server_param, (char *)UFSTFONTDIR);
+        strcat((char *)*server_param, (char *)SEPARATOR_STRING);
+        strcat((char *)*server_param, (char *)UFSTPLUGINPARM);
+        strcat((char *)*server_param, (char *)UFSTPLUGINS);
+    } else {
+        *server_param = NULL;
+        *server_param_size = length;
+    }
+}
+#else /* UFST_BRIDGE */
+static void
+pdfi_get_server_param(gs_fapi_server * I, const char *subtype,
+                    char **server_param, int *server_param_size)
+{
+    *server_param = NULL;
+    *server_param_size = 90;
+    return;
+}
+#endif /* UFST_BRIDGE */

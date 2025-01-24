@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -456,7 +456,7 @@ gs_fapi_get_font_info(gs_font *pfont, gs_fapi_font_info item, int index,
 int
 gs_fapi_passfont(gs_font *pfont, int subfont, char *font_file_path,
                  gs_string *full_font_buf, char *fapi_request, char *xlatmap,
-                 char **fapi_id, gs_fapi_get_server_param_callback get_server_param_cb);
+                 char **fapi_id, char **decodingID, gs_fapi_get_server_param_callback get_server_param_cb);
 
 int gs_fapi_init(gs_memory_t *mem);
 

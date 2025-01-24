@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -312,6 +312,7 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
         current_font->pdfi_font_type == e_pdf_font_type3 ||
         current_font->pdfi_font_type == e_pdf_font_cff ||
         current_font->pdfi_font_type == e_pdf_font_truetype ||
+        current_font->pdfi_font_type == e_pdf_font_microtype ||
         current_font->pdfi_font_type == e_pdf_font_type0)
     {
         /* For Type 0 fonts, we apply the DW/W/DW2/W2 values when we retrieve the metrics for

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3488,7 +3488,7 @@ zFAPIpassfont(i_ctx_t *i_ctx_p)
 
     code =
         gs_fapi_passfont(pfont, subfont, font_file_path, NULL, fapi_request, xlatmap,
-                         &fapi_id, (gs_fapi_get_server_param_callback)ps_get_server_param);
+                         &fapi_id, NULL, (gs_fapi_get_server_param_callback)ps_get_server_param);
 
     if (font_file_path != NULL)
         gs_free_string(imemory_global, (byte *) font_file_path, r_size(v) + 1,

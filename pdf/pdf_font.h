@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -81,6 +81,20 @@ int pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
 
 int pdfi_fapi_check_cmap_for_GID(gs_font *pfont, uint c, uint *g);
 
+#ifdef UFST_BRIDGE
+bool pdfi_fapi_ufst_available(gs_memory_t *mem);
+int pdfi_fapi_get_mtype_font_name(gs_font * pfont, byte * data, int *size);
+int pdfi_fapi_get_mtype_font_number(gs_font * pfont, int *font_number);
+const char *pdfi_fapi_ufst_get_fco_list(gs_memory_t *mem);
+const char *pdfi_fapi_ufst_get_font_dir(gs_memory_t *mem);
+int pdfi_lookup_fco_char_code(const char *decname, int32_t decnamelen, const char *gname, int32_t gnamelen, int64_t *charcode);
+#else  /* UFST_BRIDGE */
+#define pdfi_fapi_get_mtype_font_name(pfont, data, size) gs_error_undefined
+#define pdfi_fapi_get_mtype_font_number(pfont, font_number) gs_error_undefined
+#define pdfi_lookup_fco_char_code(decname, decnamelen, gname, gnamelen, charcode) gs_error_undefined
+#endif /* UFST_BRIDGE */
+
+
 int pdfi_map_glyph_name_via_agl(pdf_dict *cstrings, pdf_name *gname, pdf_string **cstring);
 
 int pdfi_init_font_directory(pdf_context *ctx);
@@ -118,6 +132,7 @@ int pdfi_font_create_widths(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font
 void pdfi_font_set_first_last_char(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font);
 int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font_base *pfont);
 void pdfi_font_set_orig_fonttype(pdf_context *ctx, pdf_font *font);
+
 
 font_proc_font_info(pdfi_default_font_info);
 
