@@ -323,7 +323,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
                     stream_zlib_state *const ss = (stream_zlib_state *)st;
                     ss->level = Effort;
                 }
-                code = param_read_int((gs_param_list *)param, "Predictor", &Predictor);
+                (void)param_read_int((gs_param_list *)param, "Predictor", &Predictor);
             }
         }
         /* If not Indexed, add a PNGPredictor filter. */
