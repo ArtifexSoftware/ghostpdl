@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: Ghostscript Introduction
@@ -47,11 +47,7 @@ GhostPDF
 
 Prior to release 9.55.0 GhostPDF was an interpreter for the PDF page description language built on top of Ghostscript, and written in the PostScript programming language. From 9.55.0 onwards there is a new GhostPDF executable, separate from Ghostscript and written in C rather than PostScript.
 
-This new interpreter has also been integrated into Ghostscript itself, in order to preserve the PDF functionality of that interpreter. For now, the old PostScript-based interpreter remains the default, but the new interpreter is built-in alongside it.
-
-The intention is that the new interpreter will replace the old one, which will be withdrawn.
-
-It is possible to control which interpreter is used with the NEWPDF command-line switch. When this is false (the current default) the old PostScript-based interpreter is used, when NEWPDF is true then the new C-based interpreter is used.
+This new interpreter has also been integrated into Ghostscript itself, in order to preserve the PDF functionality of that interpreter.
 
 
 
