@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -438,6 +438,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
                             /* We must remember to pop both the othersubr # */
                             /* and the argument count off the stack. */
+                            if (!CS_CHECK_CSTACK_BOUNDS(csp, cstack))
+                                return_error(gs_error_invalidfont);
                             switch (*pindex = fixed2int_var(*csp)) {
                                 case 0:
                                     if (!CS_CHECK_CSTACK_BOUNDS(&csp[-4], cstack))
