@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: Information for Ghostscript Developers
@@ -883,7 +883,7 @@ Miscellaneous:
    X Windows icon bitmaps:
       lib/gs_l.xbm, lib/gs_l.xpm, lib/gs_l_m.xbm, lib/gs_m.xbm, lib/gs_m.xpm, lib/gs_m_m.xbm, lib/gs_s.xbm, lib/gs_s.xpm, lib/gs_s_m.xbm, lib/gs_t.xbm, lib/gs_t.xpm, lib/gs_t_m.xbm.
 
-   PDF/X-3 definition file sample:
+   PDF/X definition file sample:
       lib/PDFX_def.ps
 
 

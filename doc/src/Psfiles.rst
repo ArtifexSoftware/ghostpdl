@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: PostScript Files Distributed with Ghostscript
@@ -236,7 +236,7 @@ These files are found in the ``Resource/Init`` subdirectory of the Ghostscript s
 These files are found in the lib subdirectory of the Ghostscript source distribution. These files are templates and should not be used without modification.
 
 ``PDFX_def.ps``
-   This is a sample prefix file for creating a PDF/X-3 document with the :title:`pdfwrite` device.
+   This is a sample prefix file for creating a PDF/X document with the :title:`pdfwrite` device.
 
 ``PDFA_def.ps``
    This is a sample prefix file for creating a PDF/A document with the :title:`pdfwrite` device.

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -506,7 +506,7 @@ pdf_separation_color_space(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (csi == gs_color_space_index_ICC) {
         csi = gsicc_get_default_type(alt_space->cmm_icc_profile_data);
     }
-    if (csi == gs_color_space_index_DeviceRGB && (pdev->PDFX ||
+    if (csi == gs_color_space_index_DeviceRGB && (pdev->PDFX != 0 ||
         (pdev->PDFA != 0 && (pdev->pcm_color_info_index == gs_color_space_index_DeviceCMYK)))) {
 
         /*

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -724,6 +724,10 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                             return 3;
                         break;
                     case gs_color_space_index_DeviceN:
+                        if (pdev->PDFX > 0) {
+                            *pcs_orig = pcs;
+                            return 1;
+                        }
                         pcs2 = pcs;
                         while (pcs2->base_space)
                             pcs2 = pcs2->base_space;
@@ -1439,7 +1443,12 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             goto fail_and_fallback;
         }
         if (convert_to_process_colors == 4) {
-            code = convert_DeviceN_alternate(pdev, pgs, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
+            if (pdev->PDFX == 1) {
+                convert_to_process_colors = 1;
+                code = 0;
+            }
+            else
+                code = convert_DeviceN_alternate(pdev, pgs, pcs, NULL, NULL, NULL, NULL, &cs_value, in_line);
             if (code < 0)
                 goto fail_and_fallback;
         }
@@ -2980,7 +2989,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
         case gxdso_event_info:
             {
                 dev_param_req_t *request = (dev_param_req_t *)data;
-                if (memcmp(request->Param, "SubstitutedFont", 15) == 0 && pdev->PDFA) {
+                if (memcmp(request->Param, "SubstitutedFont", 15) == 0 && (pdev->PDFA || pdev->PDFX)) {
                     switch (pdev->PDFACompatibilityPolicy) {
                         case 0:
                         case 1:
@@ -2988,12 +2997,14 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                              "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, reverting to normal PDF output!\n");
                             pdev->AbortPDFAX = true;
                             pdev->PDFX = 0;
+                            pdev->PDFA = 0;
                             break;
                         case 2:
                             emprintf(pdev->memory,
                              "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, aborting conversion!\n");
                             pdev->AbortPDFAX = true;
                             pdev->PDFX = 0;
+                            pdev->PDFA = 0;
                             return gs_note_error(gs_error_unknownerror);
                             break;
                         default:
@@ -3001,6 +3012,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                              "\n **** A font missing from the input PDF has been substituted with a different font.\n\tWidths may differ, unknown PDFACompatibilityPolicy, reverting to normal PDF output!\n");
                             pdev->AbortPDFAX = true;
                             pdev->PDFX = 0;
+                            pdev->PDFA = 0;
                             break;
                     }
                 }

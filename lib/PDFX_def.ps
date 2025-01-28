@@ -20,10 +20,26 @@ systemdict /ColorConversionStrategy known {
 
 % Define entries in the document Info dictionary :
 %
-[ /GTS_PDFXVersion (PDF/X-3:2002) % Must be so (the standard requires).
-  /Title (Title)                  % Customize.
-  /Trapped /False                 % Must be so (Ghostscript doesn't provide other).
-/DOCINFO pdfmark
+systemdict /PDFX known {systemdict /PDFX get}{3} ifelse
+
+dup 1 eq {
+  [ /GTS_PDFXVersion (PDF/X-1a:2001) % Must be so (the standard requires).
+    /Title (Title)                  % Customize.
+    /Trapped /False                 % Must be so (Ghostscript doesn't provide other).
+  /DOCINFO pdfmark
+} if
+dup 1000 eq {
+  [ /GTS_PDFXVersion (PDF/X-1a:200) % Must be so (the standard requires).
+    /Title (Title)                  % Customize.
+    /Trapped /False                 % Must be so (Ghostscript doesn't provide other).
+  /DOCINFO pdfmark
+} if
+3 eq {
+  [ /GTS_PDFXVersion (PDF/X-3:2002) % Must be so (the standard requires).
+    /Title (Title)                  % Customize.
+    /Trapped /False                 % Must be so (Ghostscript doesn't provide other).
+  /DOCINFO pdfmark
+} if
 
 
 /ICCProfile (ISO Coated sb.icc) def  % Customize or remove.

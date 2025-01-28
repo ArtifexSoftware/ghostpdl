@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2024 Artifex Software, Inc.
+% Copyright (C) 2001-2025 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -588,7 +588,7 @@ userdict /.pdfcvstring () put
     newpath -3 -3 moveto closepath stroke % Paints outside the device bbox.
     grestore
   } if
-  dup /PS eq systemdict /PDFX .knownget not { //false } if
+  dup /PS eq systemdict /PDFX .knownget not { //false }{0 eq {//false}{//true} ifelse} ifelse
              systemdict /PDFA .knownget not { //false }{0 eq {//false}{//true} ifelse} ifelse or and {
     % Execute it since PDF/X doesn't allow to embed it.
     pop

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1156,7 +1156,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             if (i > count) {
                 switch (pdev->PDFACompatibilityPolicy) {
                     /* Default behaviour matches Adobe Acrobat, warn and continue,
-                     * output file will not be PDF/A compliant
+                     * output file will not be PDF/X compliant
                      */
                     case 0:
                         emprintf(pdev->memory,
@@ -1164,7 +1164,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                         pdev->AbortPDFAX = true;
                         pdev->PDFX = 0;
                         break;
-                        /* Since the annotation would break PDF/A compatibility, do not
+                        /* Since the annotation would break PDF/X compatibility, do not
                          * include it, but warn the user that it has been dropped.
                          */
                     case 1:
@@ -1569,7 +1569,7 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 emprintf(pdev->memory,
                 "The PDF/A-1 specifcation prohibits the embedding of files, reverting to normal PDF output.\n");
                 pdev->AbortPDFAX = true;
-                pdev->PDFX = 0;
+                pdev->PDFA = 0;
                 return 0;
             case 1:
                 emprintf(pdev->memory,
@@ -2057,7 +2057,7 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                         emprintf(pdev->memory,
                          "Text string detected in DOCINFO cannot be represented in XMP for PDF/A1, reverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
-                        pdev->PDFX = 0;
+                        pdev->PDFA = 0;
                         break;
                     case 1:
                         emprintf(pdev->memory,

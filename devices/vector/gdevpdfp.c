@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -96,7 +96,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("HaveCIDSystem", gs_param_type_bool, HaveCIDSystem),
     pi("HaveTransparency", gs_param_type_bool, HaveTransparency),
     pi("CompressEntireFile", gs_param_type_bool, CompressEntireFile),
-    pi("PDFX", gs_param_type_bool, PDFX),
+    pi("PDFX", gs_param_type_int, PDFX),
     pi("PDFA", gs_param_type_int, PDFA),
     pi("DocumentUUID", gs_param_type_string, DocumentUUID),
     pi("InstanceUUID", gs_param_type_string, InstanceUUID),
@@ -689,7 +689,10 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         emprintf(pdev->memory, "\nIt is not possible to omit the CreationDate when creating PDF/X\nOmitInfoDate is being ignored.\n");
         pdev->OmitInfoDate = 0;
     }
-
+    if (pdev->OmitID && pdev->PDFX != 0) {
+        emprintf(pdev->memory, "\nIt is not possible to omit the ID array when creating PDF/X\nOmitID is being ignored.\n");
+        pdev->OmitID = 0;
+    }
     if (pdev->OmitID && pdev->CompatibilityLevel > 1.7) {
         emprintf(pdev->memory, "\nIt is not possible to omit the ID array when creating a version 2.0 or greater PDF\nOmitID is being ignored.\n");
         pdev->OmitID = 0;
@@ -725,7 +728,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         param_signal_error(plist, "PDFA", ecode);
         goto fail;
     }
-    if (pdev->PDFX && pdev->ForOPDFRead) {
+    if (pdev->PDFX != 0 && pdev->ForOPDFRead) {
         ecode = gs_note_error(gs_error_rangecheck);
         param_signal_error(plist, "PDFX", ecode);
         goto fail;
@@ -735,7 +738,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         param_signal_error(plist, "PDFA", ecode);
         goto fail;
     }
-    if (pdev->PDFA == 1 || pdev->PDFX || pdev->CompatibilityLevel < 1.4) {
+    if (pdev->PDFA == 1 || pdev->PDFX != 0 || pdev->CompatibilityLevel < 1.4) {
          pdev->HaveTransparency = false;
          pdev->PreserveSMask = false;
          pdev->WantsOptionalContent = false;
@@ -751,7 +754,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                 emprintf(pdev->memory,
                  "\n\tpdfwrite cannot guarantee creating a conformant PDF/A-2 file with device-independent colour.\n\tWe recommend converting to a device colour space.\n\tReverting to normal output.\n");
                 pdev->AbortPDFAX = true;
-                pdev->PDFX = 0;
+                pdev->PDFA = 0;
                 break;
             case 1:
                 emprintf(pdev->memory,
@@ -766,7 +769,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
                 emprintf(pdev->memory,
                  "\n\tpdfwrite cannot guarantee creating a conformant PDF/A-2 file with device-independent colour.\n\tWe recommend converting to a device colour space.\n\tReverting to normal output.\n");
                 pdev->AbortPDFAX = true;
-                pdev->PDFX = 0;
+                pdev->PDFA = 0;
                 break;
         }
     }
@@ -775,7 +778,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      * legal parameter values for psdf_put_params varies according to
      * the version.
      */
-    if (pdev->PDFX) {
+    if (pdev->PDFX != 0) {
         cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
         if (pdev->WriteObjStms && ObjStms_set)
             emprintf(pdev->memory, "Can't use ObjStm before PDF 1.5, PDF/X does not support PDF 1.5, ignoring WriteObjStms directive\n");

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -859,7 +859,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
      */
     if (pindex)
         *pindex = index;
-    if (pdev->PDFX || pdev->PDFA != 0)
+    if (pdev->PDFX != 0 || pdev->PDFA != 0)
         return FONT_EMBED_YES;
     if (pdev->CompatibilityLevel < 1.3) {
         if (index >= 0 &&

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -532,17 +532,17 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
         if (code < 0 && code != gs_error_undefined)
             return code;
         if (code == gs_error_undefined) {
-            if (pdev->PDFA != 0 || pdev->PDFX) {
+            if (pdev->PDFA != 0 || pdev->PDFX != 0) {
                 switch (pdev->PDFACompatibilityPolicy) {
                     case 0:
                         emprintf(pdev->memory,
-                             "Requested glyph not present in source font,\n not permitted in PDF/A, reverting to normal PDF output\n");
+                             "Requested glyph not present in source font,\n not permitted in PDF/A or PDF/X, reverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
                         pdev->PDFA = 0;
                         break;
                     case 1:
                         emprintf(pdev->memory,
-                             "Requested glyph not present in source font,\n not permitted in PDF/A, glyph will not be present in output file\n\n");
+                             "Requested glyph not present in source font,\n not permitted in PDF/A or PDF/X, glyph will not be present in output file\n\n");
                         /* Returning an error causees text processing to try and
                          * handle the glyph by rendering to a bitmap instead of
                          * as a glyph in a font. This will eliminate the problem
@@ -552,7 +552,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
                         break;
                     case 2:
                         emprintf(pdev->memory,
-                             "Requested glyph not present in source font,\n not permitted in PDF/A, aborting conversion\n");
+                             "Requested glyph not present in source font,\n not permitted in PDF/A or PDF/X, aborting conversion\n");
                         /* Careful here, only certain errors will bubble up
                          * through the text processing.
                          */
@@ -560,7 +560,7 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
                         break;
                     default:
                         emprintf(pdev->memory,
-                             "Requested glyph not present in source font,\n not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                             "Requested glyph not present in source font,\n not permitted in PDF/A or PDF/X, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
                         pdev->AbortPDFAX = true;
                         pdev->PDFA = 0;
                         break;

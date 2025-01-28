@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -631,7 +631,7 @@ struct gx_device_pdf_s {
     bool HaveTransparency;
     bool PatternImagemask; /* The target viewer|printer handles imagemask
                               with pattern color. */
-    bool PDFX;                   /* Generate PDF/X */
+    int PDFX;                   /* Generate PDF/X */
     int PDFA;                   /* Generate PDF/A 0 = don't produce, otherwise level of PDF/A */
     bool AbortPDFAX;            /* Abort generation of PDFA or X, produce regular PDF */
     int64_t MaxClipPathSize;  /* The maximal number of elements of a clipping path

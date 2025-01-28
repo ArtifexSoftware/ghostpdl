@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -577,9 +577,9 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     byte digest[16], buf[32], t;
     stream_arcfour_state sarc4;
 
-    if (pdev->PDFX && pdev->KeyLength != 0) {
+    if (pdev->PDFX == 3 && pdev->KeyLength != 0) {
         emprintf(pdev->memory,
-                 "Encryption is not allowed in a PDF/X doucment.\n");
+                 "Encryption is not allowed in a PDF/X-3 doucment.\n");
         return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength == 0)
@@ -1215,12 +1215,12 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
         for (i=0;i<4;i++)
             mediabox[i] = temp[i];
     }
-    if (pdev->PDFX) {
+    if (pdev->PDFX != 0) {
         const cos_value_t *v_trimbox = NULL;
         const cos_value_t *v_artbox = NULL;
         const cos_value_t *v_cropbox = NULL;
         const cos_value_t *v_bleedbox = NULL;
-        float trimbox[4] = {0, 0}, bleedbox[4] = {0, 0};
+        float trimbox[4] = {0, 0}, bleedbox[4] = {0, 0}, artbox[4] = {0, 0}, cropbox[4] = {0, 0};
         bool print_bleedbox = false;
 
         if (page->Page != NULL) {
@@ -1230,8 +1230,8 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             v_bleedbox = cos_dict_find_c_key(page->Page, "/BleedBox");
         }
 
-        trimbox[2] = bleedbox[2] = mediabox[2];
-        trimbox[3] = bleedbox[3] = mediabox[3];
+        cropbox[2] = trimbox[2] = bleedbox[2] = mediabox[2];
+        cropbox[2] = trimbox[3] = bleedbox[3] = mediabox[3];
         /* Offsets are [left right top bottom] according to the Acrobat 7.0
            distiller parameters manual, 12/7/2004, pp. 102-103. */
         if (v_trimbox != NULL && v_trimbox->value_type == COS_VALUE_SCALAR) {
@@ -1267,12 +1267,19 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             buf[l] = 0;
             if (sscanf(buf, "[ %g %g %g %g ]",
                     &temp[0], &temp[1], &temp[2], &temp[3]) == 4) {
-                trimbox[0] = temp[0];
-                trimbox[1] = temp[1];
-                trimbox[2] = temp[2];
-                trimbox[3] = temp[3];
-                if (page->Page != NULL)
-                    cos_dict_delete_c_key(page->Page, "/ArtBox");
+                if (pdev->PDFX == 3) {
+                    trimbox[0] = temp[0];
+                    trimbox[1] = temp[1];
+                    trimbox[2] = temp[2];
+                    trimbox[3] = temp[3];
+                    if (page->Page != NULL)
+                        cos_dict_delete_c_key(page->Page, "/ArtBox");
+                } else {
+                    artbox[0] = temp[0];
+                    artbox[1] = temp[1];
+                    artbox[2] = temp[2];
+                    artbox[3] = temp[3];
+                }
             }
         } else {
             if (pdev->PDFXTrimBoxToMediaBoxOffset.size >= 4 &&
@@ -1392,6 +1399,10 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                     temp[2] = mediabox[2];
                 if (temp[3] > mediabox[3])
                     temp[3] = mediabox[3];
+                cropbox[0] = temp[0];
+                cropbox[1] = temp[1];
+                cropbox[2] = temp[2];
+                cropbox[3] = temp[3];
                 pprintg4(s, "/CropBox [%g %g %g %g]\n",
                     temp[0], temp[1], temp[2], temp[3]);
                 /* Make sure TrimBox fits inside CropBox. Spec says 'must not extend
@@ -1435,7 +1446,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             }
         }
 
-        if (page->Page != NULL) {
+        if (pdev->PDFX == 3 && page->Page != NULL) {
             if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL &&
                 cos_dict_find_c_key(page->Page, "/ArtBox") == NULL)
                 pprintg4(s, "/TrimBox [%g %g %g %g]\n",
@@ -1444,6 +1455,36 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
                 cos_dict_find_c_key(page->Page, "/BleedBox") == NULL)
                 pprintg4(s, "/BleedBox [%g %g %g %g]\n",
                     bleedbox[0], bleedbox[1], bleedbox[2], bleedbox[3]);
+        }
+        if (pdev->PDFX == 1 && page->Page != NULL) {
+            if (cos_dict_find_c_key(page->Page, "/ArtBox") == NULL) {
+                artbox[0] = mediabox[0];
+                artbox[1] = mediabox[1];
+                artbox[2] = mediabox[2];
+                artbox[3] = mediabox[3];
+            }
+            if (cos_dict_find_c_key(page->Page, "/CropBox") != NULL) {
+                if (artbox[0] < cropbox[0])
+                    artbox[0] = cropbox[0];
+                if (artbox[1] < cropbox[1])
+                    artbox[1] = cropbox[1];
+                if (artbox[2] < cropbox[2])
+                    artbox[2] = cropbox[2];
+                if (artbox[3] < cropbox[3])
+                    artbox[3] = cropbox[3];
+            }
+            if (cos_dict_find_c_key(page->Page, "/BleedBox") != NULL) {
+                if (artbox[0] < bleedbox[0])
+                    artbox[0] = bleedbox[0];
+                if (artbox[1] < bleedbox[1])
+                    artbox[1] = bleedbox[1];
+                if (artbox[2] < bleedbox[2])
+                    artbox[2] = bleedbox[2];
+                if (artbox[3] < bleedbox[3])
+                    artbox[3] = bleedbox[3];
+            }
+            pprintg4(s, "/ArtBox [%g %g %g %g]\n",
+                artbox[0], artbox[1], artbox[2], artbox[3]);
         }
     }
     pdf_print_orientation(pdev, page);
