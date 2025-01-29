@@ -1231,7 +1231,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
         }
 
         cropbox[2] = trimbox[2] = bleedbox[2] = mediabox[2];
-        cropbox[2] = trimbox[3] = bleedbox[3] = mediabox[3];
+        cropbox[3] = trimbox[3] = bleedbox[3] = mediabox[3];
         /* Offsets are [left right top bottom] according to the Acrobat 7.0
            distiller parameters manual, 12/7/2004, pp. 102-103. */
         if (v_trimbox != NULL && v_trimbox->value_type == COS_VALUE_SCALAR) {
