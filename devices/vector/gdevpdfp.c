@@ -738,7 +738,7 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         param_signal_error(plist, "PDFA", ecode);
         goto fail;
     }
-    if (pdev->PDFA == 1 || pdev->PDFX != 0 || pdev->CompatibilityLevel < 1.4) {
+    if (pdev->PDFA == 1 || (pdev->PDFX > 0 && pdev->PDFX < 4) || pdev->CompatibilityLevel < 1.4) {
          pdev->HaveTransparency = false;
          pdev->PreserveSMask = false;
          pdev->WantsOptionalContent = false;
@@ -779,14 +779,18 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
      * the version.
      */
     if (pdev->PDFX != 0) {
-        cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
-        if (pdev->WriteObjStms && ObjStms_set)
-            emprintf(pdev->memory, "Can't use ObjStm before PDF 1.5, PDF/X does not support PDF 1.5, ignoring WriteObjStms directive\n");
-        if (pdev->WriteXRefStm && XRefStm_set)
-            emprintf(pdev->memory, "Can't use an XRef stream before PDF 1.5, PDF/X does not support PDF 1.5, ignoring WriteXRefStm directive\n");
+        if (pdev->PDFX < 4) {
+            cl = (float)1.3; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
+            if (pdev->WriteObjStms && ObjStms_set)
+                emprintf(pdev->memory, "Can't use ObjStm before PDF 1.5, PDF/X does not support PDF 1.5, ignoring WriteObjStms directive\n");
+            if (pdev->WriteXRefStm && XRefStm_set)
+                emprintf(pdev->memory, "Can't use an XRef stream before PDF 1.5, PDF/X does not support PDF 1.5, ignoring WriteXRefStm directive\n");
 
-        pdev->WriteObjStms = false;
-        pdev->WriteXRefStm = false;
+            pdev->WriteObjStms = false;
+            pdev->WriteXRefStm = false;
+        } else {
+            cl = (float)1.6; /* Instead pdev->CompatibilityLevel = 1.2; - see below. */
+        }
     }
     if (pdev->PDFA == 1 && cl != 1.4) {
         cl = (float)1.4;

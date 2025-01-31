@@ -577,7 +577,7 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     byte digest[16], buf[32], t;
     stream_arcfour_state sarc4;
 
-    if (pdev->PDFX == 3 && pdev->KeyLength != 0) {
+    if (pdev->PDFX > 1 && pdev->KeyLength != 0) {
         emprintf(pdev->memory,
                  "Encryption is not allowed in a PDF/X-3 doucment.\n");
         return_error(gs_error_rangecheck);
@@ -1446,7 +1446,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
             }
         }
 
-        if (pdev->PDFX == 3 && page->Page != NULL) {
+        if (pdev->PDFX > 1 && page->Page != NULL) {
             if (cos_dict_find_c_key(page->Page, "/TrimBox") == NULL &&
                 cos_dict_find_c_key(page->Page, "/ArtBox") == NULL)
                 pprintg4(s, "/TrimBox [%g %g %g %g]\n",

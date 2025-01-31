@@ -506,7 +506,7 @@ pdf_separation_color_space(gx_device_pdf *pdev, const gs_gstate * pgs,
     if (csi == gs_color_space_index_ICC) {
         csi = gsicc_get_default_type(alt_space->cmm_icc_profile_data);
     }
-    if (csi == gs_color_space_index_DeviceRGB && (pdev->PDFX != 0 ||
+    if (csi == gs_color_space_index_DeviceRGB && ((pdev->PDFX > 0 && pdev->PDFX < 4) ||
         (pdev->PDFA != 0 && (pdev->pcm_color_info_index == gs_color_space_index_DeviceCMYK)))) {
 
         /*

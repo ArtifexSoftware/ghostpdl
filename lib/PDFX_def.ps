@@ -28,14 +28,14 @@ dup 1 eq {
     /Trapped /False                 % Must be so (Ghostscript doesn't provide other).
   /DOCINFO pdfmark
 } if
-dup 1000 eq {
-  [ /GTS_PDFXVersion (PDF/X-1a:200) % Must be so (the standard requires).
+dup 3 eq {
+  [ /GTS_PDFXVersion (PDF/X-3:2002) % Must be so (the standard requires).
     /Title (Title)                  % Customize.
     /Trapped /False                 % Must be so (Ghostscript doesn't provide other).
   /DOCINFO pdfmark
 } if
-3 eq {
-  [ /GTS_PDFXVersion (PDF/X-3:2002) % Must be so (the standard requires).
+4 eq {
+  [ /GTS_PDFXVersion (PDF/X-4)    % Must be so (the standard requires).
     /Title (Title)                  % Customize.
     /Trapped /False                 % Must be so (Ghostscript doesn't provide other).
   /DOCINFO pdfmark
@@ -64,8 +64,11 @@ currentdict /ICCProfile known {
       pop /N 1 false
     }{
       dup /RGB eq {
-        (RGB is not a valid ColorConversionStrategy for PDF/X output)=
-        /ColorConversionStrategycvx /rangecheck signalerror
+        systemdict /PDFX known {systemdict /PDFX get}{3} ifelse
+        4 lt {
+          (RGB is not a valid ColorConversionStrategy for PDF/X output)=
+          /ColorConversionStrategycvx /rangecheck signalerror
+        } if
       }{
         /CMYK eq {
           /N 4 false
@@ -86,8 +89,11 @@ currentdict /ICCProfile known {
       pop /N 1
     }{
       dup /DeviceRGB eq {
-        (RGB is not a valid ProcessColorModel for PDF/X output)=
-        /ColorConversionStrategycvx /rangecheck signalerror
+        systemdict /PDFX known {systemdict /PDFX get}{3} ifelse
+        4 lt {
+          (RGB is not a valid ProcessColorModel for PDF/X output)=
+          /ColorConversionStrategycvx /rangecheck signalerror
+        } if
       }{
         dup /DeviceCMYK eq {
           pop /N 4
@@ -107,14 +113,14 @@ currentdict /ICCProfile known {
 
 [/_objdef {OutputIntent_PDFX} /type /dict /OBJ pdfmark
 [{OutputIntent_PDFX} <<
-  /Type /OutputIntent              % Must be so (the standard requires).
-  /S /GTS_PDFX                     % Must be so (the standard requires).
-  /OutputCondition (Commercial and specialty printing) % Customize
-  /Info (none)                     % Customize
-  /OutputConditionIdentifier (CGATS TR001)      % Customize
-  /RegistryName (http://www.color.org)   % Must be so (the standard requires).
+  /Type /OutputIntent                                   % Must be so (the standard requires).
+  /S /GTS_PDFX                                          % Must be so (the standard requires).
+  /OutputCondition (Commercial and specialty printing)  % Customize
+  /Info (none)                                          % Customize
+  /OutputConditionIdentifier (CGATS TR001)              % Customize
+  /RegistryName (http://www.color.org)                  % Must be so (the standard requires).
   currentdict /ICCProfile known {
-    /DestOutputProfile {icc_PDFX}  % Must be so (see above).
+    /DestOutputProfile {icc_PDFX}                       % Must be so (see above).
   } if
 >> /PUT pdfmark
 [{Catalog} <</OutputIntents [ {OutputIntent_PDFX} ]>> /PUT pdfmark

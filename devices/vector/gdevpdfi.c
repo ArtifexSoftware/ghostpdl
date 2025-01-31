@@ -38,6 +38,7 @@
 #include "gsicc_manage.h"
 #include "gsform1.h"
 #include "gxpath.h"
+#include "gxcdevn.h"
 
 extern_st(st_gs_gstate);
 
@@ -509,6 +510,31 @@ static int setup_image_process_colorspace(gx_device_pdf *pdev, image_union_t *im
     return 0;
 }
 
+static int check_colorants_for_pdfx4(const gs_color_space *pcs)
+{
+    int comp, all_present = 1;
+    char *ink, *Colorant;
+    gs_device_n_colorant *colorant = NULL;
+
+    if (pcs->params.device_n.colorants == NULL) {
+        return 0;
+    } else {
+        for (comp = 0; comp < pcs->params.device_n.num_components;comp++){
+            colorant = pcs->params.device_n.colorants;
+            ink = pcs->params.device_n.names[comp];
+            do {
+                if (memcmp(colorant->colorant_name, ink, strlen(ink)) == 0)
+                    break;
+                colorant = colorant->next;
+            }while(colorant);
+            if (!colorant) {
+                all_present = 0;
+                break;
+            }
+        }
+    }
+    return all_present;
+}
 /* 0 = write unchanged
    1 = convert to process
    2 = write as ICC
@@ -725,8 +751,14 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                         break;
                     case gs_color_space_index_DeviceN:
                         if (pdev->PDFX > 0) {
-                            *pcs_orig = pcs;
-                            return 1;
+                            if (pdev->PDFX < 4) {
+                                *pcs_orig = pcs;
+                                return 1;
+                            }
+                            if (!check_colorants_for_pdfx4(pcs2)){
+                                *pcs_orig = pcs;
+                                return 1;
+                            }
                         }
                         pcs2 = pcs;
                         while (pcs2->base_space)
