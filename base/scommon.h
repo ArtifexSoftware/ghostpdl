@@ -113,17 +113,18 @@ typedef union stream_cursor_s {
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
+static byte gs_fake_sbuf[1];
+
 static inline void
 stream_cursor_read_init(stream_cursor_read *r, const byte *buf, size_t length)
 {
-    static byte gs_fake_rbuf[0];
     if (buf != NULL) {
         /* starting pos for pointer is always one position back */
         r->ptr = buf - 1;
         r->limit = r->ptr + length;
     }
     else {
-        r->ptr = gs_fake_rbuf - 1;
+        r->ptr = gs_fake_sbuf - 1;
         r->limit = r->ptr;
     }
 }
@@ -131,14 +132,13 @@ stream_cursor_read_init(stream_cursor_read *r, const byte *buf, size_t length)
 static inline void
 stream_cursor_write_init(stream_cursor_write *w, const byte *buf, size_t length)
 {
-    static byte gs_fake_wbuf[0];
     if (buf != NULL) {
         /* starting pos for pointer is always one position back */
         w->ptr = (byte *)buf - 1;
         w->limit = (byte *)w->ptr + length;
     }
     else {
-        w->ptr = gs_fake_wbuf - 1;
+        w->ptr = gs_fake_sbuf - 1;
         w->limit = w->ptr;
     }
 }
