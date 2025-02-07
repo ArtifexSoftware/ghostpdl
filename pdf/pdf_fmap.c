@@ -964,11 +964,13 @@ done:
 static int pdfi_generate_native_fontmap(pdf_context *ctx)
 {
     file_enum *fe;
-    int i;
+    int i, j;
     char *patrn= NULL;
     char *result = NULL;
     char *working = NULL;
     int code = 0, l;
+    gs_param_string *respaths[2];
+    int nrespaths[2];
 
     if (ctx->pdfnativefontmap != NULL) /* Only run this once */
         return 0;
@@ -981,6 +983,8 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
         return 0;
     }
 
+    (void)pdfi_generate_platform_fontmap(ctx);
+
     patrn = (char *)gs_alloc_bytes(ctx->memory, gp_file_name_sizeof, "pdfi_generate_native_fontmap");
     result = (char *)gs_alloc_bytes(ctx->memory, gp_file_name_sizeof, "pdfi_generate_native_fontmap");
     working = (char *)gs_alloc_bytes(ctx->memory, gp_file_name_sizeof, "pdfi_generate_native_fontmap");
@@ -991,28 +995,34 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
         return_error(gs_error_VMerror);
     }
 
-    for (i = 0; i < ctx->search_paths.num_font_paths; i++) {
+    respaths[0] = ctx->search_paths.font_paths;
+    nrespaths[0] = ctx->search_paths.num_font_paths;
+    respaths[1] = ctx->search_paths.resource_paths;
+    nrespaths[1] = ctx->search_paths.num_resource_paths;
 
-        memcpy(patrn, ctx->search_paths.font_paths[i].data, ctx->search_paths.font_paths[i].size);
-        memcpy(patrn + ctx->search_paths.font_paths[i].size, "/*", 2);
-        patrn[ctx->search_paths.font_paths[i].size + 2] = '\0';
+    for (j = 0; j < sizeof(respaths) / sizeof(respaths[0]); j++) {
+        for (i = 0; i < nrespaths[j]; i++) {
 
-        fe = gp_enumerate_files_init(ctx->memory, (const char *)patrn, strlen(patrn));
-        while ((l = gp_enumerate_files_next(ctx->memory, fe, result, gp_file_name_sizeof - 1)) != ~(uint) 0) {
-            result[l] = '\0';
+            memcpy(patrn, respaths[j][i].data, respaths[j][i].size);
+            memcpy(patrn + respaths[j][i].size, "/*", 2);
+            patrn[respaths[j][i].size + 2] = '\0';
 
-            code = pdfi_add_font_to_native_map(ctx, result, working);
+            fe = gp_enumerate_files_init(ctx->memory, (const char *)patrn, strlen(patrn));
+            while ((l = gp_enumerate_files_next(ctx->memory, fe, result, gp_file_name_sizeof - 1)) != ~(uint) 0) {
+                result[l] = '\0';
 
-            /* We ignore most errors, on the basis it probably means it wasn't a valid font file */
-            if (code == gs_error_VMerror)
-                break;
-            code = 0;
+                code = pdfi_add_font_to_native_map(ctx, result, working);
+
+                /* We ignore most errors, on the basis it probably means it wasn't a valid font file */
+                if (code == gs_error_VMerror)
+                    break;
+                code = 0;
+            }
+            /* We only need to explicitly destroy the enumerator if we exit before enumeration is complete */
+            if (code < 0)
+                gp_enumerate_files_close(ctx->memory, fe);
         }
-        /* We only need to explicitly destroy the enumerator if we exit before enumeration is complete */
-        if (code < 0)
-            gp_enumerate_files_close(ctx->memory, fe);
     }
-    (void)pdfi_generate_platform_fontmap(ctx);
 
 #ifdef DUMP_NATIVE_FONTMAP
     if (ctx->pdfnativefontmap != NULL) {
@@ -1110,8 +1120,26 @@ pdfi_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname,
         if (code < 0)
             return code;
     }
+    code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, fname, &mname);
+    if (code >= 0) {
+        /* Fontmap can map in multiple "jump" i.e.
+           name -> substitute name
+           subsitute name -> file name
+           So we want to loop until we no more hits.
+         */
+        while(1) {
+            pdf_obj *mname2;
+            code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
+            if (code < 0) {
+                code = 0;
+                break;
+            }
+            pdfi_countdown(mname);
+            mname = mname2;
+        }
+    }
 
-    if (ctx->pdfnativefontmap != NULL) {
+    if (code < 0 && ctx->pdfnativefontmap != NULL) {
         pdf_obj *record;
         code = pdfi_dict_get_by_key(ctx, ctx->pdfnativefontmap, fname, &record);
         if (code >= 0) {
@@ -1139,26 +1167,6 @@ pdfi_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname,
         code = gs_error_undefined;
     }
 
-    if (code < 0) {
-        code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, fname, &mname);
-        if (code >= 0) {
-            /* Fontmap can map in multiple "jump" i.e.
-               name -> substitute name
-               subsitute name -> file name
-               So we want to loop until we no more hits.
-             */
-            while(1) {
-                pdf_obj *mname2;
-                if (pdfi_type_of(mname) == PDF_FONT) {
-                    break;
-                }
-                code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
-                if (code < 0) break;
-                pdfi_countdown(mname);
-                mname = mname2;
-            }
-        }
-    }
     if (mname != NULL && pdfi_type_of(mname) == PDF_STRING && pdfi_fmap_file_exists(ctx, (pdf_string *)mname)) {
         *mapname = mname;
         (void)pdfi_dict_put(ctx, font_dict, ".Path", mname);
