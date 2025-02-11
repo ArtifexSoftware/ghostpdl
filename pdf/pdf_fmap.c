@@ -354,6 +354,74 @@ done:
     if (code >= 0) {
         code = pdfi_populate_ufst_fontmap(ctx);
     }
+#ifdef DUMP_FONTMAP
+    if (ctx->pdffontmap != NULL) {
+        uint64_t ind;
+        int find = -1;
+        pdf_name *key = NULL;
+        pdf_obj *v = NULL;
+        pdf_string *val = NULL;
+        (void)pdfi_dict_key_first(ctx, ctx->pdffontmap, (pdf_obj **) &key, &ind);
+        (void)pdfi_dict_get_by_key(ctx, ctx->pdffontmap, key, (pdf_obj **)&v);
+        for (j = 0; j < key->length; j++)
+            dprintf1("%c", key->data[j]);
+        if (pdfi_type_of(v) == PDF_DICT) {
+            pdf_num *n;
+            pdf_string *val2;
+            code = pdfi_dict_get(ctx, (pdf_dict *)v, "Index", (pdf_obj **)&n);
+            if (code >= 0 && pdfi_type_of(n) == PDF_INT)
+                find = n->value.i;
+            else
+                code = 0;
+            (void)pdfi_dict_get(ctx, (pdf_dict *)v, "Path", (pdf_obj **)&val2);
+            val = val2;
+        }
+        else {
+            val = (pdf_string *)v;
+        }
+        dprintf("	");
+        for (j = 0; j < val->length; j++)
+            dprintf1("%c", val->data[j]);
+        if (find != -1) {
+            dprintf1("	Index = %d", find);
+            find = -1;
+        }
+
+        dprintf("\n");
+        pdfi_countdown(key);
+        pdfi_countdown(val);
+
+        while (pdfi_dict_key_next(ctx, ctx->pdffontmap, (pdf_obj **) &key, &ind) >= 0 && ind > 0) {
+            (void)pdfi_dict_get_by_key(ctx, ctx->pdffontmap, key, (pdf_obj **)&v);
+            for (j = 0; j < key->length; j++)
+                dprintf1("%c", key->data[j]);
+            if (pdfi_type_of(v) == PDF_DICT) {
+                pdf_num *n;
+                pdf_string *val2;
+                code = pdfi_dict_get(ctx, (pdf_dict *)v, "Index", (pdf_obj **)&n);
+                if (code >= 0 && pdfi_type_of(n) == PDF_INT)
+                    find = n->value.i;
+                else
+                    code = 0;
+                (void)pdfi_dict_get(ctx, (pdf_dict *)v, "Path", (pdf_obj **)&val2);
+                val = val2;
+            }
+            else {
+                val = (pdf_string *)v;
+            }
+            dprintf("       ");
+            for (j = 0; j < val->length; j++)
+                dprintf1("%c", val->data[j]);
+            if (find != -1) {
+                dprintf1("	Index = %d", find);
+                find = -1;
+            }
+            pdfi_countdown(key);
+            pdfi_countdown(val);
+            dprintf("\n");
+        }
+    }
+#endif
     pdfi_clearstack(ctx);
     return code;
 }
