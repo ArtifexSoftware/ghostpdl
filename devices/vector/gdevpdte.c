@@ -407,10 +407,32 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
             length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
         }
 
-        if (pdfont->cmap_ToUnicode != NULL)
-            gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode, length);
-        if (length > 2 && pdfont->u.simple.Encoding != NULL)
-            pdfont->TwoByteToUnicode = 0;
+        /* We use this when determining whether we should use an existing ToUnicode
+         * CMap entry, for s aimple font. The basic problem appears to be that the front end ToUnicode
+         * processing is somewhat limited, due to its origins in the PostScript GlyphNames2Unicode
+         * handling. We cannot support more than 4 bytes on input, the bug for 702201 has a ToUnicode
+         * entry which maps the single /ffi glyph to 'f' 'f' and 'i' code points for a total of 6
+         * (3 x UTF-16BE code points) bytes. If we just leave the Encoding alone then Acrobat will use the
+         * /ffi glyph to get the 'correct' answer. This was originally done using a 'TwoByteToUnicode'
+         * flag in the font and if the flag was not true, then we dropped the entire ToUnicode CMap.
+         *
+         * Additionally; bug #708284, the ToUnicode CMap is actually broken, it contains invalid UTF-16BE
+         * entries which actually are 4 bytes long. Acrobat silently ignores the broekn entires (!) but the fact
+         * that we dropped the entire CMap meant that none of the content pasted correctly.
+         *
+         * So... Until we get to the point of preserving input codes in excess of 4 bytes we do some hideous
+         * hackery here and simply drop ToUnicode entries in simple fonts, with a standard encoding, when the
+         * ToUnicode entry is not a single UTF-16BE code point. Acrobat will use the Encoding for the missing entries
+         * or the character code in extremis, which is as good as this is going to get right now.
+         *
+         */
+        if (pdfont->cmap_ToUnicode != NULL) {
+            if (pdfont->u.simple.Encoding != NULL) {
+                if (length <= 2)
+                    gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode, length);
+            } else
+                gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode, length);
+        }
     }
 
     if (unicode)

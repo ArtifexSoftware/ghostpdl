@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -123,8 +123,6 @@ pdf_simple_font_needs_ToUnicode(gx_device_pdf *pdev, const pdf_font_resource_t *
             In this circumstance, write the ToUnicode map to get a searchable PDF.
         */
         return true;
-    if (!pdfont->TwoByteToUnicode)
-        return false;
 
     if (!pdev->ToUnicodeForStdEnc) {
         for (ch = 0; ch < 256; ++ch) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -220,14 +220,6 @@ struct pdf_font_resource_s {
     gs_cmap_t *cmap_ToUnicode;	   /* CMap (not used for CIDFonts) */
     gs_glyph_mark_proc_t mark_glyph;
     void *mark_glyph_data;	/* closure data */
-
-    /* We use this when determining whether we should use an existing ToUnicode
-     * CMap or just use the Encoding, for s aimple font. Even if the Encoding
-     * only uses named glyphs, with names we can understand, the original
-     * ToUnicode may have mapped these in a non-standard way.
-     * See Bug #702201 where the ffi ligature is mapped to 3 code points
-     */
-    int TwoByteToUnicode;
 
     union {
 
