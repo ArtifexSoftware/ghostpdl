@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2804,7 +2804,6 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                     cfffont->generation_num = font_dict->generation_num;
                     cfffont->indirect_num = font_dict->indirect_num;
                     cfffont->indirect_gen = font_dict->indirect_gen;
-
                     (void)pdfi_dict_knownget_type(ctx, font_dict, "BaseFont", PDF_NAME, &basefont);
                 }
 
@@ -3167,10 +3166,14 @@ pdfi_copy_cff_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, pd
         pdfi_countup(font->Encoding);
     }
 
-    /* Since various aspects of the font may differ (widths, encoding, etc)
-       we cannot reliably use the UniqueID/XUID for copied fonts.
-     */
-    uid_set_invalid(&font->pfont->UID);
+    code = uid_copy(&font->pfont->UID, font->pfont->memory, "pdfi_copy_cff_font");
+    if (code < 0) {
+        uid_set_invalid(&font->pfont->UID);
+    }
+    code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
+    if (code < 0) {
+        goto error;
+    }
 
     if (ctx->args.ignoretounicode != true) {
         code = pdfi_dict_get(ctx, font_dict, "ToUnicode", (pdf_obj **)&tmp);

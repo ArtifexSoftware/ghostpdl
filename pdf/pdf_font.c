@@ -2552,30 +2552,40 @@ int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font
             hash = ((((hash & 0xf8000000) >> 27) ^ (hash << 5)) & 0x7ffffffff) ^ fn.data[i];
         }
         hash = ((((hash & 0xf8000000) >> 27) ^ (hash << 5)) & 0x7ffffffff) ^ fontdict->object_num;
-        if (uid_is_XUID(&pfont->UID))
-            xuidlen += uid_XUID_size(&pfont->UID);
-        else if (uid_is_valid(&pfont->UID))
-            xuidlen++;
 
-        xvalues = (long *)gs_alloc_bytes(pfont->memory, xuidlen * sizeof(long), "pdfi_font_generate_pseudo_XUID");
-        if (xvalues == NULL) {
-            return 0;
+        if (uid_is_XUID(&pfont->UID) && uid_XUID_size(&pfont->UID) > 2 && uid_XUID_values(&pfont->UID)[0] == 1000000) {
+            /* This is already a pseudo XUID, probably because we are copying an existing font object
+             * So just update the hash and the object number
+             */
+             uid_XUID_values(&pfont->UID)[1] = hash;
+             uid_XUID_values(&pfont->UID)[2] = ctx->device_state.HighLevelDevice ? fontdict->object_num : 0;
         }
-        xvalues[0] = 1000000; /* "Private" value */
-        xvalues[1] = hash;
+        else {
+            if (uid_is_XUID(&pfont->UID))
+                xuidlen += uid_XUID_size(&pfont->UID);
+            else if (uid_is_valid(&pfont->UID))
+                xuidlen++;
 
-        xvalues[2] = ctx->device_state.HighLevelDevice ? fontdict->object_num : 0;
-
-        if (uid_is_XUID(&pfont->UID)) {
-            for (i = 0; i < uid_XUID_size(&pfont->UID); i++) {
-                xvalues[i + 3] = uid_XUID_values(&pfont->UID)[i];
+            xvalues = (long *)gs_alloc_bytes(pfont->memory, xuidlen * sizeof(long), "pdfi_font_generate_pseudo_XUID");
+            if (xvalues == NULL) {
+                return 0;
             }
-            uid_free(&pfont->UID, pfont->memory, "pdfi_font_generate_pseudo_XUID");
-        }
-        else if (uid_is_valid(&pfont->UID))
-            xvalues[3] = pfont->UID.id;
+            xvalues[0] = 1000000; /* "Private" value */
+            xvalues[1] = hash;
 
-        uid_set_XUID(&pfont->UID, xvalues, xuidlen);
+            xvalues[2] = ctx->device_state.HighLevelDevice ? fontdict->object_num : 0;
+
+            if (uid_is_XUID(&pfont->UID)) {
+                for (i = 0; i < uid_XUID_size(&pfont->UID); i++) {
+                    xvalues[i + 3] = uid_XUID_values(&pfont->UID)[i];
+                }
+                uid_free(&pfont->UID, pfont->memory, "pdfi_font_generate_pseudo_XUID");
+            }
+            else if (uid_is_valid(&pfont->UID))
+                xvalues[3] = pfont->UID.id;
+
+            uid_set_XUID(&pfont->UID, xvalues, xuidlen);
+        }
     }
     return 0;
 }
