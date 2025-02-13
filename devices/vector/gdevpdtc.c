@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -450,7 +450,7 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
         uint font_index = 0x7badf00d;
         gs_const_string str;
         pdf_text_process_state_t text_state;
-        pdf_font_resource_t *pdsubf;
+        pdf_font_resource_t *pdsubf = NULL;
         gs_font *subfont = NULL;
         gs_point wxy;
         bool font_change = 0;
@@ -806,8 +806,8 @@ scan_cmap_text(pdf_text_enum_t *pte, void *vbuf)
             /* We thought that it should be gs_matrix_multiply(&font->FontMatrix, &subfont0->FontMatrix, &m3); */
             if (code < 0)
                 return code;
-            if (pdsubf0->FontType == ft_user_defined  || pdsubf0->FontType == ft_PDF_user_defined  || pdsubf->FontType == ft_encrypted ||
-                pdsubf->FontType == ft_encrypted2)
+            if (pdsubf0->FontType == ft_user_defined  || pdsubf0->FontType == ft_PDF_user_defined  || pdsubf0->FontType == ft_encrypted ||
+                pdsubf0->FontType == ft_encrypted2)
                     pdfont = pdsubf0;
             else {
                 code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf0, font_index0,
