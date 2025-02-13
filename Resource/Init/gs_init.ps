@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2024 Artifex Software, Inc.
+% Copyright (C) 2001-2025 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -1589,6 +1589,8 @@ currentdict
 % Special handling for device parameters. Must follow definition of 'type'
 % make -dPDFA equivalent to -dPDFA=1 (backwards compatible)
 currentdict /PDFA known { PDFA type /booleantype eq { /PDFA 1 def } if } if
+% make -dPDFX equivalent to -dPDFX=3 (backwards compatible)
+currentdict /PDFX known { PDFX type /booleantype eq { /PDFX 3 def } if } if
 
 % Construct a dictionary of all available devices.
 % These are (read-only) device prototypes that can't be
