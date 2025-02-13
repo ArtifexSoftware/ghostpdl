@@ -2547,9 +2547,21 @@ int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font
     int xuidlen = 3;
 
     sfilename(ctx->main_stream->s, &fn);
-    if (fn.size > 0 && fontdict!= NULL && fontdict->object_num != 0) {
-        for (i = 0; i < fn.size; i++) {
-            hash = ((((hash & 0xf8000000) >> 27) ^ (hash << 5)) & 0x7ffffffff) ^ fn.data[i];
+    if (fontdict!= NULL && fontdict->object_num != 0) {
+        const byte *sb;
+        size_t l;
+        if (fn.size > 0) {
+            sb = fn.data;
+            l = fn.size;
+        }
+        else {
+            s_process_read_buf(ctx->main_stream->s);
+            sb = sbufptr(ctx->main_stream->s);
+            l = sbufavailable(ctx->main_stream->s) > 128 ? 128: sbufavailable(ctx->main_stream->s);
+        }
+
+        for (i = 0; i < l; i++) {
+            hash = ((((hash & 0xf8000000) >> 27) ^ (hash << 5)) & 0x7ffffffff) ^ sb[i];
         }
         hash = ((((hash & 0xf8000000) >> 27) ^ (hash << 5)) & 0x7ffffffff) ^ fontdict->object_num;
 
