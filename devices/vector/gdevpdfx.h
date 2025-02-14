@@ -1139,10 +1139,20 @@ int pdf_record_usage_by_parent(gx_device_pdf *const pdev, int64_t resource_id, i
 
 /*
  * Define the offset that indicates that a file position is in the
- * asides file rather than the main (contents) file.
- * Must be a power of 2, and larger than the largest possible output file.
+ * asides file rather than the main (contents) file. We just use the top bit
+ * as a flag. Complexity is due to ubsan and the possibility we have 32-bit offset type.
  */
-#define ASIDES_BASE_POSITION min_int64_t
+#ifdef ARCH_SIZEOF_GS_OFFSET_T
+# if ARCH_SIZEOF_GS_OFFSET_T == 8
+#define ASIDES_BASE_POSITION ((uint64_t)1 << ((sizeof(gs_offset_t) * 8) - 1))
+# elif ARCH_SIZEOF_GS_OFFSET_T == 4
+#define ASIDES_BASE_POSITION ((uint32_t)1 << ((sizeof(gs_offset_t) * 8) - 1))
+# else
+UNSUPPORTED
+# endif
+# else
+UNSUPPORTED
+# endif
 
 /* Begin an object logically separate from the contents. */
 /* (I.e., an object in the resource file.) */

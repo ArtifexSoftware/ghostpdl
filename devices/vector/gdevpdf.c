@@ -1661,8 +1661,10 @@ static int find_end_xref_section (gx_device_pdf *pdev, gp_file *tfile, int64_t s
                     return(gs_note_error(gs_error_ioerror));
             } else
                 index = 0;
-            if (pos & ASIDES_BASE_POSITION)
-                pos += resource_pos - ASIDES_BASE_POSITION;
+            if (pos & ASIDES_BASE_POSITION) {
+                pos &= ~ASIDES_BASE_POSITION;
+                pos += resource_pos;
+            }
             pos -= pdev->OPDFRead_procset_length;
             if (pos == 0 && index == 0) {
                 return i;
@@ -1698,8 +1700,10 @@ static int write_xref_section(gx_device_pdf *pdev, gp_file *tfile, int64_t start
                     return(gs_note_error(gs_error_ioerror));
             }
 
-            if (pos & ASIDES_BASE_POSITION)
-                pos += resource_pos - ASIDES_BASE_POSITION;
+            if (pos & ASIDES_BASE_POSITION) {
+                pos &= ~ASIDES_BASE_POSITION;
+                pos += resource_pos;
+            }
             pos -= pdev->OPDFRead_procset_length;
 
             /* check to see we haven't got an offset which is too large to represent
@@ -1755,8 +1759,10 @@ static int write_xrefstm_section(gx_device_pdf *pdev, gp_file *tfile, int64_t st
             }
 
             if (!pdev->doubleXref || objstm == 0) {
-                if (pos & ASIDES_BASE_POSITION)
-                    pos += resource_pos - ASIDES_BASE_POSITION;
+                if (pos & ASIDES_BASE_POSITION) {
+                    pos &= ~ASIDES_BASE_POSITION;
+                    pos += resource_pos;
+                }
                 pos -= pdev->OPDFRead_procset_length;
 
                 /* check to see we haven't got an offset which is too large to represent

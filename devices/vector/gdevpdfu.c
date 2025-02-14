@@ -699,7 +699,7 @@ pdf_stell(gx_device_pdf * pdev)
     gs_offset_t pos = stell(s);
 
     if (s == pdev->asides.strm)
-        pos += ASIDES_BASE_POSITION;
+        pos |= ASIDES_BASE_POSITION;
     return pos;
 }
 
