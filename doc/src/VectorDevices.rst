@@ -1053,7 +1053,7 @@ The following option specifies creation of a PDF/X file:
 ``-dPDFX=integer``
    Specifies the generated document is to follow a PDF/X-standard (value should be 1, 3 or 4, default is 3). The pdfx_def.ps example file in the lib directory supports some other actions which must be taken to produce a valid PDF/X file.
 
-   The :title:`pdfwrite` device currently supports PDF/X versions 1 and 3.
+   The :title:`pdfwrite` device currently supports PDF/X versions 1, 3 and 4.
 
 
 When generating a PDF/X document, Ghostscript performs the following special actions to satisfy the PDF/X-3 standard:
