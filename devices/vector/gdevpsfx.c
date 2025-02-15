@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -163,7 +163,7 @@ type1_next(gs_type1_state *pcis)
     const byte *cip, *cipe;
     crypt_state state;
 #define CLEAR (csp = pcis->ostack - 1)
-    fixed *csp = &pcis->ostack[pcis->os_count - 1];
+    fixed *csp = (&pcis->ostack[pcis->os_count]) - 1;
     const bool encrypted = pcis->pfont->data.lenIV >= 0;
     int c, code, num_results, c0;
 
@@ -496,7 +496,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
     type1_next_init(&cis, pgd, pfont);
     for (;;) {
         int c = type1_next(&cis);
-        fixed *csp = &cis.ostack[cis.os_count - 1];
+        fixed *csp = (&cis.ostack[cis.os_count]) - 1;
 
         switch (c) {
         default:
@@ -588,7 +588,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
     CLEAR_OP();
     for (;;) {
         int c = type1_next(&cis);
-        fixed *csp = &cis.ostack[cis.os_count - 1];
+        fixed *csp = (&cis.ostack[cis.os_count]) - 1;
 #define POP(n)\
   (csp -= (n), cis.os_count -= (n))
         int i;
