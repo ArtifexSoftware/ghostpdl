@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -788,7 +788,8 @@ static int merge_embed(gs_param_string_array * psa, gs_param_string_array * asa,
                                   "psdf_put_embed_param(update)");
     if (rdata == 0)
         return_error(gs_error_VMerror);
-    memcpy(rdata, psa->data, psa->size * sizeof(*psa->data));
+    if (psa->size > 0)
+        memcpy(rdata, psa->data, psa->size * sizeof(*psa->data));
     rsa.data = rdata;
     rsa.size = psa->size;
     rsa.persistent = false;
