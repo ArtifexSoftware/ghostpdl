@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -156,7 +156,8 @@ gs_param_read_items(gs_param_list * plist, void *obj,
                         } else {
                             copy = s->data;
                         }
-                        memcpy(copy, typed.value.s.data, typed.value.s.size);
+                        if (typed.value.s.size > 0)
+                            memcpy(copy, typed.value.s.data, typed.value.s.size);
                         s->data = copy;
                         ((gs_param_string *)pvalue)->persistent = 0; /* 0 => We own this copy */
                         break;
@@ -236,7 +237,8 @@ gs_param_read_items(gs_param_list * plist, void *obj,
                         } else {
                             /* Hideous hackery to get around the const nature of gs_param_strings. */
                             gs_string *s = (gs_string *)(void *)sa;
-                            memcpy(s->data, typed.value.s.data, eltsize * typed.value.s.size);
+                            if (typed.value.s.size > 0)
+                                memcpy(s->data, typed.value.s.data, eltsize * typed.value.s.size);
                         }
                         ((gs_param_string *)pvalue)->persistent = 0; /* 0 => We own this copy */
                         break;
@@ -269,7 +271,8 @@ gs_param_write_items(gs_param_list * plist, const void *obj,
                     pvalue, size)
             )
             continue;
-        memcpy(&typed.value, pvalue, size);
+        if (size > 0)
+            memcpy(&typed.value, pvalue, size);
         typed.type = pi->type;
         /* Ensure the list doesn't end up keeping a pointer to our values. */
         typed.value.s.persistent = 0;

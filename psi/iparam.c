@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -324,7 +324,8 @@ ref_param_write_string_value(ref * pref, const gs_param_string * pvalue,
 
         if (pstr == 0)
             return_error(gs_error_VMerror);
-        memcpy(pstr, pdata, n);
+        if (n > 0)
+            memcpy(pstr, pdata, n);
         make_string(pref, a_readonly | imemory_space(imem), n, pstr);
     }
     return 0;

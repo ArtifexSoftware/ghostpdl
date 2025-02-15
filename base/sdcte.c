@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -107,7 +107,8 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
         case 1:		/* initialized, Markers not written */
             if (pw->limit - pw->ptr < ss->Markers.size)
                 return 1;
-            memcpy(pw->ptr + 1, ss->Markers.data, ss->Markers.size);
+            if (ss->Markers.size)
+                memcpy(pw->ptr + 1, ss->Markers.data, ss->Markers.size);
             pw->ptr += ss->Markers.size;
             ss->phase = 2;
             /* falls through */

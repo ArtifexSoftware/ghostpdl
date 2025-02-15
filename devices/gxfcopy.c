@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -512,9 +512,9 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
     case 0:			/* already defined */
         if ((options & COPY_GLYPH_NO_OLD) ||
             pcg->gdata.size != prefix_bytes + size ||
-            memcmp(pcg->gdata.data, prefix, prefix_bytes) ||
-            memcmp(pcg->gdata.data + prefix_bytes,
-                   pgdata->bits.data, size)
+            (prefix_bytes > 0 && memcmp(pcg->gdata.data, prefix, prefix_bytes)) ||
+            (size > 0 && memcmp(pcg->gdata.data + prefix_bytes,
+                   pgdata->bits.data, size))
             )
             code = gs_note_error(gs_error_invalidaccess);
         else

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -928,7 +928,8 @@ int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *valu
     if (new_list == NULL) {
         return_error(gs_error_VMerror);
     }
-    memcpy(new_list, d->list, d->size * sizeof(pdf_dict_entry));
+    if (d->size > 0)
+        memcpy(new_list, d->list, d->size * sizeof(pdf_dict_entry));
 
     gs_free_object(ctx->memory, d->list, "pdfi_dict_put key/value reallocation");
 
