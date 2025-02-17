@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2024 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -191,10 +191,7 @@ TESSDEPS=\
 	$(TESSERACTDIR)/src/lstm/series.h\
 	$(TESSERACTDIR)/src/lstm/static_shape.h\
 	$(TESSERACTDIR)/src/lstm/stridemap.h\
-	$(TESSERACTDIR)/src/lstm/tfnetwork.h\
 	$(TESSERACTDIR)/src/lstm/weightmatrix.h\
-	$(TESSERACTDIR)/src/opencl/oclkernels.h\
-	$(TESSERACTDIR)/src/opencl/openclwrapper.h\
 	$(TESSERACTDIR)/src/textord/alignedblob.h\
 	$(TESSERACTDIR)/src/textord/baselinedetect.h\
 	$(TESSERACTDIR)/src/textord/bbgrid.h\
@@ -265,6 +262,9 @@ $(TESSOBJ)api_altorenderer.$(OBJ) : $(TESSERACTDIR)/src/api/altorenderer.cpp $(T
 
 $(TESSOBJ)api_capi.$(OBJ) : $(TESSERACTDIR)/src/api/capi.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)api_capi.$(OBJ) $(C_) $(TESSERACTDIR)/src/api/capi.cpp
+
+$(TESSOBJ)api_pagerenderer.$(OBJ) : $(TESSERACTDIR)/src/api/capi.cpp $(TESSDEPS)
+	$(TESSCXX) $(TESSO_)api_pagerenderer.$(OBJ) $(C_) $(TESSERACTDIR)/src/api/pagerenderer.cpp
 
 $(TESSOBJ)api_hocrrenderer.$(OBJ) : $(TESSERACTDIR)/src/api/hocrrenderer.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)api_hocrrenderer.$(OBJ) $(C_) $(TESSERACTDIR)/src/api/hocrrenderer.cpp
@@ -890,9 +890,6 @@ $(TESSOBJ)lstm_series.$(OBJ) : $(TESSERACTDIR)/src/lstm/series.cpp $(TESSDEPS)
 $(TESSOBJ)lstm_stridemap.$(OBJ) : $(TESSERACTDIR)/src/lstm/stridemap.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)lstm_stridemap.$(OBJ) $(C_) $(TESSERACTDIR)/src/lstm/stridemap.cpp
 
-$(TESSOBJ)lstm_tfnetwork.$(OBJ) : $(TESSERACTDIR)/src/lstm/tfnetwork.cpp $(TESSDEPS)
-	$(TESSCXX) $(TESSO_)lstm_tfnetwork.$(OBJ) $(C_) $(TESSERACTDIR)/src/lstm/tfnetwork.cpp
-
 $(TESSOBJ)lstm_weightmatrix.$(OBJ) : $(TESSERACTDIR)/src/lstm/weightmatrix.cpp $(TESSDEPS)
 	$(TESSCXX) $(TESSO_)lstm_weightmatrix.$(OBJ) $(C_) $(TESSERACTDIR)/src/lstm/weightmatrix.cpp
 
@@ -925,6 +922,7 @@ TESSERACT_OBJS_1=\
 	$(TESSOBJ)api_altorenderer.$(OBJ)\
 	$(TESSOBJ)api_baseapi.$(OBJ)\
 	$(TESSOBJ)api_capi.$(OBJ)\
+	$(TESSOBJ)api_pagerenderer.$(OBJ)\
 	$(TESSOBJ)api_hocrrenderer.$(OBJ)\
 	$(TESSOBJ)api_lstmboxrenderer.$(OBJ)\
 	$(TESSOBJ)api_pdfrenderer.$(OBJ)\
@@ -1075,7 +1073,6 @@ TESSERACT_OBJS_4=\
 	$(TESSOBJ)lstm_reversed.$(OBJ)\
 	$(TESSOBJ)lstm_series.$(OBJ)\
 	$(TESSOBJ)lstm_stridemap.$(OBJ)\
-	$(TESSOBJ)lstm_tfnetwork.$(OBJ)\
 	$(TESSOBJ)lstm_weightmatrix.$(OBJ)\
 	$(TESSOBJ)arch_dotproduct.$(OBJ)\
 	$(TESSOBJ)arch_dotproductavx.$(OBJ)\
