@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1636,6 +1636,7 @@ retry:
                 goto exit;
             code = pdfi_filter(ctx, stream_obj, SubFileStream, &stream, false);
             if (code < 0) {
+                pdfi_close_file(ctx, SubFileStream);
                 goto exit;
             }
             while (seofp(stream->s) != true && serrorp(stream->s) != true) {
