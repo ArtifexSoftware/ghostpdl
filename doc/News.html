@@ -18,7 +18,10 @@ all code should now be using the standard &quot;setpagedevice&quot; operator. &q
 in the 10.06.0 release.
 </li>
 <li>
-<p><b>IMPORTANT:</b> In this release (10.04.0) we have be added protection for
+<p>We now support production of PDF/X-1a and PDF/X-4a in addition to the existing support for PDF/X-3
+</li>
+<li>
+<p><b>IMPORTANT:</b> In the 10.04.0 release we added protection for
 device selection from PostScript input. This will mean that, by default, only the device specified
 on the command line will be permitted. Similar to the file permissions, there will be a &quot;--permit-devices=&quot;
 allowing a comma separation list of allowed devices. This will also take a single wildcard &quot;*&quot; allowing any device.
@@ -56,6 +59,14 @@ for now, as we are aware that not everyone upgrades with every release.</h4>
 <p>(10.05.0) The 10.05.0 release deprecates the non-standard operator &quot;selectdevice&quot;,
 all code should now be using the standard &quot;setpagedevice&quot; operator. &quot;selectdevice&quot; will be removed
 in the 10.06.0 release.
+</li>
+<p><b>IMPORTANT:</b> (10.04.0) we added protection for device selection from PostScript input. This will mean that, by default,
+only the device specified on the command line will be permitted. Similar to the file permissions, there will be a
+&quot;--permit-devices=&quot; allowing a comma separation list of allowed devices. This will also take a single wildcard
+&quot;*&quot; allowing any device.
+<p>Any application which relies on allowing PostScript to change devices during a job will have to be aware, and take action
+to deal with this change.
+<p>The exception is &quot;nulldevice&quot;, switching to that requires no special action.
 </li>
 <li>
 <p>(10.03.1) Almost all the &quot;internal&quot; PostScript procedures defined
