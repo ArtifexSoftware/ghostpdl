@@ -70,8 +70,11 @@
     /* For incremental fonts get the character data using the */
     /* callback function.                                     */
     if ( inc )
+    {
+      char_string->pointer = NULL;
       error = inc->funcs->get_glyph_data( inc->object,
                                           glyph_index, char_string );
+    }
     else
 
 #endif /* FT_CONFIG_OPTION_INCREMENTAL */
@@ -153,6 +156,11 @@
       decoder->builder.left_bearing.x = INT_TO_FIXED( metrics.bearing_x );
       decoder->builder.advance.x      = INT_TO_FIXED( metrics.advance );
       decoder->builder.advance.y      = INT_TO_FIXED( metrics.advance_v );
+    }
+
+    if ( error && inc )
+    {
+        inc->funcs->free_glyph_data( inc->object, char_string );
     }
 
 #endif /* FT_CONFIG_OPTION_INCREMENTAL */
