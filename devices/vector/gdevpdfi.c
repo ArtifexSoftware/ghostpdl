@@ -1444,7 +1444,13 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
         || force_lossless)
         pie->writer.alt_writer_count = 1;
 
-    names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
+    if (image[0].pixel.ColorSpace != NULL && (image[0].pixel.ColorSpace->type->index != gs_color_space_index_DeviceGray &&
+        image[0].pixel.ColorSpace->type->index != gs_color_space_index_DeviceRGB &&
+        image[0].pixel.ColorSpace->type->index != gs_color_space_index_DeviceCMYK &&
+        image[0].pixel.ColorSpace->type->index != gs_color_space_index_Indexed))
+        names = &pdf_color_space_names;
+    else
+        names = (in_line ? &pdf_color_space_names_short : &pdf_color_space_names);
 
     /* We don't want to change the colour space of a mask, or an SMask (both of which are Gray) */
     if (!is_mask) {
