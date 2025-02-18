@@ -1728,7 +1728,7 @@ pdfi_get_server_param(gs_fapi_server * I, const char *subtype,
                     char **server_param, int *server_param_size)
 {
     *server_param = NULL;
-    *server_param_size = 90;
+    *server_param_size = 0;
     return;
 }
 #endif /* UFST_BRIDGE */
