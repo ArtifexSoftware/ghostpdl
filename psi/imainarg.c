@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -170,7 +170,7 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
     minst->lib_path.final = gs_lib_default_path;
     code = gs_main_set_lib_paths(minst);
     if (code < 0)
-        return code;
+        goto error;
     /* Prescan the command line for --help and --version. */
     {
         int i;
@@ -193,8 +193,10 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                 puts(minst->heap, "");  /* \n */
                 helping = true;
             }
-        if (helping)
-            return gs_error_Info;
+            if (helping) {
+                code = gs_note_error(gs_error_Info);
+                goto error;
+            }
     }
     /* Execute files named in the command line, */
     /* processing options along the way. */
@@ -211,19 +213,23 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
             (char *)gs_alloc_bytes(minst->heap, len, "GS_OPTIONS");
 
             gp_getenv(GS_OPTIONS, opts, &len);  /* can't fail */
-            if (arg_push_decoded_memory_string(&args, opts, false, true, minst->heap))
-                return gs_error_Fatal;
+            if (arg_push_decoded_memory_string(&args, opts, false, true, minst->heap)) {
+                if (opts != NULL)
+                    gs_free_object(minst->heap, opts, "error in gs_main_init_with_args");
+                code = gs_note_error(gs_error_Fatal);
+                goto error;
+            }
         }
     }
     while ((code = arg_next(&args, (const char **)&arg, minst->heap)) > 0) {
         code = gs_lib_ctx_stash_sanitized_arg(minst->heap->gs_lib_ctx, arg);
         if (code < 0)
-            return code;
+            goto error;
         switch (*arg) {
             case '-':
                 code = swproc(minst, arg, &args);
                 if (code < 0)
-                    return code;
+                    goto error;
                 if (code > 0)
                     outprintf(minst->heap, "Unknown switch %s - ignoring\n", arg);
                 if (gs_debug[':'] && !have_dumped_args) {
@@ -242,7 +248,7 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                 /* default is to treat this as a file name to be run */
                 code = argproc(minst, arg);
                 if (code < 0)
-                    return code;
+                    goto error;
                 if (minst->saved_pages_test_mode) {
                     gx_device *pdev;
                     int ret;
@@ -259,14 +265,21 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                     } while ((ret > 0) && (child_dev_data.n != 0));
                     if ((code = gx_saved_pages_param_process((gx_device_printer *)pdev,
                                (byte *)"print normal flush", 18)) < 0)
-                        return code;
+                        goto error;
                     if (code > 0)
                         if ((code = gs_erasepage(minst->i_ctx_p->pgs)) < 0)
-                            return code;
+                            goto error;
                 }
         }
     }
 
+    return code;
+
+error:
+    if (minst->lib_path.env != NULL) {
+        gs_free_object(minst->heap, (char *)minst->lib_path.env, "error in gs_main_init_with_args");
+        minst->lib_path.env = NULL;
+    }
     return code;
 }
 
