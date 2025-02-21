@@ -942,9 +942,11 @@ pdfi_copy_type1_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dict, 
     if (code < 0) {
         uid_set_invalid(&font->pfont->UID);
     }
-    code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
-    if (code < 0) {
-        goto error;
+    if (spdffont->filename == NULL) {
+        code = pdfi_font_generate_pseudo_XUID(ctx, font_dict, font->pfont);
+        if (code < 0) {
+            goto error;
+        }
     }
 
     if (ctx->args.ignoretounicode != true) {
