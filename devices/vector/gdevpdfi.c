@@ -752,11 +752,11 @@ static int setup_image_colorspace(gx_device_pdf *pdev, image_union_t *image, con
                     case gs_color_space_index_DeviceN:
                         if (pdev->PDFX > 0) {
                             if (pdev->PDFX < 4) {
-                                *pcs_orig = pcs;
+                                *pcs_orig = (gs_color_space *)pcs;
                                 return 1;
                             }
                             if (!check_colorants_for_pdfx4(pcs2)){
-                                *pcs_orig = pcs;
+                                *pcs_orig = (gs_color_space *)pcs;
                                 return 1;
                             }
                         }
