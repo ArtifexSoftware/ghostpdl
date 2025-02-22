@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -864,8 +864,8 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     pdfi_pop(ctx, 1);
 
     if (pdfi_type_of(n) != PDF_NAME) {
-        code = gs_note_error(gs_error_typecheck);
-        goto exit1;
+        pdfi_countdown(n);
+        return gs_note_error(gs_error_typecheck);
     }
 
     code = pdfi_loop_detector_mark(ctx);
