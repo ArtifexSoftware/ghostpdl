@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -766,9 +766,11 @@ int pdfi_op_BDC(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
         if (pdfi_type_of(properties) != PDF_NAME)
             goto exit;
 
+        code = pdfi_loop_detector_mark(ctx);
         /* If it's a name, look it up in Properties */
         code = pdfi_find_resource(ctx, (unsigned char *)"Properties", properties,
                                   (pdf_dict *)stream_dict, page_dict, (pdf_obj **)&oc_dict);
+        (void)pdfi_loop_detector_cleartomark(ctx);
         if (code != 0)
             goto exit;
         if (pdfi_type_of(oc_dict) != PDF_DICT)
