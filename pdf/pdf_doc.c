@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2024 Artifex Software, Inc.
+/* Copyright (C) 2020-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -370,9 +370,14 @@ int pdfi_read_Info(pdf_context *ctx)
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         goto error;
-    code = pdfi_loop_detector_add_object(ctx, Info->object_num);
-    if (code < 0)
-        goto error1;
+    if (Info->object_num != 0) {
+        code = pdfi_loop_detector_add_object(ctx, Info->object_num);
+        if (code < 0)
+            goto error1;
+    } else {
+        if (code = pdfi_set_warning_stop(ctx, 0, NULL, W_PDF_INFO_NOT_INDIRECT, "pdfi_read_Info", "") < 0)
+            goto error1;
+    }
 
     /* sanitize Info for circular references */
     code = pdfi_sanitize_Info_references(ctx, Info);
