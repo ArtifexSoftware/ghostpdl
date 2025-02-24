@@ -50,6 +50,7 @@ GLCCSHARED=$(CC_SHARED) $(GLCCFLAGS)
 
 GLJCC=$(CC) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_) $(CCFLAGS)
 GLZCC=$(CC) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_) $(CCFLAGS)
+GLBROTLICC=$(CC) $(I_)$(GLI_) $(II)$(BROTLII_)$(_I) $(ZCF_) $(GLF_) $(CCFLAGS)
 GLJBIG2CC=$(CC) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_) $(CCFLAGS)
 GLJASCC=$(CC) $(I_)$(JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_) $(CCFLAGS)
 GLJPXOPJCC=$(CC) $(I_)$(JPX_OPENJPEG_I_)$(D).. $(I_)$(JPX_OPENJPEG_I_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_) $(CCFLAGS)
@@ -614,6 +615,15 @@ zlib_h=$(ZSRCDIR)$(D)zlib.h
 # and 'local' zlib (_0)
 szlibxx_h_1=$(GLSRC)szlibxx.h $(szlibx_h)
 szlibxx_h_0=$(GLSRC)szlibxx.h $(szlibx_h) $(zlib_h)
+sbrotlix_h=$(GLSRC)sbrotlix.h
+brotli_h=\
+	$(BROTLISRCDIR)$(D)c$(D)include$(D)brotli$(D)types.h \
+	$(BROTLISRCDIR)$(D)c$(D)include$(D)brotli$(D)encode.h \
+	$(BROTLISRCDIR)$(D)c$(D)include$(D)brotli$(D)decode.h
+# We have two of the following, for shared zlib (_1)
+# and 'local' zlib (_0)
+sbrotli_h_1=$(sbrotlix_h)
+sbrotli_h_0=$(sbrotlix_h) $(brotli_h)
 # Out of order
 scf_h=$(GLSRC)scf.h
 scfx_h=$(GLSRC)scfx.h
@@ -2044,6 +2054,60 @@ $(GLOBJ)szlibd_0.$(OBJ) : $(GLSRC)szlibd.c $(AK) $(std_h) $(memory__h)\
 
 $(GLOBJ)szlibd.$(OBJ) : $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(GLOBJ)szlibd.$(OBJ)
+
+# ---------------- brotli filters ---------------- #
+# These are used by pdfi and are also available as filters.
+
+sbrotlic_=$(GLOBJ)sbrotlic.$(OBJ)
+
+$(GLOBJ)sbrotlic_1.$(OBJ) : $(GLSRC)sbrotlic.c $(AK) $(std_h)\
+ $(gserrors_h) $(gsmemory_h) \
+ $(gsstruct_h) $(gstypes_h)\
+ $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROTLICC) $(GLO_)sbrotlic_1.$(OBJ) $(C_) $(GLSRC)sbrotlic.c
+
+$(GLOBJ)sbrotlic_0.$(OBJ) : $(GLSRC)sbrotlic.c $(AK) $(std_h)\
+ $(gserrors_h) $(gsmemory_h) \
+ $(gsstruct_h) $(gstypes_h) $(brotli_h)\
+ $(strimpl_h) $(sbrotlix_h_0) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROTLICC) $(GLO_)sbrotlic_0.$(OBJ) $(C_) $(GLSRC)sbrotlic.c
+
+$(GLOBJ)sbrotlic.$(OBJ) : $(GLOBJ)sbrotlic_$(SHARE_BROTLI).$(OBJ) $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)sbrotlic_$(SHARE_BROTLI).$(OBJ) $(GLOBJ)sbrotlic.$(OBJ)
+
+sbrotlie_=$(sbrotlic_) $(GLOBJ)sbrotlie.$(OBJ)
+$(GLD)sbrotlie.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)brotlie.dev $(sbrotlie_) \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sbrotlie $(sbrotlie_)
+	$(ADDMOD) $(GLD)sbrotlie -include $(ZGENDIR)$(D)brotlie.dev
+
+$(GLOBJ)sbrotlie_1.$(OBJ) : $(GLSRC)sbrotlie.c $(AK) $(std_h)\
+ $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROTLICC) $(GLO_)sbrotlie_1.$(OBJ) $(C_) $(GLSRC)sbrotlie.c
+
+$(GLOBJ)sbrotlie_0.$(OBJ) : $(GLSRC)sbrotlie.c $(AK) $(std_h)\
+ $(strimpl_h) $(sbrotlix_h_0) $(brotli_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROTLICC) $(GLO_)sbrotlie_0.$(OBJ) $(C_) $(GLSRC)sbrotlie.c
+
+$(GLOBJ)sbrotlie.$(OBJ) : $(GLOBJ)sbrotlie_$(SHARE_BROTLI).$(OBJ)  $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)sbrotlie_$(SHARE_BROTLI).$(OBJ) $(GLOBJ)sbrotlie.$(OBJ)
+
+sbrotlid_=$(sbrotlic_) $(GLOBJ)sbrotlid.$(OBJ)
+$(GLD)sbrotlid.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)brotlid.dev $(sbrotlid_) \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sbrotlid $(sbrotlid_)
+	$(ADDMOD) $(GLD)sbrotlid -include $(ZGENDIR)$(D)brotlid.dev
+
+$(GLOBJ)sbrotlid_1.$(OBJ) : $(GLSRC)sbrotlid.c $(AK) $(std_h) $(memory__h)\
+ $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROLICC) $(GLO_)sbrotlid_1.$(OBJ) $(C_) $(GLSRC)sbrotlid.c
+
+$(GLOBJ)sbrotlid_0.$(OBJ) : $(GLSRC)sbrotlid.c $(AK) $(std_h) $(memory__h)\
+ $(strimpl_h) $(sbrotlix_h_0) $(brotli_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROTLICC) $(GLO_)sbrotlid_0.$(OBJ) $(C_) $(GLSRC)sbrotlid.c
+
+$(GLOBJ)sbrotlid.$(OBJ) : $(GLOBJ)sbrotlid_$(SHARE_BROTLI).$(OBJ) $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLOBJ)sbrotlid_$(SHARE_BROTLI).$(OBJ) $(GLOBJ)sbrotlid.$(OBJ)
 
 # ---------------- Page devices ---------------- #
 # We include this here, rather than in devs.mak, because it is more like
@@ -3617,11 +3681,40 @@ $(GLOBJ)pdlromfs1c2.$(OBJ) : $(GLOBJ)pdlromfs1c2.c $(time__h) $(LIB_MAK) $(MAKED
 $(GLOBJ)pdlromfs1c3.$(OBJ) : $(GLOBJ)pdlromfs1c3.c $(time__h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)pdlromfs1c3.$(OBJ) $(C_) $(GLOBJ)pdlromfs1c3.c
 
-# Define the ZLIB modules needed by mnkromfs here to factor it out of top makefiles
+# Define the ZLIB modules needed by mkromfs here to factor it out of top makefiles
 # Also put the .h dependencies here for the same reason
 MKROMFS_ZLIB_OBJS=$(AUX)compress.$(OBJ) $(AUX)deflate.$(OBJ) \
 	$(AUX)zutil.$(OBJ) $(AUX)adler32.$(OBJ) $(AUX)crc32.$(OBJ) \
 	$(AUX)trees.$(OBJ)
+
+MKROMFS_BROTLI_OBJS=\
+	$(AUX)constants.$(OBJ) \
+	$(AUX)context.$(OBJ) \
+	$(AUX)dictionary.$(OBJ) \
+	$(AUX)platform.$(OBJ) \
+	$(AUX)shared_dictionary.$(OBJ) \
+	$(AUX)transform.$(OBJ) \
+	$(AUX)backward_references.$(OBJ) \
+	$(AUX)backward_references_hq.$(OBJ) \
+	$(AUX)bit_cost.$(OBJ) \
+	$(AUX)block_splitter.$(OBJ) \
+	$(AUX)brotli_bit_stream.$(OBJ) \
+	$(AUX)cluster.$(OBJ) \
+	$(AUX)command.$(OBJ) \
+	$(AUX)compound_dictionary.$(OBJ) \
+	$(AUX)compress_fragment.$(OBJ) \
+	$(AUX)compress_fragment_two_pass.$(OBJ) \
+	$(AUX)dictionary_hash.$(OBJ) \
+	$(AUX)br_encode.$(OBJ) \
+	$(AUX)encoder_dict.$(OBJ) \
+	$(AUX)entropy_encode.$(OBJ) \
+	$(AUX)fast_log.$(OBJ) \
+	$(AUX)histogram.$(OBJ) \
+	$(AUX)literal_cost.$(OBJ) \
+	$(AUX)memory.$(OBJ) \
+	$(AUX)metablock.$(OBJ) \
+	$(AUX)static_dict.$(OBJ) \
+	$(AUX)utf8_util.$(OBJ)
 
 MKROMFS_COMMON_DEPS=$(stdpre_h) $(stdint__h) $(gsiorom_h) $(arch_h)\
 	$(gsmemret_h) $(gsmalloc_h) $(gsstype_h) $(gp_h) $(time__h)

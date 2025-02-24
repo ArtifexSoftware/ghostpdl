@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -120,6 +120,11 @@ PNGSRCDIR=[.libpng]
 
 ZSRCDIR=[.zlib]
 
+# Define the directory where the zlib sources are stored.
+# See zlib.mak for more information.
+
+BROTLISRCDIR=[.brotli]
+
 # Define the jbig2 library and source location.
 # See jbig2.mak for more information.
 
@@ -160,6 +165,7 @@ WHICH_CMS=lcms2mt
 SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
+SHARE_BROTLI=0
 SHARE_JBIG2=0
 SHARE_JPX=0
 
@@ -428,6 +434,7 @@ PS_ROMFS_ARGS=-c -d Resource/ $(RESOURCE_LIST) -d lib/ -P $(PSLIBDIR) $(EXTRA_IN
 include $(GLSRCDIR)lib.mak
 include $(PSSRCDIR)int.mak
 include $(GLSRCDIR)jpeg.mak
+include $(GLSRCDIR)brotli.mak
 # zlib.mak must precede png.mak
 include $(GLSRCDIR)zlib.mak
 include $(GLSRCDIR)png.mak
@@ -493,7 +500,7 @@ $(GLOBJ)genht.$(OBJ) :  $(GLSRC)genht.c $(GENHT_DEPS)
 $(GLOBJ)mkromfs.$(OBJ) :  $(GLSRC)mkromfs.c $(MKROMFS_COMMON_DEPS)
 	$(CCAUX)/obj=$(GLOBJ)mkromfs.$(OBJ) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(GLSRC)mkromfs.c
 
-MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(GLOBJ)gp_vms.$(OBJ)
+MKROMFS_OBJS=$(MKROMFS_ZLIB_OBJS) $(MKROMFS_BROTLI_OBJS) $(GLOBJ)gp_vms.$(OBJ)
 $(MKROMFS_XE): $(GLSRC)mkromfs.c $(MKROMFS_OBJS)
 	LINK/EXE=$@ $(GLOBJ)mkromfs.$(OBJ) $(MKROMFS_OBJS)
 

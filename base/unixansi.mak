@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -168,6 +168,18 @@ ZSRCDIR=zlib
 SHARE_ZLIB=0
 #ZLIB_NAME=gz
 ZLIB_NAME=z
+
+# Define the directory where the brotli sources are stored.
+# See brotli.mak for more information.
+
+BROTLISRCDIR=zlib
+
+# Choose whether to use a shared version of the brotli library, and if so,
+# what its name is.
+# See gs.mak and Make.htm for more information.
+
+SHARE_BROTLI=0
+BROTLI_NAME=brotli
 
 # Choose shared or compiled in libjbig2dec and source location
 SHARE_JBIG2=0
@@ -401,6 +413,7 @@ include $(GLSRCDIR)/lib.mak
 include $(PSSRCDIR)/int.mak
 include $(GLSRCDIR)/freetype.mak
 include $(GLSRCDIR)/jpeg.mak
+include $(GLSRCDIR)/brotli.mak
 # zlib.mak must precede png.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak

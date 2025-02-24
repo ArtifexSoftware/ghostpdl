@@ -262,6 +262,13 @@ ZSRCDIR=./zlib
 #ZLIB_NAME=gz
 ZLIB_NAME=z
 
+# Define the directory where the brotli sources are stored.
+# See brotli.mak for more information.
+
+SHARE_BROTLI=0
+BROTLISRCDIR=./brotli
+BROTLI_NAME=brotli
+
 # Choose shared or compiled in libjbig2dec and source location
 # JBIG2_LIB=jbig2dec
 JBIG2_LIB=jbig2dec
@@ -653,6 +660,7 @@ include $(PSSRCDIR)/int.mak
 include $(GLSRCDIR)/freetype.mak
 include $(GLSRCDIR)$(D)stub.mak
 include $(GLSRCDIR)/jpeg.mak
+include $(GLSRCDIR)/brotli.mak
 # zlib.mak must precede png.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak

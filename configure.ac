@@ -138,7 +138,7 @@ if test x"$host" != x"$build" ; then
   echo $AUXFLAGS_MAK_LINE07 >> $AUXFLAGS_MAK.in
 
   AC_MSG_NOTICE([Begin recursive call to configure script (for auxiliary tools)])
-  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" CPPFLAGS="$CPPFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-jbig2dec --without-x --with-drivers=""
+  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" CPPFLAGS="$CPPFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --with-local-brotli --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-jbig2dec --without-x --with-drivers=""
   status=$?
   cp config.log "$olddir/configaux.log"
   if test $status -eq 0 ; then
@@ -1614,6 +1614,50 @@ fi
 AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(LIBPNGDIR)
 #AC_SUBST(PNGDEVS)
+
+# this option is useful if you're cross-compiling and want to use
+# your toolchain's brotli for $host but the local one for $build
+AC_ARG_WITH([local-brotli], AS_HELP_STRING([--without-local-brotli],
+  [do not check for local brotli sources (has no effect on AUX toolchain when cross-building)]))
+
+AC_MSG_CHECKING([for local brotli source])
+BROTLIDIR=src
+AUX_SHARED_BROTLI=
+BROTLICFLAGS=""
+
+if test x"$with_local_brotli" = x"no" ; then
+  AC_MSG_RESULT([skip])
+  AC_CHECK_LIB(z, deflate, [
+    AC_CHECK_HEADERS(zlib.h, [SHARE_BROTLI=1; AUX_SHARED_BROTLI="-l\$(BROTLI_NAME)"])
+  ])
+else
+  if test -d $srcdir/brotli; then
+        AC_MSG_RESULT([yes])
+        SHARE_BROTLI=0
+        BROTLIDIR=$srcdir/brotli
+
+        if test x"$GCC" = x"yes"; then
+          BROTLICFLAGS="-Wno-write-strings"
+        fi
+  else
+        AC_MSG_RESULT([no])
+        AC_CHECK_LIB(brotli, deflate, [
+          AC_CHECK_HEADERS(brotli.h, [SHARE_BROTLI=1; AUX_SHARED_BROTLI="-l\$(BROTLI_NAME)"])
+        ])
+  fi
+fi
+if test -z "$SHARE_BROTLI"; then
+  AC_MSG_ERROR([I did not find a copy of brotli on your system.
+  Please either install it, or unpack a copy of the source in a
+  local directory named 'brotli'. See https://github.com/google/brotli
+  for more information.
+  ])
+fi
+
+AC_SUBST(SHARE_BROTLI)
+AC_SUBST(AUX_SHARED_BROTLI)
+AC_SUBST(BROTLICFLAGS)
+AC_SUBST(BROTLIDIR)
 
 WHICHLCMS=
 

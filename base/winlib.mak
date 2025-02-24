@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -26,6 +26,7 @@ SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_LIBTIFF=0
 SHARE_ZLIB=0
+SHARE_BROTLI=0
 SHARE_JBIG2=0
 SHARE_JPX=0
 SHARE_LCMS=0
@@ -148,6 +149,7 @@ BEGINFILES=$(GLGENDIR)\ccf32.tr\
 !include $(UFST_ROOT)\fapiufst.mak
 !endif
 !include $(GLSRCDIR)\jpeg.mak
+!include $(GLSRCDIR)\brotli.mak
 # zlib.mak must precede png.mak
 !include $(GLSRCDIR)\zlib.mak
 !include $(GLSRCDIR)\png.mak

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -214,6 +214,9 @@ PNGOBJDIR=$(GLOBJDIR)
 ZGENDIR=$(GLGENDIR)
 ZOBJDIR=$(GLOBJDIR)
 ZAUXDIR=$(AUXDIR)
+BROTLIGENDIR=$(GLGENDIR)
+BROTLIOBJDIR=$(GLOBJDIR)
+BROTLIAUXDIR=$(AUXDIR)
 TIFFGENDIR=$(GLGENDIR)
 TIFFOBJDIR=$(GLOBJDIR)
 JBIG2GENDIR=$(GLGENDIR)
@@ -333,14 +336,15 @@ JI_=$(JSRCDIR)
 JF_=
 JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)$(_D)
 ZI_=$(ZSRCDIR)
+BROTLII_=$(BROTLISRCDIR)$(D)c$(D)include
 PI_=$(PNGSRCDIR) $(II)$(ZI_)
 # PF_ should include PNG_USE_CONST, but this doesn't work.
 #PF_=-DPNG_USE_CONST
 TI_=$(TIFFSRCDIR)$(D)libtiff $(II)$(TIFFCONFDIR)$(D)libtiff $(II)$(JGENDIR) $(II)$(ZI_)
 PF_=
 PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)$(_D)
-ZI_=$(ZSRCDIR)
 ZF_=
+BROTLIF_=
 ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
 JB2I_=$(JBIG2SRCDIR)
 JB2CF_=$(JBIG2_CFLAGS)

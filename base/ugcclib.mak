@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -57,6 +57,10 @@ LIBPNG_NAME=png
 ZSRCDIR=zlib
 SHARE_ZLIB=1
 ZLIB_NAME=z
+
+BROTLISRCDIR=brotli
+SHARE_BROTLI=1
+BROTLI_NAME=brotli
 
 SHARE_JBIG2=0
 JBIG2_LIB=jbig2dec
@@ -156,6 +160,7 @@ include $(GLSRCDIR)/unixhead.mak
 include $(GLSRCDIR)/gs.mak
 include $(GLSRCDIR)/lib.mak
 include $(GLSRCDIR)/jpeg.mak
+include $(GLSRCDIR)/brotli.mak
 # zlib.mak must precede png.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak

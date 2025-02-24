@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2024 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -259,6 +259,11 @@ MSVC_VERSION_GUESS=16
 MS_TOOLSET_VERSION_GUESS=14.29.30133
 !endif
 !if "$(_NMAKE_VER)" == "14.29.30156.0"
+# VS2019 (Toolset v142)
+MSVC_VERSION_GUESS=16
+MS_TOOLSET_VERSION_GUESS=14.29.30133
+!endif
+!if "$(_NMAKE_VER)" == "14.29.30158.0"
 # VS2019 (Toolset v142)
 MSVC_VERSION_GUESS=16
 MS_TOOLSET_VERSION_GUESS=14.29.30133

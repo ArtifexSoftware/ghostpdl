@@ -930,6 +930,20 @@ $(PSOBJ)zfzlib.$(OBJ) : $(PSSRC)zfzlib.c $(OP)\
  $(spdiffx_h) $(spngpx_h) $(strimpl_h) $(szlibx_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfzlib.$(OBJ) $(C_) $(PSSRC)zfzlib.c
 
+# ---------------- Brotli filters ---------------- #
+
+fbrotli_=$(PSOBJ)zfbrotli.$(OBJ)
+$(PSD)fbrotli.dev : $(ECHOGS_XE) $(fbrotli_)\
+ $(GLD)sbrotlie.dev $(GLD)sbrotlid.dev $(INT_MAK) $(MAKEDIRS)
+	$(SETMOD) $(PSD)fbrotli -include $(GLD)sbrotlie $(GLD)sbrotlid
+	$(ADDMOD) $(PSD)fbrotli -obj $(fbrotli_)
+#	$(ADDMOD) $(PSD)fbrotli -oper zfbrotli
+
+$(PSOBJ)zfbrotli.$(OBJ) : $(PSSRC)zfbrotli.c $(OP)\
+ $(idict_h) $(idparam_h) $(ifilter_h) $(ifrpred_h) $(ifwpred_h)\
+ $(spdiffx_h) $(spngpx_h) $(strimpl_h) $(sbrotlix_h) $(INT_MAK) $(MAKEDIRS)
+	$(PSCC) $(PSO_)zfbrotli.$(OBJ) $(C_) $(PSSRC)zfbrotli.c
+
 # ---------------- ReusableStreamDecode filter ---------------- #
 # This is also used by the implementation of CIDFontType 0 fonts.
 
@@ -1624,12 +1638,13 @@ $(PSOBJ)zform.$(OBJ) : $(PSSRC)zform.c $(OP) $(ghost_h) $(oper_h)\
 $(PSD)pdf.dev : $(ECHOGS_XE)\
  $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev\
- $(PSD)type2.dev $(PSD)pdfops.dev\
+ $(PSD)type2.dev $(PSD)pdfops.dev $(PSD)fbrotli.dev\
  $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread
 	$(ADDMOD) $(PSD)pdf -include $(PSD)type2
+	$(ADDMOD) $(PSD)pdf -include $(PSD)fbrotli
 	$(ADDMOD) $(PSD)pdf -include $(PSD)pdfops
 	$(ADDMOD) $(PSD)pdf -include $(PSD)cff
 	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont

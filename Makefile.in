@@ -320,6 +320,14 @@ ZSRCDIR=@ZLIBDIR@
 ZLIB_NAME=z
 ZLIB_CFLAGS=@ZLIBCFLAGS@
 
+# Define the directory where the brotli sources are stored.
+# See brotli.mak for more information.
+
+SHARE_BROTLI=@SHARE_BROTLI@
+BROTLISRCDIR=@BROTLIDIR@
+BROTLI_NAME=brotli
+BROTLI_CFLAGS=@BROTLICFLAGS@
+
 # Choose shared or compiled in libjbig2dec and source location
 # JBIG2_LIB=jbig2dec
 JBIG2_LIB=@JBIG2_DECODER@
@@ -506,7 +514,7 @@ PDF_LDFLAGS_SO=@PDF_DYNAMIC_LDFLAGS@
 # (Libraries required by individual drivers are handled automatically.)
 
 EXTRALIBS=$(XTRALIBS) @LIBS@ @DYNAMIC_LIBS@ @FONTCONFIG_LIBS@ @FT_LIBS@ @JPX_AUTOCONF_LIBS@ @EXPAT_LIBS@
-AUXEXTRALIBS=@AUXEXTRALIBS@ @AUX_SHARED_ZLIB@
+AUXEXTRALIBS=@AUXEXTRALIBS@ @AUX_SHARED_ZLIB@ @AUX_SHARED_BROTLI@
 
 # Define the standard libraries to search at the end of linking.
 # Most platforms require -lpthread for the POSIX threads library;
@@ -771,6 +779,7 @@ include @GPDL_MAK@ # gpdl.mak
 
 include $(GLSRCDIR)/freetype.mak
 include @FAPIUFST_MAK@
+include $(GLSRCDIR)/brotli.mak
 # zlib.mak must precede png.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/png.mak

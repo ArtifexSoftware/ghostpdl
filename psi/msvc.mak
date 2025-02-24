@@ -781,6 +781,10 @@ ENABLE_TIFF=$(D_)TIFF_INCLUDED$(_D)
 ZSRCDIR=.\zlib
 !endif
 
+!ifndef BROTLISRCDIR
+BROTLISRCDIR=.\brotli
+!endif
+
 !if exist("leptonica")
 LEPTONICADIR=leptonica
 # /wd4244 = Suppress casting warnings on initialisation

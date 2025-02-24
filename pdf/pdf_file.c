@@ -31,6 +31,7 @@
 #include "spngpx.h"     /* PNG Predictor */
 #include "spdiffx.h"    /* Horizontal differencing predictor */
 #include "slzwx.h"      /* LZW ZLib */
+#include "sbrotlix.h"   /* Brotli */
 #include "sstring.h"    /* ASCIIHexDecode */
 #include "sa85d.h"      /* ASCII85Decode */
 #include "scfx.h"       /* CCITTFaxDecode */
@@ -339,6 +340,31 @@ static int pdfi_Flate_filter(pdf_context *ctx, pdf_dict *d, stream *source, stre
         code = pdfi_Predictor_filter(ctx, d, source, new_stream);
         if (code < 0)
             pdfi_close_filter_chain(ctx, source, Flate_source);
+    }
+    return code;
+}
+
+static int pdfi_Brotli_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream **new_stream)
+{
+    stream_brotlid_state zls;
+    uint min_size = 2048;
+    int code;
+    stream *Brotli_source = NULL;
+
+    memset(&zls, 0, sizeof(zls));
+
+    code = pdfi_filter_open(min_size, &s_filter_read_procs, (const stream_template *)&s_brotliD_template, (const stream_state *)&zls, ctx->memory->non_gc_memory, new_stream);
+    if (code < 0)
+        return code;
+
+    (*new_stream)->strm = source;
+    source = *new_stream;
+
+    if (d && pdfi_type_of(d) == PDF_DICT) {
+        Brotli_source = (*new_stream)->strm;
+        code = pdfi_Predictor_filter(ctx, d, source, new_stream);
+        if (code < 0)
+            pdfi_close_filter_chain(ctx, source, Brotli_source);
     }
     return code;
 }
@@ -827,6 +853,10 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         code = pdfi_JPX_filter(ctx, dict, decode, source, new_stream);
         return code;
     }
+    if (pdfi_name_is(n, "BrotliDecode")) {
+        code = pdfi_Brotli_filter(ctx, decode, source, new_stream);
+        return code;
+    }
 
     if (pdfi_name_is(n, "AHx")) {
         if (!inline_image) {
@@ -882,6 +912,14 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
                 return code;
         }
         code = pdfi_RunLength_filter(ctx, decode, source, new_stream);
+        return code;
+    }
+    if (pdfi_name_is(n, "Br")) {
+        if (!inline_image) {
+            if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL)) < 0)
+                return code;
+        }
+        code = pdfi_Brotli_filter(ctx, decode, source, new_stream);
         return code;
     }
 
