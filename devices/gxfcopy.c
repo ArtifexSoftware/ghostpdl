@@ -2793,12 +2793,14 @@ order_font_data(gs_copied_font_data_t *cfdata, gs_memory_t *memory)
     j = 0;
     for (i = 0; i < cfdata->glyphs_size; i++) {
         if (cfdata->glyphs[i].used) {
-            if (j >= cfdata->num_glyphs)
+            if (j >= cfdata->num_glyphs) {
+                gs_free_object(memory, a, "order_font_data");
                 return_error(gs_error_unregistered); /* Must not happen */
+            }
             a[j++] = &cfdata->names[i];
         }
     }
-    qsort(a, cfdata->num_glyphs, sizeof(*a), compare_glyph_names);
+    qsort(a, j, sizeof(*a), compare_glyph_names);
     for (j--; j >= 0; j--)
         cfdata->glyphs[j].order_index = a[j] - cfdata->names;
     gs_free_object(memory, a, "order_font_data");
