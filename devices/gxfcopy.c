@@ -1043,14 +1043,17 @@ static int
 uncopy_glyph_type1(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_copied_glyph_t *pcg = NULL;
+    gs_copied_font_data_t *cfdata = cf_data(copied);
 
-    (void)copied_glyph_slot(cf_data(copied), glyph, &pcg);
+    (void)copied_glyph_slot(cfdata, glyph, &pcg);
     if (pcg != NULL) {
         if (pcg->gdata.data != NULL) {
             gs_free_string(copied->memory, (byte *)pcg->gdata.data, pcg->gdata.size, "Free copied glyph name");
             pcg->gdata.size = 0;
+            pcg->gdata.data = NULL;
         }
         pcg->used = 0;
+        cfdata->num_glyphs--;
     }
     return 0;
 }
@@ -1391,18 +1394,21 @@ static int uncopy_glyph_type42(gs_font *font, gs_glyph glyph, gs_font *copied, i
     gs_copied_glyph_t *pcg = NULL;
     gs_font_type42 *font42 = (gs_font_type42 *)font;
     gs_font_cid2 *fontCID2 = (gs_font_cid2 *)font;
+    gs_copied_font_data_t *cfdata = cf_data(copied);
     uint gid = (options & COPY_GLYPH_BY_INDEX ? glyph - GS_MIN_GLYPH_INDEX :
                 font->FontType == ft_CID_TrueType
                     ? fontCID2->cidata.CIDMap_proc(fontCID2, glyph)
                     : font42->data.get_glyph_index(font42, glyph));
 
-    (void)copied_glyph_slot(cf_data(copied), gid + GS_MIN_GLYPH_INDEX, &pcg);
+    (void)copied_glyph_slot(cfdata, gid + GS_MIN_GLYPH_INDEX, &pcg);
     if (pcg != NULL) {
         if (pcg->gdata.data != NULL) {
             gs_free_string(copied->memory, (byte *)pcg->gdata.data, pcg->gdata.size, "Free copied glyph name");
             pcg->gdata.size = 0;
+            pcg->gdata.data = NULL;
         }
         pcg->used = 0;
+        cfdata->num_glyphs--;
     }
 
     return 0;
@@ -1802,14 +1808,17 @@ static int
 uncopy_glyph_cid0(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_copied_glyph_t *pcg = NULL;
+    gs_copied_font_data_t *cfdata = cf_data(copied);
 
-    (void)copied_glyph_slot(cf_data(copied), glyph, &pcg);
+    (void)copied_glyph_slot(cfdata, glyph, &pcg);
     if (pcg != NULL) {
         if (pcg->gdata.data != NULL) {
             gs_free_string(copied->memory, (byte *)pcg->gdata.data, pcg->gdata.size, "Free copied glyph name");
             pcg->gdata.size = 0;
+            pcg->gdata.data = NULL;
         }
         pcg->used = 0;
+        cfdata->num_glyphs--;
     }
     return 0;
 }
@@ -1957,14 +1966,17 @@ static int
 uncopy_glyph_cid2(gs_font *font, gs_glyph glyph, gs_font *copied, int options)
 {
     gs_copied_glyph_t *pcg = NULL;
+    gs_copied_font_data_t *cfdata = cf_data(copied);
 
     (void)copied_glyph_slot(cf_data(copied), glyph, &pcg);
     if (pcg != NULL) {
         if (pcg->gdata.data != NULL) {
             gs_free_string(copied->memory, (byte *)pcg->gdata.data, pcg->gdata.size, "Free copied glyph name");
             pcg->gdata.size = 0;
+            pcg->gdata.data = NULL;
         }
         pcg->used = 0;
+        cfdata->num_glyphs--;
     }
     return 0;
 }
