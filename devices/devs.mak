@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2024 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -1959,25 +1959,30 @@ $(DEVOBJ)gdevcmykog.$(OBJ) : $(DEVSRC)gdevcmykog.c $(GDEV) \
 
 gdevpdfimg_h=$(DEVSRC)gdevpdfimg.h
 
-$(DD)pdfimage8.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+$(DD)pdfimage8.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GLD)sbrotlie.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pdfimage8 $(DEVOBJ)gdevpdfimg.$(OBJ)
 	$(ADDMOD) $(DD)pdfimage8 -include $(GLD)page
+	$(ADDMOD) $(DD)pdfimage8 -include $(GLD)sbrotlie
 
-$(DD)pdfimage24.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+$(DD)pdfimage24.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GLD)sbrotlie.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pdfimage24 $(DEVOBJ)gdevpdfimg.$(OBJ)
 	$(ADDMOD) $(DD)pdfimage24 -include $(GLD)page
+	$(ADDMOD) $(DD)pdfimage24 -include $(GLD)sbrotlie
 
-$(DD)pdfimage32.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+$(DD)pdfimage32.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GLD)sbrotlie.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)pdfimage32 $(DEVOBJ)gdevpdfimg.$(OBJ)
 	$(ADDMOD) $(DD)pdfimage32 -include $(GLD)page
+	$(ADDMOD) $(DD)pdfimage32 -include $(GLD)sbrotlie
 
-$(DD)PCLm.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+$(DD)PCLm.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GLD)sbrotlie.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)PCLm $(DEVOBJ)gdevpdfimg.$(OBJ)
 	$(ADDMOD) $(DD)PCLm -include $(GLD)page
+	$(ADDMOD) $(DD)PCLm -include $(GLD)sbrotlie
 
-$(DD)PCLm8.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
+$(DD)PCLm8.dev : $(DEVOBJ)gdevpdfimg.$(OBJ) $(GLD)page.dev $(GLD)sbrotlie.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 	$(SETPDEV2) $(DD)PCLm8 $(DEVOBJ)gdevpdfimg.$(OBJ)
 	$(ADDMOD) $(DD)PCLm8 -include $(GLD)page
+	$(ADDMOD) $(DD)PCLm8 -include $(GLD)sbrotlie
 
 $(DEVOBJ)gdevpdfimg.$(OBJ) : $(DEVSRC)gdevpdfimg.c $(AK) $(gdevkrnlsclass_h) \
   $(DEVS_MAK) $(arch_h) $(stdint__h) $(gdevprn_h) $(gxdownscale_h) \
