@@ -2551,8 +2551,8 @@ currentdict /.locksafeglobal .undef
 /UndefinePostScriptFilters {
   [
    /BCPEncode /TBCPEncode /PNGPredictorEncode /PNGPredictorDecode /PixelDifferenceDecode /PixelDifferenceEncode
-   /zlibEncode /zlibDecode /PWGDecode /eexecEncode /ArcfourEncode /PSStringEncode /BCPDecode
-   /OLDPDF where {/OLDPDF get not {/SHA256Encode /MD5Encode /AESDecode /JPXDecode /JBIG2Decode /ArcfourDecode /.EOFDecode} if} if
+   /zlibEncode /zlibDecode /PWGDecode /eexecEncode /BCPDecode
+   /OLDPDF where {/OLDPDF get not {/JPXDecode /JBIG2Decode } if} if
   ]
   {filterdict exch undef} forall
 } .forcebind def
@@ -2601,7 +2601,7 @@ currentdict /.locksafeglobal .undef
   /.shfill /.argindex /.bytestring /.namestring /.stringbreak /.stringmatch /.globalvmarray /.globalvmdict /.globalvmpackedarray /.globalvmstring
   /.localvmarray /.localvmdict /.localvmpackedarray /.localvmstring /.systemvmarray /.systemvmdict /.systemvmpackedarray /.systemvmstring /.systemvmfile /.systemvmlibfile
   /.systemvmSFD /.settrapparams /.currentsystemparams /.currentuserparams /.getsystemparam /.getuserparam /.setsystemparams /.setuserparams
-  /.checkpassword /.locale_to_utf8 /.currentglobal /.gcheck /.imagepath /.currentoutputdevice
+  /.checkpassword /.currentglobal /.gcheck /.imagepath /.currentoutputdevice
   /.type /.writecvs /.setSMask /.currentSMask /.needinput /.countexecstack /.execstack
   /filterdict /.cidfonttypes /.colorrenderingtypes
   /.formtypes /.halftonetypes /.imagetypes /.imagemasktypes

@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2024 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -1148,57 +1148,6 @@ $(PSOBJ)zfilter2.$(OBJ) : $(PSSRC)zfilter2.c $(OP) $(memory__h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfilter2.$(OBJ) $(C_) $(PSSRC)zfilter2.c
 
-# MD5 digest filter
-fmd5_=$(PSOBJ)zfmd5.$(OBJ)
-$(PSD)fmd5.dev : $(ECHOGS_XE) $(fmd5_) $(GLD)smd5.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)fmd5 $(fmd5_)
-	$(ADDMOD) $(PSD)fmd5 -include $(GLD)smd5
-	$(ADDMOD) $(PSD)fmd5 -oper zfmd5
-
-$(PSOBJ)zfmd5.$(OBJ) : $(PSSRC)zfmd5.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(ifilter_h)\
- $(smd5_h) $(stream_h) $(strimpl_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zfmd5.$(OBJ) $(C_) $(PSSRC)zfmd5.c
-
-# SHA-256 digest filter
-fsha2_=$(PSOBJ)zfsha2.$(OBJ)
-$(PSD)fsha2.dev : $(ECHOGS_XE) $(fsha2_) $(GLD)ssha2.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)fsha2 $(fsha2_)
-	$(ADDMOD) $(PSD)fsha2 -include $(GLD)ssha2
-	$(ADDMOD) $(PSD)fsha2 -oper zfsha2
-
-$(PSOBJ)zfsha2.$(OBJ) : $(PSSRC)zfsha2.c $(OP) $(memory__h)\
- $(ghost_h) $(oper_h) $(gsstruct_h) $(stream_h) $(strimpl_h)\
- $(ialloc_h) $(ifilter_h) $(ssha2_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zfsha2.$(OBJ) $(C_) $(PSSRC)zfsha2.c
-
-# Arcfour cipher filter
-farc4_=$(PSOBJ)zfarc4.$(OBJ)
-$(PSD)farc4.dev : $(ECHOGS_XE) $(farc4_) $(GLD)sarc4.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)farc4 $(farc4_)
-	$(ADDMOD) $(PSD)farc4 -include $(GLD)sarc4
-	$(ADDMOD) $(PSD)farc4 -oper zfarc4
-
-$(PSOBJ)zfarc4.$(OBJ) : $(PSSRC)zfarc4.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
- $(sarc4_h) $(stream_h) $(strimpl_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zfarc4.$(OBJ) $(C_) $(PSSRC)zfarc4.c
-
-# AES cipher filter
-faes_=$(PSOBJ)zfaes.$(OBJ)
-$(PSD)faes.dev : $(ECHOGS_XE) $(faes_) $(GLD)saes.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)faes $(faes_)
-	$(ADDMOD) $(PSD)faes -include $(GLD)saes
-	$(ADDMOD) $(PSD)faes -oper zfaes
-
-$(PSOBJ)zfaes.$(OBJ) : $(PSSRC)zfaes.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h)\
- $(saes_h) $(stream_h) $(strimpl_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zfaes.$(OBJ) $(C_) $(PSSRC)zfaes.c
 
 # JBIG2 compression filter
 # this can be turned on and off with a FEATURE_DEV
@@ -1746,17 +1695,13 @@ $(PSOBJ)zform.$(OBJ) : $(PSSRC)zform.c $(OP) $(ghost_h) $(oper_h)\
 $(PSD)pdf.dev : $(ECHOGS_XE)\
  $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev\
- $(PSD)fmd5.dev $(PSD)fsha2.dev $(PSD)farc4.dev $(PSD)faes.dev\
  $(PSD)type2.dev $(PSD)pdfops.dev\
- $(PSD)pdf_r6.dev $(INT_MAK) $(MAKEDIRS)
+ $(INT_MAK) $(MAKEDIRS)
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread
-	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)fsha2
-	$(ADDMOD) $(PSD)pdf -include $(PSD)farc4 $(PSD)faes.dev
 	$(ADDMOD) $(PSD)pdf -include $(PSD)type2
 	$(ADDMOD) $(PSD)pdf -include $(PSD)pdfops
-	$(ADDMOD) $(PSD)pdf -include $(PSD)pdf_r6
 	$(ADDMOD) $(PSD)pdf -include $(PSD)cff
 	$(ADDMOD) $(PSD)pdf -include $(PSD)ttfont
 	$(ADDMOD) $(PSD)pdf -functiontype 4
@@ -1811,24 +1756,6 @@ $(PSOBJ)zpdfops.$(OBJ) : $(PSSRC)zpdfops.c $(OP) $(MAKEFILE)\
  $(igstate_h) $(istack_h) $(iutil_h) $(gspath_h) $(math__h) $(ialloc_h)\
  $(igc_h) $(string__h) $(store_h) $(iminst_h) $(idstack_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zpdfops.$(OBJ) $(C_) $(PSSRC)zpdfops.c
-
-zutf8_=$(PSOBJ)zutf8.$(OBJ)
-$(PSD)utf8.dev : $(ECHOGS_XE) $(zutf8_) $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)utf8 $(zutf8_)
-	$(ADDMOD) $(PSD)utf8 -oper zutf8
-
-$(PSOBJ)zutf8.$(OBJ) : $(PSSRC)zutf8.c $(OP)\
- $(ghost_h) $(oper_h) $(iutil_h) $(ialloc_h) $(malloc__h) $(string__h)\
- $(store_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zutf8.$(OBJ) $(C_) $(PSSRC)zutf8.c
-
-zpdf_r6_=$(PSOBJ)zpdf_r6.$(OBJ)
-$(PSD)pdf_r6.dev : $(ECHOGS_XE) $(zpdf_r6_) $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)pdf_r6 $(zpdf_r6_)
-	$(ADDMOD) $(PSD)pdf_r6 -oper zpdf_r6
-
-$(PSOBJ)zpdf_r6.$(OBJ) : $(PSSRC)zpdf_r6.c $(OP) $(MAKEFILE) $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zpdf_r6.$(OBJ) $(C_) $(PSSRC)zpdf_r6.c
 
 # ================ Dependencies for auxiliary programs ================ #
 

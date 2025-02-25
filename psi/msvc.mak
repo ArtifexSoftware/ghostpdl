@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2024 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -1001,7 +1001,7 @@ SBRFLAGS=/FR$(SBRDIR)\$(NUL)
 
 # if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
 PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(GPDF_DEV) $(PSD)epsf.dev $(PSD)ttfont.dev \
-                 $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)fapi_ps.dev $(GLD)winutf8.dev $(PSD)gs_pdfwr.dev
+       $(PSD)jbig2.dev $(PSD)jpx.dev $(PSD)fapi_ps.dev $(PSD)gs_pdfwr.dev
 
 
 PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCL5OBJDIR)/pcl5c.dev \

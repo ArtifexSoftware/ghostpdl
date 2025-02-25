@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -71,14 +71,6 @@ zPFBD(i_ctx_t *i_ctx_p)
     check_type(*sop, t_boolean);
     state.binary_to_hex = sop->value.boolval;
     return filter_read(i_ctx_p, 1, &s_PFBD_template, (stream_state *)&state, 0);
-}
-
-/* <target> PSStringEncode/filter <file> */
-/* <target> <dict> PSStringEncode/filter <file> */
-static int
-zPSSE(i_ctx_t *i_ctx_p)
-{
-    return filter_write_simple(i_ctx_p, &s_PSSE_template);
 }
 
 /* ------ RunLength filters ------ */
@@ -397,27 +389,6 @@ static const stream_template s_Null1D_template = {
     &st_stream_state, NULL, s_Null1D_process, 1, 1
 };
 
-/* A utility filter that returns an immediate EOF without consuming */
-/* any data from its source. Used by PDF interpreter for unknown    */
-/* filter types.                                                    */
-static int
-s_EOFD_process(stream_state * st, stream_cursor_read * pr,
-                 stream_cursor_write * pw, bool last)
-{
-    return EOFC;
-}
-static const stream_template s_EOFD_template = {
-    &st_stream_state, NULL, s_EOFD_process, 1, 1
-};
-
-/* <target> /.EOFDecode filter <file> */
-/* <target> <dict> /.EOFDecode filter <file> */
-static int
-zEOFD(i_ctx_t *i_ctx_p)
-{
-    return filter_read_simple(i_ctx_p, &s_EOFD_template);
-}
-
 /* Ensure a minimum buffer size for a filter. */
 /* This may require creating an intermediate stream. */
 static int
@@ -491,14 +462,12 @@ filter_mark_strm_temp(const ref * fop, int is_temp)
 const op_def zfilter_op_defs[] = {
                 /* We enter PSStringEncode and SubFileDecode (only) */
                 /* as separate operators. */
-    {"1.psstringencode", zPSSE},
     {"2.subfiledecode", zSFD},
     op_def_begin_filter(),
     {"1ASCIIHexEncode", zAXE},
     {"1ASCIIHexDecode", zAXD},
     {"1NullEncode", zNullE},
     {"2PFBDecode", zPFBD},
-    {"1PSStringEncode", zPSSE},
     {"2RunLengthEncode", zRLE},
     {"1RunLengthDecode", zRLD},
     {"1PWGDecode", zPWGD},
@@ -506,6 +475,5 @@ const op_def zfilter_op_defs[] = {
     {"1URFDecode", zURFD},
 #endif
     {"3SubFileDecode", zSFD},
-    {"1.EOFDecode", zEOFD},
     op_def_end(0)
 };

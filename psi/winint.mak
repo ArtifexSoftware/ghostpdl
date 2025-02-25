@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -173,17 +173,6 @@ $(PSOBJ)dwtext.obj: $(PSSRC)dwtext.c $(AK) $(dwtext_h) $(WININT_MAK)
 $(PSOBJ)dwreg.obj: $(PSSRC)dwreg.c $(AK) $(dwreg_h) $(WININT_MAK)
         $(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwreg.obj $(C_) $(PSSRC)dwreg.c
 
-
-# ------------ Windows version of the .locale_to_utf8 operator ------------ #
-
-zwinutf8_=$(PSOBJ)zwinutf8.$(OBJ)
-$(PSD)winutf8.dev : $(MAKEFILE) $(ECHOGS_XE) $(zwinutf8_) $(WININT_MAK)
-	$(SETMOD) $(PSD)winutf8 $(zwinutf8_)
-	$(ADDMOD) $(PSD)winutf8 -oper zwinutf8
-
-$(PSOBJ)zwinutf8.$(OBJ) : $(PSSRC)zwinutf8.c $(OP)\
- $(ghost_h) $(oper_h) $(iutil_h) $(store_h) $(windows__h) $(WININT_MAK)
-	$(PSCCWIN) $(PSO_)zwinutf8.$(OBJ) $(C_) $(PSSRC)zwinutf8.c
 
 # -------------------- NSIS Installer -------------------------------- #
 nsis: $(PSSRC)nsisinst.nsi $(GSCONSOLE_XE) $(GS_ALL) $(GS_XE) $(GSDLL_DLL) $(BINDIR)\$(GSDLL).lib \
