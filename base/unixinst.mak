@@ -104,7 +104,7 @@ stcinfo.ps stcolor.ps stocht.ps \
 traceimg.ps traceop.ps uninfo.ps \
 viewcmyk.ps viewgif.ps viewjpeg.ps viewmiff.ps \
 viewpcx.ps viewpbm.ps viewps2a.ps \
-winmaps.ps zeroline.ps ;\
+winmaps.ps zeroline.ps zugferd.ps  ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_DATA) $(PSLIBDIR)/$$f $(DESTDIR)$(gsdatadir)/lib; fi;\
 	done'
 	$(SH) -c 'for f in $(PSLIBDIR)/gs_*.ps $(PSLIBDIR)/pdf*.ps;\
