@@ -925,8 +925,8 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                         uid_set_invalid(&ptpriv->UID);
                     }
                     else {
-                        for (i = 0; i < n; i++) {
-                            xvalues[n - i] = args[i].ival;
+                        for (i = 1; i <= n; i++) {
+                            xvalues[n - i] = args[i - 1].ival;
                         }
                         if (uid_is_XUID(&ptpriv->UID))
                             uid_free(&ptpriv->UID, font->pfont->memory, "pdfi_read_cff_dict");
