@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -286,14 +286,16 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
             return code;
 
         code = pdfi_dict_first(ctx, shading_dict, &Key, &Value, &index);
-        if (code < 0 || !(pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM))
+        if (code < 0)
             goto error2;
 
         i = 1;
         do {
-            code = pdfi_check_Shading(ctx, Value, page_dict, tracker);
-            if (code < 0)
-                goto error2;
+            if ((pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM)) {
+                code = pdfi_check_Shading(ctx, Value, page_dict, tracker);
+                if (code < 0)
+                    goto error2;
+            }
 
             pdfi_countdown(Key);
             Key = NULL;
@@ -469,18 +471,18 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
         code = pdfi_dict_first(ctx, xobject_dict, &Key, &Value, &index);
         if (code < 0)
             goto error_exit;
-        if (pdfi_type_of(Value) != PDF_STREAM)
-            goto error_exit;
 
         i = 1;
         do {
-            code = pdfi_dict_from_obj(ctx, Value, &Value_dict);
-            if (code < 0)
-                goto error_exit;
+            if (pdfi_type_of(Value) == PDF_STREAM) {
+                code = pdfi_dict_from_obj(ctx, Value, &Value_dict);
+                if (code < 0)
+                    goto error_exit;
 
-            code = pdfi_check_XObject(ctx, Value_dict, page_dict, tracker);
-            if (code < 0)
-                goto error_exit;
+                code = pdfi_check_XObject(ctx, Value_dict, page_dict, tracker);
+                if (code < 0)
+                    goto error_exit;
+            }
 
             (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
 
@@ -787,18 +789,17 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
         if (code < 0)
             goto error1;
 
-        if (pdfi_type_of(Value) != PDF_DICT && pdfi_type_of(Value) != PDF_STREAM)
-            goto transparency_exit;
-
         i = 1;
         do {
-            code = pdfi_dict_from_obj(ctx, Value, &instance_dict);
-            if (code < 0)
-                goto transparency_exit;
+            if (pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM) {
+                code = pdfi_dict_from_obj(ctx, Value, &instance_dict);
+                if (code < 0)
+                    goto transparency_exit;
 
-            code = pdfi_check_Pattern(ctx, instance_dict, page_dict, tracker);
-            if (code < 0)
-                goto transparency_exit;
+                code = pdfi_check_Pattern(ctx, instance_dict, page_dict, tracker);
+                if (code < 0)
+                    goto transparency_exit;
+            }
 
             pdfi_countdown(Key);
             Key = NULL;
