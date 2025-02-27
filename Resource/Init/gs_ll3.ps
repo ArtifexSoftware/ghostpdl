@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2024 Artifex Software, Inc.
+% Copyright (C) 2001-2025 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -159,7 +159,7 @@ currentdict /.bind_ undef
                 % If the original Thresholds was a file, replace it with
                 % a new one.
   dup /Thresholds get type /filetype eq {
-    dup /Thresholds [ Thresholds ] cvx 0 () .subfiledecode put
+    dup /Thresholds [ Thresholds ] cvx 0 () /SubFileDecode filter put
   } if
   mark /HalftoneType 5 /Default currentdict end .dicttomark
   { .sethalftone5 }
@@ -178,7 +178,7 @@ currentdict /.bind_ undef
                         % Keys: Xsquare, Ysquare, Thresholds, T'Function
                 % Note that this is the only one of these three HalftoneTypes
                 % that allows either a file or a string for Thresholds.
-  dup /Thresholds get dup type /stringtype eq { 0 () .subfiledecode } if
+  dup /Thresholds get dup type /stringtype eq { 0 () /SubFileDecode filter } if
   1 index /Xsquare get dup 3 index /Ysquare get dup
   8 //.makehalftone7 exec
 } .internalbind def

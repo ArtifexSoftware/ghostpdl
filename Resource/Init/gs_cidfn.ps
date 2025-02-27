@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2025 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -223,7 +223,7 @@ pop		% .cidfonttypes
     /GlyphData 0 def
     exch pop 3 -1 roll pop exch
                 % Stack: pos length
-    /DataSource currentfile 2 index () .subfiledecode //true .reusablestream def
+    /DataSource currentfile 2 index () /SubFileDecode filter //true .reusablestream def
     currentfile 3 1 roll add setfileposition
   } ifelse
   /SubrCache 10 dict def

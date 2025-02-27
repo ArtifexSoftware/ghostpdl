@@ -29,21 +29,3 @@ urf_setup(os_ptr dop, int *width, int *bpp, byte *white)
         return 0;
     }
 }
-
-/* <source> <dict> URFDecode/filter <file> */
-static int
-zURFD(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    stream_URFD_state state;
-    int code;
-
-    if (s_URFD_template.set_defaults)
-        s_URFD_template.set_defaults((stream_state *)&state);
-
-    code = urf_setup(op, &state.width, &state.bpp, &state.white);
-    if (code < 0)
-        return code;
-
-    return filter_read(i_ctx_p, 0, &s_URFD_template, (stream_state *) & state, 0);
-}

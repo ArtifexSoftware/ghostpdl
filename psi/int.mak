@@ -637,9 +637,9 @@ $(PSD)level1.dev : $(PSD)psl1.dev $(INT_MAK) $(MAKEDIRS)
 	$(CP_) $(PSD)psl1.dev $(PSD)level1.dev
 
 $(PSD)psl1.dev : $(ECHOGS_XE)\
- $(PSD)psbase.dev $(PSD)bcp.dev $(PSD)path1.dev $(PSD)type1.dev\
+ $(PSD)psbase.dev $(PSD)path1.dev $(PSD)type1.dev\
  $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)psl1 -include $(PSD)psbase $(PSD)bcp $(PSD)path1 $(PSD)type1
+	$(SETMOD) $(PSD)psl1 -include $(PSD)psbase $(PSD)path1 $(PSD)type1
 	$(ADDMOD) $(PSD)psl1 -emulator PostScript PostScriptLevel1
 
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
@@ -714,20 +714,6 @@ $(PSOBJ)zpath1.$(OBJ) : $(PSSRC)zpath1.c $(OP) $(memory__h)\
 	$(PSCC) $(PSO_)zpath1.$(OBJ) $(C_) $(PSSRC)zpath1.c
 
 # ================ Level-independent PostScript options ================ #
-
-# ---------------- BCP filters ---------------- #
-
-bcp_=$(GLOBJ)sbcp.$(OBJ) $(PSOBJ)zfbcp.$(OBJ)
-$(PSD)bcp.dev : $(ECHOGS_XE) $(bcp_)\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)bcp $(bcp_)
-	$(ADDMOD) $(PSD)bcp -oper zfbcp
-
-$(PSOBJ)zfbcp.$(OBJ) : $(PSSRC)zfbcp.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(ifilter_h)\
- $(sbcp_h) $(stream_h) $(strimpl_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSCC) $(PSO_)zfbcp.$(OBJ) $(C_) $(PSSRC)zfbcp.c
 
 # ---------------- Double-precision floats ---------------- #
 
@@ -1147,63 +1133,6 @@ $(PSOBJ)zfilter2.$(OBJ) : $(PSSRC)zfilter2.c $(OP) $(memory__h)\
  $(sfilter_h) $(scfx_h) $(slzwx_h) $(spdiffx_h) $(spngpx_h) $(strimpl_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfilter2.$(OBJ) $(C_) $(PSSRC)zfilter2.c
-
-
-# JBIG2 compression filter
-# this can be turned on and off with a FEATURE_DEV
-
-fjbig2_=$(PSOBJ)zfjbig2_$(JBIG2_LIB).$(OBJ)
-
-$(PSD)jbig2_jbig2dec.dev : $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)jbig2_jbig2dec $(fjbig2_)
-	$(ADDMOD) $(PSD)jbig2_jbig2dec -include $(GLD)sjbig2
-	$(ADDMOD) $(PSD)jbig2_jbig2dec -oper zfjbig2
-
-$(PSD)jbig2_.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)jbig2_
-
-$(PSD)jbig2.dev : $(PSD)jbig2_$(JBIG2_LIB).dev $(INT_MAK) $(MAKEDIRS)
-	$(CP_) $(PSD)jbig2_$(JBIG2_LIB).dev $(PSD)jbig2.dev
-
-
-$(PSOBJ)zfjbig2_jbig2dec.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
- $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
- $(store_h) $(stream_h) $(strimpl_h) $(sjbig2_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSJBIG2CC) $(PSO_)zfjbig2_jbig2dec.$(OBJ) $(C_) $(PSSRC)zfjbig2.c
-
-# JPX (jpeg 2000) compression filter
-# this can be turned on and off with a FEATURE_DEV
-
-$(PSD)jpx.dev : $(ECHOGS_XE) $(PSD)jpx_$(JPX_LIB).dev\
- $(INT_MAK) $(MAKEDIRS)
-	$(CP_) $(PSD)jpx_$(JPX_LIB).dev $(PSD)jpx.dev
-
-$(PSD)jpx_.dev : $(ECHOGS_XE) $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)jpx_
-
-$(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
- $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
- $(store_h) $(stream_h) $(strimpl_h) $(ialloc_h) $(iname_h)\
- $(gdebug_h) $(sjpx_h) $(INT_MAK) $(MAKEDIRS)
-	$(PSJASCC) $(PSO_)zfjpx.$(OBJ) $(C_) $(PSSRC)zfjpx.c
-
-fjpx_openjpeg=$(PSOBJ)zfjpx_openjpeg.$(OBJ)
-
-$(PSD)jpx_openjpeg.dev : $(ECHOGS_XE) $(fjpx_openjpeg)\
- $(GLD)sjpx.dev $(INT_MAK) $(MAKEDIRS)
-	$(SETMOD) $(PSD)jpx_openjpeg $(fjpx_openjpeg)
-	$(ADDMOD) $(PSD)jpx_openjpeg -include $(GLD)sjpx
-	$(ADDMOD) $(PSD)jpx_openjpeg -include $(GLD)openjpeg
-	$(ADDMOD) $(PSD)jpx_openjpeg -oper zfjpx
-
-$(PSOBJ)zfjpx_openjpeg.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
- $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
- $(store_h) $(stream_h) $(strimpl_h) $(sjpx_openjpeg_h)\
- $(INT_MAK) $(MAKEDIRS)
-	$(PSOPJJPXCC) $(PSO_)zfjpx_openjpeg.$(OBJ) \
-		$(C_) $(PSSRC)zfjpx.c
-
 
 # imagemask scaling filter
 fimscale_=$(PSOBJ)zfimscale.$(OBJ)

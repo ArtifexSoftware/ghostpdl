@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -497,7 +497,7 @@ SO_LIB_VERSION_SEPARATOR=.
 
 # if it's included, $(PSD)gs_pdfwr.dev should always be one of the last in the list
 PSI_FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)epsf.dev $(PSD)ttfont.dev \
-                  $(PSD)fapi_ps.dev $(PSD)jpx.dev $(PSD)jbig2.dev $(PSD)gs_pdfwr.dev
+       $(PSD)fapi_ps.dev $(PSD)gs_pdfwr.dev
 
 
 PCL_FEATURE_DEVS=$(PLOBJDIR)/pl.dev $(PLOBJDIR)/pjl.dev $(PXLOBJDIR)/pxl.dev $(PCL5OBJDIR)/pcl5c.dev \
@@ -521,7 +521,7 @@ FEATURE_DEVS=$(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)psl3lib.dev 
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev
 #FEATURE_DEVS=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(GLD)pipe.dev
 # The following is strictly for testing.
-FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(PSD)jbig2.dev $(PSD)jpx.dev  $(GLD)ramfs.dev
+FEATURE_DEVS_ALL=$(PSD)psl3.dev $(PSD)pdf.dev $(PSD)ttfont.dev $(PSD)double.dev $(PSD)trapping.dev $(PSD)stocht.dev $(GLD)pipe.dev $(GLD)gsnogc.dev $(GLD)htxlib.dev $(GLD)ramfs.dev
 #FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 
 # The list of resources to be included in the %rom% file system.

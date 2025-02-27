@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -26,47 +26,6 @@
 #include "idparam.h"
 #include "ifilter.h"
 
-/* <state> <from_string> <to_string> .type1encrypt <new_state> <substring> */
-/* <state> <from_string> <to_string> .type1decrypt <new_state> <substring> */
-static int type1crypt(i_ctx_t *,
-                       int (*)(byte *, const byte *, uint, ushort *));
-static int
-ztype1encrypt(i_ctx_t *i_ctx_p)
-{
-    return type1crypt(i_ctx_p, gs_type1_encrypt);
-}
-static int
-ztype1decrypt(i_ctx_t *i_ctx_p)
-{
-    return type1crypt(i_ctx_p, gs_type1_decrypt);
-}
-static int
-type1crypt(i_ctx_t *i_ctx_p,
-           int (*proc)(byte *, const byte *, uint, ushort *))
-{
-    os_ptr op = osp;
-    crypt_state state;
-    uint ssize;
-
-    check_op(3);
-    check_type(op[-2], t_integer);
-    state = op[-2].value.intval;
-    if (op[-2].value.intval != state)
-        return_error(gs_error_rangecheck);	/* state value was truncated */
-    check_read_type(op[-1], t_string);
-    check_write_type(*op, t_string);
-    ssize = r_size(op - 1);
-    if (r_size(op) < ssize)
-        return_error(gs_error_rangecheck);
-    discard((*proc)(op->value.bytes, op[-1].value.const_bytes, ssize,
-                    &state));	/* can't fail */
-    op[-2].value.intval = state;
-    op[-1] = *op;
-    r_set_size(op - 1, ssize);
-    pop(1);
-    return 0;
-}
-
 /* Get the seed parameter for eexecEncode/Decode. */
 /* Return npop if OK. */
 static int
@@ -81,23 +40,6 @@ eexec_param(os_ptr op, ushort * pcstate)
     if (op->value.intval != *pcstate)
         return_error(gs_error_rangecheck);	/* state value was truncated */
     return npop;
-}
-
-/* <target> <seed> eexecEncode/filter <file> */
-/* <target> <seed> <dict_ignored> eexecEncode/filter <file> */
-static int
-zexE(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    stream_exE_state state;
-    int code = eexec_param(op, &state.cstate);
-
-    if (code < 0)
-        return code;
-    if (gs_is_path_control_active(imemory) != 0 && state.cstate != 55665) {
-        return_error(gs_error_rangecheck);
-    }
-    return filter_write(i_ctx_p, code, &s_exE_template, (stream_state *)&state, 0);
 }
 
 /* <source> <seed> eexecDecode/filter <file> */
@@ -177,10 +119,7 @@ zexD(i_ctx_t *i_ctx_p)
 
 const op_def zmisc1_op_defs[] =
 {
-    {"3.type1encrypt", ztype1encrypt},
-    {"3.type1decrypt", ztype1decrypt},
     op_def_begin_filter(),
-    {"2eexecEncode", zexE},
     {"2eexecDecode", zexD},
     op_def_end(0)
 };

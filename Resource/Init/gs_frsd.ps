@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2025 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -54,7 +54,7 @@ level2dict begin
                 % No luck.  Read the entire contents of the stream now.
     dup type /filetype ne {
                 % Make a stream from a procedure or string data source.
-      0 () .subfiledecode
+      0 () /SubFileDecode filter
     } if
                 % We must allocate the string in the same VM space as its
                 % source, since the reusable stream must be allocated there.

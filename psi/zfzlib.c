@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -40,30 +40,6 @@ filter_zlib(i_ctx_t *i_ctx_p, stream_zlib_state *pzls)
     return code;
 }
 
-/* <source> zlibEncode/filter <file> */
-/* <source> <dict> zlibEncode/filter <file> */
-static int
-zzlibE(i_ctx_t *i_ctx_p)
-{
-    stream_zlib_state zls;
-    int code = filter_zlib(i_ctx_p, &zls);
-
-    if (code < 0)
-        return code;
-    return filter_write(i_ctx_p, 0, &s_zlibE_template, (stream_state *)&zls, 0);
-}
-
-/* <target> zlibDecode/filter <file> */
-/* <target> <dict> zlibDecode/filter <file> */
-static int
-zzlibD(i_ctx_t *i_ctx_p)
-{
-    stream_zlib_state zls;
-
-    (*s_zlibD_template.set_defaults)((stream_state *)&zls);
-    return filter_read(i_ctx_p, 0, &s_zlibD_template, (stream_state *)&zls, 0);
-}
-
 /* <source> FlateEncode/filter <file> */
 /* <source> <dict> FlateEncode/filter <file> */
 static int
@@ -95,8 +71,6 @@ zFlateD(i_ctx_t *i_ctx_p)
 const op_def zfzlib_op_defs[] =
 {
     op_def_begin_filter(),
-    {"1zlibEncode", zzlibE},
-    {"1zlibDecode", zzlibD},
     {"1FlateEncode", zFlateE},
     {"1FlateDecode", zFlateD},
     op_def_end(0)

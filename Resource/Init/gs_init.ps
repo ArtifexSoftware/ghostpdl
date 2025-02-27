@@ -264,7 +264,7 @@ currentdict /DEVICE known not
 % This avoids allocating space for the skipped procedures.
 % We can't use readline, because that imposes a line length limit.
 /.skipeof	% <string> .skipeof -
- { currentfile exch 1 exch .subfiledecode flushfile
+ { currentfile exch 1 exch /SubFileDecode filter flushfile
  } .forcebind def
 
 % Define procedures to assist users who don't read the documentation.
@@ -2550,9 +2550,6 @@ currentdict /.locksafeglobal .undef
 
 /UndefinePostScriptFilters {
   [
-   /BCPEncode /TBCPEncode /PNGPredictorEncode /PNGPredictorDecode /PixelDifferenceDecode /PixelDifferenceEncode
-   /zlibEncode /zlibDecode /PWGDecode /eexecEncode /BCPDecode
-   /OLDPDF where {/OLDPDF get not {/JPXDecode /JBIG2Decode } if} if
   ]
   {filterdict exch undef} forall
 } .forcebind def
@@ -2590,7 +2587,7 @@ currentdict /.locksafeglobal .undef
   /.setpagedevice /.currentpagedevice /.knownundef /.setmaxlength /.rectappend /.initialize_dsc_parser /.parse_dsc_comments
   /.fillCIDMap /.fillIdentityCIDMap /.buildcmap /.filenamelistseparator /.libfile /.getfilename
   /.file_name_combine /.file_name_is_absolute /.file_name_separator /.file_name_directory_separator /.file_name_current /.filename
-  /.peekstring /.writecvp /.subfiledecode /.setupUnicodeDecoder /.jbig2makeglobalctx /.registerfont /.parsecff
+  /.peekstring /.writecvp /.setupUnicodeDecoder /.jbig2makeglobalctx /.registerfont /.parsecff
   /.getshowoperator /.getnativefonts /.beginform /.endform /.get_form_id /.repeatform /.reusablestream /.rsdparams
   /.buildfunction /.sethpglpathmode /.currenthpglpathmode
   /.currenthalftone /.sethalftone5 /.image1 /.imagemask1 /.image3 /.image4

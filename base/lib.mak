@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -586,7 +586,6 @@ gdevepo_h=$(GLSRC)gdevepo.h
 
 sa85d_h=$(GLSRC)sa85d.h
 sa85x_h=$(GLSRC)sa85x.h
-sbcp_h=$(GLSRC)sbcp.h
 sbtx_h=$(GLSRC)sbtx.h
 scanchar_h=$(GLSRC)scanchar.h
 sfilter_h=$(GLSRC)sfilter.h
@@ -1576,12 +1575,6 @@ $(GLOBJ)strmio.$(OBJ) : $(GLSRC)strmio.c $(AK) $(malloc__h)\
   $(gsmalloc_h) $(gsmemret_h) $(strmio_h) $(stream_h) $(gxiodev_h)\
  $(gserrors_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)strmio.$(OBJ) $(C_) $(GLSRC)strmio.c
-
-# ---------------- BCP filters ---------------- #
-
-$(GLOBJ)sbcp.$(OBJ) : $(GLSRC)sbcp.c $(AK) $(stdio__h)\
- $(sbcp_h) $(strimpl_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLCC) $(GLO_)sbcp.$(OBJ) $(C_) $(GLSRC)sbcp.c
 
 # ---------------- CCITTFax filters ---------------- #
 # These are used by clists, some drivers, and Level 2 in general.
@@ -9081,18 +9074,6 @@ $(GLSRC)sa85x.h:$(GLSRC)std.h
 $(GLSRC)sa85x.h:$(GLSRC)stdpre.h
 $(GLSRC)sa85x.h:$(GLGEN)arch.h
 $(GLSRC)sa85x.h:$(GLSRC)gs_dll_call.h
-$(GLSRC)sbcp.h:$(GLSRC)scommon.h
-$(GLSRC)sbcp.h:$(GLSRC)gsstype.h
-$(GLSRC)sbcp.h:$(GLSRC)gsmemory.h
-$(GLSRC)sbcp.h:$(GLSRC)gslibctx.h
-$(GLSRC)sbcp.h:$(GLSRC)stdio_.h
-$(GLSRC)sbcp.h:$(GLSRC)stdint_.h
-$(GLSRC)sbcp.h:$(GLSRC)gssprintf.h
-$(GLSRC)sbcp.h:$(GLSRC)gstypes.h
-$(GLSRC)sbcp.h:$(GLSRC)std.h
-$(GLSRC)sbcp.h:$(GLSRC)stdpre.h
-$(GLSRC)sbcp.h:$(GLGEN)arch.h
-$(GLSRC)sbcp.h:$(GLSRC)gs_dll_call.h
 $(GLSRC)sbtx.h:$(GLSRC)scommon.h
 $(GLSRC)sbtx.h:$(GLSRC)gsstype.h
 $(GLSRC)sbtx.h:$(GLSRC)gsmemory.h
