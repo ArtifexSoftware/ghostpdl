@@ -920,18 +920,23 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
 
                 case 14: /* XUID */
                 {
-                    long *xvalues = (long *)gs_alloc_byte_array(font->pfont->memory, n, sizeof(long), "pdfi_read_cff_dict");
-                    if (xvalues == NULL) {
-                        uid_set_invalid(&ptpriv->UID);
-                    }
-                    else {
-                        for (i = 1; i <= n; i++) {
-                            xvalues[n - i] = args[i - 1].ival;
+                    long *xvalues = NULL;
+
+                    if (n > 0) {
+                        xvalues = (long *)gs_alloc_byte_array(font->pfont->memory, n, sizeof(long), "pdfi_read_cff_dict");
+                        if (xvalues == NULL) {
+                            uid_set_invalid(&ptpriv->UID);
                         }
-                        if (uid_is_XUID(&ptpriv->UID))
-                            uid_free(&ptpriv->UID, font->pfont->memory, "pdfi_read_cff_dict");
-                        uid_set_XUID(&ptpriv->UID, xvalues, n);
-                    }
+                        else {
+                            for (i = 1; i <= n; i++) {
+                                xvalues[n - i] = args[i - 1].ival;
+                            }
+                            if (uid_is_XUID(&ptpriv->UID))
+                                uid_free(&ptpriv->UID, font->pfont->memory, "pdfi_read_cff_dict");
+                            uid_set_XUID(&ptpriv->UID, xvalues, n);
+                        }
+                    } else
+                        uid_set_invalid(&ptpriv->UID);
                     break;
                 }
 
