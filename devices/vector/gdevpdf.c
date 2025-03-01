@@ -28,6 +28,7 @@
 #include "gdevpdfo.h"
 #include "smd5.h"
 #include "sarc4.h"
+#include "sbrotlix.h"
 #include "gscms.h"
 #include "gdevpdtf.h"
 #include "gdevpdtx.h"
@@ -3438,13 +3439,23 @@ pdf_close(gx_device * dev)
 
                 xs1 = xref_temp.strm;
                 if (pdev->CompressStreams) {
-                    st = s_alloc_state(pdev->pdf_memory, s_zlibE_template.stype, "write_xref_strm");
-                    if (st == NULL)
-                        return_error(gs_error_VMerror);
-                    s_zlibE_template.set_defaults (st);
-                    xs = s_add_filter(&xref_temp.strm, &s_zlibE_template, st, pdev->pdf_memory);
-                    if (xs == NULL)
-                        xs = xref_temp.strm;
+                    if (pdev->UseBrotli) {
+                        st = s_alloc_state(pdev->pdf_memory, s_brotliE_template.stype, "write_xref_strm");
+                        if (st == NULL)
+                            return_error(gs_error_VMerror);
+                        s_brotliE_template.set_defaults (st);
+                        xs = s_add_filter(&xref_temp.strm, &s_brotliE_template, st, pdev->pdf_memory);
+                        if (xs == NULL)
+                            xs = xref_temp.strm;
+                    } else {
+                        st = s_alloc_state(pdev->pdf_memory, s_zlibE_template.stype, "write_xref_strm");
+                        if (st == NULL)
+                            return_error(gs_error_VMerror);
+                        s_zlibE_template.set_defaults (st);
+                        xs = s_add_filter(&xref_temp.strm, &s_zlibE_template, st, pdev->pdf_memory);
+                        if (xs == NULL)
+                            xs = xref_temp.strm;
+                    }
                 } else
                     xs = xref_temp.strm;
 
@@ -3487,8 +3498,12 @@ pdf_close(gx_device * dev)
                 sflush(xref_temp.strm);
                 length = stell(xref_temp.strm);
 
-                if (pdev->CompressStreams)
-                    gs_snprintf(str, sizeof(str), "]\n/W [1 %"PRId64" 2]\n/Filter /FlateDecode/Length %"PRId64"\n>>\nstream\n", offs_bytes, length);
+                if (pdev->CompressStreams) {
+                    if (pdev->UseBrotli)
+                        gs_snprintf(str, sizeof(str), "]\n/W [1 %"PRId64" 2]\n/Filter /BrotliDecode/Length %"PRId64"\n>>\nstream\n", offs_bytes, length);
+                    else
+                        gs_snprintf(str, sizeof(str), "]\n/W [1 %"PRId64" 2]\n/Filter /FlateDecode/Length %"PRId64"\n>>\nstream\n", offs_bytes, length);
+                }
                 else
                     gs_snprintf(str, sizeof(str), "]\n/W [1 %"PRId64" 2]\n/Length %"PRId64"\n>>\nstream\n", offs_bytes, length);
                 stream_puts(s, str);

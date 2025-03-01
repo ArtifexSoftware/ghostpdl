@@ -29,7 +29,7 @@ s_brotliE_set_defaults(stream_state * st)
 
     ss->mode = BROTLI_MODE_GENERIC;
     ss->windowBits = BROTLI_MAX_WINDOW_BITS;
-    ss->level = 9; /* BROTLI_MAX_QUALITY is 11. 9 is 'better than zlib' */
+    ss->level = 5; /* BROTLI_MAX_QUALITY is 11. 9 is 'better than zlib' */
 }
 
 /* Initialize the filter. */

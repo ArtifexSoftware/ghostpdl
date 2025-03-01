@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -259,7 +259,8 @@ const gx_device_pdf PDF_DEVICE_IDENT =
  true,                  /* WriteObjStms */
  0,                     /* PendingOC */
  true,                  /* ToUnicodeForStdEnc */
- true                   /* EmbedSubstituteFonts */
+ true,                  /* EmbedSubstituteFonts */
+ false                  /* Use Brotli */
 };
 
 #else

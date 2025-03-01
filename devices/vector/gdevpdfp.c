@@ -139,6 +139,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("WriteXRefStm", gs_param_type_bool, WriteXRefStm),
     pi("ToUnicodeForStdEnc", gs_param_type_bool, ToUnicodeForStdEnc),
     pi("EmbedSubstituteFonts", gs_param_type_bool, EmbedSubstituteFonts),
+    pi("UseBrotli", gs_param_type_bool, UseBrotli),
 #undef pi
     gs_param_item_end
 };
@@ -1018,6 +1019,12 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
 
     if (pdev->FlattenFonts)
         pdev->PreserveTrMode = false;
+
+    if (pdev->ForOPDFRead)
+        pdev->params.UseBrotliCompression = pdev->UseBrotli = false;
+    else
+        pdev->params.UseBrotliCompression = pdev->UseBrotli;
+
     return 0;
  fail:
     /* Restore all the parameters to their original state. */

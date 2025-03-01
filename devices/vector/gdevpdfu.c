@@ -36,6 +36,7 @@
 #include "srlx.h"
 #include "sarc4.h"
 #include "smd5.h"
+#include "sbrotlix.h"
 #include "sstring.h"
 #include "strmio.h"
 #include "szlibx.h"
@@ -56,9 +57,12 @@ extern single_glyph_list_t SingleGlyphList[];
 
 /* Optionally substitute other filters for FlateEncode for debugging. */
 #if 1
-#  define compression_filter_name "FlateDecode"
-#  define compression_filter_template s_zlibE_template
-#  define compression_filter_state stream_zlib_state
+#  define Flate_filter_name "FlateDecode"
+#  define Flate_filter_template s_zlibE_template
+#  define Flate_filter_state stream_zlib_state
+#  define Brotli_filter_name "BrotliDecode"
+#  define Brotli_filter_template s_brotliE_template
+#  define Brotli_filter_state stream_brotlie_state
 #else
 #  define compression_filter_name "LZWDecode"
 #  define compression_filter_template s_LZWE_template
@@ -671,8 +675,12 @@ pdfwrite_pdf_open_document(gx_device_pdf * pdev)
      */
     if (!pdev->params.CompressPages)
         pdev->compression = pdf_compress_none;
-    else
-        pdev->compression = pdf_compress_Flate;
+    else {
+        if (pdev->UseBrotli)
+            pdev->compression = pdf_compress_Brotli;
+        else
+            pdev->compression = pdf_compress_Flate;
+    }
     return 0;
 }
 
@@ -1078,9 +1086,15 @@ none_to_stream(gx_device_pdf * pdev)
         pprinti64d1(s, "<</Length %"PRId64" 0 R", pdev->contents_length_id);
         if (pdev->compression == pdf_compress_Flate) {
             if (pdev->binary_ok)
-                pprints1(s, "/Filter /%s", compression_filter_name);
+                pprints1(s, "/Filter /%s", Flate_filter_name);
             else
-                pprints1(s, "/Filter [/ASCII85Decode /%s]", compression_filter_name);
+                pprints1(s, "/Filter [/ASCII85Decode /%s]", Flate_filter_name);
+        }
+        if (pdev->compression == pdf_compress_Brotli) {
+            if (pdev->binary_ok)
+                pprints1(s, "/Filter /%s", Brotli_filter_name);
+            else
+                pprints1(s, "/Filter [/ASCII85Decode /%s]", Brotli_filter_name);
         }
         stream_puts(s, ">>\nstream\n");
         pdev->contents_pos = pdf_stell(pdev);
@@ -1092,7 +1106,7 @@ none_to_stream(gx_device_pdf * pdev)
             const stream_template *templat;
             stream *es;
             byte *buf;
-            compression_filter_state *st;
+            Flate_filter_state *st;
 
             if (!pdev->binary_ok) {	/* Set up the A85 filter */
                 const stream_template *templat2 = &s_A85E_template;
@@ -1113,11 +1127,59 @@ none_to_stream(gx_device_pdf * pdev)
                 (*templat2->init) ((stream_state *) ast);
                 pdev->strm = s = as;
             }
-            templat = &compression_filter_template;
+            templat = &Flate_filter_template;
             es = s_alloc(pdev->pdf_memory, "PDF compression stream");
             buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
                                        "PDF compression buffer");
-            st = gs_alloc_struct(pdev->pdf_memory, compression_filter_state,
+            st = gs_alloc_struct(pdev->pdf_memory, Flate_filter_state,
+                                 templat->stype, "PDF compression state");
+            if (es == 0 || st == 0 || buf == 0)
+                return_error(gs_error_VMerror);
+            s_std_init(es, buf, sbuf_size, &s_filter_write_procs,
+                       s_mode_write);
+            st->memory = pdev->pdf_memory;
+            st->templat = templat;
+            es->state = (stream_state *) st;
+            es->procs.process = templat->process;
+            es->strm = s;
+            (*templat->set_defaults) ((stream_state *) st);
+            code = (*templat->init) ((stream_state *) st);
+            if (code < 0) {
+                gs_free_object(pdev->pdf_memory, st, "none_to_stream");
+                return code;
+            }
+            pdev->strm = s = es;
+        }
+        if (pdev->compression == pdf_compress_Brotli) {	/* Set up the Brotli filter. */
+            const stream_template *templat;
+            stream *es;
+            byte *buf;
+            Brotli_filter_state *st;
+
+            if (!pdev->binary_ok) {	/* Set up the A85 filter */
+                const stream_template *templat2 = &s_A85E_template;
+                stream *as = s_alloc(pdev->pdf_memory, "PDF contents stream");
+                byte *buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
+                                           "PDF contents buffer");
+                stream_A85E_state *ast = gs_alloc_struct(pdev->pdf_memory, stream_A85E_state,
+                                templat2->stype, "PDF contents state");
+                if (as == 0 || ast == 0 || buf == 0)
+                    return_error(gs_error_VMerror);
+                s_std_init(as, buf, sbuf_size, &s_filter_write_procs,
+                           s_mode_write);
+                ast->memory = pdev->pdf_memory;
+                ast->templat = templat2;
+                as->state = (stream_state *) ast;
+                as->procs.process = templat2->process;
+                as->strm = s;
+                (*templat2->init) ((stream_state *) ast);
+                pdev->strm = s = as;
+            }
+            templat = &Brotli_filter_template;
+            es = s_alloc(pdev->pdf_memory, "PDF compression stream");
+            buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
+                                       "PDF compression buffer");
+            st = gs_alloc_struct(pdev->pdf_memory, Brotli_filter_state,
                                  templat->stype, "PDF compression state");
             if (es == 0 || st == 0 || buf == 0)
                 return_error(gs_error_VMerror);
@@ -1241,7 +1303,7 @@ stream_to_none(gx_device_pdf * pdev)
         }
         target = pdev->strm;
 
-        if (pdev->compression_at_page_start == pdf_compress_Flate)
+        if (pdev->compression_at_page_start == pdf_compress_Flate || pdev->compression_at_page_start == pdf_compress_Brotli)
             target = target->strm;
         if (!pdev->binary_ok)
             target = target->strm;
@@ -2645,6 +2707,8 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
             filter_name = pfn->DCTDecode;
         else if (TEMPLATE_IS(s_zlibE_template))
             filter_name = pfn->FlateDecode;
+        else if (TEMPLATE_IS(s_brotliE_template))
+            filter_name = pfn->BrotliDecode;
         else if (TEMPLATE_IS(s_LZWE_template))
             filter_name = pfn->LZWDecode;
         else if (TEMPLATE_IS(s_PNGPE_template)) {
@@ -2719,6 +2783,22 @@ pdf_flate_binary(gx_device_pdf *pdev, psdf_binary_writer *pbw)
     return psdf_encode_binary(pbw, templat, st);
 }
 
+/* Add a Brotli compression filter to a binary writer. */
+static int
+pdf_brotli_binary(gx_device_pdf *pdev, psdf_binary_writer *pbw)
+{
+    const stream_template *templat = (pdev->CompatibilityLevel < 1.3 ?
+                    &s_LZWE_template : &s_brotliE_template);
+    stream_state *st = s_alloc_state(pdev->pdf_memory, templat->stype,
+                                     "pdf_write_function");
+
+    if (st == 0)
+        return_error(gs_error_VMerror);
+    if (templat->set_defaults)
+        templat->set_defaults(st);
+    return psdf_encode_binary(pbw, templat, st);
+}
+
 /*
  * Begin a data stream.  The client has opened the object and written
  * the << and any desired dictionary keys.
@@ -2738,20 +2818,28 @@ pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     int options = orig_options;
 #define USE_ASCII85 1
 #define USE_FLATE 2
-    static const char *const fnames[4] = {
+#define USE_BROTLI 4
+    static const char *const fnames[6] = {
         "", "/Filter/ASCII85Decode", "/Filter/FlateDecode",
-        "/Filter[/ASCII85Decode/FlateDecode]"
+        "/Filter[/ASCII85Decode/FlateDecode]", "/Filter/BrotliDecode",
+        "/Filter[/ASCII85Decode/BrotliDecode]"
     };
-    static const char *const fnames1_2[4] = {
+    static const char *const fnames1_2[6] = {
         "", "/Filter/ASCII85Decode", "/Filter/LZWDecode",
+        "/Filter[/ASCII85Decode/LZWDecode]", "/Filter/LZWDecode",
         "/Filter[/ASCII85Decode/LZWDecode]"
     };
     int filters = 0;
     int code;
 
     if (options & DATA_STREAM_COMPRESS) {
-        filters |= USE_FLATE;
-        options |= DATA_STREAM_BINARY;
+        if (pdev->UseBrotli) {
+            filters |= USE_BROTLI;
+            options |= DATA_STREAM_BINARY;
+        } else {
+            filters |= USE_FLATE;
+            options |= DATA_STREAM_BINARY;
+        }
     }
     if ((options & DATA_STREAM_BINARY) && !pdev->binary_ok)
         filters |= USE_ASCII85;
@@ -2787,11 +2875,15 @@ pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
         pdw->binary.strm = pdev->strm;
     }
     pdw->start = stell(s);
-    if (filters & USE_FLATE)
-        code = pdf_flate_binary(pdev, &pdw->binary);
+    if (filters & USE_BROTLI)
+        code = pdf_brotli_binary(pdev, &pdw->binary);
+    else
+        if (filters & USE_FLATE)
+            code = pdf_flate_binary(pdev, &pdw->binary);
     return code;
 #undef USE_ASCII85
 #undef USE_FLATE
+#undef USE_BROTLI
 }
 
 int

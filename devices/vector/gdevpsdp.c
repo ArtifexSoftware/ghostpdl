@@ -23,6 +23,7 @@
 #include "gxdevice.h"
 #include "gsparamx.h"
 #include "gdevpsdf.h"
+#include "sbrotlix.h"
 #include "strimpl.h"		/* for short-sighted compilers */
 #include "scfx.h"
 #include "sdct.h"
@@ -92,6 +93,7 @@ static const psdf_image_filter_name Poly_filters[] = {
     {"DCTEncode", &s_DCTE_template},
     {"FlateEncode", &s_zlibE_template, psdf_version_ll3},
     {"LZWEncode", &s_LZWE_template},
+    {"BrotliEncode", &s_brotliE_template},
     {0, 0}
 };
 
@@ -100,6 +102,7 @@ static const psdf_image_filter_name Mono_filters[] = {
     {"FlateEncode", &s_zlibE_template, psdf_version_ll3},
     {"LZWEncode", &s_LZWE_template},
     {"RunLengthEncode", &s_RLE_template},
+    {"BrotliEncode", &s_brotliE_template},
     {0, 0}
 };
 
@@ -230,6 +233,7 @@ static const gs_param_item_t psdf_param_items[] = {
     /* (TransferFunctionInfo) */
     /* (UCRandBGInfo) */
     pi("UseFlateCompression", gs_param_type_bool, UseFlateCompression),
+    pi("UseBrotliCompression", gs_param_type_bool, UseBrotliCompression),
 
     /* Color image processing parameters */
 

@@ -107,6 +107,7 @@ typedef struct psdf_distiller_params_s {
     int OPM;
     bool PreserveOPIComments;
     bool UseFlateCompression;
+    bool UseBrotliCompression;
 
     /* Color processing parameters */
 
@@ -204,6 +205,7 @@ extern const stream_template s_zlibE_template;
     0,		    /* Overprintmode (OPM) */ \
     0,		    /* PreserveOPIComments (false) */ \
     1,		    /* UseFlateCompression (true) */ \
+    0,		    /* UseBrotliCompression (false) */ \
         /* Color processing parameters */\
     {0},	    /* calCMYKProfile */ \
     {0},	    /* CalGrayProfile */ \

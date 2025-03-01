@@ -32,6 +32,7 @@
 #include "slzwx.h"
 #include "spngpx.h"
 #include "szlibx.h"
+#include "sbrotlix.h"
 #include "gsicc_manage.h"
 #include "sisparam.h"
 
@@ -231,10 +232,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     gx_device_psdf *pdev = pbw->dev;
     gs_memory_t *mem = pdev->v_memory;
     const stream_template *templat = pdip->filter_template;
-    const stream_template *lossless_template =
-        (pdev->params.UseFlateCompression &&
-         pdev->version >= psdf_version_ll3 ?
-         &s_zlibE_template : &s_LZWE_template);
+    const stream_template *lossless_template;
     const gs_color_space *pcs = pim->ColorSpace; /* null if mask */
     int Colors = (pcs ? gs_color_space_num_components(pcs) : 1);
     bool Indexed =
@@ -243,6 +241,15 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     gs_c_param_list *dict = pdip->Dict;
     stream_state *st;
     int code;
+
+    if (pdev->params.UseBrotliCompression) {
+        lossless_template = &s_brotliE_template;
+    } else {
+        if (pdev->params.UseFlateCompression && pdev->version >= psdf_version_ll3)
+            lossless_template = &s_zlibE_template;
+        else
+            lossless_template = &s_LZWE_template;
+    }
 
     if (!pdip->Encode)		/* no compression */
         return 0;
@@ -282,7 +289,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
               (pdip->Depth == -1 && pim->BitsPerComponent == 8) :
               pim->BitsPerComponent == 8)
             ) {
-            /* Use LZW/Flate instead. */
+            /* Use LZW/Flate/Brotli instead. */
             templat = lossless_template;
         }
     }
@@ -307,11 +314,11 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
         ss->Columns = pim->Width;
         ss->Rows = (ss->EndOfBlock ? 0 : pim->Height);
     } else if ((templat == &s_LZWE_template ||
-                templat == &s_zlibE_template) &&
+                (templat == &s_zlibE_template) || templat == &s_brotliE_template) &&
                pdev->version >= psdf_version_ll3) {
         int Effort = -1, Predictor = 15;
 
-        if (templat == &s_zlibE_template) {
+        if (templat == &s_zlibE_template || templat == &s_brotliE_template) {
             gs_c_param_list *param = pdip->Dict;
 
             if (pdip->AutoFilter)
@@ -319,8 +326,12 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 
             if (param != NULL) {
                 code = param_read_int((gs_param_list *)param, "Effort", &Effort);
-                if (code == 0) {
+                if (code == 0 && templat == &s_zlibE_template) {
                     stream_zlib_state *const ss = (stream_zlib_state *)st;
+                    ss->level = Effort;
+                }
+                if (code == 0 && templat == &s_brotliE_template) {
+                    stream_brotlie_state *const ss = (stream_brotlie_state *)st;
                     ss->level = Effort;
                 }
                 (void)param_read_int((gs_param_list *)param, "Predictor", &Predictor);
@@ -611,7 +622,10 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
             params = pdev->params.ColorImage;
             /* Ensure we don't use JPEG on a /Indexed colour space */
             params.AutoFilter = false;
-            params.Filter = "FlateEncode";
+            if (pdev->params.UseBrotliCompression)
+                params.Filter = "BrotliEncode";
+            else
+                params.Filter = "FlateEncode";
         } else {
             if (ncomp == 1) {
                 if (bpc == 1)
@@ -725,12 +739,19 @@ psdf_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
 
     ipdev = *pdev;
     ipdev.params.ColorImage.AutoFilter = false;
-    ipdev.params.ColorImage.Filter = "FlateEncode";
-    ipdev.params.ColorImage.filter_template = &s_zlibE_template;
+    if (pdev->params.UseBrotliCompression) {
+        ipdev.params.ColorImage.Filter = "BrotliEncode";
+        ipdev.params.ColorImage.filter_template = &s_brotliE_template;
+        ipdev.params.GrayImage.Filter = "BrotliEncode";
+        ipdev.params.GrayImage.filter_template = &s_brotliE_template;
+    } else {
+        ipdev.params.ColorImage.Filter = "FlateEncode";
+        ipdev.params.ColorImage.filter_template = &s_zlibE_template;
+        ipdev.params.GrayImage.Filter = "FlateEncode";
+        ipdev.params.GrayImage.filter_template = &s_zlibE_template;
+    }
     ipdev.params.ConvertCMYKImagesToRGB = false;
     ipdev.params.GrayImage.AutoFilter = false;
-    ipdev.params.GrayImage.Filter = "FlateEncode";
-    ipdev.params.GrayImage.filter_template = &s_zlibE_template;
     return psdf_setup_image_filters(&ipdev, pbw, pim, NULL, NULL, true, in_line);
 }
 
@@ -856,7 +877,10 @@ new_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
             params = pdev->params.ColorImage;
             /* Ensure we don't use JPEG on a /Indexed colour space */
             params.AutoFilter = false;
-            params.Filter = "FlateEncode";
+            if (pdev->params.UseBrotliCompression)
+                params.Filter = "FlateEncode";
+            else
+                params.Filter = "BrotliEncode";
         } else {
             if (ncomp == 1) {
                 if (bpc == 1)
@@ -967,13 +991,20 @@ new_setup_lossless_filters(gx_device_psdf *pdev, psdf_binary_writer *pbw,
 
     ipdev = *pdev;
     ipdev.params.ColorImage.AutoFilter = false;
-    ipdev.params.ColorImage.Filter = "FlateEncode";
-    ipdev.params.ColorImage.filter_template = &s_zlibE_template;
+    if (pdev->params.UseBrotliCompression) {
+        ipdev.params.ColorImage.Filter = "BrotliEncode";
+        ipdev.params.ColorImage.filter_template = &s_brotliE_template;
+        ipdev.params.GrayImage.Filter = "BrotliEncode";
+        ipdev.params.GrayImage.filter_template = &s_brotliE_template;
+    } else {
+        ipdev.params.ColorImage.Filter = "FlateEncode";
+        ipdev.params.ColorImage.filter_template = &s_zlibE_template;
+        ipdev.params.GrayImage.Filter = "FlateEncode";
+        ipdev.params.GrayImage.filter_template = &s_zlibE_template;
+    }
     ipdev.params.ConvertCMYKImagesToRGB = false;
     ipdev.params.GrayImage.AutoFilter = false;
     ipdev.params.GrayImage.Downsample = false;
-    ipdev.params.GrayImage.Filter = "FlateEncode";
-    ipdev.params.GrayImage.filter_template = &s_zlibE_template;
     return new_setup_image_filters(&ipdev, pbw, pim, pctm, pgs, true, in_line, colour_conversion);
 }
 

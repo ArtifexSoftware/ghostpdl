@@ -553,7 +553,8 @@ typedef struct pdf_substream_save_s {
 typedef enum {
     pdf_compress_none,
     pdf_compress_LZW,        /* not currently used, thanks to Unisys */
-    pdf_compress_Flate
+    pdf_compress_Flate,
+    pdf_compress_Brotli
 } pdf_compression_type;
 
 typedef enum {
@@ -991,6 +992,7 @@ struct gx_device_pdf_s {
     int64_t PendingOC;              /* An OptionalContent object is pending */
     bool ToUnicodeForStdEnc;        /* Should we emit ToUnicode CMaps when a simple font has only standard glyph names. Defaults to true */
     bool EmbedSubstituteFonts;      /* When we use a substitute font to replace a missing font, should we embed it in the output */
+    bool UseBrotli;                 /* Use Brotli compression in place of Flate */
 };
 
 #define is_in_page(pdev)\
@@ -1367,13 +1369,15 @@ typedef struct pdf_filter_names_s {
     const char *RunLengthDecode;
     const char *JBIG2Decode;
     const char *JPXDecode;
+    const char *BrotliDecode;
 } pdf_filter_names_t;
 #define PDF_FILTER_NAMES\
   "/ASCII85Decode", "/ASCIIHexDecode", "/CCITTFaxDecode",\
   "/DCTDecode",  "/DecodeParms", "/Filter", "/FlateDecode",\
-  "/LZWDecode", "/RunLengthDecode", "/JBIG2Decode", "/JPXDecode"
+  "/LZWDecode", "/RunLengthDecode", "/JBIG2Decode", "/JPXDecode",\
+  "/BrotliDecode"
 #define PDF_FILTER_NAMES_SHORT\
-  "/A85", "/AHx", "/CCF", "/DCT", "/DP", "/F", "/Fl", "/LZW", "/RL", "/???", "/???"
+  "/A85", "/AHx", "/CCF", "/DCT", "/DP", "/F", "/Fl", "/LZW", "/RL", "/???", "/???", "/Br"
 
 /* Write matrix values. */
 void pdf_put_matrix(gx_device_pdf *pdev, const char *before,

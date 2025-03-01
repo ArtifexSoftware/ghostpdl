@@ -24,6 +24,7 @@
 #include "gdevpdfo.h"
 #include "szlibx.h"
 #include "slzwx.h"
+#include "sbrotlix.h"
 
 /* GC descriptors */
 private_st_pdf_article();
@@ -322,12 +323,18 @@ setup_pdfmark_stream_compression(gx_device_psdf *pdev0,
     static const pdf_filter_names_t fnames = {
         PDF_FILTER_NAMES
     };
-    const stream_template *templat =
-        (pdev->params.UseFlateCompression &&
-         pdev->version >= psdf_version_ll3 ?
-         &s_zlibE_template : &s_LZWE_template);
     stream_state *st;
+    const stream_template *templat;
 
+    if (pdev->CompressStreams) {
+        if(pdev->version >= psdf_version_ll3) {
+            if (pdev->UseBrotli)
+                templat = &s_brotliE_template;
+            else
+                templat = &s_zlibE_template;
+        } else
+            templat = &s_LZWE_template;
+    }
     pco->input_strm = cos_write_stream_alloc(pco, pdev,
                                   "setup_pdfmark_stream_compression");
     if (pco->input_strm == 0)
