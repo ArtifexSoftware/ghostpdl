@@ -25,6 +25,7 @@
 #include "pdf_doc.h"
 #include "pdf_mark.h"
 #include "pdf_optcontent.h"
+#include "pdf_loop_detect.h"
 
 
 /* Find the default value for an ocdict, based on contents of OCProperties */
