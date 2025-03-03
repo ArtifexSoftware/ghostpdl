@@ -844,10 +844,10 @@ pdfi_read_cff_integer(byte *p, byte *e, int b0, int *val)
 static inline void
 pdfi_cff_font_priv_defaults(pdfi_gs_cff_font_priv *ptpriv)
 {
-    ptpriv->type1data.BlueScale = 0.039625;
+    ptpriv->type1data.BlueScale = 0.039625f;
     ptpriv->type1data.BlueShift = 7;
     ptpriv->type1data.BlueFuzz = 1;
-    ptpriv->type1data.ExpansionFactor = 0.06;
+    ptpriv->type1data.ExpansionFactor = 0.06f;
 }
 
 #define PDFI_CFF_STACK_SIZE 48
@@ -915,7 +915,9 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                     break;
                 }
                 case 13: /* UniqueID */
-                  uid_set_UniqueID(&ptpriv->UID, args[0].ival);
+                  /* UID may not be less than 0, that makes it an XUID */
+                  if (args[0].ival >= 0)
+                      uid_set_UniqueID(&ptpriv->UID, args[0].ival);
                   break;
 
                 case 14: /* XUID */
