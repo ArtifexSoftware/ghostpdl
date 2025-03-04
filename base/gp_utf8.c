@@ -17,64 +17,87 @@
 #include "gp_utf8.h"
 
 static int
-decode_utf8(const char **inp, unsigned int i)
+decode_utf8(const char **inp, unsigned int leading_byte)
 {
     const char *in = *inp;
     unsigned char c;
+    unsigned int codepoint;
 
-    if (i < 0x80) {
-    } else if ((i & 0xE0) == 0xC0) {
-        i &= 0x1F;
-        if (i == 0)
+    if (leading_byte < 0x80) {
+        codepoint = leading_byte;
+    } else if ((leading_byte & 0xE0) == 0xC0) {
+        codepoint = leading_byte & 0x1F;
+        /* Any encoded value that fails to use bit 1 upwards of this
+         * byte would have been better encoded in a short form. */
+        if (codepoint < 2)
             goto fail_overlong;
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
-        i = (i<<6) | (c & 0x3f);
-    } else if ((i & 0xF0) == 0xE0) {
-        i &= 0xF;
-        if (i == 0)
+        codepoint = (codepoint<<6) | (c & 0x3f);
+    } else if ((leading_byte & 0xF0) == 0xE0) {
+        codepoint = leading_byte & 0xF;
+        /* Any encoding that does not use any of the data bits in this
+         * byte would have been better encoded in a shorter form. */
+        if (codepoint == 0)
             goto fail_overlong;
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
-        i = (i<<6) | (c & 0x3f);
+        codepoint = (codepoint<<6) | (c & 0x3f);
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
-        i = (i<<6) | (c & 0x3f);
-    } else if ((i & 0xF8) == 0xF0) {
-        i &= 0x7;
-        if (i == 0)
+        codepoint = (codepoint<<6) | (c & 0x3f);
+    } else if ((leading_byte & 0xF8) == 0xF0) {
+        codepoint = leading_byte & 0x7;
+        /* Any encoding that does not use any of the data bits in this
+         * byte would have been better encoded in a shorter form. */
+        if (codepoint == 0)
             goto fail_overlong;
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
-        i = (i<<6) | (c & 0x3f);
+        codepoint = (codepoint<<6) | (c & 0x3f);
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
-        i = (i<<6) | (c & 0x3f);
+        codepoint = (codepoint<<6) | (c & 0x3f);
         c = (unsigned char)*in++;
         if ((c & 0xC0) != 0x80)
             goto fail;
-        i = (i<<6) | (c & 0x3f);
+        codepoint = (codepoint<<6) | (c & 0x3f);
+        /* Check for UTF-16 surrogates which are invalid in UTF-8 */
+        if (codepoint >= 0xD800 && codepoint <= 0xDFFF)
+            goto fail_overlong;
+        /* Codepoints 0 to 0xFFFF (other than the surrogate pair
+         * ranges) can be coded for trivially. We can code for
+         * codepoints up to 0x10FFFF using surrogate pairs.
+         * Anything higher than that is forbidden. */
+        if (codepoint > 0x10FFFF)
+            goto fail_overlong;
     }
-    if (0)
+    else
     {
-        /* If we fail, unread the last one, and return the unicode replacement char. */
+        /* Longer UTF-8 encodings give more than 21 bits of data.
+         * The longest we can encode in utf-16 (even using surrogate
+         * pairs is 20 bits, so all these should fail. */
+        if (0)
+        {
+            /* If we fail, unread the last one, and return the unicode replacement char. */
 fail:
-       in--;
+           in--;
+        }
 fail_overlong:
        /* If we jump to here it's because we've detected an 'overlong' encoding.
         * While this seems harmless, it's actually illegal, for good reason;
         * this is typically an attempt to sneak stuff past security checks, like
         * "../" in paths. Fail this. */
-       i = 0xfffd;
+       codepoint = 0xfffd;
     }
     *inp = in;
 
-    return i;
+    return codepoint;
 }
 
 int gp_utf8_to_uint16(unsigned short *out, const char *in)
