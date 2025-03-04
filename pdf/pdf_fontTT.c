@@ -362,7 +362,7 @@ pdfi_alloc_tt_font(pdf_context *ctx, pdf_font_truetype **font, bool is_cid)
 
 #if REFCNT_DEBUG
     ttfont->UID = ctx->UID++;
-    dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", ttfont->type, ttfont->UID);
+    outprintf(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", ttfont->type, ttfont->UID);
 #endif
 
     pdfi_countup(ttfont);

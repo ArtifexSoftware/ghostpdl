@@ -194,7 +194,7 @@ pdfi_oc_check_OCMD_array(pdf_context *ctx, pdf_array *array, ocmd_p_type type)
         code = pdfi_array_get(ctx, array, i, &val);
         if (code < 0) continue;
         if (pdfi_type_of(val) != PDF_DICT) {
-            dmprintf1(ctx->memory, "WARNING: OCMD array contains item type %d, expected PDF_DICT or PDF_NULL\n", pdfi_type_of(val));
+            dbgprintf1("WARNING: OCMD array contains item type %d, expected PDF_DICT or PDF_NULL\n", pdfi_type_of(val));
             pdfi_countdown(val);
             val = NULL;
             continue;
@@ -268,7 +268,7 @@ pdfi_oc_check_OCMD(pdf_context *ctx, pdf_dict *ocdict)
     /* TODO: We don't support this, so log a warning and ignore */
     code = pdfi_dict_knownget_type(ctx, ocdict, "VE", PDF_ARRAY, &VE);
     if (code > 0) {
-        dmprintf(ctx->memory, "WARNING: OCMD contains VE, which is not supported (ignoring)\n");
+        dbgprintf("WARNING: OCMD contains VE, which is not supported (ignoring)\n");
     }
 
     code = pdfi_dict_knownget(ctx, ocdict, "OCGs", &obj);
@@ -385,14 +385,14 @@ pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
         char str[100];
         memcpy(str, (const char *)type->data, type->length < 100 ? type->length : 99);
         str[type->length < 100 ? type->length : 99] = '\0';
-        dmprintf1(ctx->memory, "WARNING: OC dict type is %s, expected OCG or OCMD\n", str);
+        dbgprintf1("WARNING: OC dict type is %s, expected OCG or OCMD\n", str);
     }
 
  cleanup:
     pdfi_countdown(type);
 
     if (ctx->args.pdfdebug) {
-        dmprintf2(ctx->memory, "OCG: OC Dict %d %s visible\n", ocdict->object_num,
+        outprintf(ctx->memory, "OCG: OC Dict %d %s visible\n", ocdict->object_num,
                   is_visible ? "IS" : "IS NOT");
     }
     return is_visible;

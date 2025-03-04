@@ -514,7 +514,7 @@ pdfi_JPX_filter(pdf_context *ctx, pdf_dict *dict, pdf_dict *decode,
             csobj = NULL; /* To keep ref counting straight */
             break;
         default:
-            dmprintf(ctx->memory, "warning: JPX ColorSpace value is an unhandled type!\n");
+            code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefined), NULL, E_PDF_BAD_JPX_CS, "pdfi_JPX_filter", "");
             break;
         }
         if (csname != NULL && pdfi_type_of(csname) == PDF_NAME) {
@@ -809,7 +809,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
             return_error(gs_error_VMerror);
         memcpy(str, (const char *)n->data, n->length);
         str[n->length] = '\0';
-        dmprintf1(ctx->memory, "FILTER NAME:%s\n", str);
+        outprintf(ctx->memory, "FILTER NAME:%s\n", str);
         gs_free_object(ctx->memory, str, "temp string for debug");
     }
 
@@ -943,7 +943,7 @@ int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
 
     if (ctx->args.pdfdebug) {
         gs_offset_t stream_offset = pdfi_stream_offset(ctx, stream_obj);
-        dmprintf2(ctx->memory, "Filter: offset %ld(0x%lx)\n", stream_offset, stream_offset);
+        outprintf(ctx->memory, "Filter: offset %ld(0x%lx)\n", stream_offset, stream_offset);
     }
 
     code = pdfi_dict_from_obj(ctx, (pdf_obj *)stream_obj, &stream_dict);

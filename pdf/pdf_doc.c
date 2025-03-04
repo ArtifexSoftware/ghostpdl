@@ -38,7 +38,7 @@ int pdfi_read_Root(pdf_context *ctx)
     int code;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Reading Root dictionary\n");
+        outprintf(ctx->memory, "%% Reading Root dictionary\n");
 
     /* Unusual code. This is because if the entry in the trailer dictionary causes
      * us to repair the file, the Trailer dictionary in the context can be replaced.
@@ -131,7 +131,7 @@ int pdfi_read_Root(pdf_context *ctx)
     }
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "\n");
+        outprintf(ctx->memory, "\n");
     /* We don't pdfi_countdown(o1) now, because we've transferred our
      * reference to the pointer in the pdf_context structure.
      */
@@ -354,7 +354,7 @@ int pdfi_read_Info(pdf_context *ctx)
     pdf_dict *d;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Reading Info dictionary\n");
+        outprintf(ctx->memory, "%% Reading Info dictionary\n");
 
     /* See comment in pdfi_read_Root() for details */
     d = ctx->Trailer;
@@ -365,7 +365,7 @@ int pdfi_read_Info(pdf_context *ctx)
         return code;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "\n");
+        outprintf(ctx->memory, "\n");
 
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
@@ -409,7 +409,7 @@ int pdfi_read_Pages(pdf_context *ctx)
     double d;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Reading Pages dictionary\n");
+        outprintf(ctx->memory, "%% Reading Pages dictionary\n");
 
     code = pdfi_dict_get(ctx, ctx->Root, "Pages", &o1);
     if (code < 0)
@@ -444,7 +444,7 @@ int pdfi_read_Pages(pdf_context *ctx)
     }
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "\n");
+        outprintf(ctx->memory, "\n");
 
     /* Acrobat allows the Pages Count to be a floating point number (!) */
     /* sample w_a.PDF from Bug688419 (not on the cluster, maybe it should be?) has no /Count entry because
@@ -602,29 +602,29 @@ void pdfi_read_OptionalRoot(pdf_context *ctx)
     bool known;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Reading other Root contents\n");
+        outprintf(ctx->memory, "%% Reading other Root contents\n");
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% OCProperties\n");
+        outprintf(ctx->memory, "%% OCProperties\n");
     code = pdfi_dict_get_type(ctx, ctx->Root, "OCProperties", PDF_DICT, &obj);
     if (code == 0) {
         ctx->OCProperties = (pdf_dict *)obj;
     } else {
         ctx->OCProperties = NULL;
         if (ctx->args.pdfdebug)
-            dmprintf(ctx->memory, "%% (None)\n");
+            outprintf(ctx->memory, "%% (None)\n");
     }
 
     (void)pdfi_dict_known(ctx, ctx->Root, "Collection", &known);
 
     if (known) {
         if (ctx->args.pdfdebug)
-            dmprintf(ctx->memory, "%% Collection\n");
+            outprintf(ctx->memory, "%% Collection\n");
         code = pdfi_dict_get(ctx, ctx->Root, "Collection", (pdf_obj **)&ctx->Collection);
-        if (code < 0)
-            dmprintf(ctx->memory, "\n   **** Warning: Failed to read Collection information.\n");
+        if (code < 0) {
+            (void)pdfi_set_warning_stop(ctx, 0, NULL, W_PDF_BAD_COLLECTION, "pdfi_read_OptionalRoot", "");
+        }
     }
-
 }
 
 void pdfi_free_OptionalRoot(pdf_context *ctx)
@@ -814,7 +814,7 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
     double dbl;
 
     if (ctx->args.pdfdebug)
-        dmprintf1(ctx->memory, "%% Finding page dictionary for page %"PRIi64"\n", page_num + 1);
+        outprintf(ctx->memory, "%% Finding page dictionary for page %"PRIi64"\n", page_num + 1);
 
     /* Allocated inheritable dict (it might stay empty) */
     code = pdfi_dict_alloc(ctx, 0, &inheritable);
@@ -1561,9 +1561,7 @@ static int pdfi_doc_OutputIntents(pdf_context *ctx)
         code = pdfi_array_get_type(ctx, OutputIntents, ctx->args.PDFX3Profile_num,
                                    PDF_DICT, (pdf_obj **)&intent);
         if (code < 0) {
-            dmprintf1(ctx->memory,
-                      "*** WARNING UsePDFX3Profile specified invalid index %d for OutputIntents\n",
-                      ctx->args.PDFX3Profile_num);
+            code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_BAD_OUTPUTINTENT_INDEX, "pdfi_doc_OutputIntents", "");
             goto exit;
         }
     } else if (ctx->args.UseOutputIntent != NULL) {
@@ -1691,7 +1689,7 @@ static int pdfi_doc_EmbeddedFiles(pdf_context *ctx)
     if (code < 0) goto exit;
     if (code > 0) {
         /* TODO: Need to implement */
-        dmprintf(ctx->memory, "*** WARNING Kids array in EmbeddedFiles not implemented\n");
+        errprintf(ctx->memory, "*** WARNING Kids array in EmbeddedFiles not implemented\n");
     }
 
     /* TODO: This is a name tree.

@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -205,7 +205,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
         ctx->xref_table->xref_size = size;
 #if REFCNT_DEBUG
         ctx->xref_table->UID = ctx->ref_UID++;
-        dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
+        outprintf(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
         pdfi_countup(ctx->xref_table);
 
@@ -416,7 +416,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
     }
 
     if(ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Reading /Prev xref\n");
+        outprintf(ctx->memory, "%% Reading /Prev xref\n");
 
     pdfi_seek(ctx, s, num, SEEK_SET);
 
@@ -477,7 +477,7 @@ static int pdfi_read_xref_stream_dict(pdf_context *ctx, pdf_c_stream *s, int obj
     int gen_num;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "\n%% Reading PDF 1.5+ xref stream\n");
+        outprintf(ctx->memory, "\n%% Reading PDF 1.5+ xref stream\n");
 
     /* We have the obj_num. Lets try for obj_num gen obj as a XRef stream */
     code = pdfi_read_bare_int(ctx, ctx->main_stream, &gen_num);
@@ -730,7 +730,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
     *section_start = *section_size = 0;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "\n%% Reading xref section\n");
+        outprintf(ctx->memory, "\n%% Reading xref section\n");
 
     code = pdfi_read_bare_int(ctx, ctx->main_stream, &start);
     if (code < 0) {
@@ -765,7 +765,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
     *section_size = size;
 
     if (ctx->args.pdfdebug)
-        dmprintf2(ctx->memory, "\n%% Section starts at %d and has %d entries\n", (unsigned int) start, (unsigned int)size);
+        outprintf(ctx->memory, "\n%% Section starts at %d and has %d entries\n", (unsigned int) start, (unsigned int)size);
 
     if (size > 0) {
         if (ctx->xref_table == NULL) {
@@ -782,7 +782,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
             }
 #if REFCNT_DEBUG
             ctx->xref_table->UID = ctx->ref_UID++;
-            dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
+            outprintf(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
 
             memset(ctx->xref_table->xref, 0x00, (start + size) * sizeof(xref_entry));
@@ -816,7 +816,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
             pdfi_unread_byte(ctx, s, (byte)Buffer[j]);
             if (--j < 0) {
                 pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_ENTRY_NO_EOL, "read_xref_section", NULL);
-                dmprintf(ctx->memory, "Invalid xref entry, line terminator missing.\n");
+                outprintf(ctx->memory, "Invalid xref entry, line terminator missing.\n");
                 code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
                 if (code < 0)
                     return code;
@@ -833,7 +833,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
 
         if (sscanf(Buffer, "%"PRIdOFFSET" %d %c", &entry->u.uncompressed.offset, &entry->u.uncompressed.generation_num, &free) != 3) {
             pdfi_set_warning(ctx, 0, NULL, W_PDF_BAD_XREF_ENTRY_FORMAT, "read_xref_section", NULL);
-            dmprintf(ctx->memory, "Invalid xref entry, incorrect format.\n");
+            outprintf(ctx->memory, "Invalid xref entry, incorrect format.\n");
             pdfi_unread(ctx, s, (byte *)Buffer, 20);
             code = read_xref_entry_slow(ctx, s, &off, &gen, &free);
             if (code < 0)
@@ -993,7 +993,7 @@ static int read_xref(pdf_context *ctx, pdf_c_stream *s)
         ctx->is_hybrid = true;
 
         if (ctx->args.pdfdebug)
-            dmprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Reading the stream.\n");
+            outprintf(ctx->memory, "%% File is a hybrid, containing xref table and xref stream. Reading the stream.\n");
 
 
         if (pdfi_loop_detector_check_object(ctx, XRefStm) == true) {
@@ -1056,7 +1056,7 @@ int pdfi_read_xref(pdf_context *ctx)
         goto exit;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Trying to read 'xref' token for xref table, or 'int int obj' for an xref stream\n");
+        outprintf(ctx->memory, "%% Trying to read 'xref' token for xref table, or 'int int obj' for an xref stream\n");
 
     if (ctx->startxref > ctx->main_stream_length - 5) {
         if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, E_PDF_BADSTARTXREF, "pdfi_read_xref", (char *)"startxref offset is beyond end of file")) < 0)
@@ -1103,64 +1103,64 @@ int pdfi_read_xref(pdf_context *ctx)
         xref_entry *entry;
         char Buffer[32];
 
-        dmprintf(ctx->memory, "\n%% Dumping xref table\n");
+        outprintf(ctx->memory, "\n%% Dumping xref table\n");
         for (i=0;i < ctx->xref_table->xref_size;i++) {
             entry = &ctx->xref_table->xref[i];
             if(entry->compressed) {
-                dmprintf(ctx->memory, "*");
+                outprintf(ctx->memory, "*");
                 gs_snprintf(Buffer, sizeof(Buffer), "%"PRId64"", entry->object_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
-                    dmprintf(ctx->memory, " ");
+                    outprintf(ctx->memory, " ");
                 }
-                dmprintf1(ctx->memory, "%s ", Buffer);
+                outprintf(ctx->memory, "%s ", Buffer);
 
                 gs_snprintf(Buffer, sizeof(Buffer), "%ld", entry->u.compressed.compressed_stream_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
-                    dmprintf(ctx->memory, " ");
+                    outprintf(ctx->memory, " ");
                 }
-                dmprintf1(ctx->memory, "%s ", Buffer);
+                outprintf(ctx->memory, "%s ", Buffer);
 
                 gs_snprintf(Buffer, sizeof(Buffer), "%ld", entry->u.compressed.object_index);
                 j = 10 - strlen(Buffer);
                 while(j--) {
-                    dmprintf(ctx->memory, " ");
+                    outprintf(ctx->memory, " ");
                 }
-                dmprintf1(ctx->memory, "%s ", Buffer);
+                outprintf(ctx->memory, "%s ", Buffer);
             }
             else {
-                dmprintf(ctx->memory, " ");
+                outprintf(ctx->memory, " ");
 
                 gs_snprintf(Buffer, sizeof(Buffer), "%ld", entry->object_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
-                    dmprintf(ctx->memory, " ");
+                    outprintf(ctx->memory, " ");
                 }
-                dmprintf1(ctx->memory, "%s ", Buffer);
+                outprintf(ctx->memory, "%s ", Buffer);
 
                 gs_snprintf(Buffer, sizeof(Buffer), "%"PRIdOFFSET"", entry->u.uncompressed.offset);
                 j = 10 - strlen(Buffer);
                 while(j--) {
-                    dmprintf(ctx->memory, " ");
+                    outprintf(ctx->memory, " ");
                 }
-                dmprintf1(ctx->memory, "%s ", Buffer);
+                outprintf(ctx->memory, "%s ", Buffer);
 
                 gs_snprintf(Buffer, sizeof(Buffer), "%ld", entry->u.uncompressed.generation_num);
                 j = 10 - strlen(Buffer);
                 while(j--) {
-                    dmprintf(ctx->memory, " ");
+                    outprintf(ctx->memory, " ");
                 }
-                dmprintf1(ctx->memory, "%s ", Buffer);
+                outprintf(ctx->memory, "%s ", Buffer);
             }
             if (entry->free)
-                dmprintf(ctx->memory, "f\n");
+                outprintf(ctx->memory, "f\n");
             else
-                dmprintf(ctx->memory, "n\n");
+                outprintf(ctx->memory, "n\n");
         }
     }
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "\n");
+        outprintf(ctx->memory, "\n");
 
  exit:
     (void)pdfi_loop_detector_cleartomark(ctx);

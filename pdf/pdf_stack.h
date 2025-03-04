@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -47,7 +47,7 @@ static inline void pdfi_countup_impl(pdf_obj *o)
     }
     o->refcnt++;
 #if REFCNT_DEBUG
-    dmprintf3(OBJ_MEMORY(o), "Incrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
+    outprintf(ctx->memory, "Incrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
 #endif
 }
 
@@ -72,7 +72,7 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
 #endif
     o->refcnt--;
 #if REFCNT_DEBUG
-    dmprintf3(OBJ_MEMORY(o), "Decrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
+    outprintf(ctx->memory, "Decrementing reference count of object %d, UID %lu, to %d\n", o->object_num, o->UID, o->refcnt);
 #endif
     if (o->refcnt != 0)
         return;
@@ -83,18 +83,18 @@ static inline void pdfi_countdown_impl(pdf_obj *o)
         while(entry) {
             next = entry->next;
             if (entry->o->object_num != 0 && entry->o->object_num == o->object_num)
-                dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu, but there is still a cache entry!\n", o->object_num, o->UID);
+                outprintf(ctx->memory, "Freeing object %d, UID %lu, but there is still a cache entry!\n", o->object_num, o->UID);
             entry = next;
         }
     }
-    dmprintf2(OBJ_MEMORY(o), "Freeing object %d, UID %lu\n", o->object_num, o->UID);
+    outprintf(ctx->memory, "Freeing object %d, UID %lu\n", o->object_num, o->UID);
 #endif
 #ifdef DEBUG
     if (ctx->xref_table != NULL && o->object_num > 0 &&
         o->object_num < ctx->xref_table->xref_size &&
         ctx->xref_table->xref[o->object_num].cache != NULL &&
         ctx->xref_table->xref[o->object_num].cache->o == o) {
-        dmprintf1(OBJ_MEMORY(o), "Freeing object %d while it is still in the object cache!\n", o->object_num);
+        outprintf(ctx->memory, "Freeing object %d while it is still in the object cache!\n", o->object_num);
     }
 #endif
     pdfi_free_object(o);

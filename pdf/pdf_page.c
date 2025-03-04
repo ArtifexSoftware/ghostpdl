@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -890,7 +890,7 @@ int pdfi_page_render(pdf_context *ctx, uint64_t page_num, bool init_graphics)
         return_error(gs_error_rangecheck);
 
     if (ctx->args.pdfdebug)
-        dmprintf1(ctx->memory, "%% Processing Page %"PRIi64" content stream\n", page_num + 1);
+        outprintf(ctx->memory, "%% Processing Page %"PRIi64" content stream\n", page_num + 1);
 
     code = pdfi_page_get_dict(ctx, page_num, &page_dict);
     if (code < 0) {

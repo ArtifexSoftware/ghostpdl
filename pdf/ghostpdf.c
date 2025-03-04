@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -70,7 +70,7 @@ static int dump_info_string(pdf_context *ctx, pdf_dict *source_dict, const char 
         if (Cstr) {
             memcpy(Cstr, s->data, s->length);
             Cstr[s->length] = 0x00;
-            dmprintf2(ctx->memory, "%s: %s\n", Key, Cstr);
+            outprintf(ctx->memory, "%s: %s\n", Key, Cstr);
             gs_free_object(ctx->memory, Cstr, "Working memory for string dumping");
         }
         code = 0;
@@ -85,14 +85,14 @@ static int pdfi_output_metadata(pdf_context *ctx)
     int code = 0;
 
     if (ctx->filename != NULL)
-        dmprintf2(ctx->memory, "\n        %s has %"PRIi64" ", ctx->filename, ctx->num_pages);
+        outprintf(ctx->memory, "\n        %s has %"PRIi64" ", ctx->filename, ctx->num_pages);
     else
-        dmprintf1(ctx->memory, "\n        File has %"PRIi64" ", ctx->num_pages);
+        outprintf(ctx->memory, "\n        File has %"PRIi64" ", ctx->num_pages);
 
     if (ctx->num_pages > 1)
-        dmprintf(ctx->memory, "pages\n\n");
+        outprintf(ctx->memory, "pages\n\n");
     else
-        dmprintf(ctx->memory, "page.\n\n");
+        outprintf(ctx->memory, "page.\n\n");
 
     if (ctx->Info != NULL) {
         pdf_name *n = NULL;
@@ -153,7 +153,7 @@ static int pdfi_output_metadata(pdf_context *ctx)
             if (Cstr) {
                 memcpy(Cstr, n->data, n->length);
                 Cstr[n->length] = 0x00;
-                dmprintf1(ctx->memory, "Trapped: %s\n\n", Cstr);
+                outprintf(ctx->memory, "Trapped: %s\n\n", Cstr);
                 gs_free_object(ctx->memory, Cstr, "Working memory for string dumping");
             }
             code = 0;
@@ -161,7 +161,7 @@ static int pdfi_output_metadata(pdf_context *ctx)
         pdfi_countdown(n);
         n = NULL;
     }
-    dmprintf(ctx->memory, "\n");
+    outprintf(ctx->memory, "\n");
     return code;
 }
 
@@ -179,24 +179,24 @@ static int pdfi_dump_box(pdf_context *ctx, pdf_dict *page_dict, const char *Key)
     code = pdfi_dict_knownget_type(ctx, page_dict, Key, PDF_ARRAY, (pdf_obj **)&a);
     if (code > 0) {
         if (pdfi_array_size(a) != 4) {
-            dmprintf1(ctx->memory, "Error - %s does not contain 4 values.\n", Key);
+            outprintf(ctx->memory, "Error - %s does not contain 4 values.\n", Key);
             code = gs_note_error(gs_error_rangecheck);
         } else {
-            dmprintf1(ctx->memory, " %s: [", Key);
+            outprintf(ctx->memory, " %s: [", Key);
             for (i = 0; i < pdfi_array_size(a); i++) {
                 code = pdfi_array_get_number(ctx, a, (uint64_t)i, &f);
                 if (i != 0)
-                    dmprintf(ctx->memory, " ");
+                    outprintf(ctx->memory, " ");
                 if (code == 0) {
                     if (pdfi_type_of(a->values[i]) == PDF_INT)
-                        dmprintf1(ctx->memory, "%"PRIi64"", ((pdf_num *)a->values[i])->value.i);
+                        outprintf(ctx->memory, "%"PRIi64"", ((pdf_num *)a->values[i])->value.i);
                     else
-                        dmprintf1(ctx->memory, "%f", ((pdf_num *)a->values[i])->value.d);
+                        outprintf(ctx->memory, "%f", ((pdf_num *)a->values[i])->value.d);
                 } else {
-                    dmprintf(ctx->memory, "NAN");
+                    outprintf(ctx->memory, "NAN");
                 }
             }
-            dmprintf(ctx->memory, "]");
+            outprintf(ctx->memory, "]");
         }
     }
     pdfi_countdown(a);
@@ -214,12 +214,12 @@ static int dump_font(pdf_context *ctx, pdf_dict *font_dict, bool space_name)
     if (code >= 0) {
         code = pdfi_string_from_name(ctx, (pdf_name *)obj, &str, &len);
         if (code >= 0) {
-            dmprintf1(ctx->memory, "%s", str);
+            outprintf(ctx->memory, "%s", str);
             if (len < 32 && space_name) {
                 for (i = 0; i < 32 - len;i++)
-                    dmprintf(ctx->memory, " ");
+                    outprintf(ctx->memory, " ");
             } else
-                dmprintf(ctx->memory, "    ");
+                outprintf(ctx->memory, "    ");
             (void)pdfi_free_string_from_name(ctx, str);
         }
         pdfi_countdown(obj);
@@ -230,9 +230,9 @@ static int dump_font(pdf_context *ctx, pdf_dict *font_dict, bool space_name)
     if (code >= 0) {
         code = pdfi_string_from_name(ctx, (pdf_name *)obj, &str, &len);
         if (code >= 0) {
-            dmprintf1(ctx->memory, "%s", str);
+            outprintf(ctx->memory, "%s", str);
             for (i = 0; i < 16 - len;i++)
-                dmprintf(ctx->memory, " ");
+                outprintf(ctx->memory, " ");
             (void)pdfi_free_string_from_name(ctx, str);
         }
         if (pdfi_name_is((pdf_name *)obj, "Type0"))
@@ -245,28 +245,28 @@ static int dump_font(pdf_context *ctx, pdf_dict *font_dict, bool space_name)
         code = pdfi_dict_get_type(ctx, font_dict, "Embedded", PDF_BOOL, &obj);
         if (code >= 0) {
             if (obj == PDF_FALSE_OBJ)
-                dmprintf(ctx->memory, "Not embedded    ");
+                outprintf(ctx->memory, "Not embedded    ");
             else
-                dmprintf(ctx->memory, "Embedded        ");
+                outprintf(ctx->memory, "Embedded        ");
             pdfi_countdown(obj);
             obj = NULL;
         }
         else
-            dmprintf(ctx->memory, "Not embedded    ");
+            outprintf(ctx->memory, "Not embedded    ");
     } else
-        dmprintf(ctx->memory, "                ");
+        outprintf(ctx->memory, "                ");
 
     code = pdfi_dict_get_type(ctx, font_dict, "ToUnicode", PDF_BOOL, &obj);
     if (code >= 0) {
         if (obj == PDF_TRUE_OBJ)
-            dmprintf(ctx->memory, "Has ToUnicode    ");
+            outprintf(ctx->memory, "Has ToUnicode    ");
         else
-            dmprintf(ctx->memory, "No ToUnicode     ");
+            outprintf(ctx->memory, "No ToUnicode     ");
         pdfi_countdown(obj);
         obj = NULL;
     }
     else
-        dmprintf(ctx->memory, "No ToUnicode    ");
+        outprintf(ctx->memory, "No ToUnicode    ");
 
     code = pdfi_dict_known(ctx, font_dict, "Descendants", &known);
     if (code >= 0 && known) {
@@ -276,9 +276,9 @@ static int dump_font(pdf_context *ctx, pdf_dict *font_dict, bool space_name)
 
             code = pdfi_array_get_type(ctx, (pdf_array *)obj, 0, PDF_DICT, &desc);
             if (code >= 0) {
-                dmprintf(ctx->memory, "\n            Descendants: [");
+                outprintf(ctx->memory, "\n            Descendants: [");
                 (void)dump_font(ctx, (pdf_dict *)desc, false);
-                dmprintf(ctx->memory, "]");
+                outprintf(ctx->memory, "]");
             }
             pdfi_countdown(obj);
             obj = NULL;
@@ -309,11 +309,11 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
     if (code < 0)
         return code;
 
-    dmprintf1(ctx->memory, "Page %"PRIi64"", page_num + 1);
+    outprintf(ctx->memory, "Page %"PRIi64"", page_num + 1);
 
     code = pdfi_dict_knownget_number(ctx, page_dict, "UserUnit", &f);
     if (code > 0)
-        dmprintf1(ctx->memory, " UserUnit: %f ", f);
+        outprintf(ctx->memory, " UserUnit: %f ", f);
     if (code < 0) {
         pdfi_countdown(page_dict);
         return code;
@@ -361,7 +361,7 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 
     code = pdfi_dict_knownget_number(ctx, page_dict, "Rotate", &f);
     if (code > 0)
-        dmprintf1(ctx->memory, "    Rotate = %d ", (int)f);
+        outprintf(ctx->memory, "    Rotate = %d ", (int)f);
     if (code < 0) {
         pdfi_countdown(page_dict);
         return code;
@@ -373,7 +373,7 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
             return code;
     } else {
         if (ctx->page.has_transparency)
-            dmprintf(ctx->memory, "     Page uses transparency features");
+            outprintf(ctx->memory, "     Page uses transparency features");
     }
 
     code = pdfi_dict_known(ctx, page_dict, "Annots", &known);
@@ -382,7 +382,7 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
             goto error;
     } else {
         if (known == true)
-            dmprintf(ctx->memory, "     Page contains Annotations");
+            outprintf(ctx->memory, "     Page contains Annotations");
         code = 0;
     }
 
@@ -392,14 +392,14 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
         char *str = NULL;
         int len;
 
-        dmprintf(ctx->memory, "\n    Page Spot colors: \n");
+        outprintf(ctx->memory, "\n    Page Spot colors: \n");
         for (index = 0;index < pdfi_array_size(spots_array);index++) {
             code = pdfi_array_get(ctx, spots_array, index, (pdf_obj **)&spot);
             if (code >= 0) {
                 if (pdfi_type_of(spot) == PDF_NAME) {
                     code = pdfi_string_from_name(ctx, spot, &str, &len);
                     if (code >= 0) {
-                        dmprintf1(ctx->memory, "        '%s'\n", str);
+                        outprintf(ctx->memory, "        '%s'\n", str);
                         (void)pdfi_free_string_from_name(ctx, str);
                     }
                 }
@@ -414,13 +414,13 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
         uint64_t index = 0;
         pdf_dict *font_dict = NULL;
 
-        dmprintf(ctx->memory, "\n    Fonts used: \n");
+        outprintf(ctx->memory, "\n    Fonts used: \n");
         for (index = 0;index < pdfi_array_size(fonts_array);index++) {
             code = pdfi_array_get_type(ctx, fonts_array, index, PDF_DICT, (pdf_obj **)&font_dict);
             if (code >= 0) {
-                dmprintf(ctx->memory, "        ");
+                outprintf(ctx->memory, "        ");
                 (void)dump_font(ctx, font_dict, true);
-                dmprintf(ctx->memory, "\n");
+                outprintf(ctx->memory, "\n");
                 pdfi_countdown(font_dict);
                 font_dict = NULL;
             }
@@ -431,7 +431,7 @@ int pdfi_output_page_info(pdf_context *ctx, uint64_t page_num)
 error:
     pdfi_countdown(fonts_array);
     pdfi_countdown(spots_array);
-    dmprintf(ctx->memory, "\n\n");
+    outprintf(ctx->memory, "\n\n");
     pdfi_countdown(page_dict);
 
     return code;
@@ -694,7 +694,7 @@ pdfi_report_errors(pdf_context *ctx)
 
     if (errors_exist)
     {
-        dmprintf(ctx->memory, "\nThe following errors were encountered at least once while processing this file:\n");
+        errprintf(ctx->memory, "\nThe following errors were encountered at least once while processing this file:\n");
         for (i = 0; i < PDF_ERROR_BYTE_SIZE; i++) {
             if (ctx->pdf_errors[i] != 0) {
                 for (j=0;j < sizeof(char) * 8; j++) {
@@ -710,7 +710,7 @@ pdfi_report_errors(pdf_context *ctx)
 
     if (warnings_exist)
     {
-        dmprintf(ctx->memory, "\nThe following warnings were encountered at least once while processing this file:\n");
+        outprintf(ctx->memory, "\nThe following warnings were encountered at least once while processing this file:\n");
         for (i = 0; i < PDF_WARNING_BYTE_SIZE; i++) {
             if (ctx->pdf_warnings[i] != 0) {
                 for (j=0;j < sizeof(char) * 8; j++) {
@@ -724,7 +724,12 @@ pdfi_report_errors(pdf_context *ctx)
         }
     }
 
-    dmprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
+    if (errors_exist)
+        errprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
+    else {
+        if (warnings_exist)
+            outprintf(ctx->memory, "\n   **** This file had errors that were repaired or ignored.\n");
+    }
     if (ctx->Info) {
         pdf_string *s = NULL;
 
@@ -734,19 +739,30 @@ pdfi_report_errors(pdf_context *ctx)
 
             cs = (char *)gs_alloc_bytes(ctx->memory, s->length + 1, "temporary string for error report");
             if (cs == NULL) {
-                dmprintf(ctx->memory, "   **** Out of memory while trying to display Producer ****\n");
+                errprintf(ctx->memory, "   **** Out of memory while trying to display Producer ****\n");
             } else {
                 memcpy(cs, s->data, s->length);
                 cs[s->length] = 0x00;
-                dmprintf1(ctx->memory, "   **** The file was produced by: \n   **** >>>> %s <<<<\n", cs);
+                if (errors_exist)
+                    errprintf(ctx->memory, "   **** The file was produced by: \n   **** >>>> %s <<<<\n", cs);
+                else {
+                    if (warnings_exist)
+                    outprintf(ctx->memory, "   **** The file was produced by: \n   **** >>>> %s <<<<\n", cs);
+                }
                 gs_free_object(ctx->memory, cs, "temporary string for error report");
             }
         }
         pdfi_countdown(s);
     }
-    dmprintf(ctx->memory, "   **** Please notify the author of the software that produced this\n");
-    dmprintf(ctx->memory, "   **** file that it does not conform to Adobe's published PDF\n");
-    dmprintf(ctx->memory, "   **** specification.\n\n");
+    if (errors_exist) {
+        errprintf(ctx->memory, "   **** Please notify the author of the software that produced this\n");
+        errprintf(ctx->memory, "   **** file that it does not conform to Adobe's published PDF\n");
+        errprintf(ctx->memory, "   **** specification.\n\n");
+    } else {
+        outprintf(ctx->memory, "   **** Please notify the author of the software that produced this\n");
+        outprintf(ctx->memory, "   **** file that it does not conform to Adobe's published PDF\n");
+        outprintf(ctx->memory, "   **** specification.\n\n");
+    }
 }
 
 /* Name table
@@ -1100,7 +1116,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                             }
                                             gp_fclose(scratch_file);
                                         } else
-                                            dmprintf(ctx->memory, "\n   **** Warning: Failed to open a scratch file.\n");
+                                            errprintf(ctx->memory, "\n   **** Warning: Failed to open a scratch file.\n");
                                     }
                                 }
                             }
@@ -1116,13 +1132,13 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                     File = NULL;
                 }
             } else {
-                dmprintf(ctx->memory, "\n   **** Warning: Failed to read EmbeededFiles Names tree.\n");
+                errprintf(ctx->memory, "\n   **** Warning: Failed to read EmbeededFiles Names tree.\n");
             }
         } else {
-            dmprintf(ctx->memory, "\n   **** Warning: Failed to read EmbeddedFiles.\n");
+            errprintf(ctx->memory, "\n   **** Warning: Failed to read EmbeddedFiles.\n");
         }
     } else {
-        dmprintf(ctx->memory, "\n   **** Warning: Failed to find Names tree.\n");
+        errprintf(ctx->memory, "\n   **** Warning: Failed to find Names tree.\n");
     }
     code = 0;
 
@@ -1281,13 +1297,13 @@ static int pdfi_init_file(pdf_context *ctx)
                 }
                 P = (uint32_t)Permissions;
                 if ((P & 0x04) == 0) {
-                    dmprintf(ctx->memory, "   ****The owner of this file has requested you do not print it.\n");
+                    errprintf(ctx->memory, "   ****The owner of this file has requested you do not print it.\n");
                     code = gs_note_error(gs_error_invalidfileaccess);
                     goto exit;
                 }
                 if (ctx->device_state.HighLevelDevice) {
                     if ((P & 0x800) == 0) {
-                        dmprintf(ctx->memory, "   ****The owner of this file has requested you do not make a digital copy of it.\n");
+                        errprintf(ctx->memory, "   ****The owner of this file has requested you do not make a digital copy of it.\n");
                         code = gs_note_error(gs_error_invalidfileaccess);
                         goto exit;
                     }
@@ -1342,7 +1358,7 @@ read_root:
     }
 
     if (!ctx->Root) {
-        dmprintf(ctx->memory, "Catalog dictionary not located in file, unable to proceed\n");
+        errprintf(ctx->memory, "Catalog dictionary not located in file, unable to proceed\n");
         return_error(gs_error_syntaxerror);
     }
 
@@ -1355,7 +1371,7 @@ read_root:
         goto exit;
 
     if (ctx->num_pages == 0)
-        dmprintf(ctx->memory, "\n   **** Warning: PDF document has no pages.\n");
+        errprintf(ctx->memory, "\n   **** Warning: PDF document has no pages.\n");
 
     code = pdfi_doc_trailer(ctx);
     if (code < 0)
@@ -1414,16 +1430,16 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
     bytes = Offset = min(BUF_SIZE - 1, ctx->main_stream_length);
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Reading header\n");
+        outprintf(ctx->memory, "%% Reading header\n");
 
     bytes = pdfi_read_bytes(ctx, Buffer, 1, Offset, ctx->main_stream);
     if (bytes <= 0) {
-        emprintf(ctx->memory, "Failed to read any bytes from input stream\n");
+        errprintf(ctx->memory, "Failed to read any bytes from input stream\n");
         code = gs_error_ioerror;
         goto error;
     }
     if (bytes < 8) {
-        emprintf(ctx->memory, "Failed to read enough bytes for a valid PDF header from input stream\n");
+        errprintf(ctx->memory, "Failed to read enough bytes for a valid PDF header from input stream\n");
         code = gs_error_ioerror;
         goto error;
     }
@@ -1484,14 +1500,14 @@ int pdfi_set_input_stream(pdf_context *ctx, stream *stm)
             }
         }
         if (ctx->args.pdfdebug)
-            dmprintf1(ctx->memory, "%% Found header, PDF version is %f\n", ctx->HeaderVersion);
+            outprintf(ctx->memory, "%% Found header, PDF version is %f\n", ctx->HeaderVersion);
     }
 
     /* Jump to EOF and scan backwards looking for startxref */
     pdfi_seek(ctx, ctx->main_stream, 0, SEEK_END);
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Searching for 'startxref' keyword\n");
+        outprintf(ctx->memory, "%% Searching for 'startxref' keyword\n");
 
     /* Initially read min(BUF_SIZE, file_length) bytes of data to the buffer */
     bytes = Offset;
@@ -1600,7 +1616,7 @@ int pdfi_open_pdf_file(pdf_context *ctx, char *filename)
     int code;
 
     if (ctx->args.pdfdebug)
-        dmprintf1(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
+        outprintf(ctx->memory, "%% Attempting to open %s as a PDF file\n", filename);
 
     ctx->filename = (char *)gs_alloc_bytes(ctx->memory, strlen(filename) + 1, "copy of filename");
     if (ctx->filename == NULL)
@@ -1997,15 +2013,15 @@ pdfi_print_cache(pdf_context *ctx)
 {
     pdf_obj_cache_entry *entry = ctx->cache_LRU, *next;
 
-    dmprintf1(ctx->memory, "CACHE: #entries=%d\n", ctx->cache_entries);
+    outprintf(ctx->memory, "CACHE: #entries=%d\n", ctx->cache_entries);
     while(entry) {
         next = entry->next;
 #if REFCNT_DEBUG
-        dmprintf5(ctx->memory, "UID:%ld, Object:%d, refcnt:%d, next=%p, prev=%p\n",
+        outprintf(ctx->memory, "UID:%ld, Object:%d, refcnt:%d, next=%p, prev=%p\n",
                   entry->o->UID, entry->o->object_num, entry->o->refcnt,
                   entry->next, entry->previous);
 #else
-        dmprintf4(ctx->memory, "Object:%d, refcnt:%d, next=%p, prev=%p\n",
+        outprintf(ctx->memory, "Object:%d, refcnt:%d, next=%p, prev=%p\n",
                   entry->o->object_num, entry->o->refcnt,
                   entry->next, entry->previous);
 #endif
@@ -2060,12 +2076,12 @@ int pdfi_clear_context(pdf_context *ctx)
     if (ctx->hits > 0 || ctx->misses > 0)
         hit_rate = (float)ctx->hits / (float)(ctx->hits + ctx->misses);
 
-    dmprintf1(ctx->memory, "Number of normal object cache hits: %"PRIi64"\n", ctx->hits);
-    dmprintf1(ctx->memory, "Number of normal object cache misses: %"PRIi64"\n", ctx->misses);
-    dmprintf1(ctx->memory, "Number of compressed object cache hits: %"PRIi64"\n", ctx->compressed_hits);
-    dmprintf1(ctx->memory, "Number of compressed object cache misses: %"PRIi64"\n", ctx->compressed_misses);
-    dmprintf1(ctx->memory, "Normal object cache hit rate: %f\n", hit_rate);
-    dmprintf1(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
+    outprintf(ctx->memory, "Number of normal object cache hits: %"PRIi64"\n", ctx->hits);
+    outprintf(ctx->memory, "Number of normal object cache misses: %"PRIi64"\n", ctx->misses);
+    outprintf(ctx->memory, "Number of compressed object cache hits: %"PRIi64"\n", ctx->compressed_hits);
+    outprintf(ctx->memory, "Number of compressed object cache misses: %"PRIi64"\n", ctx->compressed_misses);
+    outprintf(ctx->memory, "Normal object cache hit rate: %f\n", hit_rate);
+    outprintf(ctx->memory, "Compressed object cache hit rate: %f\n", compressed_hit_rate);
 #endif
     if (ctx->PathSegments != NULL) {
         gs_free_object(ctx->memory, ctx->PathSegments, "pdfi_clear_context");

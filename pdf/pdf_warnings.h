@@ -106,4 +106,7 @@ PARAM(W_PDF_BAD_CONFIG,             "A configuration or command line parameter w
 PARAM(W_PDF_INVALID_TTF_CMAP,       "A TrueType font contains invalid or no cmap table(s)"),
 PARAM(W_PDF_LIMITCHECK_TYPE0_CMAP,  "A CMap has too many code maps."),
 PARAM(W_PDF_INHERITED_STREAM_RESOURCE, "stream inherited a resource"),
+PARAM(W_PDF_BAD_COLLECTION,         "Failed to read Collection information."),
+PARAM(W_PDF_BAD_OUTPUTINTENT_INDEX, "UsePDFX3Profile specified invalid index for OutputIntents"),
+PARAM(W_PDF_VMERROR_BUILTIN_FONT,   "VM Error for built-in font."),
 #undef PARAM

@@ -1,4 +1,4 @@
-/* Copyright (C) 2022-2024 Artifex Software, Inc.
+/* Copyright (C) 2022-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -75,6 +75,7 @@ PARAM(E_PDF_BAD_VALUE,                 "An object has an unexpected value"),
 PARAM(E_PDF_BAD_ANNOTATION,            "There was an error in an annotation"),
 PARAM(E_PDF_BAD_XREFSTMOFFSET,         "An XRefStm value did not point to a cross reference stream"),
 PARAM(E_PDF_SMASK_MISSING_G,           "An SMask is missing the required Group (/G) key, SMask was ignored"),
+PARAM(E_PDF_SMASK_IN_SMASK,            "SMaskInData when there is already an SMask"),
 PARAM(E_PDF_PS_XOBJECT_IGNORED,        "An XObject had the Subtype /PS which is deprecated, the XObject was ignored"),
 PARAM(E_PDF_TRANS_CHK_BADTYPE,         "An object (eg XObject, Pattern) being checked for transparency had the wrong type and was not checked"),
 PARAM(E_PDF_SPOT_CHK_BADTYPE,          "An object (eg Shading) being checked for spot colours had the wrong type and was not checked"),
@@ -88,4 +89,9 @@ PARAM(E_PDF_GROUP_BAD_BC_NO_CS,        "An Smask has a /BC key, but the Group at
 PARAM(E_PDF_BAD_TYPE0_CMAP,            "CMap unrecoverably broken"),
 PARAM(E_PDF_BAD_EMBEDDED_FONT,         "An embedded font is invalid"),
 PARAM(E_PDF_BAD_INDEXED_STRING,        "The string data prameter for a /Indexed colour space lookup is too short"),
+PARAM(E_PDF_EMPTY_FORM_KIDS,           "Empty /Kids array in Form field."),
+PARAM(E_PDF_BAD_JPX_CS,                "JPX ColorSpace value is an unhandled type."),
+PARAM(E_PDF_INVALID_JPX_HDR,           "invalid JPX header"),
+PARAM(E_PDF_JPX_CS_ERROR,              ""),
+PARAM(E_PDF_BAD_TTC_VERSION,           "Unknown TTC header version"),
 #undef PARAM

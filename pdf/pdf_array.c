@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -98,7 +98,7 @@ int pdfi_array_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indi
         return code;
 
     if (ctx->args.pdfdebug)
-        dmprintf (ctx->memory, " ]\n");
+        outprintf (ctx->memory, " ]\n");
 
     a->indirect_num = indirect_num;
     a->indirect_gen = indirect_gen;

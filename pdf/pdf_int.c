@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -213,7 +213,7 @@ restart:
 
     *parsed_int = negative ? -int_val : int_val;
     if (ctx->args.pdfdebug)
-        dmprintf1(ctx->memory, " %d", *parsed_int);
+        outprintf(ctx->memory, " %d", *parsed_int);
     return (index > 0);
 
 error:
@@ -391,9 +391,9 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
     }
     if (ctx->args.pdfdebug) {
         if (real)
-            dmprintf1(ctx->memory, " %f", num->value.d);
+            outprintf(ctx->memory, " %f", num->value.d);
         else
-            dmprintf1(ctx->memory, " %"PRIi64, num->value.i);
+            outprintf(ctx->memory, " %"PRIi64, num->value.i);
     }
     num->indirect_num = indirect_num;
     num->indirect_gen = indirect_gen;
@@ -473,7 +473,7 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
     name->indirect_gen = indirect_gen;
 
     if (ctx->args.pdfdebug)
-        dmprintf1(ctx->memory, " /%s", Buffer);
+        outprintf(ctx->memory, " /%s", Buffer);
 
     gs_free_object(ctx->memory, Buffer, "pdfi_read_name");
 
@@ -498,7 +498,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
         return_error(gs_error_VMerror);
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, " <");
+        outprintf(ctx->memory, " <");
 
     do {
         do {
@@ -513,7 +513,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
             break;
 
         if (ctx->args.pdfdebug)
-            dmprintf1(ctx->memory, "%c", (char)hex0);
+            outprintf(ctx->memory, "%c", (char)hex0);
 
         do {
             hex1 = pdfi_read_byte(ctx, s);
@@ -535,7 +535,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
             }
             Buffer[index] = (fromhex(hex0) << 4) + fromhex(hex1);
             if (ctx->args.pdfdebug)
-                dmprintf1(ctx->memory, "%c", hex1);
+                outprintf(ctx->memory, "%c", hex1);
             break;
         }
 
@@ -545,7 +545,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
         }
 
         if (ctx->args.pdfdebug)
-            dmprintf1(ctx->memory, "%c", (char)hex1);
+            outprintf(ctx->memory, "%c", (char)hex1);
 
         Buffer[index] = (fromhex(hex0) << 4) + fromhex(hex1);
 
@@ -563,7 +563,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
     } while(1);
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, ">");
+        outprintf(ctx->memory, ">");
 
     code = pdfi_object_alloc(ctx, PDF_STRING, index, (pdf_obj **)&string);
     if (code < 0)
@@ -747,10 +747,10 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
 
     if (ctx->args.pdfdebug) {
         int i;
-        dmprintf(ctx->memory, " (");
+        outprintf(ctx->memory, " (");
         for (i=0;i<string->length;i++)
-            dmprintf1(ctx->memory, "%c", string->data[i]);
-        dmprintf(ctx->memory, ")");
+            outprintf(ctx->memory, "%c", string->data[i]);
+        outprintf(ctx->memory, ")");
     }
 
     code = pdfi_push(ctx, (pdf_obj *)string);
@@ -791,7 +791,7 @@ int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s)
     int c;
 
     if (ctx->args.pdfdebug)
-        dmprintf (ctx->memory, " %%");
+        outprintf (ctx->memory, " %%");
 
     do {
         c = pdfi_read_byte(ctx, s);
@@ -799,7 +799,7 @@ int pdfi_skip_comment(pdf_context *ctx, pdf_c_stream *s)
             break;
 
         if (ctx->args.pdfdebug)
-            dmprintf1 (ctx->memory, "%c", (char)c);
+            outprintf (ctx->memory, "%c", (char)c);
 
     } while (c != 0x0a && c != 0x0d);
 
@@ -855,7 +855,7 @@ int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s)
         return TOKEN_INVALID_KEY;
 
     if (ctx->args.pdfdebug)
-        dmprintf1(ctx->memory, " %s\n", Buffer);
+        outprintf(ctx->memory, " %s\n", Buffer);
 
     return (((const char *)t) - pdf_token_strings[0]) / sizeof(pdf_token_strings[0]);
 }
@@ -916,7 +916,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
         key = lookup_keyword(Buffer);
 
         if (ctx->args.pdfdebug)
-            dmprintf1(ctx->memory, " %s\n", Buffer);
+            outprintf(ctx->memory, " %s\n", Buffer);
 
         switch (key) {
             case TOKEN_R:
@@ -1046,7 +1046,7 @@ rescan:
             }
             if (c == '<') {
                 if (ctx->args.pdfdebug)
-                    dmprintf (ctx->memory, " <<\n");
+                    outprintf (ctx->memory, " <<\n");
                 if (ctx->object_nesting < MAX_NESTING_DEPTH) {
                     ctx->object_nesting++;
                     code = pdfi_mark_stack(ctx, PDF_DICT_MARK);
@@ -1102,7 +1102,7 @@ rescan:
             break;
         case '[':
             if (ctx->args.pdfdebug)
-                dmprintf (ctx->memory, "[");
+                outprintf (ctx->memory, "[");
             if (ctx->object_nesting < MAX_NESTING_DEPTH) {
                 ctx->object_nesting++;
                 code = pdfi_mark_stack(ctx, PDF_ARRAY_MARK);
@@ -1128,7 +1128,7 @@ rescan:
             break;
         case '{':
             if (ctx->args.pdfdebug)
-                dmprintf (ctx->memory, "{");
+                outprintf (ctx->memory, "{");
             code = pdfi_mark_stack(ctx, PDF_PROC_MARK);
             if (code < 0)
                 return code;

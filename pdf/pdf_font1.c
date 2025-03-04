@@ -431,8 +431,7 @@ pdfi_alloc_t1_font(pdf_context *ctx, pdf_font_type1 **font, uint32_t obj_num)
 
 #if REFCNT_DEBUG
     t1font->UID = ctx->UID++;
-    dmprintf2(ctx->memory,
-              "Allocated object of type %c with UID %" PRIi64 "\n", t1font->type, t1font->UID);
+    outprintf(ctx->memory, "Allocated object of type %c with UID %" PRIi64 "\n", t1font->type, t1font->UID);
 #endif
 
     pdfi_countup(t1font);

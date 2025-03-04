@@ -46,7 +46,7 @@ pdfi_alloc_mt_font(pdf_context *ctx, pdf_string *fco_path, int32_t index, pdf_fo
 
 #if REFCNT_DEBUG
     pdffont->UID = ctx->UID++;
-    dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", pdffont->type, pdffont->UID);
+    outprintf("Allocated object of type %c with UID %"PRIi64"\n", pdffont->type, pdffont->UID);
 #endif
 
     pdfi_countup(pdffont);

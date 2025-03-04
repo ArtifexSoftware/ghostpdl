@@ -1016,7 +1016,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     double f;
 
     if (ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Checking for Encrypt dictionary\n");
+        outprintf(ctx->memory, "%% Checking for Encrypt dictionary\n");
 
     /* See comment in pdfi_read_Root() for details of why we indirect through 'd' */
     d1 = ctx->Trailer;

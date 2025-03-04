@@ -1228,7 +1228,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             if (b0 == 30) {
                 p = pdfi_read_cff_real(p, e, &args[n].fval);
                 if (!p) {
-                    dmprintf(ptpriv->memory, "\nCFF: corrupt dictionary operand\n");
+                    dbgprintf("\nCFF: corrupt dictionary operand\n");
                     break;
                 }
                 args[n].ival = (int)args[n].fval;
@@ -1243,14 +1243,14 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
                 if (!p) {
                     if (!near_end)
                         code = gs_note_error(gs_error_invalidfont);
-                    dmprintf(ptpriv->memory, "\nCFF: corrupt dictionary operand\n");
+                    dbgprintf("\nCFF: corrupt dictionary operand\n");
                     break;
                 }
                 args[n].fval = (float)args[n].ival;
                 n++;
             }
             else {
-                dmprintf1(ptpriv->memory, "CFF: corrupt dictionary operand (b0 = %d)", b0);
+                dbgprintf1("CFF: corrupt dictionary operand (b0 = %d)", b0);
             }
         }
         if (n >= PDFI_CFF_STACK_SIZE) {
@@ -1272,7 +1272,7 @@ pdfi_read_cff_dict(byte *p, byte *e, pdfi_gs_cff_font_priv *ptpriv, cff_font_off
             code = pdfi_read_cff_dict(font->cffdata + offsets->private_off, dend, ptpriv, offsets, false);
 
         if (code < 0)
-            dmprintf(ptpriv->memory, "CFF: cannot read private dictionary");
+            dbgprintf("CFF: cannot read private dictionary");
     }
 
     return code;
@@ -2115,7 +2115,7 @@ pdfi_alloc_cff_cidfont(pdf_context *ctx, pdf_cidfont_type0 ** font, uint32_t obj
 
 #if REFCNT_DEBUG
     cffcidfont->UID = ctx->UID++;
-    dmprintf2(ctx->memory, "Allocated object of type %c with UID %" PRIi64 "\n", cffcidfont->type,
+    outprintf(ctx->memory, "Allocated object of type %c with UID %" PRIi64 "\n", cffcidfont->type,
               cffcidfont->UID);
 #endif
 
@@ -2202,7 +2202,7 @@ pdfi_alloc_cff_font(pdf_context *ctx, pdf_font_cff ** font, uint32_t obj_num, bo
 
 #if REFCNT_DEBUG
     cfffont->UID = ctx->UID++;
-    dmprintf2(ctx->memory, "Allocated object of type %c with UID %" PRIi64 "\n", cfffont->type,
+    outprintf(ctx->memory, "Allocated object of type %c with UID %" PRIi64 "\n", cfffont->type,
               cfffont->UID);
 #endif
 

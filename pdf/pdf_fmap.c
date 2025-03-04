@@ -178,7 +178,7 @@ static inline int pdfi_populate_ufst_fontmap(pdf_context *ctx)
             status = pdfi_fapi_passfont((pdf_font *)pdffont, i, (char *)"UFST", pthnm, NULL, 0);
             if (status < 0){
 #ifdef DEBUG
-                dmprintf1(ctx->memory, "CGIFfco_Access error %d\n", status);
+                outprintf(ctx->memory, "CGIFfco_Access error %d\n", status);
 #endif
                 pdfi_countdown(pdffont);
                 break;
@@ -193,7 +193,8 @@ static inline int pdfi_populate_ufst_fontmap(pdf_context *ctx)
             pname = (char *)gs_alloc_bytes(ctx->memory, bSize, "pdfi: mt font name buffer");
             if (!pname) {
                 pdfi_countdown(pdffont);
-                dmprintf1(ctx->memory, "VM Error for built-in font %d", i);
+                (void)pdfi_set_warning_stop(ctx, gs_note_error(gs_error_VMerror), NULL, W_PDF_VMERROR_BUILTIN_FONT, "pdfi_populate_ufst_fontmap", "");
+                outprintf(ctx->memory, "VM Error for built-in font %d", i);
                 continue;
             }
 
@@ -663,8 +664,9 @@ static int pdfi_ttf_add_to_native_map(pdf_context *ctx, stream *f, byte magic[4]
         include_index = true;
         ver = sru32(f);
         if (ver != 0x00010000 && ver !=0x00020000) {
-            dmprintf1(ctx->memory, "Unknown TTC header version %08X.\n", ver);
-            return_error(gs_error_invalidaccess);
+            code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_invalidaccess), NULL, E_PDF_BAD_TTC_VERSION, "pdfi_ttf_add_to_native_map", NULL);
+            outprintf(ctx->memory, "Unknown TTC header version %08X.\n", ver);
+            return code;
         }
         nfonts = sru32(f);
         /* There isn't a specific limit on the number of fonts,

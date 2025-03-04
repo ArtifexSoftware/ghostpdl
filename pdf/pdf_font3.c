@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -118,7 +118,7 @@ static int alloc_type3_font(pdf_context *ctx, pdf_font_type3 **font)
 
 #if REFCNT_DEBUG
     (t3font)->UID = ctx->UID++;
-    dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", t3font->type, t3font->UID);
+    outprintf(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", t3font->type, t3font->UID);
 #endif
 
 

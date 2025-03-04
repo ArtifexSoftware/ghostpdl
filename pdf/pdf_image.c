@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -270,8 +270,7 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
         avail -= 8;
         box_len -= 8;
         if (box_len <= 0 || box_len > avail) {
-            dmprintf1(ctx->memory, "WARNING: invalid JPX header, box_len=0x%x\n", box_len+8);
-            code = gs_note_error(gs_error_syntaxerror);
+            code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_INVALID_JPX_HDR, "pdfi_scan_jpxfilter", NULL);
             goto exit;
         }
         if (box_val == K4('j','p','2','h')) {
@@ -1417,8 +1416,8 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                                                               jpx_info->icc_length, jpx_info->comps, &dummy,
                                                               dictkey, pcs);
                 if (code < 0) {
-                    dmprintf2(ctx->memory,
-                              "WARNING JPXDecode: Error setting icc colorspace (offset=%d,len=%d)\n",
+                    code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_JPX_CS_ERROR, "pdfi_image_get_color", NULL);
+                    dbgprintf2("WARNING JPXDecode: Error setting icc colorspace (offset=%d,len=%d)\n",
                               jpx_info->icc_offset, jpx_info->icc_length);
                     goto cleanupExit;
                 }
@@ -1506,7 +1505,7 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
                                   image_info->stream_dict, image_info->page_dict,
                                   pcs, image_info->inline_image);
     if (code < 0) {
-        dmprintf(ctx->memory, "WARNING: Image has unsupported ColorSpace ");
+        dbgprintf("WARNING: Image has unsupported ColorSpace ");
         if (pdfi_type_of(ColorSpace) == PDF_NAME) {
             pdf_name *name = (pdf_name *)ColorSpace;
             char str[100];
@@ -1518,10 +1517,10 @@ pdfi_image_get_color(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *
 
                 memcpy(str, (const char *)name->data, length);
                 str[length] = '\0';
-                dmprintf1(ctx->memory, "NAME:%s\n", str);
+                dbgprintf1("NAME:%s\n", str);
             }
         } else {
-            dmprintf(ctx->memory, "(not a name)\n");
+            dbgmprintf(ctx->memory, "(not a name)\n");
         }
 
         /* If we were trying an enum_cs, attempt to use backup_color_name instead */
@@ -1565,7 +1564,7 @@ pdfi_make_smask_dict(pdf_context *ctx, pdf_stream *image_stream, pdfi_image_info
     pdf_dict *image_dict = NULL, *dict = NULL; /* alias */
 
     if (image_info->SMask != NULL) {
-        dmprintf(ctx->memory, "ERROR SMaskInData when there is already an SMask?\n");
+        code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_SMASK_IN_SMASK, "pdfi_make_smask_dict", NULL);
         goto exit;
     }
 
@@ -2152,7 +2151,7 @@ pdfi_do_image(pdf_context *ctx, pdf_dict *page_dict, pdf_dict *stream_dict, pdf_
                              comps, image_info.ImageMask);
     if (code < 0) {
         if (ctx->args.pdfdebug)
-            dmprintf1(ctx->memory, "WARNING: pdfi_do_image: error %d from pdfi_render_image\n", code);
+            outprintf(ctx->memory, "WARNING: pdfi_do_image: error %d from pdfi_render_image\n", code);
     }
 
     if (trans_required) {

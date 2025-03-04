@@ -179,7 +179,7 @@ int pdfi_dict_from_stack(pdf_context *ctx, uint32_t indirect_num, uint32_t indir
     }
 
     if (ctx->args.pdfdebug)
-        dmprintf (ctx->memory, "\n >>\n");
+        outprintf (ctx->memory, "\n >>\n");
 
     d->indirect_num = indirect_num;
     d->indirect_gen = indirect_gen;

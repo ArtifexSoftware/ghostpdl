@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -345,7 +345,7 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
     pdft0->ctx = ctx;
 #if REFCNT_DEBUG
     pdft0->UID = ctx->UID++;
-    dmprintf2(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", pdft0->type, pdft0->UID);
+    outprintf(ctx->memory, "Allocated object of type %c with UID %"PRIi64"\n", pdft0->type, pdft0->UID);
 #endif
     pdft0->refcnt = 1;
     pdft0->filename = NULL;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2024 Artifex Software, Inc.
+/* Copyright (C) 2020-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -53,7 +53,7 @@ static int pdfi_repair_add_object(pdf_context *ctx, int64_t obj, int64_t gen, gs
         ctx->xref_table->xref_size = obj + 1;
 #if REFCNT_DEBUG
         ctx->xref_table->UID = ctx->ref_UID++;
-        dmprintf1(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
+        outprintf(ctx->memory, "Allocated xref table with UID %"PRIi64"\n", ctx->xref_table->UID);
 #endif
         pdfi_countup(ctx->xref_table);
     } else {
@@ -105,7 +105,7 @@ int pdfi_repair_file(pdf_context *ctx)
     pdfi_clearstack(ctx);
 
     if(ctx->args.pdfdebug)
-        dmprintf(ctx->memory, "%% Error encountered in opening PDF file, attempting repair\n");
+        outprintf(ctx->memory, "%% Error encountered in opening PDF file, attempting repair\n");
 
     /* First try to locate a %PDF header. If we can't find one, abort this, the file is too broken
      * and may not even be a PDF file.
