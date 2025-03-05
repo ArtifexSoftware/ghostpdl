@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -218,7 +218,7 @@ extern const stream_template s_zlibE_template;
 #define psdf_color_image_param_defaults\
   { NULL,	    /* ACSDict (JPEG) */ \
     0,		    /* AntiAlias (false) */ \
-    0,		    /* AutoFilter (false) */ \
+    1,		    /* AutoFilter (false) */ \
     -1,		    /* Depth */ \
     NULL,	    /* Dict (JPEG or CCITTFax) */ \
     0,		    /* Downsample (false) */ \
@@ -235,7 +235,7 @@ extern const stream_template s_zlibE_template;
 #define psdf_gray_image_param_defaults\
   { NULL,	    /* ACSDict (JPEG) */ \
     0,		    /* AntiAlias (false) */ \
-    0,		    /* AutoFilter (false) */ \
+    1,		    /* AutoFilter (false) */ \
     -1,		    /* Depth */ \
     NULL,	    /* Dict (JPEG or CCITTFax) */ \
     0,		    /* Downsample (false) */ \
@@ -251,7 +251,7 @@ extern const stream_template s_zlibE_template;
 #define psdf_mono_image_param_defaults\
   { NULL,	    /* ACSDict (JPEG) */ \
     0,		    /* AntiAlias (false) */ \
-    0,		    /* AutoFilter (false) */ \
+    1,		    /* AutoFilter (false) */ \
     -1,		    /* Depth */ \
     NULL,	    /* Dict (JPEG or CCITTFax) */ \
     0,		    /* Downsample (false) */ \
