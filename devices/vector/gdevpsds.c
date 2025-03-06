@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1157,7 +1157,7 @@ s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
     if (force) {
         if (ss->gradients > plateaus / 12) /* messenger16.pdf, page 3. */
             return 1; /* photo */
-        else if (plateaus / 5000 >= ss->gradients)
+        else if (plateaus && plateaus / 5000 >= ss->gradients)
             return 2; /* lineart */
     }
     return 0;
