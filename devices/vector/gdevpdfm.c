@@ -334,7 +334,9 @@ setup_pdfmark_stream_compression(gx_device_psdf *pdev0,
                 templat = &s_zlibE_template;
         } else
             templat = &s_LZWE_template;
-    }
+    } else
+        return 0;
+
     pco->input_strm = cos_write_stream_alloc(pco, pdev,
                                   "setup_pdfmark_stream_compression");
     if (pco->input_strm == 0)
