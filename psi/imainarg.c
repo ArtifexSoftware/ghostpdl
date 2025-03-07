@@ -176,7 +176,7 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
         int i;
         bool helping = false;
 
-        for (i = 1; i < argc; ++i)
+        for (i = 1; i < argc; ++i) {
             if (!arg_strcmp(&args, argv[i], "--")) {
                 /* A PostScript program will be interpreting all the */
                 /* remaining switches, so stop scanning. */
@@ -193,10 +193,11 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
                 puts(minst->heap, "");  /* \n */
                 helping = true;
             }
-            if (helping) {
-                code = gs_note_error(gs_error_Info);
-                goto error;
-            }
+        }
+        if (helping) {
+            code = gs_note_error(gs_error_Info);
+            goto error;
+        }
     }
     /* Execute files named in the command line, */
     /* processing options along the way. */
