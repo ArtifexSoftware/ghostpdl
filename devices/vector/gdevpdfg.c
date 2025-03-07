@@ -1422,7 +1422,7 @@ rescale_cie_color(gs_range_t *ranges, int num_colorants,
 static int check_colorants_for_pdfx4(const gs_color_space *pcs)
 {
     int comp, all_present = 1;
-    char *ink, *Colorant;
+    char *ink;
     gs_device_n_colorant *colorant = NULL;
 
     if (pcs->params.device_n.colorants == NULL) {
