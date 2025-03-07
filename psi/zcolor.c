@@ -167,8 +167,7 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;   /* required by "push" macro */
     int code;
-    ref namestr,stref, *aref;
-    byte *body;
+    ref namestr, *aref;
 
     /* Adobe applications expect that the Device spaces (DeviceGray
      * DeviceRGB and DeviceCMYK) will always return the same array.
@@ -490,7 +489,7 @@ static int copy_cspace_string(i_ctx_t * i_ctx_p, ref *dest, ref *src)
 
 static int copy_cspace_dict(i_ctx_t * i_ctx_p, ref *dest, ref *src)
 {
-    int code = 0, index, i = 0;
+    int code = 0, index;
     uint saved_space = avm_local;
     ref eltp[2], cref;
 
@@ -3941,7 +3940,6 @@ static int septransform(i_ctx_t *i_ctx_p, ref *sepspace, int *usealternate, int 
          */
         if (*stage == 10) {
             gs_function_t *pfn = NULL;
-            gs_device_n_map *pimap;
             gs_color_space * pcs;
             float in, out[4];
             int i;
@@ -4799,7 +4797,6 @@ static int devicentransform(i_ctx_t *i_ctx_p, ref *devicenspace, int *usealterna
          */
         if (*stage == 10) {
             gs_function_t *pfn = NULL;
-            gs_device_n_map *pimap;
             gs_color_space * pcs;
             float *in, *out;
             int i;
@@ -7286,7 +7283,6 @@ zsetcmykcolor(i_ctx_t * i_ctx_p)
 static int currentbasecolor(i_ctx_t *i_ctx_p, int base, ref arr)
 {
     ref *parr = &arr;
-    es_ptr ep = esp;
     int i, code = 0, cont=1, CIESubst=0;
     unsigned int depth = 1;
     PS_colour_space_t *obj;
