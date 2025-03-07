@@ -1202,14 +1202,7 @@ if test x$with_libidn != xno; then
   fi
 fi
 
-UTF8DEVS=''
-if test x$with_libidn != xno; then
-  if test x$found_iconv != xno; then
-    UTF8DEVS='$(PSD)utf8.dev'
-  fi
-fi
 AC_SUBST(HAVE_LIBIDN)
-AC_SUBST(UTF8DEVS)
 
 if test x"$GPL_CONF" = x"yes" ; then
 
