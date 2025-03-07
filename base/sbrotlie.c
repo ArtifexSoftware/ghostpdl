@@ -37,7 +37,6 @@ static int
 s_brotliE_init(stream_state * st)
 {
     stream_brotlie_state *ss = (stream_brotlie_state *)st;
-    int code;
 
     ss->enc_state = BrotliEncoderCreateInstance(s_brotli_alloc,
 						s_brotli_free,
