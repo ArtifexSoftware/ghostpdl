@@ -27,7 +27,6 @@ static int
 s_brotliD_init(stream_state * st)
 {
     stream_brotlid_state *ss = (stream_brotlid_state *)st;
-    int code;
 
     ss->dec_state = BrotliDecoderCreateInstance(
                                     s_brotli_alloc,
