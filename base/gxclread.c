@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -317,6 +317,9 @@ clist_file_offset(const stream_state * st, uint buffer_offset)
     const stream_band_read_state *ss = (const stream_band_read_state *) st;
     uint offset0;
     int i = buffer_segment_index(ss, buffer_offset, &offset0);
+
+    if (i < 0)
+        return 0;
 
     return ss->offset_map[i].file_offset + (uint)(buffer_offset - offset0);
 }
