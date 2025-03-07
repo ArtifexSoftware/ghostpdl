@@ -44,6 +44,7 @@
 #include "gspath.h"         /* For gs_moveto() and friends */
 #include "gsstate.h"        /* For gs_setoverprintmode() */
 #include "gscoord.h"        /* for gs_concat() and others */
+#include "gxgstate.h"
 
 int pdfi_BI(pdf_context *ctx)
 {
@@ -1011,6 +1012,8 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
     int code, code1;
     pdfi_int_gstate *igs = (pdfi_int_gstate *)ctx->pgs->client_data;
     pdf_stream *stream_obj = NULL;
+    gs_rect clip_box;
+    int empty = 0;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_image_smask BEGIN\n");
@@ -1033,11 +1036,6 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
 
     gs_trans_mask_params_init(&params, TRANSPARENCY_MASK_Luminosity);
 
-    code = pdfi_image_get_matte(ctx, image_info->SMask, params.Matte, GS_CLIENT_COLOR_MAX_COMPONENTS, has_Matte);
-
-    if (code >= 0)
-        params.Matte_components = code;
-
     /* gs_begin_transparency_mask is going to crap all over the current
      * graphics state. We need to be sure that everything goes back as
      * it was. So, gsave here, and grestore on the 'end', right? Well
@@ -1045,11 +1043,30 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
      * drawn! We'll do some magic to ensure that doesn't happen. */
     code = gs_gsave(ctx->pgs);
     if (code < 0)
-        goto exitSaved;
+        goto exit;
+
+    if (gs_clip_bounds_in_user_space(ctx->pgs, &clip_box) >= 0)
+    {
+        rect_intersect(bbox, clip_box);
+        if (bbox.p.x >= bbox.q.x || bbox.p.y >= bbox.q.y)
+        {
+            /* If the bbox is illegal, we still need to set up an empty mask.
+             * We can't just skip forwards as everything will now be unmasked!
+             * We can skip doing the actual work though. */
+            empty = 1;
+        }
+    }
+
+    code = pdfi_image_get_matte(ctx, image_info->SMask, params.Matte, GS_CLIENT_COLOR_MAX_COMPONENTS, has_Matte);
+
+    if (code >= 0)
+        params.Matte_components = code;
 
     code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, true);
     if (code < 0)
         goto exitSaved;
+    if (empty)
+        goto exitMasked;
     savedoffset = pdfi_tell(ctx->main_stream);
     code = pdfi_gsave(ctx);
     if (code < 0)
@@ -1084,9 +1101,9 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
             goto exitSavedTwice;
     }
 
+exitSavedTwice:
     pdfi_seek(ctx, ctx->main_stream, savedoffset, SEEK_SET);
 
-exitSavedTwice:
     code1 = pdfi_grestore(ctx);
     if (code < 0)
         code = code1;

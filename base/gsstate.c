@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1608,4 +1608,22 @@ void gs_swapcolors_quick(const gs_gstate *cpgs)
     pgs->color_component_map_alt = tmp_ccm;
 
     pgs->is_fill_color = !(pgs->is_fill_color);	/* used by overprint for fill_stroke */
+}
+
+int
+gs_clip_bounds_in_user_space(gs_gstate *pgs, gs_rect *ubox)
+{
+    gx_clip_path *clip_path;
+    gs_rect dbox;
+    int code;
+
+    code = gx_effective_clip_path(pgs, &clip_path);
+    if (code < 0)
+        return code;
+
+    dbox.p.x = fixed2float(clip_path->outer_box.p.x);
+    dbox.p.y = fixed2float(clip_path->outer_box.p.y);
+    dbox.q.x = fixed2float(clip_path->outer_box.q.x);
+    dbox.q.y = fixed2float(clip_path->outer_box.q.y);
+    return gs_bbox_transform_inverse(&dbox, &ctm_only(pgs), ubox);
 }

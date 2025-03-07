@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -497,5 +497,7 @@ cs_adjust_swappedcolor_count(gs_gstate *pgs, int delta)
     (pcs->type->adjust_color_count)(gs_swappedcolor_inline(pgs),
                                     pcs, delta);
 }
+
+int gs_clip_bounds_in_user_space(gs_gstate *pgs, gs_rect *ubox);
 
 #endif /* gxistate_INCLUDED */

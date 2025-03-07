@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -105,6 +105,8 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
     bool Processed, ProcessedKnown = 0;
     bool save_OverrideICC = gs_currentoverrideicc(ctx->pgs);
     gs_gstate *saved_gs = NULL;
+    gs_rect clip_bbox;
+    int empty = 0;
 
 #if DEBUG_TRANSPARENCY
     dbgmprintf(ctx->memory, "pdfi_trans_set_mask (.execmaskgroup) BEGIN\n");
@@ -228,6 +230,18 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         /* Transform the BBox by the Matrix */
         pdfi_bbox_transform(ctx, &bbox, &group_Matrix);
 
+        if (gs_clip_bounds_in_user_space(ctx->pgs, &clip_bbox) >= 0)
+        {
+            rect_intersect(bbox, clip_bbox);
+            if (bbox.p.x >= bbox.q.x || bbox.p.y >= bbox.q.y)
+            {
+                /* If the bbox is illegal, we still need to set up an empty mask.
+                 * We can't just skip forwards as everything will now be unmasked!
+                 * We can skip doing the actual work though. */
+                empty = 1;
+            }
+        }
+
         /* CS is in the dict "Group" inside the dict "G" */
         /* TODO: Not sure if this is a required thing or just one possibility */
         code = pdfi_dict_knownget_type(ctx, G_stream_dict, "Group", PDF_DICT, (pdf_obj **)&Group);
@@ -336,8 +350,9 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
             code = gs_begin_transparency_mask(ctx->pgs, &params, &bbox, false);
 
         if (code >= 0) {
-            code = pdfi_form_execgroup(ctx, ctx->page.CurrentPageDict, G_stream,
-                                       igs->GroupGState, NULL, NULL, &group_Matrix);
+            if (!empty)
+                code = pdfi_form_execgroup(ctx, ctx->page.CurrentPageDict, G_stream,
+                                           igs->GroupGState, NULL, NULL, &group_Matrix);
             code1 = gs_end_transparency_mask(ctx->pgs, colorindex);
             if (code == 0)
                 code = code1;
@@ -622,6 +637,7 @@ int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask, gs_
 {
     gs_transparency_group_params_t params;
     gs_rect bbox;
+    gs_rect clip_box;
 
     gs_trans_group_params_init(&params, 1.0);
 
@@ -633,6 +649,8 @@ int pdfi_trans_begin_isolated_group(pdf_context *ctx, bool image_with_SMask, gs_
     bbox.p.y = 0;
     bbox.q.x = 1;
     bbox.q.y = 1;
+    if (gs_clip_bounds_in_user_space(ctx->pgs, &clip_box) >= 0)
+        rect_intersect(bbox, clip_box);
 
     return pdfi_gs_begin_transparency_group(ctx->pgs, &params, &bbox, PDF14_BEGIN_TRANS_GROUP);
 }
