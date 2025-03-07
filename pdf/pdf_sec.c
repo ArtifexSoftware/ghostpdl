@@ -321,7 +321,7 @@ error:
  */
 
 static void
-pdf_compute_hardened_hash_r6(unsigned char *password, int pwlen, unsigned char salt[16], unsigned char *ownerkey, unsigned char hash[32])
+pdf_compute_hardened_hash_r6(unsigned char *password, int pwlen, unsigned char *salt, unsigned char *ownerkey, unsigned char *hash)
 {
 	unsigned char data[(128 + 64 + 48) * 64];
 	unsigned char block[64];
