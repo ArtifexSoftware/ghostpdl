@@ -375,7 +375,7 @@ int pdfi_read_Info(pdf_context *ctx)
         if (code < 0)
             goto error1;
     } else {
-        if (code = pdfi_set_warning_stop(ctx, 0, NULL, W_PDF_INFO_NOT_INDIRECT, "pdfi_read_Info", "") < 0)
+        if ((code = pdfi_set_warning_stop(ctx, 0, NULL, W_PDF_INFO_NOT_INDIRECT, "pdfi_read_Info", "")) < 0)
             goto error1;
     }
 
