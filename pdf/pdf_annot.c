@@ -3445,8 +3445,10 @@ typedef enum {
 static int pdfi_form_draw_Btn(pdf_context *ctx, pdf_dict *field, pdf_obj *AP)
 {
     int code;
+#ifdef DEBUG
     bool Radio = false;
     bool Pushbutton = false;
+#endif
     int64_t value;
 
     /* TODO: There can be Kids array. I think it should be handled in caller.
@@ -3461,12 +3463,15 @@ static int pdfi_form_draw_Btn(pdf_context *ctx, pdf_dict *field, pdf_obj *AP)
     code = pdfi_form_get_inheritable_int(ctx, field, "Ff", &value);
     if (code < 0) goto exit;
 
+#ifdef DEBUG
     Radio = value & PDFI_FORM_FF_RADIO;
     Pushbutton = value & PDFI_FORM_FF_PUSHBUTTON;
 
     dbgprintf("WARNING: AcroForm field 'Btn' with no AP not implemented.\n");
     dbgprintf2("       : Radio = %s, Pushbutton = %s.\n",
               Radio ? "TRUE" : "FALSE", Pushbutton ? "TRUE" : "FALSE");
+#endif
+
  exit:
     return 0;
 }
