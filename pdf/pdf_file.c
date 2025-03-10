@@ -1878,6 +1878,9 @@ static int pdfi_open_font_file_inner(pdf_context *ctx, const char *fname, const 
     int code = 0;
     const char *fontdirstr = "Font/";
     const int fontdirstrlen = strlen(fontdirstr);
+    uint fnlen;
+    gp_file_name_combine_result r;
+    char fnametotry[gp_file_name_sizeof];
 
     if (fname == NULL || fnamelen == 0 || fnamelen >= (gp_file_name_sizeof - fontdirstrlen))
         *s = NULL;
@@ -1893,9 +1896,7 @@ static int pdfi_open_font_file_inner(pdf_context *ctx, const char *fname, const 
     }
     else {
         char fnametotry[gp_file_name_sizeof];
-        uint fnlen;
         gs_parsed_file_name_t pname;
-        gp_file_name_combine_result r;
         int i;
 
         *s = NULL;
@@ -1926,26 +1927,29 @@ static int pdfi_open_font_file_inner(pdf_context *ctx, const char *fname, const 
                     break;
             }
         }
-        if (*s == NULL && i < ctx->search_paths.num_resource_paths) {
-            gs_param_string *ss = &ctx->search_paths.genericresourcedir;
-            char fstr[gp_file_name_sizeof];
+    }
 
-            fnlen = gp_file_name_sizeof;
+    /* If not in the font specific search path, try it as a resource */
+    if (*s == NULL)
+        code =  pdfi_open_resource_file_inner(ctx, fname, fnamelen, s);
 
-            memcpy(fstr, fontdirstr, fontdirstrlen);
-            memcpy(fstr + fontdirstrlen, fname, fnamelen);
+    if (*s == NULL) {
+        gs_param_string *ss = &ctx->search_paths.genericresourcedir;
+        char fstr[gp_file_name_sizeof];
 
-            r = gp_file_name_combine((char *)ss->data, ss->size, fstr, fontdirstrlen + fnamelen, false, fnametotry, &fnlen);
-            if (r == gp_combine_success || fnlen < gp_file_name_sizeof) {
-                fnametotry[fnlen] = '\0';
-                *s = sfopen(fnametotry, "r", ctx->memory);
-            }
+        fnlen = gp_file_name_sizeof;
+
+        memcpy(fstr, fontdirstr, fontdirstrlen);
+        memcpy(fstr + fontdirstrlen, fname, fnamelen);
+
+        r = gp_file_name_combine((char *)ss->data, ss->size, fstr, fontdirstrlen + fnamelen, false, fnametotry, &fnlen);
+        if (r == gp_combine_success || fnlen < gp_file_name_sizeof) {
+            fnametotry[fnlen] = '\0';
+            *s = sfopen(fnametotry, "r", ctx->memory);
         }
     }
-    if (*s == NULL)
-        return pdfi_open_resource_file_inner(ctx, fname, fnamelen, s);
 
-    return 0;
+    return *s == NULL ? gs_error_undefinedfilename : 0;
 }
 
 int pdfi_open_font_file(pdf_context *ctx, const char *fname, const int fnamelen, stream **s)
