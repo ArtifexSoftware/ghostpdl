@@ -868,6 +868,10 @@ static int pdfi_load_font_file(pdf_context *ctx, int fftype, pdf_name *Subtype, 
             return code;
         pdfi_countup(fontname);
     }
+    else {
+        /* Just to ensure that fontfname is a valid, though empty, string */
+        fontfname[0] = '\0';
+    }
 
     do {
         if (f_retry == true && pdfi_font_file_exists(ctx, (const char *)((pdf_name *)fontname)->data, ((pdf_name *)fontname)->length) == true) {
