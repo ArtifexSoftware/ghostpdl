@@ -1940,7 +1940,8 @@ static int pdfi_open_font_file_inner(pdf_context *ctx, const char *fname, const 
         fnlen = gp_file_name_sizeof;
 
         memcpy(fstr, fontdirstr, fontdirstrlen);
-        memcpy(fstr + fontdirstrlen, fname, fnamelen);
+        if (fname != NULL)
+            memcpy(fstr + fontdirstrlen, fname, fnamelen);
 
         r = gp_file_name_combine((char *)ss->data, ss->size, fstr, fontdirstrlen + fnamelen, false, fnametotry, &fnlen);
         if (r == gp_combine_success || fnlen < gp_file_name_sizeof) {
