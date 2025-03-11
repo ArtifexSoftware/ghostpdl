@@ -109,4 +109,5 @@ PARAM(W_PDF_INHERITED_STREAM_RESOURCE, "stream inherited a resource"),
 PARAM(W_PDF_BAD_COLLECTION,         "Failed to read Collection information."),
 PARAM(W_PDF_BAD_OUTPUTINTENT_INDEX, "UsePDFX3Profile specified invalid index for OutputIntents"),
 PARAM(W_PDF_VMERROR_BUILTIN_FONT,   "VM Error for built-in font."),
+PARAM(W_PDF_ERROR_IN_MATTE,         "Setting up a Matte for an image returned an error"),
 #undef PARAM

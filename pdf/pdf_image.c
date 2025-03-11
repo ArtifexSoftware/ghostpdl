@@ -1059,6 +1059,11 @@ pdfi_do_image_smask(pdf_context *ctx, pdf_c_stream *source, pdfi_image_info_t *i
 
     code = pdfi_image_get_matte(ctx, image_info->SMask, params.Matte, GS_CLIENT_COLOR_MAX_COMPONENTS, has_Matte);
 
+    if (code < 0) {
+        code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_ERROR_IN_MATTE, "", NULL);
+        if (code < 0)
+            goto exitSaved;
+    }
     if (code >= 0)
         params.Matte_components = code;
 
