@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -10507,8 +10507,6 @@ get_pdf14_clist_device_proto(gx_device          *dev,
                               pdevproto->color_info.max_components;
                 pdevproto->color_info.depth =
                               pdevproto->color_info.num_components * (8<<deep);
-                if (deep && has_tags)
-                    pdevproto->color_info.depth -= 8;
             }
             pdevproto->color_info.anti_alias = dev->color_info.anti_alias;
             pdevproto->sep_device = true;
@@ -10534,8 +10532,6 @@ get_pdf14_clist_device_proto(gx_device          *dev,
                         pdevproto->color_info.max_components;
                 pdevproto->color_info.depth =
                     pdevproto->color_info.num_components * (8 << deep);
-                if (deep && has_tags)
-                    pdevproto->color_info.depth -= 8;
             }
             pdevproto->color_info.anti_alias = dev->color_info.anti_alias;
             pdevproto->sep_device = true;
@@ -10559,6 +10555,11 @@ get_pdf14_clist_device_proto(gx_device          *dev,
             break;
         default:			/* Should not occur */
             return_error(gs_error_rangecheck);
+    }
+    if (has_tags)
+    {
+        pdevproto->color_info.num_components++;
+        pdevproto->color_info.depth += (8<<deep);
     }
     pdevproto->overprint_sim = pdf14pct->params.overprint_sim_push;
     pdevproto->blend_cs_state = blend_cs_state;
