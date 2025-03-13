@@ -671,7 +671,7 @@ psd_prn_open(gx_device * pdev)
 
     /* The default code thinks that any number of spots over 4 must mean
      * that it's a CMYK space. Correct that for psdrgb and psdrgbtags. */
-    if (strcmp(pdev->dname, "psdrgb") == 0 || strcmp(pdev->dname, "psdrgbtags") == 0) {
+    if (strcmp(pdev->dname, "psdrgb") == 0 || strcmp(pdev->dname, "psdrgbtags") == 0 || strcmp(pdev->dname, "psdrgb16") == 0 || strcmp(pdev->dname, "psdrgbtags16") == 0) {
         if (pdev->icc_struct &&
             pdev->icc_struct->device_profile[gsDEFAULTPROFILE]) {
             rc_decrement(pdev->icc_struct->device_profile[gsDEFAULTPROFILE], "psd_prn_open");
