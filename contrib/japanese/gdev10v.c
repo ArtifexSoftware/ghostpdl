@@ -199,7 +199,7 @@ bj10v_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         int bytes_per_column = bits_per_column / 8;
         int x_skip_unit = bytes_per_column * (xres / 180);
         int y_skip_unit = (yres / 180);
-        byte *in, *out;
+        byte *in = NULL, *out = NULL;
         int lnum = 0;
         int y_skip = 0;
         int code = 0;
@@ -332,7 +332,9 @@ xit:
         prn_putc(pdev, 014); /* form feed */
         prn_flush(pdev);
 error:
-        gs_free(pdev->memory->non_gc_memory, (char *)out, bits_per_column, line_size, "bj10v_print_page(out)");
-        gs_free(pdev->memory->non_gc_memory, (char *)in, 8, line_size, "bj10v_print_page(in)");
+        if (out != NULL)
+            gs_free(pdev->memory->non_gc_memory, (char *)out, bits_per_column, line_size, "bj10v_print_page(out)");
+        if (in != NULL)
+            gs_free(pdev->memory->non_gc_memory, (char *)in, 8, line_size, "bj10v_print_page(in)");
         return code;
 }
