@@ -1138,21 +1138,40 @@ In case of common printer problems like being out of paper, a warning describing
 
 
 
-Apple dot matrix printer
-------------------------------
+Apple's Dot Matrix Printer and ImageWriters
+-----------------------------------------
 
-This section was contributed by `Mark Wedel`_.
+**CAUTION: Do not use options that are unsupported on your printer: e.g., using margins less than .25" on any side, using color printing with a monochrome printer or ribbon, selecting a page size or weight greater or lesser than what your printer can handle (or has loaded) or by selecting a higher resolution than your printer supports.  Doing so could possibly jam or even damage your printer and may be unsupported in this driver suite.**
 
-The Apple Dot Matrix Printer (DMP) was a parallel predecessor to the Imagewriter printer. As far as I know, Imagewriter commands are a superset of the Dot Matrix printer's, so the driver should generate output that can be printed on Imagewriters.
+Credits for this documentation section and the associated driver(s) are at the top of (``contrib/gdevadmp.c``).  This documentation is for version ][ (2.0) of the driver, released in 2025.
 
-To print images, the driver sets the printer for unidirectional printing and 15 characters per inch (cpi), or 120dpi. It sets the line feed to 1/9 inch. When finished, it sets the printer to bidirectional printing, 1/8-inch line feeds, and 12 cpi. There appears to be no way to reset the printer to initial values.
+The Apple Dot Matrix Printer (DMP) was the parallel predecessor to the serial ImageWriters.  ImageWriter commands are a superset of the Dot Matrix Printer's, so the driver suite supports all of Apple's dot-matrix printers.  (And, in theory, the C. Itoh 8510 on which they were originally based.)  Each printer supports all the resolutions of its predecessors.  Additionally, the driver could possibly even be adapted to support the Scribe, Apple's CMY/K thermal transfer printer with the same command set.
 
-This code does not set for 8-bit characters (which is required). It also assumes that carriage return-newline is needed, and not just carriage return. These are all switch settings on the DMP, and I have configured them for 8-bit data and carriage return exclusively. Ensure that the Unix printer daemon handles 8-bit (binary) data properly; in my ``SunOS 4.1.1 printcap`` file the string "``ms=pass8,-opost``" works fine for this.
+========================  ==================  =======================
+Device                    Maximum Resolution  Ghostscript Device Name
+========================  ==================  =======================
+Dot Matrix Printer        120x72              :title:`appledmp`
+ImageWriter               160x72              :title:`iwlo`
+ImageWriter 15"           160x72              :title:`iwlow`
+ImageWriter II            160x144             :title:`iwhi`
+ImageWriter II (color)    160x144             :title:`iwhic`
+ImageWriter LQ            320x216             :title:`iwlq`
+ImageWriter LQ (color)    320x216             :title:`iwlqc`
+========================  ==================  =======================
 
-Finally, you can search ``devdemp.c`` for "Init" and "Reset" to find the strings that initialize the printer and reset things when finished, and change them to meet your needs.
+The driver sets the printer for bidirectional (by default) or unidirectional (``-dUNIDIRECTIONAL``) printing and may vary the characters per inch (cpi) and line-height.  When finished, the driver sets the printer to bidirectional printing, 1/6-inch line feeds, and an elite character pitch (as suggested by Apple's documentation.)
 
+This code does not set for 8-bit characters (which is required). It also assumes that carriage return-newline is needed, and not just carriage return. These are all switch settings on the printers, and you should configure them for 8-bit data and carriage return and line feed exclusively. Ensure that your printer daemon handles 8-bit (binary) data properly; in ``SunOS 4.1.1 printcap`` file, the string "``ms=pass8,-opost``" works fine for this.  DOS and Windows users may need to run ``MODE.COM %PORT%: baud=9600 parity=n data=8 stop=1 octs=on idsr=on odsr=on`` or similar.
 
+In version ][ of this driver, the paper must be loaded an additional .25" to the left, as compared to prior versions.  This brings the driver into line with Apple's documented requirements for print head position zero the be aligned .25" into the left side of the page.  This allows paper alignment by the alignment indicators on the printers and matches the output behavior of the native Apple II and Macintosh drivers.  It also fixes likely issues with the ImageWriter II and LQ Cut Sheet Feeders.  Sheet eject behavior has been improved, also -- rather than issuing a form feed at end of page, we just line feed through the entire length of the sheet.  And the driver now also enforces Apple's minimum .25" margin requirement on each side of the page.
 
+For those who don't want a nanny-state printer driver preventing them from printing banners from `theprintshop.club <https://www.theprintshop.club>`_ (whose banners also require ``-c "<< /.HWMargins [0 0 0 0] >> setpagedevice"``), there is ``-dUNSAFEMARGINS``.  It is designed in particular for this type of incorrectly formatted banner, where there are several individual sheets (vs. a single, continuous sheet) described in the banner's PostScript or PDF page description.  ``-dUNSAFEMARGINS`` is only designed to allow for printing on the boundary between fanfold sheets when printing these incorrectly formatted banners.  DO NOT use ``-dUNSAFEMARGINS`` to print closer than .25" to the edge of any side of the sheet.  Doing so creates risks of jamming and print guide and print head damage.
+
+True CMYK color output is now supported with a color ribbon on the ImageWriter II and ImageWriter LQ.  In the upcoming ][+ release, a companion set of PPDs and Windows INFs for each device will hopefully also be made available.  Among other features, they should allow for easier adjustment of the halftone screen, which may alleviate problems with excessive striking and inking during 320x216 DPI color photo prints.  (Photo printing works best with resolutions of 160x144 or less.  Large areas of heavy saturation -- especially at 320x216 DPI -- may require beefier papers.  Don't forget to adjust your paper thickness lever!)  TrueGray support seems to be application dependent, with both Chrome and Windows Explorer photo print not seeming to support it.  Printing first to PDF and then re-printing to PostScript from Adobe Acrobat Reader seems to often solve this problem.
+
+Paper bin selection for the ImageWriter LQ is also supported when the cut sheet feeder is installed with more than 1 bin and the (unreleased) PPD is used (or with appropriate tray configuration parameters specified in PostScript and passed in with ``-c``.)
+
+This driver is currently maintained by `Josh Moyer <mailto:JMoyer@NODOMAIN.NET>`_.  The homepage is `http://press.jmoyer.nodomain.net/gdevadmp/ <http://press.jmoyer.nodomain.net/gdevadmp/>`_.  This driver release is part of Josh's larger efforts in legacy printing, documented at `http://press.jmoyer.nodomain.net/ <http://press.jmoyer.nodomain.net/>`_.  See also his "Apple Dot Matrix Printers" Facebook group at `https://www.facebook.com/groups/appledotmatrixprinters/ <https://www.facebook.com/groups/appledotmatrixprinters/>`_.
 
 Special and Test devices
 ------------------------------

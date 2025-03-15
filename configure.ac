@@ -2828,7 +2828,7 @@ if test "x$driversfile" != x; then
         drivers="`tr '\n' ',' <$driversfile`"
 fi
 
-if echo $drivers | grep 'APPLE\|iwhi\|iwlo\|iwlq' >/dev/null; then
+if echo $drivers | grep 'APPLE\|appledmp\|iwhi\|iwhic\|iwlo\|iwlow\|iwlq\|iwlqc' >/dev/null; then
    APPLE_DEVICES_REQUESTED="yes"
 fi
 
@@ -2850,7 +2850,7 @@ EPSON_DEVS='eps9high eps9mid epson epsonc escp lp8000 lq850 photoex st800 stcolo
 CANON_DEVS='bj10e bj200 bjc600 bjc800 lbp8 lips3 bjcmono bjcgray bjccmyk bjccolor'
 LEXMARK_DEVS='lxm5700m lxm3200 lex2050 lex3200 lex5700 lex7000'
 BROTHER_DEVS='hl7x0 hl1240 hl1250'
-APPLE_DEVS='appledmp iwhi iwlo iwlq'
+APPLE_DEVS='appledmp iwhi iwhic iwlo iwlow iwlq iwlqc'
 IBM_DEVS='ibmpro jetp3852'
 OKI_DEVS='oki182 okiibm oki4w'
 JAPAN_DEVS='lips4 lips4v ljet4pjl lj4dithp dj505j picty180 lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl'
@@ -3089,9 +3089,9 @@ fi
 
 # if the user explicitly requested the Apple devices, then hard fail if they aren't available
 if test x"$APPLE_DEVICES_REQUESTED" = x"yes" ; then
-  APDEVS=`echo $P_DEVS | grep 'APPLE\|iwhi\|iwlo\|iwlq'`
+  APDEVS=`echo $P_DEVS | grep 'APPLE\|appledmp\|iwhi\|iwhic\|iwlo\|iwlow\|iwlq\|iwlqc'`
   if test -z "$APDEVS" ; then
-    AC_MSG_ERROR([Requested Apple device(s) not available (iwhi, iwlo, and/or iwlq)])
+    AC_MSG_ERROR([Requested Apple device(s) not available (appledmp, iwhi, iwhic, iwlo, iwlow, iwlq and/or iwlqc)])
   fi
 fi
 

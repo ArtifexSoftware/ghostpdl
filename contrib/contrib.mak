@@ -59,6 +59,14 @@ CONTDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	escpage  Epson ESC/Page driver for Ghostscript (japanese)
 #	fmpr	 Fujitsu FMPR (japanese)
 #	fmlbp	 Fujitsu FMLBP2xx Page Printer (japanese)
+#	gdevadmp suite (Apple dot matrix)
+#		appledmp  Apple Dot Matrix Printer
+#		iwlo      Apple ImageWriter
+#		iwlow     Apple ImageWriter 15"
+#		iwhi      Apple ImageWriter II
+#		iwhic     Apple ImageWriter II (color)
+#		iwlq      Apple ImageWriter LQ
+#		iwlqc     Apple ImageWriter LQ (color)
 #	gdi	 Samsung's old driver for their SmartGDI laser printers:
 #		 ML-4500, ML-2xx, ML-1xxx, ML-5080, ML-6040, ... and
 #		 Lexmark E210, same as "samsunggdi"
@@ -141,11 +149,12 @@ CONTDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 # in alphabetical order.
 
 ###### ----------------------- End of catalog ----------------------- ######
+###### Note: these drivers were contributed by users.                 ######
 
-### --------------------- The Apple printer devices --------------------- ###
-### Note: these drivers were contributed by users.                        ###
+### ---------------- The Apple dot-matrix printer devices --------------- ###
 ###                                                                       ###
-### Maintained by Mike Galatean contact via https://bugs.ghostscript.com  ###
+### Maintained by Josh Moyer <JMoyer@NODOMAIN.NET>                        ###
+### http://press.jmoyer.nodomain.net/gdevadmp/                            ###
 ###                                                                       ###
 
 appledmp_=$(DEVOBJ)gdevadmp.$(OBJ)
@@ -159,11 +168,20 @@ $(DD)appledmp.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKED
 $(DD)iwhi.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)iwhi $(appledmp_)
 
+$(DD)iwhic.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
+	$(SETPDEV) $(DD)iwhic $(appledmp_)
+
 $(DD)iwlo.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)iwlo $(appledmp_)
 
+$(DD)iwlow.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
+	$(SETPDEV) $(DD)iwlow $(appledmp_)
+
 $(DD)iwlq.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)iwlq $(appledmp_)
+
+$(DD)iwlqc.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
+	$(SETPDEV) $(DD)iwlqc $(appledmp_)
 
 
 ### ----------------- The BJC-210/240/250/250ex/265/1000 ---------------- ###

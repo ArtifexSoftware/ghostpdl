@@ -1676,7 +1676,7 @@ After this code runs, then requesting a letter page size (612x792 points) from `
    << /PageSize [612 792] /MediaPosition 1 >> setpagedevice
 
 
-At this point, the chosen tray is sent to the device as the (nonstandard) ``%MediaSource`` device parameter. Devices with switchable trays should implement this device parameter in the ``put_params`` procedure. Unlike the usual protocol for device parameters, it is not necessary for devices to also implement ``get_params`` querying of this paramter; it is effectively a write-only communication from the language to the device. Currently, among the devices that ship with Ghostscript, only PCL (``gdevdjet.c``) and PCL/XL (``gdevpx.c``) implement this parameter, but that list may well grow over time.
+At this point, the chosen tray is sent to the device as the (nonstandard) ``%MediaSource`` device parameter. Devices with switchable trays should implement this device parameter in the ``put_params`` procedure. Unlike the usual protocol for device parameters, it is not necessary for devices to also implement ``get_params`` querying of this paramter; it is effectively a write-only communication from the language to the device. Currently, among the devices that ship with Ghostscript, only PCL (``gdevdjet.c``) and PCL/XL (``gdevpx.c``) and the ImageWriter LQ (``gdevadmp.c``) implement this parameter, but that list may well grow over time.
 
 If the device has dynamic configuration of trays, etc., then the easiest way to get that information into the tray selection logic is to send a ``setpagedevice`` request (if using the standard API, then using ``gsapi_run_string_continue``) to update the ``/InputAttributes`` dictionary immediately before beginning a job.
 
