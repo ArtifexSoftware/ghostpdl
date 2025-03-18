@@ -546,6 +546,7 @@ static int pdfi_type1_add_to_native_map(pdf_context *ctx, stream *f, char *fname
     char *typestr;
     bool pin_eol = false; /* initialised just to placate coverity */
     int type = -1;
+    int lines = 0;
     buf.data = (byte *)pname;
     buf.size = pname_size;
 
@@ -553,7 +554,10 @@ static int pdfi_type1_add_to_native_map(pdf_context *ctx, stream *f, char *fname
        /FontType and /FontName keys start in column 0 of their lines
      */
     while ((code = sreadline(f, NULL, NULL, NULL, &buf, NULL, &count, &pin_eol, NULL)) >= 0) {
-        if (buf.size > 9 && memcmp(buf.data, "/FontName", 9) == 0) {
+        lines++;
+        if (lines > 100 || (buf.size >= 17 && memcmp(buf.data, "currentfile eexec", 17) == 0))
+            break;
+        else if (buf.size > 9 && memcmp(buf.data, "/FontName", 9) == 0) {
             namestr = (char *)buf.data + 9;
             while (pdfi_end_ps_token(*namestr))
                 namestr++;
@@ -594,8 +598,6 @@ static int pdfi_type1_add_to_native_map(pdf_context *ctx, stream *f, char *fname
                 }
             }
         }
-        else if (buf.size >= 17 && memcmp(buf.data, "currentfile eexec", 17) == 0)
-            break;
         count = 0;
     }
     if (type == 1 && namestr != NULL) {
@@ -912,8 +914,9 @@ static int pdfi_add_font_to_native_map(pdf_context *ctx, const char *fp, char *w
               code = gs_error_undefined;
           break;
         case type1_font:
-        default:
           code = pdfi_type1_add_to_native_map(ctx, sf, (char *)fp, working, gp_file_name_sizeof);
+          break;
+        default:
           break;
     }
     sfclose(sf);
