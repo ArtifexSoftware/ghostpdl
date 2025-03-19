@@ -1322,6 +1322,7 @@ pdf14_make_base_group_color(gx_device* dev)
     pdf14_device* pdev = (pdf14_device*)dev;
     pdf14_group_color_t* group_color;
     bool deep = pdev->ctx->deep;
+    bool has_tags = device_encodes_tags(dev);
 
     if_debug0m('v', dev->memory, "[v]pdf14_make_base_group_color\n");
 
@@ -1336,7 +1337,7 @@ pdf14_make_base_group_color(gx_device* dev)
     group_color->num_std_colorants = pdev->num_std_colorants;
     group_color->blend_procs = pdev->blend_procs;
     group_color->polarity = pdev->color_info.polarity;
-    group_color->num_components = pdev->color_info.num_components;
+    group_color->num_components = pdev->color_info.num_components - has_tags;
     group_color->isadditive = pdev->ctx->additive;
     group_color->unpack_procs = pdev->pdf14_procs;
     group_color->max_color = pdev->color_info.max_color = deep ? 65535 : 255;
@@ -7219,6 +7220,8 @@ pdf14_pop_color_model(gx_device* dev, pdf14_group_color_t* group_color)
         if (pdev->num_planar_planes > 0)
             pdev->num_planar_planes += group_color->num_components - (pdev->color_info.num_components - has_tags);
         pdev->color_info.num_components = group_color->num_components + has_tags;
+        assert(pdev->num_planar_planes == 0 || pdev->num_planar_planes == pdev->color_info.num_components);
+        assert(pdev->color_info.num_components - has_tags == group_color->num_components);
         pdev->blend_procs = group_color->blend_procs;
         pdev->ctx->additive = group_color->isadditive;
         pdev->pdf14_procs = group_color->unpack_procs;
@@ -7462,6 +7465,8 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
         pdev->num_planar_planes += new_num_comps - pdev->color_info.num_components;
     group_color->num_components = new_num_comps - has_tags;
     pdev->color_info.num_components = new_num_comps;
+    assert(pdev->num_planar_planes == 0 || pdev->num_planar_planes == pdev->color_info.num_components);
+    assert(pdev->color_info.num_components - has_tags == group_color->num_components);
     pdev->color_info.depth = new_num_comps * (8<<deep);
     memset(&(pdev->color_info.comp_bits), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(&(pdev->color_info.comp_shift), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -7545,7 +7550,7 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
         dev_proc(pdev, get_color_comp_index);
     new_group_color->blend_procs = pdev->blend_procs;
     new_group_color->polarity = pdev->color_info.polarity;
-    new_group_color->num_components = pdev->color_info.num_components;
+    new_group_color->num_components = pdev->color_info.num_components - has_tags;
     new_group_color->unpack_procs = pdev->pdf14_procs;
     new_group_color->depth = pdev->color_info.depth;
     new_group_color->max_color = pdev->color_info.max_color;
@@ -7733,6 +7738,7 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     if (pdev->num_planar_planes > 0)
         pdev->num_planar_planes += new_num_comps - pdev->color_info.num_components;
     pdev->color_info.num_components = new_num_comps;
+    assert(pdev->num_planar_planes == 0 || pdev->num_planar_planes == pdev->color_info.num_components);
     pdev->color_info.depth = new_depth;
     memset(&(pdev->color_info.comp_bits), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(&(pdev->color_info.comp_shift), 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
@@ -7798,7 +7804,9 @@ pdf14_clist_pop_color_model(gx_device *dev, gs_gstate *pgs)
         pdev->color_info.depth = group_color->depth;
         if (pdev->num_planar_planes > 0)
             pdev->num_planar_planes += group_color->num_components - (pdev->color_info.num_components - has_tags);
-        pdev->color_info.num_components = group_color->num_components;
+        pdev->color_info.num_components = group_color->num_components + has_tags;
+        assert(pdev->num_planar_planes == 0 || pdev->num_planar_planes == pdev->color_info.num_components);
+        assert(pdev->color_info.num_components - has_tags == group_color->num_components);
         pdev->blend_procs = group_color->blend_procs;
         pdev->pdf14_procs = group_color->unpack_procs;
         pdev->color_info.max_color = group_color->max_color;
@@ -7988,6 +7996,8 @@ pdf14_end_transparency_mask(gx_device *dev, gs_gstate *pgs)
             if (pdev->num_planar_planes > 0)
                 pdev->num_planar_planes += group_color->num_components - (pdev->color_info.num_components - has_tags);
             pdev->color_info.num_components = group_color->num_components + has_tags;
+            assert(pdev->num_planar_planes == 0 || pdev->num_planar_planes == pdev->color_info.num_components);
+            assert(pdev->color_info.num_components - has_tags == group_color->num_components);
             pdev->num_std_colorants = group_color->num_std_colorants;
             pdev->color_info.depth = group_color->depth;
             pdev->blend_procs = group_color->blend_procs;
@@ -12388,6 +12398,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                         if (p14dev->num_planar_planes > 0)
                             p14dev->num_planar_planes += num_comp - p14dev->color_info.num_components;
                         p14dev->color_info.num_components = num_comp;
+                        assert(p14dev->num_planar_planes == 0 || p14dev->num_planar_planes == p14dev->color_info.num_components);
                     } else {
                         /* if page_spot_colors < 0, this will be wrong, so don't update num_components */
                         if (p14dev->devn_params.page_spot_colors >= 0) {
@@ -12396,6 +12407,7 @@ c_pdf14trans_clist_read_update(gs_composite_t *	pcte, gx_device	* cdev,
                             if (p14dev->num_planar_planes > 0)
                                 p14dev->num_planar_planes += n - p14dev->color_info.num_components;
                             p14dev->color_info.num_components = n;
+                            assert(p14dev->num_planar_planes == 0 || p14dev->num_planar_planes == p14dev->color_info.num_components);
                         }
                     }
                 }
