@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -358,6 +358,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             gx_make_clip_device_on_stack(&cdev, pcpath, save_dev);
             cdev.max_fill_band = save_dev->max_fill_band;
             clipping = 1;
+            rc_increment(cdev.target);
         }
     }
     /*
@@ -426,8 +427,9 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             int x1 = fixed2int_pixround(rbox.q.x + fo.adjust_right);
             int y1 = fixed2int_pixround(rbox.q.y + fo.adjust_above);
 
-            return gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
+            code = gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
                                                 pdevc, dev, lop);
+            goto exit;
         }
         if (fo.adjust_left | fo.adjust_right | fo.adjust_below | fo.adjust_above)
             fill_by_trapezoids = false; /* avoid double writing pixels */
@@ -444,7 +446,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             code = gx_path_copy_reducing(ppath, &ffpath, fo.fixed_flat, NULL,
                                          pco_small_curves | pco_accurate);
             if (code < 0)
-                return code;
+                goto exit;
             ppath = &ffpath;
         }
 
@@ -472,7 +474,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
                                        (!fill_by_trapezoids && fo.fill_direct) ? -1 : (int)pgs->log_op);
         if (ppath == &ffpath)
             gx_path_free(ppath, "gx_general_fill_path");
-        return code;
+        goto exit;
     }
 
     gx_path_init_local(&ffpath, ppath->memory);
@@ -486,12 +488,12 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
         code = gx_path_copy_reducing(ppath, &ffpath, fo.fixed_flat, NULL,
                                      pco_small_curves | (pgs->accurate_curves ? pco_accurate : 0));
         if (code < 0)
-            return code;
+            goto exit;
         pfpath = &ffpath;
         if (big_path) {
             code = gx_path_merge_contacting_contours(pfpath);
             if (code < 0)
-                return code;
+                goto exit;
         }
     }
     fo.fill_by_trapezoids = fill_by_trapezoids;
@@ -548,6 +550,7 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
                    stats_fill.slow_order);
     }
 #endif
+exit:
     if (clipping)
         gx_destroy_clip_device_on_stack(&cdev);
     return code;
@@ -583,7 +586,7 @@ gx_default_fill_path_shading_or_pattern(gx_device * pdev, const gs_gstate * pgs,
                                         gx_path * ppath, const gx_fill_params * params,
                                         const gx_device_color * pdevc, const gx_clip_path * pcpath)
 {
-    int code = 0;
+    int code = 0, clipping = 0;
     /*  We need a single clipping path here, because shadings and
         halftones don't take 2 paths. Compute the clipping path intersection.
     */
@@ -633,11 +636,13 @@ gx_default_fill_path_shading_or_pattern(gx_device * pdev, const gs_gstate * pgs,
             dev = pdev;
         } else {
             gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
+            rc_increment(cdev.target);
             dev = (gx_device *)&cdev;
             if ((*dev_proc(pdev, dev_spec_op))(pdev,
                         gxdso_pattern_shading_area, NULL, 0) > 0)
                 set_dev_proc(&cdev, fill_path, pass_shading_area_through_clip_path_device);
             code = 0;
+            clipping = 1;
         }
         if (code >= 0) {
             /* Check clip rectangle covers an actual area */
@@ -646,6 +651,8 @@ gx_default_fill_path_shading_or_pattern(gx_device * pdev, const gs_gstate * pgs,
                         cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
                         dev, pgs->log_op, rs);
         }
+        if (clipping)
+            gx_destroy_clip_device_on_stack(&cdev);
     }
     if (ppath != NULL)
         gx_cpath_free(&cpath_intersection, "shading_fill_cpath_intersection");

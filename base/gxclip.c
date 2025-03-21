@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -155,6 +155,8 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
 void
 gx_destroy_clip_device_on_stack(gx_device_clip * dev)
 {
+    if (dev->target != NULL)
+        rc_decrement(dev->target, "gx_destroy_clip_device_on_stack");
     if (dev->cpath)
         ((gx_clip_path *)dev->cpath)->cached = (dev->current == &dev->list.single ? NULL : dev->current); /* Cast away const */
 }
