@@ -969,13 +969,11 @@ done:
 static int pdfi_generate_native_fontmap(pdf_context *ctx)
 {
     file_enum *fe;
-    int i, j;
+    int i;
     char *patrn= NULL;
     char *result = NULL;
     char *working = NULL;
     int code = 0, l;
-    gs_param_string *respaths[2];
-    int nrespaths[2];
 
     if (ctx->pdfnativefontmap != NULL) /* Only run this once */
         return 0;
@@ -1000,33 +998,26 @@ static int pdfi_generate_native_fontmap(pdf_context *ctx)
         return_error(gs_error_VMerror);
     }
 
-    respaths[0] = ctx->search_paths.font_paths;
-    nrespaths[0] = ctx->search_paths.num_font_paths;
-    respaths[1] = ctx->search_paths.resource_paths;
-    nrespaths[1] = ctx->search_paths.num_resource_paths;
+    for (i = 0; i < ctx->search_paths.num_font_paths; i++) {
 
-    for (j = 0; j < sizeof(respaths) / sizeof(respaths[0]); j++) {
-        for (i = 0; i < nrespaths[j]; i++) {
+        memcpy(patrn, ctx->search_paths.font_paths[i].data, ctx->search_paths.font_paths[i].size);
+        memcpy(patrn + ctx->search_paths.font_paths[i].size, "/*", 2);
+        patrn[ctx->search_paths.font_paths[i].size + 2] = '\0';
 
-            memcpy(patrn, respaths[j][i].data, respaths[j][i].size);
-            memcpy(patrn + respaths[j][i].size, "/*", 2);
-            patrn[respaths[j][i].size + 2] = '\0';
+        fe = gp_enumerate_files_init(ctx->memory, (const char *)patrn, strlen(patrn));
+        while ((l = gp_enumerate_files_next(ctx->memory, fe, result, gp_file_name_sizeof - 1)) != ~(uint) 0) {
+            result[l] = '\0';
 
-            fe = gp_enumerate_files_init(ctx->memory, (const char *)patrn, strlen(patrn));
-            while ((l = gp_enumerate_files_next(ctx->memory, fe, result, gp_file_name_sizeof - 1)) != ~(uint) 0) {
-                result[l] = '\0';
+            code = pdfi_add_font_to_native_map(ctx, result, working);
 
-                code = pdfi_add_font_to_native_map(ctx, result, working);
-
-                /* We ignore most errors, on the basis it probably means it wasn't a valid font file */
-                if (code == gs_error_VMerror)
-                    break;
-                code = 0;
-            }
-            /* We only need to explicitly destroy the enumerator if we exit before enumeration is complete */
-            if (code < 0)
-                gp_enumerate_files_close(ctx->memory, fe);
+            /* We ignore most errors, on the basis it probably means it wasn't a valid font file */
+            if (code == gs_error_VMerror)
+                break;
+            code = 0;
         }
+        /* We only need to explicitly destroy the enumerator if we exit before enumeration is complete */
+        if (code < 0)
+            gp_enumerate_files_close(ctx->memory, fe);
     }
 
 #ifdef DUMP_NATIVE_FONTMAP
