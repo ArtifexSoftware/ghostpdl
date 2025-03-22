@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -391,6 +391,7 @@ gx_default_stroke_path_shading_or_pattern(gx_device        * pdev,
         code = pdevc->type->fill_rectangle(pdevc,
                         cb.p.x, cb.p.y, cb.q.x - cb.p.x, cb.q.y - cb.p.y,
                         (gx_device *)&cdev, pgs->log_op, NULL);
+        gx_destroy_clip_device_on_stack(&cdev);
     }
     gx_cpath_free(&stroke_as_clip_path, "gx_default_stroke_path_shading_or_pattern");
 
@@ -734,15 +735,20 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
     /* Start by flattening the path.  We should do this on-the-fly.... */
     if (!gx_path_has_curves(ppath) && !gx_path_has_long_segments(ppath)) {
         /* don't need to flatten */
-        if (!ppath->first_subpath)
+        if (!ppath->first_subpath) {
+            if (dev == &cdev)
+                gx_destroy_clip_device_on_stack(&cdev);
             return 0;
+        }
         spath = ppath;
     } else {
         gx_path_init_local(&fpath, ppath->memory);
         if ((code = gx_path_add_flattened_for_stroke(ppath, &fpath,
-                                                params->flatness, pgs)) < 0
-            )
+            params->flatness, pgs)) < 0) {
+            if (dev == &cdev)
+                gx_destroy_clip_device_on_stack(&cdev);
             return code;
+        }
         spath = &fpath;
         flattened_path = true;
     }
@@ -1144,6 +1150,8 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
     /* If we flattened the path then we set spath to &fpath. If we flattned the path then now we need to free fpath */
     if(flattened_path)
         gx_path_free(&fpath, "gx_stroke_path exit(flattened path)");
+    if (dev == &cdev)
+        gx_destroy_clip_device_on_stack(&cdev);
     return code;
 }
 

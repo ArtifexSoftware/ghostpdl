@@ -358,7 +358,6 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             gx_make_clip_device_on_stack(&cdev, pcpath, save_dev);
             cdev.max_fill_band = save_dev->max_fill_band;
             clipping = 1;
-            rc_increment(cdev.target);
         }
     }
     /*
@@ -636,7 +635,6 @@ gx_default_fill_path_shading_or_pattern(gx_device * pdev, const gs_gstate * pgs,
             dev = pdev;
         } else {
             gx_make_clip_device_on_stack(&cdev, pcpath1, pdev);
-            rc_increment(cdev.target);
             dev = (gx_device *)&cdev;
             if ((*dev_proc(pdev, dev_spec_op))(pdev,
                         gxdso_pattern_shading_area, NULL, 0) > 0)

@@ -1059,6 +1059,7 @@ pdf_image_handle_eps(gx_device_pdf *pdev, const gs_gstate * pgs,
                                  float2fixed(corners[3].x) - x0,
                                  float2fixed(corners[3].y) - y0,
                                  bx2, by2, &devc, lop_default);
+        gx_destroy_clip_device_on_stack(&cdev);
         pdev->AccumulatingBBox--;
     } else {
         /* Just use the bounding box. */

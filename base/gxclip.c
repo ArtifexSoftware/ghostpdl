@@ -112,6 +112,11 @@ void
 gx_device_clip_finalize(const gs_memory_t *cmem, void *vpdev)
 {
     gx_device_clip *dev = (gx_device_clip *)vpdev;
+
+    if (dev->target != NULL) {
+        rc_decrement(dev->target, "gx_device_clip_finalize");
+        dev->target = NULL;
+    }
     if (dev->rect_list != NULL) {
         rc_decrement(dev->rect_list, "finalizing clipper device");
         dev->rect_list = NULL;
@@ -142,7 +147,7 @@ gx_make_clip_device_on_stack(gx_device_clip * dev, const gx_clip_path *pcpath, g
     dev->HWResolution[0] = target->HWResolution[0];
     dev->HWResolution[1] = target->HWResolution[1];
     dev->sgr = target->sgr;
-    dev->target = target;
+    gx_device_set_target((gx_device_forward *)dev, target);
     dev->pad = target->pad;
     dev->log2_align_mod = target->log2_align_mod;
     dev->num_planar_planes = target->num_planar_planes;
@@ -189,7 +194,7 @@ gx_make_clip_device_on_stack_if_needed(gx_device_clip * dev, const gx_clip_path 
     dev->HWResolution[0] = target->HWResolution[0];
     dev->HWResolution[1] = target->HWResolution[1];
     dev->sgr = target->sgr;
-    dev->target = target;
+    gx_device_set_target((gx_device_forward *)dev, target);
     dev->pad = target->pad;
     dev->log2_align_mod = target->log2_align_mod;
     dev->num_planar_planes = target->num_planar_planes;

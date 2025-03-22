@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1088,6 +1088,7 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
                                  float2fixed(corners[3].y) - y0,
                                  bx2, by2, &devc, lop_default);
         bdev->target = tdev;
+        gx_destroy_clip_device_on_stack(&cdev);
     } else {
         /* Just use the bounding box if the image is not 0 width or height */
         if (ibox.p.x != ibox.q.x && ibox.p.y != ibox.q.y)

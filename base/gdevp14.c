@@ -5257,6 +5257,8 @@ pdf14_fill_mask(gx_device * orig_dev,
                        "pdf14_fill_mask");
         ptile->ttrans->fill_trans_buffer = NULL;  /* Avoid GC issues */
     }
+    if (pcpath != 0)
+        gx_destroy_clip_device_on_stack(&cdev);
     return code;
 }
 
@@ -5474,7 +5476,7 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
             code = gx_trans_pattern_fill_rect(rect.p.x, rect.p.y, rect.q.x, rect.q.y,
                                               ptile, fill_trans_buffer, phase,
                                               dev, pdevc, 1);
-
+            gx_destroy_clip_device_on_stack(&clipdev);
         }
         /* We're done drawing with the pattern, remove the reference to the
          * pattern device

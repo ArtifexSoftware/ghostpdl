@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -505,8 +505,6 @@ gx_image1_end_image(gx_image_enum_common_t * info, bool draw_last)
     /* release the reference to the target */
     if ( penum->rop_dev )
         gx_device_set_target((gx_device_forward *)penum->rop_dev, NULL);
-    if ( penum->clip_dev )
-        gx_device_set_target((gx_device_forward *)penum->clip_dev, NULL);
     /* it is not clear (to me) why these are freed explicitly instead
        of using reference counting */
     gs_free_object(mem, penum->rop_dev, "image RasterOp");

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -185,6 +185,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
     gx_device *imaging_dev = penum->imaging_dev ? penum->imaging_dev : dev;
     gx_device *orig_dev = imaging_dev;
     gx_device_clip cdev;
+    int clipping = 0;
     gx_xglyph xg = cc->xglyph;
     gx_xfont *xf;
     byte *bits;
@@ -239,8 +240,11 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
         if_debug0m('K', penum->memory, "[K](clipping)\n");
     }
     code = gx_set_dev_color(pgs);
-    if (code != 0)
+    if (code != 0) {
+        if (imaging_dev == (gx_device *) & cdev)
+            gx_destroy_clip_device_on_stack(&cdev);
         return code;
+    }
     /* If an xfont can render this character, use it. */
     if (xg != gx_no_xglyph && (xf = cc_pair(cc)->xfont) != 0) {
         int cx = x + fixed2int(cc->offset.x);
@@ -261,8 +265,11 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
                        (intptr_t)xf, (ulong)xg, (intptr_t)imaging_dev,
                        imaging_dev->dname, cx, cy,
                        (ulong) pdevc->colors.pure, code);
-            if (code == 0)
+            if (code == 0) {
+                if (imaging_dev == (gx_device *) & cdev)
+                    gx_destroy_clip_device_on_stack(&cdev);
                 return_check_interrupt(penum->memory, 0);
+            }
         }
         /* Can't render directly.  If we don't have a bitmap yet, */
         /* get it from the xfont now. */
@@ -278,8 +285,11 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
                        "[K]render_char to bits: xfont="PRI_INTPTR", glyph=0x%lx\n\tdev="PRI_INTPTR"(%s) x,y=%d,%d => %d\n",
                       (intptr_t)xf, (ulong) xg, (intptr_t)&mdev,
                       mdev.dname, cx - x, cy - y, code);
-            if (code != 0)
+            if (code != 0) {
+                if (imaging_dev == (gx_device *) & cdev)
+                    gx_destroy_clip_device_on_stack(&cdev);
                 return_check_interrupt(penum->memory, 1);
+            }
             gx_add_char_bits(cc_pair(cc)->font->dir,
                              cc, &scale_log2_1);
             /* gx_add_char_bits may change width, height, */
@@ -330,8 +340,11 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
                 return_check_interrupt(penum->memory, 0);
             /* copy_alpha failed, construct a monobit mask. */
             bits = compress_alpha_bits(cc, penum->memory->non_gc_memory);
-            if (bits == 0)
+            if (bits == 0) {
+                if (imaging_dev == (gx_device *) & cdev)
+                    gx_destroy_clip_device_on_stack(&cdev);
                 return 1;	/* VMerror, but recoverable */
+            }
         }
         code = (*dev_proc(imaging_dev, copy_mono))
             (imaging_dev, bits, 0, bitmap_raster(w), gs_no_id,
@@ -341,9 +354,11 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
     if (depth > 1) {		/* Complex color or fill_mask / copy_alpha failed, */
         /* construct a monobit mask. */
         bits = compress_alpha_bits(cc, penum->memory->non_gc_memory);
-        if (bits == 0)
+        if (bits == 0) {
+            if (imaging_dev == (gx_device *) & cdev)
+                gx_destroy_clip_device_on_stack(&cdev);
             return 1;		/* VMerror, but recoverable */
-
+        }
     } {				/* Use imagemask to render the character. */
         gs_memory_t *mem = penum->memory->non_gc_memory;
         gs_image_enum *pie =
@@ -358,6 +373,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
             if (bits != cc_bits(cc))
                 gs_free_object(mem, bits,
                                "compress_alpha_bits");
+            if (imaging_dev == (gx_device *) & cdev)
+                gx_destroy_clip_device_on_stack(&cdev);
             return 1;		/* VMerror, but recoverable */
         }
         /* Make a matrix that will place the image */
@@ -387,6 +404,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
         gs_free_object(penum->memory->non_gc_memory, bits, "compress_alpha_bits");
     if (code > 0)
         code = 0;
+    if (imaging_dev == (gx_device *) & cdev)
+        gx_destroy_clip_device_on_stack(&cdev);
     return_check_interrupt(penum->memory, code);
 }
 

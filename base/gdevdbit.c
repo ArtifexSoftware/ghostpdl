@@ -539,6 +539,7 @@ gx_default_fill_mask(gx_device * orig_dev,
 {
     gx_device *dev = orig_dev;
     gx_device_clip cdev;
+    int code = 0;
 
     if (w == 0 || h == 0)
         return 0;
@@ -577,12 +578,15 @@ gx_default_fill_mask(gx_device * orig_dev,
     }
     if (depth > 1) {
         /****** CAN'T DO ROP OR HALFTONE WITH ALPHA ******/
-        return (*dev_proc(dev, copy_alpha))
+        code = (*dev_proc(dev, copy_alpha))
             (dev, data, dx, raster, id, x, y, w, h,
              gx_dc_pure_color(pdcolor), depth);
     } else
-        return pdcolor->type->fill_masked(pdcolor, data, dx, raster, id,
+        code = pdcolor->type->fill_masked(pdcolor, data, dx, raster, id,
                                           x, y, w, h, dev, lop, false);
+    if (dev != orig_dev)
+        gx_destroy_clip_device_on_stack(&cdev);
+    return code;
 }
 
 /* Default implementation of strip_tile_rect_devn.  With the current design

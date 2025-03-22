@@ -1112,6 +1112,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
                                  float2fixed(text_bbox.q.x) - x0,
                                  float2fixed(text_bbox.p.y) - y0,
                                  bx2, by2, &devc, lop_default);
+        gx_destroy_clip_device_on_stack(&cdev);
         pdev->AccumulatingBBox--;
     }
     if (!(operation & TEXT_RETURN_WIDTH)) {

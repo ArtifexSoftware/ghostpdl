@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -91,6 +91,7 @@ gx_image_fill_masked_end(gx_device *dev, gx_device *tdev, const gx_device_color 
         if (code == 0)
             code = code1;
     }
+    gx_destroy_clip_device_on_stack(&cdev);
     if (pcpath1 == &cpath_with_shading_bbox)
         gx_cpath_free(&cpath_with_shading_bbox, "s_image_cleanup");
     gx_device_retain((gx_device *)pcdev, false);

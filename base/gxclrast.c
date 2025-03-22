@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -574,7 +574,7 @@ clist_playback_band(clist_playback_action playback_action, /* lgtm [cpp/use-of-g
     ht_buff_t  ht_buff;
     gx_device *const orig_target = target;
     gx_device_clip clipper_dev;
-    bool clipper_dev_open;
+    bool clipper_dev_open = false;
     patch_fill_state_t pfs;
     int op = 0;
     int plane_height = 0;
@@ -613,6 +613,8 @@ in:                             /* Initialize for a new page. */
     set_dev_colors = state.tile_color_devn;
     use_clip = false;
     pcpath = NULL;
+    if (clipper_dev_open)
+        gx_destroy_clip_device_on_stack(&clipper_dev);
     clipper_dev_open = false;
     notes = sn_none;
     data_x = 0;
@@ -681,6 +683,8 @@ in:                             /* Initialize for a new page. */
         gs_free_object(mem, gs_gstate.color[1].ccolor, "clist_playback_band");
         gs_free_object(mem, gs_gstate.color[0].dev_color, "clist_playback_band");
         gs_free_object(mem, gs_gstate.color[1].dev_color, "clist_playback_band");
+        if (clipper_dev_open)
+            gx_destroy_clip_device_on_stack(&clipper_dev);
         return_error(gs_error_VMerror);
     }
     gs_gstate.color[0].color_space->pclient_color_space_data =
@@ -1340,16 +1344,22 @@ set_tile_phase:
                             if (code < 0)
                                 goto out;
                         }
+                        if (clipper_dev_open)
+                            gx_destroy_clip_device_on_stack(&clipper_dev);
                         clipper_dev_open = false;
                         if_debug0m('L', mem, "\n");
                         break;
                     case cmd_opv_disable_clip:
                         pcpath = NULL;
+                        if (clipper_dev_open)
+                            gx_destroy_clip_device_on_stack(&clipper_dev);
                         clipper_dev_open = false;
                         if_debug0m('L', mem, "\n");
                         break;
                     case cmd_opv_begin_clip:
                         pcpath = NULL;
+                        if (clipper_dev_open)
+                            gx_destroy_clip_device_on_stack(&clipper_dev);
                         clipper_dev_open = false;
                         in_clip = true;
                         if_debug0m('L', mem, "\n");
@@ -1395,6 +1405,8 @@ set_tile_phase:
                             if (code < 0)
                                 goto out;
                         }
+                        if (clipper_dev_open)
+                            gx_destroy_clip_device_on_stack(&clipper_dev);
                         clipper_dev_open = false;
                         state.lop_enabled = clip_save.lop_enabled;
                         gs_gstate.log_op =
@@ -2448,6 +2460,8 @@ idata:                  data_size = 0;
         gx_cpath_free(&clip_path, "clist_playback_band");
         if (pcpath != &clip_path)
             gx_cpath_free(pcpath, "clist_playback_band");
+        if (clipper_dev_open)
+            gx_destroy_clip_device_on_stack(&clipper_dev);
         return_error(code);
     }
     /* Check whether we have more pages to process. */
@@ -2463,11 +2477,15 @@ idata:                  data_size = 0;
     gx_cpath_free(&clip_path, "clist_playback_band");
     if (pcpath != &clip_path)
         gx_cpath_free(pcpath, "clist_playback_band");
+    if (clipper_dev_open)
+        gx_destroy_clip_device_on_stack(&clipper_dev);
     return code;
 top_up_failed:
     gx_cpath_free(&clip_path, "clist_playback_band");
     if (pcpath != &clip_path)
         gx_cpath_free(pcpath, "clist_playback_band");
+    if (clipper_dev_open)
+        gx_destroy_clip_device_on_stack(&clipper_dev);
     return code;
 }
 
