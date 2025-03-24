@@ -10448,7 +10448,6 @@ get_pdf14_clist_device_proto(gx_device          *dev,
     pdf14_default_colorspace_t dev_cs =
                 pdf14_determine_default_blend_cs(dev, use_pdf14_accum,
                                                  &blend_cs_state);
-    bool has_tags = device_encodes_tags(dev);
     bool deep = device_is_deep(dev);
     int num_spots = pdf14pct->params.num_spot_colors;
 

@@ -185,7 +185,6 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
     gx_device *imaging_dev = penum->imaging_dev ? penum->imaging_dev : dev;
     gx_device *orig_dev = imaging_dev;
     gx_device_clip cdev;
-    int clipping = 0;
     gx_xglyph xg = cc->xglyph;
     gx_xfont *xf;
     byte *bits;
