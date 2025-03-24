@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -503,7 +503,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * pdev,
     if (iraster != 0 && iheight >> log2_yscale > dir->ccache.upper / iraster) {
         if_debug5m('k', pdev->memory, "[k]no cache bits: scale=%dx%d, raster/scale=%u, height/scale=%u, upper=%u\n",
                    1 << log2_xscale, 1 << log2_yscale,
-                   iraster, iheight, dir->ccache.upper);
+                   (unsigned int)iraster, iheight, dir->ccache.upper);
         return 0;		/* too big */
     }
     /* Compute the actual bitmap size(s) and allocate the bits. */
