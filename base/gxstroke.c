@@ -736,7 +736,7 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
     if (!gx_path_has_curves(ppath) && !gx_path_has_long_segments(ppath)) {
         /* don't need to flatten */
         if (!ppath->first_subpath) {
-            if (dev == &cdev)
+            if (dev == (gx_device *)&cdev)
                 gx_destroy_clip_device_on_stack(&cdev);
             return 0;
         }
@@ -745,7 +745,7 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
         gx_path_init_local(&fpath, ppath->memory);
         if ((code = gx_path_add_flattened_for_stroke(ppath, &fpath,
             params->flatness, pgs)) < 0) {
-            if (dev == &cdev)
+            if (dev == (gx_device *)&cdev)
                 gx_destroy_clip_device_on_stack(&cdev);
             return code;
         }
@@ -1150,7 +1150,7 @@ gx_stroke_path_only_aux(gx_path          *ppath, /* lgtm[cpp/use-of-goto] */
     /* If we flattened the path then we set spath to &fpath. If we flattned the path then now we need to free fpath */
     if(flattened_path)
         gx_path_free(&fpath, "gx_stroke_path exit(flattened path)");
-    if (dev == &cdev)
+    if (dev == (gx_device *)&cdev)
         gx_destroy_clip_device_on_stack(&cdev);
     return code;
 }
