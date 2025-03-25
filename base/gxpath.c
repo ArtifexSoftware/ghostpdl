@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -225,6 +225,28 @@ gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
     ppath->allocation = path_allocated_on_stack;
     ppath->procs = &default_path_procs;
     return 0;
+}
+
+void gx_path_preinit_local_rectangle(gx_path *ppath, gs_memory_t *mem)
+{
+    rc_init_free(&ppath->local_segments, mem, 1, NULL);
+    ppath->segments = &ppath->local_segments;
+    ppath->box_last = 0;
+    ppath->first_subpath = ppath->current_subpath = 0;
+    ppath->subpath_count = 0;
+    ppath->curve_count = 0;
+    path_update_newpath(ppath);
+    ppath->bbox_set = 1;
+    ppath->bbox_accurate = 1;
+    ppath->last_charpath_segment = 0;
+    ppath->memory = mem;
+    ppath->allocation = path_allocated_on_stack;
+    ppath->procs = &default_path_procs;
+}
+
+void gx_path_init_local_rectangle(gx_path *ppath, gs_fixed_rect *rect)
+{
+    ppath->bbox = *rect;
 }
 
 /*

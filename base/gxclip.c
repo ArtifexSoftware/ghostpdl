@@ -21,6 +21,7 @@
 #include "gxpath.h"
 #include "gxcpath.h"
 #include "gzcpath.h"
+#include "gsutil.h"  /* For gs_next_ids */
 
 /* Define whether to look for vertical clipping regions. */
 #define CHECK_VERTICAL_CLIPPING
@@ -1575,32 +1576,26 @@ static int
 do_clip_call_fill_path(clip_callback_data_t *pccd, int xc, int yc, int xec, int yec)
 {
     gx_device *tdev = pccd->tdev;
-    gx_clip_path cpath;
     gs_fixed_rect rect;
-    int code;
     dev_proc_fill_path((*proc));
+    gs_id id;
 
     rect.p.x = int2fixed(xc);
     rect.p.y = int2fixed(yc);
     rect.q.x = int2fixed(xec);
     rect.q.y = int2fixed(yec);
 
-    /* The cpath calls might look expensive, but actually are
-     * achieved without any allocations. */
-    gx_cpath_init_local(&cpath, pccd->ppath->memory);
-    code = gx_cpath_from_rectangle(&cpath, &rect);
-    if (code < 0)
-        return code;
+    if (pccd->id_pool_len == 0) {
+        pccd->id_pool = gs_next_ids(pccd->tdev->memory, 100);
+        pccd->id_pool_len = 100;
+    }
+    gx_cpath_init_local_rectangle(pccd->rect_cpath, &rect, pccd->id_pool++);
+    pccd->id_pool_len--;
     proc = dev_proc(tdev, fill_path);
     if (proc == NULL)
         proc = gx_default_fill_path;
-    code = (*proc)(pccd->tdev, pccd->pgs, pccd->ppath, pccd->params,
-                   pccd->pdcolor, &cpath);
-    /* We could call gx_cpath_free here, but actually everything
-     * is allocated on the stack, so it serves no purpose. */
-    /* gx_cpath_free(&cpath, "clip_call_fill_path"); */
-
-    return code;
+    return (*proc)(pccd->tdev, pccd->pgs, pccd->ppath, pccd->params,
+                   pccd->pdcolor, pccd->rect_cpath);
 }
 
 static int
@@ -1626,7 +1621,11 @@ clip_fill_path(gx_device * dev, const gs_gstate * pgs,
     gx_device_clip *rdev = (gx_device_clip *) dev;
     clip_callback_data_t ccdata;
     gs_fixed_rect box;
+    gx_clip_path cpath;
 
+    ccdata.id_pool_len = 0;
+    gx_cpath_preinit_local_rectangle(&cpath, ppath->memory);
+    ccdata.rect_cpath = &cpath;
     ccdata.pgs = pgs;
     ccdata.ppath = ppath;
     ccdata.params = params;

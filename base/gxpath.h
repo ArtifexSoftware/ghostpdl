@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -106,6 +106,12 @@ int gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
 
 #define gx_path_init_local(ppath, mem)\
   (void)gx_path_init_local_shared(ppath, NULL, mem)	/* can't fail */
+
+/* Special case constructors for paths that will only ever consist of a
+ * single rectangle. Used for speed. No destruction required. The
+ * memory pointer is only for callers further down the chain. */
+void gx_path_preinit_local_rectangle(gx_path *ppath, gs_memory_t *mem);
+void gx_path_init_local_rectangle(gx_path *ppath, gs_fixed_rect *rect);
 
 /*
  * Initialize a stack-allocated pseudo-path for computing a bbox
@@ -358,6 +364,13 @@ int gx_cpath_init_local_shared_nested(gx_clip_path * pcpath,
 
 #define gx_cpath_init_local(pcpath, mem)\
   (void)gx_cpath_init_local_shared(pcpath, NULL, mem)	/* can't fail */
+
+/* Special case constructors for clip paths that will only ever consist of a
+ * single rectangle. Used for speed. No destruction required. The mem pointer
+ * is only used by callers further down the chain needing such. */
+void gx_cpath_preinit_local_rectangle(gx_clip_path *pcpath, gs_memory_t *mem);
+void gx_cpath_init_local_rectangle(gx_clip_path *pcpath, gs_fixed_rect *r, gs_id id);
+
 int gx_cpath_unshare(gx_clip_path * pcpath);
 void gx_cpath_free(gx_clip_path * pcpath, client_name_t cname);
 int gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom);

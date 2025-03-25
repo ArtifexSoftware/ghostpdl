@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -267,6 +267,34 @@ gx_cpath_init_local_shared(gx_clip_path * pcpath, const gx_clip_path * shared,
                            gs_memory_t * mem)
 {
     return gx_cpath_init_local_shared_nested(pcpath, shared, mem, 0);
+}
+
+void gx_cpath_preinit_local_rectangle(gx_clip_path *pcpath, gs_memory_t *mem)
+{
+    gx_clip_list *clp = &pcpath->local_list.list;
+    gx_path_preinit_local_rectangle(&pcpath->path, mem);
+    rc_init_free(&pcpath->local_list, mem, 1, NULL);
+    pcpath->rect_list = &pcpath->local_list;
+    gx_clip_list_init(clp);
+    clp->count = 1;
+    pcpath->path_valid = false;
+    pcpath->path_fill_adjust.x = 0;
+    pcpath->path_fill_adjust.y = 0;
+    pcpath->cached = NULL;
+    pcpath->path_list = NULL;
+}
+
+void gx_cpath_init_local_rectangle(gx_clip_path *pcpath, gs_fixed_rect *r, gs_id id)
+{
+    gx_clip_list *clp = &pcpath->local_list.list;
+    clp->single.xmin = clp->xmin = fixed2int_var(r->p.x);
+    clp->single.ymin = fixed2int_var(r->p.y);
+    clp->single.xmax = clp->xmax = fixed2int_var_ceiling(r->q.x);
+    clp->single.ymax = fixed2int_var_ceiling(r->q.y);
+    pcpath->inner_box = *r;
+    pcpath->path.bbox = *r;
+    gx_cpath_set_outer_box(pcpath);
+    pcpath->id = id;
 }
 
 /* Unshare a clipping path. */
