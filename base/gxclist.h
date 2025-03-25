@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -181,7 +181,7 @@ typedef struct gx_clist_state_s gx_clist_state;
         gx_device_buf_procs_t buf_procs;\
         gs_memory_t *bandlist_memory;	/* allocator for in-memory bandlist files */\
         byte *data;			/* buffer area */\
-        uint data_size;			/* size of buffer */\
+        size_t data_size;		/* size of buffer */\
         gx_band_params_t band_params;	/* band buffering parameters */\
         bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
         dev_proc_dev_spec_op((*orig_spec_op)); /* Original dev spec op handler */\
@@ -633,7 +633,7 @@ void clist_debug_set_ctm_imp(const gs_matrix *m);
 #define gx_device_clist_mutatable_common\
     byte skip[max(sizeof(gx_device_memory), sizeof(gx_device_clist)) -\
               sizeof(gx_device) + sizeof(double) /* padding */];\
-    long buffer_space;	          /* amount of space for clist buffer, */\
+    size_t buffer_space;          /* amount of space for clist buffer, */\
                                   /* 0 means not using clist */\
     byte *buf;	                  /* buffer for rendering */\
     gs_memory_t *buffer_memory;   /* allocator for command list */\
