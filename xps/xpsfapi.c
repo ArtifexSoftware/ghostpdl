@@ -176,12 +176,13 @@ xps_fapi_build_char(gs_show_enum *penum, gs_gstate *pgs, gs_font *pfont,
     return (code);
 }
 
-static void
+static int
 xps_get_server_param(gs_fapi_server *I, const char *subtype,
                      char **server_param, int *server_param_size)
 {
     *server_param = NULL;
     *server_param_size = 0;
+    return 1;
 }
 
 int
@@ -206,8 +207,7 @@ xps_fapi_passfont(gs_font *pfont, char *fapi_request, char *file_name,
 
     code =
         gs_fapi_passfont(pfont, 0, file_name, &fdata, fapi_request, NULL,
-                         &fapi_id, NULL,
-                         (gs_fapi_get_server_param_callback)xps_get_server_param);
+                         &fapi_id, NULL, xps_get_server_param);
 
     if (code >= 0 && fapi_id == NULL) {
         code = gs_error_invalidfont;

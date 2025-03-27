@@ -2358,9 +2358,9 @@ zFAPIavailable(i_ctx_t *i_ctx_p)
     return (0);
 }
 
-static void
-ps_get_server_param(gs_fapi_server *I, const byte *subtype,
-                    byte **server_param, int *server_param_size)
+static int
+ps_get_server_param(gs_fapi_server *I, const char *subtype, char **server_param, int *server_param_size)
+
 {
     ref *FAPIconfig, *options, *server_options;
     i_ctx_t *i_ctx_p = (i_ctx_t *) I->client_ctx_p;
@@ -2371,11 +2371,12 @@ ps_get_server_param(gs_fapi_server *I, const byte *subtype,
             && r_has_type(options, t_dictionary)) {
             if (dict_find_string(options, (char *)subtype, &server_options) >
                 0 && r_has_type(server_options, t_string)) {
-                *server_param = (byte *) server_options->value.const_bytes;
+                *server_param = (char *) server_options->value.const_bytes;
                 *server_param_size = r_size(server_options);
             }
         }
     }
+    return 1;
 }
 
 static int
@@ -2547,9 +2548,7 @@ zFAPIrebuildfont(i_ctx_t *i_ctx_p)
 
         code =
             gs_fapi_find_server(imemory, FAPI_ID,
-                                (gs_fapi_server **) & (pbfont->FAPI),
-                                (gs_fapi_get_server_param_callback)
-                                ps_get_server_param);
+                                (gs_fapi_server **) & (pbfont->FAPI), ps_get_server_param);
         if (!pbfont->FAPI || code < 0) {
             return_error(gs_error_invalidfont);
         }
@@ -3498,7 +3497,7 @@ zFAPIpassfont(i_ctx_t *i_ctx_p)
 
     code =
         gs_fapi_passfont(pfont, subfont, font_file_path, NULL, fapi_request, xlatmap,
-                         &fapi_id, NULL, (gs_fapi_get_server_param_callback)ps_get_server_param);
+                         &fapi_id, NULL, ps_get_server_param);
 
     if (font_file_path != NULL)
         gs_free_string(imemory_global, (byte *) font_file_path, r_size(v) + 1,
