@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -21,6 +21,14 @@
 #  define setjmp_INCLUDED
 
 #include <setjmp.h>
+
+#ifndef INIT_GS_JMPBUF
+#  if defined(__clang__) && __clang__==1
+#    define INIT_GS_JMPBUF 1
+#  else
+#    define INIT_GS_JMPBUF 0
+#  endif
+#endif
 
 typedef struct {
     char c;
