@@ -63,7 +63,7 @@ install-scripts: $(PSLIBDIR)/gsnd $(UNIXINST_MAK) $(MAKEDIRS)
 	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
 bdftops dvipdf eps2eps \
-pdf2ps pf2afm pfbtopfa pphs printafm \
+pdf2dsc pdf2ps pf2afm pfbtopfa pphs printafm \
 ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdf14 ps2pdfwr ps2ps ps2ps2 \
 fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then \
@@ -104,7 +104,7 @@ stcinfo.ps stcolor.ps stocht.ps \
 traceimg.ps traceop.ps uninfo.ps \
 viewcmyk.ps viewgif.ps viewjpeg.ps viewmiff.ps \
 viewpcx.ps viewpbm.ps viewps2a.ps \
-winmaps.ps zeroline.ps zugferd.ps  ;\
+winmaps.ps zeroline.ps zugferd.ps  pdf2dsc.ps ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_DATA) $(PSLIBDIR)/$$f $(DESTDIR)$(gsdatadir)/lib; fi;\
 	done'
 	$(SH) -c 'for f in $(PSLIBDIR)/gs_*.ps $(PSLIBDIR)/pdf*.ps;\
