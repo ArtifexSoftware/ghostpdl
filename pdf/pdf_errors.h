@@ -94,4 +94,5 @@ PARAM(E_PDF_BAD_JPX_CS,                "JPX ColorSpace value is an unhandled typ
 PARAM(E_PDF_INVALID_JPX_HDR,           "invalid JPX header"),
 PARAM(E_PDF_JPX_CS_ERROR,              ""),
 PARAM(E_PDF_BAD_TTC_VERSION,           "Unknown TTC header version"),
+PARAM(E_PDF_INVALID_MATTE,             "Matte for an image is invalid"),
 #undef PARAM
