@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -586,8 +586,15 @@ hpgl_PR(hpgl_args_t * pargs, hpgl_state_t * pgls)
 int
 hpgl_PU(hpgl_args_t * pargs, hpgl_state_t * pgls)
 {
+    int was = pgls->g.move_or_draw;
+
     pgls->g.move_or_draw = hpgl_plot_move;
-    return hpgl_plot(pargs, pgls,
+    if (was == hpgl_plot_move)
+        return hpgl_plot(pargs, pgls,
+                     hpgl_plot_move | pgls->g.relative_coords,
+                     true /* is PA command */ );
+    else
+        return hpgl_plot(pargs, pgls,
                      hpgl_plot_move | pgls->g.relative_coords,
                      false /* is PA command */ );
 }
