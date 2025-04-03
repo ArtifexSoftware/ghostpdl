@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -74,8 +74,8 @@ typedef struct gx_device_pdf_image_s {
     PCLm_temp_file_t temp_stream;
     int NextObject;
 
-    int Tumble;
-    int Tumble2;
+    bool Tumble;
+    bool Tumble2;
 
     /* OCR data */
     struct {

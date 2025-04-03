@@ -126,7 +126,7 @@ typedef struct gx_device_escv_s {
   int           prev_paper_height;
   int           prev_num_copies;
   int           prev_feed_mode;
-  int           orientation;
+  bool          orientation;
   bool          faceup;
   int           MediaType;
   bool          first_page;

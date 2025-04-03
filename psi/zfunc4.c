@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -468,7 +468,7 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     int code;
     byte *ops;
     uint size;
-    int AllowRepeat = 1; /* Default to permitting Repeat, devices which can't handle it implement the spec_op */
+    bool AllowRepeat = true; /* Default to permitting Repeat, devices which can't handle it implement the spec_op */
 
     *(gs_function_params_t *)&params = *mnDR;
     params.ops.data = 0;	/* in case of failure */
@@ -548,7 +548,7 @@ int make_type4_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t *
     float *ptr;
     ref alternatespace, *palternatespace = &alternatespace;
     PS_colour_space_t *space, *altspace;
-    int AllowRepeat = 1; /* Default to permitting Repeat, devices which can't handle it implement the spec_op */
+    bool AllowRepeat = true; /* Default to permitting Repeat, devices which can't handle it implement the spec_op */
 
     code = get_space_object(i_ctx_p, arr, &space);
     if (code < 0)

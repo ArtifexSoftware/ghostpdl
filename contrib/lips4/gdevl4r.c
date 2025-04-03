@@ -496,7 +496,7 @@ lips4_put_params(gx_device * pdev, gs_param_list * plist)
     int code;
     gs_param_name param_name;
     gs_param_string pmedia;
-    bool nup = lips4->nup;
+    int nup = lips4->nup;
     bool faceup = lips4->faceup;
     int old_bpp = pdev->color_info.depth;
     int bpp = 0;

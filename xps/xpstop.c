@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -188,7 +188,7 @@ xps_impl_init_job(pl_interp_implementation_t *impl,
     gs_c_param_list list;
     int code;
     bool disable_page_handler = false;
-    int true_val = 1;
+    bool true_val = true;
     gs_memory_t* mem = ctx->memory;
 
     ctx->font_table = xps_hash_new(ctx);
@@ -211,8 +211,10 @@ xps_impl_init_job(pl_interp_implementation_t *impl,
     gs_c_param_list_write(&list, pdevice->memory);
     code = gs_getdeviceparams(pdevice, (gs_param_list *)&list);
     if (code >= 0) {
+        bool trm = false;
         gs_c_param_list_read(&list);
-        code = param_read_bool((gs_param_list *)&list, "PreserveTrMode", &ctx->preserve_tr_mode);
+        code = param_read_bool((gs_param_list *)&list, "PreserveTrMode", &trm);
+        ctx->preserve_tr_mode = (int)trm;
     }
     gs_c_param_list_release(&list);
     if (code < 0)

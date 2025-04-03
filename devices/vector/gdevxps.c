@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -271,7 +271,7 @@ static int
 xps_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
              gs_logical_operation_t diff);
 
-static int
+static bool
 xps_can_handle_hl_color(gx_device_vector *vdev, const gs_gstate *pgs,
                         const gx_drawing_color * pdc);
 static int
@@ -1480,12 +1480,12 @@ xps_setlogop(gx_device_vector *vdev, gs_logical_operation_t lop,
 
         /* Other state */
 
-static int
+static bool
 xps_can_handle_hl_color(gx_device_vector *vdev, const gs_gstate *pgs,
                           const gx_drawing_color *pdc)
 {
     if_debug0m('_', vdev->memory, "xps_can_handle_hl_color\n");
-    return 0;
+    return false;
 }
 
 /* Paths */

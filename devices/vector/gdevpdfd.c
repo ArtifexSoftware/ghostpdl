@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -108,7 +108,7 @@ pdf_setlinewidth(gx_device_vector * vdev, double width)
     return psdf_setlinewidth(vdev, fabs(width));
 }
 
-static int
+static bool
 pdf_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
                  const gx_drawing_color * pdc)
 {

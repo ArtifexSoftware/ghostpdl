@@ -601,7 +601,7 @@ gx_no_concretize_color(const gs_client_color * pcc, const gs_color_space * pcs,
 /* If someone has specified a table for handling named spot colors then we will
    be attempting to do the special handling to go directly to the device colors
    here */
-bool
+int
 gx_remap_named_color(const gs_client_color * pcc, const gs_color_space * pcs,
 gx_device_color * pdc, const gs_gstate * pgs, gx_device * dev,
 gs_color_select_t select)

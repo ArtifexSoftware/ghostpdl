@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -297,7 +297,7 @@ gs_create_overprint(
  * This is used by the gs_pdf1.4_device (and eventually the PDFWrite
  * device), which implements overprint and overprint mode directly.
  */
-int
+bool
 gs_is_overprint_compositor(const gs_composite_t * pct)
 {
     return pct->type == &gs_composite_overprint_type;

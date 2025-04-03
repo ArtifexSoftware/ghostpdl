@@ -224,7 +224,7 @@ static int lips4v_setflat(gx_device_vector * vdev, double flatness);
 static int
 lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
                  gs_logical_operation_t diff);
-static int lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
+static bool lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
                   const gx_drawing_color * pdc);
 static int
 
@@ -1220,7 +1220,7 @@ lips4v_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
 }
 
 /*--- added for Ghostscritp 8.15 ---*/
-static int
+static bool
 lips4v_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs1,
               const gx_drawing_color * pdc)
 {

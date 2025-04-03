@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -45,7 +45,7 @@ bool pdfi_device_check_param_bool(gx_device *dev, const char *param)
 {
     int code;
     gs_c_param_list list;
-    int value;
+    bool value;
 
     code = pdfi_device_check_param(dev, param, &list);
     if (code < 0)
@@ -57,7 +57,7 @@ bool pdfi_device_check_param_bool(gx_device *dev, const char *param)
     if (code < 0)
         value = false;
     gs_c_param_list_release(&list);
-    return (bool)value;
+    return value;
 }
 
 /* Set value of string device parameter */

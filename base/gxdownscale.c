@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3376,7 +3376,8 @@ int gx_downscaler_read_params(gs_param_list        *plist,
                               int                   features)
 {
     int code;
-    int downscale, mfs, ets, deskew;
+    int downscale, mfs, ets;
+    bool deskew;
     int trap_w, trap_h;
     const char *param_name;
     gs_param_int_array trap_order;

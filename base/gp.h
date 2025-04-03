@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -646,7 +646,7 @@ int gp_fseek_impl(FILE *strm, gs_offset_t offset, int origin);
 /* Create a second open gp_file on the basis of a given one */
 FILE *gp_fdup_impl(FILE *f, const char *mode);
 
-int gp_fseekable_impl(FILE *f);
+bool gp_fseekable_impl(FILE *f);
 
 /* Force given file into binary mode (no eol translations, etc) */
 /* if 2nd param true, text mode if 2nd param false */

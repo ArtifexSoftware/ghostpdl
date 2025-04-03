@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -54,8 +54,8 @@ int gs_do_set_overprint(gs_gstate *);
 int gs_currentrenderingintent(const gs_gstate *);
 int gs_setrenderingintent(gs_gstate *, int);
 
-int gs_currentblackptcomp(const gs_gstate *);
-int gs_setblackptcomp(gs_gstate *, int);
+bool gs_currentblackptcomp(const gs_gstate *);
+int gs_setblackptcomp(gs_gstate *, bool);
 
 int gs_initgraphics(gs_gstate *);
 int gs_initgraphics_no_cspace(gs_gstate *);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1393,7 +1393,7 @@ pclxl_setlogop(gx_device_vector * vdev, gs_logical_operation_t lop,
     return 0;
 }
 
-static int
+static bool
 pclxl_can_handle_hl_color(gx_device_vector * vdev, const gs_gstate * pgs,
                           const gx_drawing_color * pdc)
 {

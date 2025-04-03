@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -990,7 +990,7 @@ const op_def zcontrol3_op_defs[] = {
  * interpreter to catch them, so that we can signal the error with the
  * object still on the operand stack.
  */
-static bool
+static int
 check_for_exec(const_os_ptr op)
 {
     if (!r_has_attr(op, a_execute) && /* only true if noaccess */

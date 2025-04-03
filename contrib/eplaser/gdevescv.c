@@ -183,7 +183,7 @@ esmv_initialize_device_procs(gx_device *dev)
         0,			/*   int           prev_paper_height; */\
         0,			/*   int           prev_num_copies; */\
         -1,			/*   int           prev_feed_mode; */\
-        0,			/*   int           orientation; */\
+        false,			/*   bool          orientation; */\
         ESCPAGE_FACEUP_DEFAULT,	/*   bool          faceup; */\
         ESCPAGE_MEDIATYPE_DEFAULT, /*   int           MediaType; */\
         0,			/*   bool          first_page; */\

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -112,7 +112,7 @@ device_allows_imagemask_interpolation(gx_device *dev)
     char data[] = "NoInterpolateImagemasks";
     dev_param_req_t request;
     gs_c_param_list list;
-    int nointerpolate = 0;
+    bool nointerpolate = false;
     int code;
 
     gs_c_param_list_write(&list, dev->memory);

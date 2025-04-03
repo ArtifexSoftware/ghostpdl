@@ -157,10 +157,11 @@ alps_get_params(gx_device *pdev, gs_param_list *plist)
 }
 
 static int
-alps_put_param_bool(gs_param_list *plist, gs_param_name pname, int *pvalue,
+alps_put_param_bool(gs_param_list *plist, gs_param_name pname, bool *pvalue,
                    int ecode)
 {
-    int code, value;
+    int code;
+    bool value;
     switch (code = param_read_bool(plist, pname, &value)) {
     default:
         return code;

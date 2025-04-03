@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -682,7 +682,7 @@ nup_dev_spec_op(gx_device *dev, int dev_spec_op, void *data, int size)
         case gxdso_get_dev_param:
             {
                 dev_param_req_t *request = (dev_param_req_t *)data;
-                int code = false;
+                bool code = false;
 
                 /* We need to disable pdfmark writing, primarily for CropBox, but also	*/
                 /* they are probably not relevant for multiple input files to a single	*/

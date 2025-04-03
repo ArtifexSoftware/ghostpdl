@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3272,18 +3272,14 @@ static void pdf_type3_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
     gs_matrix_scale(pmat, pdev->HWResolution[0] / 72.0, pdev->HWResolution[0] / 72.0, pmat);
 }
 
-static int pdf_query_purge_cached_char(const gs_memory_t *mem, cached_char *cc, void *data)
+static bool pdf_query_purge_cached_char(const gs_memory_t *mem, cached_char *cc, void *data)
 {
     cached_char *to_purge = (cached_char *)data;
 
-
-    if (cc->code == to_purge->code && cc_pair(cc) == cc_pair(to_purge) &&
-        cc->subpix_origin.x == to_purge->subpix_origin.x &&
-        cc->subpix_origin.y == to_purge->subpix_origin.y &&
-        cc->wmode == to_purge->wmode && cc_depth(cc) == cc_depth(to_purge)
-        )
-        return 1;
-    return 0;
+    return cc->code == to_purge->code && cc_pair(cc) == cc_pair(to_purge) &&
+           cc->subpix_origin.x == to_purge->subpix_origin.x &&
+           cc->subpix_origin.y == to_purge->subpix_origin.y &&
+           cc->wmode == to_purge->wmode && cc_depth(cc) == cc_depth(to_purge);
 }
 
 static int ProcessTextForOCR(gs_text_enum_t *pte)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -391,7 +391,7 @@ check_image3x_extent(double mask_coeff, double data_coeff)
  * pmcs->{InterleaveType,width,height,full_height,depth,data,y,skip}.
  * If the mask is omitted, sets pmcs->depth = 0 and returns normally.
  */
-static bool
+static int
 check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
                    const image3x_channel_values_t *ppcv,
                    image3x_channel_values_t *pmcv,

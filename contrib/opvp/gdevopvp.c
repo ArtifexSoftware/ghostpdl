@@ -265,7 +265,7 @@ static  int opvp_setdash(gx_device_vector *, const float *, uint, double);
 static  int opvp_setflat(gx_device_vector *, double);
 static  int opvp_setlogop(gx_device_vector *, gs_logical_operation_t,
                           gs_logical_operation_t);
-static  int opvp_can_handle_hl_color(gx_device_vector *, const gs_gstate *, const gx_drawing_color *);
+static  bool opvp_can_handle_hl_color(gx_device_vector *, const gs_gstate *, const gx_drawing_color *);
 static  int opvp_setfillcolor(gx_device_vector *, const gs_gstate *, const gx_drawing_color *);
 static  int opvp_setstrokecolor(gx_device_vector *, const gs_gstate *,const gx_drawing_color *);
 static  int opvp_vector_dopath(gx_device_vector *, const gx_path *,
@@ -4947,7 +4947,7 @@ opvp_setlogop(
 }
 
 /*--- added for Ghostscript 8.15 ---*/
-static int
+static bool
 opvp_can_handle_hl_color(gx_device_vector * vdev,
               const gs_gstate * pgs1, const gx_drawing_color * pdc)
 {

@@ -190,7 +190,7 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
 int
 zlz_setup(os_ptr op, stream_LZW_state * plzs)
 {
-    int code;
+    int code, ech;
     const ref *dop;
 
     s_LZW_set_defaults_inline(plzs);
@@ -200,7 +200,7 @@ zlz_setup(os_ptr op, stream_LZW_state * plzs)
     } else
         dop = 0;
     if (   (code = dict_int_param(dop, "EarlyChange", 0, 1, 1,
-                                  &plzs->EarlyChange)) < 0 ||
+                                  &ech)) < 0 ||
            /*
             * The following are not PostScript standard, although
             * LanguageLevel 3 provides the first two under different
@@ -214,6 +214,7 @@ zlz_setup(os_ptr op, stream_LZW_state * plzs)
                                    &plzs->BlockData)) < 0
         )
         return code;
+    plzs->EarlyChange = ech != 0;
     return 0;
 }
 

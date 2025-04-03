@@ -190,7 +190,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
     byte *bits;
 
     /* This is only to silence a Coverity warning */
-    cdev.target = cdev.cpath = NULL;
+    cdev.target = NULL;
+    cdev.cpath = NULL;
 
   top:code = gx_path_current_point_inline(pgs, &pt);
     if (code < 0)

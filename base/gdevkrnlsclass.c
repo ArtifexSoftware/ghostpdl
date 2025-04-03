@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -29,7 +29,7 @@
  * of devices which the push of the compositor claims are already installed (to prevent
  * a second copy being installed by gdev_prn_open).
  */
-int install_internal_subclass_devices(gx_device **ppdev, int *devices_loaded)
+int install_internal_subclass_devices(gx_device **ppdev, bool *devices_loaded)
 {
     int code = 0;
     gx_device *dev = (gx_device *)*ppdev, *saved;

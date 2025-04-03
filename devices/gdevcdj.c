@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -337,7 +337,7 @@ typedef struct gx_device_bjc800_s gx_device_bjc;
     bool mediaWeight_isSet;	/* Say if weight is an integer or null */ \
     int mediaWeight;		/* Weigth of the media */ \
     int printQuality;		/* Cf. strings below */ \
-    bool ditheringType;		/* Do dithering */ \
+    int ditheringType;		/* Do dithering */ \
     int colorComponents;	/* The number of *desired* color comps */ \
     int printColors		/* 0: Transparent, \
                                    1: C, 2: M, 4: Y, 7: K (Color decomp). \

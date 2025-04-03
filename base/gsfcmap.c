@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -221,7 +221,7 @@ gs_cmap_create_char_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
 /*
  * Check for identity CMap. Uses a fast check for special cases.
  */
-int
+bool
 gs_cmap_is_identity(const gs_cmap_t *pcmap, int font_index_only)
 {
     return pcmap->procs->is_identity(pcmap, font_index_only);

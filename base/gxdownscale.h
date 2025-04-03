@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -124,7 +124,7 @@ typedef struct gx_downscaler_params_s
     int trap_h;
     int trap_order[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int ets;
-    int do_skew_detection;
+    bool do_skew_detection;
 } gx_downscaler_params;
 
 /* To use the downscaler:

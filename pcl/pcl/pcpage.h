@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -44,9 +44,9 @@ int new_logical_page(pcl_state_t * pcs,
 
 int pcl_getdevice_initial_matrix(pcl_state_t * pcs, gs_matrix * mat);
 
-bool pcl_page_marked(pcl_state_t * pcs);
+int pcl_page_marked(pcl_state_t * pcs);
 
-bool pcl_cursor_moved(pcl_state_t * pcs);
+int pcl_cursor_moved(pcl_state_t * pcs);
 
 int pcl_mark_page_for_path(pcl_state_t * pcs);
 
