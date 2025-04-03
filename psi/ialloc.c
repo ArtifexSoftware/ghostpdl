@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -213,7 +213,7 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
          *      - Large clump: cc unchanged, end != cc->cbot.
          *      - New clump: cc changed.
          */
-        clump_t *cc = mem->cc;
+        clump_t *cc;
         ref *end;
         alloc_change_t *cp = 0;
         int code = 0;
@@ -223,6 +223,8 @@ gs_alloc_ref_array(gs_ref_memory_t * mem, ref * parr, uint attrs,
             if (code < 0)
                 return code;
         }
+        /* The save state allocation above may have moved mem->cc */
+        cc = mem->cc;
         obj = gs_alloc_struct_array((gs_memory_t *) mem, num_refs + 1,
                                     ref, &st_refs, cname);
         if (obj == 0) {
