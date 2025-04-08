@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2024 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -20,7 +20,7 @@
 
 # Define the name of this makefile.
 LIBOCR_MAK=$(GLSRC)ocr.mak $(TOP_MAKEFILES)
-OCRCXX = $(CXX) $(TESSINCLUDES) $(TESSCXXFLAGS) $(CCFLAGS) -DTESSERACT_IMAGEDATA_AS_PIX -DTESSERACT_DISABLE_DEBUG_FONTS -DGRAPHICS_DISABLED -UCLUSTER
+OCRCXX = $(CXX) $(TESSINCLUDES) $(TESSCXXFLAGS) $(CCXXFLAGS) -DTESSERACT_IMAGEDATA_AS_PIX -DTESSERACT_DISABLE_DEBUG_FONTS -DGRAPHICS_DISABLED -UCLUSTER
 
 # Tesseract veneer.
 $(GLGEN)tessocr.$(OBJ) : $(GLSRC)tessocr.cpp $(GLSRC)tessocr.h $(LIBOCR_MAK) \

@@ -3932,6 +3932,8 @@ fi
 
 CFLAGSAUX=$(echo $CFLAGSAUX | sed -e 's/-DGS_NO_FILESYSTEM//g')
 
+GXXFLAGS=$(echo $GCFLAGS | sed -e 's/-Wstrict-prototypes//g' | sed -e 's/-Wmissing-prototypes//g' | sed -e 's/-Werror=declaration-after-statement//g')
+
 dnl --------------------------------------------------
 dnl Do substitutions
 dnl --------------------------------------------------
@@ -3940,6 +3942,7 @@ AC_SUBST(SRCDIR)
 AC_SUBST(OPT_CFLAGS)
 AC_SUBST(DBG_CFLAGS)
 AC_SUBST(GCFLAGS)
+AC_SUBST(GXXFLAGS)
 AC_SUBST(CFLAGS_SANITIZE)
 AC_SUBST(STRIP_XE)
 AC_SUBST(JPX_SSE_CFLAGS)
