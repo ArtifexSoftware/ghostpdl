@@ -2663,6 +2663,8 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
             return code;
 
         if (pdfi_type_of(OCDict) == PDF_DICT) {
+            char *label = NULL;
+
             if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && ctx->device_state.WantsOptionalContent) {
                 code = pdfi_pdfmark_dict(ctx, OCDict);
                 if (code < 0) {
@@ -2671,8 +2673,17 @@ int pdfi_do_image_or_form(pdf_context *ctx, pdf_dict *stream_dict,
                         return code;
                     }
                 }
-                code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pending_optional_content, &OCDict->object_num, 0);
-                if (code < 0) {
+                code = pdfi_obj_get_label(ctx, (pdf_obj *)OCDict, &label);
+                if (code >= 0) {
+                    code = dev_proc(cdev, dev_spec_op)(cdev, gxdso_pending_optional_content, label, 0);
+                    gs_free_object(ctx->memory, label, "");
+                    if (code < 0) {
+                        if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL)) < 0) {
+                            pdfi_countdown(OCDict);
+                            return code;
+                        }
+                    }
+                } else {
                     if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_DO_OC_FAILED, "pdfi_do_image_or_form", NULL)) < 0) {
                         pdfi_countdown(OCDict);
                         return code;

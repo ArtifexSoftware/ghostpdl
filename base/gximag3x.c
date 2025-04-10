@@ -132,7 +132,7 @@ gx_begin_image3x_generic(gx_device * dev,
                         const gx_clip_path *pcpath, gs_memory_t *mem,
                         image3x_make_mid_proc_t make_mid,
                         image3x_make_mcde_proc_t make_mcde,
-                        gx_image_enum_common_t **pinfo, int64_t OC)
+                        gx_image_enum_common_t **pinfo, char *OC)
 {
     const gs_image3x_t *pim = (const gs_image3x_t *)pic;
     gx_image3x_enum_t *penum;
