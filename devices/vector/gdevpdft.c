@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -201,10 +201,10 @@ pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
             gs_param_string param;
             cos_object_t *pco = NULL;
 
-            gs_snprintf(str, sizeof(str), "{Obj%dG0}", pdev->PendingOC);
-            param.data = (const byte *)str;
-            param.size = strlen(str);
+            param.data = (const byte *)pdev->PendingOC;
+            param.size = strlen(pdev->PendingOC);
             code = pdf_refer_named(pdev, &param, &pco);
+            gs_free_object(pdev->memory, pdev->PendingOC, "");
             if(code < 0)
                 return code;
 

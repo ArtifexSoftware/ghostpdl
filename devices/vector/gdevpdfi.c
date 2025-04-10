@@ -1171,7 +1171,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
 
     case IMAGE3X_IMAGETYPE:
         {
-            int64_t OC = pdev->PendingOC;
+            char *OC = pdev->PendingOC;
 
             pdev->JPEG_PassThrough = 0;
             pdev->JPX_PassThrough = 0;
@@ -1184,7 +1184,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             }
             pdev->image_mask_is_SMask = true;
 
-            pdev->PendingOC = 0;
+            if (pdev->PendingOC)
+                gs_free_object(pdev->memory, pdev->PendingOC, "");
+            OC = pdev->PendingOC = NULL;
             code = gx_begin_image3x_generic((gx_device *)pdev, pgs, pmat, pic,
                                             prect, pdcolor, pcpath, mem,
                                             pdf_image3x_make_mid,
@@ -3091,8 +3093,11 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 }
             } else
             {
-                int64_t *object = data;
-                pdev->PendingOC = *object;
+                char *object = data;
+                if (pdev->PendingOC)
+                    gs_free_object(pdev->memory, pdev->PendingOC, "");
+                pdev->PendingOC = (char *)gs_alloc_bytes(pdev->memory, strlen(object) + 1, "");
+                memcpy(pdev->PendingOC, object, strlen(object) + 1);
             }
             return 0;
             break;

@@ -988,7 +988,7 @@ struct gx_device_pdf_s {
     bool ModifiesPageOrder;         /* If true, the new PDF interpreter will not preserve Outlines or Dests, because they will refer to the wrong page number */
     bool WriteXRefStm;              /* If true, (the default) use an XRef stream rather than an xref table */
     bool WriteObjStms;              /* If true, (the default) store candidate objects in ObjStms rather than plain text in the PDF file. */
-    int64_t PendingOC;              /* An OptionalContent object is pending */
+    char *PendingOC;                /* An OptionalContent object is pending, the string is the name of the (already defined) object  */
     bool ToUnicodeForStdEnc;        /* Should we emit ToUnicode CMaps when a simple font has only standard glyph names. Defaults to true */
     bool EmbedSubstituteFonts;      /* When we use a substitute font to replace a missing font, should we embed it in the output */
 };

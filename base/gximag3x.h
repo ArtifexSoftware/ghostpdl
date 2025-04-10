@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -73,6 +73,6 @@ int gx_begin_image3x_generic(gx_device * dev,
                              const gx_clip_path *pcpath, gs_memory_t *mem,
                              IMAGE3X_MAKE_MID_PROC((*make_mid)),
                              IMAGE3X_MAKE_MCDE_PROC((*make_mcde)),
-                             gx_image_enum_common_t **pinfo, int64_t OC);
+                             gx_image_enum_common_t **pinfo, char *OC);
 
 #endif /* gximag3x_INCLUDED */

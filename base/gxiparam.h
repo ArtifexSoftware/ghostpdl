@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -191,7 +191,7 @@ typedef struct gx_image_enum_procs_s {
         gs_id id;\
         bool skipping; /* don't render, just consume image streams. */\
         int num_planes;\
-        int64_t OC;     /* Only used currently for pdfwrite with image type 3x images because we need to know and set this for the type 3 image, but not the mask */\
+        char *OC;     /* Only used currently for pdfwrite with image type 3x images because we need to know and set this for the type 3 image, but not the mask */\
         int plane_depths[GS_IMAGE_MAX_COMPONENTS]; /* [num_planes] */\
         int plane_widths[GS_IMAGE_MAX_COMPONENTS]  /* [num_planes] */
 struct gx_image_enum_common_s {
