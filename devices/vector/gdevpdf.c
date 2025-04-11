@@ -3971,7 +3971,7 @@ error_cleanup:
     code1 = gdev_vector_close_file((gx_device_vector *) pdev);
     if (code >= 0)
         code = code1;
-    if (pdev->max_referred_page >= pdev->next_page + 1) {
+    if (pdev->max_referred_page >= pdev->next_page + 1 && pdev->next_page != 0 && !file_per_page) {
         /* Note : pdev->max_referred_page counts from 1,
            and pdev->next_page counts from 0. */
         emprintf2(pdev->memory, "ERROR: A pdfmark destination page %d "
