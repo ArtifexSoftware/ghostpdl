@@ -880,7 +880,7 @@ int pdfi_separation_name_from_index(gs_gstate *pgs, gs_separation_name index, un
 int pdfi_finish_pdf_file(pdf_context *ctx)
 {
     if (ctx->Root) {
-        if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && ctx->device_state.WantsOptionalContent) {
+        if (ctx->device_state.writepdfmarks && ctx->device_state.WantsOptionalContent) {
             pdf_obj *o = NULL;
             int code = 0;
 
@@ -901,7 +901,7 @@ int pdfi_finish_pdf_file(pdf_context *ctx)
 int pdfi_close_pdf_file(pdf_context *ctx)
 {
     if (ctx->Root) {
-        if (ctx->device_state.writepdfmarks && ctx->args.preservemarkedcontent && ctx->device_state.WantsOptionalContent) {
+        if (ctx->device_state.writepdfmarks && ctx->device_state.WantsOptionalContent) {
             pdf_obj *o = NULL;
             int code = 0;
 
