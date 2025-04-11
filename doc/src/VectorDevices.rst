@@ -1014,7 +1014,8 @@ PDF file output - ``pdfwrite``
 ``-dPreserveMarkedContent=boolean``
    We now attempt to preserve marked content from input PDF files through to the output PDF file (note, not in output PostScript!). This does now include marked content relating to optional content.
 
-   This control also requires the PDF interpreter to pass the marked content to the :title:`pdfwrite` device, this is only done with the new (C-based) PDF interpreter. The old (PostScript-based) interpreter does not support this feature and will not pass marked content to the :title:`pdfwrite` device.
+``-dWantsOptionalContent=boolean``
+   We now attempt to preserve optional content (what Acrobat UI calls 'Layers') from input PDF files through to the output PDF file (note, not in output PostScript!).
 
 ``-dOmitInfoDate=boolean``
    Under some conditions the ``CreationDate`` and ``ModDate`` in the ``/Info`` dictionary are optional and can be omitted. They are required when producing PDF/X output however. This control will allow the user to omit the ``/CreationDate`` and ``/ModDate`` entries in the ``Info`` dictionary (and the corresponding information in the XMP metadata, if present). If you try to set this control when writing PDF/X output, the device will give a warning and ignore this control.
