@@ -91,7 +91,7 @@ is:
 .fi
 .PP
 Some devices can support different resolutions (densities).  To specify
-the resolution on such a printer, use the "\-r" switch:
+the resolution on such a device, use the "\-r" switch:
 .PP
 .nf
 	gs \-sDEVICE=<device> \-r<xres>x<yres>
@@ -284,7 +284,7 @@ desirable for applications where another program is driving Ghostscript.
 .TP
 .B \-dNOPLATFONTS
 Disables the use of fonts supplied by the underlying platform (for instance
-X Windows). This may be needed if the platform fonts look undesirably
+X11). This may be needed if the platform fonts look undesirably
 different from the scalable fonts.
 .TP
 .B \-dSAFER
@@ -317,7 +317,7 @@ you should pass the
 command line option or its synonym
 .BR \-dDELAYSAFER .
 .PP
-Running with NOSAFER/DELAYSAFER (as the same suggests) loosens the security
+Running with NOSAFER/DELAYSAFER (as the name suggests) loosens the security
 and is thus recommended ONLY for debugging or in VERY controlled workflows,
 and strongly NOT recommended in any other circumstances.
 .SH FILES
@@ -410,7 +410,7 @@ Determines whether backing store is to be used for saving display window
 (default = true).
 .PP
 See the usage document for a more complete list of resources.  To set these
-resources on Unix, put them in a file such as "~/.Xresources" in the
+resources on Unix, put them in a file such as /fI~/.Xresources/fR in the
 following form:
 .PP
 .nf
