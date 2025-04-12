@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1225,9 +1225,9 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
         case '-': /* Need to check for permitted file lists */
             /* By default, we want to keep the key, but lose the value */
             p = arg+2;
-            while (*p && *p != '=')
+            while (*p && *p != '=' && *p != '#')
                 p++;
-            if (*p == '=')
+            if (*p == '=' || *p == '#')
                 p++;
             if (*p == 0)
                 break; /* No value to elide */
@@ -1269,9 +1269,9 @@ gs_lib_ctx_stash_sanitized_arg(gs_lib_ctx_t *ctx, const char *arg)
         case 'S':
             /* By default, we want to keep the key, but lose the value */
             p = arg+2;
-            while (*p && *p != '=')
+            while (*p && *p != '=' && *p != '#')
                 p++;
-            if (*p == '=')
+            if (*p == '=' || *p == '#')
                 p++;
             if (*p == 0)
                 break; /* No value to elide */
