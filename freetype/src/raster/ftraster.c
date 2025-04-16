@@ -297,8 +297,8 @@
   typedef unsigned int    UInt;
   typedef short           Short;
   typedef unsigned short  UShort, *PUShort;
-  typedef long            Long, *PLong;
-  typedef unsigned long   ULong;
+  typedef long long           Long, *PLong;
+  typedef unsigned long long   ULong;
 
   typedef unsigned char   Byte, *PByte;
   typedef char            Bool;
