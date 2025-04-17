@@ -1613,22 +1613,20 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
     for (i = 0; i < count; i += 2) {
         if (pdf_key_eq(&pairs[i], "/FS")) {
-            if (!cos_dict_find_c_key(pdev->Catalog, "/AF")) {
+            if (pdev->PDFA == 3 && !cos_dict_find_c_key(pdev->Catalog, "/AF")) {
+                uint written;
                 cos_value_t v;
                 cos_object_t *object;
                 int64_t id;
                 int code;
 
-                {
-                    char written = pairs[i+1].data[pairs[i+1].size];
-                    char *data = (char *)pairs[i+1].data;
+                id = pdf_obj_ref(pdev);
 
-                    data[pairs[i+1].size] = 0x00;
-                    code = sscanf(data, "%"PRId64" 0 R", &id);
-                    data[pairs[i+1].size] = written;
-                    if (code < 1)
-                        return_error(gs_error_rangecheck);
-                }
+                pdf_open_separate(pdev, id, resourceNone);
+                sputs(pdev->strm, pairs[i+1].data, pairs[i+1].size, &written);
+                if (pairs[i+1].data[pairs[i+1].size] != 0x0d && pdev->PDFA != 0)
+                    sputc(pdev->strm, 0x0d);
+                pdf_end_separate(pdev, resourceNone);
 
                 object = cos_reference_alloc(pdev, "embedded file");
                 object->id = id;
