@@ -3,16 +3,6 @@
 
 .. raw:: html
 
-   <div class="feedbackLink"><a id="feedbackLinkBottom" target=_blank>Do you have any feedback on this page?</b></a></div>
-
-   <script>
-
-      var url_string = window.location.href;
-      var a = document.getElementById('feedbackLinkBottom');
-      a.setAttribute("href", "https://artifex.com/contributor/feedback.php?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=footer-link&url="+url_string);
-
-   </script>
-
    <hr>
 
    This software is provided AS-IS with no warranty, either express or implied. This software is distributed under license and may not be copied, modified or distributed except as expressly authorized under the terms of that license. Refer to licensing information at <a href="https://www.artifex.com/?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=footer-link">artifex.com</a> or contact Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA, for further information.
