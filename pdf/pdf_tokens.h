@@ -1,4 +1,4 @@
-/* Copyright (C) 2022-2023 Artifex Software, Inc.
+/* Copyright (C) 2022-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,12 +19,12 @@
 #define PARAM2(A,B) PARAMCAT(TOKEN_, B),
 #endif
 
-// Errors
+/* Errors */
 PARAM2("", NOT_A_KEYWORD)
-// Insert new error tokens here.
+/* Insert new error tokens here. */
 PARAM2("", TOO_LONG)
 PARAM2("", INVALID_KEY)
-// Real tokens start here, at TOKEN_INVALID_KEY+1
+/* Real tokens start here, at TOKEN_INVALID_KEY+1 */
 PARAM2("\"", QUOTE)
 PARAM2("'", APOSTROPHE)
 PARAM1(B)

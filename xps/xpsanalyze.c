@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -110,7 +110,7 @@ xps_gradient_stops_have_transparency(xps_context_t *ctx, char *base_uri, xps_ite
                 xps_parse_color(ctx, base_uri, color_att, NULL, samples);
                 if (samples[0] < 1.0)
                 {
-                    //dmputs(ctx->memory, "page has transparency: GradientStop has alpha\n");
+                    /*dmputs(ctx->memory, "page has transparency: GradientStop has alpha\n"); */
                     return 1;
                 }
             }
@@ -131,7 +131,7 @@ xps_gradient_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item
     {
         if (atof(opacity_att) < 1.0)
         {
-            //dmputs(ctx->memory, "page has transparency: GradientBrush Opacity\n");
+            /*dmputs(ctx->memory, "page has transparency: GradientBrush Opacity\n"); */
             return 1;
         }
     }
@@ -170,7 +170,7 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
             float opacity = atof(opacity_att);
             if (opacity < 1.0 && opacity != 0.0)
             {
-                //dmputs(ctx->memory, "page has transparency: SolidColorBrush Opacity\n");
+                /*dmputs(ctx->memory, "page has transparency: SolidColorBrush Opacity\n"); */
                 return 1;
             }
         }
@@ -181,7 +181,7 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
             xps_parse_color(ctx, base_uri, color_att, NULL, samples);
             if (samples[0] < 1.0 && samples[0] != 0.0)
             {
-                //dmputs(ctx->memory, "page has transparency: SolidColorBrush Color has alpha\n");
+                /*dmputs(ctx->memory, "page has transparency: SolidColorBrush Color has alpha\n"); */
                 return 1;
             }
         }
@@ -194,7 +194,7 @@ xps_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
         {
             if (atof(opacity_att) < 1.0)
             {
-                //dmputs(ctx->memory, "page has transparency: VisualBrush Opacity\n");
+                /*dmputs(ctx->memory, "page has transparency: VisualBrush Opacity\n"); */
                 return 1;
             }
         }
@@ -239,7 +239,7 @@ xps_path_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root)
     {
         if (!strcmp(xps_tag(node), "Path.OpacityMask"))
         {
-            //dmputs(ctx->memory, "page has transparency: Path.OpacityMask\n");
+            /*dmputs(ctx->memory, "page has transparency: Path.OpacityMask\n"); */
             return 1;
         }
 
@@ -268,7 +268,7 @@ xps_glyphs_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root
     {
         if (!strcmp(xps_tag(node), "Glyphs.OpacityMask"))
         {
-            //dmputs(ctx->memory, "page has transparency: Glyphs.OpacityMask\n");
+            /*dmputs(ctx->memory, "page has transparency: Glyphs.OpacityMask\n"); */
             return 1;
         }
 
@@ -297,7 +297,7 @@ xps_canvas_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *root
 
         if (!strcmp(xps_tag(node), "Canvas.OpacityMask"))
         {
-            //dmputs(ctx->memory, "page has transparency: Canvas.OpacityMask\n");
+            /*dmputs(ctx->memory, "page has transparency: Canvas.OpacityMask\n"); */
             return 1;
         }
 
@@ -323,7 +323,7 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
         xps_parse_color(ctx, base_uri, stroke_att, NULL, samples);
         if (samples[0] < 1.0 && samples[0] != 0.0)
         {
-            //dmprintf1(ctx->memory, "page has transparency: Stroke alpha=%g\n", samples[0]);
+            /*dmprintf1(ctx->memory, "page has transparency: Stroke alpha=%g\n", samples[0]); */
             return 1;
         }
     }
@@ -334,7 +334,7 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
         xps_parse_color(ctx, base_uri, fill_att, NULL, samples);
         if (samples[0] < 1.0 && samples[0] != 0.0)
         {
-            //dmprintf1(ctx->memory, "page has transparency: Fill alpha=%g\n", samples[0]);
+            /*dmprintf1(ctx->memory, "page has transparency: Fill alpha=%g\n", samples[0]); */
             return 1;
         }
     }
@@ -345,14 +345,14 @@ xps_element_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t *nod
         float opacity = atof(opacity_att);
         if (opacity < 1.0 && opacity != 0.0)
         {
-            //dmprintf1(ctx->memory, "page has transparency: Opacity=%g\n", atof(opacity_att));
+            /*dmprintf1(ctx->memory, "page has transparency: Opacity=%g\n", atof(opacity_att)); */
             return 1;
         }
     }
 
     if (xps_att(node, "OpacityMask"))
     {
-        //dmputs(ctx->memory, "page has transparency: OpacityMask\n");
+        /*dmputs(ctx->memory, "page has transparency: OpacityMask\n"); */
         return 1;
     }
 

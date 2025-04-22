@@ -1,4 +1,4 @@
-/* Copyright (C) 2023 Artifex Software, Inc.
+/* Copyright (C) 2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -304,17 +304,17 @@ static int
 send_pcl_init(txt_interp_instance_t *instance)
 {
     static byte init[] = {
-            ESC, 'E',                     // Reset
-            ESC, '&', 'l', '0', 'O',      // Orientation
-            ESC, '&', 'k', '1', '0', 'H', // Horizontal spacing 10/120 of an inch.
-            ESC, '&', 'l', '8', 'C',      // Vertical line spacing 8/48 of an inch.
-            ESC, '&', 't', '8', '3', 'P', // &t = double byte parsing, 83 = utf-8, P = ?
-            ESC, '(', '1', '8', 'N',      // Primary symbol set = 18N = Unicode
-            ESC, '(', 's', '0', 'P',      // Fixed pitch
-            ESC, '(', 's', '1', '2', 'H', // Secondary fixed pitch 12cpi
-            ESC, '(', 's', '8', 'V',      // Point size 8
-            ESC, '(', 's', '3', 'T',      // Typeface number 3
-            ESC, '&', 's', '0', 'C'       // Wrappity wrap wrap
+            ESC, 'E',                     /* Reset */
+            ESC, '&', 'l', '0', 'O',      /* Orientation */
+            ESC, '&', 'k', '1', '0', 'H', /* Horizontal spacing 10/120 of an inch. */
+            ESC, '&', 'l', '8', 'C',      /* Vertical line spacing 8/48 of an inch. */
+            ESC, '&', 't', '8', '3', 'P', /* &t = double byte parsing, 83 = utf-8, P = ? */
+            ESC, '(', '1', '8', 'N',      /* Primary symbol set = 18N = Unicode */
+            ESC, '(', 's', '0', 'P',      /* Fixed pitch */
+            ESC, '(', 's', '1', '2', 'H', /* Secondary fixed pitch 12cpi */
+            ESC, '(', 's', '8', 'V',      /* Point size 8 */
+            ESC, '(', 's', '3', 'T',      /* Typeface number 3 */
+            ESC, '&', 's', '0', 'C'       /* Wrappity wrap wrap */
     };
 
     return send_bytes(instance, init, sizeof(init));

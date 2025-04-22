@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2681,16 +2681,16 @@ int gx_scan_convert_tr(gx_device     * gs_restrict pdev,
     }
     }
 
-    //if (zero) {
-    //    if (table[0] == 0) {
-    //        /* Zero height rectangle fills a span */
-    //        table[0] = 2;
-    //        table[1] = int2fixed(fixed2int(bbox.p.x + fixed_half));
-    //        table[2] = 0;
-    //        table[3] = int2fixed(fixed2int(bbox.q.x + fixed_half));
-    //        table[4] = 1;
-    //    }
-    //}
+    /*if (zero) {
+        if (table[0] == 0) { */
+            /* Zero height rectangle fills a span */
+/*          table[0] = 2;
+            table[1] = int2fixed(fixed2int(bbox.p.x + fixed_half));
+            table[2] = 0;
+            table[3] = int2fixed(fixed2int(bbox.q.x + fixed_half));
+            table[4] = 1;
+        }
+    }*/
 
     /* Step 2 complete: We now have a complete list of intersection data in
      * table, indexed by index. */

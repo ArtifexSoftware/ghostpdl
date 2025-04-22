@@ -413,7 +413,7 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
         }
         /* We need to map these values to D50 illuminant so that things work
            correctly with ICC profile */
-        //apply_adaption(cam, xyz_float, xyz_adapt);
+        /* apply_adaption(cam, xyz_float, xyz_adapt); */
 
         /* Correct for range of ICC CIEXYZ table data */
         for (j = 0; j < 3; j++) {

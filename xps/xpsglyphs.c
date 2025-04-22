@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -231,7 +231,7 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
     int i;
     gs_gstate_color saved;
 
-    // dmprintf1(ctx->memory, "flushing text buffer (%d glyphs)\n", buf->count);
+    /* dmprintf1(ctx->memory, "flushing text buffer (%d glyphs)\n", buf->count); */
 
     initial_x = x;
     initial_y = y;

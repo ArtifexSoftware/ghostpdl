@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -505,7 +505,7 @@ putcomp(byte *line, int x, int bpc, int value)
 {
     int maxval = (1 << bpc) - 1;
 
-    // clear bits first
+    /* clear bits first  */
     switch (bpc)
     {
     case 1: line[x / 8] &= ~(maxval << (7 - (x % 8))); break;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -503,7 +503,7 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     templat.YStep = YStep;
     templat.uses_transparency = transparency;
     templat.BM_Not_Normal = BM_Not_Normal;
-    //templat.uses_transparency = false; /* disable */
+    /* templat.uses_transparency = false; /* disable */
 
     code = pdfi_gsave(ctx);
     if (code < 0)
@@ -771,7 +771,7 @@ pdfi_pattern_create(pdf_context *ctx, pdf_array *color_array, pdf_dict *stream_d
 #if DEBUG_PATTERN
     dbgmprintf(ctx->memory, "PATTERN: pdfi_create_Pattern\n");
 #endif
-    //    return 0;
+    /*    return 0; */
 
     pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Pattern);
     if (pcs == NULL) {

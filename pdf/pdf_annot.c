@@ -4552,7 +4552,7 @@ annot_preserve_dispatch_t annot_preserve_dispatch[] = {
     {"Movie", pdfi_annot_preserve_default},
     {"PolyLine", pdfi_annot_preserve_default},
     {"Popup", pdfi_annot_preserve_default},
-    //    {"Screen", pdfi_annot_preserve_default},  /* TODO: fts_07_0709.pdf */
+    /*    {"Screen", pdfi_annot_preserve_default},  /* TODO: fts_07_0709.pdf */
     {"Sound", pdfi_annot_preserve_default},
     {"Square", pdfi_annot_preserve_default},
     {"Squiggly", pdfi_annot_preserve_default},

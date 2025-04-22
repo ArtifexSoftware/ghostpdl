@@ -886,7 +886,7 @@ int pdfi_finish_pdf_file(pdf_context *ctx)
 
             code = pdfi_dict_knownget_type(ctx, ctx->Root, "OCProperties", PDF_DICT, &o);
             if (code > 0) {
-                // Build and send the OCProperties structure
+                /* Build and send the OCProperties structure */
                 code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "OCProperties");
                 pdfi_countdown(o);
                 if (code < 0)

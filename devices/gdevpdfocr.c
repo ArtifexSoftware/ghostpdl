@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -605,11 +605,12 @@ ocr_callback(void *arg, const char *rune_,
     }
 
 #if 0
-    // First attempt; match char bboxes exactly. This is bad, as the
-    // bboxes given back from tesseract are 'untrustworthy' to say the
-    // least (they overlap one another in strange ways). Trying to
-    // match those causes the font height to change repeatedly, and
-    // gives output that's hard to identify words in.
+    /* First attempt; match char bboxes exactly. This is bad, as the
+     * bboxes given back from tesseract are 'untrustworthy' to say the
+     * least (they overlap one another in strange ways). Trying to
+     * match those causes the font height to change repeatedly, and
+     * gives output that's hard to identify words in.
+     */
     bbox[0] = char_bbox[0] * 72.0 / ppdev->ocr.xres;
     bbox[1] = (ppdev->ocr.h-1 - char_bbox[3]) * 72.0 / ppdev->ocr.yres;
     bbox[2] = char_bbox[2] * 72.0 / ppdev->ocr.xres;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -158,7 +158,7 @@ xps_decode_image(xps_context_t *ctx, xps_part_t *part, xps_image_t *image)
     else
         return gs_throw(-1, "unknown image file format");
 
-    // TODO: refcount image->colorspace
+    /* TODO: refcount image->colorspace */
 
     /* See if we need to use the embedded profile. */
     if (image->profile)

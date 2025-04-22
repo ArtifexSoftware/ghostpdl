@@ -75,7 +75,7 @@ static irender_proc(image_render_interpolate_landscape_icc);
 static irender_proc(image_render_interpolate_landscape_masked);
 static irender_proc(image_render_interpolate_landscape_masked_hl);
 
-#if 0 // Unused now, but potentially useful in the future
+#if 0 /* Unused now, but potentially useful in the future */
 static bool
 is_high_level_device(gx_device *dev)
 {

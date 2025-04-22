@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -201,7 +201,7 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     /* TODO: Commented out because it caused a seemingly random incorrect pdfwrite output.
      * Will try putting it back in when pdfwrite is more stable.
      */
-    //gs_setlimitclamp(ctx->pgs, true); /* Match gs code */
+    /*gs_setlimitclamp(ctx->pgs, true); /* Match gs code */
 
     /* We need to setup strokeadjust the same way gs does, which is currently based on
      * the device resolution and the DITHERPPI arg.

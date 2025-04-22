@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -870,7 +870,7 @@ clist_render_thread_no_output_fn(void* data)
             band_end_line = dev->height;
         band_num_lines = band_end_line - band_begin_line;
 
-        ((gx_device_memory*)bdev)->band_y = band_begin_line; // probably useless, but doesn't hurt
+        ((gx_device_memory*)bdev)->band_y = band_begin_line; /* probably useless, but doesn't hurt */
 
         code = crdev->buf_procs.setup_buf_device
         (bdev, mdata, raster, (byte**)mlines, 0, band_num_lines, band_num_lines);

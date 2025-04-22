@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -113,7 +113,7 @@ xps_begin_opacity(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         code = xps_parse_brush(ctx, base_uri, dict, opacity_mask_tag);
         if (code)
         {
-            //gs_grestore(ctx->pgs);
+            /* gs_grestore(ctx->pgs); */
             gs_end_transparency_mask(ctx->pgs, TRANSPARENCY_CHANNEL_Opacity);
             ctx->opacity_only = save;
             return gs_rethrow(code, "cannot parse opacity mask brush");

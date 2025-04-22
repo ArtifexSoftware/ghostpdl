@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -70,19 +70,20 @@
  *     processing of that plane.
  */
 
-// Set USE_SSE2 if we have SSE2 available to us.
-// GS defines HAVE_SSE2 for windows builds.
+/* Set USE_SSE2 if we have SSE2 available to us.
+   GS defines HAVE_SSE2 for windows builds.
+ */
 #ifdef HAVE_SSE2
 #define USE_SSE2
 #endif
 
-// Set USE_SSE3 if we have SSE3 available to us. Only has an effect if
-// USE_SSE2 is also set.
-//#define USE_SSE3
+/* Set USE_SSE3 if we have SSE3 available to us. Only has an effect if
+   USE_SSE2 is also set. */
+/* #define USE_SSE3 */
 
-// For timing we might want to disable this device from actually producing
-// any output.
-//#define NO_OUTPUT
+/*   For timing we might want to disable this device from actually producing
+   any output. */
+/* #define NO_OUTPUT */
 
 #include "std.h"
 #include "gstypes.h"
@@ -99,13 +100,13 @@
 
 /* And for the SSE code */
 #ifdef USE_SSE4
-#include <smmintrin.h>   // SIMD sse4
+#include <smmintrin.h>   /* SIMD sse4 */
 #endif
 #ifdef USE_SSE3
-#include <tmmintrin.h>   // SIMD sse3
+#include <tmmintrin.h>   /* SIMD sse3 */
 #endif
 #ifdef USE_SSE2
-#include <emmintrin.h>   // SIMD sse2
+#include <emmintrin.h>   /* SIMD sse2 */
 #endif
 
 /* First we have the device structure definition. */
@@ -433,50 +434,50 @@ static void average_plane(byte* image, int width, int height, int raster)
     const __m128i *in = (__m128i *)(image + y * raster);
 
     for (x = 0; x < width; x += 32) {
-      mm0 = _mm_load_si128(in);          //mm0 = HHhhGGggFFffEEeeDDddCCccBBbbAAaa
+      mm0 = _mm_load_si128(in);          /*mm0 = HHhhGGggFFffEEeeDDddCCccBBbbAAaa*/
 #ifdef USE_SSE3
-      mm1 = _mm_shuffle_epi8(mm0, maskL);//mm1 = 00hh00gg00ff00ee00dd00cc00bb00aa
-      mm0 = _mm_shuffle_epi8(mm0, maskH);//mm0 = 00HH00GG00FF00EE00DD00CC00BB00AA
+      mm1 = _mm_shuffle_epi8(mm0, maskL);/*mm1 = 00hh00gg00ff00ee00dd00cc00bb00aa*/
+      mm0 = _mm_shuffle_epi8(mm0, maskH);/*mm0 = 00HH00GG00FF00EE00DD00CC00BB00AA*/
 #else
-      mm1 = _mm_and_si128(mask, mm0);    //mm1 = 00hh00gg00ff00ee00dd00cc00bb00aa
-      mm0 = _mm_andnot_si128(mask, mm0); //mm0 = HH00GG00FF00EE00DD00CC00BB00AA00
-      mm0 = _mm_srli_epi16(mm0, 8);      //mm0 = 00HH00GG00FF00EE00DD00CC00BB00AA
+      mm1 = _mm_and_si128(mask, mm0);    /*mm1 = 00hh00gg00ff00ee00dd00cc00bb00aa*/
+      mm0 = _mm_andnot_si128(mask, mm0); /*mm0 = HH00GG00FF00EE00DD00CC00BB00AA00*/
+      mm0 = _mm_srli_epi16(mm0, 8);      /*mm0 = 00HH00GG00FF00EE00DD00CC00BB00AA*/
 #endif
       mm0 = _mm_add_epi16(mm1, mm0);
       mm3 = _mm_load_si128((__m128i*)(((char *)in) + raster));
-                                         //mm3 = PPppOOooNNnnMMmmLLllKKkkJJjjIIii
+                                         /*mm3 = PPppOOooNNnnMMmmLLllKKkkJJjjIIii*/
       in++;
 #ifdef USE_SSE3
-      mm1 = _mm_shuffle_epi8(mm3, maskL);//mm1 = 00pp00oo00nn00mm00ll00kk00jj00ii
-      mm3 = _mm_shuffle_epi8(mm3, maskH);//mm3 = 00PP00OO00NN00MM00LL00KK00JJ00II
+      mm1 = _mm_shuffle_epi8(mm3, maskL);/*mm1 = 00pp00oo00nn00mm00ll00kk00jj00ii*/
+      mm3 = _mm_shuffle_epi8(mm3, maskH);/*mm3 = 00PP00OO00NN00MM00LL00KK00JJ00II*/
 #else
-      mm1 = _mm_and_si128(mask, mm3);    //mm1 = 00pp00oo00nn00mm00ll00kk00jj00ii
-      mm3 = _mm_andnot_si128(mask, mm3); //mm3 = PP00OO00NN00MM00LL00KK00JJ00II00
-      mm3 = _mm_srli_epi16(mm3, 8);      //mm3 = 00PP00OO00NN00MM00LL00KK00JJ00II
+      mm1 = _mm_and_si128(mask, mm3);    /*mm1 = 00pp00oo00nn00mm00ll00kk00jj00ii*/
+      mm3 = _mm_andnot_si128(mask, mm3); /*mm3 = PP00OO00NN00MM00LL00KK00JJ00II00*/
+      mm3 = _mm_srli_epi16(mm3, 8);      /*mm3 = 00PP00OO00NN00MM00LL00KK00JJ00II*/
 #endif
       mm3 = _mm_add_epi16(mm1, mm3);
       mm2 = _mm_add_epi16(mm0, mm3);
 
-      mm0 = _mm_load_si128(in);          //mm0 = HHhhGGggFFffEEeeDDddCCccBBbbAAaa
+      mm0 = _mm_load_si128(in);          /*mm0 = HHhhGGggFFffEEeeDDddCCccBBbbAAaa*/
 #ifdef USE_SSE3
-      mm1 = _mm_shuffle_epi8(mm0, maskL);//mm1 = 00hh00gg00ff00ee00dd00cc00bb00aa
-      mm0 = _mm_shuffle_epi8(mm0, maskH);//mm0 = 00HH00GG00FF00EE00DD00CC00BB00AA
+      mm1 = _mm_shuffle_epi8(mm0, maskL);/*mm1 = 00hh00gg00ff00ee00dd00cc00bb00aa*/
+      mm0 = _mm_shuffle_epi8(mm0, maskH);/*mm0 = 00HH00GG00FF00EE00DD00CC00BB00AA*/
 #else
-      mm1 = _mm_and_si128(mask, mm0);    //mm1 = 00hh00gg00ff00ee00dd00cc00bb00aa
-      mm0 = _mm_andnot_si128(mask, mm0); //mm0 = HH00GG00FF00EE00DD00CC00BB00AA00
-      mm0 = _mm_srli_epi16(mm0, 8);      //mm0 = 00HH00GG00FF00EE00DD00CC00BB00AA
+      mm1 = _mm_and_si128(mask, mm0);    /*mm1 = 00hh00gg00ff00ee00dd00cc00bb00aa*/
+      mm0 = _mm_andnot_si128(mask, mm0); /*mm0 = HH00GG00FF00EE00DD00CC00BB00AA00*/
+      mm0 = _mm_srli_epi16(mm0, 8);      /*mm0 = 00HH00GG00FF00EE00DD00CC00BB00AA*/
 #endif
       mm0 = _mm_add_epi16(mm1, mm0);
       mm3 = _mm_load_si128((__m128i*)(((char *)in) + raster));
-                                         //mm3 = PPppOOooNNnnMMmmLLllKKkkJJjjIIii
+                                         /*mm3 = PPppOOooNNnnMMmmLLllKKkkJJjjIIii*/
       in++;
 #ifdef USE_SSE3
-      mm1 = _mm_shuffle_epi8(mm3, maskL);//mm1 = 00pp00oo00nn00mm00ll00kk00jj00ii
-      mm3 = _mm_shuffle_epi8(mm3, maskH);//mm3 = 00PP00OO00NN00MM00LL00KK00JJ00II
+      mm1 = _mm_shuffle_epi8(mm3, maskL);/*mm1 = 00pp00oo00nn00mm00ll00kk00jj00ii*/
+      mm3 = _mm_shuffle_epi8(mm3, maskH);/*mm3 = 00PP00OO00NN00MM00LL00KK00JJ00II*/
 #else
-      mm1 = _mm_and_si128(mask, mm3);    //mm1 = 00pp00oo00nn00mm00ll00kk00jj00ii
-      mm3 = _mm_andnot_si128(mask, mm3); //mm3 = PP00OO00NN00MM00LL00KK00JJ00II00
-      mm3 = _mm_srli_epi16(mm3, 8);      //mm3 = 00PP00OO00NN00MM00LL00KK00JJ00II
+      mm1 = _mm_and_si128(mask, mm3);    /*mm1 = 00pp00oo00nn00mm00ll00kk00jj00ii*/
+      mm3 = _mm_andnot_si128(mask, mm3); /*mm3 = PP00OO00NN00MM00LL00KK00JJ00II00*/
+      mm3 = _mm_srli_epi16(mm3, 8);      /*mm3 = 00PP00OO00NN00MM00LL00KK00JJ00II*/
 #endif
       mm3 = _mm_add_epi16(mm1, mm3);
       mm3 = _mm_add_epi16(mm0, mm3);
@@ -484,10 +485,10 @@ static void average_plane(byte* image, int width, int height, int raster)
       mm2 = _mm_srli_epi16(mm2, 2);
       mm3 = _mm_srli_epi16(mm3, 2);
 
-      // Recombine
+      /* Recombine */
       mm2 = _mm_packus_epi16(mm2, mm3);
 
-      // Invert
+      /* Invert */
       mm2 = _mm_xor_si128(mm2, invert);
 
       _mm_store_si128(out++, mm2);

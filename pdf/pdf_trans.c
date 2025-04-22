@@ -437,7 +437,7 @@ static int pdfi_transparency_group_common(pdf_context *ctx, pdf_dict *page_dict,
     int code;
 
     gs_trans_group_params_init(&params, 1.0);
-    //    gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha);
+    /*    gs_setopacityalpha(ctx->pgs, ctx->pgs->fillconstantalpha); */
 
     /* It seems the flag for Isolated is /I */
     code = pdfi_dict_get_bool(ctx, group_dict, "I", &b);

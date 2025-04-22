@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -200,7 +200,7 @@ static int display_close(void *handle, void *device)
         }
     }
 
-    DisposePixMap(img->pixmapHdl);   // need to go in doCloseWindow()
+    DisposePixMap(img->pixmapHdl);   /* need to go in doCloseWindow() */
     DisposeWindow(img->windowRef);
 
     free(img);
@@ -479,7 +479,7 @@ static void window_create(IMAGE *img)
 {
     WindowRef windowRef;
     Str255    windowTitle = "\pGhostscript Image";
-    Rect      windowRect = {20,4,580,420};//, portRect;
+    Rect      windowRect = {20,4,580,420};/*, portRect; */
     Rect      scrollbarRect = {0,0,0,0};
 
 #if TARGET_API_MAC_CARBON
@@ -624,7 +624,7 @@ void main(void)
 
     /* Part of fudge to make SIOUX accept characters without becoming modal */
     SelectWindow(SIOUXTextWindow->window);
-    PostEvent(keyDown, 0x4c00);  // Enter
+    PostEvent(keyDown, 0x4c00);  /* Enter */
     ReadCharsFromConsole(dformat, 0x7FFF);
     clrscr();
 
