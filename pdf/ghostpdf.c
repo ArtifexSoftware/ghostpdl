@@ -972,9 +972,9 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
     pdf_obj *EF = NULL, *F = NULL;
     char **working_array = NULL;
 
-    if (pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, &Names)) {
-        if(pdfi_dict_knownget_type(ctx, (pdf_dict *)Names, "EmbeddedFiles", PDF_DICT, &EmbeddedFiles)) {
-            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EmbeddedFiles, "Names", PDF_ARRAY, (pdf_obj **)&FileNames)) {
+    if (pdfi_dict_knownget_type(ctx, ctx->Root, "Names", PDF_DICT, &Names) > 0) {
+        if(pdfi_dict_knownget_type(ctx, (pdf_dict *)Names, "EmbeddedFiles", PDF_DICT, &EmbeddedFiles) > 0) {
+            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EmbeddedFiles, "Names", PDF_ARRAY, (pdf_obj **)&FileNames) > 0) {
                 int ix = 0, index = 0;
                 gp_file *scratch_file = NULL;
                 char scratch_name[gp_file_name_sizeof];
@@ -997,8 +997,8 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                         goto exit;
 
                     if (pdfi_type_of(File) == PDF_DICT) {
-                        if (pdfi_dict_knownget_type(ctx, (pdf_dict *)File, "EF", PDF_DICT, &EF)) {
-                            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EF, "F", PDF_STREAM, &F)) {
+                        if (pdfi_dict_knownget_type(ctx, (pdf_dict *)File, "EF", PDF_DICT, &EF) > 0) {
+                            if (pdfi_dict_knownget_type(ctx, (pdf_dict *)EF, "F", PDF_STREAM, &F) > 0) {
                                 pdf_dict *stream_dict = NULL;
                                 pdf_c_stream *s = NULL;
 
@@ -1007,7 +1007,7 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                  */
                                 code = pdfi_dict_from_obj(ctx, F, &stream_dict);
                                 if (code >= 0) {
-                                    if (!pdfi_dict_knownget_type(ctx, stream_dict, "Subtype", PDF_NAME, &Subtype)) {
+                                    if (pdfi_dict_knownget_type(ctx, stream_dict, "Subtype", PDF_NAME, &Subtype) <= 0) {
                                         /* No Subtype, (or not a name) we can't check the Mime type, so try to read the first 2Kb
                                          * and look for a %PDF- in that. If not present, assume its not a PDF
                                          */
