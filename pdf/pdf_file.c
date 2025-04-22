@@ -22,6 +22,7 @@
 #include "pdf_array.h"
 #include "pdf_misc.h"
 #include "pdf_sec.h"
+#include "pdf_loop_detect.h"
 #include "stream.h"
 #include "strimpl.h"
 #include "strmio.h"
@@ -775,6 +776,14 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 {
     int code;
 
+    code = pdfi_loop_detector_mark(ctx);
+    if (code < 0)
+        return code;
+
+    code = pdfi_loop_detector_add_object(ctx, dict->object_num);
+    if (code < 0)
+        goto cleanupExit;
+
     if (ctx->args.pdfdebug)
     {
         char *str;
@@ -789,104 +798,107 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
 
     if (pdfi_name_is(n, "RunLengthDecode")) {
         code = pdfi_RunLength_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "CCITTFaxDecode")) {
         code = pdfi_CCITTFax_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "ASCIIHexDecode")) {
         code = pdfi_simple_filter(ctx, &s_AXD_template, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "ASCII85Decode")) {
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "SubFileDecode")) {
         code = pdfi_simple_filter(ctx, &s_SFD_template, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "FlateDecode")) {
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "JBIG2Decode")) {
         code = pdfi_JBIG2Decode_filter(ctx, dict, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "LZWDecode")) {
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "DCTDecode")) {
         code = pdfi_DCT_filter(ctx, dict, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "JPXDecode")) {
         code = pdfi_JPX_filter(ctx, dict, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
-
     if (pdfi_name_is(n, "AHx")) {
         if (!inline_image) {
             if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL)) < 0)
-                return code;
+                goto cleanupExit;
         }
         code = pdfi_simple_filter(ctx, &s_AXD_template, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "A85")) {
         if (!inline_image) {
             if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL)) < 0)
-                return code;
+                goto cleanupExit;
         }
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "LZW")) {
         if (!inline_image) {
             if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL)) < 0)
-                return code;
+                goto cleanupExit;
         }
         code = pdfi_LZW_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "CCF")) {
         if (!inline_image) {
             if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL)) < 0)
-                return code;
+                goto cleanupExit;
         }
         code = pdfi_CCITTFax_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "DCT")) {
         if (!inline_image) {
             if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL)) < 0)
-                return code;
+                goto cleanupExit;
         }
         code = pdfi_DCT_filter(ctx, dict, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "Fl")) {
         if (!inline_image) {
             if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL)) < 0)
-                return code;
+                goto cleanupExit;
         }
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
     if (pdfi_name_is(n, "RL")) {
         if (!inline_image) {
             if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_BAD_INLINEFILTER, "pdfi_apply_filter", NULL)) < 0)
-                return code;
+                goto cleanupExit;
         }
         code = pdfi_RunLength_filter(ctx, decode, source, new_stream);
-        return code;
+        goto cleanupExit;
     }
 
     pdfi_set_error(ctx, 0, NULL, E_PDF_UNKNOWNFILTER, "pdfi_apply_filter", NULL);
-    return_error(gs_error_undefined);
+    code = gs_error_undefined;
+
+cleanupExit:
+    pdfi_loop_detector_cleartomark(ctx);
+    return code;
 }
 
 int pdfi_filter_no_decryption(pdf_context *ctx, pdf_stream *stream_obj,
