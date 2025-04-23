@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1355,7 +1355,7 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
     int w = xmax - xmin;
     int h = ymax - ymin;
 
-    if (ptile == 0)             /* null pattern */
+    if (ptile == NULL)             /* null pattern */
         return 0;
 
     fit_fill_xywh(dev, xmin, ymin, w, h);
@@ -1377,6 +1377,9 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
             imod(-(int)fastfloor(ptile->step_matrix.ty - phase.y + 0.5),
                  ptile->ttrans->height);
 
+        if (fill_trans_buffer == NULL)
+            return_error(gs_error_unknownerror);
+
         tile_rect_trans_simple(xmin, ymin, xmax, ymax, px, py, ptile,
             fill_trans_buffer, native16);
     } else {
@@ -1385,6 +1388,9 @@ gx_trans_pattern_fill_rect(int xmin, int ymin, int xmax, int ymax,
                This portion transforms the bounding box by the step matrix
                and does partial rect fills with tiles that fall into this
                transformed bbox */
+            if (fill_trans_buffer == NULL)
+                return_error(gs_error_unknownerror);
+
             code = tile_by_steps_trans(&state_trans, xmin, ymin, xmax-xmin,
                                         ymax-ymin, fill_trans_buffer, ptile,
                                         native16);
