@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -136,16 +136,26 @@ make_mcde_default(gx_device *dev, const gs_gstate *pgs,
                   const gs_int_point *origin)
 {
     gx_device_memory *const mdev = (gx_device_memory *)midev;
-    gx_device_mask_clip *mcdev =
-        gs_alloc_struct(mem, gx_device_mask_clip, &st_device_mask_clip,
-                        "make_mcde_default");
+    gx_device_mask_clip *mcdev = NULL;
     gx_strip_bitmap bits;	/* only gx_bitmap */
     int code;
+
+    /* The gx_strip_bitmap structure defines (via gs_tile_bitmap_common)
+     * rep_width and rep_height as being of type 'ushort', device width and
+     * height are of type 'int'. Make sure we don't overflow because that
+     * will lead to memory corruption.
+     */
+    if (mdev->width > ARCH_MAX_USHORT || mdev->height > ARCH_MAX_USHORT)
+        return_error(gs_error_rangecheck);
+
+    mcdev = gs_alloc_struct(mem, gx_device_mask_clip, &st_device_mask_clip,
+                        "make_mcde_default");
 
     if (mcdev == 0)
         return_error(gs_error_VMerror);
     bits.data = mdev->base;
     bits.raster = mdev->raster;
+
     bits.size.x = bits.rep_width = mdev->width;
     bits.size.y = bits.rep_height = mdev->height;
     bits.id = gx_no_bitmap_id;
