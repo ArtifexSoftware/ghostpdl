@@ -806,9 +806,17 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (code < 0)
         return code;
 
-    code = pdfi_loop_detector_add_object(ctx, dict->object_num);
-    if (code < 0)
-        goto cleanupExit;
+    if (dict->object_num != 0) {
+        code = pdfi_loop_detector_add_object(ctx, dict->object_num);
+        if (code < 0)
+            goto cleanupExit;
+    } else {
+        if (dict->indirect_num != 0) {
+            code = pdfi_loop_detector_add_object(ctx, dict->indirect_num);
+            if (code < 0)
+                goto cleanupExit;
+        }
+    }
 
     if (ctx->args.pdfdebug)
     {
