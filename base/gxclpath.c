@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -811,6 +811,8 @@ clist_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         crop_fill_y(cdev, ry, rheight);
         if (rheight <= 0)
             return 0;
+        if (rheight > cdev->height)
+            return gs_error_limitcheck;
         rx = fixed2int(bbox.p.x) - 1;
         rwidth = fixed2int_ceiling(bbox.q.x) - rx + 1;
         fit_fill_w(cdev, rx, rwidth);
