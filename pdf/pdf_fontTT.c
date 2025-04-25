@@ -337,7 +337,7 @@ static void pdfi_make_post_dict(gs_font_type42 *pfont)
             }
             pdfi_countup(ind);
             ind->value.i = i;
-            (void)pdfi_dict_put_obj(ctx, ttfont->post, (pdf_obj *)key, (pdf_obj *)ind, true);
+            (void)pdfi_dict_put_obj(ctx, ttfont->post, (pdf_obj *)key, (pdf_obj *)ind, false);
             pdfi_countdown(key);
             pdfi_countdown(ind);
         }
