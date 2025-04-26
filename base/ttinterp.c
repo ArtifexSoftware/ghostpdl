@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -69,6 +69,7 @@
 #include "ttcalc.h"
 #include "ttinterp.h"
 #include "ttfinp.h"
+#include "setjmp_.h"
 
 #ifdef DEBUG
 #  define DBG_PAINT    CUR.current_face->font->DebugRepaint(CUR.current_face->font);
@@ -1290,6 +1291,7 @@ static int nInstrCount=0;
  *
  *****************************************************************/
 
+OPTIMIZE_SETJMP
   static TT_F26Dot6  Project( EXEC_OPS TT_F26Dot6  Vx, TT_F26Dot6  Vy )
   {
     THROW_PATENTED;
@@ -1309,6 +1311,7 @@ static int nInstrCount=0;
  *
  *****************************************************************/
 
+OPTIMIZE_SETJMP
   static TT_F26Dot6  Dual_Project( EXEC_OPS TT_F26Dot6  Vx, TT_F26Dot6  Vy )
   {
     THROW_PATENTED;
@@ -1328,6 +1331,7 @@ static int nInstrCount=0;
  *
  *****************************************************************/
 
+OPTIMIZE_SETJMP
   static TT_F26Dot6  Free_Project( EXEC_OPS TT_F26Dot6  Vx, TT_F26Dot6  Vy )
   {
     THROW_PATENTED;
@@ -4995,6 +4999,7 @@ static int nInstrCount=0;
 /*                                                              */
 /****************************************************************/
 
+OPTIMIZE_SETJMP
   TT_Error  RunIns( PExecution_Context  exc )
   {
     TT_Error     Result;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -23,12 +23,14 @@
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
+#include "setjmp_.h"
 
 /*
  * Interface routines.  This layer of routines exists solely to limit
  * side-effects from using setjmp.
  */
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_create_compress(stream_DCT_state * st)
 {				/* Initialize error handling */
@@ -46,6 +48,7 @@ gs_jpeg_create_compress(stream_DCT_state * st)
     return 0;
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_set_defaults(stream_DCT_state * st)
 {
@@ -55,6 +58,7 @@ gs_jpeg_set_defaults(stream_DCT_state * st)
     return 0;
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_set_colorspace(stream_DCT_state * st,
                        J_COLOR_SPACE colorspace)
@@ -65,6 +69,7 @@ gs_jpeg_set_colorspace(stream_DCT_state * st,
     return 0;
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_set_linear_quality(stream_DCT_state * st,
                            int scale_factor, boolean force_baseline)
@@ -76,6 +81,7 @@ gs_jpeg_set_linear_quality(stream_DCT_state * st,
     return 0;
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_set_quality(stream_DCT_state * st,
                     int quality, boolean force_baseline)
@@ -87,6 +93,7 @@ gs_jpeg_set_quality(stream_DCT_state * st,
     return 0;
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_start_compress(stream_DCT_state * st,
                        boolean write_all_tables)
@@ -97,6 +104,7 @@ gs_jpeg_start_compress(stream_DCT_state * st,
     return 0;
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_write_scanlines(stream_DCT_state * st,
                         JSAMPARRAY scanlines,
@@ -108,6 +116,7 @@ gs_jpeg_write_scanlines(stream_DCT_state * st,
                                      scanlines, (JDIMENSION) num_lines);
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_finish_compress(stream_DCT_state * st)
 {

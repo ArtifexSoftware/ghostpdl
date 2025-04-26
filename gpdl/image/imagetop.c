@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -423,6 +423,7 @@ img_term_source(j_decompress_ptr cinfo)
 {
 }
 
+OPTIMIZE_SETJMP
 static void
 img_error_exit(j_common_ptr cinfo)
 {
@@ -473,6 +474,7 @@ consume_jpeg_data(img_interp_instance_t *img, stream_cursor_read *pr)
     return (pr->limit - pr->ptr == img->bytes_available_on_entry);
 }
 
+OPTIMIZE_SETJMP
 static int
 img_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -57,6 +57,7 @@
 #include "gxdownscale.h"
 #include "gxdevsop.h"
 #include "gscms.h"
+#include "setjmp_.h"
 
 /* ------ The device descriptors ------ */
 
@@ -467,6 +468,7 @@ my_png_flush(png_struct *png)
 
 /* Write out a page in PNG format. */
 /* This routine is used for all formats. */
+OPTIMIZE_SETJMP
 static int
 do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
 {

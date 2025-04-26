@@ -24,12 +24,14 @@
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
+#include "setjmp_.h"
 
 /*
  * Interface routines.  This layer of routines exists solely to limit
  * side-effects from using setjmp.
  */
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_create_decompress(stream_DCT_state * st)
 {				/* Initialize error handling */
@@ -50,6 +52,7 @@ gs_jpeg_create_decompress(stream_DCT_state * st)
     return 0;
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_read_header(stream_DCT_state * st,
                     boolean require_image)
@@ -62,6 +65,7 @@ gs_jpeg_read_header(stream_DCT_state * st,
     return jpeg_read_header(&st->data.decompress->dinfo, require_image);
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_start_decompress(stream_DCT_state * st)
 {
@@ -79,6 +83,7 @@ gs_jpeg_start_decompress(stream_DCT_state * st)
 #endif
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_read_scanlines(stream_DCT_state * st,
                        JSAMPARRAY scanlines,
@@ -93,6 +98,7 @@ gs_jpeg_read_scanlines(stream_DCT_state * st,
                                     scanlines, (JDIMENSION) max_lines);
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_finish_decompress(stream_DCT_state * st)
 {

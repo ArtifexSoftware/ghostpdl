@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,6 +25,7 @@
 #include "sdct.h"
 #include "sjpeg.h"
 #include "gsmchunk.h"
+#include "setjmp_.h"
 
 #if !defined(SHARE_JPEG) || SHARE_JPEG==0
 #include "jmemcust.h"
@@ -50,6 +51,7 @@
  * offset_of(jpeg_compress_data, cinfo)==offset_of(jpeg_decompress_data, dinfo)
  */
 
+OPTIMIZE_SETJMP
 static void
 gs_jpeg_error_exit(j_common_ptr cinfo)
 {
@@ -115,6 +117,7 @@ gs_jpeg_log_error(stream_DCT_state * st)
  * side-effects from using setjmp.
  */
 
+OPTIMIZE_SETJMP
 JQUANT_TBL *
 gs_jpeg_alloc_quant_table(stream_DCT_state * st)
 {
@@ -126,6 +129,7 @@ gs_jpeg_alloc_quant_table(stream_DCT_state * st)
                                   & st->data.compress->cinfo);
 }
 
+OPTIMIZE_SETJMP
 JHUFF_TBL *
 gs_jpeg_alloc_huff_table(stream_DCT_state * st)
 {
@@ -137,6 +141,7 @@ gs_jpeg_alloc_huff_table(stream_DCT_state * st)
                                  & st->data.compress->cinfo);
 }
 
+OPTIMIZE_SETJMP
 int
 gs_jpeg_destroy(stream_DCT_state * st)
 {

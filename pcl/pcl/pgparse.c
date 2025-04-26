@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -22,6 +22,7 @@
 #include "gstypes.h"
 #include "scommon.h"
 #include "pgmand.h"
+#include "setjmp_.h"
 
 /* ---------------- Command definition ---------------- */
 
@@ -83,6 +84,7 @@ hpgl_process_init(hpgl_parser_state_t * pst)
 
 /* Process a buffer of HP-GL/2 commands. */
 /* Return 0 if more input needed, 1 if ESC seen, or an error code. */
+OPTIMIZE_SETJMP
 int
 hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
              stream_cursor_read * pr)
@@ -229,6 +231,9 @@ hpgl_process(hpgl_parser_state_t * pst, hpgl_state_t * pgls,
  * argument, a pointer to the value if an argument is present, or longjmp if
  * need more data.  Note that no errors are possible.
  */
+#if defined(__clang__) && __clang__==1
+__attribute__((optnone))
+#endif
 static const hpgl_value_t *
 hpgl_arg(const gs_memory_t * mem, hpgl_parser_state_t * pst)
 {

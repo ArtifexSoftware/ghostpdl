@@ -22,6 +22,14 @@
 
 #include <setjmp.h>
 
+#ifndef OPTIMISE_SETJMP
+#  if defined(__clang__) && __clang__==1
+#    define OPTIMIZE_SETJMP __attribute__((optnone))
+#  else
+#    define OPTIMIZE_SETJMP
+#  endif
+#endif
+
 #ifndef INIT_GS_JMPBUF
 #  if defined(__clang__) && __clang__==1
 #    define INIT_GS_JMPBUF 1

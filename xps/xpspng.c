@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -21,6 +21,7 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "gsstate.h"
+#include "setjmp_.h"
 
 /* silence a warning where #if SHARE_LIBPNG is used when it's undefined */
 #ifndef SHARE_LIBPNG
@@ -79,6 +80,7 @@ xps_png_free(png_structp png, png_voidp ptr)
 }
 
 /* This only determines if we have an alpha value */
+OPTIMIZE_SETJMP
 int
 xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
 {
@@ -161,6 +163,7 @@ xps_png_has_alpha(xps_context_t *ctx, byte *rbuf, int rlen)
     return has_alpha;
 }
 
+OPTIMIZE_SETJMP
 int
 xps_decode_png(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
 {

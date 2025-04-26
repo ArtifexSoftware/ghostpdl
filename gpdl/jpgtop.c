@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -411,6 +411,7 @@ jpg_term_source(j_decompress_ptr cinfo)
 {
 }
 
+OPTIMIZE_SETJMP
 static void
 jpg_error_exit(j_common_ptr cinfo)
 {
@@ -483,6 +484,7 @@ align_setjmp_buffer(void *ptr)
     return (jmp_buf *)(void *)aligned;
 }
 
+OPTIMIZE_SETJMP
 static int
 jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
 {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -26,6 +26,7 @@
 #include "gspaint.h"
 #include "plmain.h"
 #include "png_.h"
+#include "setjmp_.h"
 
 /* Forward decls */
 
@@ -305,6 +306,7 @@ bytes_until_uel(const stream_cursor_read *pr)
     return pr->limit - pr->ptr;
 }
 
+OPTIMIZE_SETJMP
 static void
 my_png_error(png_structp png_ptr, png_const_charp error_msg)
 {
@@ -367,6 +369,7 @@ my_png_read(png_structp png_ptr, png_bytep data, png_size_t length)
     png->file_pos += length;
 }
 
+OPTIMIZE_SETJMP
 static int
 do_impl_process(png_interp_instance_t *png, stream_cursor_read * pr, bool eof)
 {
