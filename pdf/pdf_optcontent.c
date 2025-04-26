@@ -109,21 +109,21 @@ pdfi_oc_check_OCG_usage(pdf_context *ctx, pdf_dict *ocdict)
     }
 
     if (ctx->args.printed) {
-        code = pdfi_dict_knownget_type(ctx, ocdict, "Print", PDF_DICT, (pdf_obj **)&dict);
+        code = pdfi_dict_knownget_type(ctx, Usage, "Print", PDF_DICT, (pdf_obj **)&dict);
         if (code <= 0)
             goto cleanup;
         code = pdfi_dict_knownget_type(ctx, dict, "PrintState", PDF_NAME, &name);
         if (code <= 0)
             goto cleanup;
     } else {
-        code = pdfi_dict_knownget_type(ctx, ocdict, "View", PDF_DICT, (pdf_obj **)&dict);
+        code = pdfi_dict_knownget_type(ctx, Usage, "View", PDF_DICT, (pdf_obj **)&dict);
         if (code <= 0)
             goto cleanup;
         code = pdfi_dict_knownget_type(ctx, dict, "ViewState", PDF_NAME, &name);
         if (code <= 0)
             goto cleanup;
     }
-    if (pdfi_name_strcmp((pdf_name *)name, "OFF")) {
+    if (pdfi_name_strcmp((pdf_name *)name, "OFF") == 0) {
         is_visible = false;
     }
 
