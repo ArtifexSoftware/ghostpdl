@@ -541,6 +541,40 @@ pdf_encode_string_element(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_
     code = font->procs.glyph_name(font, glyph, &gnstr);
     if (code < 0)
         return code;	/* can't get name of glyph */
+    if (pdev->PDFA > 1 && (font->FontType == ft_encrypted || font->FontType == ft_encrypted2) && bytes_compare(gnstr.data, gnstr.size, (const byte *)".notdef", 7) == 0) {
+        switch (pdev->PDFACompatibilityPolicy) {
+            case 0:
+                emprintf(pdev->memory,
+                     "\nAttempt to use the /.notdef glyph directly, not permitted in PDF/A-2+, reverting to normal PDF output\n");
+                pdev->AbortPDFAX = true;
+                pdev->PDFA = 0;
+                break;
+            case 1:
+                emprintf(pdev->memory,
+                     "\nAttempt to use the /.notdef glyph directly, not permitted in PDF/A-2+, glyph will not be present in output file\n\n");
+                /* Returning an error causees text processing to try and
+                 * handle the glyph by rendering to a bitmap instead of
+                 * as a glyph in a font. This will eliminate the problem
+                 * and the fiel should appear the same as the original.
+                 */
+                return_error(gs_error_unknownerror);
+                break;
+            case 2:
+                emprintf(pdev->memory,
+                     "\nAttempt to use the /.notdef glyph directly, not permitted in PDF/A-2+, aborting conversion\n");
+                /* Careful here, only certain errors will bubble up
+                 * through the text processing.
+                 */
+                return_error(gs_error_invalidfont);
+                break;
+            default:
+                emprintf(pdev->memory,
+                     "\nAttempt to use the /.notdef glyph directly, not permitted in PDF/A-2+, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                pdev->AbortPDFAX = true;
+                pdev->PDFA = 0;
+                break;
+        }
+    }
     if (font->FontType != ft_user_defined &&
         font->FontType != ft_PDF_user_defined &&
         font->FontType != ft_PCL_user_defined &&
