@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -318,6 +318,17 @@ ycc_to_rgb_8(unsigned char *row, unsigned long row_size)
     unsigned char y;
     signed char u, v;
     int r,g,b;
+
+    /* extra code for OSS-fuzz 414383025, the test file should not get here now
+     * but as a belt and braces approach, check the width of the row is a
+     * multiple of 3. If it isn't, reduce it until it is. This prevents
+     * row_size being decreased *below* 0, failing to exit the loop and
+     * reading from illegal memory locations
+     */
+    if (row_size < 3)
+        return;
+    row_size = row_size - row_size % 3;
+
     do
     {
         y = row[0];
@@ -353,6 +364,14 @@ ycc_to_rgb_16(unsigned char *row, unsigned long row_size)
     unsigned short y;
     signed short u, v;
     int r,g,b;
+
+    /* As per the 8-bit case above, make sure that row-size is a mutiple of 6
+     * so that we don't decrement it below 0 in the loop.
+     */
+    if (row_size < 6)
+        return;
+    row_size = row_size - row_size % 6;
+
     do
     {
         y = (row[0]<<8) | row[1];
@@ -669,7 +688,8 @@ static int process_one_trunk(stream_jpxd_state * const state, stream_cursor_writ
                 }
             }
 
-            if (state->image->color_space == OPJ_CLRSPC_SYCC || state->image->color_space == OPJ_CLRSPC_EYCC)
+            /* Check the number of components, if it's not 3 then we could be dealing with an indexed space and must not do this conversion */
+            if ((state->image->color_space == OPJ_CLRSPC_SYCC || state->image->color_space == OPJ_CLRSPC_EYCC) && state->image->numcomps == 3)
             {
                 /* bpp >= 8 always, as bpp < 8 only for grayscale */
                 if (state->bpp == 8)
