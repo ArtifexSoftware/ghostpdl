@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -181,7 +181,10 @@ psw_begin_file_header(gp_file *f, const gx_device *dev, const gs_rect *pbbox,
         fputs("%...............................................................\n", f);
     }
 #ifdef CLUSTER
-    fprintf(f, "%%%%Creator: GPL Ghostscript (%s)\n", dev->dname);
+    /* Slightly screwy - separating the G, P and L characters this way to avoid
+     * accidental replacement by the release script.
+     */
+    fprintf(f, "%%%%Creator: %s%s%s Ghostscript (%s)\n", "G", "P", "L", dev->dname);
 #else
     fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
             dev->dname);

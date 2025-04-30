@@ -2083,11 +2083,15 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             }
         }
         if (pdf_key_eq(pairs + i, "/Producer")) {
+            /* Slightly screwy - separating the G, P and L characters this way to avoid
+             * accidental replacement by the release script.
+             */
+            const byte gs_g_p_l_prod_fam[16] = {'G', 'P', 'L', ' ', 'G', 'h', 'o', 's', 't', 's', 'c', 'r', 'i', 'p', 't', '\0'};
             string_match_params params;
             params = string_match_params_default;
             params.ignore_case = true;
 
-            if (!string_match((const byte *)GS_PRODUCTFAMILY, strlen(GS_PRODUCTFAMILY), (const byte *)"GPL Ghostscript", 15, &params))
+            if (!string_match((const byte *)GS_PRODUCTFAMILY, strlen(GS_PRODUCTFAMILY), gs_g_p_l_prod_fam, 15, &params))
                 code = pdfmark_put_pair(pcd, pair);
         } else
             code = pdfmark_put_pair(pcd, pair);
