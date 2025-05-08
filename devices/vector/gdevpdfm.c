@@ -486,14 +486,14 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
         Subtype.data = 0;
     for (i = 0; i < count; i += 2) {
         const gs_param_string *pair = &pairs[i];
-        int src_pg;
+        unsigned int src_pg;
 
         if (pdf_key_eq(pair, "/SrcPg")){
             unsigned char *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, (pair[1].size + 1) * sizeof(unsigned char),
                         "pdf_xmp_write_translated");
             memcpy(buf0, pair[1].data, pair[1].size);
             buf0[pair[1].size] = 0x00;
-            if (sscanf((char *)buf0, "%ld", &src_pg) == 1)
+            if (sscanf((char *)buf0, "%ud", &src_pg) == 1)
                 params->src_pg = src_pg - 1;
             gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");
         }
