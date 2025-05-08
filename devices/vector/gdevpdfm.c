@@ -200,6 +200,8 @@ pdfmark_coerce_dest(gs_param_string *dstr, char dest[MAX_DEST_STRING])
 {
     const byte *data = dstr->data;
     uint size = dstr->size;
+    if (size > MAX_DEST_STRING)
+        return_error(gs_error_limitcheck);
     if (size == 0 || data[0] != '(')
         return 0;
     /****** HANDLE ESCAPES ******/
@@ -868,6 +870,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
             char buf[30];
             int d0, d1;
 
+            if (Action[1].size > 29)
+                return_error(gs_error_rangecheck);
             memcpy(buf, Action[1].data, Action[1].size);
             buf[Action[1].size] = 0;
             if (sscanf(buf, "%d %d R", &d0, &d1) == 2)
