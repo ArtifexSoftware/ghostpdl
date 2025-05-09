@@ -489,8 +489,10 @@ pl_show_text_is_width_only(const gs_text_enum_t *pte)
 
 void pl_text_release(gs_text_enum_t *pte, client_name_t cname)
 {
-  (void)pte;
-  (void)cname;
+   gx_cpath_free((gx_clip_path *)pte->pcpath, "gx_default_text_release");
+   pte->pcpath = NULL;
+   rc_decrement_only(pte->dev, cname);
+   rc_decrement_only(pte->imaging_dev, cname);
   return;
 }
 
