@@ -722,9 +722,9 @@ run_stdin:
             break;
         case 'N':               /* set size of name table */
             {
-                unsigned nsize = 0;
+                unsigned int nsize = 0;
 
-                (void)sscanf((const char *)arg, "%d", &nsize);
+                (void)sscanf((const char *)arg, "%ud", &nsize);
                 if (nsize < 2 || nsize > (max_uint >> 10)) {
                     outprintf(minst->heap, "-N must be between 2 and %d\n", (int)(max_uint >> 10));
                     return gs_error_Fatal;
