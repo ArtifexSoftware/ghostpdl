@@ -1203,6 +1203,9 @@ make_keyword_obj(pdf_context *ctx, const byte *data, int length, pdf_keyword **p
     pdf_key key;
     int code;
 
+    if (length > 255)
+        return_error(gs_error_rangecheck);
+
     memcpy(Buffer, data, length);
     Buffer[length] = 0;
     key = lookup_keyword(Buffer);

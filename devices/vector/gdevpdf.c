@@ -2271,6 +2271,10 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
                 pagehint = &linear_params->PageHints[page - 1];
                 if (pagehint->SharedObjectRef){
                     int *Temp = (int *)gs_alloc_bytes(pdev->pdf_memory, (pagehint->NumSharedObjects + 1) * sizeof(int), "realloc shared object hints");
+                    if (Temp == NULL) {
+                        code = gs_note_error(gs_error_VMerror);
+                        goto error;
+                    }
                     memcpy(Temp, pagehint->SharedObjectRef, (pagehint->NumSharedObjects) * sizeof(int));
                     gs_free_object(pdev->pdf_memory, pagehint->SharedObjectRef, "realloc shared object hints");
                     pagehint->SharedObjectRef = (unsigned int *)Temp;
@@ -2724,6 +2728,8 @@ int pdf_record_usage(gx_device_pdf *const pdev, int64_t resource_id, int page_nu
         }
     }
     Temp = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, (pdev->ResourceUsage[resource_id].NumPagesUsing + 1) * sizeof (int), "Page usage records");
+    if (Temp == NULL)
+        return_error(gs_error_VMerror);
     memset((char *)Temp, 0x00, (pdev->ResourceUsage[resource_id].NumPagesUsing + 1) * sizeof (int));
     memcpy((char *)Temp, pdev->ResourceUsage[resource_id].PageList, pdev->ResourceUsage[resource_id].NumPagesUsing * sizeof (int));
     gs_free_object(pdev->pdf_memory->non_gc_memory, (byte *)pdev->ResourceUsage[resource_id].PageList, "Free old page usage records");

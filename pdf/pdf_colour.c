@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2053,6 +2053,10 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     pcs->params.separation.mem = ctx->memory;
     pcs->params.separation.sep_type = sep_type;
     pcs->params.separation.sep_name = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, name->length + 1, "pdfi_setseparationspace(ink)");
+    if (pcs->params.separation.sep_name == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto pdfi_separation_error;
+    }
     memcpy(pcs->params.separation.sep_name, name->data, name->length);
     pcs->params.separation.sep_name[name->length] = 0x00;
 
@@ -2247,6 +2251,10 @@ all_error:
             goto pdfi_devicen_error;
 
         pcs->params.device_n.names[ix] = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, ink_name->length + 1, "pdfi_setdevicenspace(ink)");
+        if (pcs->params.device_n.names[ix] == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto pdfi_devicen_error;
+        }
         memcpy(pcs->params.device_n.names[ix], ink_name->data, ink_name->length);
         pcs->params.device_n.names[ix][ink_name->length] = 0x00;
         pdfi_countdown(ink_name);

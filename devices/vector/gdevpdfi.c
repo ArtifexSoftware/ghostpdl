@@ -2519,6 +2519,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 gs_free_object(pdev->memory->non_gc_memory, pdev->PDFFormName, "free Name of Form for pdfmark");
             }
             pdev->PDFFormName = (char *)gs_alloc_bytes(pdev->memory->non_gc_memory, size + 1, "Name of Form for pdfmark");
+            if (pdev->PDFFormName == NULL)
+                return_error(gs_error_VMerror);
             memset(pdev->PDFFormName, 0x00, size + 1);
             memcpy(pdev->PDFFormName, data, size);
             return 0;
@@ -3098,6 +3100,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                 if (pdev->PendingOC)
                     gs_free_object(pdev->memory, pdev->PendingOC, "");
                 pdev->PendingOC = (char *)gs_alloc_bytes(pdev->memory, strlen(object) + 1, "");
+                if (pdev->PendingOC == NULL)
+                    return_error(gs_error_VMerror);
                 memcpy(pdev->PendingOC, object, strlen(object) + 1);
             }
             return 0;

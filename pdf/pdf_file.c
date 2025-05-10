@@ -1960,6 +1960,9 @@ static int pdfi_open_font_file_inner(pdf_context *ctx, const char *fname, const 
 
         fnlen = gp_file_name_sizeof;
 
+        if (fontdirstrlen + 1 > gp_file_name_sizeof)
+            return_error(gs_error_undefinedfilename);
+
         memcpy(fstr, fontdirstr, fontdirstrlen);
         if (fname != NULL) {
             if (fontdirstrlen + fnamelen < gp_file_name_sizeof)
