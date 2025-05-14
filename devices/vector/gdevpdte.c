@@ -944,7 +944,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
                 rect.q.x = fixed2float(clip_bbox.q.x);
                 rect.q.y = fixed2float(clip_bbox.q.y);
                 rect_intersect(rect, text_bbox);
-                if (rect.p.x > rect.q.x || rect.p.y > rect.q.y) {
+                if (rect.p.x > rect.q.x || rect.p.y > rect.q.y && penum->pgs->text_rendering_mode < 3) {
                     penum->index += pstr->size;
                     text->operation &= ~TEXT_DO_DRAW;
                     penum->text_clipped = true;
