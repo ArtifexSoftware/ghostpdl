@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -684,8 +684,10 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         }
         num_bytes = sfread(buffer_ptr,sizeof(unsigned char), info_size, str);
         code = sfclose(str);
-        if (code < 0)
-            return code;
+        if (code < 0) {
+            gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
+             return code;
+        }
         buffer_ptr[info_size] = 0;
         if (num_bytes != info_size) {
             gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
@@ -694,6 +696,11 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
         }
         /* Create the structure in which we will store this data */
         srcgtag = gsicc_new_srcgtag_profile(mem);
+        if (srcgtag == NULL) {
+            gs_free_object(mem, buffer_ptr, "gsicc_set_srcgtag_struct");
+            return gs_throw1(gs_error_VMerror, "creation of profile for %s failed",
+                               pname);
+        }
         /* Now parse through the data opening the profiles that are needed */
         curr_ptr = buffer_ptr;
         /* Initialize that we want color management.  Then if profile is not
@@ -1657,6 +1664,9 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
         }
         /* Allocate structure for managing names */
         spot_names = gsicc_new_namelist(mem);
+        if (spot_names == 0)
+            return gs_throw(gs_error_VMerror, "Insufficient memory for spot name");
+
         profile_struct->spotnames = spot_names;
         spot_names->name_str = (char*) gs_alloc_bytes(mem, str_len+1,
                                                "gsicc_set_device_profile_colorants");

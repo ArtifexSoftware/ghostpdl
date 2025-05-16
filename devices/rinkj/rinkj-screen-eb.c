@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -117,6 +117,8 @@ rinkj_screen_eb_init (RinkjDevice *self, const RinkjDeviceParams *params)
   ebp.dump_file = NULL;
   ebp.gamma = 0;
   z->dither = even_better_new (&ebp);
+  if (z->dither == NULL)
+      return -1;
 
   z->width_out = out_params.width;
   z->height_in = params->height;
@@ -132,14 +134,14 @@ static int
 rinkj_screen_eb_write (RinkjDevice *self, const char **data)
 {
   RinkjScreenEb *z = (RinkjScreenEb *)self;
-  uchar **out_data;
-  uchar **out_buf;
+  uchar **out_data = NULL;
+  uchar **out_buf = NULL;
   int i;
   int n_planes = z->n_planes;
   int xs = z->width_out;
   int xsb;
   int status;
-  const uchar ** data_permuted;
+  const uchar ** data_permuted = NULL;
   int cmyk_permutation[] = { 3, 0, 1, 2 };
   int ccmmyk_permutation[] = { 3, 0, 1, 4, 5, 2 };
   int ccmmykk_permutation[] = { 3, 6, 0, 1, 4, 5, 2 };
@@ -169,14 +171,24 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
 
   xsb = (xs * z->bps + 7) >> 3;
 
-  out_data = (uchar **)malloc (n_planes * sizeof(char *));
-  out_buf = (uchar **)malloc (n_planes * sizeof(char *));
+  out_data = (uchar **)calloc (n_planes, sizeof(char *));
+  if (out_data == NULL)
+      goto out;
+  out_buf = (uchar **)calloc (n_planes, sizeof(char *));
+  if (out_buf == NULL)
+      goto out;
   data_permuted = (const uchar **)malloc (n_planes * sizeof(char *));
+  if (data_permuted == NULL)
+      goto out;
 
   for (i = 0; i < n_planes; i++)
     {
       out_data[i] = malloc (xsb);
       out_buf[i] = malloc (xs);
+      if (out_data == NULL || out_buf == NULL) {
+          status = -1;
+          goto out;
+      }
       data_permuted[i] = (const uchar *)data[permutation[i]];
     }
 
@@ -235,10 +247,13 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
     }
   z->yrem -= z->height_out;
 
+out:
   for (i = 0; i < n_planes; i++)
     {
-      free (out_data[i]);
-      free (out_buf[i]);
+      if (out_data)
+        free (out_data[i]);
+      if (out_buf)
+        free (out_buf[i]);
     }
   free (out_data);
   free (out_buf);
@@ -263,6 +278,8 @@ rinkj_screen_eb_new (RinkjDevice *dev_out)
   RinkjScreenEb *result;
 
   result = (RinkjScreenEb *)malloc (sizeof(RinkjScreenEb));
+  if (result == NULL)
+      return NULL;
 
   result->super.set = rinkj_screen_eb_set;
   result->super.write = rinkj_screen_eb_write;
@@ -298,8 +315,13 @@ rinkj_screen_eb_set_gamma (RinkjDevice *self, int plane, double gamma, double ma
 
   if (z->lut == NULL)
     z->lut = (int **)malloc (MAX_CHAN * sizeof (int *));
+  if (z->lut == NULL)
+      return;
 
   z->lut[plane] = (int *)malloc (256 * sizeof (int));
+  if (z->lut[plane] == NULL)
+      return;
+
   for (i = 0; i < 256; i++)
     {
       double v;
@@ -320,8 +342,13 @@ rinkj_screen_eb_set_lut (RinkjDevice *self, int plane, const double *lut)
 
   if (z->lut == NULL)
     z->lut = (int **)malloc (MAX_CHAN * sizeof (int *));
+  if (z->lut == NULL)
+      return;
 
   z->lut[plane] = (int *)malloc (256 * sizeof (int));
+  if (z->lut[plane] == NULL)
+      return;
+
   for (i = 0; i < 256; i++)
     {
       double v;

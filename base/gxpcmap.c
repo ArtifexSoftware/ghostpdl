@@ -314,12 +314,15 @@ new_pattern_trans_buff(gs_memory_t *mem)
 
     /* Allocate structure that we will use for the trans pattern */
     result = gs_alloc_struct(mem, gx_pattern_trans_t, &st_pattern_trans, "new_pattern_trans_buff");
-    result->transbytes = NULL;
-    result->pdev14 = NULL;
-    result->mem = NULL;
-    result->fill_trans_buffer = NULL;
-    result->buf = NULL;
-    result->n_chan = 0;
+
+    if (result != NULL) {
+        result->transbytes = NULL;
+        result->pdev14 = NULL;
+        result->mem = NULL;
+        result->fill_trans_buffer = NULL;
+        result->buf = NULL;
+        result->n_chan = 0;
+    }
 
     return(result);
 }

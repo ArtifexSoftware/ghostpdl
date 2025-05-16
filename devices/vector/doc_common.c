@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -542,6 +542,10 @@ int txt_get_unicode(gx_device *dev, gs_font *font, gs_glyph glyph, gs_char ch, u
         }
 
         unicode = (ushort *)gs_alloc_bytes(dev->memory, length, "temporary Unicode array");
+        if (unicode == NULL) {
+            *Buffer = fallback;
+            return 1;
+        }
         length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);
 #if ARCH_IS_BIG_ENDIAN
         memcpy(Buffer, unicode, length);

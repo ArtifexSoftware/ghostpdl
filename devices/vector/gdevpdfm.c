@@ -491,6 +491,10 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
         if (pdf_key_eq(pair, "/SrcPg")){
             unsigned char *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, (pair[1].size + 1) * sizeof(unsigned char),
                         "pdf_xmp_write_translated");
+
+            if (buf0 == NULL)
+                return_error(gs_error_VMerror);
+
             memcpy(buf0, pair[1].data, pair[1].size);
             buf0[pair[1].size] = 0x00;
             if (sscanf((char *)buf0, "%ud", &src_pg) == 1)
@@ -1633,6 +1637,9 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 pdf_end_separate(pdev, resourceNone);
 
                 object = cos_reference_alloc(pdev, "embedded file");
+                if (object == NULL)
+                    return_error(gs_error_VMerror);
+
                 object->id = id;
                 COS_OBJECT_VALUE(&v, object);
                 code = cos_dict_put(pdev->EmbeddedFiles, key.data, key.size, &v);
@@ -1640,6 +1647,9 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                     return code;
                 if (pdev->PDFA == 3) {
                     object = cos_reference_alloc(pdev, "embedded file");
+                    if (object == NULL)
+                        return_error(gs_error_VMerror);
+
                     object->id = id;
                     COS_OBJECT_VALUE(&v, object);
                     code = cos_array_add(pdev->AF, &v);
@@ -2554,6 +2564,9 @@ pdfmark_MP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 
     tag = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
                 "pdfmark_MP");
+    if (tag == NULL)
+        return_error(gs_error_VMerror);
+
     memcpy(tag, pairs[0].data, pairs[0].size);
     tag[pairs[0].size] = 0x00;
 
@@ -2615,6 +2628,9 @@ pdfmark_DP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
         if (code<0) return code;
         cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[1].size + 1) * sizeof(unsigned char),
             "pdfmark_DP");
+        if (cstring == NULL)
+            return_error(gs_error_VMerror);
+
         memcpy(cstring, pairs[1].data, pairs[1].size);
         cstring[pairs[1].size] = 0x00;
 
@@ -2666,6 +2682,9 @@ pdfmark_BMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 
     tag = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
                 "pdfmark_BMC");
+    if (tag == NULL)
+        return_error(gs_error_VMerror);
+
     memcpy(tag, pairs[0].data, pairs[0].size);
     tag[pairs[0].size] = 0x00;
 
@@ -2761,6 +2780,9 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             if (code<0) return code;
             cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[1].size + 1) * sizeof(unsigned char),
                 "pdfmark_BDC");
+            if (cstring == NULL)
+                return_error(gs_error_VMerror);
+
             memcpy(cstring, pairs[1].data, pairs[1].size);
             cstring[pairs[1].size] = 0x00;
 
@@ -2819,6 +2841,9 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 
     cstring = (char *)gs_alloc_bytes(pdev->memory, (esc_size + 1) * sizeof(unsigned char),
                 "pdfmark_BDC");
+    if (cstring == NULL)
+        return_error(gs_error_VMerror);
+
     esc_size = 0;
     for (i = 0;i < pairs[0].size;i++) {
         switch(pairs[0].data[i]) {
@@ -3047,6 +3072,9 @@ pdfmark_Ext_Metadata(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         gs_free_object(pdev->pdf_memory->stable_memory, pdev->ExtensionMetadata, "Extension metadata");
     }
     pdev->ExtensionMetadata = (char *)gs_alloc_bytes(pdev->pdf_memory->stable_memory, pairs[1].size - 1, "Extension metadata");
+    if (pdev->ExtensionMetadata == NULL)
+        return_error(gs_error_VMerror);
+
     memset(pdev->ExtensionMetadata, 0x00, pairs[1].size - 1);
     for (i=1;i<pairs[1].size - 1;i++) {
         if (pairs[1].data[i] == '\\') {
@@ -3128,6 +3156,9 @@ pdfmark_OCProperties(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         }
     } else {
         str = (char *)gs_alloc_bytes(pdev->memory, pairs[0].size + 1, "pdfmark_OCProperties");
+        if (str == NULL)
+            return_error(gs_error_VMerror);
+
         memset(str, 0x00, pairs[0].size + 1);
         memcpy(str, pairs[0].data, pairs[0].size);
 

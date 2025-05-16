@@ -3107,6 +3107,10 @@ static int pdfi_device_setoutputintent(pdf_context *ctx, pdf_dict *profile_dict,
     picc_profile->name = (char *) gs_alloc_bytes(picc_profile->memory,
                                                  MAX_DEFAULT_ICC_LENGTH,
                                                  "pdfi_color_setoutputintent");
+    if (picc_profile->name == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
     strncpy(picc_profile->name, OI_PROFILE, strlen(OI_PROFILE));
     picc_profile->name[strlen(OI_PROFILE)] = 0;
     picc_profile->name_length = strlen(OI_PROFILE);

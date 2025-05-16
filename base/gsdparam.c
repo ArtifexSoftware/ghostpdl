@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1158,6 +1158,8 @@ gx_default_put_graydetection(bool graydetection, gx_device * dev)
         if (dev->icc_struct == NULL) {
             /* Allocate at this time the structure */
             dev->icc_struct = gsicc_new_device_profile_array(dev);
+            if (dev->icc_struct == NULL)
+                return_error(gs_error_VMerror);
         }
         dev->icc_struct->graydetection = graydetection;
         dev->icc_struct->pageneutralcolor = graydetection;
@@ -1166,6 +1168,8 @@ gx_default_put_graydetection(bool graydetection, gx_device * dev)
         if (profile_struct == NULL) {
             /* Create now  */
             dev->icc_struct = gsicc_new_device_profile_array(dev);
+            if (dev->icc_struct == NULL)
+                return_error(gs_error_VMerror);
             profile_struct =  dev->icc_struct;
         }
         profile_struct->graydetection = graydetection;

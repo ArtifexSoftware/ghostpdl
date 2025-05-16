@@ -1059,6 +1059,9 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         pcs = pcs_save;
         discard(COS_OBJECT_VALUE(&value, pca));
         pca1 = cos_array_alloc(pdev, "pdf_color_space");
+        if (pca1 == NULL)
+            return_error(gs_error_VMerror);
+
         code = pdf_indexed_color_space(pdev, pgs, &value, pcs, pca1, (cos_value_t *)&value);
         pca = pca1;
 
@@ -1354,6 +1357,9 @@ int convert_separation_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, co
 
         discard(COS_OBJECT_VALUE(&value, pca));
         pca1 = cos_array_alloc(pdev, "pdf_color_space");
+        if (pca1 == NULL)
+            return_error(gs_error_VMerror);
+
         code = pdf_indexed_color_space(pdev, pgs, &value, pcs, pca1, (cos_value_t *)&value);
         pca = pca1;
 

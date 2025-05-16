@@ -571,7 +571,7 @@ reverse_buffer(byte * buf, int Len)
         *(buf + i) = ~*(buf + i);
 }
 
-static void
+static int
 lips4v_write_image_data(gx_device_vector * vdev, byte * buf, int tbyte,
                         int reverse)
 {
@@ -582,6 +582,11 @@ lips4v_write_image_data(gx_device_vector * vdev, byte * buf, int tbyte,
                                     "lips4v_write_image_data(cbuf_rle)");
     int Len, Len_rle;
 
+    if (cbuf == NULL || cbuf_rle == NULL) {
+        gs_free_object(vdev->memory, cbuf, "lips4v_write_image_data(cbuf)");
+        gs_free_object(vdev->memory, cbuf_rle, "lips4v_write_image_data(cbuf_rle)");
+        return_error(gs_error_VMerror);
+    }
     if (reverse)
         reverse_buffer(buf, tbyte);
 
@@ -614,6 +619,7 @@ lips4v_write_image_data(gx_device_vector * vdev, byte * buf, int tbyte,
     gs_free_object(vdev->memory, cbuf, "lips4v_write_image_data(cbuf)");
     gs_free_object(vdev->memory, cbuf_rle,
                    "lips4v_write_image_data(cbuf_rle)");
+    return 0;
 }
 
 /* ---------------- Vector device implementation ---------------- */
@@ -1929,6 +1935,9 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
         byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
                                    "lips4v_copy_mono(buf)");
 
+        if (buf == NULL)
+            return_error(gs_error_VMerror);
+
         if (data_x % 8 == 0) {
             for (i = 0; i < h; ++i) {
                 memcpy(buf + i * width_bytes,
@@ -1947,19 +1956,18 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
             }
         }
 
-        if (one == gx_no_color_index
-            || (one == vdev->white
-                && zero != gx_no_color_index)) lips4v_write_image_data(vdev,
-                                                                       buf,
-                                                                       num_bytes,
-                                                                       TRUE);
+        if (one == gx_no_color_index || (one == vdev->white && zero != gx_no_color_index))
+                code = lips4v_write_image_data(vdev,
+                                               buf,
+                                               num_bytes,
+                                               TRUE);
         else
-            lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
+            code = lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
 
         gs_free_object(vdev->memory, buf, "lips4v_copy_mono(buf)");
     }
 
-    return 0;
+    return code;
 }
 
 /* Copy a color bitmap. */
@@ -1976,6 +1984,7 @@ lips4v_copy_color(gx_device * dev,
     int dpi = dev->x_pixels_per_inch;
     int num_components = (depth < 24 ? 1 : 3);
     uint width_bytes = w * num_components;
+    int code = 0;
 
     if (dev->color_info.depth == 8) {
         gx_drawing_color dcolor;
@@ -2015,6 +2024,9 @@ lips4v_copy_color(gx_device * dev,
         byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
                                    "lips4v_copy_color(buf)");
 
+        if (buf == NULL)
+            return_error(gs_error_VMerror);
+
         lputs(s, "}Q11");
 
         for (i = 0; i < h; ++i) {
@@ -2023,14 +2035,14 @@ lips4v_copy_color(gx_device * dev,
         }
 
         if (dev->color_info.depth == 8)
-            lips4v_write_image_data(vdev, buf, num_bytes, TRUE);
+            code = lips4v_write_image_data(vdev, buf, num_bytes, TRUE);
         else
-            lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
+            code = lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
 
         gs_free_object(vdev->memory, buf, "lips4v_copy_color(buf)");
     }
 
-    return 0;
+    return code;
 }
 
 /* Fill a mask. */
@@ -2045,6 +2057,7 @@ lips4v_fill_mask(gx_device * dev,
     gx_device_lips4v *const pdev = (gx_device_lips4v *) dev;
     stream *s = gdev_vector_stream(vdev);
     int dpi = dev->x_pixels_per_inch;
+    int code = 0;
 
     if (w <= 0 || h <= 0)
         return 0;
@@ -2093,6 +2106,8 @@ lips4v_fill_mask(gx_device * dev,
         byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
                                    "lips4v_fill_mask(buf)");
 
+        if (buf == NULL)
+            return_error(gs_error_VMerror);
         /* This code seems suspect to me; we allocate a buffer
          * rounding each line up to a multiple of 4, and then
          * fill it without reference to this rounding. I suspect
@@ -2110,12 +2125,12 @@ lips4v_fill_mask(gx_device * dev,
                    width_bytes);
         }
 
-        lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
+        code = lips4v_write_image_data(vdev, buf, num_bytes, FALSE);
 
         gs_free_object(vdev->memory, buf, "lips4v_fill_mask(buf)");
     }
 
-    return 0;
+    return code;
 }
 
 /* ---------------- High-level images ---------------- */
@@ -2363,7 +2378,7 @@ lips4v_image_plane_data(gx_image_enum_common_t * info,
     gx_image_plane_data(pie->bbox_info, planes, height);
     {
         int plane;
-        int width_bytes, tbyte;
+        int width_bytes, tbyte, code = 0;
         byte *buf;
 
         width_bytes =
@@ -2371,6 +2386,9 @@ lips4v_image_plane_data(gx_image_enum_common_t * info,
              7) / 8 * pdev->ncomp;
         tbyte = width_bytes * height;
         buf = gs_alloc_bytes(vdev->memory, tbyte, "lips4v_image_data(buf)");
+
+        if (buf == NULL)
+            return_error(gs_error_VMerror);
 
         for (plane = 0; plane < pie->num_planes; ++plane)
             for (y = 0; y < height; ++y) {
@@ -2384,12 +2402,13 @@ lips4v_image_plane_data(gx_image_enum_common_t * info,
 
         if ((pie->bits_per_pixel > 1 && pdev->ncomp == 1) ||
             pdev->MaskReverse == 0) {
-            lips4v_write_image_data(vdev, buf, tbyte, TRUE);
+            code = lips4v_write_image_data(vdev, buf, tbyte, TRUE);
         } else
-            lips4v_write_image_data(vdev, buf, tbyte, FALSE);
+            code = lips4v_write_image_data(vdev, buf, tbyte, FALSE);
 
         gs_free_object(vdev->memory, buf, "lips4v_image_data(buf)");
-
+        if (code < 0)
+            return code;
     }
 
     return (pie->y += height) >= pie->height;
