@@ -899,6 +899,11 @@ pdf_open(gx_device * dev)
                 pdev->resources[i].chains[j] = 0;
     }
     pdev->outline_levels = (pdf_outline_level_t *)gs_alloc_bytes(mem, INITIAL_MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t), "outline_levels array");
+    if (pdev->outline_levels == NULL) {
+        code = gs_error_VMerror;
+        goto fail;
+    }
+
     memset(pdev->outline_levels, 0x00, INITIAL_MAX_OUTLINE_DEPTH * sizeof(pdf_outline_level_t));
     pdev->max_outline_depth = INITIAL_MAX_OUTLINE_DEPTH;
     pdev->outline_levels[0].first.id = 0;
@@ -2224,10 +2229,18 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     linear_params->HintBits = linear_params->HintByte = 0;
 
     linear_params->PageHints = (page_hint_stream_t *)gs_alloc_bytes(pdev->pdf_memory, pdev->next_page * sizeof(page_hint_stream_t), "Hints for the pages");
+    if (linear_params->PageHints == NULL) {
+        code = gs_error_VMerror;
+        goto error;
+    }
     memset(linear_params->PageHints, 0x00, pdev->next_page * sizeof(page_hint_stream_t));
     linear_params->NumPageHints = pdev->next_page;
 
     linear_params->SharedHints = (shared_hint_stream_t *)gs_alloc_bytes(pdev->pdf_memory, (linear_params->NumPage1Resources + linear_params->NumSharedResources) * sizeof(shared_hint_stream_t), "Hints for the shared objects");
+    if (linear_params->SharedHints == NULL) {
+        code = gs_error_VMerror;
+        goto error;
+    }
     memset(linear_params->SharedHints, 0x00, (linear_params->NumPage1Resources + linear_params->NumSharedResources) * sizeof(shared_hint_stream_t));
     linear_params->NumSharedHints = linear_params->NumPage1Resources + linear_params->NumSharedResources;
 
@@ -2280,6 +2293,10 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
                     pagehint->SharedObjectRef = (unsigned int *)Temp;
                 } else {
                     pagehint->SharedObjectRef = (unsigned int *)gs_alloc_bytes(pdev->pdf_memory, (pagehint->NumSharedObjects + 1) * sizeof(int), "shared object hints");
+                    if (pagehint->SharedObjectRef == NULL) {
+                        code = gs_note_error(gs_error_VMerror);
+                        goto error;
+                    }
                 }
                 pagehint->SharedObjectRef[pagehint->NumSharedObjects] = i;
                 pagehint->NumSharedObjects++;
@@ -2695,9 +2712,13 @@ int pdf_record_usage(gx_device_pdf *const pdev, int64_t resource_id, int page_nu
             pdev->ResourceUsageSize = resource_id + 1;
             pdev->ResourceUsage = gs_alloc_struct_array(pdev->pdf_memory->non_gc_memory, resource_id + 1, pdf_linearisation_record_t,
                               &st_pdf_linearisation_record_element, "start resource usage array");
+            if (pdev->ResourceUsage == NULL)
+                return_error(gs_error_VMerror);
             memset((char *)pdev->ResourceUsage, 0x00, (resource_id + 1) * sizeof(pdf_linearisation_record_t));
         } else {
             resize = gs_resize_object(pdev->pdf_memory->non_gc_memory, pdev->ResourceUsage, resource_id + 1, "resize resource usage array");
+            if (resize == NULL)
+                return_error(gs_error_VMerror);
             memset(&resize[pdev->ResourceUsageSize], 0x00, sizeof(pdf_linearisation_record_t) * (resource_id - pdev->ResourceUsageSize + 1));
             pdev->ResourceUsageSize = resource_id + 1;
             pdev->ResourceUsage = resize;
@@ -3296,6 +3317,10 @@ pdf_close(gx_device * dev)
     if (pdev->Linearise) {
         linear_params.LastResource = pdev->next_id - 1;
         linear_params.Offsets = (gs_offset_t *)gs_alloc_bytes(pdev->pdf_memory, pdev->next_id * sizeof(gs_offset_t), "temp xref storage");
+        if (linear_params.Offsets == NULL) {
+            code = gs_error_VMerror;
+            goto error_cleanup;
+        }
         memset(linear_params.Offsets, 0x00, linear_params.LastResource * sizeof(gs_offset_t));
     }
 

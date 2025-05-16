@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -308,11 +308,11 @@ htsc_gen_ordered(htsc_param_t params, int *S, htsc_dig_grid_t *final_mask, gs_me
 #endif
     /* If we are using the Holladay grid (non dithered) then we are done. */
     if (params.holladay) {
-        htsc_create_holladay_mask(super_cell, H, L, params.gamma, final_mask);
+        code = htsc_create_holladay_mask(super_cell, H, L, params.gamma, final_mask);
     } else {
         if ((super_cell.height == dot_grid.height &&
             super_cell.width == dot_grid.width) || num_levels == 1) {
-            htsc_create_nondithered_mask(super_cell, H, L, params.gamma, final_mask);
+            code = htsc_create_nondithered_mask(super_cell, H, L, params.gamma, final_mask);
         } else {
             /* Dont allow nonsense settings */
             if (num_levels * N > super_cell.height * super_cell.width) {
@@ -1784,7 +1784,7 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
     }
 
     thresholds = (double *) ALLOC(final_mask->memory, (size_t)H * L * sizeof(double));
-    if (final_mask->data == NULL) {
+    if (thresholds == NULL) {
         code = -1;
         goto out;
     }

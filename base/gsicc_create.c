@@ -1902,7 +1902,7 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
             /* Convert ABC matrix to 2x2x2 MLUT type */
             icc_luta2bparts.clut = (gsicc_clut*) gs_alloc_bytes(memory,
                                         sizeof(gsicc_clut),"gsicc_create_fromabc");
-            if (icc_luta2bparts.m_curves == NULL) {
+            if (icc_luta2bparts.clut == NULL) {
                 gs_free_object(memory, icc_luta2bparts.a_curves,
                                "gsicc_create_fromabc");
                 gs_free_object(memory, icc_luta2bparts.m_curves,
@@ -3002,6 +3002,12 @@ gsicc_create_v2displaygray(const gs_gstate *pgs, icHeader *header, cmm_profile_t
     max = des[1];
 
     trc = (float*) gs_alloc_bytes(memory, TRC_V2_SIZE * sizeof(float), "gsicc_createv2display_gray");
+    if (trc == NULL) {
+        gsicc_release_link(link);
+        gs_free_object(memory, tag_list, "gsicc_createv2display_gray");
+        gs_free_object(memory, buffer, "gsicc_createv2display_gray");
+        return;
+    }
     for (k = 0; k < TRC_V2_SIZE; k++) {
         src = (unsigned short)((double)k * (double)65535 / (double)(TRC_V2_SIZE - 1));
         (link->procs.map_color)(NULL, link, &src, &(des[0]), 2);
@@ -3098,6 +3104,12 @@ gsicc_create_v2displayrgb(const gs_gstate *pgs, icHeader *header, cmm_profile_t 
 
     /* Now the TRCs */
     trc = (float*) gs_alloc_bytes(memory, TRC_V2_SIZE * sizeof(float), "gsicc_create_v2displayrgb");
+    if (trc == NULL) {
+        gsicc_release_link(link);
+        gs_free_object(memory, tag_list, "gsicc_create_v2displayrgb");
+        gs_free_object(memory, buffer, "gsicc_create_v2displayrgb");
+        return;
+    }
 
     for (k = 0; k < 3; k++) {
         get_trc(k, link, &trc, TRC_V2_SIZE);

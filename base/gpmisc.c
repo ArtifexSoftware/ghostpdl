@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -690,10 +690,12 @@ char *gp_fgets(char *buffer, size_t n, gp_file *f)
     char *b = buffer;
     while (n > 1) {
         c = gp_fgetc(f);
-	if (c == 0)
+        if (c == 0 || c == EOF)
             break;
-	*b++ = c;
-	n--;
+	    *b++ = c;
+	    n--;
+        if (c == '\n')
+            break;
     }
     if (c == EOF && b == buffer)
         return NULL;

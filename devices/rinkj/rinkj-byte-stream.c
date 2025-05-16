@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -100,6 +100,8 @@ rinkj_byte_stream_file_new (gp_file *f)
   RinkjByteStreamFile *result;
 
   result = (RinkjByteStreamFile *)malloc (sizeof (RinkjByteStreamFile));
+  if (result == NULL)
+      return NULL;
 
   result->super.write = rinkj_byte_stream_file_write;
   result->f = f;

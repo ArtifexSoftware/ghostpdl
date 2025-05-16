@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -823,7 +823,16 @@ rinkj_add_lut(rinkj_device *rdev, rinkj_lutset *lutset, char plane, gp_file *f)
     chain->next = NULL;
     chain->n_graph = n_graph;
     chain->graph_x = (double *)gs_alloc_bytes(rdev->memory, sizeof(double) * n_graph, "rinkj_add_lut");
+    if (chain->graph_x == NULL) {
+        gs_free_object(rdev->memory, chain, "rinkj_add_lut");
+        return -1;
+    }
     chain->graph_y = (double *)gs_alloc_bytes(rdev->memory, sizeof(double) * n_graph, "rinkj_add_lut");
+    if (chain->graph_y == NULL) {
+        gs_free_object(rdev->memory, chain->graph_x, "rinkj_add_lut");
+        gs_free_object(rdev->memory, chain, "rinkj_add_lut");
+        return -1;
+    }
     for (i = 0; i < n_graph; i++) {
         double x, y;
 
@@ -870,12 +879,15 @@ rinkj_set_luts(rinkj_device *rdev,
                RinkjDevice *printer_dev, RinkjDevice *cmyk_dev,
                const char *config_fn, const RinkjDeviceParams *params)
 {
-  gp_file *f = gp_fopen(rdev->memory, config_fn, "r");
+    gp_file *f = gp_fopen(rdev->memory, config_fn, "r");
     char linebuf[256];
     char key[256];
     char *val;
     rinkj_lutset lutset;
     int i;
+
+    if (f == NULL)
+        return_error(gs_error_ioerror);
 
     lutset.plane_names = "KkCMcmY";
     for (i = 0; i < MAX_CHAN; i++) {
@@ -921,8 +933,19 @@ rinkj_init(rinkj_device *rdev, gp_file *file)
     RinkjDeviceParams params;
 
     bs = rinkj_byte_stream_file_new(file);
+    if (bs == NULL)
+        return NULL;
     epson_dev = rinkj_epson870_new(bs);
+    if (epson_dev == NULL) {
+        free(bs);
+        return NULL;
+    }
     cmyk_dev = rinkj_screen_eb_new(epson_dev);
+    if (cmyk_dev == NULL) {
+        free(epson_dev);
+        free(bs);
+        return NULL;
+    }
 
     params.width = rdev->width;
     params.height = rdev->height;
@@ -930,7 +953,12 @@ rinkj_init(rinkj_device *rdev, gp_file *file)
     params.plane_names = "CMYKcmk";
     rdev->n_planes_out = params.n_planes;
 
-    rinkj_set_luts(rdev, epson_dev, cmyk_dev, rdev->setup_fn, &params);
+    if (rinkj_set_luts(rdev, epson_dev, cmyk_dev, rdev->setup_fn, &params) < 0) {
+        free(cmyk_dev);
+        free(epson_dev);
+        free(bs);
+        return NULL;
+    }
 
     rinkj_device_init (cmyk_dev, &params);
 

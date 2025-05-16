@@ -2841,6 +2841,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     int pdepth;
 
                     new_states = (gs_gstate **)gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, sizeof(gs_gstate *) * (pdev->PatternDepth + 2), "pattern initial graphics state stack");
+                    if (new_states == NULL)
+                        return_error(gs_error_VMerror);
                     memset(new_states, 0x00, sizeof(gs_gstate *) * (pdev->PatternDepth + 2));
                     for (pdepth = 0; pdepth < pdev->PatternDepth;pdepth++)
                         new_states[pdepth] = pdev->initial_pattern_states[pdepth];

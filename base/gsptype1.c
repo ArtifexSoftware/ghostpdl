@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2358,6 +2358,8 @@ gx_dc_pattern_read(
                 /* Make a new ttrans object */
 
                 ptile->ttrans = new_pattern_trans_buff(mem);
+                if (ptile->ttrans == NULL)
+                    return_error(gs_error_VMerror);
                 /* trans_info was loaded above */
 
                 ptile->ttrans->height = trans_info.height;

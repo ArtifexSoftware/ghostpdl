@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -541,7 +541,14 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
   z->rowstride = z->planestride * z->num_chan;
   z->bufheight = 2048; /* todo: compute */
   z->buf = (char *)calloc (z->rowstride,  z->bufheight);
+  if (z->buf == NULL)
+    return -1;
   z->buf_linevalid = (unsigned char *)calloc (z->num_chan, z->bufheight);
+  if (z->buf_linevalid == NULL) {
+    free(z->buf);
+    z->buf = NULL;
+    return -1;
+  }
   z->vertpos = -1;
 
   if (z->model && !strcmp (z->model, "Stylus Photo 870"))
@@ -871,8 +878,16 @@ rinkj_escp_flush (RinkjEscp *z)
     (z->passes_per_scan);
 
   thisbuf = malloc (xsb_out);
-  if (rle)
+  if (thisbuf == NULL)
+      return -1;
+
+  if (rle) {
     compress_buf = malloc (xsb_out + ((xsb_out + 127) >> 7));
+    if (compress_buf == NULL) {
+        free(thisbuf);
+        return -1;
+    }
+  }
   ysc = ytop;
   if (z->vertpos == -1)
     status = rinkj_byte_stream_printf (z->out, "\033(V%c%c%c%c",
@@ -1062,6 +1077,8 @@ rinkj_epson870_new (RinkjByteStream *out)
   RinkjEscp *result;
 
   result = (RinkjEscp *)malloc (sizeof (RinkjEscp));
+  if (result == NULL)
+      return NULL;
 
   result->super.set = rinkj_escp_set;
   result->super.write = rinkj_escp_write;

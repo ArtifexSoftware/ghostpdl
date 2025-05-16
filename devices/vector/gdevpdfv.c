@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -168,6 +168,9 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
          * all that the writing code will use, we cna avoid the double pointers.
          */
         object = cos_reference_alloc(pdev, "pdf_pattern(reference copy of XObject)");
+        if (object == NULL)
+            return_error(gs_error_VMerror);
+
         object->id = pcs_image->id;
         COS_OBJECT_VALUE(&v, object);
         if ((code = cos_dict_put(pcd_XObject, (byte *)key, strlen(key), &v)) < 0 ||

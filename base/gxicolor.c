@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -496,6 +496,8 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
          * line. Also extra space for 32 byte overrun. */
         *psrc_cm_start = gs_alloc_bytes(pgs->memory,  span * spp_cm + 64,
                                         "image_color_icc_prep");
+        if (*psrc_cm_start == NULL)
+            return_error(gs_error_VMerror);
         *psrc_cm = *psrc_cm_start + ((32 - (intptr_t)(*psrc_cm_start)) & 31);
         *bufend = *psrc_cm +  span * spp_cm;
         if (penum->icc_link->is_identity) {
@@ -510,6 +512,10 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                     /* Need decode and then to planar */
                     psrc_decode = gs_alloc_bytes(pgs->memory,  w,
                                                   "image_color_icc_prep");
+                    if (psrc_decode == NULL) {
+                        code = gs_note_error(gs_error_VMerror);
+                        goto out;
+                    }
                     if (!penum->use_cie_range) {
                         decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
                     } else {
@@ -559,6 +565,10 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                 /* Need decode and CM.  This is slow but does not happen that often */
                 psrc_decode = gs_alloc_bytes(pgs->memory, w,
                                               "image_color_icc_prep");
+                if (psrc_decode == NULL) {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto out;
+                }
                 if (!penum->use_cie_range) {
                     decode_row(penum, psrc, spp, psrc_decode, psrc_decode+w);
                 } else {
@@ -573,7 +583,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                                                     (void*) *psrc_cm);
                 gs_free_object(pgs->memory, psrc_decode, "image_color_icc_prep");
                 if (code < 0)
-                    return code;
+                    goto out;
             } else {
                 /* CM only. No decode */
                 code = (penum->icc_link->procs.map_buffer)(dev, penum->icc_link,
@@ -582,12 +592,17 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
                                                     (void*) psrc,
                                                     (void*) *psrc_cm);
                 if (code < 0)
-                    return code;
+                    goto out;
             }
         }
     }
-    *spp_cm_out = spp_cm;
-    return 0;
+    code = 0;
+out:
+    if (code < 0)
+        gs_free_object(pgs->memory, *psrc_cm_start, "image_color_icc_prep");
+    else
+        *spp_cm_out = spp_cm;
+    return code;
 }
 
 #ifdef WITH_CAL

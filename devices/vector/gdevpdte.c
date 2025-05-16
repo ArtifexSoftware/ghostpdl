@@ -341,6 +341,9 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
                     char *d3 = strchr(hexdigits, gnstr->data[6]);
 
                     unicode = (ushort *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
+                    if (unicode == NULL)
+                        return_error(gs_error_VMerror);
+
                     if(d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
                         char *u = (char *)unicode;
                         u[0] = ((d0 - hexdigits) << 4) + ((d1 - hexdigits));

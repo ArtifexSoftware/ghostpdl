@@ -1147,13 +1147,17 @@ exit:
         uint64_t ix = 0;
 
         (*names_array) = (char **)gs_alloc_bytes(ctx->memory, *TotalFiles * 2 * sizeof(char *), "Collection file namesarray");
-        for (i = 0; i < NumEmbeddedFiles;i++) {
-            if (working_array[i * 2] != NULL && working_array[(i * 2) + 1] != NULL) {
-                (*names_array)[ix * 2] = working_array[i * 2];
-                working_array[i * 2] = NULL;
-                (*names_array)[(ix * 2) + 1] = working_array[(i * 2) + 1];
-                working_array[(i * 2) + 1] = NULL;
-                ix++;
+        if (names_array == NULL)
+            code = gs_note_error(gs_error_VMerror);
+        else {
+            for (i = 0; i < NumEmbeddedFiles;i++) {
+                if (working_array[i * 2] != NULL && working_array[(i * 2) + 1] != NULL) {
+                    (*names_array)[ix * 2] = working_array[i * 2];
+                    working_array[i * 2] = NULL;
+                    (*names_array)[(ix * 2) + 1] = working_array[(i * 2) + 1];
+                    working_array[(i * 2) + 1] = NULL;
+                    ix++;
+                }
             }
         }
     }

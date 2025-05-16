@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -295,6 +295,10 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                         new_max = 32;
                     if (array_data == NULL) {
                         array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                        if (array_data == NULL) {
+                            code = gs_error_VMerror;
+                            break;
+                        }
                     } else {
                         char *new_array = (char *)gs_resize_object(mem, array_data, sizeof(gs_param_string) * new_max, "param string array in param parsing");
                         if (new_array == NULL) {
@@ -354,6 +358,10 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                         new_max = 32;
                     if (array_data == NULL) {
                         array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                        if (array_data == NULL) {
+                            code = gs_error_VMerror;
+                            break;
+                        }
                     } else {
                         char *new_array = (char *)gs_resize_object(mem, array_data, sizeof(gs_param_string) * new_max, "param string array in param parsing");
                         if (new_array == NULL) {
@@ -386,6 +394,10 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                         new_max = 32;
                     if (array_data == NULL) {
                         array_data = (char *)gs_alloc_bytes(mem, sizeof(gs_param_string) * new_max, "param string array in param parsing");
+                        if (array_data == NULL) {
+                            code = gs_error_VMerror;
+                            break;
+                        }
                     } else {
                         char *new_array = (char *)gs_resize_object(mem, array_data, sizeof(gs_param_string) * new_max, "param string array in param parsing");
                         if (new_array == NULL) {
@@ -460,6 +472,10 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                         }
                         if (array_data == NULL) {
                             array_data = (char *)gs_alloc_bytes(mem, sizeof(size_me) * new_max, "param string array in param parsing");
+                            if (array_data == NULL) {
+                                code = gs_error_VMerror;
+                                break;
+                            }
                         } else {
                             char *new_array = (char *)gs_resize_object(mem, array_data, sizeof(size_me) * new_max, "param string array in param parsing");
                             if (new_array == NULL) {

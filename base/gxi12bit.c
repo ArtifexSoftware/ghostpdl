@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -637,6 +637,9 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
         psrc_cm = (unsigned short*) gs_alloc_bytes(pgs->memory,
                         sizeof(unsigned short)  * w * spp_cm/spp,
                         "image_render_icc16");
+        if (psrc_cm == NULL)
+            return_error(gs_error_VMerror);
+
         psrc_cm_start = psrc_cm;
         bufend = psrc_cm +  w * spp_cm/spp;
         if (penum->icc_link->is_identity) {
@@ -661,6 +664,10 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
                 psrc_decode = (unsigned short*) gs_alloc_bytes(pgs->memory,
                                 sizeof(unsigned short) * w * spp,
                                 "image_render_icc16");
+                if (psrc_decode == NULL) {
+                    gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_icc16");
+                    return_error(gs_error_VMerror);
+                }
                 if (!penum->use_cie_range) {
                     decode_row16(penum, psrc, spp, psrc_decode,
                                     (const unsigned short*) (psrc_decode+w));

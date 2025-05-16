@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -39,6 +39,9 @@ rinkj_device_set_param (RinkjDevice *self, const char *key,
   int bufsize = keylen + value_size + 3;
   char *buf = malloc (bufsize);
   int status;
+
+  if (buf == NULL)
+      return -1;
 
   /* This implementation is in terms of device_set, but we're going to
      change the prototype of the device so this is native. */

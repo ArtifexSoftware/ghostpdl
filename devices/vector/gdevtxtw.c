@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -729,6 +729,9 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
                         } else {
                             block_line->next = (page_text_list_t *)gs_malloc(tdev->memory->stable_memory, 1,
                                 sizeof(page_text_list_t), "txtwrite alloc Y-list");
+                            if (block_line->next == NULL)
+                                return_error(gs_error_VMerror);
+
                             memset(block_line->next, 0x00, sizeof(page_text_list_t));
                             block_line = block_line->next;
                             block_line->x_ordered_list = x_entry;
@@ -771,6 +774,9 @@ static int decorated_text_output(gx_device_txtwrite_t *tdev)
                 } else {
                     block.y_ordered_list = block_line = (page_text_list_t *)gs_malloc(tdev->memory->stable_memory, 1,
                         sizeof(page_text_list_t), "txtwrite alloc Y-list");
+                    if (block.y_ordered_list == NULL)
+                        return_error(gs_error_VMerror);
+
                     memset(block_line, 0x00, sizeof(page_text_list_t));
                     block_line->x_ordered_list = y_list->x_ordered_list;
                     y_list->x_ordered_list = y_list->x_ordered_list->next;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -222,6 +222,21 @@ eb_compute_randshift(int nl, int rs_base, int do_shadows, int levels)
 }
 
 #ifdef USE_SSE2
+static void
+eb_ctx_sse2_free(eb_ctx_sse2 *ctx)
+{
+  int i;
+
+  for (i = 0; i < 4; i++)
+    free(ctx->luts[i]);
+  eb_free_aligned(ctx->iir_line);
+  eb_free_aligned(ctx->a_line);
+  eb_free_aligned(ctx->b_line);
+  eb_free_aligned(ctx->r_line);
+  free(ctx->skip_line);
+  eb_free_aligned(ctx);
+}
+
 static eb_ctx_sse2 *
 eb_ctx_sse2_new(const EvenBetterParams *params, int start_plane, int end_plane)
 {
@@ -235,6 +250,9 @@ eb_ctx_sse2_new(const EvenBetterParams *params, int start_plane, int end_plane)
   int rs_base;
 
   ctx = (eb_ctx_sse2 *)eb_malloc_aligned(sizeof(eb_ctx_sse2), 16);
+  if (ctx == NULL)
+      return NULL;
+
   ctx->xs = xs;
   for (i = 0; i < 4; i++)
     {
@@ -261,10 +279,17 @@ eb_ctx_sse2_new(const EvenBetterParams *params, int start_plane, int end_plane)
   im_scale = (params->levels - 1) * 1.0 / (1 << 24);
   rs_base = 35 - EVEN_SHIFT - params->rand_scale;
 
+  ctx->iir_line = ctx->a_line = ctx->b_line ctx->r_line = NULL;
+  memset(ctx->luts, 0x00, 4 * sizeof(float *));
+
   for (i = start_plane; i < end_plane; i++)
     {
       float *lut = (float *)malloc((ET_SRC_MAX + 1) * sizeof(float) * 3);
       int j;
+
+      if (lut == NULL)
+          goto err;
+
       ctx->luts[i - start_plane] = lut;
 
       for (j = 0; j < ET_SRC_MAX + 1; j++)
@@ -289,9 +314,17 @@ eb_ctx_sse2_new(const EvenBetterParams *params, int start_plane, int end_plane)
     ctx->luts[i] = NULL;
 
   ctx->iir_line = (int *)eb_malloc_aligned(16 * (xs + 32), 16);
+  if (ctx->iir_line == NULL)
+      goto err;
   ctx->a_line = (int *)eb_malloc_aligned(16 * (xs + 32), 16);
+  if (ctx->a_line == NULL)
+      goto err;
   ctx->b_line = (int *)eb_malloc_aligned(16 * (xs + 32), 16);
+  if (ctx->b_line == NULL)
+      goto err;
   ctx->r_line = (int *)eb_malloc_aligned(16 * (xs + 32), 16);
+  if (ctx->r_line == NULL)
+      goto err;
   for (i = 0; i < (xs + 32) * 4; i++)
     {
       ((float *)ctx->iir_line)[i] = 0;
@@ -301,12 +334,20 @@ eb_ctx_sse2_new(const EvenBetterParams *params, int start_plane, int end_plane)
     }
 
   ctx->skip_line = (char *)malloc((xs + 15) & -16);
+  if(ctx->skip_line == NULL)
+      goto err;
 
   return ctx;
-}
 
+err:
+  eb_ctx_sse2_free(ctx);
+  return NULL;
+}
+#endif
+
+#ifdef USE_AVEC
 static void
-eb_ctx_sse2_free(eb_ctx_sse2 *ctx)
+eb_ctx_avec_free(eb_ctx_avec *ctx)
 {
   int i;
 
@@ -319,9 +360,7 @@ eb_ctx_sse2_free(eb_ctx_sse2 *ctx)
   free(ctx->skip_line);
   eb_free_aligned(ctx);
 }
-#endif
 
-#ifdef USE_AVEC
 static eb_ctx_avec *
 eb_ctx_avec_new(const EvenBetterParams *params, int start_plane, int end_plane)
 {
@@ -340,6 +379,9 @@ eb_ctx_avec_new(const EvenBetterParams *params, int start_plane, int end_plane)
   int rs_base;
 
   ctx = (eb_ctx_avec *)eb_malloc_aligned(sizeof(eb_ctx_avec), 16);
+  if (ctx == NULL)
+      return NULL;
+
   ctx->xs = xs;
 
   ctx->e = (vector float) zero;
@@ -402,10 +444,17 @@ eb_ctx_avec_new(const EvenBetterParams *params, int start_plane, int end_plane)
 
   rs_base = 35 - EVEN_SHIFT - params->rand_scale;
 
+  ctx->iir_line = ctx->a_line = ctx->b_line ctx->r_line = NULL;
+  memset(ctx->luts, 0x00, 4 * sizeof(float *));
+
   for (i = start_plane; i < end_plane; i++)
     {
       float *lut = (float *)malloc((ET_SRC_MAX + 1) * sizeof(float) * 3);
       int j;
+
+      if (lut == NULL)
+          goto err;
+
       ctx->luts[i - start_plane] = lut;
 
       for (j = 0; j < ET_SRC_MAX + 1; j++)
@@ -429,9 +478,17 @@ eb_ctx_avec_new(const EvenBetterParams *params, int start_plane, int end_plane)
     ctx->luts[i] = NULL;
 
   ctx->iir_line = (vector float *)eb_malloc_aligned(16 * (xs + 32), 16);
+  if (ctx->iir_line == NULL)
+      goto err;
   ctx->a_line = (vector unsigned int *)eb_malloc_aligned(16 * (xs + 32), 16);
+  if (ctx->a_line == NULL)
+      goto err;
   ctx->b_line = (vector unsigned int *)eb_malloc_aligned(16 * (xs + 32), 16);
+  if (ctx->b_line == NULL)
+      goto err;
   ctx->r_line = (vector unsigned int *)eb_malloc_aligned(16 * (xs + 32), 16);
+  if (ctx->r_line == NULL)
+      goto err;
   for (i = 0; i < (xs + 32) * 4; i++)
     {
       ((float *)ctx->iir_line)[i] = 0;
@@ -441,23 +498,14 @@ eb_ctx_avec_new(const EvenBetterParams *params, int start_plane, int end_plane)
     }
 
   ctx->skip_line = (char *)malloc((xs + 15) & -16);
+  if (ctx->skip_line == NULL)
+      goto err;
 
   return ctx;
-}
 
-static void
-eb_ctx_avec_free(eb_ctx_avec *ctx)
-{
-  int i;
-
-  for (i = 0; i < 4; i++)
-    free(ctx->luts[i]);
-  eb_free_aligned(ctx->iir_line);
-  eb_free_aligned(ctx->a_line);
-  eb_free_aligned(ctx->b_line);
-  eb_free_aligned(ctx->r_line);
-  free(ctx->skip_line);
-  eb_free_aligned(ctx);
+err:
+  eb_ctx_avec_free(ctx);
+  return NULL;
 }
 
 #endif
@@ -1454,7 +1502,7 @@ void
 even_better_line (EvenBetterCtx *ebc, uchar **dest,
                       const ET_SrcPixel *const *src)
 {
-  ET_Rll *rll_buf[M];
+  ET_Rll *rll_buf[M] = {0};
   int i;
   int source_width = ebc->source_width;
   int dest_width = ebc->dest_width;
@@ -1470,9 +1518,13 @@ even_better_line (EvenBetterCtx *ebc, uchar **dest,
       for (i = 0; i < ebc->n_planes; i++)
         {
           rll_buf[i] = (ET_Rll *)malloc (source_width * sizeof(ET_Rll));
+          if (rll_buf[i] == NULL)
+              goto out;
           even_better_compress_rll (rll_buf[i], src[i], source_width, dest_width);
         }
       even_better_line_rll (ebc, dest, (const ET_Rll * const *)rll_buf);
+
+out:
       for (i = 0; i < ebc->n_planes; i++)
         free (rll_buf[i]);
     }
@@ -1534,11 +1586,8 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
   int source_width = params->source_width;
   int dest_width = params->dest_width;
   int *lut = params->luts[plane_idx];
-  EBPlaneCtx *result;
+  EBPlaneCtx *result = NULL;
   int i;
-  int *new_lut;
-  int *rb_lut;
-  char *rs_lut;
   double rbscale = eb_compute_rbscale(params);
   int even_c1 = ebc->even_c1;
   int even_rlimit = 1 << (30 - EVEN_SHIFT + even_c1);
@@ -1546,12 +1595,18 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
   int log2_levels;
   int rs_base;
 
-  result = (EBPlaneCtx *)malloc (sizeof(EBPlaneCtx));
+  result = (EBPlaneCtx *)calloc (1, sizeof(EBPlaneCtx));
+
+  if (result == NULL)
+      return NULL;
 
   result->source_width = source_width;
   result->dest_width = dest_width;
 
-  new_lut = (int *)malloc ((ET_SRC_MAX + 1) * sizeof(int));
+  result->lut = (int *)calloc ((ET_SRC_MAX + 1), sizeof(int));
+  if (result->lut == NULL)
+      goto err;
+
   for (i = 0; i < ET_SRC_MAX + 1; i++)
     {
       int nli;
@@ -1566,11 +1621,15 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
         }
       else
         nli = lut[i] >> (24 - EVEN_SHIFT);
-      new_lut[i] = (1 << EVEN_SHIFT) - nli;
+      result->lut[i] = (1 << EVEN_SHIFT) - nli;
     }
 
-  rb_lut = (int *)malloc ((ET_SRC_MAX + 1) * sizeof(int));
-  rs_lut = (char *)malloc ((ET_SRC_MAX + 1) * sizeof(int));
+  result->rb_lut = (int *)malloc ((ET_SRC_MAX + 1) * sizeof(int));
+  if (result->rb_lut == NULL)
+      goto err;
+  result->rs_lut = (char *)malloc ((ET_SRC_MAX + 1) * sizeof(int));
+  if (result->rs_lut == NULL)
+      goto err;
 
   log2_levels = even_log2 (params->levels);
   rs_base = 35 - EVEN_SHIFT + log2_levels - params->rand_scale;
@@ -1578,7 +1637,7 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
   for (i = 0; i <= ET_SRC_MAX; i++)
     {
       double rb;
-      int nl = new_lut[i] * (params->levels - 1);
+      int nl = result->lut[i] * (params->levels - 1);
       int rs;
 
       if (nl == 0)
@@ -1591,11 +1650,11 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
         }
 
       rs = eb_compute_randshift(nl, rs_base, do_shadows, params->levels);
-      rs_lut[i] = rs;
+      result->rs_lut[i] = rs;
 
       if (params->do_shadows)
         {
-          nl = ((1 << EVEN_SHIFT) - new_lut[i]) * (params->levels - 1);
+          nl = ((1 << EVEN_SHIFT) - result->lut[i]) * (params->levels - 1);
 
           if (nl == 0)
             rb = 0;
@@ -1608,25 +1667,40 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
               rb -= rb_sh;
             }
         }
-      rb_lut[i] = rb;
+      result->rb_lut[i] = rb;
 
     }
 
-  result->lut = new_lut;
-  result->rb_lut = rb_lut;
-  result->rs_lut = rs_lut;
-
   result->rb_line = (int *)calloc (dest_width, sizeof(int));
+  if (result->rb_line == NULL)
+      goto err;
   result->iir_line = (int *)calloc (dest_width, sizeof(int));
+  if (result->rb_line == NULL)
+      goto err;
   result->r_line = (int *)calloc (dest_width, sizeof(int));
+  if (result->rb_line == NULL)
+      goto err;
   result->a_line = (int *)calloc (dest_width, sizeof(int));
+  if (result->rb_line == NULL)
+      goto err;
   result->b_line = (int *)calloc (dest_width, sizeof(int));
+  if (result->rb_line == NULL)
+      goto err;
   result->white_count_line = (int *)calloc ((dest_width + 15) >> 4, sizeof(int));
+  if (result->rb_line == NULL)
+      goto err;
+
   if (do_shadows)
     {
       result->r_line_sh = (int *)calloc (dest_width, sizeof(int));
+      if (result->rb_line == NULL)
+          goto err;
       result->a_line_sh = (int *)calloc (dest_width, sizeof(int));
+      if (result->rb_line == NULL)
+          goto err;
       result->b_line_sh = (int *)calloc (dest_width, sizeof(int));
+      if (result->rb_line == NULL)
+          goto err;
     }
   else
     {
@@ -1647,16 +1721,23 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
     }
 
   return result;
+
+err:
+  even_better_plane_free(result);
+  return NULL;
 }
 
 EvenBetterCtx *
 even_better_new (const EvenBetterParams *params)
 {
-  EvenBetterCtx *result = (EvenBetterCtx *)malloc (sizeof(EvenBetterCtx));
+  EvenBetterCtx *result = (EvenBetterCtx *)calloc (1, sizeof(EvenBetterCtx));
   int n_planes = params->n_planes;
   int i;
   int log2_levels, log2_aspect;
   int using_vectors = 0;
+
+  if (result == NULL)
+      return NULL;
 
   if (params->dump_file)
     {
@@ -1694,6 +1775,9 @@ even_better_new (const EvenBetterParams *params)
   result->even_elo = -result->even_ehi;
 
   result->strengths = (int *)malloc (sizeof(int) * n_planes);
+  if (result->strengths == NULL)
+      goto err;
+
   memcpy (result->strengths, params->strengths,
           sizeof(int) * n_planes);
 
@@ -1703,6 +1787,8 @@ even_better_new (const EvenBetterParams *params)
   result->do_shadows = params->do_shadows;
 
   result->c_line = (int *)calloc (params->dest_width, sizeof(int));
+  if (result->c_line == NULL)
+      goto err;
 
   result->seed1 = 0x5324879f;
   result->seed2 = 0xb78d0945;
@@ -1728,32 +1814,48 @@ even_better_new (const EvenBetterParams *params)
   if (using_vectors)
     {
 #ifdef USE_SSE2
-      result->sse2_ctx = (eb_ctx_sse2 **)malloc(sizeof(eb_ctx_sse2 *) *
+      result->sse2_ctx = (eb_ctx_sse2 **)calloc(sizeof(eb_ctx_sse2 *) *
                                                 ((n_planes + 3) >> 2));
+      if (result->sse2_ctx == NULL)
+          goto err;
       for (i = 0; i < n_planes; i += 4)
         {
           int end_plane = i + 4 < n_planes ? i + 4 : n_planes;
           result->sse2_ctx[i >> 2] = eb_ctx_sse2_new(params, i, end_plane);
+          if (result->sse2_ctx[i >> 2] == NULL)
+              goto err;
         }
 #endif
 #ifdef USE_AVEC
-      result->avec_ctx = (eb_ctx_avec **)malloc(sizeof(eb_ctx_avec *) *
+      result->avec_ctx = (eb_ctx_avec **)calloc(sizeof(eb_ctx_avec *) *
                                                 ((n_planes + 3) >> 2));
+      if (result->avec_ctx == NULL)
+          goto err;
       for (i = 0; i < n_planes; i += 4)
         {
           int end_plane = i + 4 < n_planes ? i + 4 : n_planes;
           result->avec_ctx[i >> 2] = eb_ctx_avec_new(params, i, end_plane);
+          if (result->avec_ctx[i >> 2] == NULL)
+              goto err;
         }
 #endif
       result->plane_ctx = NULL;
     }
   else
     {
-      result->plane_ctx = (EBPlaneCtx **)malloc(sizeof(EBPlaneCtx *) * n_planes);
+      result->plane_ctx = (EBPlaneCtx **)calloc(sizeof(EBPlaneCtx *), n_planes);
+      if (result->plane_ctx == NULL)
+          goto err;
       for (i = 0; i < n_planes; i++)
         result->plane_ctx[i] = even_better_plane_new (params, result, i);
+      if (result->plane_ctx[i] == NULL)
+          goto err;
     }
   return result;
+
+err:
+  even_better_free(result);
+  return NULL;
 }
 
 /**
@@ -1777,12 +1879,22 @@ even_better_free (EvenBetterCtx *ctx)
 #ifdef USE_SSE2
       for (i = 0; i < n_planes; i += 4)
         eb_ctx_sse2_free(ctx->sse2_ctx[i >> 2]);
-      free(ctx->sse2_ctx);
+      if (ctx->sse2_ctx != NULL) {
+        for (i = 0; i < n_planes; i += 4)
+          if (ctx->sse2_ctx[i >> 2])
+            eb_ctx_sse2_free(ctx->sse2_ctx[i >> 2]);
+        free(ctx->sse2_ctx);
+      }
 #endif
 #ifdef USE_AVEC
       for (i = 0; i < n_planes; i += 4)
         eb_ctx_avec_free(ctx->avec_ctx[i >> 2]);
-      free(ctx->avec_ctx);
+      if (ctx->avec_ctx != NULL) {
+        for (i = 0; i < n_planes; i += 4)
+          if (ctx->avec_ctx[i >> 2])
+            eb_ctx_avec_free(ctx->avec_ctx[i >> 2]);
+        free(ctx->avec_ctx);
+      }
 #endif
     }
   else
@@ -1790,7 +1902,12 @@ even_better_free (EvenBetterCtx *ctx)
     {
       for (i = 0; i < n_planes; i++)
         even_better_plane_free (ctx->plane_ctx[i]);
-      free(ctx->plane_ctx);
+      if (ctx->plane_ctx != NULL) {
+        for (i = 0; i < n_planes; i++)
+          if (ctx->plane_ctx[i])
+            even_better_plane_free (ctx->plane_ctx[i]);
+        free(ctx->plane_ctx);
+      }
     }
   free (ctx->strengths);
   free (ctx->c_line);

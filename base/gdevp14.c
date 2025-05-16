@@ -3867,7 +3867,7 @@ copy_tag_setup(gx_device *dev, const gx_device *target)
  * keep agreement with colorant name->number mapping, and don't change
  * with the pdf14 color handling.
  */
-static	void
+static	int
 gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
 {
     cmm_dev_profile_t *profile_targ;
@@ -3898,6 +3898,8 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
 
     if (dev->icc_struct == NULL) {
         dev->icc_struct = gsicc_new_device_profile_array(dev);
+        if (dev->icc_struct == NULL)
+            return_error(gs_error_VMerror);
         profile_dev14 = dev->icc_struct;
         dev_proc((gx_device *) target, get_profile)((gx_device *) target,
                                           &(profile_targ));
@@ -3951,6 +3953,7 @@ gs_pdf14_device_copy_params(gx_device *dev, const gx_device *target)
     }
 #undef COPY_ARRAY_PARAM
 #undef COPY_PARAM
+    return 0;
 }
 
 /*
@@ -3997,7 +4000,7 @@ pdf14_put_params(gx_device * dev, gs_param_list	* plist)
     pdf14_device * pdev = (pdf14_device *)dev;
     gx_device * tdev = pdev->target;
     bool was_open = tdev->is_open;
-    int code = 0;
+    int code = 0, code2 = 0;
 
     if (tdev != 0 && (code = dev_proc(tdev, put_params)(tdev, plist)) >= 0) {
         gx_device_decache_colors(dev);
@@ -4006,7 +4009,9 @@ pdf14_put_params(gx_device * dev, gs_param_list	* plist)
             if (code == 0)
                 code = was_open ? 1 : 0;   /* target device closed */
         }
-        gs_pdf14_device_copy_params(dev, tdev);
+        code2 = gs_pdf14_device_copy_params(dev, tdev);
+        if (code2 < 0)
+            code = code2;
     }
     return code;
 }
@@ -5209,7 +5214,7 @@ pdf14_fill_mask(gx_device * orig_dev,
 
                 pdf14_group_color_t *group_color_info = pdf14_clone_group_color_info((gx_device *) p14dev, p14dev->ctx->stack->group_color_info);
                 if (group_color_info == NULL)
-                    return gs_error_VMerror;
+                    return_error(gs_error_VMerror);
 
                 code = pdf14_push_transparency_group(p14dev->ctx, &group_rect,
                      1, 0, 65535, 65535, 65535, BLEND_MODE_Normal, 0, 0,
@@ -5220,6 +5225,9 @@ pdf14_fill_mask(gx_device * orig_dev,
                 /* Set up the output buffer information now that we have
                    pushed the group */
                 fill_trans_buffer = new_pattern_trans_buff(p14dev->memory);
+                if (fill_trans_buffer == NULL)
+                    return_error(gs_error_VMerror);
+
                 pdf14_get_buffer_information((gx_device *) p14dev,
                                               fill_trans_buffer, NULL, false);
                 /* Store this in the appropriate place in pdcolor.  This
@@ -5418,6 +5426,10 @@ pdf14_tile_pattern_fill(gx_device * pdev, const gs_gstate * pgs,
         /* First get the buffer that we will be filling */
         if (ptile->cdev == NULL) {
             fill_trans_buffer = new_pattern_trans_buff(pgs->memory);
+            if (fill_trans_buffer == NULL) {
+                p14dev->pclist_device = NULL;
+                return_error(gs_error_VMerror);
+            }
             pdf14_get_buffer_information(pdev, fill_trans_buffer, NULL, false);
             /* Based upon if the tiles overlap pick the type of rect fill that we will
                want to use */
@@ -5651,6 +5663,9 @@ pdf14_patt_trans_image_fill(gx_device * dev, const gs_gstate * pgs,
         /* Set up the output buffer information now that we have
            pushed the group */
         fill_trans_buffer = new_pattern_trans_buff(pgs->memory);
+        if (fill_trans_buffer == NULL)
+            return_error(gs_error_VMerror);
+
         pdf14_get_buffer_information(dev, fill_trans_buffer, NULL, false);
 
         /* Store this in the appropriate place in pdcolor.  This
@@ -9171,7 +9186,10 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         return code;
 
     /* Copying the params across will add tags to the colorinfo as required. */
-    gs_pdf14_device_copy_params((gx_device *)p14dev, target);
+    code = gs_pdf14_device_copy_params((gx_device *)p14dev, target);
+    if (code < 0)
+        return code;
+
     gx_device_set_target((gx_device_forward *)p14dev, target);
     p14dev->pad = target->pad;
     p14dev->log2_align_mod = target->log2_align_mod;
@@ -10946,6 +10964,9 @@ put_param_pdf14_spot_names(gx_device * pdev,
                     case 0:
                         sep_name = gs_alloc_bytes(pdev->memory,
                                 str.size, "put_param_pdf14_spot_names");
+                        if (sep_name == NULL)
+                            return_error(gs_error_VMerror);
+
                         memcpy(sep_name, str.data, str.size);
                         pseparations->names[i].size = str.size;
                         pseparations->names[i].data = sep_name;
