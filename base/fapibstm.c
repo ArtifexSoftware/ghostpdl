@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -82,14 +82,18 @@ InitFont(Bitstream_server * server, FAPI_font * ff)
             else
                 length = FF_serialize_type2_font(ff, NULL, 0);
             own_font_data = gs_malloc(mem, 1, length, "Type 1 font copy");
+            if (own_font_data == NULL)
+                return_error(gs_error_VMerror);
             if (type == 1)
                 written =
                     FF_serialize_type1_font_complete(ff, own_font_data,
                                                      length);
             else
                 written = FF_serialize_type2_font(ff, own_font_data, length);
-            if (written != length)
-                return (gs_error_unregistered);        /* Must not happen. */
+            if (written != length) {
+                gs_free_object(mem, own_font_data, "InitFont");
+                return_error(gs_error_unregistered);        /* Must not happen. */
+            }
         }
         /* It must be type 42 (see code in FAPI_FF_get_glyph in zfapi.c). */
         else {
@@ -105,7 +109,9 @@ InitFont(Bitstream_server * server, FAPI_font * ff)
                 return_error(gs_error_VMerror);
             error = ff->serialize_tt_font(ff, own_font_data, length);
             if (error < 0)
-                return error;
+                gs_free_object(mem, own_font_data, "InitFont");
+                return (error);        /* Must not happen. */
+            }
         }
     }
     face->font_data = own_font_data;
@@ -153,9 +159,14 @@ get_scaled_font(FAPI_server * server, FAPI_font * ff,
         face =
             (Bitstream_face *) gs_malloc(mem, 1, sizeof(Bitstream_face),
                                          "Bitstream_face alloc");
-        face->MemObject = tsi_NewMemhandler(&error);
-        if (error)
+        if (face == NULL) {
             return -1;
+        }
+        face->MemObject = tsi_NewMemhandler(&error);
+        if (error) {
+            gs_free_object(mem, face, "get_scaled_font");
+            return -1;
+        }
         face->Initialised = 0;
         ff->server_font_data = face;
         Bserver->ff = ff;

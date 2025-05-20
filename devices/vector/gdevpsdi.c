@@ -708,6 +708,9 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
                 s_alloc_state(mem, s_C2R_template.stype, "C2R state");
             int code = pixel_resize(pbw, pim->Width, 3, 8, bpc_out);
 
+            if (ss == 0)
+                return_error(gs_error_VMerror);
+
             if (code < 0 ||
                 (code = psdf_encode_binary(pbw, &s_C2R_template,
                                            (stream_state *) ss)) < 0 ||

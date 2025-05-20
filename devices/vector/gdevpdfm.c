@@ -2653,6 +2653,8 @@ pdfmark_DP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 
     cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
                 "pdfmark_DP");
+    if (cstring == NULL)
+        return_error(gs_error_VMerror);
     memcpy(cstring, pairs[0].data, pairs[0].size);
     cstring[pairs[0].size] = 0x00;
 

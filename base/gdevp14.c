@@ -3510,11 +3510,29 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             const char *name = devn_params->std_colorant_names[i];
             size_t len = strlen(name);
             pcs->params.device_n.names[i] = (char *)gs_alloc_bytes(pgs->memory->non_gc_memory, len + 1, "mem_planar_put_image_very_slow");
+            if (pcs->params.device_n.names[i] == NULL) {
+                int j = 0;
+                for (j = 0;j < i; j++) {
+                    if (pcs->params.device_n.names[j] != NULL)
+                        gs_free_object(pgs->memory->non_gc_memory, pcs->params.device_n.names[j], "mem_planar_put_image_very_slow");
+                    pcs->params.device_n.names[j] = NULL;
+                }
+                return_error(gs_error_VMerror);
+            }
             strcpy(pcs->params.device_n.names[i], name);
         }
         for (; i < devn_params->separations.num_separations; i++) {
             devn_separation_name *name = &devn_params->separations.names[i - num_std];
             pcs->params.device_n.names[i] = (char *)gs_alloc_bytes(pgs->memory->non_gc_memory, name->size + 1, "mem_planar_put_image_very_slow");
+            if (pcs->params.device_n.names[i] == NULL) {
+                int j = 0;
+                for (j = 0;j < i; j++) {
+                    if (pcs->params.device_n.names[j] != NULL)
+                        gs_free_object(pgs->memory->non_gc_memory, pcs->params.device_n.names[j], "mem_planar_put_image_very_slow");
+                    pcs->params.device_n.names[j] = NULL;
+                }
+                return_error(gs_error_VMerror);
+            }
             memcpy(pcs->params.device_n.names[i], devn_params->separations.names[i - num_std].data, name->size);
             pcs->params.device_n.names[i][name->size] = 0;
         }

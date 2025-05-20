@@ -181,6 +181,9 @@ PreserveTrMode(xps_context_t *ctx)
 
     /* Interrogate the device to see if it supports Text Rendering Mode */
     data = (char *)gs_alloc_bytes(ctx->memory, 15, "temporary special_op string");
+    if (data == NULL)
+        return_error(gs_error_VMerror);
+
     memset(data, 0x00, 15);
     memcpy(data, "PreserveTrMode", 15);
     gs_c_param_list_write(&list, ctx->memory);

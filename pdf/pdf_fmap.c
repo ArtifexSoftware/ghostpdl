@@ -343,13 +343,15 @@ done:
     if (cidfmap == true) {
         if (ctx->pdfcidfmap == NULL) {
             code = pdfi_dict_alloc(ctx, 0, &ctx->pdfcidfmap);
-            pdfi_countup(ctx->pdfcidfmap);
+            if (code >= 0)
+                pdfi_countup(ctx->pdfcidfmap);
         }
     }
     else {
         if (ctx->pdffontmap == NULL) {
             code = pdfi_dict_alloc(ctx, 0, &ctx->pdffontmap);
-            pdfi_countup(ctx->pdffontmap);
+            if (code >= 0)
+                pdfi_countup(ctx->pdffontmap);
         }
     }
     if (code >= 0) {

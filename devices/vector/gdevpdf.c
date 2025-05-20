@@ -845,8 +845,16 @@ pdf_open(gx_device * dev)
     pdev->local_named_objects =
         pdev->global_named_objects =
         cos_dict_alloc(pdev, "pdf_open(global_named_objects)");
+    if (pdev->local_named_objects == NULL) {
+        code = gs_error_VMerror;
+        goto fail;
+    }
     /* Initialize internal structures that don't have IDs. */
     pdev->NI_stack = cos_array_alloc(pdev, "pdf_open(NI stack)");
+    if (pdev->NI_stack == NULL) {
+        code = gs_error_VMerror;
+        goto fail;
+    }
     pdev->vgstack = (pdf_viewer_state *)gs_alloc_bytes(pdev->pdf_memory, 11 * sizeof(pdf_viewer_state), "pdf_open(graphics state stack)");
     if (pdev->vgstack == 0) {
         code = gs_error_VMerror;
@@ -855,6 +863,10 @@ pdf_open(gx_device * dev)
     memset(pdev->vgstack, 0x00, 11 * sizeof(pdf_viewer_state));
     pdev->vgstack_size = 11;
     pdev->Namespace_stack = cos_array_alloc(pdev, "pdf_open(Namespace stack)");
+    if (pdev->Namespace_stack == NULL) {
+        code = gs_error_VMerror;
+        goto fail;
+    }
     pdf_initialize_ids(pdev);
     code = pdf_compute_fileID(pdev);
     if (code < 0)
@@ -875,6 +887,10 @@ pdf_open(gx_device * dev)
     /* Now create a new dictionary for the local named objects. */
     pdev->local_named_objects =
         cos_dict_alloc(pdev, "pdf_open(local_named_objects)");
+    if (pdev->local_named_objects == NULL) {
+        code = gs_error_VMerror;
+        goto fail;
+    }
     pdev->outlines_id = 0;
     pdev->next_page = 0;
     pdev->text = pdf_text_data_alloc(mem);

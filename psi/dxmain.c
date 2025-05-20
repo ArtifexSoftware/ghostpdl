@@ -1205,6 +1205,9 @@ int main(int argc, char *argv[])
             DISPLAY_BIGENDIAN | DISPLAY_TOPFIRST);
     nargc = argc + 1;
     nargv = (char **)malloc(nargc * sizeof(char *));
+    if (nargv == NULL)
+        return 1;
+
     nargv[0] = argv[0];
     nargv[1] = dformat;
     memcpy(&nargv[2], &argv[1], (argc-1) * sizeof(char *));

@@ -509,8 +509,8 @@ static int pdfi_annot_draw_Border(pdf_context *ctx, pdf_dict *annot, pdf_array *
     }
     if (!Border) {
         code = pdfi_array_alloc(ctx, 0, &dash);
-        pdfi_countup(dash);
         if (code < 0) goto exit;
+        pdfi_countup(dash);
         width = 1;
     } else {
         if (size > 3) {

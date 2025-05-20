@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -522,6 +522,8 @@ show_char_invisible_foreground(const pcl_state_t * pcs, const gs_char * pbuff)
      * doesn't then we drop the text.
      */
     data = (char *)gs_alloc_bytes(pcs->memory, 15, "temporary special_op string");
+    if (data == NULL)
+        return_error(gs_error_VMerror);
     memset(data, 0x00, 15);
     memcpy(data, "PreserveTrMode", 15);
     gs_c_param_list_write(&list, pcs->memory);

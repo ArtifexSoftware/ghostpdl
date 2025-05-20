@@ -3552,7 +3552,10 @@ _put_params(gx_device *dev, gs_param_list *plist)
         buff = realloc(buff, pmps.size + 1);
         memcpy(buff, pmps.data, pmps.size);
         buff[pmps.size] = 0;
-        opvp_alloc_string(&(opdev->globals.printerModel), buff);
+        if (opvp_alloc_string(&(opdev->globals.printerModel), buff) == NULL) {
+            ecode = gs_error_VMerror;
+            param_signal_error(plist, pname, ecode);
+        }
         break;
     case 1:
         /*opvp_alloc_string(&(opdev->globals.printerModel), NULL);*/

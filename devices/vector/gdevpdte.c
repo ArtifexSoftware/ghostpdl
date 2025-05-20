@@ -399,7 +399,9 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
             }
         } else {
             if (((gs_cmap_ToUnicode_t *)pdfont->cmap_ToUnicode)->value_size < length){
-                gs_cmap_ToUnicode_realloc(pdev->pdf_memory, length, &pdfont->cmap_ToUnicode);
+                code = gs_cmap_ToUnicode_realloc(pdev->pdf_memory, length, &pdfont->cmap_ToUnicode);
+                if (code < 0)
+                    return code;
             }
         }
 

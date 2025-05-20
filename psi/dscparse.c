@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -622,6 +622,9 @@ dsc_add_page(CDSC *dsc, int ordinal, char *label)
     dsc->page[dsc->page_count].ordinal = ordinal;
     dsc->page[dsc->page_count].label =
         dsc_alloc_string(dsc, label, (int)strlen(label)+1);
+    if (dsc->page[dsc->page_count].label == NULL)
+        return CDSC_ERROR;	/* out of memory */
+
     dsc->page[dsc->page_count].begin = 0;
     dsc->page[dsc->page_count].end = 0;
     dsc->page[dsc->page_count].orientation = CDSC_ORIENT_UNKNOWN;
@@ -2340,9 +2343,12 @@ dsc_scan_comments(CDSC *dsc)
                     if (dsc_add_media(dsc, &lmedia))
                         return CDSC_ERROR;
                 }
-                else
+                else {
                     dsc->media[count]->name =
                         dsc_alloc_string(dsc, p, (int)strlen(p));
+                    if (dsc->media[count]->name == NULL)
+                        return CDSC_ERROR;
+                }
                 /* find in list of known media */
                 while (m && m->name) {
                     if (dsc_stricmp(p, m->name)==0) {
@@ -2382,9 +2388,12 @@ dsc_scan_comments(CDSC *dsc)
                     if (dsc_add_media(dsc, &lmedia))
                         return CDSC_ERROR;
                 }
-                else
+                else {
                     dsc->media[count]->type =
                         dsc_alloc_string(dsc, p, (int)strlen(p));
+                    if (dsc->media[count]->type == NULL)
+                        return CDSC_ERROR;
+                }
             }
             n+=i;
             count++;
@@ -2415,9 +2424,12 @@ dsc_scan_comments(CDSC *dsc)
                     if (dsc_add_media(dsc, &lmedia))
                         return CDSC_ERROR;
                 }
-                else
+                else {
                     dsc->media[count]->colour =
                         dsc_alloc_string(dsc, p, (int)strlen(p));
+                    if (dsc->media[count]->colour == NULL)
+                        return CDSC_ERROR;
+                }
             }
             n+=i;
             count++;
@@ -3828,9 +3840,12 @@ dsc_dcs2_fixup(CDSC *dsc)
          * the correct separation. */
         if (dsc->page_count == 0)
             code = dsc_add_page(dsc, 1, composite);
-        else if (dsc->page_count == 1)
+        else if (dsc->page_count == 1) {
             dsc->page[0].label =
                 dsc_alloc_string(dsc, composite, (int)strlen(composite)+1);
+            if (dsc->page[0].label == NULL)
+                return CDSC_ERROR;
+        }
         if (code != CDSC_OK)
             return code;
         page_number = dsc->page_count - 1;
@@ -4030,15 +4045,24 @@ dsc_parse_platefile(CDSC *dsc)
             dsc_unknown(dsc); /* we didn't get all fields */
         else {
             /* Allocate strings */
-            if (strlen(colourname))
+            if (strlen(colourname)) {
                 dcs2.colourname = dsc_alloc_string(dsc,
                     colourname, (int)strlen(colourname));
-            if (strlen(filetype))
+                if (dcs2.colourname == NULL)
+                    return CDSC_ERROR;
+            }
+            if (strlen(filetype)) {
                 dcs2.filetype = dsc_alloc_string(dsc,
                     filetype, (int)strlen(filetype));
-            if (strlen(location))
+                if (dcs2.filetype == NULL)
+                    return CDSC_ERROR;
+            }
+            if (strlen(location)) {
                 dcs2.location = dsc_alloc_string(dsc,
                     location, (int)strlen(location));
+                if (dcs2.location == NULL)
+                    return CDSC_ERROR;
+            }
             if (filename)
                 dcs2.filename = dsc_add_line(dsc, filename, filename_length);
 
@@ -4129,9 +4153,15 @@ dsc_parse_dcs1plate(CDSC *dsc)
                     colourname, (int)strlen(colourname));
             dcs2.filetype = dsc_alloc_string(dsc, "EPS", 3);
             dcs2.location = dsc_alloc_string(dsc, "Local", 5);
-            if (strlen(filename))
+            if (dcs2.colourname == NULL || dcs2.filetype == NULL || dcs2.location == NULL) {
+                return CDSC_ERROR;
+            }
+            if (strlen(filename)) {
                 dcs2.filename = dsc_alloc_string(dsc,
                     filename, (int)strlen(filename));
+                if (dcs2.filename == NULL)
+                    return CDSC_ERROR;
+            }
             /* Allocate it */
             pdcs2 = (CDCS2 *)dsc_memalloc(dsc, sizeof(CDCS2));
             if (pdcs2 == NULL)
@@ -4240,6 +4270,8 @@ dsc_parse_process_colours(CDSC *dsc)
                     pcolour->custom = CDSC_CUSTOM_COLOUR_UNKNOWN;
                     pcolour->name = dsc_alloc_string(dsc,
                         colourname, (int)strlen(colourname));
+                    if (pcolour->name == NULL)
+                        return CDSC_ERROR;
                     if (dsc->colours == NULL)
                         dsc->colours = pcolour;
                     else {
@@ -4340,6 +4372,8 @@ dsc_parse_custom_colours(CDSC *dsc)
                     memset(pcolour, 0, sizeof(CDSCCOLOUR));
                     pcolour->name = dsc_alloc_string(dsc,
                         colourname, (int)strlen(colourname));
+                    if (pcolour->name == NULL)
+                        return CDSC_ERROR;
                     pcolour->custom = CDSC_CUSTOM_COLOUR_UNKNOWN;
                     if (dsc->colours == NULL)
                         dsc->colours = pcolour;
@@ -4412,6 +4446,8 @@ dsc_parse_cmyk_custom_colour(CDSC *dsc)
                     memset(pcolour, 0, sizeof(CDSCCOLOUR));
                     pcolour->name = dsc_alloc_string(dsc,
                         colourname, (int)strlen(colourname));
+                    if (pcolour->name == NULL)
+                        return CDSC_ERROR;
                     pcolour->type = CDSC_COLOUR_UNKNOWN;
                     if (dsc->colours == NULL)
                         dsc->colours = pcolour;
@@ -4485,6 +4521,8 @@ dsc_parse_rgb_custom_colour(CDSC *dsc)
                     memset(pcolour, 0, sizeof(CDSCCOLOUR));
                     pcolour->name = dsc_alloc_string(dsc,
                         colourname, (int)strlen(colourname));
+                    if (pcolour->name == NULL)
+                        return CDSC_ERROR;
                     pcolour->type = CDSC_COLOUR_UNKNOWN;
                     if (dsc->colours == NULL)
                         dsc->colours = pcolour;

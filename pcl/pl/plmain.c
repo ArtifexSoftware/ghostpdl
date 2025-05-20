@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2637,8 +2637,10 @@ help:
                                  "-K must be followed by a number\n");
                         code = -1;
                     }
-                    else
-                        rawheap->limit = (long)maxk << 10;
+                    else {
+                        if (rawheap != NULL)
+                            rawheap->limit = (long)maxk << 10;
+                    }
                 }
                 break;
             case 'l':          /* personality */

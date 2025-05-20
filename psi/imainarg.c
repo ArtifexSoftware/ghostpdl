@@ -162,6 +162,9 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
         if (code < 0) {         /* key present, value doesn't fit */
             char *path = (char *)gs_alloc_bytes(minst->heap, len, "GS_LIB");
 
+            if (path == NULL)
+                return_error(gs_error_VMerror);
+
             gp_getenv(GS_LIB, path, &len);      /* can't fail */
             minst->lib_path.env = path;
         }
@@ -213,6 +216,10 @@ gs_main_init_with_args01(gs_main_instance * minst, int argc, char *argv[])
             char *opts =
             (char *)gs_alloc_bytes(minst->heap, len, "GS_OPTIONS");
 
+            if (opts == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                    goto error;
+            }
             gp_getenv(GS_OPTIONS, opts, &len);  /* can't fail */
             if (arg_push_decoded_memory_string(&args, opts, false, true, minst->heap)) {
                 if (opts != NULL)

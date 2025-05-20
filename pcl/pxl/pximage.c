@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -604,6 +604,8 @@ read_deltarow_bitmap_data(px_bitmap_enum_t * benum, byte ** pdata,
         deltarow->seedrow =
             gs_alloc_bytes(benum->mem, benum->data_per_row,
                            "read_deltarow_bitmap_data");
+        if (deltarow->seedrow == NULL)
+            return 0;
         memset(deltarow->seedrow, 0, benum->data_per_row);
         deltarow->row_byte_count = 0;
         deltarow->short_cnt = 0;

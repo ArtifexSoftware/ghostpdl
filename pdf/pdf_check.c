@@ -968,10 +968,10 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
                         pdf_array *desc_array = NULL;
 
                         code = pdfi_array_alloc(ctx, 0, &desc_array);
-                        pdfi_countup(desc_array);
                         if (code >= 0) {
                             pdf_array *saved = tracker->font_array;
 
+                            pdfi_countup(desc_array);
                             tracker->font_array = desc_array;
                             (void)pdfi_check_Font(ctx, desc_font, page_dict, tracker);
                             (void)pdfi_dict_put(ctx, font_info_dict, "Descendants", (pdf_obj *)tracker->font_array);

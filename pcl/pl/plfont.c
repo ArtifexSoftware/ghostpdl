@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -791,6 +791,8 @@ pl_clone_font(const pl_font_t * src, gs_memory_t * mem, client_name_t cname)
         plfont->glyphs.table =
             gs_alloc_struct_array(mem, src->glyphs.size, pl_font_glyph_t,
                                   &st_pl_font_glyph_element_f, cname);
+        if (plfont->glyphs.table == NULL)
+            return 0;
         plfont->glyphs.used = src->glyphs.used;
         plfont->glyphs.limit = src->glyphs.limit;
         plfont->glyphs.size = src->glyphs.size;

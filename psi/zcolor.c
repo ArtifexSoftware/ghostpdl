@@ -5122,6 +5122,9 @@ static int setindexedspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         else
             pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Indexed);
 
+        if (pcs == NULL)
+            return_error(gs_error_VMerror);
+
         pcs->params.indexed.lookup.map = NULL;
         code = zcs_begin_map(i_ctx_p, pcs, &map, &lookup, (hival.value.intval + 1),
                              pcs_base, indexed_cont);
@@ -5412,6 +5415,9 @@ static int setpatternspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int
         }
     }
     pcs = gs_cspace_alloc(imemory, &gs_color_space_type_Pattern);
+    if (pcs == NULL)
+        return_error(gs_error_VMerror);
+
     pcs->base_space = pcs_base;
     pcs->params.pattern.has_base_space = (pcs_base != NULL);
     rc_increment_cs(pcs_base);
