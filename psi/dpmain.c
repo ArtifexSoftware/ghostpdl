@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1046,6 +1046,12 @@ main(int argc, char *argv[])
 #endif
     nargc = argc + 1;
     nargv = (char **)malloc(nargc * sizeof(char *));
+
+    if (nargv == NULL) {
+        fprintf("Can't allocate memory to start up\n");
+        return -1;
+    }
+
     nargv[0] = argv[0];
     nargv[1] = dformat;
     memcpy(&nargv[2], &argv[1], (argc-1) * sizeof(char *));

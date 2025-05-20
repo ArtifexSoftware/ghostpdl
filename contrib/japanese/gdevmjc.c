@@ -1042,8 +1042,10 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
         p += xtalbuff_size;
         (void) p;
   }
-  else
+  else {
+    code = gs_note_error(gs_error_VMerror);
       goto cleanup;
+  }
 
   storage = (word *) gs_malloc(pdev->memory->non_gc_memory, storage_size_words, W, "mj_colour_print_page");
 

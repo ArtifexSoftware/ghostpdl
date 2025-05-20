@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -120,9 +120,17 @@ main(int argc, const char *argv[])
     bbdev =
         gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,
                                   "bbox");
+    if (bbdev == NULL) {
+        lprintf1("\n", code);
+        gs_abort(mem);
+    }
     gx_device_bbox_init(bbdev, dev, mem);
 
     code = dev_proc(dev, get_profile)(dev, &bbdev->icc_struct);
+    if (code < 0) {
+        lprintf1("Failed to initialise device\n", code);
+        gs_abort(mem);
+    }
     rc_increment(bbdev->icc_struct);
 
     /* Print out the device name just to test the gsparam.c API. */
@@ -172,6 +180,10 @@ main(int argc, const char *argv[])
     }
     dev = (gx_device *) bbdev;
     pgs = gs_gstate_alloc(mem);
+    if (pgs == NULL) {
+        lprintf1("allocation of gstate failed\n", code);
+        gs_abort(mem);
+    }
     gs_setdevice_no_erase(pgs, dev);	/* can't erase yet */
     {
         gs_point dpi;

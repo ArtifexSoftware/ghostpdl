@@ -2730,6 +2730,8 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                 p_cm_buff = (byte *) gs_alloc_bytes(pgs->memory,
                     sizeof(unsigned short) * width * spp_cm,
                     "image_render_interpolate_icc");
+                if (p_cm_buff == NULL)
+                    return_error(gs_error_VMerror);
                 /* Set up the buffer descriptors. */
                 gsicc_init_buffer(&input_buff_desc, spp_decode, 2,
                               false, false, false, 0, width * spp_decode,

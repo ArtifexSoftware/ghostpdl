@@ -512,6 +512,8 @@ gx_general_fill_path(gx_device * pdev, const gs_gstate * pgs,
             if (lst.contour_count > countof(lst.local_windings)) {
                 lst.windings = (int *)gs_alloc_byte_array(pdev->memory, lst.contour_count,
                                 sizeof(int), "gx_general_fill_path");
+                if (lst.windings == NULL)
+                    return_error(gs_error_VMerror);
             } else
                 lst.windings = lst.local_windings;
             memset(lst.windings, 0, sizeof(lst.windings[0]) * lst.contour_count);

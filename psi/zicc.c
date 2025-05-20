@@ -226,10 +226,12 @@ int seticc(i_ctx_t * i_ctx_p, int ncomps, ref *ICCdict, float *range_buff)
         rc_decrement(picc_profile,"seticc");
         if (code >= 0) {
             /* Save this colorspace in the iccprofile_cache */
-            gsicc_add_cs(igs, pcs, picc_profile->hashcode);
-            /* should be an integer, but if for some reason it isn't, don't update */
-            if (phashval && r_has_type(phashval, t_integer))
-                phashval->value.intval = picc_profile->hashcode;
+            code = gsicc_add_cs(igs, pcs, picc_profile->hashcode);
+            if (code >= 0) {
+                /* should be an integer, but if for some reason it isn't, don't update */
+                if (phashval && r_has_type(phashval, t_integer))
+                    phashval->value.intval = picc_profile->hashcode;
+            }
         }
     }
     /* Remove the ICC dict from the stack */
@@ -503,7 +505,9 @@ seticc_cal(i_ctx_t * i_ctx_p, float *white, float *black, float *gamma,
             pcs->cmm_icc_profile_data->Range.ranges[i].rmax = 1;
         }
         /* Add the color space to the profile cache */
-        gsicc_add_cs(igs, pcs,dictkey);
+        code = gsicc_add_cs(igs, pcs,dictkey);
+        if (code < 0)
+            return gs_rethrow(code, "adding the colour space");
     }
     /* Set the color space.  We are done.  */
     code = gs_setcolorspace(igs, pcs);

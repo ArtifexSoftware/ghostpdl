@@ -2423,10 +2423,13 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
         if (code >= 0) {
             if (cffpriv.FontType == ft_CID_encrypted) {
                 pdf_obj *obj = NULL;
-                pdf_cidfont_type0 *cffcid;
-                gs_font_cid0 *pfont;
+                pdf_cidfont_type0 *cffcid = NULL;
+                gs_font_cid0 *pfont = NULL;
 
                 code = pdfi_alloc_cff_cidfont(ctx, &cffcid, font_dict->object_num);
+                if (code < 0)
+                    goto error;
+
                 pfont = (gs_font_cid0 *) cffcid->pfont;
                 ppdfont = (pdf_font *) cffcid;
 
@@ -2800,11 +2803,14 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 cffcid->pfont->id = gs_next_ids(ctx->memory, 1);
             }
             else {
-                pdf_font_cff *cfffont;
+                pdf_font_cff *cfffont = NULL;
                 gs_font_type1 *pfont = NULL;
                 pdf_obj *tounicode = NULL;
 
                 code = pdfi_alloc_cff_font(ctx, &cfffont, font_dict != NULL ? font_dict->object_num : 0, false);
+                if (code < 0)
+                    goto error;
+
                 pfont = (gs_font_type1 *) cfffont->pfont;
                 ppdfont = (pdf_font *) cfffont;
 

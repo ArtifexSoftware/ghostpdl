@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -204,6 +204,8 @@ find_hwnd_gs(char *gsid)
     ulCount = WinQuerySwitchList(hab, NULL, 0);		/* get num of items */
     cbBuf = (ulCount * sizeof(SWENTRY)) + sizeof(HSWITCH);
     pswblk = (PSWBLOCK) malloc(cbBuf + 32768);
+    if (pswblk == NULL)
+        return;
     ulCount = WinQuerySwitchList(hab, pswblk, cbBuf);	/* get num of items */
     for (i = 0; i < ulCount; i++) {
         pswentry = &pswblk->aswentry[i];

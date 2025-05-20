@@ -1023,6 +1023,8 @@ pdfi_fapi_get_glyphname_or_cid(gs_text_enum_t *penum, gs_font_base * pbfont, gs_
                 code = pdfi_name_alloc(ctx, (byte *) gname.data, gname.size, (pdf_obj **) &GlyphName);
                 if (code >= 0)
                     pdfi_countup(GlyphName);
+                else
+                    return_error(gs_error_VMerror);
             }
 
             cr->char_codes[0] = cr->client_char_code;

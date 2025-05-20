@@ -1044,8 +1044,11 @@ static int pdfi_create_icc(pdf_context *ctx, char *Name, stream *s, int ncomps, 
         rc_increment(pcs->cmm_icc_profile_data);
     }
     /* Add the color space to the profile cache */
-    if (dictkey != 0)
-        gsicc_add_cs(ctx->pgs, pcs, dictkey);
+    if (dictkey != 0) {
+        code = gsicc_add_cs(ctx->pgs, pcs, dictkey);
+        if (code < 0)
+            goto exit;
+    }
 
     if (ppcs!= NULL){
         *ppcs = pcs;
@@ -2582,6 +2585,10 @@ pdfi_create_indexed(pdf_context *ctx, pdf_array *color_array, int index,
     else
         pcs = gs_cspace_alloc(ctx->memory, &gs_color_space_type_Indexed);
 
+    if (pcs == NULL) {
+        code = gs_note_error(gs_error_VMerror);
+        goto exit;
+    }
     /* NOTE: we don't need to increment the reference to pcs_base, since it is already 1 */
     pcs->base_space = pcs_base;
 

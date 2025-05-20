@@ -281,6 +281,8 @@ gdi_print_page(gx_device_printer *pdev, gp_file *prn_stream)
                     if (!fudge) {
                       ASSERT(use_band == ibp);
                       use_band = (byte*)gs_malloc(pdev->memory->non_gc_memory, ul_band_size, 1, "gdi_print_page/fudge");
+                      if (use_band == NULL)
+                          return_error(gs_error_VMerror);
                       fudge=1;
                     }
                     memcpy(use_band, ibp, ul_band_size);

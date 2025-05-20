@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2024 Artifex Software, Inc.
+/* Copyright (C) 2020-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -994,6 +994,9 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
                         upcmap->notdef_cmap_range.ranges = NULL;
                         /* But we keep the subcmap itself because we rely on its storage */
                         pdfi_cmap->next = upcmap;
+                    } else {
+                        code = gs_note_error(gs_error_VMerror);
+                        goto error_out;
                     }
                 }
                 else {
@@ -1044,6 +1047,9 @@ pdfi_read_cmap(pdf_context *ctx, pdf_obj *cmap, pdf_cmap **pcmap)
             if (pdfi_cmap->object_num != 0) {
                 code = replace_cache_entry(ctx, (pdf_obj *)pdfi_cmap);
             }
+        } else {
+            code = gs_note_error(gs_error_VMerror);
+            goto error_out;
         }
     }
     else {

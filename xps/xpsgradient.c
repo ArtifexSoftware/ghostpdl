@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -349,7 +349,7 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
         lparams.C0 = c0;
 
         c1 = xps_alloc(ctx, 3 * sizeof(float));
-        if (!c0) {
+        if (!c1) {
             gs_throw(gs_error_VMerror, "out of memory: c1.\n");
             return NULL;
         }

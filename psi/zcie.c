@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -482,7 +482,9 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
         if (code < 0)
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         /* Add the color space to the profile cache */
-        gsicc_add_cs(igs, pcs,dictkey);
+        code = gsicc_add_cs(igs, pcs,dictkey);
+        if (code < 0)
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
     } else {
         rc_increment(pcs);
     }
@@ -595,7 +597,9 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
         if (code < 0)
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
         /* Add the color space to the profile cache */
-        gsicc_add_cs(igs, pcs,dictkey);
+        code = gsicc_add_cs(igs, pcs,dictkey);
+        if (code < 0)
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
     } else {
         rc_increment(pcs);
     }
@@ -662,7 +666,9 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
             caches.  We may need the vector cache if we are going to go
             ahead and create an MLUT for this thing */
         /* Add the color space to the profile cache */
-        gsicc_add_cs(igs, pcs,dictkey);
+        code = gsicc_add_cs(igs, pcs,dictkey);
+        if (code < 0)
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
     } else {
         rc_increment(pcs);
     }
@@ -751,7 +757,9 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, uint64_t dictkey)
             }
         }
         /* Add the color space to the profile cache */
-        gsicc_add_cs(igs, pcs,dictkey);
+        code = gsicc_add_cs(igs, pcs,dictkey);
+        if (code < 0)
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
     } else {
         rc_increment(pcs);
     }

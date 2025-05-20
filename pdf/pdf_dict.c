@@ -827,6 +827,9 @@ int pdfi_make_float_array_from_dict(pdf_context *ctx, float **parray, pdf_dict *
 
     arr = (float *)gs_alloc_byte_array(ctx->memory, array_size,
                                        sizeof(float), "array_from_dict_key");
+    if (arr == NULL)
+        return_error(gs_error_VMerror);
+
     *parray = arr;
 
     for (i=0;i< array_size;i++) {
@@ -863,6 +866,9 @@ int pdfi_make_int_array_from_dict(pdf_context *ctx, int **parray, pdf_dict *dict
     array_size = pdfi_array_size(a);
     arr = (int *)gs_alloc_byte_array(ctx->memory, array_size,
                                      sizeof(int), "array_from_dict_key");
+    if (arr == NULL)
+        return_error(gs_error_VMerror);
+
     *parray = arr;
 
     for (i=0;i< array_size;i++) {
@@ -1028,9 +1034,9 @@ int pdfi_dict_put_int(pdf_context *ctx, pdf_dict *d, const char *key, int64_t va
     pdf_num *obj;
 
     code = pdfi_object_alloc(ctx, PDF_INT, 0, (pdf_obj **)&obj);
-    obj->value.i = value;
     if (code < 0)
         return code;
+    obj->value.i = value;
 
     return pdfi_dict_put(ctx, d, key, (pdf_obj *)obj);
 }

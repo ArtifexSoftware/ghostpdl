@@ -2054,7 +2054,7 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
         icc_luta2bparts.clut->data_short = (unsigned short*)
                     gs_alloc_bytes(memory, 2 * 3 * sizeof(short),
                    "gsicc_create_froma");
-        if (icc_luta2bparts.clut == NULL) {
+        if (icc_luta2bparts.clut->data_short == NULL) {
             gs_free_object(memory, icc_luta2bparts.a_curves, "gsicc_create_froma");
             gs_free_object(memory, icc_luta2bparts.m_curves, "gsicc_create_froma");
             gs_free_object(memory, icc_luta2bparts.clut, "gsicc_create_froma");

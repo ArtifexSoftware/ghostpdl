@@ -3015,6 +3015,8 @@ static int escv_write_data(gx_device *dev, int bits, byte *buf, int bsize, int w
     tmps = 0;
     if (bits == 12) {
       p = tmps = gs_alloc_bytes(vdev->memory, bsize * 2, "escv_write_data(tmp)");
+      if (p == NULL)
+          return_error(gs_error_VMerror);
       for (size = 0; size < bsize; size++) {
         tmp = buf[size] & 0xF0;
         *p++ = (tmp + (tmp >> 4 & 0x0F));

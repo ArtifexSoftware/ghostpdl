@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -91,7 +91,7 @@ rc_gsicc_profile_cache_free(gs_memory_t * mem, void *ptr_in, client_name_t cname
                    "rc_gsicc_profile_cache_free");
 }
 
-void
+int
 gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, uint64_t dictkey)
 {
     gsicc_profile_entry_t *result;
@@ -99,14 +99,14 @@ gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, uint64_t dictkey)
     gs_memory_t *memory =  profile_cache->memory;
 
     if (dictkey == 0)
-        return;
+        return 0;
 
     /* The entry has to be added in stable memory. We want them
        to be maintained across the gsave and grestore process */
     result = gs_alloc_struct(memory, gsicc_profile_entry_t,
                              &st_profile_entry, "gsicc_add_cs");
     if (result == NULL)
-        return;			/* FIXME */
+        return_error(gs_error_VMerror);
 
     /* If needed, remove an entry (the last one) */
     if (profile_cache->num_entries >= ICC_CACHE_MAXPROFILE) {
@@ -123,6 +123,7 @@ gsicc_add_cs(gs_gstate * pgs, gs_color_space * colorspace, uint64_t dictkey)
                "[icc] Add cs to cache = "PRI_INTPTR", hash = %"PRIu64"\n",
                (intptr_t)result->color_space, (uint64_t)result->key);
     profile_cache->num_entries++;
+    return 0;
 }
 
 gs_color_space*

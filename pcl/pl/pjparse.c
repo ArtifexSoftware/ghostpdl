@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1284,8 +1284,10 @@ pjl_set_envvar(pjl_parser_state * pst, const char *pjl_var, const char *data)
             if (env[i].value)
                 gs_free_object(pst->mem, env[i].value, "pjl_set_envvar value");
             newvalue = (char *)gs_alloc_bytes(pst->mem, strlen(data) + 1, "pjl_set_envvar, value");
-            strcpy(newvalue, data);
-            env[i].value = newvalue;
+            if (newvalue != NULL) {
+                strcpy(newvalue, data);
+                env[i].value = newvalue;
+            }
         }
         i++;
     }
@@ -1307,8 +1309,10 @@ pjl_set_defvar(pjl_parser_state * pst, const char *pjl_var, const char *data)
             if (env[i].value)
                 gs_free_object(pst->mem, env[i].value, "pjl_set_defvar value");
             newvalue = (char *)gs_alloc_bytes(pst->mem, strlen(data) + 1, "pjl_set_defvar, value");
-            strcpy(newvalue, data);
-            env[i].value = newvalue;
+            if (newvalue != NULL) {
+                strcpy(newvalue, data);
+                env[i].value = newvalue;
+            }
         }
         i++;
     }
@@ -1411,11 +1415,13 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
         /* Always leave room for a terminator. */
         if (pst->pos == pst->line_size) {
             char *temp = (char *)gs_alloc_bytes (pst->mem, pst->line_size + 256, "pjl_state increase line buffer");
-            memcpy(temp, pst->line, pst->line_size);
-            gs_free_object(pst->mem, pst->line, "pjl_state line buffer");
-            pst->line = temp;
-            pst->line_size += 256;
-            pst->line[pst->pos] = p[1], pst->pos++;
+            if (temp != NULL) {
+                memcpy(temp, pst->line, pst->line_size);
+                gs_free_object(pst->mem, pst->line, "pjl_state line buffer");
+                pst->line = temp;
+                pst->line_size += 256;
+                pst->line[pst->pos] = p[1], pst->pos++;
+            }
         } else
             pst->line[pst->pos] = p[1], pst->pos++;
         ++p;

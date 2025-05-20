@@ -680,6 +680,7 @@ in:                             /* Initialize for a new page. */
     if (gs_gstate.color[0].ccolor == 0 || gs_gstate.color[0].dev_color == 0 ||
         gs_gstate.color[1].ccolor == 0 || gs_gstate.color[1].dev_color == 0
         ) {
+        gs_free_object(mem, gs_gstate.color[0].ccolor, "clist_playback_band");
         gs_free_object(mem, gs_gstate.color[1].ccolor, "clist_playback_band");
         gs_free_object(mem, gs_gstate.color[0].dev_color, "clist_playback_band");
         gs_free_object(mem, gs_gstate.color[1].dev_color, "clist_playback_band");

@@ -246,7 +246,8 @@ int pdfi_apply_Arc4_filter(pdf_context *ctx, pdf_string *Key, pdf_c_stream *sour
         return code;
 
     code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
-    new_s->strm = source->s;
+    if (code >= 0)
+        new_s->strm = source->s;
     return code;
 }
 
@@ -266,7 +267,8 @@ int pdfi_apply_AES_filter(pdf_context *ctx, pdf_string *Key, bool use_padding, p
         return code;
 
     code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
-    new_s->strm = source->s;
+    if (code >= 0)
+        new_s->strm = source->s;
     return code;
 }
 
@@ -285,7 +287,8 @@ int pdfi_apply_SHA256_filter(pdf_context *ctx, pdf_c_stream *source, pdf_c_strea
         return code;
 
     code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
-    new_s->strm = source->s;
+    if (code >= 0)
+        new_s->strm = source->s;
     return code;
 }
 #endif
@@ -313,7 +316,8 @@ int pdfi_apply_imscale_filter(pdf_context *ctx, pdf_string *Key, int width, int 
         return code;
 
     code = pdfi_alloc_stream(ctx, new_s, source->s, new_stream);
-    new_s->strm = source->s;
+    if (code >= 0)
+        new_s->strm = source->s;
     return code;
 }
 
