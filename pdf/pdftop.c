@@ -198,11 +198,12 @@ pdf_impl_set_device(pl_interp_implementation_t *impl, gx_device *pdevice)
     code = gs_setsmoothness(ctx->pgs, 0.02); /* Match gs code */
 
     /* NOTE: Not sure what this is or when it matters, but it should match gs, which sets it to true */
-    /* TODO: Commented out because it caused a seemingly random incorrect pdfwrite output.
+    /* TODO: Compiled out because it caused a seemingly random incorrect pdfwrite output.
      * Will try putting it back in when pdfwrite is more stable.
      */
-    /*gs_setlimitclamp(ctx->pgs, true); /* Match gs code */
-
+#if 0
+    gs_setlimitclamp(ctx->pgs, true); /* Match gs code */
+#endif
     /* We need to setup strokeadjust the same way gs does, which is currently based on
      * the device resolution and the DITHERPPI arg.
      *
