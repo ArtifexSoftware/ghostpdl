@@ -692,8 +692,8 @@ char *gp_fgets(char *buffer, size_t n, gp_file *f)
         c = gp_fgetc(f);
         if (c == 0 || c == EOF)
             break;
-	    *b++ = c;
-	    n--;
+	*b++ = c;
+	n--;
         if (c == '\n')
             break;
     }
