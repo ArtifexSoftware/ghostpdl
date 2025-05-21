@@ -1578,7 +1578,6 @@ do_clip_call_fill_path(clip_callback_data_t *pccd, int xc, int yc, int xec, int 
     gx_device *tdev = pccd->tdev;
     gs_fixed_rect rect;
     dev_proc_fill_path((*proc));
-    gs_id id;
 
     rect.p.x = int2fixed(xc);
     rect.p.y = int2fixed(yc);
