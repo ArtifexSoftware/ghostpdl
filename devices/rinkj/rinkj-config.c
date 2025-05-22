@@ -140,6 +140,8 @@ rinkj_config_keyval (const char *config, char **p_val, const char **p_next)
           if (config[ix + key_ix] == ':')
             {
               key = rinkj_strdup_size (config + ix, key_ix);
+              if (key == NULL)
+                  return NULL;
               ix += key_ix + 1;
               while (ix < ix_eol && isspace (config[ix]))
                 ix++;
