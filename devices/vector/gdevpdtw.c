@@ -743,8 +743,8 @@ pdf_write_cid_system_info_to_stream(gx_device_pdf *pdev, stream *s,
     if(code < 0)
         goto error;
     s_write_ps_string(s, Ordering, pcidsi->Ordering.size, PRINT_HEX_NOT_OK);
-error:
     pprintd1(s, "\n/Supplement %d\n>>\n", pcidsi->Supplement);
+error:
     gs_free_object(pdev->pdf_memory, Registry, "free temporary Registry buffer");
     gs_free_object(pdev->pdf_memory, Ordering, "free temporary Ordering buffer");
     return code;
