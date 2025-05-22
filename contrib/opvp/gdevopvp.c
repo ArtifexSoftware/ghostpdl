@@ -2470,6 +2470,7 @@ opvp_open(gx_device *dev)
                 }
             }
             free(tmp_info);
+            tmp_info = NULL;
         }
 
         /* call StartJob */

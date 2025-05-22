@@ -1843,7 +1843,7 @@ even_better_new (const EvenBetterParams *params)
     }
   else
     {
-      result->plane_ctx = (EBPlaneCtx **)calloc(sizeof(EBPlaneCtx *), n_planes);
+      result->plane_ctx = (EBPlaneCtx **)calloc(n_planes, sizeof(EBPlaneCtx *));
       if (result->plane_ctx == NULL)
           goto err;
       for (i = 0; i < n_planes; i++)

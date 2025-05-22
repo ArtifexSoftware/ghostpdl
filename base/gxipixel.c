@@ -1192,11 +1192,14 @@ image_init_color_cache(gx_image_enum * penum, int bps, int spp)
     penum->color_cache = gs_alloc_struct(penum->memory, gx_image_color_cache_t,
                                          &st_color_cache,
                                          "image_init_color_cache");
+    if (penum->color_cache == NULL)
+        return_error(gs_error_VMerror);
+
     penum->color_cache->device_contone = (byte*) gs_alloc_bytes(penum->memory,
                    num_des_comp * num_entries * sizeof(byte), "image_init_color_cache");
     penum->color_cache->is_transparent = (bool*) gs_alloc_bytes(penum->memory,
              num_entries * sizeof(bool), "image_init_color_cache");
-    if (penum->color_cache == NULL || penum->color_cache->device_contone == NULL || penum->color_cache->is_transparent == NULL) {
+    if (penum->color_cache->device_contone == NULL || penum->color_cache->is_transparent == NULL) {
         gs_free_object(penum->memory, penum->color_cache->device_contone, "image_init_color_cache");
         gs_free_object(penum->memory, penum->color_cache->is_transparent, "image_init_color_cache");
         gs_free_object(penum->memory, penum->color_cache, "image_init_color_cache");

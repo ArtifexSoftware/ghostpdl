@@ -3919,6 +3919,8 @@ dsc_dcs2_fixup(CDSC *dsc)
                 if (code)
                     return code;
                 dsc->page[page_number].begin = pdcs->begin;
+                if (pend == dsc->page[page_number].end)
+                    pend = pdcs->end;
                 dsc->page[page_number].end = pdcs->end;
                 if (end != 0)
                     end = min(end, pdcs->begin);
@@ -4270,8 +4272,10 @@ dsc_parse_process_colours(CDSC *dsc)
                     pcolour->custom = CDSC_CUSTOM_COLOUR_UNKNOWN;
                     pcolour->name = dsc_alloc_string(dsc,
                         colourname, (int)strlen(colourname));
-                    if (pcolour->name == NULL)
+                    if (pcolour->name == NULL) {
+                        dsc_memfree(dsc, pcolour);
                         return CDSC_ERROR;
+                    }
                     if (dsc->colours == NULL)
                         dsc->colours = pcolour;
                     else {
@@ -4372,8 +4376,10 @@ dsc_parse_custom_colours(CDSC *dsc)
                     memset(pcolour, 0, sizeof(CDSCCOLOUR));
                     pcolour->name = dsc_alloc_string(dsc,
                         colourname, (int)strlen(colourname));
-                    if (pcolour->name == NULL)
+                    if (pcolour->name == NULL) {
+                        dsc_memfree(dsc, pcolour);
                         return CDSC_ERROR;
+                    }
                     pcolour->custom = CDSC_CUSTOM_COLOUR_UNKNOWN;
                     if (dsc->colours == NULL)
                         dsc->colours = pcolour;

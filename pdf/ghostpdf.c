@@ -1147,7 +1147,7 @@ exit:
         uint64_t ix = 0;
 
         (*names_array) = (char **)gs_alloc_bytes(ctx->memory, *TotalFiles * 2 * sizeof(char *), "Collection file namesarray");
-        if (names_array == NULL)
+        if (*names_array == NULL)
             code = gs_note_error(gs_error_VMerror);
         else {
             for (i = 0; i < NumEmbeddedFiles;i++) {
