@@ -1627,35 +1627,51 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 cos_object_t *object;
                 int64_t id;
                 int code;
+                char *p = pairs[i+1].data;
 
-                id = pdf_obj_ref(pdev);
+                /* Skip past white space */
+                while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
+                    p++;
 
-                pdf_open_separate(pdev, id, resourceNone);
-                sputs(pdev->strm, pairs[i+1].data, pairs[i+1].size, &written);
-                if (pairs[i+1].data[pairs[i+1].size] != 0x0d && pdev->PDFA != 0)
-                    sputc(pdev->strm, 0x0d);
-                pdf_end_separate(pdev, resourceNone);
+                /* If we have a dictionary, then we assume this is a 'normal' /EMBED pdfmark */
+                if (*p == '<') {
+                    /* Write the dictionary to an object in the PDF file, and note the id we are
+                     * using. We need that below to write references to the object from the /EmbeddedFiles
+                     * entry in the Catalog dictionary and the /AF array, also in the Catalog dictionary.
+                     */
+                    id = pdf_obj_ref(pdev);
+
+                    pdf_open_separate(pdev, id, resourceNone);
+                    sputs(pdev->strm, pairs[i+1].data, pairs[i+1].size, &written);
+                    if (pairs[i+1].data[pairs[i+1].size] != 0x0d && pdev->PDFA != 0)
+                        sputc(pdev->strm, 0x0d);
+                    pdf_end_separate(pdev, resourceNone);
+                } else {
+                    /* Otherwise, try to determine if we have an indirect reference to an existing FileSpec dictionary
+                     * If we get what looks like an indirect reference, try using the id for the /EmbeddedFiles
+                     * and /AF entries
+                     */
+                    if (sscanf(p, "%"PRId64" 0 R", &id) != 0)
+                        return_error(gs_error_syntaxerror);
+                }
 
                 object = cos_reference_alloc(pdev, "embedded file");
                 if (object == NULL)
                     return_error(gs_error_VMerror);
-
                 object->id = id;
                 COS_OBJECT_VALUE(&v, object);
                 code = cos_dict_put(pdev->EmbeddedFiles, key.data, key.size, &v);
                 if (code < 0)
                     return code;
-                if (pdev->PDFA == 3) {
-                    object = cos_reference_alloc(pdev, "embedded file");
-                    if (object == NULL)
-                        return_error(gs_error_VMerror);
 
-                    object->id = id;
-                    COS_OBJECT_VALUE(&v, object);
-                    code = cos_array_add(pdev->AF, &v);
-                    if (code < 0)
-                        return code;
-                }
+                object = cos_reference_alloc(pdev, "embedded file");
+                if (object == NULL)
+                    return_error(gs_error_VMerror);
+                object->id = id;
+                COS_OBJECT_VALUE(&v, object);
+                code = cos_array_add(pdev->AF, &v);
+                if (code < 0)
+                    return code;
             }
             else
                 return cos_dict_put_string(pdev->EmbeddedFiles, key.data, key.size, pairs[i+1].data, pairs[i+1].size);
