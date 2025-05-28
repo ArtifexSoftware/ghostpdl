@@ -1335,6 +1335,7 @@ typedef struct pdf_lcvd_s {
     bool filled_trap;
     bool write_matrix;
     bool has_background;
+    int pass;
     gs_matrix m;
     gs_point path_offset;
 } pdf_lcvd_t;

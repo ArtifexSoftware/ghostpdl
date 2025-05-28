@@ -955,6 +955,9 @@ lcvd_fill_rectangle_shifted(gx_device *dev, int x, int y, int width, int height,
     int w = cvd->mdev.width;
     int h = cvd->mdev.height;
 
+    if (cvd->pass == 2)
+        return 0;
+
     cvd->mdev.width -= cvd->mdev.mapped_x;
     cvd->mdev.height -= cvd->mdev.mapped_y;
 
@@ -971,24 +974,30 @@ lcvd_fill_rectangle_shifted2(gx_device *dev, int x, int y, int width, int height
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
     int code;
-    int w = cvd->mdev.width;
-    int h = cvd->mdev.height;
 
-    cvd->mdev.width -= cvd->mdev.mapped_x;
-    cvd->mdev.height -= cvd->mdev.mapped_y;
-
-    if (cvd->mask) {
-        code = (*dev_proc(cvd->mask, fill_rectangle))((gx_device *)cvd->mask,
-            x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, (gx_color_index)1);
-        if (code < 0)
-            goto fail;
+    if (cvd->pass != 1)
+    {
+        if (cvd->mask) {
+            code = (*dev_proc(cvd->mask, fill_rectangle))((gx_device *)cvd->mask,
+                x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, (gx_color_index)1);
+            if (code < 0)
+                goto fail;
+        }
     }
-    code = cvd->std_fill_rectangle((gx_device *)&cvd->mdev,
-        x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
+    if (cvd->pass != 2)
+    {
+        int w = cvd->mdev.width;
+        int h = cvd->mdev.height;
+        cvd->mdev.width -= cvd->mdev.mapped_x;
+        cvd->mdev.height -= cvd->mdev.mapped_y;
+
+        code = cvd->std_fill_rectangle((gx_device *)&cvd->mdev,
+            x - cvd->mdev.mapped_x, y - cvd->mdev.mapped_y, width, height, color);
+        cvd->mdev.width = w;
+        cvd->mdev.height = h;
+    }
 
 fail:
-    cvd->mdev.width = w;
-    cvd->mdev.height = h;
 
     return code;
 }
@@ -1325,6 +1334,9 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
 {
     int code = 0;
 
+    if (cvd->pass == 1)
+        return 0;
+
     cvd->mdev.width -= cvd->mdev.mapped_x;
     cvd->mdev.height -= cvd->mdev.mapped_y;
 
@@ -1411,6 +1423,7 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
     if (code > 0)
         code = (*dev_proc(&cvd->mdev, fill_rectangle))((gx_device *)&cvd->mdev,
                 0, 0, cvd->mdev.width, cvd->mdev.height, (gx_color_index)0);
+
     return code;
 }
 static int
@@ -1435,6 +1448,8 @@ lcvd_handle_fill_path_as_shading_coverage(gx_device *dev,
     gx_device_pdf *pdev = (gx_device_pdf *)cvd->mdev.target;
     int code;
 
+    if (cvd->pass == 1)
+        return 0;
     if (cvd->has_background)
         return 0;
     if (gx_path_is_null(ppath)) {
@@ -1561,6 +1576,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     cvd->mask_is_clean = false;
     cvd->filled_trap = false;
     cvd->has_background = false;
+    cvd->pass = 0;
     cvd->mask = 0;
     cvd->write_matrix = true;
     code = (*dev_proc(&cvd->mdev, open_device))((gx_device *)&cvd->mdev);
@@ -1805,8 +1821,19 @@ gdev_pdf_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
                     stream_puts(pdev->strm, (params->rule < 0 ? "W n\n" : "W* n\n"));
                     pdf_put_matrix(pdev, NULL, &cvd.m, " cm q\n");
                     cvd.write_matrix = false;
-                    code = gs_shading_do_fill_rectangle(pi.templat.Shading,
-                         NULL, (gx_device *)&cvd.mdev, pgs2, !pi.shfill);
+                    if (!pcvd->has_background) {
+                        pcvd->pass = 1;
+                        code = gs_shading_do_fill_rectangle(pi.templat.Shading,
+                             NULL, (gx_device *)&cvd.mdev, pgs2, !pi.shfill);
+                        pcvd->pass = 2;
+                        pcvd->mask_is_empty = true;
+                        pcvd->path_is_empty = true;
+                        pcvd->filled_trap = 0;
+                    }
+                    if (code >= 0) {
+                        code = gs_shading_do_fill_rectangle(pi.templat.Shading,
+                             NULL, (gx_device *)&cvd.mdev, pgs2, !pi.shfill);
+                    }
                     if (code >= 0)
                         code = pdf_dump_converted_image(pdev, &cvd, 2);
                 }
