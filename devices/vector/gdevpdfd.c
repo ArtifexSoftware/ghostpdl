@@ -973,7 +973,7 @@ static int
 lcvd_fill_rectangle_shifted2(gx_device *dev, int x, int y, int width, int height, gx_color_index color)
 {
     pdf_lcvd_t *cvd = (pdf_lcvd_t *)dev;
-    int code;
+    int code = 0;
 
     if (cvd->pass != 1)
     {
