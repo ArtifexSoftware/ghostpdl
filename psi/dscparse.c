@@ -3848,6 +3848,8 @@ dsc_dcs2_fixup(CDSC *dsc)
         }
         if (code != CDSC_OK)
             return code;
+        if (dsc->page_count >= max_int - 1)
+            return CDSC_ERROR;
         page_number = dsc->page_count - 1;
         pbegin = &dsc->page[page_number].begin;
         pend = &dsc->page[page_number].end;
@@ -3914,18 +3916,20 @@ dsc_dcs2_fixup(CDSC *dsc)
         while (pdcs) {
             page_number = dsc->page_count;
             if ((pdcs->begin) && (pdcs->colourname != NULL)) {
+                if (pend == &dsc->page[page_number].end)
+                    pend = &pdcs->end;
                 /* Single file DCS 2.0 */
                 code = dsc_add_page(dsc, page_number+1, pdcs->colourname);
                 if (code)
                     return code;
                 dsc->page[page_number].begin = pdcs->begin;
-                if (pend == dsc->page[page_number].end)
-                    pend = pdcs->end;
                 dsc->page[page_number].end = pdcs->end;
                 if (end != 0)
                     end = min(end, pdcs->begin);
                 else
                     end = pdcs->begin;		/* first separation  */
+                if (pend != &pdcs->end)
+                    pend = &dsc->page[page_number+1].end;
             }
             else {
                 /* Multiple file DCS 2.0 */
