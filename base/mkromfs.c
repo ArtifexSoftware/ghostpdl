@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -268,12 +268,27 @@ lprintf_file_and_line(const char *file, int line)
 {
     errprintf_nomem("%s(%d): ", file, line);
 }
+
+void
+dmprintf_file_and_line(const gs_memory_t *mem, const char *file, int line)
+{
+    (void)mem;
+    errprintf_nomem("%s(%d): ", file, line);
+}
 #else
 void
 lprintf_file_only(FILE * f, const char *file)
 {
     errprintf_nomem("%s(?): ", file);
 }
+
+void
+dmprintf_file_and_line(const gs_memory_t *mem, const char *file)
+{
+    (void)mem;
+    errprintf_nomem("%s(%d): ", file);
+}
+
 #endif
 
 gs_memory_t *gp_get_debug_mem_ptr(void)
@@ -327,6 +342,14 @@ gs_log_error(int err, const char *file, int line)
     return err;
 }
 
+int
+gs_add_control_path(const gs_memory_t *mem, gs_path_control_t type, const char *path)
+{
+    (void)mem;
+    (void)type;
+    (void)path;
+    return 0;
+}
 /*******************************************************************************
  * The following is a REALLY minimal gs_memory_t for use by the gp_ functions
  *******************************************************************************/
