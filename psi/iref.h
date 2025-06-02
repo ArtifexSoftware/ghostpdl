@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -452,7 +452,7 @@ struct ref_s {
         struct stream_s *pfile;
         struct psi_device_ref_s *pdevice;
         obj_header_t *pstruct;
-        uint64_t dummy; /* force 16-byte ref on 32-bit platforms */
+        uint64_t dummy; /* force 8-byte ref on 32-bit platforms */
     } value;
 };
 
@@ -606,7 +606,7 @@ struct ref_s {
 /* We assume all alignment values are powers of 2. */
 #define ARCH_ALIGN_REF_MOD\
  (((ARCH_ALIGN_LONG_MOD - 1) | (ARCH_ALIGN_FLOAT_MOD - 1) |\
-   (ARCH_ALIGN_PTR_MOD - 1)) + 1)
+   (ARCH_ALIGN_PTR_MOD - 1) | (ARCH_ALIGN_UINT64_T_MOD - 1)) + 1)
 
 /* Select reasonable values for PDF interpreter */
 /* The maximum array size cannot exceed max_uint/ARCH_SIZEOF_REF */

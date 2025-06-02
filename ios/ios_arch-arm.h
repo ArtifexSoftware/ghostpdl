@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -23,6 +23,7 @@
 #define ARCH_ALIGN_PTR_MOD                   8
 #define ARCH_ALIGN_FLOAT_MOD                 4
 #define ARCH_ALIGN_DOUBLE_MOD                8
+#define ARCH_ALIGN_UINT64_T_MOD              8
 
          /* ---------------- Scalar sizes ---------------- */
 

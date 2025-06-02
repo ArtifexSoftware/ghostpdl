@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -186,7 +186,8 @@ struct cached_char_s {
 /*
  * Define the alignment and size of the cache structures.
  */
-#define align_cached_char_mod align_cached_bits_mod
+#define align_cached_char_mod \
+  max(align_cached_bits_mod, ARCH_ALIGN_UINT64_T_MOD)
 #define sizeof_cached_char\
   ROUND_UP((int)sizeof(cached_char), align_cached_char_mod)
 #define cc_bits(cc) ((byte *)(cc) + sizeof_cached_char)

@@ -58,11 +58,11 @@
 
 // Alignment to memory pointer
 
-// (Ultra)SPARC with gcc requires ptr alignment of 8 bytes
-// even though sizeof(void *) is only four: for greatest flexibility
-// allow the build to specify ptr alignment.
+// CMS structures contain pointers or doubles.
+// Some 32-bit platforms require doubles to be 8 byte aligned.
+// For greatest flexibility allow the build to specify ptr alignment.
 #ifndef CMS_PTR_ALIGNMENT
-# if defined(sparc) || defined(__sparc) || defined(__sparc__)
+# if defined(sparc) || defined(__sparc) || defined(__sparc__) || defined(__EMSCRIPTEN__)
 #  define CMS_PTR_ALIGNMENT 8
 # else
 #  define CMS_PTR_ALIGNMENT sizeof(void *)

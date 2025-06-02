@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -187,20 +187,27 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_ALIGN_SIZE_T_MOD", OFFSET_IN(sz, z));
 
 #if defined (GS_MEMPTR_ALIGNMENT) && GS_MEMPTR_ALIGNMENT != 0
-    define_int(f, "ARCH_ALIGN_PTR_MOD", GS_MEMPTR_ALIGNMENT);
+# define ARCH_ALIGN_PTR_MOD GS_MEMPTR_ALIGNMENT
 #else
 #if defined (sparc) || defined (__hpux)
 # ifndef __BIGGEST_ALIGNMENT__
 #  define __BIGGEST_ALIGNMENT__ 8
 # endif
-    define_int(f, "ARCH_ALIGN_PTR_MOD", __BIGGEST_ALIGNMENT__);
+# define ARCH_ALIGN_PTR_MOD __BIGGEST_ALIGNMENT__
 #else
-    define_int(f, "ARCH_ALIGN_PTR_MOD", OFFSET_IN(sp, p));
+# define ARCH_ALIGN_PTR_MOD OFFSET_IN(sp, p)
 #endif
 #endif
+    define_int(f, "ARCH_ALIGN_PTR_MOD", ARCH_ALIGN_PTR_MOD);
 
     define_int(f, "ARCH_ALIGN_FLOAT_MOD", OFFSET_IN(sf, f));
     define_int(f, "ARCH_ALIGN_DOUBLE_MOD", OFFSET_IN(sd, d));
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#include <stdint.h>
+    define_int(f, "ARCH_ALIGN_UINT64_T_MOD", _Alignof(uint64_t));
+#else
+    define_int(f, "ARCH_ALIGN_UINT64_T_MOD", ARCH_ALIGN_PTR_MOD);
+#endif
 #undef OFFSET_IN
 
     /* Some architectures have special alignment requirements for   */
