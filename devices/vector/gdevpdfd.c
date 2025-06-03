@@ -1386,6 +1386,8 @@ pdf_dump_converted_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd, int for_pattern)
             code = write_image(pdev, &cvd->mdev, NULL, for_pattern);
         }
         pres = pdev->accumulating_substream_resource;
+        if (pres == NULL)
+            code = gs_note_error(gs_error_unregistered);
         if (code >= 0) {
             pattern_accum_param_s param;
             param.pinst = (void *)&inst;

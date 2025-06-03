@@ -1627,7 +1627,7 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                 cos_object_t *object;
                 int64_t id;
                 int code;
-                char *p = pairs[i+1].data;
+                char *p = (char *)pairs[i+1].data;
 
                 /* Skip past white space */
                 while (*p == ' ' || *p == '\t' || *p == '\r' || *p == '\n')
@@ -1855,6 +1855,8 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
         if (code < 0)
             return code;
         pres = pdev->accumulating_substream_resource;
+        if (pres == NULL)
+            return_error(gs_error_unregistered);
         code = cos_stream_put_c_strings(pcs, "/Type", "/XObject");
         if (code < 0)
             return code;

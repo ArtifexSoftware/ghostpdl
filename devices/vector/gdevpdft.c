@@ -305,6 +305,8 @@ pdf_end_transparency_group(gs_gstate * pgs, gx_device_pdf * pdev)
         int code;
         uint ignore;
 
+        if (pres == NULL)
+            return_error(gs_error_unregistered);
         pdev->FormDepth--;
         pdev->PatternsSinceForm = 0;
         code = pdf_exit_substream(pdev);
@@ -411,6 +413,8 @@ pdf_end_transparency_mask(gs_gstate * pgs, gx_device_pdf * pdev,
         int code;
         char buf[20];
 
+        if (pres == NULL)
+            return_error(gs_error_unregistered);
         code = pdf_exit_substream(pdev);
         if (code < 0)
             return code;

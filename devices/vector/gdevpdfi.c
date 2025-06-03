@@ -1946,6 +1946,8 @@ use_image_as_pattern(gx_device_pdf *pdev, pdf_resource_t *pres1,
     if (code >= 0)
         pprinti64d1(pdev->strm, "/R%"PRId64" Do\n", pdf_resource_id(pres1));
     pres = pdev->accumulating_substream_resource;
+    if (pres == NULL)
+        code = gs_note_error(gs_error_unregistered);
     if (code >= 0)
         code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres1);
     if (code >= 0) {
@@ -2730,6 +2732,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                         return code;
                 }
                 pres = pres1 = pdev->accumulating_substream_resource;
+                if (pres == NULL)
+                    return_error(gs_error_unregistered);
                 code = pdf_exit_substream(pdev);
                 if (code < 0)
                     return code;
@@ -2905,7 +2909,10 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
                     }
                 }
                 pres = pres1 = pdev->accumulating_substream_resource;
-                code = pdf_exit_substream(pdev);
+                if (pres == NULL)
+                    code = gs_note_error(gs_error_unregistered);
+                else
+                    code = pdf_exit_substream(pdev);
                 if (code < 0) {
                     gs_free_object(pdev->pdf_memory, pdev->initial_pattern_states[pdev->PatternDepth], "Freeing dangling pattern state");
                     pdev->initial_pattern_states[pdev->PatternDepth] = NULL;

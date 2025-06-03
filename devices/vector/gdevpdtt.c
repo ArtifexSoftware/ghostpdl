@@ -129,7 +129,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
             return_error(gs_error_typecheck);
     }
 
-    if (pdev->type3charpath)
+    if (pdev->type3charpath || (penum->current_font->FontType == ft_PDF_user_defined && pdev->OCRStage == OCR_Rendering))
         return gs_text_set_cache(penum->pte_default, pw, control);
 
     switch (control) {
@@ -273,6 +273,8 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
                but now we re-decided to go with the default implementation.
                Cancel the stream now.
              */
+            if (pres == NULL)
+                return_error(gs_error_unregistered);
             code = pdf_exit_substream(pdev);
             if (code < 0)
                 return code;

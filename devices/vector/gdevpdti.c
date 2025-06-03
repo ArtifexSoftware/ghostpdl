@@ -627,6 +627,8 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, double *pw, int narg,
     pdf_char_proc_t *pcp;
     int code;
 
+    if (pres == NULL)
+        return_error(gs_error_undefined);
     code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
     if (code < 0)
         return code;
@@ -1123,6 +1125,8 @@ pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font, const pdf_char_glyph_
     if (ch == GS_NO_CHAR)
         return_error(gs_error_unregistered); /* Must not happen. */
     if (ch >= 256)
+        return_error(gs_error_unregistered); /* Must not happen. */
+    if (pres == NULL)
         return_error(gs_error_unregistered); /* Must not happen. */
     code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
     if (code < 0)
