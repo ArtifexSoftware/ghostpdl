@@ -54,7 +54,7 @@ The table below details the third party libraries that Ghostscript and/or GhostP
 
      - http://www.freetype.org/
    * - jbig2dec
-     - 0.19
+     - 0.20
      - JBIG2 decoding for the
 
        PDF interpreter
