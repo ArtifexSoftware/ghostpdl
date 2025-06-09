@@ -502,13 +502,30 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         int in_size = line_size * 8; /* Note that in_size is a multiple of 8 dots in height. */
         unsigned char color_order[4] = { -1, -1, -1, -1 };
         gx_render_plane_t render_planes[4] = {{ -1, -1, -1}, { -1, -1, -1}, { -1, -1, -1}, { -1, -1, -1}};
-        byte* buf_in, * buf_out, * in, * out, * prn, * row;
+        byte* buf_in = NULL;
+        byte* buf_out = NULL;
+        byte* row = NULL;
+        byte* prn = NULL;
+        byte* in, * out;
+
+        if (line_size > max_int / 24)
+            return_error(gs_error_rangecheck);
 
         /* Allocate memory */
         row = (byte*)gs_alloc_bytes(pdev->memory, line_size, "admp_print_page(row)");
         buf_in = (byte*)gs_alloc_bytes(pdev->memory, in_size, "admp_print_page(buf_in)");
         buf_out = (byte*)gs_alloc_bytes(pdev->memory, in_size, "admp_print_page(buf_out)");
         prn = (byte*)gs_alloc_bytes(pdev->memory, in_size * 3, "admp_print_page(prn)");
+
+        if (row == NULL ||
+                buf_in == NULL ||
+                buf_out == NULL ||
+                prn == NULL)
+        {
+                (void)errprintf(pdev->memory, ERRALLOC);
+                code = gs_note_error(gs_error_VMerror);
+                goto xit;
+        }
 
         /* Set-up for color or monochrome */
         switch (pdev->color_info.num_components)
@@ -527,8 +544,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                 break;
         default:
                 (void)errprintf(pdev->memory, ERRNUMCOMP);
-                (void)gs_note_error(gs_error_rangecheck);
-                code = gs_error_rangecheck;
+                code = gs_note_error(gs_error_rangecheck);
                 goto xit;
         }
 
@@ -539,24 +555,11 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         /* Init */
         lnum = 0;
 
-        /* Check allocations */
-        if (row == 0 ||
-                buf_in == 0 ||
-                buf_out == 0 ||
-                prn == 0)
-        {
-                (void)errprintf(pdev->memory, ERRALLOC);
-                (void)gs_note_error(gs_error_VMerror);
-                code = gs_error_VMerror;
-                goto xit;
-        }
-
         /* Check that the image is not too wide for the printer */
         if (pdev->width > ((gx_device_admp*)pdev)->platen * pdev->HWResolution[0])
         {
                 (void)errprintf(pdev->memory, ERRWIDTH, pdev->width, ((gx_device_admp*)pdev)->platen * pdev->HWResolution[0]);
-                (void)gs_note_error(gs_error_rangecheck);
-                code = gs_error_rangecheck;
+                code = gs_note_error(gs_error_rangecheck);
                 goto xit;
         }
 
@@ -568,8 +571,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                         pdev->HWMargins[3] < MARGINMIN))
         {
                 (void)errprintf(pdev->memory, ERRHWMARGINS);
-                (void)gs_note_error(gs_error_rangecheck);
-                code = gs_error_rangecheck;
+                code = gs_note_error(gs_error_rangecheck);
                 goto xit;
         }
 
@@ -593,8 +595,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                         break;
                 default:
                         (void)errprintf(pdev->memory, ERRBINSELECT, ((gx_device_admp*)pdev)->bin);
-                        (void)gs_note_error(gs_error_rangecheck);
-                        code = gs_error_rangecheck;
+                        code = gs_note_error(gs_error_rangecheck);
                         goto xit;
                 }
 
@@ -603,8 +604,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                 if (code != strlen(pcmd))
                 {
                         (void)errprintf(pdev->memory, ERRBINCMD);
-                        (void)gs_note_error(gs_error_ioerror);
-                        code = gs_error_ioerror;
+                        code = gs_note_error(gs_error_ioerror);
                         goto xit;
                 }
         }
@@ -626,8 +626,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         if (code != strlen(pcmd))
         {
                 (void)errprintf(pdev->memory, ERRDIRSELECT);
-                (void)gs_note_error(gs_error_ioerror);
-                code = gs_error_ioerror;
+                code = gs_note_error(gs_error_ioerror);
                 goto xit;
         }
 
@@ -664,8 +663,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                 }
         default:
                 (void)errprintf(pdev->memory, ERRREZSELECT);
-                (void)gs_note_error(gs_error_rangecheck);
-                code = gs_error_rangecheck;
+                code = gs_note_error(gs_error_rangecheck);
                 goto xit;
         }
 
@@ -691,8 +689,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         if (code != strlen(pcmd))
         {
                 (void)errprintf(pdev->memory, ERRREZSELECT);
-                (void)gs_note_error(gs_error_ioerror);
-                code = gs_error_ioerror;
+                code = gs_note_error(gs_error_ioerror);
                 goto xit;
         }
 
@@ -704,8 +701,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                 if (code != 0)
                 {
                         (void)errprintf(pdev->memory, ERRPLANEINIT, code);
-                        (void)gs_note_error(gs_error_rangecheck);
-                        code = gs_error_rangecheck;
+                        code = gs_note_error(gs_error_rangecheck);
                         goto xit;
                 }
         }
@@ -797,8 +793,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                         if (code != 0 || actual_line_size != line_size)
                                                         {
                                                                 (void)errprintf(pdev->memory, ERRGPGL, code);
-                                                                (void)gs_note_error(gs_error_rangecheck);
-                                                                code = gs_error_rangecheck;
+                                                                code = gs_note_error(gs_error_rangecheck);
                                                                 goto xit;
                                                         }
 
@@ -829,8 +824,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                         if (code != 0 || actual_line_size != line_size)
                                                         {
                                                                 (void)errprintf(pdev->memory, ERRGPGL, code);
-                                                                (void)gs_note_error(gs_error_rangecheck);
-                                                                code = gs_error_rangecheck;
+                                                                code = gs_note_error(gs_error_rangecheck);
                                                                 goto xit;
                                                         }
 
@@ -846,16 +840,14 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                         if (code != 1)
                                                         {
                                                                 (void)errprintf(pdev->memory, ERRGPCSL, code, line_size);
-                                                                (void)gs_note_error(gs_error_rangecheck);
-                                                                code = gs_error_rangecheck;
+                                                                code = gs_note_error(gs_error_rangecheck);
                                                                 goto xit;
                                                         }
                                                         break;
 
                                                 default: /* Invalid rendering mode */
                                                         (void)errprintf(pdev->memory, ERRRENDERMODE, ((gx_device_admp*)pdev)->rendermode);
-                                                        (void)gs_note_error(gs_error_rangecheck);
-                                                        code = gs_error_rangecheck;
+                                                        code = gs_note_error(gs_error_rangecheck);
                                                         goto xit;
                                                         break;
                                                 }
@@ -915,8 +907,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                 if (code != strlen(pcmd))
                                 {
                                         (void)errprintf(pdev->memory, ERRCOLORSELECT);
-                                        (void)gs_note_error(gs_error_ioerror);
-                                        code = gs_error_ioerror;
+                                        code = gs_note_error(gs_error_ioerror);
                                         goto xit;
                                 }
                         }
@@ -965,8 +956,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                 if (code != 9)
                                                 {
                                                         (void)errprintf(pdev->memory, ERRPOSLQ);
-                                                        (void)gs_note_error(gs_error_ioerror);
-                                                        code = gs_error_ioerror;
+                                                        code = gs_note_error(gs_error_ioerror);
                                                         goto xit;
                                                 }
                                         }
@@ -981,8 +971,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                         if (code != 6)
                                         {
                                                 (void)errprintf(pdev->memory, ERRCMDLQ);
-                                                (void)gs_note_error(gs_error_ioerror);
-                                                code = gs_error_ioerror;
+                                                code = gs_note_error(gs_error_ioerror);
                                                 goto xit;
                                         }
 
@@ -995,8 +984,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                         if (code != (int)(prn_end - prn_blk))
                                         {
                                                 (void)errprintf(pdev->memory, ERRDATLQ);
-                                                (void)gs_note_error(gs_error_ioerror);
-                                                code = gs_error_ioerror;
+                                                code = gs_note_error(gs_error_ioerror);
                                                 goto xit;
                                         }
                                 }
@@ -1037,8 +1025,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                         if (code != 7)
                                                         {
                                                                 (void)errprintf(pdev->memory, ERRPOSNLQ);
-                                                                (void)gs_note_error(gs_error_ioerror);
-                                                                code = gs_error_ioerror;
+                                                                code = gs_note_error(gs_error_ioerror);
                                                                 goto xit;
                                                         }
                                                 }
@@ -1053,8 +1040,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                 if (code != 6)
                                                 {
                                                         (void)errprintf(pdev->memory, ERRCMDNLQ);
-                                                        (void)gs_note_error(gs_error_ioerror);
-                                                        code = gs_error_ioerror;
+                                                        code = gs_note_error(gs_error_ioerror);
                                                         goto xit;
                                                 }
 
@@ -1067,8 +1053,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                 if (code != (int)(prn_end - prn_blk))
                                                 {
                                                         (void)errprintf(pdev->memory, ERRDATNLQ);
-                                                        (void)gs_note_error(gs_error_ioerror);
-                                                        code = gs_error_ioerror;
+                                                        code = gs_note_error(gs_error_ioerror);
                                                         goto xit;
                                                 }
                                         } /* if prn_end != prn_blk */
@@ -1093,8 +1078,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                 if (code != 1 && code != 5)
                                                 {
                                                         (void)errprintf(pdev->memory, ERRADVNLQ);
-                                                        (void)gs_note_error(gs_error_ioerror);
-                                                        code = gs_error_ioerror;
+                                                        code = gs_note_error(gs_error_ioerror);
                                                         goto xit;
                                                 }
                                         }
@@ -1115,8 +1099,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                         if (code != 4)
                                         {
                                                 (void)errprintf(pdev->memory, ERRLHNLQ);
-                                                (void)gs_note_error(gs_error_ioerror);
-                                                code = gs_error_ioerror;
+                                                code = gs_note_error(gs_error_ioerror);
                                                 goto xit;
                                         }
                                 }
@@ -1156,8 +1139,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                 if (code != 7)
                                                 {
                                                         (void)errprintf(pdev->memory, ERRPOS);
-                                                        (void)gs_note_error(gs_error_ioerror);
-                                                        code = gs_error_ioerror;
+                                                        code = gs_note_error(gs_error_ioerror);
                                                         goto xit;
                                                 }
                                         }
@@ -1172,8 +1154,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                         if (code != 6)
                                         {
                                                 (void)errprintf(pdev->memory, ERRCMD);
-                                                (void)gs_note_error(gs_error_ioerror);
-                                                code = gs_error_ioerror;
+                                                code = gs_note_error(gs_error_ioerror);
                                                 goto xit;
                                         }
 
@@ -1186,8 +1167,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                         if (code != (int)(prn_end - prn_blk))
                                         {
                                                 (void)errprintf(pdev->memory, ERRDAT);
-                                                (void)gs_note_error(gs_error_ioerror);
-                                                code = gs_error_ioerror;
+                                                code = gs_note_error(gs_error_ioerror);
                                                 goto xit;
                                         }
                                 } /* if prn_end != prn blk */
@@ -1202,8 +1182,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                 if (code != 1)
                                 {
                                         (void)errprintf(pdev->memory, ERRCR);
-                                        (void)gs_note_error(gs_error_ioerror);
-                                        code = gs_error_ioerror;
+                                        code = gs_note_error(gs_error_ioerror);
                                         goto xit;
                                 }
                         }
@@ -1214,8 +1193,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                 if (code != 2)
                                 {
                                         (void)errprintf(pdev->memory, ERRCRLF);
-                                        (void)gs_note_error(gs_error_ioerror);
-                                        code = gs_error_ioerror;
+                                        code = gs_note_error(gs_error_ioerror);
                                         goto xit;
                                 }
                         }
@@ -1243,8 +1221,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         if (code != 6)
         {
                 (void)errprintf(pdev->memory, ERRRESET);
-                (void)gs_note_error(gs_error_ioerror);
-                code = gs_error_ioerror;
+                code = gs_note_error(gs_error_ioerror);
                 goto xit;
         }
 
