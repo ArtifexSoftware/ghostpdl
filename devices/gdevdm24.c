@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -81,6 +81,9 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
 
   bits_per_column = (y_high ? 48 : 24);
   line_size = gdev_prn_raster (pdev);
+  if (line_size > max_uint / bits_per_column)
+    return_error(gs_error_rangecheck);
+
   in_size = line_size * bits_per_column;
   in = (byte *) gs_malloc (pdev->memory, in_size, 1, "dot24_print_page (in)");
   out_size = ((pdev->width + 7) & -8) * 3;
