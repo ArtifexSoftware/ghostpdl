@@ -103,44 +103,6 @@ currentuserparams /IdiomRecognition get
     } bind
    ]
 
-  /pbf [
-    {
-      gsave pop /fEOFill exch def GDIBWPatternDict begin /yOrg exch def /xOrg exch def /PaintData exch def/OutputBPP exch def
-      /Height exch def/Width exch def/PaintType 1 def/PatternType 1 def/TilingType 1 def/BBox[0 0
-      Width Height]def/XStep Width def/YStep Height def/mx xOrg yOrg matrix translate def 20 dict dup begin
-      /ImageType 1 def/Width Width def/Height Height def/ImageMatrix[1 0 0 1 0 0]def
-      /BitsPerComponent 8 def OutputBPP 24 eq{/Decode[0 1 0 1 0 1]def}{OutputBPP 8 eq{
-      /Decode[0 1]def}{/Decode[0 1 0 1 0 1 0 1]def}ifelse}ifelse/DataSource{PaintData}def end/ImageDict
-      exch def/PaintProc{begin ImageDict image end}b currentdict mx makepattern setpattern end fEOFill{eofill}{fill}
-      ifelse grestore
-    }bind
-    {
-      /IsDistiller /GetDeviceParam .special_op {
-        exch pop
-      }{
-        //false
-      } ifelse
-      {gsave pop /fEOFill exch def GDIBWPatternDict begin /yOrg exch def /xOrg exch def /PaintData exch def/OutputBPP exch def
-      /Height exch def/Width exch def/PaintType 1 def/PatternType 1 def/TilingType 1 def/BBox[0 0
-      1 1]def/XStep 1 def/YStep 1 def/mx xOrg yOrg matrix translate Width Height 3 -1 roll scale def 20 dict dup begin
-      /ImageType 1 def/Width Width def/Height Height def/ImageMatrix[1 0 0 1 0 0]def
-      /BitsPerComponent 8 def OutputBPP 24 eq{/Decode[0 1 0 1 0 1]def}{OutputBPP 8 eq{
-      /Decode[0 1]def}{/Decode[0 1 0 1 0 1 0 1]def}ifelse}ifelse/DataSource{PaintData}def end/ImageDict
-      exch def/PaintProc{begin ImageDict image end}b currentdict mx makepattern setpattern end fEOFill{eofill}{fill}
-      ifelse grestore
-      }{
-      gsave pop /fEOFill exch def GDIBWPatternDict begin /yOrg exch def /xOrg exch def /PaintData exch def/OutputBPP exch def
-      /Height exch def/Width exch def/PaintType 1 def/PatternType 1 def/TilingType 1 def/BBox[0 0
-      Width Height]def/XStep Width def/YStep Height def/mx xOrg yOrg matrix translate def 20 dict dup begin
-      /ImageType 1 def/Width Width def/Height Height def/ImageMatrix[1 0 0 1 0 0]def
-      /BitsPerComponent 8 def OutputBPP 24 eq{/Decode[0 1 0 1 0 1]def}{OutputBPP 8 eq{
-      /Decode[0 1]def}{/Decode[0 1 0 1 0 1 0 1]def}ifelse}ifelse/DataSource{PaintData}def end/ImageDict
-      exch def/PaintProc{begin ImageDict image end}b currentdict mx makepattern setpattern end fEOFill{eofill}{fill}
-      ifelse grestore
-      } ifelse
-    }bind
-  ]
-
   /mask_pbf [
     {gsave /fEOFill exch def 20 dict begin /yOrg exch def /xOrg exch def /PaintData exch def /Height exch def
      /Width exch def /PatternType 1 def /PaintType 2 def /TilingType 1 def /BBox[0 0 Width Height] def
