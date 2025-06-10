@@ -1284,25 +1284,29 @@ int pdfi_TJ(pdf_context *ctx)
             goto TJ_error;
     }
 
-    /* Update the Text matrix with the current point, for the next operation
+    /* We don't want to update the Text matrix if we aren't in a text block, there
+     * is no point because the matrix isn't persistent between text blocks.
      */
-    (void)gs_currentpoint(ctx->pgs, &current_point); /* Always valid */
-    Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
-    Trm.xy = 0;
-    Trm.yx = 0;
-    Trm.yy = ctx->pgs->PDFfontsize;
-    Trm.tx = 0;
-    Trm.ty = 0;
-    code = gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
-    if (code < 0)
-        goto TJ_error;
+    if (ctx->text.BlockDepth > 0) {
+        /* Update the Text matrix with the current point, for the next operation
+         */
+        (void)gs_currentpoint(ctx->pgs, &current_point); /* Always valid */
+        Trm.xx = ctx->pgs->PDFfontsize * (ctx->pgs->texthscaling / 100);
+        Trm.xy = 0;
+        Trm.yx = 0;
+        Trm.yy = ctx->pgs->PDFfontsize;
+        Trm.tx = 0;
+        Trm.ty = 0;
+        code = gs_matrix_multiply(&Trm, &ctx->pgs->textmatrix, &Trm);
+        if (code < 0)
+            goto TJ_error;
 
-    code = gs_distance_transform(current_point.x, current_point.y, &Trm, &pt);
-    if (code < 0)
-        goto TJ_error;
-    ctx->pgs->textmatrix.tx += pt.x;
-    ctx->pgs->textmatrix.ty += pt.y;
-
+        code = gs_distance_transform(current_point.x, current_point.y, &Trm, &pt);
+        if (code < 0)
+            goto TJ_error;
+        ctx->pgs->textmatrix.tx += pt.x;
+        ctx->pgs->textmatrix.ty += pt.y;
+    }
 TJ_error:
     pdfi_countdown(o);
     /* Restore the CTM to the saved value */
