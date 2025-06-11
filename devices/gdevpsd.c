@@ -1224,6 +1224,8 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
     }
     xc->base_num_channels = dev->devn_params.num_std_colorant_names;
     xc->num_channels = i;
+    if (xc->num_channels > dev->color_info.num_components)
+        xc->num_channels = dev->color_info.num_components;
     if (strcmp(dev->dname, "psdcmykog") != 0) {
 
         /* Note: num_separation_order_names is only set if
@@ -1293,8 +1295,11 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
             int code;
 
             code = dev_proc(dev, get_profile)((gx_device *)dev, &profile_struct);
-            if (code == 0 && profile_struct->spotnames != NULL)
+            if (code == 0 && profile_struct->spotnames != NULL) {
                 xc->num_channels += dev->devn_params.separations.num_separations;
+                if (xc->num_channels > dev->color_info.num_components)
+                    xc->num_channels = dev->color_info.num_components;
+            }
             else {
                 /* No order specified, map them alpabetically */
                 /* This isn't at all speed critical -- only runs once per page and */
@@ -1307,6 +1312,8 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
                 int prev_size = 1;
 
                 xc->num_channels += xc->n_extra_channels;
+                if (xc->num_channels > dev->color_info.num_components)
+                    xc->num_channels = dev->color_info.num_components;
                 for (i=xc->base_num_channels + has_tags; i < xc->num_channels; i++) {
                     int j;
                     const char *curr = "\377";
