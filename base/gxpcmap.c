@@ -322,6 +322,7 @@ new_pattern_trans_buff(gs_memory_t *mem)
         result->fill_trans_buffer = NULL;
         result->buf = NULL;
         result->n_chan = 0;
+        result->rect.p.x = result->rect.p.y = result->rect.q.x = result->rect.q.y = 0;
     }
 
     return(result);
@@ -863,6 +864,9 @@ gx_pattern_alloc_cache(gs_memory_t * mem, uint num_tiles, ulong max_bits)
 #else
         tiles->tbits.data = 0;
         tiles->tmask.data = 0;
+        tiles->tmask.rep_width = 0;
+        tiles->tmask.rep_height = 0;
+        tiles->tmask.num_planes = 0;
 #endif
         tiles->index = i;
         tiles->cdev = NULL;
