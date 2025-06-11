@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -485,9 +485,9 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
         tcode = (*pcs->params.device_n.map->tint_transform)
              (pc->paint.values, &cc.paint.values[0],
              pgs, pcs->params.device_n.map->tint_transform_data);
-        (*pacs->type->restrict_color)(&cc, pacs);
         if (tcode < 0)
             return tcode;
+        (*pacs->type->restrict_color)(&cc, pacs);
         /* First check if this was PS based. */
         if (gs_color_space_is_PSCIE(pacs)) {
             /* We may have to rescale data to 0 to 1 range */
