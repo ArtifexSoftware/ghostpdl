@@ -777,7 +777,7 @@ bjc_print_page_cmyk(gx_device_printer * pdev, gp_file * file)
     int x_resolution = (int)pdev->HWResolution[0];
     int y_resolution = (int)pdev->HWResolution[1];
     int length = 0/*x71*/, lm = 0/*x01*/, rm = 0/*x01*/, top = 0/*x50*/;
-    int plane;
+    int plane, code = 0;
     byte mask_array[] = { 0xff, 0x80, 0xc0, 0xe0, 0xf0, 0xf8, 0xfc, 0xfe };
     byte lastmask = mask_array[pdev->width % 8];
     skip_t skipc;
@@ -804,9 +804,13 @@ bjc_print_page_cmyk(gx_device_printer * pdev, gp_file * file)
     for (y = 0; y < pdev->height ; y++) {
 
         for (plane = 0; plane < 4; plane++) {   /* print each color component */
-            gx_render_plane_init(&render_plane, (gx_device *)pdev, plane);
-            gdev_prn_get_lines(pdev, y, 1, row + raster*plane, raster,
+            code = gx_render_plane_init(&render_plane, (gx_device *)pdev, plane);
+            if (code < 0)
+                goto error;
+            code = gdev_prn_get_lines(pdev, y, 1, row + raster*plane, raster,
                                &rows[plane], &a_raster, &render_plane);
+            if (code < 0)
+                goto error;
         }
 
         {
@@ -862,10 +866,11 @@ bjc_print_page_cmyk(gx_device_printer * pdev, gp_file * file)
     bjc_put_FF(file);            /* eject a page */
     bjc_put_initialize (file);
 
+error:
     gs_free_object(pdev->memory, cmp, "bjc cmyk comp buffer");
     gs_free_object(pdev->memory, row, "bjc cmyk file buffer");
 
-    return 0;
+    return code;
 
 #undef ppdev
 }
