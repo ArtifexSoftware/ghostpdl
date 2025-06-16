@@ -105,6 +105,9 @@ pdfi_filter_open(uint buffer_size,
         sst = s_alloc_state(mem, templat->stype, "pdfi_filter_open(stream_state)");
         if (sst == NULL)
             return_error(gs_error_VMerror);
+        if (templat->set_defaults != NULL) {
+            (*templat->set_defaults)(sst);
+        }
     }
     if (buffer_size < 128)
         buffer_size = file_default_buffer_size;
