@@ -853,10 +853,6 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
         code = pdfi_ASCII85_filter(ctx, decode, source, new_stream);
         goto cleanupExit;
     }
-    if (pdfi_name_is(n, "SubFileDecode")) {
-        code = pdfi_simple_filter(ctx, &s_SFD_template, source, new_stream);
-        goto cleanupExit;
-    }
     if (pdfi_name_is(n, "FlateDecode")) {
         code = pdfi_Flate_filter(ctx, decode, source, new_stream);
         goto cleanupExit;
