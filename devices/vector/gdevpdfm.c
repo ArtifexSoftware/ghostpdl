@@ -1651,7 +1651,7 @@ pdfmark_EMBED(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
                      * If we get what looks like an indirect reference, try using the id for the /EmbeddedFiles
                      * and /AF entries
                      */
-                    if (sscanf(p, "%"PRId64" 0 R", &id) != 0)
+                    if (sscanf(p, "%"PRId64" 0 R", &id) == 0)
                         return_error(gs_error_syntaxerror);
                 }
 
