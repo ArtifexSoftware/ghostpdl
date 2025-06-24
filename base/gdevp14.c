@@ -6040,7 +6040,13 @@ get_pdf14_device_proto(gx_device       *dev,
     /* overprint overide */
     if (pdf14pct->params.overprint_sim_push &&
         blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
-        if (pdf14pct->params.num_spot_colors_int > 0) {
+        int has_tags = device_encodes_tags(dev);
+        if (dev->color_info.num_components == 3 + has_tags &&
+            dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0))
+        {
+            /* rgb + spots device! */
+            dev_cs = PDF14_DeviceRGB;
+        } else if (pdf14pct->params.num_spot_colors_int > 0) {
             dev_cs = PDF14_DeviceCMYKspot;
             num_spots = pdf14pct->params.num_spot_colors_int;
         } else
@@ -10490,7 +10496,13 @@ get_pdf14_clist_device_proto(gx_device          *dev,
     /* overprint overide */
     if (pdf14pct->params.overprint_sim_push &&
         blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
-        if (pdf14pct->params.num_spot_colors_int > 0) {
+        int has_tags = device_encodes_tags(dev);
+        if (dev->color_info.num_components == 3 + has_tags &&
+            dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0))
+        {
+            /* rgb + spots device! */
+            dev_cs = PDF14_DeviceRGB;
+        } else if (pdf14pct->params.num_spot_colors_int > 0) {
             dev_cs = PDF14_DeviceCMYKspot;
             num_spots = pdf14pct->params.num_spot_colors_int;
         } else
