@@ -1719,7 +1719,7 @@ pdfi_get_server_param(gs_fapi_server * I, const char *subtype,
         *server_param = NULL;
         *server_param_size = length;
     }
-    return 1
+    return 1;
 }
 #else /* UFST_BRIDGE */
 static int
