@@ -983,7 +983,10 @@ pdf_ferror(gx_device_pdf *pdev)
 {
     int code = 0;
 
-    gp_fflush(pdev->file);
+    if (pdev->file != NULL) {
+        gp_fflush(pdev->file);
+        code = gp_ferror(pdev->file);
+    }
     gp_fflush(pdev->xref.file);
     if (pdev->strm->file != NULL)
         sflush(pdev->strm);
@@ -992,12 +995,13 @@ pdf_ferror(gx_device_pdf *pdev)
     if (pdev->streams.strm->file != NULL)
         sflush(pdev->streams.strm);
     if (pdev->ObjStm.strm != NULL && pdev->ObjStm.strm->file != NULL) {
+        int code2;
         sflush(pdev->ObjStm.strm);
-        code = gp_ferror(pdev->ObjStm.file);
+        code2 = gp_ferror(pdev->ObjStm.file);
+        if (code >= 0) code = code2;
     }
-    return gp_ferror(pdev->file) || gp_ferror(pdev->xref.file) ||
-        gp_ferror(pdev->asides.file) || gp_ferror(pdev->streams.file) ||
-        code;
+    return gp_ferror(pdev->xref.file) || gp_ferror(pdev->asides.file) ||
+           gp_ferror(pdev->streams.file) || code;
 }
 
 /* Compute the dominant text orientation of a page. */
