@@ -38,7 +38,7 @@ BROTLIAO_=$(O_)$(BROTLIAUX)
 # We need D_, _D_, and _D because the OpenVMS compiler uses different
 # syntax from other compilers.
 # BROTLII_ and BROTLIF_ are defined in gs.mak.
-BROTLICCFLAGS=$(BROTLI_CFLAGS) $(I_)$(BROTLII_)$(_I) $(BROTLIF_) $(D_)verbose$(_D_)-1$(_D)
+BROTLICCFLAGS=$(BROTLI_CFLAGS) $(I_)$(BROTLII_)$(_I) $(I_)$(BROTLISRCDIR)$(D)c$(D)common$(_I) $(I_)$(BROTLISRCDIR)$(D)c$(D)dec$(_I) $(I_)$(BROTLISRCDIR)$(D)c$(D)enc$(_I)  $(BROTLIF_) $(D_)verbose$(_D_)-1$(_D)
 BROTLICC=$(CC) $(BROTLICCFLAGS) $(CCFLAGS)
 
 BROTLICCAUXFLAGS=$(BROTLI_CFLAGS) $(I_)$(BROTLII_)$(_I) $(BROTLIF_) $(D_)verbose$(_D_)-1$(_D)
@@ -117,7 +117,7 @@ brotlie_= \
 	  $(BROTLIOBJ)fast_log.$(OBJ) \
 	  $(BROTLIOBJ)histogram.$(OBJ) \
 	  $(BROTLIOBJ)literal_cost.$(OBJ) \
-	  $(BROTLIOBJ)memory.$(OBJ) \
+	  $(BROTLIOBJ)brotlimemory.$(OBJ) \
 	  $(BROTLIOBJ)metablock.$(OBJ) \
 	  $(BROTLIOBJ)static_dict.$(OBJ) \
 	  $(BROTLIOBJ)utf8_util.$(OBJ)
@@ -177,8 +177,9 @@ $(BROTLIOBJ)histogram.$(OBJ) : $(BROTLISRC)c$(D)enc$(D)histogram.c $(BROTLIDEP)
 $(BROTLIOBJ)literal_cost.$(OBJ) : $(BROTLISRC)c$(D)enc$(D)literal_cost.c $(BROTLIDEP)
 	$(BROTLICC) $(BROTLIO_)literal_cost.$(OBJ) $(C_) $(BROTLISRC)c$(D)enc$(D)literal_cost.c
 
-$(BROTLIOBJ)memory.$(OBJ) : $(BROTLISRC)c$(D)enc$(D)memory.c $(BROTLIDEP)
-	$(BROTLICC) $(BROTLIO_)memory.$(OBJ) $(C_) $(BROTLISRC)c$(D)enc$(D)memory.c
+$(BROTLIOBJ)brotlimemory.$(OBJ) : $(BROTLISRC)c$(D)enc$(D)memory.c $(BROTLIDEP)
+	$(CP_) $(BROTLISRC)c$(D)enc$(D)memory.c $(BROTLIOBJ)brotlimemory.c
+	$(BROTLICC) $(BROTLIO_)brotlimemory.$(OBJ) $(C_) $(BROTLIOBJ)brotlimemory.c
 
 $(BROTLIOBJ)metablock.$(OBJ) : $(BROTLISRC)c$(D)enc$(D)metablock.c $(BROTLIDEP)
 	$(BROTLICC) $(BROTLIO_)metablock.$(OBJ) $(C_) $(BROTLISRC)c$(D)enc$(D)metablock.c
