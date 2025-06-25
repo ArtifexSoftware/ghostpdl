@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -183,6 +183,9 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         char start_graphics;
         int first_pass;
         int last_pass;
+
+        if (line_size > max_int / (8 * in_y_mult))
+            return_error(gs_error_rangecheck);
 
         if (y_24pin) {
             if (x_dpi / 60 >= sizeof(graphics_modes_24) / sizeof(graphics_modes_24[0])) {
