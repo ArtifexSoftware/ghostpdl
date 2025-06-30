@@ -190,7 +190,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     row_alpha = data;
-    out_raster = bitmap_raster(width * byte_depth);
+    out_raster = bitmap_raster(width * (size_t)byte_depth);
     gb_buff = gs_alloc_bytes(mem, out_raster * ncomps, "copy_alpha_hl_color(gb_buff)");
     if (gb_buff == 0) {
         code = gs_note_error(gs_error_VMerror);
@@ -385,7 +385,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
                               GB_RASTER_STANDARD | GB_PACKING_CHUNKY |
                               GB_COLORS_NATIVE | GB_ALPHA_NONE);
             params.x_offset = 0;
-            params.raster = bitmap_raster(dev->width * dev->color_info.depth);
+            params.raster = bitmap_raster(dev->width * (size_t)dev->color_info.depth);
             params.data[0] = lin;
             rect.p.y = ry;
             rect.q.y = ry+1;

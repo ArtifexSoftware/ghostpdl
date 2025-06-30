@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -563,7 +563,7 @@ gdev_mem_set_line_ptrs_interleaved(gx_device_memory * mdev, byte * base,
     byte **pline;
     byte *data;
     int pi;
-    int plane_raster;
+    size_t plane_raster;
 
     /* If we are supplied with line_ptrs, then assume that we don't have
      * any already, and take them on. */
@@ -602,7 +602,7 @@ gdev_mem_set_line_ptrs_interleaved(gx_device_memory * mdev, byte * base,
     if (interleaved)
         plane_raster = raster, raster *= num_planes;
     else
-        plane_raster = raster * mdev->height;
+        plane_raster = raster * (size_t)mdev->height;
     for (pi = 0; pi < num_planes; ++pi) {
         byte **pptr = pline;
         byte **pend = pptr + setup_height;

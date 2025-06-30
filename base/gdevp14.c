@@ -1105,15 +1105,12 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     /* yet another plane */
 
     pdf14_buf *result;
-    int rowstride = ((rect->q.x - rect->p.x + 3) & -4)<<deep;
-    int height = (rect->q.y - rect->p.y);
+    size_t rowstride = ((size_t)((rect->q.x - rect->p.x + 3) & -4))<<deep;
+    size_t height = (rect->q.y - rect->p.y);
     int n_planes = n_chan + (has_shape ? 1 : 0) + (has_alpha_g ? 1 : 0) +
                    (has_tags ? 1 : 0);
-    int planestride;
-    double dsize = (((double) rowstride) * height) * n_planes;
-
-    if (dsize > (double)max_uint)
-      return NULL;
+    size_t planestride;
+    size_t dsize = rowstride * height * n_planes;
 
     result = gs_alloc_struct(memory, pdf14_buf, &st_pdf14_buf,
                              "pdf14_buf_new");
@@ -1153,7 +1150,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
         planestride = rowstride * height;
         result->planestride = planestride;
         result->data = gs_alloc_bytes(memory,
-                                      (size_t)planestride * n_planes + CAL_SLOP,
+                                      planestride * n_planes + CAL_SLOP,
                                       "pdf14_buf_new");
         if (result->data == NULL) {
             gs_free_object(memory, result, "pdf14_buf_new");

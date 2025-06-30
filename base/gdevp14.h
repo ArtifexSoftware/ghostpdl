@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -161,8 +161,8 @@ struct pdf14_buf_s {
     /* Data is stored in planar format. Order of planes is: pixel values,
        alpha, shape if present, alpha_g if present. */
 
-    int rowstride;
-    int planestride;
+    size_t rowstride;
+    size_t planestride;
     int n_chan;   /* number of pixel planes including alpha */
     int n_planes; /* total number of planes including alpha, shape, alpha_g and tags */
     byte *data;
