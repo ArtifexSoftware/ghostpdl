@@ -6037,13 +6037,7 @@ get_pdf14_device_proto(gx_device       *dev,
     /* overprint overide */
     if (pdf14pct->params.overprint_sim_push &&
         blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
-        int has_tags = device_encodes_tags(dev);
-        if (dev->color_info.num_components == 3 + has_tags &&
-            dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0))
-        {
-            /* rgb + spots device! */
-            dev_cs = PDF14_DeviceRGB;
-        } else if (pdf14pct->params.num_spot_colors_int > 0) {
+        if (pdf14pct->params.num_spot_colors_int > 0) {
             dev_cs = PDF14_DeviceCMYKspot;
             num_spots = pdf14pct->params.num_spot_colors_int;
         } else
@@ -9216,6 +9210,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     p14dev->log2_align_mod = target->log2_align_mod;
     if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
         p14dev->num_planar_planes = p14dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
+    else if (pdf14pct->params.overprint_sim_push && target->num_planar_planes != 0)
+        p14dev->num_planar_planes = p14dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
     else
         p14dev->num_planar_planes = target->num_planar_planes;
     p14dev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
@@ -10494,12 +10490,7 @@ get_pdf14_clist_device_proto(gx_device          *dev,
     if (pdf14pct->params.overprint_sim_push &&
         blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
         int has_tags = device_encodes_tags(dev);
-        if (dev->color_info.num_components == 3 + has_tags &&
-            dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0))
-        {
-            /* rgb + spots device! */
-            dev_cs = PDF14_DeviceRGB;
-        } else if (pdf14pct->params.num_spot_colors_int > 0) {
+        if (pdf14pct->params.num_spot_colors_int > 0) {
             dev_cs = PDF14_DeviceCMYKspot;
             num_spots = pdf14pct->params.num_spot_colors_int;
         } else

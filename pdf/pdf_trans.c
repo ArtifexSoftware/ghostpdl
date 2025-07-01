@@ -695,7 +695,7 @@ void pdfi_trans_set_needs_OP(pdf_context *ctx)
     bool device_transparency = false;
 
     /* PS code checks for >= 4 components... */
-    is_cmyk = ctx->pgs->device->color_info.num_components >= 4;
+    is_cmyk = ctx->pgs->device->color_info.num_components >= 4 && ctx->pgs->device->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE;
 
     device_transparency = pdfi_device_check_param_bool(ctx->pgs->device, "HaveTransparency");
 
