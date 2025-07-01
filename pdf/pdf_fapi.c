@@ -1517,7 +1517,7 @@ pdfi_fapi_passfont(pdf_font *font, int subfont, char *fapi_request,
     char *xlatmap = NULL;
     char *decodingID = NULL;
 
-    if (!gs_fapi_available(pbfont->memory, NULL)) {
+    if (!gs_fapi_available(pbfont->memory, fapi_request)) {
         return (code);
     }
 

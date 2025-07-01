@@ -228,6 +228,7 @@ static inline int pdfi_populate_ufst_fontmap(pdf_context *ctx)
                 status = 0;
                 continue;
             }
+            gs_free_object(ctx->memory, pname, "pdfi_populate_ufst_fontmap");
         }
         pdfi_countdown(fco_str);
     }
@@ -1125,15 +1126,17 @@ pdfi_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname,
            subsitute name -> file name
            So we want to loop until we no more hits.
          */
-        while(1) {
-            pdf_obj *mname2;
-            code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
-            if (code < 0) {
-                code = 0;
-                break;
+        if (pdfi_type_of(mname) != PDF_FONT) {
+            while(1) {
+                pdf_obj *mname2;
+                code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
+                if (code < 0) {
+                    code = 0;
+                    break;
+                }
+                pdfi_countdown(mname);
+                mname = mname2;
             }
-            pdfi_countdown(mname);
-            mname = mname2;
         }
     }
 

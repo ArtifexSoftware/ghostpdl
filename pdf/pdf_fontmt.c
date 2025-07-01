@@ -156,7 +156,9 @@ pdfi_copy_microtype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_di
     if (code < 0)
         return code;
     pbfont = dmtfont->pfont;
+    pdfi_countdown(dmtfont->Encoding);
     memcpy(dmtfont, mtfont, sizeof(pdf_font_microtype));
+    pdfi_countup(dmtfont->Encoding);
     dmtfont->refcnt = 1;
     dmtfont->pfont = pbfont;
     memcpy(dmtfont->pfont, mtfont->pfont, sizeof(gs_font_base));
@@ -186,6 +188,8 @@ pdfi_copy_microtype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_di
     tmp = NULL;
     code = pdfi_dict_knownget(ctx, font_dict, "Encoding", &tmp);
     if (code == 1) {
+        pdfi_countdown(dmtfont->Encoding);
+        dmtfont->Encoding = NULL;
         if (pdfi_type_of(tmp) == PDF_NAME && force_symbolic == true) {
             dmtfont->Encoding = spdffont->Encoding;
             pdfi_countup(dmtfont->Encoding);
@@ -204,7 +208,6 @@ pdfi_copy_microtype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_di
         tmp = NULL;
     }
     else {
-        pdfi_countup(dmtfont->Encoding);
         pdfi_countdown(tmp);
         tmp = NULL;
         code = 0;

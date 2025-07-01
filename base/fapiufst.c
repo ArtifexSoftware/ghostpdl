@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -313,7 +313,7 @@ open_UFST(fapi_ufst_server * r, const byte * server_param,
     code = gx_UFST_init(r->mem, (const UB8 *)ufst_root_dir);
     if (code < 0)
         return code;
-    r->ufst_is_singleton = (code == 1);
+    r->ufst_is_singleton = 0;
     CGIFfont_access(FSA DISK_ACCESS);
     if (bPlugIn) {
         if ((code = gx_UFST_open_static_fco(sPlugIn, &fcHandle)) != 0)
@@ -919,6 +919,7 @@ pack_pseo_fhdr(fapi_ufst_server * r, gs_fapi_font * ff, UB8 * p, UB8 * pe)
     }
     if (skip)
         pack_word(&p, 0xFFFF);
+    return -1;
 }
 
 static char *
@@ -1331,8 +1332,10 @@ gs_fapi_ufst_get_scaled_font_aux(gs_fapi_server * server, gs_fapi_font * ff,
     r->callback_error = 0;
 
     code = CGIFfont(FSA fc);
-    if (r->callback_error != 0)
+    if (r->callback_error != 0) {
+        gs_free(r->mem, ff->server_font_data, 0, 0, "gs_fapi_ufst_get_scaled_font_aux");
         return r->callback_error;
+    }
 
     if (d->font_type == FC_FCO_TYPE) {
         code = CGIFfont_metrics(&fm);
@@ -1340,6 +1343,7 @@ gs_fapi_ufst_get_scaled_font_aux(gs_fapi_server * server, gs_fapi_font * ff,
             return r->callback_error;
     }
     if (code != 0) {
+        gs_free(r->mem, ff->server_font_data, 0, 0, "gs_fapi_ufst_get_scaled_font_aux");
         code = gs_error_invalidfont;
     }
 
@@ -2334,6 +2338,13 @@ gs_fapi_ufst_destroy(gs_fapi_server ** server)
     gs_fapi_ufst_release_char_data_inline(r);
     if (r->bInitialized && !r->ufst_is_singleton)
         gx_UFST_fini();
+
+    while (r->fco_list != NULL) {
+        fco_list_elem *e = r->fco_list;
+        r->fco_list = e->next;
+        gs_free(r->mem, e->file_path, 0, 0, "gs_fapi_ufst_destroy");
+        gs_free(r->mem, e, 0, 0, "gs_fapi_ufst_destroy");
+    }
 
     if (r->param) {
         gs_free(r->mem, r->param, 0, 0, "server_params");
