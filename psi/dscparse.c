@@ -3939,6 +3939,7 @@ dsc_dcs2_fixup(CDSC *dsc)
                         return code;
                     dsc->page[page_number].begin = 0;
                     dsc->page[page_number].end = 0;
+                    pend = &dsc->page[page_number+1].end;
                 }
             }
             pdcs = pdcs->next;
