@@ -521,9 +521,12 @@ ocr_line32(gx_device_pdf_image *dev, void *row)
 static int
 ocr_begin_page(gx_device_pdf_image *dev, int w, int h, int bpp)
 {
-    int raster = (w+3)&~3;
+    int64_t raster = (w + 3) & ~3;
 
-    dev->ocr.data = gs_alloc_bytes(dev->memory, raster * h, "ocr_begin_page");
+    raster = raster * (int64_t)h;
+    if (raster < 0 || raster > max_size_t)
+        return gs_note_error(gs_error_VMerror);
+    dev->ocr.data = gs_alloc_bytes(dev->memory, raster, "ocr_begin_page");
     if (dev->ocr.data == NULL)
         return_error(gs_error_VMerror);
     dev->ocr.w = w;
