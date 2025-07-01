@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1195,8 +1195,8 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                                    &ft_face);
 
             if (ft_error) {
-                gs_memory_t * mem = (gs_memory_t *) s->ftmemory->user;
-                gs_free(mem, own_font_data, 0, 0, "FF_open_read_stream");
+                gs_memory_t *mem = (gs_memory_t *) s->ftmemory->user;
+                gs_free(mem, own_font_data, 0, 0, "gs_fapi_ft_get_scaled_font");
                 return ft_to_gs_error(ft_error);
             }
         }
@@ -1221,6 +1221,9 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
                              &ft_face);
             if (ft_error) {
                 /* in the event of an error, Freetype should cleanup the stream */
+                /* But not the ft container */
+                gs_memory_t *mem = (gs_memory_t *) s->ftmemory->user;
+                gs_free(mem, ft_strm, 0, 0, "gs_fapi_ft_get_scaled_font");
                 return ft_to_gs_error(ft_error);
             }
         }
