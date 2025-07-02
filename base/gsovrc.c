@@ -914,9 +914,9 @@ overprint_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
 }
 
 /* Currently we really should only be here if the target device is planar
-   AND it supports devn colors AND is 8 bit.  This could use a rewrite to
-   make if more efficient but I had to get something in place that would
-   work */
+   AND it supports devn colors AND is 8 (or 16) bit.  This could use a
+   rewrite to make if more efficient but I had to get something in place
+   that would work */
 static int
 overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster_in,
                   gx_bitmap_id id, int x, int y, int w, int h, int plane_height)
@@ -940,15 +940,17 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     if (tdev == 0)
         return 0;
 
-    if  (opdev->copy_alpha_hl) {
-       /* We are coming here via copy_alpha_hl_color due to the use of AA.
-          We will want to handle the overprinting here */
+    if (opdev->copy_alpha_hl) {
+        /* We are coming here via copy_alpha_hl_color due to the use of AA.
+           We will want to handle the overprinting here */
+        int bytespercomp;
 
         depth = tdev->color_info.depth;
         num_comps = tdev->color_info.num_components;
 
         fit_fill(tdev, x, y, w, h);
         byte_depth = depth / num_comps;
+        bytespercomp = byte_depth>>3;
 
         /* allocate a buffer for the returned data */
         raster = bitmap_raster(w * byte_depth);
@@ -978,7 +980,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
             gx_color_index comps = comps_orig;
             gb_rect.p.y = y++;
             gb_rect.q.y = y;
-            offset = row * raster_in + data_x;
+            offset = row * raster_in + data_x * bytespercomp;
             row++;
             curr_data = (byte *) data + offset; /* start us at the start of row */
             /* And now through each plane */
@@ -997,7 +999,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
                    its the one that we want to draw, replace it with our
                    buffer data */
                 if ((comps & 0x01) == 1) {
-                    memcpy(gb_params.data[k], curr_data, w);
+                    memcpy(gb_params.data[k], curr_data, w * bytespercomp);
                 }
                 /* Next plane */
                 curr_data += plane_height * raster_in;
