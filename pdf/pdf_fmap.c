@@ -1125,19 +1125,19 @@ pdfi_fontmap_lookup_font(pdf_context *ctx, pdf_dict *font_dict, pdf_name *fname,
            name -> substitute name
            subsitute name -> file name
            So we want to loop until we no more hits.
+           With "predefined fonts" in the fontmap, as in with UFST, we can
+           have a an actual font, as well as a name or string (file name).
          */
-        if (pdfi_type_of(mname) != PDF_FONT) {
-            while(1) {
-                pdf_obj *mname2;
-                code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
-                if (code < 0) {
-                    code = 0;
-                    break;
-                }
-                pdfi_countdown(mname);
-                mname = mname2;
-            }
-        }
+         while(pdfi_type_of(mname) != PDF_FONT) {
+             pdf_obj *mname2;
+             code = pdfi_dict_get_by_key(ctx, ctx->pdffontmap, (pdf_name *)mname, &mname2);
+             if (code < 0) {
+                 code = 0;
+                 break;
+             }
+             pdfi_countdown(mname);
+             mname = mname2;
+         }
     }
 
     if (code < 0 && ctx->pdfnativefontmap != NULL) {
