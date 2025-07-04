@@ -2257,7 +2257,7 @@ int pdfi_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
 
     if (pfont->FontType == ft_encrypted || pfont->FontType == ft_encrypted2
      || pfont->FontType == ft_user_defined || pfont->FontType == ft_TrueType
-     || pfont->FontType == ft_PDF_user_defined) {
+     || pfont->FontType == ft_PDF_user_defined || pfont->FontType == ft_MicroType) {
         pdf_font *font = (pdf_font *)pfont->client_data;
 
         code = pdfi_name_from_index(font->ctx, glyph, (unsigned char **)&pstr->data, &pstr->size);
