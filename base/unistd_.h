@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -50,9 +50,19 @@
 #  define setmode(fd, mode) _setmode(fd, mode)
 #else
    /* _XOPEN_SOURCE 500 define is needed to get
-    * access to pread and pwrite */
-#  define _XOPEN_SOURCE 500
-#  define __USE_UNIX98
+    * access to pread and pwrite and, on some platforms
+    * the PRI macros
+    * The "undef" avoids warnings about a redefinition
+    */
+#  if !defined(_XOPEN_SOURCE) || _XOPEN_SOURCE < 500
+#    undef _XOPEN_SOURCE
+#    define _XOPEN_SOURCE 500
+#  endif
+
+#  ifndef __USE_UNIX98
+#    define __USE_UNIX98
+#  endif
+
 #  include <unistd.h>
 #endif
 
