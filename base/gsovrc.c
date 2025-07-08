@@ -1053,6 +1053,7 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     gx_color_index          mask;
     int                     shift;
     int                     deep;
+    int                     tag_plane = -1;
 
     if (tdev == 0)
         return 0;
@@ -1068,6 +1069,8 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
 
     depth = tdev->color_info.depth;
     num_comps = tdev->color_info.num_components;
+    if (device_encodes_tags(dev))
+        tag_plane = tdev->num_planar_planes - 1;
 
     x = fixed2int(rect->p.x);
     y = fixed2int(rect->p.y);
@@ -1136,9 +1139,12 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
                 if (deep)
                     my_memset16_be((uint16_t *)(gb_params.data[k]),
                                    pdcolor->colors.devn.values[k], w);
-                else
-                    memset(gb_params.data[k],
-                           ((pdcolor->colors.devn.values[k]) >> shift & mask), w);
+                else {
+                    int v = pdcolor->colors.devn.values[k];
+                    if (k != tag_plane)
+                        v = (v>>shift) & mask;
+                    memset(gb_params.data[k], v, w);
+                }
             }
             comps >>= 1;
         }
