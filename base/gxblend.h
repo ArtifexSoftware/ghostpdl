@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -87,20 +87,20 @@ typedef struct {
 typedef pdf14_parent_cs_params_s pdf14_parent_cs_params_t;
 
 /* This function is used for mapping Smask CMYK or RGB data to a monochrome alpha buffer */
-void smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, int row_stride,
-                              int plane_stride, const byte *gs_restrict src, byte *gs_restrict des, bool isadditive,
+void smask_luminosity_mapping(int num_rows, int num_cols, int n_chan, intptr_t row_stride,
+                              intptr_t plane_stride, const byte *gs_restrict src, byte *gs_restrict des, bool isadditive,
                               gs_transparency_mask_subtype_t SMask_SubType, bool deep
 #if RAW_DUMP
                               , const gs_memory_t *mem
 #endif
                               );
-void smask_blend(byte *gs_restrict src, int width, int height, int rowstride,
-                 int planestride, bool deep);
+void smask_blend(byte *gs_restrict src, int width, int height, intptr_t rowstride,
+                 intptr_t planestride, bool deep);
 
-void smask_copy(int num_rows, int num_cols, int row_stride,
+void smask_copy(int num_rows, int num_cols, intptr_t row_stride,
                          byte *gs_restrict src, const byte *gs_restrict des);
 int smask_icc(gx_device *dev, int num_rows, int num_cols, int n_chan,
-               int row_stride, int plane_stride, byte *gs_restrict src, const byte *gs_restrict des,
+               intptr_t row_stride, intptr_t plane_stride, byte *gs_restrict src, const byte *gs_restrict des,
                gsicc_link_t *icclink, bool deep);
 /* For spot colors, blend modes must be white preserving and separable */
 bool blend_valid_for_spot(gs_blend_mode_t blend_mode);
@@ -381,16 +381,16 @@ void pdf14_rgb_cs_to_grayspot_cm(const gx_device * dev, const gs_gstate *pgs,
     frac r, frac g, frac b, frac out[]);
 void pdf14_cmyk_cs_to_grayspot_cm(const gx_device * dev, frac c, frac m, frac y, frac k, frac out[]);
 
-void gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
+void gx_build_blended_image_row(const byte *gs_restrict buf_ptr, intptr_t planestride,
                                 int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);
-void gx_build_blended_image_row16(const byte *gs_restrict buf_ptr, int planestride,
+void gx_build_blended_image_row16(const byte *gs_restrict buf_ptr, intptr_t planestride,
                                   int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);
 void gx_blend_image_buffer(byte *buf_ptr, int width, int height,
-                      int rowstride, int planestride, int num_comp, int additive);
+                      intptr_t rowstride, intptr_t planestride, int num_comp, int additive);
 void gx_blend_image_buffer16(byte *buf_ptr, int width, int height,
-    int rowstride, int planestride, int num_comp, int additive, bool keep_native);
+    intptr_t rowstride, intptr_t planestride, int num_comp, int additive, bool keep_native);
 int gx_put_blended_image_custom(gx_device *target, byte *buf_ptr,
-                      int planestride, int rowstride,
+                      intptr_t planestride, intptr_t rowstride,
                       int x0, int y0, int width, int height, int num_comp, uint16_t bg, bool deep);
 
 /* Function moved between compilation units to allow inlining. */
@@ -404,11 +404,11 @@ int pdf14_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 void dump_raw_buffer(const gs_memory_t *mem,
                      int num_rows, int width, int n_chan,
-                     int plane_stride, int rowstride,
+                     intptr_t plane_stride, intptr_t rowstride,
                      char filename[],const byte *Buffer, bool deep);
 void dump_raw_buffer_be(const gs_memory_t *mem,
                         int num_rows, int width, int n_chan,
-                        int plane_stride, int rowstride,
+                        intptr_t plane_stride, intptr_t rowstride,
                         char filename[],const byte *Buffer, bool deep);
 #endif
 

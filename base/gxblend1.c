@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -726,7 +726,7 @@ dump_planar_rgba(gs_memory_t *mem, const pdf14_buf *pbuf)
 #endif
 
 void
-gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
+gx_build_blended_image_row(const byte *gs_restrict buf_ptr, intptr_t planestride,
                            int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf)
 {
     size_t inc = planestride * (size_t)num_comp;
@@ -763,7 +763,7 @@ gx_build_blended_image_row(const byte *gs_restrict buf_ptr, int planestride,
 }
 
 void
-gx_build_blended_image_row16(const byte *gs_restrict buf_ptr_, int planestride,
+gx_build_blended_image_row16(const byte *gs_restrict buf_ptr_, intptr_t planestride,
                              int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf)
 {
     const uint16_t *gs_restrict buf_ptr = (const uint16_t *)(const void *)buf_ptr_;
@@ -810,8 +810,8 @@ gx_build_blended_image_row16(const byte *gs_restrict buf_ptr_, int planestride,
 }
 
 void
-gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
-                      int planestride, int num_comp, int additive)
+gx_blend_image_buffer(byte *buf_ptr, int width, int height, intptr_t rowstride,
+                      intptr_t planestride, int num_comp, int additive)
 {
     int x, y;
     int position;
@@ -893,8 +893,8 @@ gx_blend_image_buffer(byte *buf_ptr, int width, int height, int rowstride,
 }
 
 void
-gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
-                        int planestride, int num_comp, int additive, bool keep_native)
+gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, intptr_t rowstride,
+                        intptr_t planestride, int num_comp, int additive, bool keep_native)
 {
     uint16_t *buf_ptr = (uint16_t *)(void *)buf_ptr_;
     int x, y;
@@ -1033,7 +1033,7 @@ gx_blend_image_buffer16(byte *buf_ptr_, int width, int height, int rowstride,
 
 int
 gx_put_blended_image_custom(gx_device *target, byte *buf_ptr_,
-                      int planestride, int rowstride,
+                      intptr_t planestride, intptr_t rowstride,
                       int x0, int y0, int width, int height,
                       int num_comp, uint16_t bg, bool deep)
 {
