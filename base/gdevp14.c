@@ -1110,10 +1110,12 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
     int n_planes = n_chan + (has_shape ? 1 : 0) + (has_alpha_g ? 1 : 0) +
                    (has_tags ? 1 : 0);
     size_t planestride;
+#if ARCH_SIZEOF_SIZE_T <= 4
     int64_t dsize = rowstride * height * n_planes;
 
     if (dsize > max_size_t)
         return NULL;
+#endif
 
     result = gs_alloc_struct(memory, pdf14_buf, &st_pdf14_buf,
                              "pdf14_buf_new");
