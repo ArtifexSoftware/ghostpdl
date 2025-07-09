@@ -7024,7 +7024,7 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
     fake_tos.n_planes = dev->color_info.num_components;
     fake_tos.num_spots = 0;
     fake_tos.group_color_info = NULL;
-    fake_tos.planestride = raster * plane_height;
+    fake_tos.planestride = raster * (size_t)plane_height;
     fake_tos.rect.p.x = x;
     fake_tos.rect.p.y = y;
     fake_tos.rect.q.x = x + w;
