@@ -6316,6 +6316,13 @@ gx_update_pdf14_compositor(gx_device * pdev, gs_gstate * pgs,
                     deviceN parameters from the target clist device.  In this
                     case they should not be freed */
                 if (p14dev->free_devicen) {
+                    gs_devn_params *devn_params = dev_proc(pdev, ret_devn_params)(pdev);
+                    if (devn_params) {
+                        gxdso_spot_info si;
+                        si.params = devn_params;
+                        si.equiv = &p14dev->op_pequiv_cmyk_colors;
+                        (void)dev_proc(p14dev->target, dev_spec_op)(p14dev->target, gxdso_update_spots, &si, sizeof(si));
+                    }
                     devn_free_params(pdev);
                 }
                 pdf14_disable_device(pdev);

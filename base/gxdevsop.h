@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -532,6 +532,13 @@ enum {
      * mode and 0 when we grestore back to a non-clip mode.
      */
     gxdso_hilevel_text_clip,
+
+    /* Called to give the target device the chance to update the devn_params and
+     * equivalent colors from the current device before the current device goes away.
+     * data = gxdso_spot_info
+     * size = sizeof(gx_dso_spot_info);
+     */
+    gxdso_update_spots,
 
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST

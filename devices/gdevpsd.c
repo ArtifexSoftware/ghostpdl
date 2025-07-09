@@ -155,6 +155,34 @@ static RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
 RELOC_PTRS_END
 
 static int
+update_spots(psd_device *dev, gxdso_spot_info *si)
+{
+    gs_devn_params *dst_params = &dev->devn_params;
+    gs_devn_params *src_params = si->params;
+    gs_separations *dsep, *ssep;
+    equivalent_cmyk_color_params *dequiv = &dev->equiv_cmyk_colors;
+    equivalent_cmyk_color_params *sequiv = si->equiv;
+    int i;
+
+    for (i = dst_params->separations.num_separations; i < src_params->separations.num_separations; i++)
+    {
+        dst_params->separations.names[i].data = gs_alloc_bytes(dev->memory->stable_memory,
+                                                               src_params->separations.names[i].size,
+                                                               "copy_devn_spots");
+        if (dst_params->separations.names[i].data == NULL)
+            return_error(gs_error_VMerror);
+        memcpy(dst_params->separations.names[i].data,
+               src_params->separations.names[i].data,
+               src_params->separations.names[i].size);
+        dst_params->separations.names[i].size = src_params->separations.names[i].size;
+        dequiv->color[i] = sequiv->color[i];
+        dst_params->separations.num_separations++;
+    }
+
+    return 0;
+}
+
+static int
 psd_spec_op(gx_device *pdev, int op, void *data, int datasize)
 {
     psd_device *pdev_psd = (psd_device*)pdev;
@@ -247,6 +275,9 @@ psd_spec_op(gx_device *pdev, int op, void *data, int datasize)
         pdev->color_info.depth = nc * pdev_psd->devn_params.bitspercomponent;
         return 0;
     }
+
+    if (op == gxdso_update_spots)
+        return update_spots(pdev_psd, (gxdso_spot_info *)data);
 
 #if ENABLE_COLOR_REPLACE
     /* Demo of doing color replacement in the device in place of

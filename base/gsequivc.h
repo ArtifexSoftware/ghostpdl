@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -56,6 +56,11 @@ typedef struct equivalent_cmyk_color_params_s {
     bool all_color_info_valid;
     cmyk_color color[GX_DEVICE_MAX_SEPARATIONS];
 } equivalent_cmyk_color_params;
+
+typedef struct {
+    gs_devn_params *params;
+    equivalent_cmyk_color_params *equiv;
+} gxdso_spot_info;
 
 /*
  * If possible, update the equivalent CMYK color for spot colors.
