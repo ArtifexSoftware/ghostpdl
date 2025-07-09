@@ -12607,7 +12607,7 @@ c_pdf14trans_get_cropping(const gs_composite_t *pcte, int *ry, int *rheight,
  */
 static int
 pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
-    int name_size, int component_type, int num_process_colors)
+    int name_size, int component_type, int num_process_colors, int cmyk)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
     gx_device *tdev = pdev->target;
@@ -12685,6 +12685,20 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
         if (name_size == 6 && strncmp(pname, "Yellow", 6) == 0)
             return -1;
     }
+    /* A psdrgb device, with simulate overprint will have become a cmyk
+     * device. As such, we don't want to add Black/Cyan/Magenta/Yellow to that
+     * either, but we need to return real numbers for them as the underlying
+     * routine won't know about these. */
+    if (comp_index < 0 && dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE && cmyk) {
+        if (name_size == 5 && strncmp(pname, "Black", 7) == 0)
+            return 3;
+        if (name_size == 4 && strncmp(pname, "Cyan", 4) == 0)
+            return 0;
+        if (name_size == 7 && strncmp(pname, "Magenta", 7) == 0)
+            return 1;
+        if (name_size == 6 && strncmp(pname, "Yellow", 6) == 0)
+            return 2;
+    }
 
     /*
     * Return the colorant number if we know this name.  Note adjustment for
@@ -12755,7 +12769,7 @@ static int
 pdf14_cmykspot_get_color_comp_index(gx_device * dev, const char * pname,
     int name_size, int component_type)
 {
-    return pdf14_spot_get_color_comp_index(dev, pname, name_size, component_type, 4);
+    return pdf14_spot_get_color_comp_index(dev, pname, name_size, component_type, 4, 1);
 }
 
 /* RGB process + spots */
@@ -12763,7 +12777,7 @@ static int
 pdf14_rgbspot_get_color_comp_index(gx_device * dev, const char * pname,
     int name_size, int component_type)
 {
-    return pdf14_spot_get_color_comp_index(dev, pname, name_size, component_type, 3);
+    return pdf14_spot_get_color_comp_index(dev, pname, name_size, component_type, 3, 0);
 }
 
 /* Gray process + spots */
@@ -12771,7 +12785,7 @@ static int
 pdf14_grayspot_get_color_comp_index(gx_device * dev, const char * pname,
     int name_size, int component_type)
 {
-    return pdf14_spot_get_color_comp_index(dev, pname, name_size, component_type, 1);
+    return pdf14_spot_get_color_comp_index(dev, pname, name_size, component_type, 1, 0);
 }
 
 /* These functions keep track of when we are dealing with soft masks.
