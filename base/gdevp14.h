@@ -161,8 +161,8 @@ struct pdf14_buf_s {
     /* Data is stored in planar format. Order of planes is: pixel values,
        alpha, shape if present, alpha_g if present. */
 
-    size_t rowstride;
-    size_t planestride;
+    intptr_t rowstride;
+    intptr_t planestride;
     int n_chan;   /* number of pixel planes including alpha */
     int n_planes; /* total number of planes including alpha, shape, alpha_g and tags */
     byte *data;

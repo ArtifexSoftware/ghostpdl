@@ -812,7 +812,7 @@ RELOC_PTRS_END
 /* ------ Private definitions ------ */
 
 static void
-resolve_matte(pdf14_buf *maskbuf, byte *src_data, int src_planestride, int src_rowstride,
+resolve_matte(pdf14_buf *maskbuf, byte *src_data, intptr_t src_planestride, intptr_t src_rowstride,
               int width, int height, cmm_profile_t *src_profile, int deep)
 {
     if (deep) {
@@ -913,12 +913,12 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     gsicc_link_t *icc_link;
     gsicc_bufferdesc_t src_buff_desc;
     gsicc_bufferdesc_t des_buff_desc;
-    int src_planestride = src_buf->planestride;
-    int src_rowstride = src_buf->rowstride;
+    intptr_t src_planestride = src_buf->planestride;
+    intptr_t src_rowstride = src_buf->rowstride;
     int src_n_planes = src_buf->n_planes;
     int src_n_chan = src_buf->n_chan;
-    int des_planestride = src_planestride;
-    int des_rowstride = src_rowstride;
+    intptr_t des_planestride = src_planestride;
+    intptr_t des_rowstride = src_rowstride;
     int des_n_planes = src_n_planes;
     int des_n_chan = src_n_chan;
     int diff;
@@ -959,7 +959,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         des_n_planes = src_n_planes + diff;
         des_n_chan = src_n_chan + diff;
         des_data = gs_alloc_bytes(ctx->memory,
-                                  (size_t)des_planestride * des_n_planes + CAL_SLOP,
+                                  des_planestride * des_n_planes + CAL_SLOP,
                                   "pdf14_transform_color_buffer");
         if (des_data == NULL)
             return NULL;
@@ -1152,7 +1152,7 @@ pdf14_buf_new(gs_int_rect *rect, bool has_tags, bool has_alpha_g,
         result->planestride = 0;
         result->data = 0;
     } else {
-        planestride = (size_t)(rowstride * height);
+        planestride = rowstride * height;
         result->planestride = planestride;
         result->data = gs_alloc_bytes(memory,
                                       planestride * n_planes + CAL_SLOP,
@@ -1398,7 +1398,7 @@ pdf14_initialize_ctx(gx_device* dev, const gs_gstate* pgs)
         "[v]base buf: %d x %d, %d color channels, %d planes, deep=%d\n",
         buf->rect.q.x, buf->rect.q.y, buf->n_chan, buf->n_planes, pdev->ctx->deep);
 
-    memset(buf->data, 0, (size_t)buf->planestride * (buf->n_planes - !!has_tags));
+    memset(buf->data, 0, buf->planestride * (buf->n_planes - !!has_tags));
     buf->saved = NULL;
     pdev->ctx->stack = buf;
     pdev->ctx->additive = additive;
@@ -1521,7 +1521,7 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
     if (pdf14_backdrop == NULL || (is_backdrop && pdf14_backdrop->backdrop == NULL)) {
         /* Note, don't clear out tags set by pdf14_buf_new == GS_UNKNOWN_TAG */
         /* Memsetting by 0, so this copes with the deep case too */
-        memset(buf->data, 0, (size_t)buf->planestride *
+        memset(buf->data, 0, buf->planestride *
                                           (buf->n_chan +
                                            (buf->has_shape ? 1 : 0) +
                                            (buf->has_alpha_g ? 1 : 0)));
@@ -1550,14 +1550,14 @@ pdf14_push_transparency_group(pdf14_ctx	*ctx, gs_int_rect *rect, bool isolated,
        an isolated knockout group. */
     if (buf->knockout && pdf14_backdrop != NULL) {
         buf->backdrop = gs_alloc_bytes(ctx->memory,
-                                       (size_t)buf->planestride * buf->n_planes + CAL_SLOP,
+                                       buf->planestride * buf->n_planes + CAL_SLOP,
                                        "pdf14_push_transparency_group");
         if (buf->backdrop == NULL) {
             return gs_throw(gs_error_VMerror, "Knockout backdrop allocation failed");
         }
 
         memcpy(buf->backdrop, buf->data,
-               (size_t)buf->planestride * buf->n_planes);
+               buf->planestride * buf->n_planes);
 
 #if RAW_DUMP
         /* Dump the current buffer to see what we have. */
@@ -1653,10 +1653,9 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
 
         if (nos->data != NULL)
             memset(nos->data, 0,
-                   (size_t)nos->planestride *
-                                          (nos->n_chan +
-                                           (nos->has_shape ? 1 : 0) +
-                                           (nos->has_alpha_g ? 1 : 0)));
+                   nos->planestride * (nos->n_chan +
+                                       (nos->has_shape ? 1 : 0) +
+                                       (nos->has_alpha_g ? 1 : 0)));
     }
 
     /* Before we get started, lets see if we have somehow gotten into
@@ -1903,11 +1902,11 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
                    need to set the alpha for this mask as if we had drawn in the
                    entire soft mask buffer */
                 memset(buf->data + buf->planestride, 255,
-                       (size_t)buf->planestride * (buf->n_chan - 1));
+                       buf->planestride * (buf->n_chan - 1));
             }
         } else {
             /* Compose mask with opaque background */
-            memset(buf->data, 0, (size_t)buf->planestride * buf->n_chan);
+            memset(buf->data, 0, buf->planestride * buf->n_chan);
         }
     }
     return 0;
@@ -2335,8 +2334,8 @@ pdf14_get_buffer_information(const gx_device * dev,
             /* If the bbox is smaller than the whole buffer than go ahead and
                create a new one to use.  This can occur if we drew in a smaller
                area than was specified by the transparency group rect. */
-            int rowstride = ((width + 3) & -4)<<buf->deep;
-            int planestride = rowstride * height;
+            intptr_t rowstride = ((width + 3) & -4)<<buf->deep;
+            intptr_t planestride = rowstride * height;
             int k, j;
             byte *buff_ptr_src, *buff_ptr_des;
 
@@ -2344,7 +2343,7 @@ pdf14_get_buffer_information(const gx_device * dev,
             transbuff->rowstride = rowstride;
             transbuff->transbytes =
                          gs_alloc_bytes(mem,
-                                        (size_t)planestride *
+                                        planestride *
                                                 (buf->n_chan +
                                                  buf->has_tags ? 1 : 0) + CAL_SLOP,
                                         "pdf14_get_buffer_information");
@@ -2390,8 +2389,8 @@ pdf14_get_buffer_information(const gx_device * dev,
                 /* FIXME: This is a nop on big endian machines. Is the compiler smart enough to spot that? */
                 uint16_t *buff_ptr;
                 int j, k, z;
-                int rowstride = transbuff->rowstride>>1;
-                int planestride = transbuff->planestride;
+                intptr_t rowstride = transbuff->rowstride>>1;
+                intptr_t planestride = transbuff->planestride;
                 for (j = 0; j < transbuff->n_chan; j++) {
                     buff_ptr = (uint16_t *)(transbuff->transbytes + j * planestride);
                     for (k = 0; k < height; k++) {
@@ -2538,8 +2537,8 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     uint16_t bg;
     bool has_tags = device_encodes_tags(dev);
     bool deep = pdev->ctx->deep;
-    int planestride;
-    int rowstride;
+    intptr_t planestride;
+    intptr_t rowstride;
     blend_image_row_proc_t blend_row;
     bool color_mismatch = false;
     bool supports_alpha = false;
@@ -2828,15 +2827,15 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 
 /* Overprint simulation with spots.  Collapse to CMYK */
 static void
-template_spots_to_cmyk(byte *buf_ptr, int width, int height, int rowstride,
-    int planestride, int num_comp, int spot_start, int tag_offset,
+template_spots_to_cmyk(byte *buf_ptr, int width, int height, intptr_t rowstride,
+    intptr_t planestride, int num_comp, int spot_start, int tag_offset,
     cmyk_composite_map *map, bool keep_alpha)
 {
     int comp_num;
     uint cyan, magenta, yellow, black;
     cmyk_composite_map *cmyk_map_entry;
     int x, y;
-    int position;
+    intptr_t position;
     byte comp, a;
 
     for (y = 0; y < height; y++) {
@@ -2897,15 +2896,15 @@ template_spots_to_cmyk(byte *buf_ptr, int width, int height, int rowstride,
 }
 
 static void
-template_spots_to_cmyk_16(byte *buf_ptr_, int width, int height, int rowstride,
-    int planestride, int num_comp, int spot_start, int tag_offset,
+template_spots_to_cmyk_16(byte *buf_ptr_, int width, int height, intptr_t rowstride,
+    intptr_t planestride, int num_comp, int spot_start, int tag_offset,
     cmyk_composite_map *map, bool keep_alpha)
 {
     int comp_num;
     ulong cyan, magenta, yellow, black;
     cmyk_composite_map *cmyk_map_entry;
     int x, y;
-    int position;
+    intptr_t position;
     ulong comp, a;
     uint16_t *buf_ptr = (uint16_t *)(void *)buf_ptr_;
 
@@ -3000,8 +2999,8 @@ template_spots_to_cmyk_16(byte *buf_ptr_, int width, int height, int rowstride,
 }
 
 static void
-pdf14_spots_to_cmyk(byte *buf_ptr, int width, int height, int rowstride,
-    int planestride, int num_comp, int spot_start, int tag_offset,
+pdf14_spots_to_cmyk(byte *buf_ptr, int width, int height, intptr_t rowstride,
+    intptr_t planestride, int num_comp, int spot_start, int tag_offset,
     cmyk_composite_map *map, bool keep_alpha, bool deep)
 {
     if (deep) {
@@ -3054,11 +3053,11 @@ pdf14_spots_to_cmyk(byte *buf_ptr, int width, int height, int rowstride,
 /* This is for the case where we have mixture of spots and additive color.
    For example, RGB + spots or Gray + spots */
 static void
-pdf14_blend_image_mixed_buffer(byte* buf_ptr, int width, int height, int rowstride,
-    int planestride, int num_comp, int spot_start)
+pdf14_blend_image_mixed_buffer(byte* buf_ptr, int width, int height, intptr_t rowstride,
+    intptr_t planestride, int num_comp, int spot_start)
 {
     int x, y;
-    int position;
+    intptr_t position;
     byte comp, a;
     int tmp, comp_num;
 
@@ -3094,12 +3093,12 @@ pdf14_blend_image_mixed_buffer(byte* buf_ptr, int width, int height, int rowstri
 }
 
 static void
-pdf14_blend_image_mixed_buffer16(byte* buf_ptr_, int width, int height, int rowstride,
-    int planestride, int num_comp, int spot_start)
+pdf14_blend_image_mixed_buffer16(byte* buf_ptr_, int width, int height, intptr_t rowstride,
+    intptr_t planestride, int num_comp, int spot_start)
 {
     uint16_t* buf_ptr = (uint16_t*)(void*)buf_ptr_;
     int x, y;
-    int position;
+    intptr_t position;
     int comp, a;
     int tmp, comp_num;
 
@@ -3158,8 +3157,8 @@ pdf14_blend_image_mixed_buffer16(byte* buf_ptr_, int width, int height, int rows
 
 static int
 pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
-    gs_gstate* pgs, pdf14_buf* buf, int planestride_in,
-    int rowstride_in, int x0, int y0, int width, int height,
+    gs_gstate* pgs, pdf14_buf* buf, intptr_t planestride_in,
+    intptr_t rowstride_in, int x0, int y0, int width, int height,
     int num_comp, int additive, bool has_tags, gs_int_rect rect_in,
     gs_separations* pseparations, bool deep)
 {
@@ -3169,8 +3168,8 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     int num_rows_left;
     int i;
     gs_int_rect rect = rect_in;
-    int planestride = planestride_in;
-    int rowstride = rowstride_in;
+    intptr_t planestride = planestride_in;
+    intptr_t rowstride = rowstride_in;
     byte* buf_ptr = NULL;
     cmm_profile_t* src_profile = buf->group_color_info->icc_profile;
     cmm_profile_t* des_profile = NULL;
@@ -3626,8 +3625,8 @@ pdf14_cmykspot_put_image(gx_device *dev, gs_gstate *pgs, gx_device *target)
     int x1, y1, width, height;
     gs_devn_params *pdevn_params = &pdev->devn_params;
     gs_separations *pseparations = &pdevn_params->separations;
-    int planestride;
-    int rowstride;
+    intptr_t planestride;
+    intptr_t rowstride;
     bool deep = pdev->ctx->deep;
     int num_comp;
 
@@ -3693,8 +3692,8 @@ pdf14_custom_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     bool deep = pdev->ctx->deep;
     gs_int_rect rect;
     int x0, y0;
-    int planestride;
-    int rowstride;
+    intptr_t planestride;
+    intptr_t rowstride;
     int num_comp;
     uint16_t bg;
     int x1, y1, width, height;
@@ -4760,8 +4759,8 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
     byte dst[PDF14_MAX_PLANES] = { 0 };
     gs_blend_mode_t blend_mode = pdev->blend_mode;
     bool additive = pdev->ctx->additive;
-    int rowstride = buf->rowstride;
-    int planestride = buf->planestride;
+    intptr_t rowstride = buf->rowstride;
+    intptr_t planestride = buf->planestride;
     gs_graphics_type_tag_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
     bool has_alpha_g = buf->has_alpha_g;
     bool has_shape = buf->has_shape;
@@ -4772,9 +4771,9 @@ do_pdf14_copy_alpha_color(gx_device * dev, const byte * data, int data_x,
         blend_mode == BLEND_MODE_CompatibleOverprint;
     int num_chan = buf->n_chan;
     int num_comp = num_chan - 1;
-    int shape_off = num_chan * planestride;
-    int alpha_g_off = shape_off + (has_shape ? planestride : 0);
-    int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
+    intptr_t shape_off = num_chan * planestride;
+    intptr_t alpha_g_off = shape_off + (has_shape ? planestride : 0);
+    intptr_t tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
     gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
                                  pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
@@ -4965,7 +4964,7 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
         blend_mode == BLEND_MODE_Compatible ||
         blend_mode == BLEND_MODE_CompatibleOverprint;
     bool additive = pdev->ctx->additive;
-    int rowstride = buf->rowstride;
+    intptr_t rowstride = buf->rowstride;
     int planestride = buf->planestride;
     gs_graphics_type_tag_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
     bool has_alpha_g = buf->has_alpha_g;
@@ -4974,9 +4973,9 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
     bool knockout = buf->knockout;
     int num_chan = buf->n_chan;
     int num_comp = num_chan - 1;
-    int shape_off = num_chan * planestride;
-    int alpha_g_off = shape_off + (has_shape ? planestride : 0);
-    int tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
+    intptr_t shape_off = num_chan * planestride;
+    intptr_t alpha_g_off = shape_off + (has_shape ? planestride : 0);
+    intptr_t tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
     bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
     gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
         pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
@@ -8084,16 +8083,16 @@ do_mark_fill_rectangle_ko_simple(gx_device *dev, int x, int y, int w, int h,
     byte src[PDF14_MAX_PLANES];
     byte dst[PDF14_MAX_PLANES] = { 0 };
     byte dst2[PDF14_MAX_PLANES] = { 0 };
-    int rowstride = buf->rowstride;
-    int planestride = buf->planestride;
+    intptr_t rowstride = buf->rowstride;
+    intptr_t planestride = buf->planestride;
     int num_chan = buf->n_chan;
     int num_comp = num_chan - 1;
-    int shape_off = num_chan * planestride;
+    intptr_t shape_off = num_chan * planestride;
     bool has_shape = buf->has_shape;
     bool has_alpha_g = buf->has_alpha_g;
-    int alpha_g_off = shape_off + (has_shape ? planestride : 0);
-    int tag_off = shape_off + (has_alpha_g ? planestride : 0) +
-                              (has_shape ? planestride : 0);
+    intptr_t alpha_g_off = shape_off + (has_shape ? planestride : 0);
+    intptr_t tag_off = shape_off + (has_alpha_g ? planestride : 0) +
+                                   (has_shape ? planestride : 0);
     bool has_tags = buf->has_tags;
     bool additive = pdev->ctx->additive;
     gs_graphics_type_tag_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
@@ -8307,16 +8306,16 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
     uint16_t src[PDF14_MAX_PLANES];
     uint16_t dst[PDF14_MAX_PLANES] = { 0 };
     uint16_t dst2[PDF14_MAX_PLANES] = { 0 };
-    int rowstride = buf->rowstride;
-    int planestride = buf->planestride;
+    intptr_t rowstride = buf->rowstride;
+    intptr_t planestride = buf->planestride;
     int num_chan = buf->n_chan;
     int num_comp = num_chan - 1;
-    int shape_off = num_chan * planestride;
+    intptr_t shape_off = num_chan * planestride;
     bool has_shape = buf->has_shape;
     bool has_alpha_g = buf->has_alpha_g;
-    int alpha_g_off = shape_off + (has_shape ? planestride : 0);
-    int tag_off = shape_off + (has_alpha_g ? planestride : 0) +
-                              (has_shape ? planestride : 0);
+    intptr_t alpha_g_off = shape_off + (has_shape ? planestride : 0);
+    intptr_t tag_off = shape_off + (has_alpha_g ? planestride : 0) +
+                                   (has_shape ? planestride : 0);
     bool has_tags = buf->has_tags;
     bool additive = pdev->ctx->additive;
     gs_graphics_type_tag_t curr_tag = GS_UNKNOWN_TAG;  /* Quiet compiler */
