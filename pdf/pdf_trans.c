@@ -49,6 +49,15 @@ static void
 pdfi_set_GrayBackground(gs_transparency_mask_params_t *params)
 {
     float num;
+    int i;
+
+    for (i = 0; i < params->Background_components; i++)
+    {
+        if (params->Background[i] < 0)
+            params->Background[i] = 0;
+        else if (params->Background[i] > 1)
+            params->Background[i] = 1;
+    }
 
     /* This uses definition from PLRM2 6.2.1 and 6.2.2 */
     /* TODO: We are assuming 3 components is RGB and 4 components is CMYK,
@@ -67,8 +76,6 @@ pdfi_set_GrayBackground(gs_transparency_mask_params_t *params)
         */
         num = 0.3*params->Background[0] + 0.59*params->Background[1] +
             0.11*params->Background[2] + params->Background[3];
-        if (num > 1)
-            num = 1;
         params->GrayBackground = 1 - num;
         break;
     case 1:
@@ -78,6 +85,10 @@ pdfi_set_GrayBackground(gs_transparency_mask_params_t *params)
         /* No clue... */
         params->GrayBackground = 0;
     }
+    if (params->GrayBackground < 0)
+        params->GrayBackground = 0;
+    else if (params->GrayBackground > 1)
+        params->GrayBackground = 1;
 }
 
 /* (see pdf_draw.ps/execmaskgroup) */
@@ -194,9 +205,12 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
         }
 
         /* BC is Background Color array (Optional) */
-        code = pdfi_dict_knownget_type(ctx, SMask, "BC", PDF_ARRAY, (pdf_obj **)&BC);
-        if (code < 0)
-            goto exit;
+        if (subtype == TRANSPARENCY_MASK_Luminosity)
+        {
+            code = pdfi_dict_knownget_type(ctx, SMask, "BC", PDF_ARRAY, (pdf_obj **)&BC);
+            if (code < 0)
+                goto exit;
+        }
 
         code = pdfi_dict_knownget_type(ctx, G_stream_dict, "BBox", PDF_ARRAY, (pdf_obj **)&BBox);
         if (code < 0)
