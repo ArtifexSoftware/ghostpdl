@@ -95,7 +95,7 @@ The table below details the third party libraries that Ghostscript and/or GhostP
        "a permissive free software license"
      - http://www.libpng.org/
    * - OpenJPEG
-     - 2.5.2
+     - 2.5.3
      - JPEG2000 image decoding for the
 
        PDF interpreter
