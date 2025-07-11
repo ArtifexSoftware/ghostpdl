@@ -2,7 +2,8 @@
  * $Id$
  *
  * Copyright (c) 2002-2014, Universite catholique de Louvain (UCL), Belgium
- * Copyright (c) 2011, Mickael Savinaud, Communications & Systemes <mickael.savinaud@c-s.fr>
+ * Copyright (c) 2002-2014, Professor Benoit Macq
+ * Copyright (c) 2010-2011, Kaori Hagihara
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,36 +28,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*! \mainpage OpenJPEG v@OPENJPEG_VERSION@ Documentation
-*
-* \section intro Introduction
-* This manual documents the low-level OpenJPEG C API.\n
-* The OpenJPEG library is an open-source JPEG 2000 library developed in order to promote the use of JPEG 2000.\n
-* This documents is focused on the main part of the library which try to implement Part 1 and Part 2 of the JPEG2000 norm.\n
-*
-* \section home Home page
-*
-* The Home Page of the OpenJPEG project can be found at:
-*
-* http://www.openjpeg.org/
-*
-* The source code repository is available here:
-*
-* http://github.com/uclouvain/openjpeg
-*
-* The OpenJPEG mailing list is located here:
-*
-* http://groups.google.com/group/openjpeg
-*
-* The test files repository is available here:
-*
-* http://github.com/uclouvain/openjpeg-data
-*
-* \section license License
-* This software is released under the BSD license, anybody can use or modify the library, even for commercial applications.\n
-* The only restriction is to retain the copyright in the sources or the binaries documentation.\n
-* Neither the author, nor the university accept any responsibility for any kind of error or data loss which may occur during usage.
-*
-* \author OpenJPEG Team
-*
-*/
+#include "byte_manager.h"
+#include "msgqueue_manager.h"
+#include "ihdrbox_manager.h"
+
+Byte_t * update_JPIPstream(Byte_t *newstream, OPJ_SIZE_T newstreamlen,
+                           Byte_t *cache_stream, OPJ_SIZE_T *streamlen);
+
+void save_codestream(Byte_t *codestream, OPJ_SIZE_T streamlen, const char *fmt);
+
+Byte_t * jpipstream_to_pnm(Byte_t *jpipstream, msgqueue_param_t *msgqueue,
+                           Byte8_t csn, int fw, int fh, ihdrbox_param_t **ihdrbox);
+
+ihdrbox_param_t * get_SIZ_from_jpipstream(Byte_t *jpipstream,
+        msgqueue_param_t *msgqueue, Byte8_t csn);
