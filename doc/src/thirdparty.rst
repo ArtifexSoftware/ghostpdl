@@ -88,7 +88,7 @@ The table below details the third party libraries that Ghostscript and/or GhostP
      - MIT LICENSE
      - http://www.ghostscript.com/
    * - libpng
-     - 1.6.44
+     - 1.6.50
      - PNG image encoding/decoding
      - libpng license - classified as
 
