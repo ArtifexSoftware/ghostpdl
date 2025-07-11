@@ -59,6 +59,8 @@
 #if !defined(_MSC_VER) || (_MSC_VER > 1900)
 #include <stdint.h>
 #include <inttypes.h>
+#else
+#define UINT32_MAX 0xffffffffL
 #endif
 
 /*
