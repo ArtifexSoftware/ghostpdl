@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -159,7 +159,7 @@ int pdfi_string_from_name(pdf_context *ctx, pdf_name *n, char **str, int *len)
     *str = NULL;
     *len = 0;
 
-    *str = (char *)gs_alloc_bytes(ctx->memory, n->length + 1, "pdfi_string_from_name");
+    *str = (char *)gs_alloc_bytes(ctx->memory, (size_t)n->length + 1, "pdfi_string_from_name");
     if (*str == NULL)
         return gs_note_error(gs_error_VMerror);
 
@@ -245,7 +245,7 @@ int pdfi_parse_name_cstring_array(pdf_context *ctx, char *data, uint64_t size, c
     }
 
     /* Allocate space for the array of char * (plus one extra for null termination) */
-    strlist = (char **)gs_alloc_bytes(ctx->memory, (numitems+1)*sizeof(char *),
+    strlist = (char **)gs_alloc_bytes(ctx->memory, ((size_t)numitems+1)*sizeof(char *),
                                        "pdfi_parse_cstring_array(strlist)");
     if (strlist == NULL)
         return_error(gs_error_VMerror);
@@ -253,7 +253,7 @@ int pdfi_parse_name_cstring_array(pdf_context *ctx, char *data, uint64_t size, c
     memset(strlist, 0, (numitems+1)*sizeof(char *));
 
     /* Allocate a temp array */
-    templist = (char **)gs_alloc_bytes(ctx->memory, (numitems+1)*sizeof(char *),
+    templist = (char **)gs_alloc_bytes(ctx->memory, ((size_t)numitems+1)*sizeof(char *),
                                        "pdfi_parse_cstring_array(templist)");
     if (templist == NULL) {
         code = gs_note_error(gs_error_VMerror);
@@ -295,7 +295,7 @@ int pdfi_parse_name_cstring_array(pdf_context *ctx, char *data, uint64_t size, c
             length --;
 
         /* Allocate the string and copy it */
-        newstr = (char *)gs_alloc_bytes(ctx->memory, length+1,
+        newstr = (char *)gs_alloc_bytes(ctx->memory, (size_t)length+1,
                                        "pdfi_parse_cstring_array(newstr)");
         if (newstr == NULL) {
             code = gs_note_error(gs_error_VMerror);

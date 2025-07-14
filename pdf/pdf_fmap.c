@@ -82,7 +82,7 @@ pdfi_fontmap_open_file(pdf_context *ctx, const char *mapfilename, byte **buf, in
             byte *dbuf;
             *buflen = (int)file_size;
 
-            (*buf) = gs_alloc_bytes(ctx->memory, *buflen + poststringlen, "pdf_cmap_open_file(buf)");
+            (*buf) = gs_alloc_bytes(ctx->memory, (size_t)*buflen + poststringlen, "pdf_cmap_open_file(buf)");
             if (*buf != NULL) {
                 sfread((*buf), 1, *buflen, s);
                 memcpy((*buf) + *buflen, poststring, poststringlen);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -260,7 +260,7 @@ bj10e_open(gx_device *pdev)
 /* Send the page to the printer. */
 static int
 bj10e_print_page(gx_device_printer *pdev, gp_file *prn_stream)
-{	int line_size = gx_device_raster((gx_device *)pdev, 0);
+{	size_t line_size = gx_device_raster((gx_device *)pdev, 0);
         int xres = (int)pdev->x_pixels_per_inch;
         int yres = (int)pdev->y_pixels_per_inch;
         int mode = (yres == 180 ?

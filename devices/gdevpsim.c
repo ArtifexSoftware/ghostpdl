@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -142,7 +142,7 @@ static void write_data_run(const byte *, int, gp_file *, byte);
 static int
 psmono_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
-    int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
+    size_t line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int lnum, code = 0;
     byte *line = gs_alloc_bytes(pdev->memory, line_size, "psmono_print_page");
     byte invert = (pdev->color_info.depth == 1 ? 0xff : 0);
@@ -308,7 +308,7 @@ psrgb_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
     int width = pdev->width;
-    byte *lbuf = gs_alloc_bytes(mem, width * 3,
+    byte *lbuf = gs_alloc_bytes(mem, (size_t)width * 3,
                                 "psrgb_print_page(lbuf)");
     int lnum, code = 0;
     stream fs, a85s, rls;

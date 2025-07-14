@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -80,7 +80,7 @@ static int zpdfi_populate_search_paths(i_ctx_t *i_ctx_p, pdf_context *ctx)
             }
         }
 
-        ctx->search_paths.resource_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_param_string) * r_size(&pfpath->list), "array of paths");
+        ctx->search_paths.resource_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, (size_t)sizeof(gs_param_string) * r_size(&pfpath->list), "array of paths");
         if (ctx->search_paths.resource_paths == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto done;
@@ -101,7 +101,7 @@ static int zpdfi_populate_search_paths(i_ctx_t *i_ctx_p, pdf_context *ctx)
         }
         code = dict_find_string(systemdict, "FONTPATH", &fpathref);
         if (code >= 0 && r_has_type(fpathref, t_array)) {
-            ctx->search_paths.font_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_param_string) * r_size(fpathref), "array of font paths");
+            ctx->search_paths.font_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, (size_t)sizeof(gs_param_string) * r_size(fpathref), "array of font paths");
             if (ctx->search_paths.font_paths == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto done;
@@ -134,7 +134,7 @@ static int zpdfi_populate_fontmap_files(i_ctx_t *i_ctx_p, pdf_context *ctx)
 
     code = dict_find_string(systemdict, "FONTMAP", &fontmaps);
     if (code >= 0 && r_has_type(fontmaps, t_array)) {
-        ctx->fontmapfiles = (gs_string *)gs_alloc_bytes(ctx->memory, sizeof(gs_string) * r_size(fontmaps), "array of fontmap files");
+        ctx->fontmapfiles = (gs_string *)gs_alloc_bytes(ctx->memory, (size_t)sizeof(gs_string) * r_size(fontmaps), "array of fontmap files");
         if (ctx->fontmapfiles != 0) {
             memset(ctx->fontmapfiles, 0x00, sizeof(gs_string) * r_size(fontmaps));
             ctx->num_fontmapfiles = r_size(fontmaps);
@@ -474,7 +474,7 @@ static void debug_pdfobj(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, pdf_obj *PDFobj)
             (void)pdfi_free_string_from_name(pdfctx->ctx, str);
             break;
         case PDF_STRING:
-            str = (char *)gs_alloc_bytes(pdfctx->ctx->memory, ((pdf_string *)PDFobj)->length + 1, "");
+            str = (char *)gs_alloc_bytes(pdfctx->ctx->memory, ((pdf_string *)PDFobj)->length + (size_t)1, "");
             if (str == NULL)
                 return;
             memset(str, 0x00, ((pdf_string *)PDFobj)->length + 1);
@@ -1022,7 +1022,7 @@ static int param_value_get_namelist(gs_memory_t *ps_mem, pdf_context *ctx, ref *
 
     check_read_type(*pvalueref, t_array);
 
-    strlist = (char **)gs_alloc_bytes(ctx->memory, (r_size(pvalueref)+1)*sizeof(char *), "param_value_get_namelist");
+    strlist = (char **)gs_alloc_bytes(ctx->memory, (size_t)(r_size(pvalueref)+1)*sizeof(char *), "param_value_get_namelist");
     if (strlist == NULL)
         return_error(gs_error_VMerror);
     memset(strlist, 0x00, (r_size(pvalueref)+1)*sizeof(char *));
@@ -1040,7 +1040,7 @@ static int param_value_get_namelist(gs_memory_t *ps_mem, pdf_context *ctx, ref *
         else
             sref = lval;
 
-        strlist[count] = (char *)gs_alloc_bytes(ctx->memory, sref.tas.rsize + 1, "param_value_get_namelist");
+        strlist[count] = (char *)gs_alloc_bytes(ctx->memory, (size_t)sref.tas.rsize + 1, "param_value_get_namelist");
         if (strlist[count] == NULL)
             return_error(gs_error_VMerror);
         memset(strlist[count], 0x00, sref.tas.rsize + 1);
@@ -1102,7 +1102,7 @@ static int apply_interpreter_params(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, ref *pdi
     if (dict_find_string(pdictref, "PDFPassword", &pvalueref) > 0) {
         if (!r_has_type(pvalueref, t_string))
             goto error;
-        pdfctx->ctx->encryption.Password = (char *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF Password from zpdfops");
+        pdfctx->ctx->encryption.Password = (char *)gs_alloc_bytes(pdfctx->ctx->memory, (size_t)r_size(pvalueref) + 1, "PDF Password from zpdfops");
         if (pdfctx->ctx->encryption.Password == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -1290,7 +1290,7 @@ static int apply_interpreter_params(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, ref *pdi
     if (dict_find_string(pdictref, "CIDFSubstPath", &pvalueref) > 0) {
         if (!r_has_type(pvalueref, t_string))
             goto error;
-        pdfctx->ctx->args.cidfsubstpath.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF cidfsubstpath from zpdfops");
+        pdfctx->ctx->args.cidfsubstpath.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, (size_t)r_size(pvalueref) + 1, "PDF cidfsubstpath from zpdfops");
         if (pdfctx->ctx->args.cidfsubstpath.data == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -1301,7 +1301,7 @@ static int apply_interpreter_params(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, ref *pdi
     if (dict_find_string(pdictref, "CIDFSubstFont", &pvalueref) > 0) {
         if (!r_has_type(pvalueref, t_string))
             goto error;
-        pdfctx->ctx->args.cidfsubstfont.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(pvalueref) + 1, "PDF cidfsubstfont from zpdfops");
+        pdfctx->ctx->args.cidfsubstfont.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, (size_t)r_size(pvalueref) + 1, "PDF cidfsubstfont from zpdfops");
         if (pdfctx->ctx->args.cidfsubstfont.data == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -1323,7 +1323,7 @@ static int apply_interpreter_params(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, ref *pdi
             code = gs_note_error(gs_error_typecheck);
             goto error;
         }
-        pdfctx->ctx->args.defaultfont.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, r_size(namstrp) + 1, "PDF defaultfontname from zpdfops");
+        pdfctx->ctx->args.defaultfont.data = (byte *)gs_alloc_bytes(pdfctx->ctx->memory, (size_t)r_size(namstrp) + 1, "PDF defaultfontname from zpdfops");
         if (pdfctx->ctx->args.defaultfont.data == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -1471,7 +1471,7 @@ static int zPDFparsePageList(i_ctx_t *i_ctx_p)
 
     check_type_only(*(op - 1), t_string);
 
-    PageString = (char *)gs_alloc_bytes(imemory, r_size(op - 1) + 1, "zPDFparsePageList");
+    PageString = (char *)gs_alloc_bytes(imemory, (size_t)r_size(op - 1) + 1, "zPDFparsePageList");
     if (PageString == NULL)
         return_error(gs_error_VMerror);
     memcpy(PageString, (op - 1)->value.const_bytes, r_size(op - 1));

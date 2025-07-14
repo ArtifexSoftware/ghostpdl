@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -555,7 +555,7 @@ hpgl_RF(hpgl_args_t * pargs, hpgl_state_t * pgls)
 
         /* allocate enough memory for pattern header and data */
         data =
-            gs_alloc_bytes(pgls->memory, width * height, "hpgl raster fill");
+            gs_alloc_bytes(pgls->memory, (size_t)width * height, "hpgl raster fill");
         if (data == 0)
             return e_Memory;
 

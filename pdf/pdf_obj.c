@@ -138,7 +138,7 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
 
                 ((pdf_array *)*obj)->size = size;
                 if (size > 0) {
-                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_obj *), "pdfi_object_alloc");
+                    values = (pdf_obj **)gs_alloc_bytes(ctx->memory, (size_t)size * sizeof(pdf_obj *), "pdfi_object_alloc");
                     if (values == NULL) {
                         code = gs_note_error(gs_error_VMerror);
                         goto error_out;
@@ -154,7 +154,7 @@ int pdfi_object_alloc(pdf_context *ctx, pdf_obj_type type, unsigned int size, pd
 
                 ((pdf_dict *)*obj)->size = size;
                 if (size > 0) {
-                    entries = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, size * sizeof(pdf_dict_entry), "pdfi_object_alloc");
+                    entries = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, (size_t)size * sizeof(pdf_dict_entry), "pdfi_object_alloc");
                     if (entries == NULL) {
                         code = gs_note_error(gs_error_VMerror);
                         goto error_out;

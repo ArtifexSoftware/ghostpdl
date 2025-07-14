@@ -641,7 +641,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
     } else {
         spp_cm = num_des_comps;
         psrc_cm = (unsigned short*) gs_alloc_bytes(pgs->memory,
-                        sizeof(unsigned short)  * w * spp_cm/spp,
+                        sizeof(unsigned short)  * (size_t)w * spp_cm/spp,
                         "image_render_icc16");
         if (psrc_cm == NULL)
             return_error(gs_error_VMerror);
@@ -668,7 +668,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
             if (need_decode) {
                 /* Need decode and CM.  This is slow but does not happen that often */
                 psrc_decode = (unsigned short*) gs_alloc_bytes(pgs->memory,
-                                sizeof(unsigned short) * w * spp,
+                                sizeof(unsigned short) * (size_t)w * spp,
                                 "image_render_icc16");
                 if (psrc_decode == NULL) {
                     gs_free_object(pgs->memory, (byte *)psrc_cm_start, "image_render_icc16");

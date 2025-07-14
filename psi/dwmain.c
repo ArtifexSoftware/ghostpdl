@@ -360,7 +360,7 @@ int new_main(int argc, char *argv[])
         sprintf(dformat, "-dDisplayFormat=%d", format);
     }
     nargc = argc + 2;
-    nargv = (char **)malloc(nargc * sizeof(char *));
+    nargv = (char **)malloc((size_t)nargc * sizeof(char *));
 
     if (nargv == NULL)
         return 1;
@@ -496,7 +496,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmd
     }
 
     argc = 0;
-    args = (char *)malloc(lstrlen(p)+1);
+    args = (char *)malloc((size_t)lstrlen(p)+1);
     if (args == (char *)NULL) {
         fprintf(stdout, "Insufficient memory in WinMain()\n");
         return 1;

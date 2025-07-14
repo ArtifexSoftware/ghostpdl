@@ -283,7 +283,7 @@ opvpSetLineDash(opvp_dc_t printerContext, opvp_int_t n, const opvp_fix_t *dash)
     if (opv_gstate.line_dash_array != NULL)
         free(opv_gstate.line_dash_array);
 
-    opv_gstate.line_dash_array = (opvp_fix_t*) malloc(n * sizeof(opvp_fix_t));
+    opv_gstate.line_dash_array = (opvp_fix_t*) malloc((size_t)n * sizeof(opvp_fix_t));
     if (opv_gstate.line_dash_array == NULL) {
         fprintf(pFile,"\t Error in dash array allocation.  Exiting.");
         fclose(pFile);

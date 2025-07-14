@@ -575,7 +575,8 @@ clist_read_chunk(gx_device_clist_reader *crdev, int64_t position, int size, unsi
 int
 clist_read_color_usage_array(gx_device_clist_reader *crdev)
 {
-    int code, size_data = crdev->nbands * sizeof(gx_color_usage_t );
+    int code;
+    size_t size_data = crdev->nbands * sizeof(gx_color_usage_t );
     cmd_block cb;
 
     if (crdev->color_usage_array != NULL)
@@ -619,7 +620,8 @@ clist_unserialize_icctable(gx_device_clist_reader *crdev, cmd_block *cb)
     clist_file_ptr cfile = crdev->page_info.cfile;
     clist_icctable_t *icc_table = crdev->icc_table;
     int64_t save_pos;
-    int number_entries, size_data;
+    int number_entries;
+    size_t size_data;
     unsigned char *buf, *buf_start;
     clist_icctable_entry_t *curr_entry;
     int k;

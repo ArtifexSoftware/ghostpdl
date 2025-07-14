@@ -636,7 +636,7 @@ dsc_add_page(CDSC *dsc, int ordinal, char *label)
     dsc->page_count++;
     if (dsc->page_count >= dsc->page_chunk_length) {
         CDSCPAGE *new_page = (CDSCPAGE *)dsc_memalloc(dsc,
-            (CDSC_PAGE_CHUNK+dsc->page_count) * sizeof(CDSCPAGE));
+            (size_t)(CDSC_PAGE_CHUNK+dsc->page_count) * sizeof(CDSCPAGE));
         if (new_page == NULL)
             return CDSC_ERROR;	/* out of memory */
         memcpy(new_page, dsc->page,
@@ -658,7 +658,7 @@ dsc_add_media(CDSC *dsc, CDSCMEDIA *media)
 
     /* extend media array  */
     newmedia_array = (CDSCMEDIA **)dsc_memalloc(dsc,
-        (dsc->media_count + 1) * sizeof(CDSCMEDIA *));
+        (size_t)(dsc->media_count + 1) * sizeof(CDSCMEDIA *));
     if (newmedia_array == NULL)
         return CDSC_ERROR;	/* out of memory */
     if (dsc->media != NULL) {
@@ -779,7 +779,7 @@ dsc_init2(CDSC *dsc)
     dsc->string->index = 0;
     dsc->string->length = CDSC_STRING_CHUNK;
 
-    dsc->page = (CDSCPAGE *)dsc_memalloc(dsc, CDSC_PAGE_CHUNK * sizeof(CDSCPAGE));
+    dsc->page = (CDSCPAGE *)dsc_memalloc(dsc, (size_t)CDSC_PAGE_CHUNK * sizeof(CDSCPAGE));
     if (dsc->page == NULL) {
         dsc_free(dsc);
         return NULL;	/* no memory */

@@ -2205,7 +2205,7 @@ gx_dc_pattern_read_trans_buff(gx_color_tile *ptile, int64_t offset,
     int left = size;
     int64_t offset1 = offset;
     gx_pattern_trans_t *trans_pat = ptile->ttrans;
-    int data_size;
+    int64_t data_size;
 
     data_size = trans_pat->planestride * trans_pat->n_chan;
     if (trans_pat->has_tags)

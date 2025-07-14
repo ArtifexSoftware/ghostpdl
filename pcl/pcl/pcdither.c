@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -63,7 +63,8 @@ download_dither_matrix(pcl_args_t * pargs, pcl_state_t * pcs)
     pcl_udither_t *pdither = 0;
 
     const pcl__udither_t *ptbl = (pcl__udither_t *) arg_data(pargs);
-    uint nplanes, h, w, rlen;
+    uint nplanes, h, w;
+    size_t rlen;
     int code = 0;
     byte *bp;
 

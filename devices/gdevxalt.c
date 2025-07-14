@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -318,7 +318,7 @@ x_wrap_get_bits_rectangle(gx_device * dev, const gs_int_rect *prect,
     int width;
     int sdepth;
     byte smask;
-    uint dsize;
+    size_t dsize;
     gs_memory_t *mem = dev->memory;
     byte *row;
     byte *base;

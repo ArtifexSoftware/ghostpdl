@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2213,9 +2213,9 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
     }
 
     {
-        int raster_plane = bitmap_raster(width * 8);
+        size_t raster_plane = bitmap_raster(width * 8);
         byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS] = { 0 };
-        int cmyk_raster = width * NUM_CMYK_COMPONENTS;
+        size_t cmyk_raster = width * NUM_CMYK_COMPONENTS;
         int pixel, y;
         byte * sep_line;
         int plane_index;
@@ -2555,7 +2555,7 @@ tiffsep1_print_page(gx_device_printer * pdev, gp_file * file)
     {   /* Get the halftoned line and write out the separations */
         byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
         int width = tfdev->width;
-        int raster_plane = bitmap_raster(width);
+        size_t raster_plane = bitmap_raster(width);
         int y;
         gs_get_bits_params_t params;
         gs_int_rect rect;

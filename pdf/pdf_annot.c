@@ -747,7 +747,7 @@ static int pdfi_form_modDA(pdf_context *ctx, pdf_string *DA, pdf_string **mod_DA
     pdf_string *newDA = NULL;
 
     /* Make a copy of the string because we are going to destructively parse it */
-    parse_str = (char *)gs_alloc_bytes(ctx->memory, DA->length+1, "pdfi_annot_display_text(strbuf)");
+    parse_str = (char *)gs_alloc_bytes(ctx->memory, (size_t)DA->length+1, "pdfi_annot_display_text(strbuf)");
     if (parse_str == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto exit;
@@ -779,7 +779,7 @@ static int pdfi_form_modDA(pdf_context *ctx, pdf_string *DA, pdf_string **mod_DA
     snprintf(size_str, sizeof(size_str), "%g ", size);
 
     /* Create a new DA and reassemble the old DA into it */
-    code = pdfi_object_alloc(ctx, PDF_STRING, DA->length+strlen(size_str)+1, (pdf_obj **)&newDA);
+    code = pdfi_object_alloc(ctx, PDF_STRING, (size_t)DA->length+strlen(size_str)+1, (pdf_obj **)&newDA);
     if (code < 0)
         goto exit;
     pdfi_countup(newDA);

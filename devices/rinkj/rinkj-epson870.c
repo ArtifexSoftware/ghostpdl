@@ -850,7 +850,7 @@ rinkj_escp_compress_rle (char *dst, const char *src, int n)
 static int
 rinkj_escp_flush (RinkjEscp *z)
 {
-  int xsb, xsb_out;
+  size_t xsb, xsb_out;
   int status;
   const int plane[7] = {3, 1, 0, 2, 5, 4, 6};
   const int color[7] = {0, 1, 2, 4, 17, 18, 16};

@@ -828,7 +828,7 @@ static int pdfi_apply_filter(pdf_context *ctx, pdf_dict *dict, pdf_name *n, pdf_
     if (ctx->args.pdfdebug)
     {
         char *str;
-        str = (char *)gs_alloc_bytes(ctx->memory, n->length + 1, "temp string for debug");
+        str = (char *)gs_alloc_bytes(ctx->memory, (size_t)n->length + 1, "temp string for debug");
         if (str == NULL)
             return_error(gs_error_VMerror);
         memcpy(str, (const char *)n->data, n->length);
@@ -1664,7 +1664,8 @@ pdfi_stream_to_buffer(pdf_context *ctx, pdf_stream *stream_obj, byte **buf, int6
 {
     byte *Buffer = NULL;
     int code = 0;
-    uint read = 0, buflen = 0;
+    uint read = 0;
+    size_t buflen = 0;
     int64_t ToRead = *bufferlen;
     gs_offset_t savedoffset;
     pdf_c_stream *stream = NULL, *SubFileStream = NULL;

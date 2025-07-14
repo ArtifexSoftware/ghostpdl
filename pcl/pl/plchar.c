@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1222,7 +1222,7 @@ pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
             int xAux, yAux;
             int *xScan, *yScan, *xLast;
             int pointBufferSize;
-            uint sz;
+            size_t sz;
 
             if ((outlines + 4 + i * 8) >= cdata_end) {
                 code = gs_note_error(gs_error_invalidfont);

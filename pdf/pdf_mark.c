@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -194,7 +194,7 @@ static int pdfi_pdfmark_from_dict_withlabel(pdf_context *ctx, pdf_indirect_ref *
     if (label)
         size += 1;
 
-    parray = (gs_param_string *)gs_alloc_bytes(ctx->memory, size*sizeof(gs_param_string),
+    parray = (gs_param_string *)gs_alloc_bytes(ctx->memory, (size_t)size*sizeof(gs_param_string),
                                                "pdfi_pdfmark_from_dict(parray)");
     if (parray == NULL) {
         code = gs_note_error(gs_error_VMerror);
@@ -296,7 +296,7 @@ int pdfi_pdfmark_from_objarray(pdf_context *ctx, pdf_obj **objarray, int len,
 
     size = len + 2; /* data + CTM + type */
 
-    parray = (gs_param_string *)gs_alloc_bytes(ctx->memory, size*sizeof(gs_param_string),
+    parray = (gs_param_string *)gs_alloc_bytes(ctx->memory, (size_t)size*sizeof(gs_param_string),
                                                "pdfi_pdfmark_from_objarray(parray)");
     if (parray == NULL) {
         code = gs_note_error(gs_error_VMerror);
@@ -678,7 +678,7 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
             return code;
     } else {
         len2 = ((pdf_string *)Str)->length;
-        str2 = (char *)gs_alloc_bytes(ctx->memory, len2 + 1, "pdfi_check_limits");
+        str2 = (char *)gs_alloc_bytes(ctx->memory, (size_t)len2 + 1, "pdfi_check_limits");
         if (str2 == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -719,7 +719,7 @@ static int pdfi_check_limits(pdf_context *ctx, pdf_dict *node, char *str, int le
             return code;
     } else {
         len2 = ((pdf_string *)Str)->length;
-        str2 = (char *)gs_alloc_bytes(ctx->memory, len2 + 1, "pdfi_check_limits");
+        str2 = (char *)gs_alloc_bytes(ctx->memory, (size_t)len2 + 1, "pdfi_check_limits");
         if (str2 == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -865,7 +865,7 @@ static int pdfi_get_named_dest(pdf_context *ctx, pdf_obj *Named, pdf_obj **Dest)
             return code;
     } else {
         len = ((pdf_string *)Named)->length;
-        str = (char *)gs_alloc_bytes(ctx->memory, len + 1, "pdfi_get_named_dest");
+        str = (char *)gs_alloc_bytes(ctx->memory, (size_t)len + 1, "pdfi_get_named_dest");
         if (str == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;

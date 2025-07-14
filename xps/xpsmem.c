@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,7 +19,7 @@
 #include "ghostxps.h"
 
 void *
-xps_realloc_imp(xps_context_t *ctx, void *ptr, int size, const char *func)
+xps_realloc_imp(xps_context_t *ctx, void *ptr, size_t size, const char *func)
 {
     if (!ptr)
         return gs_alloc_bytes(ctx->memory, size, func);
@@ -51,7 +51,7 @@ xps_strdup_imp(xps_context_t *ctx, const char *str, const char *cname)
 {
     char *cpy = NULL;
     if (str)
-        cpy = (char*) gs_alloc_bytes(ctx->memory, strlen(str) + 1, cname);
+        cpy = (char*) gs_alloc_bytes(ctx->memory, (size_t)strlen(str) + 1, cname);
     if (cpy)
         strcpy(cpy, str);
     return cpy;

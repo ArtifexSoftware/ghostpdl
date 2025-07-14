@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -299,7 +299,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
                 int num_log_blocks = (f->log_length + MEMFILE_DATA_SIZE - 1) / MEMFILE_DATA_SIZE;
                 const stream_template *decompress_template = clist_decompressor_template();
 
-                new_log_block = MALLOC(f, num_log_blocks * sizeof(LOG_MEMFILE_BLK), "memfile_fopen" );
+                new_log_block = MALLOC(f, (size_t)num_log_blocks * sizeof(LOG_MEMFILE_BLK), "memfile_fopen" );
                 if (new_log_block == NULL) {
                     code = gs_note_error(gs_error_VMerror);
                     goto finish;

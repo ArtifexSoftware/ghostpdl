@@ -2047,7 +2047,7 @@ hp_colour_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
   byte *data[4], *plane_data[4][4], *out_data;
   byte *out_row, *out_row_alt;
   word *storage;
-  uint storage_size_words;
+  size_t storage_size_words;
   ep_globals eg;
 
   memset(&eg, 0, sizeof(eg));

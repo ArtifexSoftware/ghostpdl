@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -338,11 +338,11 @@ static int
 pcx_write_page(gx_device_printer * pdev, gp_file * file, pcx_header * phdr,
                bool planar)
 {
-    int raster = gdev_prn_raster(pdev);
+    size_t raster = gdev_prn_raster(pdev);
     uint rsize = ROUND_UP((pdev->width * phdr->bpp + 7) >> 3, 2);	/* PCX format requires even */
     int height = pdev->height;
     int depth = pdev->color_info.depth;
-    uint lsize = raster + rsize;
+    size_t lsize = raster + rsize;
     byte *line = gs_alloc_bytes(pdev->memory, lsize, "pcx file buffer");
     byte *plane = line + raster;
     int y;

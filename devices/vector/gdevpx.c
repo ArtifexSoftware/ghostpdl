@@ -824,7 +824,7 @@ pclxl_write_image_data_JPEG(gx_device_pclxl * xdev, const byte * base,
 
     /* Approx. The worse case is ~ header + width_bytes * height.
        Apparently minimal SOI/DHT/DQT/SOS/EOI is 341 bytes. TO CHECK. */
-    int buffersize = 341 + width_bytes * height;
+    size_t buffersize = 341 + width_bytes * height;
 
     byte *buf = gs_alloc_bytes(xdev->v_memory, buffersize,
                                "pclxl_write_image_data_JPEG(buf)");
@@ -941,7 +941,7 @@ pclxl_write_image_data_DeltaRow(gx_device_pclxl * xdev, const byte * base,
 
     /* allocate the worst case scenario; PCL XL has an extra 2 byte per row compared to PCL5 */
     byte *buf =
-        gs_alloc_bytes(xdev->v_memory, (worst_case_comp_size + 2) * height,
+        gs_alloc_bytes(xdev->v_memory, (worst_case_comp_size + 2) * (size_t)height,
                        "pclxl_write_image_data_DeltaRow(buf)");
 
     prow =
@@ -2124,7 +2124,7 @@ pclxl_begin_typed_image(gx_device * dev,
         num_rows = 1;
     pie = gs_alloc_struct(mem, pclxl_image_enum_t, &st_pclxl_image_enum,
                           "pclxl_begin_image");
-    row_data = gs_alloc_bytes(mem, num_rows * row_raster,
+    row_data = gs_alloc_bytes(mem, (size_t)num_rows * row_raster,
                               "pclxl_begin_image(rows)");
     if (pie == 0 || row_data == 0) {
         code = gs_note_error(gs_error_VMerror);

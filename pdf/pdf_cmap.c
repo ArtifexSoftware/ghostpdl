@@ -679,7 +679,7 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
             if (pdficmap->csi_reg.data != NULL)
                gs_free_object(mem, pdficmap->csi_reg.data, "cmap_def_func(Registry)");
 
-            pdficmap->csi_reg.data = gs_alloc_bytes(mem, s->cur[0].size + 1, "cmap_def_func(Registry)");
+            pdficmap->csi_reg.data = gs_alloc_bytes(mem, (size_t)s->cur[0].size + 1, "cmap_def_func(Registry)");
             if (pdficmap->csi_reg.data != NULL) {
                 pdficmap->csi_reg.size = s->cur[0].size;
                 if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
@@ -698,7 +698,7 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
             if (pdficmap->csi_ord.data != NULL)
                gs_free_object(mem, pdficmap->csi_ord.data, "cmap_def_func(Ordering)");
 
-            pdficmap->csi_ord.data = gs_alloc_bytes(mem, s->cur[0].size + 1, "cmap_def_func(Ordering)");
+            pdficmap->csi_ord.data = gs_alloc_bytes(mem, (size_t)s->cur[0].size + 1, "cmap_def_func(Ordering)");
             if (pdficmap->csi_ord.data != NULL) {
                 pdficmap->csi_ord.size = s->cur[0].size;
                 if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING))
@@ -723,7 +723,7 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
             if (pdficmap->name.data != NULL)
                gs_free_object(mem, pdficmap->name.data, "cmap_def_func(CMapName)");
 
-            pdficmap->name.data = gs_alloc_bytes(mem, s->cur[0].size + 1, "cmap_def_func(CMapName)");
+            pdficmap->name.data = gs_alloc_bytes(mem, (size_t)s->cur[0].size + 1, "cmap_def_func(CMapName)");
             if (pdficmap->name.data != NULL) {
                 pdficmap->name.size = s->cur[0].size;
                 if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING))
@@ -762,7 +762,7 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
                 if (pdficmap->uid.xvalues != NULL)
                    gs_free_object(mem, pdficmap->uid.xvalues, "cmap_def_func(XUID)");
 
-                pdficmap->uid.xvalues = (long *)gs_alloc_bytes(mem, len * sizeof(*pdficmap->uid.xvalues), "cmap_def_func(XUID)");
+                pdficmap->uid.xvalues = (long *)gs_alloc_bytes(mem, (size_t)len * sizeof(*pdficmap->uid.xvalues), "cmap_def_func(XUID)");
                 if (pdficmap->uid.xvalues != NULL) {
                      int i;
                      pdf_ps_stack_object_t *a = s->cur->val.arr;

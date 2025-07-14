@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -90,7 +90,7 @@ perm_print_page(gx_device_printer *pdev, gp_file *pstream)
     int y;
     gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;
     int ncomp = dev->num_std_colorant_names;
-    int raw_raster = pdev->width * ncomp;
+    size_t raw_raster = pdev->width * ncomp;
     byte *raw_line = NULL;
     byte *cooked_line = NULL;
     byte *row;
@@ -100,7 +100,7 @@ perm_print_page(gx_device_printer *pdev, gp_file *pstream)
 
     fprintf(pstream, "P6\n%d %d\n255\n", dev->width, dev->height);
     raw_line = gs_alloc_bytes(pdev->memory, raw_raster, "perm_print_page");
-    cooked_line = gs_alloc_bytes(pdev->memory, dev->width * 3, "perm_print_page");
+    cooked_line = gs_alloc_bytes(pdev->memory, (size_t)dev->width * 3, "perm_print_page");
     if (raw_line == NULL || cooked_line == NULL) {
         gs_free_object(pdev->memory, raw_line, "perm_print_page");
         return_error(gs_error_VMerror);

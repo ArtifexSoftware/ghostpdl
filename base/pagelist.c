@@ -1,4 +1,4 @@
-/* Copyright (C) 2022-2023 Artifex Software, Inc.
+/* Copyright (C) 2022-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -56,7 +56,7 @@ pagelist_parse_to_array(char *page_list, gs_memory_t *mem, int num_pages, int **
         return gs_error_rangecheck;	/* not valid */
 
     range_count++;			/* room for the end of list marker: 0, 0, 0 */
-    pagelist_array = (int *)gs_alloc_byte_array(mem, 1 + (range_count * 3), sizeof(int), "pagelist_parse_to_array");
+    pagelist_array = (int *)gs_alloc_byte_array(mem, 1 + ((size_t)range_count * 3), sizeof(int), "pagelist_parse_to_array");
     *parray = pagelist_array;		/* return the array (NULL is OK) */
     if (pagelist_array == NULL)
         return gs_error_VMerror;

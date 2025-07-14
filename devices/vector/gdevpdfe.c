@@ -463,7 +463,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
     if (data_length == 0)
         return 0;
 
-    buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, data_length * sizeof(unsigned char),
+    buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, (size_t)data_length * sizeof(unsigned char),
                     "pdf_xmp_write_translated");
     if (buf0 == NULL)
         return_error(gs_error_VMerror);
@@ -531,7 +531,7 @@ pdf_xmp_write_translated(gx_device_pdf *pdev, stream *s, const byte *data, int d
         int code;
 
         /* A single UTF-16 (2 bytes) can end up as 4 bytes in UTF-8 */
-        buf1 = (char *)gs_alloc_bytes(pdev->memory, data_length * 2 * sizeof(unsigned char),
+        buf1 = (char *)gs_alloc_bytes(pdev->memory, (size_t)data_length * 2 * sizeof(unsigned char),
                     "pdf_xmp_write_translated");
         if (buf1 == NULL) {
             gs_free_object(pdev->memory, buf0, "pdf_xmp_write_translated");

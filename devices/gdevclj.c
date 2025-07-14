@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -437,7 +437,7 @@ clj_print_page(
     /* allocate memory for the raw and compressed data */
     if ((data = gs_alloc_bytes(mem, lsize, "clj_print_page(data)")) == 0)
         return_error(gs_error_VMerror);
-    if ((cdata[0] = gs_alloc_bytes(mem, 3 * clsize, "clj_print_page(cdata)")) == 0) {
+    if ((cdata[0] = gs_alloc_bytes(mem, 3 * (size_t)clsize, "clj_print_page(cdata)")) == 0) {
         gs_free_object(mem, data, "clj_print_page(data)");
         return_error(gs_error_VMerror);
     }

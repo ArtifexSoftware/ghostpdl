@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -396,7 +396,7 @@ jpeg_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gx_device_jpeg *jdev = (gx_device_jpeg *) pdev;
     gs_memory_t *mem = pdev->memory;
-    int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
+    size_t line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     byte *in = gs_alloc_bytes(mem, line_size, "jpeg_print_page(in)");
     jpeg_compress_data *jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
       &st_jpeg_compress_data, "jpeg_print_page(jpeg_compress_data)");

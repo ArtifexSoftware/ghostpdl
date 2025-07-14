@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -113,7 +113,7 @@ escp2_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         int line_size = gdev_prn_raster((gx_device_printer *)pdev);
         int band_size = 24;	/* 1, 8, or 24 */
-        int in_size = line_size * band_size;
+        size_t in_size = line_size * band_size;
 
         byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "escp2_print_page(buf1)");
         byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "escp2_print_page(buf2)");

@@ -426,7 +426,7 @@ run_stdin:
                     if (minst->saved_pages_initial_arg == NULL) {
                         /* Tuck the parameters away for later when init2 is done (usually "begin") */
                         minst->saved_pages_initial_arg = (char *)gs_alloc_bytes(minst->heap,
-                                                                                1+strlen((char *)arg+12),
+                                                                                1+strlen((char *)arg+(size_t)12),
                                                                                "GS_OPTIONS");
                         if (minst->saved_pages_initial_arg != NULL) {
                             strcpy(minst->saved_pages_initial_arg,(char *)arg+12);
@@ -1136,6 +1136,9 @@ runarg(gs_main_instance *minst,
     int code;
     char *line;
 
+    if (len < 0)
+        return gs_note_error(gs_error_rangecheck);
+
     if (options & runInit) {
         code = gs_main_init2(minst);    /* Finish initialization */
 
@@ -1388,7 +1391,7 @@ print_devices(const gs_main_instance *minst)
         for (i = 0; gs_getdevice(i) != 0; i++)
             ;
         ndev = (size_t)i;
-        names = (const char **)gs_alloc_bytes(minst->heap, ndev * sizeof(const char*), "print_devices");
+        names = (const char **)gs_alloc_bytes(minst->heap, (size_t)ndev * sizeof(const char*), "print_devices");
         if (names == (const char **)NULL) { /* old-style unsorted device list */
             for (i = 0; (pdev = gs_getdevice(i)) != 0; i++) {
                 const char *dname = gs_devicename(pdev);

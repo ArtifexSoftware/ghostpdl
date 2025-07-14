@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1297,7 +1297,7 @@ read_dither(pcl_state_t * pcs,
     int itype;
     int height, width;
     int nplanes = 1, nlevels = 1;
-    uint req_size = 0;
+    size_t req_size = 0;
     gs_param_string dstring;
 
     /* gather the common parameters */

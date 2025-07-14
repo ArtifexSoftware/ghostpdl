@@ -494,7 +494,7 @@ image_color_icc_prep(gx_image_enum *penum_orig, const byte *psrc, uint w,
             *pspan = span;
         /* Put the buffer on a 32 byte memory alignment for SSE/AVX for every
          * line. Also extra space for 32 byte overrun. */
-        *psrc_cm_start = gs_alloc_bytes(pgs->memory,  span * spp_cm + 64,
+        *psrc_cm_start = gs_alloc_bytes(pgs->memory,  (size_t)span * spp_cm + 64,
                                         "image_color_icc_prep");
         if (*psrc_cm_start == NULL)
             return_error(gs_error_VMerror);

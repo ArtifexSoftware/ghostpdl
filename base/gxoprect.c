@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -230,7 +230,7 @@ gx_overprint_generic_fill_rectangle(
     /* allocate space for a scanline of color indices */
     pcolor_buff = (gx_color_index *)
                       gs_alloc_bytes( mem,
-                                      w *  ARCH_SIZEOF_COLOR_INDEX,
+                                      (size_t)w *  ARCH_SIZEOF_COLOR_INDEX,
                                       "overprint generic fill rectangle" );
     if (pcolor_buff == 0)
         return gs_note_error(gs_error_VMerror);
@@ -449,7 +449,7 @@ gx_overprint_sep_fill_rectangle_1(
     gs_get_bits_params_t    gb_params;
     gs_int_rect             gb_rect;
     int                     code = 0, bit_w, depth = tdev->color_info.depth;
-    int                     raster;
+    int64_t                  raster;
     mono_fill_chunk         rep_color, rep_mask;
 
     fit_fill(tdev, x, y, w, h);
@@ -465,7 +465,8 @@ gx_overprint_sep_fill_rectangle_1(
     }
 
     /* allocate a buffer for the returned data */
-    raster = bitmap_raster(w * depth);
+    if (check_64bit_multiply(w, depth, &raster) != 0)
+        return gs_note_error(gs_error_undefinedresult);
     gb_buff = gs_alloc_bytes(mem, raster, "overprint sep fill rectangle 1");
     if (gb_buff == 0)
         return gs_note_error(gs_error_VMerror);
@@ -534,7 +535,8 @@ gx_overprint_sep_fill_rectangle_2(
     byte *                  gb_buff = 0;
     gs_get_bits_params_t    gb_params;
     gs_int_rect             gb_rect;
-    int                     code = 0, byte_w, raster;
+    int                     code = 0, byte_w;
+    int64_t                  raster;
     int                     byte_depth = tdev->color_info.depth >> 3;
     byte *                  pcolor;
     byte *                  pmask;
@@ -551,7 +553,8 @@ gx_overprint_sep_fill_rectangle_2(
 #endif
 
     /* allocate a buffer for the returned data */
-    raster = bitmap_raster(w * (byte_depth << 3));
+    if (check_64bit_multiply(w, (byte_depth << 3), &raster) != 0)
+        return gs_note_error(gs_error_undefinedresult);
     gb_buff = gs_alloc_bytes(mem, raster, "overprint sep fill rectangle 2");
     if (gb_buff == 0)
         return gs_note_error(gs_error_VMerror);

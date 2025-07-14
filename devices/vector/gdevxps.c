@@ -2083,7 +2083,7 @@ xps_begin_typed_image(gx_device               *dev,
     gs_fixed_rect bbox;
     int bits_per_pixel;
     int num_components;
-    int bsize;
+    size_t bsize;
     cmm_profile_t *icc_profile = NULL;
     gs_color_space_index csindex;
     float index_decode[2];

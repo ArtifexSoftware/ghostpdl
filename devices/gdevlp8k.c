@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -181,8 +181,8 @@ static int
 lp8000_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
 
-        int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
-        int in_size = line_size;
+        size_t line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+        size_t in_size = line_size;
         unsigned int report_size;
 
         byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "lp8000_print_page(buf1)");

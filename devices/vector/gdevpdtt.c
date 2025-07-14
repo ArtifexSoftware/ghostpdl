@@ -1927,7 +1927,7 @@ static int
 pdf_alloc_text_glyphs_table(gx_device_pdf *pdev, pdf_text_enum_t *penum, const gs_string *pstr)
 {
     const int go = (pstr != NULL ? pstr->size : penum->text.size);
-    const int struct_size = sizeof(pdf_char_glyph_pairs_t) +
+    const size_t struct_size = sizeof(pdf_char_glyph_pairs_t) +
                             sizeof(pdf_char_glyph_pair_t) * (2 * go - 1);
     pdf_char_glyph_pairs_t *cgp = (pdf_char_glyph_pairs_t *)gs_alloc_bytes(penum->memory,
                 struct_size, "pdf_alloc_text_glyphs_table");

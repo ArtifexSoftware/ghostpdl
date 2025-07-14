@@ -1045,7 +1045,7 @@ main(int argc, char *argv[])
         fprintf(stdout, "%s\n", dformat);
 #endif
     nargc = argc + 1;
-    nargv = (char **)malloc(nargc * sizeof(char *));
+    nargv = (char **)malloc((size_t)nargc * sizeof(char *));
 
     if (nargv == NULL) {
         fprintf("Can't allocate memory to start up\n");

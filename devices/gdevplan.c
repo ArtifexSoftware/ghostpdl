@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -583,7 +583,7 @@ plan_print_page_loop(gx_device_printer *pdev, int log2bits, int numComps,
     int factor = dev->downscale.downscale_factor;
     int width = gx_downscaler_scale(pdev->width, factor);
     int height = gx_downscaler_scale(pdev->height, factor);
-    int raster_plane = bitmap_raster(width << log2bits);
+    size_t raster_plane = bitmap_raster(width << log2bits);
 
 #ifdef DEBUG_DUMP
     dump_row row_proc = NULL;

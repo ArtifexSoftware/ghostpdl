@@ -137,7 +137,7 @@ pdf_impl_allocate_interp_instance(pl_interp_implementation_t *impl,
 
     impl->interp_client_data = instance;
     if (COMPILE_INITS == 1) {
-        newpathsstr = (char *)gs_alloc_bytes(ctx->memory, strlen(rompathstr) + strlen(GS_LIB_DEFAULT_STRING) + 2, "temp paths string");
+        newpathsstr = (char *)gs_alloc_bytes(ctx->memory, (size_t)strlen(rompathstr) + strlen(GS_LIB_DEFAULT_STRING) + 2, "temp paths string");
         if (newpathsstr == NULL) {
             newpathsstr = (char *)rompathstr;
         }
@@ -413,7 +413,7 @@ static int plist_value_get_string_or_name(pdf_context *ctx, gs_param_typed_value
     if (*pstr)
         gs_free_object(ctx->memory, *pstr, "plist_value_get_string_or_name()");
 
-    *pstr = (char *)gs_alloc_bytes(ctx->memory, size + 1, "plist_value_get_string_or_name()");
+    *pstr = (char *)gs_alloc_bytes(ctx->memory, (size_t)size + 1, "plist_value_get_string_or_name()");
     if (*pstr == NULL)
         return_error(gs_error_VMerror);
 

@@ -140,7 +140,7 @@ static int OCRText(gx_device_pdf *pdev, gs_glyph glyph, gs_char ch, gs_char *len
          */
         rows = ury - lly;
         stride = (((urx - llx) + 7) / 8) + 1;
-        bitmap = gs_alloc_bytes(pdev->memory, rows * stride, "working OCR memory");
+        bitmap = gs_alloc_bytes(pdev->memory, (size_t)rows * stride, "working OCR memory");
         if(bitmap == NULL)
             return_error(gs_error_VMerror);
         memset(bitmap, 0x00, rows * stride);
@@ -150,7 +150,7 @@ static int OCRText(gx_device_pdf *pdev, gs_glyph glyph, gs_char ch, gs_char *len
          * need to think about the possibility that the OCR engine finds more character than we
          * expected (eg fi ligatures returned as 'f' and 'i'.
          */
-        returned = (int *)gs_alloc_bytes(pdev->memory, char_count * sizeof(int), "returned unicodes");
+        returned = (int *)gs_alloc_bytes(pdev->memory, (size_t)char_count * sizeof(int), "returned unicodes");
         if(returned == NULL) {
             gs_free_object(pdev->memory, bitmap, "working OCR memory");
             return_error(gs_error_VMerror);
@@ -406,7 +406,7 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
         }
 
         if (!unicode) {
-            unicode = (ushort *)gs_alloc_bytes(pdev->memory, length * sizeof(short), "temporary Unicode array");
+            unicode = (ushort *)gs_alloc_bytes(pdev->memory, (size_t)length * sizeof(short), "temporary Unicode array");
             if (unicode == NULL)
                 return_error(gs_error_VMerror);
             length = font->procs.decode_glyph((gs_font *)font, glyph, ch, unicode, length);

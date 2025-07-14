@@ -498,8 +498,8 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         int code, dev_rez, lnum;
         unsigned char color = 0;
         char pcmd[255];
-        int line_size = gdev_mem_bytes_per_scan_line((gx_device*)pdev);
-        int in_size = line_size * 8; /* Note that in_size is a multiple of 8 dots in height. */
+        size_t line_size = gdev_mem_bytes_per_scan_line((gx_device*)pdev);
+        size_t in_size = line_size * 8; /* Note that in_size is a multiple of 8 dots in height. */
         unsigned char color_order[4] = { -1, -1, -1, -1 };
         gx_render_plane_t render_planes[4] = {{ -1, -1, -1}, { -1, -1, -1}, { -1, -1, -1}, { -1, -1, -1}};
         byte* buf_in = NULL;

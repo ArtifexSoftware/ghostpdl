@@ -965,6 +965,7 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
   uint mj_tmp_buf_size;
   byte* mj_tmp_buf = NULL;
   int xtalbuff_size;
+  size_t realbufsize;
   short *xtalbuff = NULL;
   short *Cbar[16];
   short *Mbar[16];
@@ -1002,12 +1003,14 @@ mj_print_page(gx_device_printer * pdev, gp_file * prn_stream, int ptype)
 
 /* NOZ */
   xtalbuff_size = plane_size*8 + 64;
-  xtalbuff = (short *) gs_malloc(pdev->memory->non_gc_memory,  xtalbuff_size*(16*4+2*4) , W, "mj_colour_print_barrier");
+  realbufsize = xtalbuff_size*(16*4+2*4);
+  xtalbuff = (short *) gs_malloc(pdev->memory->non_gc_memory,  realbufsize, W, "mj_colour_print_barrier");
   if (xtalbuff) {
         int i;
         short *p = xtalbuff + 16;
 
-        memset(xtalbuff, 0, xtalbuff_size*(16*4+2*4) * W);
+        realbufsize *= W;
+        memset(xtalbuff, 0, realbufsize);
         for ( i = 0 ; i < 16 ; i++ ) {
                 Cbar[i] = p;
                 p += xtalbuff_size;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -688,6 +688,27 @@ int gx_update_from_subclass(gx_device *dev);
 int gx_subclass_composite(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
     gs_gstate *pgs, gs_memory_t *memory, gx_device *cdev);
 void gx_subclass_fill_in_page_procs(gx_device *dev);
+
+/* ---------------- End subclassing procedures ---------------- */
+
+static inline int check_64bit_multiply(int64_t x, int64_t y, int64_t *result)
+{
+    *result = x * y;
+
+    if ((x != 0 && *result / x != y) || *result > max_size_t)
+        return -1;
+
+#if 0
+    if (x != 0){
+        if(*result / x == y) {
+            if (*result <= max_size_t)
+                return 0;
+        }
+    }
+    return -1;
+#endif
+    return 0;
+}
 
 int gx_init_non_threadsafe_device(gx_device *dev);
 

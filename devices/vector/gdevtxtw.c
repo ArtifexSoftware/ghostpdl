@@ -1863,23 +1863,23 @@ textw_text_process(gs_text_enum_t *pte)
          * decoded, and this temporary buffer will be discarded.
          */
         penum->TextBuffer = (unsigned short *)gs_malloc(tdev->memory->stable_memory,
-            pte->text.size * 4, sizeof(unsigned short), "txtwrite temporary text buffer");
+            (size_t)pte->text.size * 4, sizeof(unsigned short), "txtwrite temporary text buffer");
         if (!penum->TextBuffer)
             return gs_note_error(gs_error_VMerror);
         penum->Widths = (float *)gs_malloc(tdev->memory->stable_memory,
-            pte->text.size * 4, sizeof(float), "txtwrite temporary widths array");
+            (size_t)pte->text.size * 4, sizeof(float), "txtwrite temporary widths array");
         if (!penum->Widths)
             return gs_note_error(gs_error_VMerror);
         penum->Advs = (float *)gs_malloc(tdev->memory->stable_memory,
-            pte->text.size * 4, sizeof(float), "txtwrite temporary advs array");
+            (size_t)pte->text.size * 4, sizeof(float), "txtwrite temporary advs array");
         if (!penum->Advs)
             return gs_note_error(gs_error_VMerror);
         penum->GlyphWidths = (float *)gs_malloc(tdev->memory->stable_memory,
-            pte->text.size * 4, sizeof(float), "txtwrite temporary glyphwidths array");
+            (size_t)pte->text.size * 4, sizeof(float), "txtwrite temporary glyphwidths array");
         if (!penum->GlyphWidths)
             return gs_note_error(gs_error_VMerror);
         penum->SpanDeltaX = (float *)gs_malloc(tdev->memory->stable_memory,
-            pte->text.size * 4, sizeof(float), "txtwrite temporary spandeltax array");
+            (size_t)pte->text.size * 4, sizeof(float), "txtwrite temporary spandeltax array");
         if (!penum->SpanDeltaX)
             return gs_note_error(gs_error_VMerror);
     }

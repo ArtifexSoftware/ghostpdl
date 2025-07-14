@@ -168,7 +168,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     gs_memory_t *mem = dev->memory;
     int bpp = dev->color_info.depth;
     uchar ncomps = dev->color_info.num_components;
-    uint out_raster;
+    uint64_t out_raster, product = 0;
     int code = 0;
     gx_color_value src_cv[GS_CLIENT_COLOR_MAX_COMPONENTS];
     gx_color_value curr_cv[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -191,7 +191,9 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     row_alpha = data;
     out_raster = bitmap_raster(width * (size_t)byte_depth);
-    gb_buff = gs_alloc_bytes(mem, out_raster * ncomps, "copy_alpha_hl_color(gb_buff)");
+    if (check_64bit_multiply(out_raster, ncomps, &product) != 0)
+        return gs_note_error(gs_error_undefinedresult);
+    gb_buff = gs_alloc_bytes(mem, product, "copy_alpha_hl_color(gb_buff)");
     if (gb_buff == 0) {
         code = gs_note_error(gs_error_VMerror);
         return code;

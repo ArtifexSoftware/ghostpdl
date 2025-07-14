@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -976,7 +976,7 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
 {
     gx_device_ijs *ijsdev = (gx_device_ijs *)dev;
     gx_device_printer *pdev = (gx_device_printer *)dev;
-    int raster = gdev_prn_raster(pdev);
+    size_t raster = gdev_prn_raster(pdev);
     int ijs_width, ijs_height;
     int row_bytes, k_row_bytes=0;
     int n_chan = pdev->color_info.num_components;
@@ -1010,6 +1010,8 @@ gsijs_output_page(gx_device *dev, int num_copies, int flush)
         /* Create banding buffer for k plane. */
         ijsdev->k_width = ijs_width;
         ijsdev->k_band_size = band_height * k_row_bytes;
+        if (k_row_bytes != 0 && ijsdev->k_band_size / k_row_bytes != band_height)
+            return gs_note_error(gs_error_undefinedresult);
         if ((ijsdev->k_band = gs_malloc(pdev->memory, ijsdev->k_band_size, 1, "gsijs_output_page")) == (unsigned char *)NULL)
            return gs_note_error(gs_error_VMerror);
     }

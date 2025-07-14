@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -243,7 +243,7 @@ param_put_cie_render1(gs_param_list * plist, gs_cie_render * pcrd,
                 /****** WRITE RenderTableTValues LIKE write_proc3 ******/
                 uint size = gx_cie_cache_size;
                 float *values =
-                    (float *)gs_alloc_byte_array(mem, size * m,
+                    (float *)gs_alloc_byte_array(mem, (size_t)size * m,
                                                  sizeof(float),
                                                  "write_proc3");
                 gs_param_float_array fa;

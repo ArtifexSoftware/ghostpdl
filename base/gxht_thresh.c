@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -635,16 +635,16 @@ gxht_thresh_image_init(gx_image_enum *penum)
         penum->line_size = bitmap_raster((temp * LAND_BITS) * 8);  /* The stride */
         /* Now we need at most LAND_BITS of these */
         penum->line = gs_alloc_bytes(penum->memory,
-                                     LAND_BITS * penum->line_size * spp_out + 16,
+                                     LAND_BITS * (size_t)penum->line_size * spp_out + 16,
                                      "gxht_thresh");
         /* Same with this.  However, we only need one plane here */
         penum->thresh_buffer = gs_alloc_bytes(penum->memory,
-                                           penum->line_size * LAND_BITS + 16,
+                                           (size_t)penum->line_size * LAND_BITS + 16,
                                            "gxht_thresh");
         /* That maps into (LAND_BITS/8) bytes of Halftone data */
         penum->ht_buffer =
                         gs_alloc_bytes(penum->memory,
-                           penum->line_size * (LAND_BITS>>3) * spp_out,
+                           (size_t)penum->line_size * (LAND_BITS>>3) * spp_out,
                            "gxht_thresh");
         penum->ht_plane_height = penum->line_size;
         penum->ht_stride = penum->line_size;
@@ -743,7 +743,7 @@ gxht_thresh_image_init(gx_image_enum *penum)
             penum->ht_buffer = NULL;
             return -1;         /* thresh_buffer size overflow */
         }
-        penum->line = gs_alloc_bytes(penum->memory, penum->line_size * spp_out,
+        penum->line = gs_alloc_bytes(penum->memory, (size_t)penum->line_size * spp_out,
                                      "gxht_thresh");
         penum->thresh_buffer = gs_alloc_bytes(penum->memory,
                                               (size_t)penum->line_size * max_height,

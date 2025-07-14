@@ -1693,7 +1693,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
 
     psd_device *psd_dev = (psd_device *)pdev;
     int bpc = psd_dev->devn_params.bitspercomponent;
-    int raster_plane = bitmap_raster(pdev->width * bpc);
+    size_t raster_plane = bitmap_raster(pdev->width * bpc);
     byte *planes[GS_CLIENT_COLOR_MAX_COMPONENTS];
     int code = 0;
     int i, j;
@@ -1705,7 +1705,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
     gs_get_bits_params_t params = { 0 };
     gx_downscaler_t ds = { NULL };
     int octets_per_component = bpc >> 3;
-    int octets_per_line = xc->width * octets_per_component;
+    size_t octets_per_line = (size_t)xc->width * octets_per_component;
 
     /* Return planar data */
     params.options = (GB_RETURN_POINTER | GB_RETURN_COPY |

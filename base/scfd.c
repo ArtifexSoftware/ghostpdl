@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -65,7 +65,7 @@ s_CFD_init(stream_state * st)
     s_hcd_init_inline(ss);
     /* Because skip_white_pixels can look as many as 4 bytes ahead, */
     /* we need to allow 4 extra bytes at the end of the row buffers. */
-    ss->lbufstart = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP * 2, "CFD lbuf");
+    ss->lbufstart = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP * (size_t)2, "CFD lbuf");
     ss->lprev = 0;
     if (ss->lbufstart == 0)
         return ERRC;		/****** WRONG ******/
@@ -74,7 +74,7 @@ s_CFD_init(stream_state * st)
     memset(ss->lbuf, white, raster);
     memset(ss->lbuf + raster, 0xaa, CFD_BUFFER_SLOP);  /* for Valgrind */
     if (ss->K != 0) {
-        ss->lprevstart = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP * 2, "CFD lprev");
+        ss->lprevstart = gs_alloc_bytes(st->memory, raster + CFD_BUFFER_SLOP * (size_t)2, "CFD lprev");
         if (ss->lprevstart == 0)
             return ERRC;	/****** WRONG ******/
         ss->lprev = ss->lprevstart + CFD_BUFFER_SLOP;

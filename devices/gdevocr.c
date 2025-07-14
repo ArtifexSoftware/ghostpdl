@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -254,7 +254,7 @@ do_ocr_print_page(gx_device_ocr * pdev, gp_file * file, int hocr)
     int factor = pdev->downscale.downscale_factor;
     int height = gx_downscaler_scale(pdev->height, factor);
     int width = gx_downscaler_scale(pdev->width, factor);
-    int raster = bitmap_raster(width*8);
+    size_t raster = bitmap_raster((size_t)width*8);
     gx_downscaler_t ds;
     int code;
 

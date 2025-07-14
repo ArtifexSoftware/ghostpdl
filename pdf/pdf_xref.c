@@ -36,7 +36,7 @@ static int resize_xref(pdf_context *ctx, uint64_t new_size)
     if (new_size >= (0x7ffffff / sizeof(xref_entry)))
         return_error(gs_error_rangecheck);
 
-    new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (new_size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+    new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (size_t)(new_size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
     if (new_xrefs == NULL){
         pdfi_countdown(ctx->xref_table);
         ctx->xref_table = NULL;
@@ -193,7 +193,7 @@ static int pdfi_process_xref_stream(pdf_context *ctx, pdf_stream *stream_obj, pd
             return_error(gs_error_VMerror);
         }
         memset(ctx->xref_table, 0x00, sizeof(xref_table_t));
-        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, size * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (size_t)size * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
         if (ctx->xref_table->xref == NULL){
             gs_free_object(ctx->memory, ctx->xref_table, "failed to allocate xref table entries");
             ctx->xref_table = NULL;
@@ -774,7 +774,7 @@ static int read_xref_section(pdf_context *ctx, pdf_c_stream *s, uint64_t *sectio
                 return_error(gs_error_VMerror);
             memset(ctx->xref_table, 0x00, sizeof(xref_table_t));
 
-            ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (start + size) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+            ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, ((size_t)start + (size_t)size) * (size_t)sizeof(xref_entry), "read_xref_stream allocate xref table entries");
             if (ctx->xref_table->xref == NULL){
                 gs_free_object(ctx->memory, ctx->xref_table, "free xref table on error allocating entries");
                 ctx->xref_table = NULL;

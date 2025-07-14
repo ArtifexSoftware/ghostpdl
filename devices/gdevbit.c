@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -727,7 +727,7 @@ static int
 bit_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {				/* Just dump the bits on the file. */
     /* If the file is 'nul', don't even do the writes. */
-    int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
+    size_t line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     byte *in = gs_alloc_bytes(pdev->memory, line_size, "bit_print_page(in)");
     byte *data;
     int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");
@@ -761,7 +761,7 @@ static int
 bittags_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {				/* Just dump the bits on the file. */
     /* If the file is 'nul', don't even do the writes. */
-    int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
+    size_t line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     byte *in = gs_alloc_bytes(pdev->memory, line_size, "bit_print_page(in)");
     byte *data;
     int nul = !strcmp(pdev->fname, "nul") || !strcmp(pdev->fname, "/dev/null");

@@ -2231,7 +2231,7 @@ image_render_interpolate_icc(gx_image_enum * penum, const byte * buffer,
                if needed.  16 bit operations if CM takes place.  */
             if (!penum->icc_link->is_identity) {
                 p_cm_buff = (byte *) gs_alloc_bytes(pgs->memory,
-                    sizeof(unsigned short) * width * spp_cm,
+                    sizeof(unsigned short) * (size_t)width * spp_cm,
                     "image_render_interpolate_icc");
                 if (!p_cm_buff) {
                     return gs_error_VMerror;
@@ -2728,7 +2728,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
                if needed.  16 bit operations if CM takes place.  */
             if (!penum->icc_link->is_identity) {
                 p_cm_buff = (byte *) gs_alloc_bytes(pgs->memory,
-                    sizeof(unsigned short) * width * spp_cm,
+                    sizeof(unsigned short) * (size_t)width * spp_cm,
                     "image_render_interpolate_icc");
                 if (p_cm_buff == NULL)
                     return_error(gs_error_VMerror);

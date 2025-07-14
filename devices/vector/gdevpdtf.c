@@ -603,7 +603,7 @@ font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
                             gs_id rid, font_type ftype,
                             pdf_font_write_contents_proc_t write_contents)
 {
-    pdf_encoding_element_t *Encoding = (pdf_encoding_element_t *)gs_alloc_bytes(pdev->pdf_memory, 256 * sizeof(pdf_encoding_element_t), "font_resource_encoded_alloc");
+    pdf_encoding_element_t *Encoding = (pdf_encoding_element_t *)gs_alloc_bytes(pdev->pdf_memory, (size_t)256 * sizeof(pdf_encoding_element_t), "font_resource_encoded_alloc");
     gs_point *v = (gs_point *)gs_alloc_byte_array(pdev->pdf_memory,
                     256, sizeof(gs_point), "pdf_font_simple_alloc");
     pdf_font_resource_t *pdfont;

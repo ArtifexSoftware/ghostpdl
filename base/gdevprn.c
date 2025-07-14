@@ -1544,7 +1544,7 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int raster,
         ptrs = (byte **)
             gs_alloc_byte_array(mdev->memory,
                                 (mdev->num_planar_planes ?
-                                 full_height * mdev->num_planar_planes :
+                                 (size_t)full_height * mdev->num_planar_planes :
                                  setup_height),
                                 sizeof(byte *), "setup_buf_device");
         if (ptrs == 0)

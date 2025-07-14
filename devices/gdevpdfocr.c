@@ -521,9 +521,9 @@ ocr_line32(gx_device_pdf_image *dev, void *row)
 static int
 ocr_begin_page(gx_device_pdf_image *dev, int w, int h, int bpp)
 {
-    int64_t raster = (w + 3) & ~3;
+    size_t raster = (w + 3) & ~3;
 
-    raster = raster * (int64_t)h;
+    raster = raster * (size_t)h;
     if (raster < 0 || raster > max_size_t)
         return gs_note_error(gs_error_VMerror);
     dev->ocr.data = gs_alloc_bytes(dev->memory, raster, "ocr_begin_page");
@@ -656,7 +656,7 @@ ocr_callback(void *arg, const char *rune_,
     /* Add the char to the current word. */
     if (ppdev->ocr.word_len == ppdev->ocr.word_max) {
         int *newblock;
-        int newmax = ppdev->ocr.word_max * 2;
+        size_t newmax = ppdev->ocr.word_max * 2;
         if (newmax == 0)
             newmax = 16;
         newblock = (int *)gs_alloc_bytes(ppdev->memory, sizeof(int)*newmax,

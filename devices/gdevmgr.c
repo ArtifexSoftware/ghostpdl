@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -141,7 +141,7 @@ typedef struct mgr_cursor_s {
 static int
 mgr_begin_page(gx_device_mgr *bdev, gp_file *pstream, mgr_cursor *pcur)
 {	struct b_header head;
-        uint line_size =
+        size_t line_size =
                 gdev_prn_raster((gx_device_printer *)bdev) + 3;
         /* FIXME: Note that there does not seem to free for 'data' LEAK ALERT */
         byte *data = (byte *)gs_malloc(bdev->memory, line_size, 1, "mgr_begin_page");

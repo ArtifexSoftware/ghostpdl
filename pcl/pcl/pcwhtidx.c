@@ -223,7 +223,7 @@ pcl_cmap_map_raster(const pcl_cs_indexed_t * pindexed,
         nbytes = ((nbytes + 7) / 8);
         pout_pixinfo->raster = nbytes;
         pout_rast = gs_alloc_bytes(pmem,
-                                   nbytes * pin_pixinfo->size.y,
+                                   (size_t)nbytes * pin_pixinfo->size.y,
                                    "re-map colored pattern raster");
         if (pout_rast == 0)
             return e_Memory;

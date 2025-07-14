@@ -1948,7 +1948,7 @@ static int init_ht(gx_downscaler_t *ds, int num_planes, gx_downscale_core *downs
 
     /* Allocate us a row (with padding for alignment) so we can hold the
      * expanded threshold array. */
-    ds->htrow_alloc = gs_alloc_bytes(ds->dev->memory, ds->width * nc + 64,
+    ds->htrow_alloc = gs_alloc_bytes(ds->dev->memory, (size_t)ds->width * nc + 64,
                                      "gx_downscaler(htrow)");
     if (ds->htrow_alloc == NULL)
         return gs_error_VMerror;
@@ -1956,7 +1956,7 @@ static int init_ht(gx_downscaler_t *ds, int num_planes, gx_downscale_core *downs
     ds->htrow = ds->htrow_alloc + ((32-(intptr_t)ds->htrow_alloc) & 31);
 
     /* Allocate us a row (with padding for alignment) for the downscaled data. */
-    ds->inbuf_alloc = gs_alloc_bytes(ds->dev->memory, ds->width * nc + 64,
+    ds->inbuf_alloc = gs_alloc_bytes(ds->dev->memory, (size_t)ds->width * nc + 64,
                                      "gx_downscaler(inbuf)");
     if (ds->inbuf_alloc == NULL)
     {
@@ -2687,7 +2687,7 @@ gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
         int h = ds->dev->height;
         int n = ds->dev->color_info.num_components;
         cal_skew *skew;
-        byte *buffer = gs_alloc_bytes(ds->dev->memory, w*n, "skew_row");
+        byte *buffer = gs_alloc_bytes((size_t)ds->dev->memory, w*n, "skew_row");
         if (buffer == NULL)
             return_error(gs_error_VMerror);
         skew = cal_skew_init(ds->dev->memory->gs_lib_ctx->core->cal_ctx,

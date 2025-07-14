@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -68,8 +68,8 @@ gs_color_index_cache_t *
 gs_color_index_cache_create(gs_memory_t *memory, const gs_color_space *direct_space, gx_device *dev,
                             gs_gstate *pgs, bool need_frac, gx_device *trans_dev)
 {
-    int client_num_components = cs_num_components(direct_space);
-    int device_num_components = trans_dev->color_info.num_components;
+    size_t client_num_components = cs_num_components(direct_space);
+    size_t device_num_components = trans_dev->color_info.num_components;
     gs_color_index_cache_elem_t *buf = ( gs_color_index_cache_elem_t *)gs_alloc_byte_array(memory, COLOR_INDEX_CACHE_SIZE,
                     sizeof(gs_color_index_cache_elem_t), "gs_color_index_cache_create");
     float *paint_values = (float *)gs_alloc_byte_array(memory, COLOR_INDEX_CACHE_SIZE * client_num_components,

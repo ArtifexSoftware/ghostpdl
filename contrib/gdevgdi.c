@@ -183,7 +183,7 @@ gdi_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         int dots_per_inch = (int)pdev->y_pixels_per_inch;
         int raster = gx_device_raster((gx_device *)pdev, true);
         int real_line_width;
-        long ul_band_size, ul_comp_size;
+        size_t ul_band_size, ul_comp_size;
         /* long ul_tiff_size, ul_min_size; */
         byte *ibp=NULL, *obp=NULL, *tmp=NULL;
         byte paper_type=0, compression_type;

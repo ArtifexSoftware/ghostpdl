@@ -1124,7 +1124,7 @@ static int write_key_as_string_encrypted(const gx_device_pdf *pdev, const byte *
     stream_arcfour_state sarc4;
     int i, j = 0;
 
-    buffer = gs_alloc_bytes(pdev->pdf_memory, size * 2, "encryption buffer");
+    buffer = gs_alloc_bytes(pdev->pdf_memory, (size_t)size * 2, "encryption buffer");
     if (buffer == 0L)
         return 0;
 

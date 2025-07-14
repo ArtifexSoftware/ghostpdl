@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -181,8 +181,8 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     int y_24pin = pdev->y_pixels_per_inch > 72;
     int y_mult = (y_24pin ? 3 : 1);
     int line_size = (pdev->width + 7) >> 3;     /* always mono */
-    int in_size = line_size * (8 * y_mult);
-    int out_size = ((pdev->width + 7) & -8) * y_mult;
+    size_t in_size = line_size * (8 * y_mult);
+    size_t out_size = ((pdev->width + 7) & -8) * y_mult;
     byte *in;
     byte *out;
     int x_dpi = (int)pdev->x_pixels_per_inch;
@@ -195,7 +195,7 @@ epsc_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     int skip = 0, lnum = 0, code = 0, pass;
 
     byte *color_in;
-    int color_line_size, color_in_size;
+    size_t color_line_size, color_in_size;
     int spare_bits;
     int whole_bits;
 

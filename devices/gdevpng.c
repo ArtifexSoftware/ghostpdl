@@ -473,7 +473,7 @@ static int
 do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
 {
     gs_memory_t *mem = pdev->memory;
-    int raster = gdev_prn_raster(pdev);
+    size_t raster = gdev_prn_raster(pdev);
     gx_downscaler_t ds;
 
     /* PNG structures */
@@ -613,7 +613,7 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
         palettep = palette;
 #else
         palettep =
-            (void *)gs_alloc_bytes(mem, 256 * sizeof(png_color),
+            (void *)gs_alloc_bytes(mem, (size_t)256 * sizeof(png_color),
                                    "png palette");
         if (palettep == 0) {
             code = gs_note_error(gs_error_VMerror);
@@ -1019,9 +1019,9 @@ pngalpha_copy_alpha(gx_device * dev, const byte * data, int data_x,
         gs_memory_t *mem = dev->memory;
         int bpp = dev->color_info.depth;
         int ncomps = dev->color_info.num_components;
-        uint in_size = gx_device_raster(dev, false);
+        size_t in_size = gx_device_raster(dev, false);
         byte *lin;
-        uint out_size;
+        size_t out_size;
         byte *lout;
         int code = 0;
         gx_color_value color_cv[GX_DEVICE_COLOR_MAX_COMPONENTS];

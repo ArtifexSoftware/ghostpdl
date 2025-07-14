@@ -548,6 +548,7 @@ int pcl3_begin_raster(gp_file *out, pcl_RasterData *data)
 {
   const pcl_FileData *global = NULL;
   int j;
+  size_t seed_size = global->number_of_bitplanes*sizeof(pcl_OctetString *);
 
   /* Check 'data' for validity */
   {
@@ -585,13 +586,13 @@ int pcl3_begin_raster(gp_file *out, pcl_RasterData *data)
 
   /* Allocate the seed plane array */
   data->seed_plane = (pcl_OctetString **)
-    malloc(global->number_of_bitplanes*sizeof(pcl_OctetString *));
+    malloc(seed_size);
   if (data->seed_plane == NULL) {
     errprintf(out->memory, ERRPREF "Memory allocation failure in pcl3_begin_raster().\n");
     return -1;
   }
   memset(data->seed_plane, 0,
-    global->number_of_bitplanes*sizeof(pcl_OctetString *));
+    seed_size);
 
   /* Use the seed plane array for differential compression methods */
   if (pcl_cm_is_differential(global->compression)) {

@@ -1928,7 +1928,7 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
 
         ptpriv->cidata.FDBytes = 1;     /* Basically, always 1 just now */
 
-        ptpriv->cidata.FDArray = (gs_font_type1 **) gs_alloc_bytes(ctx->memory, fdarray_size * sizeof(gs_font_type1 *), "pdfi_read_cff(fdarray)");
+        ptpriv->cidata.FDArray = (gs_font_type1 **) gs_alloc_bytes(ctx->memory, (size_t)fdarray_size * sizeof(gs_font_type1 *), "pdfi_read_cff(fdarray)");
         if (!ptpriv->cidata.FDArray)
             return_error(gs_error_VMerror);
         ptpriv->cidata.FDArray_size = fdarray_size;

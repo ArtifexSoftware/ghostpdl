@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -171,7 +171,7 @@ static int
 nwp533_print_page(gx_device_printer *dev, gp_file *prn_stream)
 {
   int lnum, code = 0;
-  int line_size = gdev_mem_bytes_per_scan_line(dev);
+  size_t line_size = gdev_mem_bytes_per_scan_line(dev);
   byte *in;
   int printer_file;
   printer_file = fileno(prn_stream);

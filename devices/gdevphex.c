@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1680,14 +1680,15 @@ static	int		GetInt( PLIST *list, PNAME name, int *value, int code )
 
 static	int		photoex_print_page( PDEV *device, gp_file *stream )
 {
-int			pixels;						/* Length of the line 				*/
+size_t		pixels;						/* Length of the line 				*/
 int			x;							/* Work vars						*/
 int			code = 0;
 EDEV		*dev;						/* Our device						*/
 RENDER		*render;					/* Rendering info					*/
 
 int			xres, yres;
-int			start, width;
+int			start;
+size_t      width;
 int			unit;
 double		psize;
 

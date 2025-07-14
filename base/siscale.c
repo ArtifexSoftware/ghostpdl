@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -948,7 +948,7 @@ do_init(stream_state        *st,
     ss->min_scale    = vert->min_scale;
     ss->tmp = (byte *) gs_alloc_byte_array(mem,
                                            ss->max_support,
-                                           (limited_WidthOut * ss->params.spp_interp),
+                                           ((size_t)limited_WidthOut * ss->params.spp_interp),
                                            "image_scale tmp");
     ss->contrib = (CLIST *) gs_alloc_byte_array(mem,
                                                 max(limited_WidthOut,
@@ -960,11 +960,11 @@ do_init(stream_state        *st,
                                         (horiz->contrib_pixels(
                                             (double)limited_EntireWidthOut /
                                             ss->params.EntireWidthIn) *
-                                            limited_WidthOut),
+                                            (size_t)limited_WidthOut),
                                          sizeof(CONTRIB),
                                          "image_scale contrib[*]");
     ss->dst_items = (CONTRIB *) gs_alloc_byte_array(mem,
-                                                    ss->max_support*2,
+                                                    (size_t)ss->max_support*2,
                                                     sizeof(CONTRIB), "image_scale contrib_dst[*]");
     /* Allocate buffers for 1 row of source and destination. */
     ss->dst =

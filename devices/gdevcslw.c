@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -53,7 +53,7 @@ coslw_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
     int line_size_words = (line_size + W - 1) / W;
-    uint storage_size_words = line_size_words * 8;	/* data, out_row, out_row_alt, prev_row */
+    size_t storage_size_words = line_size_words * 8;	/* data, out_row, out_row_alt, prev_row */
     word *storage = (ulong *) gs_malloc(pdev->memory, storage_size_words, W,
                                         "coslw_print_page");
 

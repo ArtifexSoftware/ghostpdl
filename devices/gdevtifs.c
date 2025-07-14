@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -428,8 +428,8 @@ tiff_print_page(gx_device_printer *dev, TIFF *tif, int min_feature_size)
 {
     int code = 0;
     byte *data;
-    int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
-    int max_size = max(size, TIFFScanlineSize(tif));
+    size_t size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
+    size_t max_size = max(size, TIFFScanlineSize(tif));
     int row;
     int bpc = dev->color_info.depth / dev->color_info.num_components;
     void *min_feature_data = NULL;
@@ -518,8 +518,8 @@ tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
     gx_device_tiff *const tfdev = (gx_device_tiff *)dev;
     int code = 0;
     byte *data = NULL;
-    int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
-    int max_size = max(size, TIFFScanlineSize(tif));
+    size_t size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
+    size_t max_size = max(size, TIFFScanlineSize(tif));
     int row;
     int factor = params->downscale_factor;
     int height = dev->height/factor;

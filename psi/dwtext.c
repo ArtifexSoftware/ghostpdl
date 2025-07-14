@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -213,7 +213,7 @@ text_font(TW *tw, const char *name, int size)
 
     /* set new name and size */
     free(tw->fontname);
-    tw->fontname = (char *)malloc(strlen(name)+1);
+    tw->fontname = (char *)malloc((size_t)strlen(name)+1);
     if (tw->fontname == NULL)
         return;
     strcpy(tw->fontname, name);
@@ -266,10 +266,10 @@ text_drag(TW *tw, const char *pre, const char *post)
     tw->DragPost = NULL;
 
     /* add new strings */
-    tw->DragPre = malloc(strlen(pre)+1);
+    tw->DragPre = malloc((size_t)strlen(pre)+1);
     if (tw->DragPre)
         strcpy(tw->DragPre, pre);
-    tw->DragPost = malloc(strlen(post)+1);
+    tw->DragPost = malloc((size_t)strlen(post)+1);
     if (tw->DragPost)
         strcpy(tw->DragPost, post);
 }
@@ -386,7 +386,7 @@ int text_create(TW *tw, const char *app_name, int show_cmd)
     wchar_t *app_nameW, *d;
     const char *s;
 
-    app_nameW = malloc(strlen(app_name)*2+2);
+    app_nameW = malloc((size_t)strlen(app_name)*2+2);
     if (app_nameW == NULL) {
         text_error("Out of memory");
         return 1;
@@ -415,12 +415,12 @@ int text_create(TW *tw, const char *app_name, int show_cmd)
         text_error("Out of memory");
         return 1;
     }
-    tw->ScreenBuffer = malloc(tw->ScreenSize.x * tw->ScreenSize.y * CHARSIZE);
+    tw->ScreenBuffer = malloc((size_t)tw->ScreenSize.x * (size_t)tw->ScreenSize.y * CHARSIZE);
     if (tw->ScreenBuffer == NULL) {
         text_error("Out of memory");
         return 1;
     }
-    wmemset(tw->ScreenBuffer, ' ', tw->ScreenSize.x * tw->ScreenSize.y);
+    wmemset(tw->ScreenBuffer, ' ', (size_t)tw->ScreenSize.x * (size_t)tw->ScreenSize.y);
 
     tw->hwnd = CreateWindowW(TextWinClassName, app_nameW,
                   WS_OVERLAPPEDWINDOW | WS_VSCROLL | WS_HSCROLL,
@@ -768,7 +768,7 @@ text_drag_drop(TW *tw, HDROP hdrop)
     cFiles = DragQueryFile(hdrop, (UINT)(-1), (LPTSTR)NULL, 0);
     if (tw->cFiles < cFiles) {
         free(tw->szFiles);
-        tw->szFiles = malloc(cFiles * sizeof(char*));
+        tw->szFiles = malloc((size_t)cFiles * sizeof(char*));
         if (tw->szFiles == NULL) {
             tw->cFiles = 0;
             return;
@@ -778,7 +778,7 @@ text_drag_drop(TW *tw, HDROP hdrop)
     }
     for (i=0; i<cFiles; i++) {
         Len = DragQueryFile(hdrop, i, NULL, 0);
-        tw->szFiles[i] = (TCHAR *)malloc((Len+1)*sizeof(TCHAR));
+        tw->szFiles[i] = (TCHAR *)malloc(((size_t)Len+1)*sizeof(TCHAR));
         if (tw->szFiles[i] != 0) {
             error = DragQueryFile(hdrop, i, tw->szFiles[i], Len+1);
             if (error != 0) {

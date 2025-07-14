@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -106,8 +106,8 @@ static int
 pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
   const char *end_page)
 {
-        int line_size;
-        int data_size;
+        size_t line_size;
+        size_t data_size;
         byte *data = NULL;
         byte *plane_data = NULL;
         byte *temp = NULL;

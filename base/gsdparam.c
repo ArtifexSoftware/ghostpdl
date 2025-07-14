@@ -1559,7 +1559,7 @@ gx_default_put_icc_colorants(gs_param_string *colorants, gx_device * dev)
      */
     len = gp_utf8_to_uint16(NULL, tempstr);
     if (len >= 0)
-        tempstr2 = (unsigned short *)gs_alloc_bytes(dev->memory, len * sizeof(unsigned short),
+        tempstr2 = (unsigned short *)gs_alloc_bytes(dev->memory, (size_t)len * sizeof(unsigned short),
                                                 "gx_default_put_icc_colorants");
     if (tempstr2 == NULL)
     {

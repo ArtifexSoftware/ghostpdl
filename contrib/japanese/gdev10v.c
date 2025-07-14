@@ -205,6 +205,7 @@ bj10v_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         int code = 0;
         int blank_lines = 0;
         int bytes_per_data = ((xres == 360) && (yres == 360)) ? 1 : 3;
+        size_t outsize = bits_per_column * line_size + 1;
 
         if (bits_per_column == 0 || line_size > (max_int - 1) / bits_per_column) {
             code = gs_note_error(gs_error_rangecheck);
@@ -213,7 +214,7 @@ bj10v_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 
         in = (byte *)gs_malloc(pdev->memory->non_gc_memory, 8, line_size, "bj10v_print_page(in)");
         /* We need one extra byte in <out> for our sentinel. */
-        out = (byte *)gs_malloc(pdev->memory->non_gc_memory, bits_per_column * line_size + 1, 1, "bj10v_print_page(out)");
+        out = (byte *)gs_malloc(pdev->memory->non_gc_memory, outsize, 1, "bj10v_print_page(out)");
         if ( in == NULL || out == NULL ) {
             code = gs_note_error(gs_error_VMerror);
             goto error;

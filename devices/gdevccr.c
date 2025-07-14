@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -146,7 +146,7 @@ static int
 ccr_print_page(gx_device_printer *pdev, gp_file *pstream)
 {
   cmyrow *linebuf;
-  int line_size = gdev_prn_raster((gx_device *)pdev);
+  size_t line_size = gdev_prn_raster((gx_device *)pdev);
   int pixnum = pdev->width;
   int lnum = pdev->height;
   int l, p, b;

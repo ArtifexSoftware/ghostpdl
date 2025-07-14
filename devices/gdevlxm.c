@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -153,10 +153,10 @@ lxm5700m_print_page(gx_device_printer *pdev, gp_file *prn_stream)
     int lastY = 0;
     int code = 0;
 
-    int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
+    size_t line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
     /* Note that in_size is a multiple of 8. */
-    int in_size = line_size * (swipeHeight);
-    int swipeBuf_size = in_size;
+    size_t in_size = line_size * (swipeHeight);
+    size_t swipeBuf_size = in_size;
     byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "lxm_print_page(buf1)");
     byte *swipeBuf =
         (byte *)gs_malloc(pdev->memory, swipeBuf_size, 1, "lxm_print_page(swipeBuf)");

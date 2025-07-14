@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -114,7 +114,7 @@ on_open_tag(void *zp, const char *ns_name, const char **atts)
             textlen += strlen(atts[i]) + 1;
     }
 
-    item = xps_alloc(ctx, sizeof(xps_item_t) + attslen + namelen + textlen);
+    item = xps_alloc(ctx, (size_t)sizeof(xps_item_t) + attslen + namelen + textlen);
     if (!item) {
         parser->error = "out of memory";
         gs_throw(gs_error_VMerror, "out of memory.\n");
@@ -200,7 +200,7 @@ on_text(void *zp, char *buf, int len)
     {
         if (!is_xml_space(buf[i]))
         {
-            char *tmp = xps_alloc(ctx, len + 1);
+            char *tmp = xps_alloc(ctx, (size_t)len + 1);
             if (!tmp)
             {
                 parser->error = "out of memory";

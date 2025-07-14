@@ -333,8 +333,8 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
         } else {
             gs_point pt;
 
-            x_widths = (float *)gs_alloc_bytes(ctx->memory, s->length * sizeof(float), "X widths array for text");
-            y_widths = (float *)gs_alloc_bytes(ctx->memory, s->length * sizeof(float), "Y widths array for text");
+            x_widths = (float *)gs_alloc_bytes(ctx->memory, (size_t)s->length * sizeof(float), "X widths array for text");
+            y_widths = (float *)gs_alloc_bytes(ctx->memory, (size_t)s->length * sizeof(float), "Y widths array for text");
             if (x_widths == NULL || y_widths == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto text_params_error;
@@ -385,7 +385,7 @@ static int pdfi_show_set_params(pdf_context *ctx, pdf_string *s, gs_text_params_
 
         if (current_font->pdfi_font_type == e_pdf_font_type3) {
             text->operation |= TEXT_FROM_CHARS;
-            text->data.chars = (const gs_char *)gs_alloc_bytes(ctx->memory, s->length * sizeof(gs_char), "string gs_chars");
+            text->data.chars = (const gs_char *)gs_alloc_bytes(ctx->memory, (size_t)s->length * sizeof(gs_char), "string gs_chars");
             if (!text->data.chars) {
                 code = gs_note_error(gs_error_VMerror);
                 goto text_params_error;

@@ -927,7 +927,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
     gs_get_bits_params_t    gb_params;
     gs_int_rect             gb_rect;
     int                     code = 0;
-    unsigned int            raster;
+    int64_t                raster;
     int                     byte_depth;
     int                     depth;
     uchar                   num_comps;
@@ -953,7 +953,9 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
         bytespercomp = byte_depth>>3;
 
         /* allocate a buffer for the returned data */
-        raster = bitmap_raster(w * byte_depth);
+        if (check_64bit_multiply(w, byte_depth, &raster) != 0)
+            return gs_note_error(gs_error_undefinedresult);
+
         gb_buff = gs_alloc_bytes(mem, raster * num_comps , "overprint_copy_planes");
         if (gb_buff == 0)
             return gs_note_error(gs_error_VMerror);
@@ -1042,7 +1044,7 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     gs_get_bits_params_t    gb_params;
     gs_int_rect             gb_rect;
     int                     code = 0;
-    unsigned int            raster;
+    int64_t                raster;
     int                     byte_depth;
     int                     depth;
     uchar                   num_comps;
@@ -1084,7 +1086,8 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     deep = byte_depth == 16;
 
     /* allocate a buffer for the returned data */
-    raster = bitmap_raster(w * byte_depth);
+    if (check_64bit_multiply(w, byte_depth, &raster) != 0)
+        return gs_note_error(gs_error_undefinedresult);
     gb_buff = gs_alloc_bytes(mem, raster * num_comps , "overprint_fill_rectangle_hl_color");
     if (gb_buff == 0)
         return gs_note_error(gs_error_VMerror);

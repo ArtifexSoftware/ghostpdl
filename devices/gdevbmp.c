@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -173,9 +173,9 @@ prn_device(bmp32b_initialize_device_procs, "bmp32b",
 static int
 bmp_print_page(gx_device_printer * pdev, gp_file * file)
 {
-    uint raster = gdev_prn_raster(pdev);
+    size_t raster = gdev_prn_raster(pdev);
     /* BMP scan lines are padded to 32 bits. */
-    uint bmp_raster = raster + (-(int)raster & 3);
+    size_t bmp_raster = raster + (-(int)raster & 3);
     byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     int y;
     int code;		/* return code */
@@ -212,9 +212,9 @@ static int
 bmp_cmyk_print_page(gx_device_printer * pdev, gp_file * file)
 {
     int plane_depth = pdev->color_info.depth / 4;
-    uint raster = (pdev->width * plane_depth + 7) >> 3;
+    size_t raster = (pdev->width * plane_depth + 7) >> 3;
     /* BMP scan lines are padded to 32 bits. */
-    uint bmp_raster = raster + (-(int)raster & 3);
+    size_t bmp_raster = raster + (-(int)raster & 3);
     byte *row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     int y;
     int code = 0;		/* return code */

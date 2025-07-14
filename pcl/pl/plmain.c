@@ -423,7 +423,7 @@ pl_main_run_string_begin(pl_main_instance_t *minst)
 static int
 ensure_buf_size(pl_main_instance_t *minst, int len)
 {
-    int max = minst->buf_max;
+    size_t max = minst->buf_max;
 
     if (len < max)
         return 0;
@@ -490,12 +490,12 @@ int buffer_data(pl_main_instance_t *minst, const char *data, unsigned int len)
         chunk_max >>= BUFFERED_FILE_CHUNK_SHIFT;
         if (bf->index == NULL) {
             new_index = (byte **)gs_alloc_bytes(bf->memory,
-                                                sizeof(byte *) * chunk_max,
+                                                (size_t)sizeof(byte *) * chunk_max,
                                                 "buffered_file_index");
         } else {
             new_index = (byte **)gs_resize_object(bf->memory,
                                                   bf->index,
-                                                  sizeof(byte *) * chunk_max,
+                                                  (size_t)sizeof(byte *) * chunk_max,
                                                   "buffered_file_index");
         }
         if (new_index == NULL)
@@ -1244,7 +1244,7 @@ pl_main_languages_init(gs_memory_t * mem,        /* deallocator for devices */
 {
     int index;
     int count;
-    int sz;
+    size_t sz;
     pl_interp_implementation_t **impls;
 
     for (count = 0; pdl_implementations[count] != 0; ++count)

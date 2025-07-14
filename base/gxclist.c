@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1004,7 +1004,7 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
     clist_icctable_t *icc_table = cldev->icc_table;
     int number_entries = icc_table->tablesize;
     clist_icctable_entry_t *curr_entry;
-    int size_data;
+    size_t size_data;
     int k;
     bool rend_is_valid;
 
@@ -1163,7 +1163,8 @@ int
 clist_write_color_usage_array(gx_device_clist_writer *cldev)
 {
    gx_color_usage_t *color_usage_array;
-   int i, size_data = cldev->nbands * sizeof(gx_color_usage_t);
+   int i;
+   size_t size_data = cldev->nbands * sizeof(gx_color_usage_t);
 
     /* Now serialize the table data */
     color_usage_array = (gx_color_usage_t *)gs_alloc_bytes(cldev->memory, size_data,

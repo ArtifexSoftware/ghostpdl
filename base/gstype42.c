@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2202,8 +2202,8 @@ gs_woff2sfnt(gs_memory_t *mem, stream *s, byte *outbuf, int *outbuflen)
     PUTU16(obuf, (ushort)rs, 4);
     obuf += 6;
 
-    tabbuf = gs_alloc_bytes(mem, WOFF_TABDIR_ENT_LEN * ntables, "gs_woff2sfnt(tabbuf)");
-    tabbufptrs = (byte **)gs_alloc_bytes(mem, (ntables + 1) * sizeof(byte *), "gs_woff2sfnt(tabbufptrs)");
+    tabbuf = gs_alloc_bytes(mem, WOFF_TABDIR_ENT_LEN * (size_t)ntables, "gs_woff2sfnt(tabbuf)");
+    tabbufptrs = (byte **)gs_alloc_bytes(mem, (ntables + 1) * (size_t)sizeof(byte *), "gs_woff2sfnt(tabbufptrs)");
     if (!tabbuf || !tabbufptrs) {
         code = gs_note_error(gs_error_VMerror);
         goto done;

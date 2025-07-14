@@ -2248,7 +2248,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     memset(linear_params->HintBuffer, 0x00, 256);
     linear_params->HintBits = linear_params->HintByte = 0;
 
-    linear_params->PageHints = (page_hint_stream_t *)gs_alloc_bytes(pdev->pdf_memory, pdev->next_page * sizeof(page_hint_stream_t), "Hints for the pages");
+    linear_params->PageHints = (page_hint_stream_t *)gs_alloc_bytes(pdev->pdf_memory, (size_t)(pdev->next_page) * sizeof(page_hint_stream_t), "Hints for the pages");
     if (linear_params->PageHints == NULL) {
         code = gs_error_VMerror;
         goto error;
@@ -2256,7 +2256,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
     memset(linear_params->PageHints, 0x00, pdev->next_page * sizeof(page_hint_stream_t));
     linear_params->NumPageHints = pdev->next_page;
 
-    linear_params->SharedHints = (shared_hint_stream_t *)gs_alloc_bytes(pdev->pdf_memory, (linear_params->NumPage1Resources + linear_params->NumSharedResources) * sizeof(shared_hint_stream_t), "Hints for the shared objects");
+    linear_params->SharedHints = (shared_hint_stream_t *)gs_alloc_bytes(pdev->pdf_memory, (size_t)(linear_params->NumPage1Resources + linear_params->NumSharedResources) * sizeof(shared_hint_stream_t), "Hints for the shared objects");
     if (linear_params->SharedHints == NULL) {
         code = gs_error_VMerror;
         goto error;
@@ -2303,7 +2303,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
 
                 pagehint = &linear_params->PageHints[page - 1];
                 if (pagehint->SharedObjectRef){
-                    int *Temp = (int *)gs_alloc_bytes(pdev->pdf_memory, (pagehint->NumSharedObjects + 1) * sizeof(int), "realloc shared object hints");
+                    int *Temp = (int *)gs_alloc_bytes(pdev->pdf_memory, (size_t)(pagehint->NumSharedObjects + 1) * sizeof(int), "realloc shared object hints");
                     if (Temp == NULL) {
                         code = gs_note_error(gs_error_VMerror);
                         goto error;
@@ -2312,7 +2312,7 @@ static int pdf_linearise(gx_device_pdf *pdev, pdf_linearisation_t *linear_params
                     gs_free_object(pdev->pdf_memory, pagehint->SharedObjectRef, "realloc shared object hints");
                     pagehint->SharedObjectRef = (unsigned int *)Temp;
                 } else {
-                    pagehint->SharedObjectRef = (unsigned int *)gs_alloc_bytes(pdev->pdf_memory, (pagehint->NumSharedObjects + 1) * sizeof(int), "shared object hints");
+                    pagehint->SharedObjectRef = (unsigned int *)gs_alloc_bytes(pdev->pdf_memory, (size_t)(pagehint->NumSharedObjects + 1) * sizeof(int), "shared object hints");
                     if (pagehint->SharedObjectRef == NULL) {
                         code = gs_note_error(gs_error_VMerror);
                         goto error;
@@ -2768,7 +2768,7 @@ int pdf_record_usage(gx_device_pdf *const pdev, int64_t resource_id, int page_nu
                 return 0;
         }
     }
-    Temp = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, (pdev->ResourceUsage[resource_id].NumPagesUsing + 1) * sizeof (int), "Page usage records");
+    Temp = gs_alloc_bytes(pdev->pdf_memory->non_gc_memory, (size_t)(pdev->ResourceUsage[resource_id].NumPagesUsing + 1) * sizeof (int), "Page usage records");
     if (Temp == NULL)
         return_error(gs_error_VMerror);
     memset((char *)Temp, 0x00, (pdev->ResourceUsage[resource_id].NumPagesUsing + 1) * sizeof (int));

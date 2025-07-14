@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -40,7 +40,7 @@ gp_fopen_impl(gs_memory_t *mem, const char *fname, const char *mode)
     if (len <= 0)
         return NULL;
 
-    uni = (wchar_t *)gs_alloc_bytes(mem, len*sizeof(wchar_t), "gp_fopen_impl");
+    uni = (wchar_t *)gs_alloc_bytes(mem, (size_t)len*sizeof(wchar_t), "gp_fopen_impl");
     if (uni == NULL)
         return NULL;
     gp_utf8_to_uint16(uni, fname);
@@ -65,7 +65,7 @@ gp_unlink_impl(gs_memory_t *mem, const char *fname)
     if (len <= 0)
         return gs_error_unknownerror;
 
-    uni = (wchar_t *)gs_alloc_bytes(mem, len*sizeof(wchar_t), "gp_unlink_impl");
+    uni = (wchar_t *)gs_alloc_bytes(mem, (size_t)len*sizeof(wchar_t), "gp_unlink_impl");
     if (uni == NULL)
         return gs_error_VMerror;
     gp_utf8_to_uint16(uni, fname);
@@ -86,10 +86,10 @@ gp_rename_impl(gs_memory_t *mem, const char *from, const char *to)
     if (lenf <= 0 || lent <= 0)
         return gs_error_unknownerror;
 
-    unif = (wchar_t *)gs_alloc_bytes(mem, lenf*sizeof(wchar_t), "gp_rename_impl");
+    unif = (wchar_t *)gs_alloc_bytes(mem, (size_t)lenf*sizeof(wchar_t), "gp_rename_impl");
     if (unif == NULL)
         return gs_error_VMerror;
-    unit = (wchar_t *)gs_alloc_bytes(mem, lent*sizeof(wchar_t), "gp_rename_impl");
+    unit = (wchar_t *)gs_alloc_bytes(mem, (size_t)lent*sizeof(wchar_t), "gp_rename_impl");
     if (unit == NULL) {
         gs_free_object(mem, unif, "gs_unlink_impl");
         return gs_error_VMerror;

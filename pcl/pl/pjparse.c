@@ -1598,7 +1598,7 @@ static int set_pjl_environment(gs_memory_t * mem, pjl_envir_var_t **env, pjl_env
         limit++;
 
     pjl_env = (pjl_envir_var_t *) gs_alloc_bytes(mem,
-                                                  sizeof
+                                                  (size_t)sizeof
                                                   (pjl_envir_var_t) * (limit + 1),
                                                   "pjl_envir");
     if (!pjl_env)
@@ -1642,7 +1642,7 @@ static int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl
         limit++;
 
     pjl_fontenv = (pjl_fontsource_t *) gs_alloc_bytes(mem,
-                                                      sizeof
+                                                      (size_t)sizeof
                                                       (pjl_fontsource_t) * (limit + 1),
                                                       "font_envir");
     if (!pjl_fontenv)
@@ -1695,7 +1695,7 @@ static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **font
         limit++;
 
     pjl_fontdef = (pjl_fontsource_t *) gs_alloc_bytes(mem,
-                                                      sizeof
+                                                      (size_t)sizeof
                                                       (pjl_fontsource_t) * (limit + 1),
                                                       "new_font_defaults");
     if (!pjl_fontdef)

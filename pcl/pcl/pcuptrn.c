@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -367,7 +367,8 @@ download_pcl_pattern(pcl_args_t * pargs, pcl_state_t * pcs)
 {
     uint count = arg_data_size(pargs);
     const pcl_upattern0_t *puptrn0 = (pcl_upattern0_t *) arg_data(pargs);
-    uint format, depth, rsize, ndsize, dsize;
+    uint format, depth, ndsize, dsize;
+    size_t rsize;
     gs_depth_bitmap pixinfo;
     int xres = 300, yres = 300;
     pcl_pattern_t *pptrn = 0;

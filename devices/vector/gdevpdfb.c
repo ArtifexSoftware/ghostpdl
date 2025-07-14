@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -535,7 +535,7 @@ gdev_pdf_fill_mask(gx_device * dev,
         new_glyph = (ocr_glyph_t *)gs_alloc_bytes(pdev->pdf_memory, sizeof(ocr_glyph_t), "");
         if (new_glyph == NULL)
             return_error(gs_error_VMerror);
-        new_glyph->data = gs_alloc_bytes(pdev->pdf_memory, raster*height, "");
+        new_glyph->data = gs_alloc_bytes(pdev->pdf_memory, (size_t)raster*height, "");
         if (new_glyph->data == NULL)
             return_error(gs_error_VMerror);
         memcpy(new_glyph->data, data, raster * height);

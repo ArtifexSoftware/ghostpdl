@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2021 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -117,7 +117,7 @@ s_IScale_cal_init(stream_state * st)
     if (ss->dst == NULL)
         goto fail;
 
-    ss->src = gs_alloc_byte_array(mem, ss->params.EntireWidthIn * ss->params.spp_interp,
+    ss->src = gs_alloc_byte_array(mem, (size_t)ss->params.EntireWidthIn * ss->params.spp_interp,
                                   src_bytes_per_pixel, "image_scale dst");
     if (ss->src == NULL)
         goto fail;

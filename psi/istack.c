@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -321,7 +321,7 @@ ref_stack_array_sanitize(i_ctx_t *i_ctx_p, ref *sarr, ref *darr, int depth)
             if (index > 0 && index < op_def_count) {
                 const byte *data = (const byte *)(op_index_def(index)->oname + 1);
                 if (dict_find_string(systemdict, (const char *)data, &pobj2) <= 0) {
-                    byte *s = gs_alloc_bytes(mem, strlen((char *)data) + 5, "ref_stack_array_sanitize");
+                    byte *s = gs_alloc_bytes(mem, (size_t)strlen((char *)data) + 5, "ref_stack_array_sanitize");
                     if (s) {
                         s[0] =  '\0';
                         strcpy((char *)s, "--");

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -38,7 +38,7 @@ static int
 cov_write_page(gx_device_printer *pdev, gp_file *file)
 {
     int code = 0, ecode = 0;
-    int raster = gdev_prn_raster(pdev);
+    size_t raster = gdev_prn_raster(pdev);
     int height = pdev->height;
     byte *line = gs_alloc_bytes(pdev->memory, raster, "ink coverage plugin buffer");
     int y;
@@ -100,7 +100,7 @@ cov_write_page(gx_device_printer *pdev, gp_file *file)
 static int cov_write_page_ink(gx_device_printer *pdev, gp_file *file)
 {
     int code = 0, ecode = 0;
-    int raster = gdev_prn_raster(pdev);
+    size_t raster = gdev_prn_raster(pdev);
     int height = pdev->height;
 	double dc_pix=0;
 	double dm_pix=0;

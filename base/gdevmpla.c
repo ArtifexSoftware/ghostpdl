@@ -1959,7 +1959,8 @@ mem_planar_strip_copy_rop2(gx_device * dev,
         byte *sbuf, *buf;
 
         chunky_sraster = sraster * (intptr_t)mdev->num_planar_planes;
-        nbytes = height * chunky_sraster;
+        if (check_64bit_multiply(height, chunky_sraster, (size_t *)&nbytes) != 0)
+            return gs_note_error(gs_error_undefinedresult);
         buf = gs_alloc_bytes(mdev->memory, nbytes, "mem_planar_strip_copy_rop(buf)");
         if (buf == NULL) {
             return gs_note_error(gs_error_VMerror);
@@ -2018,7 +2019,8 @@ mem_planar_strip_copy_rop2(gx_device * dev,
             ty = 0;
             chunky_t_height = textures->rep_height;
         }
-        nbytes = chunky_t_height * chunky_t_raster;
+        if (check_64bit_multiply(chunky_t_height, chunky_t_raster, &nbytes) != 0)
+            return gs_note_error(gs_error_undefinedresult);
         buf = gs_alloc_bytes(mdev->memory, nbytes, "mem_planar_strip_copy_rop(buf)");
         if (buf == NULL) {
             return gs_note_error(gs_error_VMerror);

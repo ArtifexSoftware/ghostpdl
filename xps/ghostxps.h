@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -122,7 +122,7 @@ typedef struct xps_context_s xps_context_t;
  * Memory, and string functions.
  */
 
-void * xps_realloc_imp(xps_context_t *ctx, void *ptr, int size, const char *func);
+void * xps_realloc_imp(xps_context_t *ctx, void *ptr, size_t size, const char *func);
 
 #define xps_alloc(ctx, size) \
     ((void*)gs_alloc_bytes(ctx->memory, size, __func__))

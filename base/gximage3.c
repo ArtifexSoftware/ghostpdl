@@ -345,7 +345,7 @@ gx_begin_image3_generic(gx_device * dev,
         /* Allocate row buffers for the mask and pixel data. */
         penum->pixel_data =
             gs_alloc_bytes(mem,
-                           (penum->pixel_width * pim->BitsPerComponent *
+                           ((size_t)penum->pixel_width * pim->BitsPerComponent *
                             penum->num_components + 7) >> 3,
                            "gx_begin_image3(pixel_data)");
         penum->mask_data =

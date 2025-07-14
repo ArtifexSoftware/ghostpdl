@@ -2460,7 +2460,7 @@ int pdfi_font_create_widths(pdf_context *ctx, pdf_dict *fontdict, pdf_font *font
             goto error;
         }
 
-        font->Widths = (double *)gs_alloc_bytes(OBJ_MEMORY(font), sizeof(double) * (font->LastChar - font->FirstChar + 1), "pdfi_font_create_widths(Widths)");
+        font->Widths = (double *)gs_alloc_bytes(OBJ_MEMORY(font), (size_t)sizeof(double) * (font->LastChar - font->FirstChar + 1), "pdfi_font_create_widths(Widths)");
         if (font->Widths == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto error;
@@ -2586,7 +2586,7 @@ int pdfi_font_generate_pseudo_XUID(pdf_context *ctx, pdf_dict *fontdict, gs_font
             else if (uid_is_valid(&pfont->UID))
                 xuidlen++;
 
-            xvalues = (long *)gs_alloc_bytes(pfont->memory, xuidlen * sizeof(long), "pdfi_font_generate_pseudo_XUID");
+            xvalues = (long *)gs_alloc_bytes(pfont->memory, (size_t)xuidlen * sizeof(long), "pdfi_font_generate_pseudo_XUID");
             if (xvalues == NULL) {
                 return 0;
             }

@@ -729,7 +729,7 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
     } else if (tiff->tiled) {
         tiff->samples = gs_alloc_bytes(tiff->memory, TIFFTileSize(tiff->handle), "tiff_tile");
     } else if (planar == PLANARCONFIG_SEPARATE) {
-        tiff->samples = gs_alloc_bytes(tiff->memory, tiff->byte_width * tiff->num_comps, "tiff_scan");
+        tiff->samples = gs_alloc_bytes(tiff->memory, (size_t)tiff->byte_width * tiff->num_comps, "tiff_scan");
     } else {
         tiff->samples = gs_alloc_bytes(tiff->memory, tiff->byte_width, "tiff_scan");
     }

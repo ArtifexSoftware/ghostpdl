@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -44,7 +44,7 @@ prn_device(miff24_initialize_device_procs, "miff24",
 static int
 miff24_print_page(gx_device_printer * pdev, gp_file * file)
 {
-    int raster = gx_device_raster((gx_device *) pdev, true);
+    size_t raster = gx_device_raster((gx_device *) pdev, true);
     byte *line = gs_alloc_bytes(pdev->memory, raster, "miff line buffer");
     int y;
     int code = 0;		/* return code */

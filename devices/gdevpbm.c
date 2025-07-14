@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -692,7 +692,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, gp_file * pstream,
              int (*row_proc) (gx_device_printer *, byte *, int, gp_file *))
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-    uint raster = gdev_prn_raster_chunky(pdev);
+    size_t raster = gdev_prn_raster_chunky(pdev);
     byte *data = gs_alloc_bytes(pdev->memory, raster, "pbm_print_page_loop");
     int lnum = 0;
     int code = 0;
@@ -1089,7 +1089,7 @@ pnmcmyk_print_page(gx_device_printer *pdev, gp_file *pstream)
     if (pdev->icc_struct->graydetection == true && pdev->icc_struct->pageneutralcolor == true) {
         /* Here we need to convert the data from CMYK to K (gray) then print */
         gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-        uint raster = gdev_prn_raster_chunky(pdev);	/* enough space for the CMYK data */
+        size_t raster = gdev_prn_raster_chunky(pdev);	/* enough space for the CMYK data */
         byte *data = gs_alloc_bytes(pdev->memory, raster, "pbm_print_page_loop");
         int lnum = 0;
         int code = 0;
@@ -1350,7 +1350,7 @@ psm_print_page(gx_device_printer * pdev, gp_file * pstream)
      * is for didactic purposes only: we know perfectly well that each
      * component will have 1/N of the bits.)
      */
-    uint max_raster = bitmap_raster(pdev->width * pdev->color_info.depth);
+    size_t max_raster = bitmap_raster(pdev->width * pdev->color_info.depth);
     byte *data = gs_alloc_bytes(pdev->memory, max_raster, "pksm_print_page");
     int code = 0;
     unsigned char plane;

@@ -327,7 +327,7 @@ gsicc_create_clut(const gs_color_space *pcs, gsicc_clut *clut, gs_range *ranges,
        map to the input if the range is something other than 0 to 1 */
     for (i = 0; i < num_components; i++) {
         input_samples[i] = (float*) gs_alloc_bytes(memory,
-                                sizeof(float)*table_size,"gsicc_create_clut");
+                                sizeof(float) * (size_t)table_size,"gsicc_create_clut");
         if (input_samples[i] == NULL) {
             for (j = 0; j < i; j++) {
                 gs_free_object(memory, input_samples[j], "gsicc_create_clut");
@@ -1283,7 +1283,7 @@ gsicc_create_from_cal(float *white, float *black, float *gamma, float *matrix,
         return NULL;
     }
     tag_list = (gsicc_tag*) gs_alloc_bytes(memory,
-                    sizeof(gsicc_tag)*num_tags,"gsicc_create_from_cal");
+                    sizeof(gsicc_tag)*(size_t)num_tags,"gsicc_create_from_cal");
     if (tag_list == NULL)
         return NULL;
     /* Let us precompute the sizes of everything and all our offsets */
@@ -1470,7 +1470,7 @@ create_lutAtoBprofile(unsigned char **pp_buffer_in, icHeader *header,
     float lmn_vector[3],d50_cieA[3];
 
     profile_size = HEADER_SIZE;
-    tag_list = (gsicc_tag*) gs_alloc_bytes(memory, sizeof(gsicc_tag)*num_tags,
+    tag_list = (gsicc_tag*) gs_alloc_bytes(memory, sizeof(gsicc_tag) * (size_t)num_tags,
                                             "create_lutAtoBprofile");
     if (tag_list == NULL)
         return gs_throw(gs_error_VMerror, "Allocation of ICC tag list failed");
@@ -1630,7 +1630,7 @@ gsicc_create_mashed_clut(gsicc_lutatob *icc_luta2bparts,
     gsicc_create_initialize_clut(clut);
     /* Allocate space for the table data */
     clut->data_short = (unsigned short*) gs_alloc_bytes(memory,
-        clut->clut_num_entries*3*sizeof(unsigned short),"gsicc_create_mashed_clut");
+        clut->clut_num_entries*3*(size_t)sizeof(unsigned short),"gsicc_create_mashed_clut");
     if (clut->data_short == NULL) {
         gs_free_object(memory, clut, "gsicc_create_mashed_clut");
         return gs_throw(gs_error_VMerror, "Allocation of ICC clut short data failed");
@@ -1704,7 +1704,7 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
     if ( !(matrixABC->is_identity) && has_lmn_procs) {
         /* A matrix followed by a curve */
         atob_parts->b_curves = (float*) gs_alloc_bytes(memory,
-                            3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+                            3*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_abc_merge");
         if (atob_parts->b_curves == NULL)
             return gs_throw(gs_error_VMerror, "Allocation of ICC b curves failed");
         curr_pos = atob_parts->b_curves;
@@ -1716,7 +1716,7 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
         if (has_abc_procs) {
             /* Also a curve before the matrix */
             atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
-                            3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+                            3*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_abc_merge");
             if (atob_parts->m_curves == NULL) {
                 gs_free_object(memory, atob_parts->b_curves, "gsicc_create_abc_merge");
                 return gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
@@ -1734,7 +1734,7 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
            has_lmn_procs true */
         if (has_abc_procs) {
             atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
-                            3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+                            3*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_abc_merge");
             if (atob_parts->m_curves == NULL)
                 return gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
             curr_pos = atob_parts->m_curves;
@@ -1746,7 +1746,7 @@ gsicc_create_abc_merge(gsicc_lutatob *atob_parts, gs_matrix3 *matrixLMN,
         }
         if (has_lmn_procs) {
             atob_parts->m_curves = (float*) gs_alloc_bytes(memory,
-                                3*CURVE_SIZE*sizeof(float),"gsicc_create_abc_merge");
+                                3*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_abc_merge");
             if (atob_parts->m_curves == NULL)
                 return gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
             curr_pos = atob_parts->m_curves;
@@ -1867,7 +1867,7 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
                and b curves will be identity. */
             if (has_abc_procs) {
                 icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
-                                3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+                                3*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_fromabc");
                 if (icc_luta2bparts.a_curves == NULL)
                     return gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
 
@@ -1883,7 +1883,7 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
             }
             if (has_lmn_procs) {
                 icc_luta2bparts.m_curves = (float*) gs_alloc_bytes(memory,
-                                3*CURVE_SIZE*sizeof(float),"gsicc_create_fromabc");
+                                3*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_fromabc");
                 if (icc_luta2bparts.m_curves == NULL) {
                     gs_free_object(memory, icc_luta2bparts.a_curves,
                                    "gsicc_create_fromabc");
@@ -1919,7 +1919,7 @@ gsicc_create_fromabc(const gs_color_space *pcs, unsigned char **pp_buffer_in,
             /* 8 grid points, 3 outputs */
             icc_luta2bparts.clut->data_short =
                             (unsigned short*) gs_alloc_bytes(memory,
-                            8*3*sizeof(short),"gsicc_create_fromabc");
+                            8*3*(size_t)sizeof(short),"gsicc_create_fromabc");
             if (icc_luta2bparts.clut->data_short == NULL) {
                 gs_free_object(memory, icc_luta2bparts.a_curves,
                                "gsicc_create_fromabc");
@@ -2013,7 +2013,7 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
            is required even when Matrix A is the identity. */
         if (has_a_proc) {
             icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
-                CURVE_SIZE*sizeof(float),"gsicc_create_froma");
+                CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_froma");
             if (icc_luta2bparts.a_curves == NULL)
                 return gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
             memcpy(icc_luta2bparts.a_curves,
@@ -2022,7 +2022,7 @@ gsicc_create_froma(const gs_color_space *pcs, unsigned char **pp_buffer_in,
         }
         if (has_lmn_procs) {
             icc_luta2bparts.m_curves = (float*) gs_alloc_bytes(memory,
-                3*CURVE_SIZE*sizeof(float),"gsicc_create_froma");
+                3*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_froma");
             if (icc_luta2bparts.m_curves == NULL) {
                 gs_free_object(memory, icc_luta2bparts.a_curves, "gsicc_create_froma");
                 return gs_throw(gs_error_VMerror, "Allocation of ICC m curves failed");
@@ -2220,7 +2220,7 @@ gsicc_create_fromdefg(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     /* The a curves stored as def procs */
     if (has_defg_procs) {
         icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
-            4*CURVE_SIZE*sizeof(float),"gsicc_create_fromdefg");
+            4*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_fromdefg");
         if (icc_luta2bparts.a_curves == NULL)
             return gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
         curr_pos = icc_luta2bparts.a_curves;
@@ -2284,7 +2284,7 @@ gsicc_create_fromdef(const gs_color_space *pcs, unsigned char **pp_buffer_in,
     /* The a curves stored as def procs */
     if (has_def_procs) {
         icc_luta2bparts.a_curves = (float*) gs_alloc_bytes(memory,
-                        3*CURVE_SIZE*sizeof(float),"gsicc_create_fromdef");
+                        3*CURVE_SIZE*(size_t)sizeof(float),"gsicc_create_fromdef");
         if (icc_luta2bparts.a_curves == NULL)
             return gs_throw(gs_error_VMerror, "Allocation of ICC a curves failed");
         curr_pos = icc_luta2bparts.a_curves;
@@ -2514,7 +2514,7 @@ create_clut_v2(gsicc_clut *clut, gsicc_link_t *link, int num_in,
 
     /* Create the sample indices */
     input_samples = (unsigned short*) gs_alloc_bytes(memory,
-        sizeof(unsigned short)*table_size, "create_clut_v2");
+        sizeof(unsigned short)*(size_t)table_size, "create_clut_v2");
     if (input_samples == NULL) {
         return -1;
     }
@@ -2716,7 +2716,7 @@ gsicc_create_v2input(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src_
 
     /* Profile description tag, copyright tag white point and grayTRC */
     tag_list = (gsicc_tag*)gs_alloc_bytes(memory,
-        sizeof(gsicc_tag)*num_tags, "gsicc_create_v2input");
+        sizeof(gsicc_tag)*(size_t)num_tags, "gsicc_create_v2input");
     if (tag_list == NULL)
         return;
     /* Let us precompute the sizes of everything and all our offsets */
@@ -2801,7 +2801,7 @@ gsicc_create_v2output(const gs_gstate *pgs, icHeader *header, cmm_profile_t *src
 
     /* Profile description tag, copyright tag white point and grayTRC */
     tag_list = (gsicc_tag*)gs_alloc_bytes(memory,
-        sizeof(gsicc_tag)*num_tags, "gsicc_create_v2output");
+        sizeof(gsicc_tag)*(size_t)num_tags, "gsicc_create_v2output");
     if (tag_list == NULL)
         return;
     /* Let us precompute the sizes of everything and all our offsets */
@@ -2959,7 +2959,7 @@ gsicc_create_v2displaygray(const gs_gstate *pgs, icHeader *header, cmm_profile_t
 
     /* Profile description tag, copyright tag white point and grayTRC */
     tag_list = (gsicc_tag*)gs_alloc_bytes(memory,
-        sizeof(gsicc_tag)*num_tags, "gsicc_createv2display_gray");
+        sizeof(gsicc_tag)*(size_t)num_tags, "gsicc_createv2display_gray");
     if (tag_list == NULL)
         return;
     /* Let us precompute the sizes of everything and all our offsets */
@@ -3001,7 +3001,7 @@ gsicc_create_v2displaygray(const gs_gstate *pgs, icHeader *header, cmm_profile_t
     (link->procs.map_color)(NULL, link, &src, &(des[0]), 2);
     max = des[1];
 
-    trc = (float*) gs_alloc_bytes(memory, TRC_V2_SIZE * sizeof(float), "gsicc_createv2display_gray");
+    trc = (float*) gs_alloc_bytes(memory, TRC_V2_SIZE * (size_t)sizeof(float), "gsicc_createv2display_gray");
     if (trc == NULL) {
         gsicc_release_link(link);
         gs_free_object(memory, tag_list, "gsicc_createv2display_gray");
@@ -3051,7 +3051,7 @@ gsicc_create_v2displayrgb(const gs_gstate *pgs, icHeader *header, cmm_profile_t 
     /* Profile description tag, copyright tag white point RGB colorants and
        RGB TRCs */
     tag_list = (gsicc_tag*)gs_alloc_bytes(memory,
-        sizeof(gsicc_tag)*num_tags, "gsicc_create_v2displayrgb");
+        sizeof(gsicc_tag)*(size_t)num_tags, "gsicc_create_v2displayrgb");
     if (tag_list == NULL)
         return;
     /* Let us precompute the sizes of everything and all our offsets */
@@ -3103,7 +3103,7 @@ gsicc_create_v2displayrgb(const gs_gstate *pgs, icHeader *header, cmm_profile_t 
     }
 
     /* Now the TRCs */
-    trc = (float*) gs_alloc_bytes(memory, TRC_V2_SIZE * sizeof(float), "gsicc_create_v2displayrgb");
+    trc = (float*) gs_alloc_bytes(memory, TRC_V2_SIZE * (size_t)sizeof(float), "gsicc_create_v2displayrgb");
     if (trc == NULL) {
         gsicc_release_link(link);
         gs_free_object(memory, tag_list, "gsicc_create_v2displayrgb");
@@ -3191,7 +3191,7 @@ get_xyzprofile(cmm_profile_t *xyz_profile)
 
     /* Profile description tag, copyright tag white point and grayTRC */
     tag_list = (gsicc_tag*)gs_alloc_bytes(memory,
-        sizeof(gsicc_tag) * num_tags, "get_xyzprofile");
+        sizeof(gsicc_tag) * (size_t)num_tags, "get_xyzprofile");
     if (tag_list == NULL)
         return -1;
     /* Let us precompute the sizes of everything and all our offsets */

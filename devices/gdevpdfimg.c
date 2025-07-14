@@ -227,7 +227,7 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
             gs_free_object(pdf_dev->memory->non_gc_memory, page, "pdfimage create new page");
             return_error(gs_error_VMerror);
         }
-        pdf_dev->strm_buf = gs_alloc_bytes(pdf_dev->memory->non_gc_memory, pdf_dev->width * (pdf_dev->color_info.depth / 8),
+        pdf_dev->strm_buf = gs_alloc_bytes(pdf_dev->memory->non_gc_memory, (size_t)pdf_dev->width * (pdf_dev->color_info.depth / 8),
                                        "pdfimage_open_temp_stream(strm_buf)");
         if (pdf_dev->strm_buf == NULL) {
             pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
@@ -409,8 +409,8 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
     gx_device_pdf_image *const pdf_dev = (gx_device_pdf_image *)dev;
     int code = 0;
     byte *data = NULL;
-    int size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
-    int max_size = size;
+    size_t size = gdev_mem_bytes_per_scan_line((gx_device *)dev);
+    size_t max_size = size;
     int row;
     int factor = params->downscale_factor;
     int height = gx_downscaler_scale(dev->height, factor);

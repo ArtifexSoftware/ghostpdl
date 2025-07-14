@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -747,7 +747,7 @@ zspec_op(i_ctx_t *i_ctx_p)
                 ref_assign(&opname, op);
                 name_string_ref(imemory, &opname, &namestr);
 
-                data = (char *)gs_alloc_bytes(imemory, r_size(&namestr) + 1, "temporary special_op string");
+                data = (char *)gs_alloc_bytes(imemory, (size_t)r_size(&namestr) + 1, "temporary special_op string");
                 if (data == 0)
                     return_error(gs_error_VMerror);
                 memset(data, 0x00, r_size(&namestr) + 1);
@@ -795,7 +795,7 @@ zspec_op(i_ctx_t *i_ctx_p)
                 ref_assign(&opname, op);
                 name_string_ref(imemory, &opname, &namestr);
 
-                data = (char *)gs_alloc_bytes(imemory, r_size(&namestr) + 1, "temporary special_op string");
+                data = (char *)gs_alloc_bytes(imemory, (size_t)r_size(&namestr) + 1, "temporary special_op string");
                 if (data == 0)
                     return_error(gs_error_VMerror);
                 memset(data, 0x00, r_size(&namestr) + 1);

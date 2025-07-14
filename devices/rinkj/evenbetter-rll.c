@@ -1517,7 +1517,7 @@ even_better_line (EvenBetterCtx *ebc, uchar **dest,
     {
       for (i = 0; i < ebc->n_planes; i++)
         {
-          rll_buf[i] = (ET_Rll *)malloc (source_width * sizeof(ET_Rll));
+          rll_buf[i] = (ET_Rll *)malloc ((size_t)source_width * sizeof(ET_Rll));
           if (rll_buf[i] == NULL)
               goto out;
           even_better_compress_rll (rll_buf[i], src[i], source_width, dest_width);
@@ -1624,10 +1624,10 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
       result->lut[i] = (1 << EVEN_SHIFT) - nli;
     }
 
-  result->rb_lut = (int *)malloc ((ET_SRC_MAX + 1) * sizeof(int));
+  result->rb_lut = (int *)malloc ((size_t)(ET_SRC_MAX + 1) * sizeof(int));
   if (result->rb_lut == NULL)
       goto err;
-  result->rs_lut = (char *)malloc ((ET_SRC_MAX + 1) * sizeof(int));
+  result->rs_lut = (char *)malloc ((size_t)(ET_SRC_MAX + 1) * sizeof(int));
   if (result->rs_lut == NULL)
       goto err;
 
@@ -1774,7 +1774,7 @@ even_better_new (const EvenBetterParams *params)
   result->even_ehi = 0.6 * (1 << EVEN_SHIFT) / (params->levels - 1);
   result->even_elo = -result->even_ehi;
 
-  result->strengths = (int *)malloc (sizeof(int) * n_planes);
+  result->strengths = (int *)malloc (sizeof(int) * (size_t)n_planes);
   if (result->strengths == NULL)
       goto err;
 

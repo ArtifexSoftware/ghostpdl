@@ -154,12 +154,13 @@ lp2000_print_page_copies(gx_device_printer * pdev, gp_file * fp, int num_coipes)
     int code = 0;
     int bpl = gdev_mem_bytes_per_scan_line(pdev);
     int maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
+    size_t Bufsize = bpl * 3 / 2 + 1;
 
     /* printer initialize */
     if (pdev->PageCount == 0)
         escpage_printer_initialize(pdev, fp, num_coipes);
 
-    if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, bpl * 3 / 2 + 1, maxY, "lp2000_print_page_copies(CompBuf)")))
+    if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, Bufsize, maxY, "lp2000_print_page_copies(CompBuf)")))
         return_error(gs_error_VMerror);
 
     if (lprn->NegativePrint) {

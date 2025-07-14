@@ -2173,7 +2173,7 @@ escv_copy_mono(gx_device * dev, const byte * data,
   {
     int		i, j;
     uint		width_bytes = (w + 7) >> 3;
-    uint		num_bytes = width_bytes * h;
+    size_t		num_bytes = width_bytes * h;
 
     byte *buf = gs_alloc_bytes(vdev->memory, num_bytes, "escv_copy_mono(buf)");
     if (buf == NULL)
@@ -2237,7 +2237,7 @@ escv_copy_color(gx_device * dev,
 
   {
     int		i;
-    uint		num_bytes = width_bytes * h;
+    size_t		num_bytes = width_bytes * h;
     byte		*buf = gs_alloc_bytes(vdev->memory, num_bytes, "escv_copy_color(buf)");
 
     if (buf == NULL)
@@ -2320,7 +2320,7 @@ escv_fill_mask(gx_device * dev,
       char		obuf[128];
       int		i;
       uint		width_bytes = (w + 7) >> 3;
-      uint		num_bytes = width_bytes * h;
+      size_t	num_bytes = width_bytes * h;
       byte		*buf;
 
       if (pdev -> id_cache[id & VCACHE] != id) {
@@ -2358,7 +2358,7 @@ escv_fill_mask(gx_device * dev,
   {
     int		i;
     uint		width_bytes = (w + 7) >> 3;
-    uint		num_bytes = width_bytes * h;
+    size_t		num_bytes = width_bytes * h;
     byte		*buf = gs_alloc_bytes(vdev->memory, num_bytes, "escv_fill_mask(buf)");
 
     if (buf == NULL)
@@ -2592,7 +2592,7 @@ escv_image_plane_data(gx_image_enum_common_t *info, const gx_image_plane_t *plan
 
   int				y;
   int				plane;
-  int				width_bytes, tbyte;
+  size_t			width_bytes, tbyte;
   byte			*buf;
 
   if (pie->default_info) return gx_image_plane_data(pie->default_info, planes, height);
@@ -2941,13 +2941,14 @@ static int escv_write_data(gx_device *dev, int bits, byte *buf, int bsize, int w
   unsigned char           *rgbbuf;
   unsigned char           *ucp;
   double                   gray8;
+  size_t                   bsize2 = bsize * 2;
 
   if( 0 == pdev->colormode ) { /* ESC/Page (Monochrome) */
 
     tmps = 0;
 
     if (bits == 12) {
-      p = tmps = gs_alloc_bytes(vdev->memory, bsize * 2, "escv_write_data(tmp)");
+      p = tmps = gs_alloc_bytes(vdev->memory, bsize2, "escv_write_data(tmp)");
       if (p == NULL)
           return_error(gs_error_VMerror);
       for (size = 0; size < bsize; size++) {
@@ -2959,7 +2960,7 @@ static int escv_write_data(gx_device *dev, int bits, byte *buf, int bsize, int w
     }
 
     if(bits == 4) {
-      p = tmps = gs_alloc_bytes(vdev->memory, bsize * 2, "escv_write_data(tmp)");
+      p = tmps = gs_alloc_bytes(vdev->memory, bsize2, "escv_write_data(tmp)");
       if (p == NULL)
           return_error(gs_error_VMerror);
       for (size = 0; size < bsize; size++) {
@@ -3014,7 +3015,7 @@ static int escv_write_data(gx_device *dev, int bits, byte *buf, int bsize, int w
 
     tmps = 0;
     if (bits == 12) {
-      p = tmps = gs_alloc_bytes(vdev->memory, bsize * 2, "escv_write_data(tmp)");
+      p = tmps = gs_alloc_bytes(vdev->memory, bsize2, "escv_write_data(tmp)");
       if (p == NULL)
           return_error(gs_error_VMerror);
       for (size = 0; size < bsize; size++) {

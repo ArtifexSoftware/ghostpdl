@@ -284,17 +284,17 @@ xps_create_gradient_stop_function(xps_context_t *ctx, struct stop *stops, int co
     range[5] = 1.0;
     sparams.Range = range;
 
-    functions = xps_alloc(ctx, k * sizeof(void*));
+    functions = xps_alloc(ctx, (size_t)k * sizeof(void*));
     if (!functions) {
         gs_throw(gs_error_VMerror, "out of memory: functions.\n");
         return NULL;
     }
-    bounds = xps_alloc(ctx, (k - 1) * sizeof(float));
+    bounds = xps_alloc(ctx, ((size_t)k - 1) * sizeof(float));
     if (!bounds) {
         gs_throw(gs_error_VMerror, "out of memory: bounds.\n");
         return NULL;
     }
-    encode = xps_alloc(ctx, (k * 2) * sizeof(float));
+    encode = xps_alloc(ctx, ((size_t)k * 2) * sizeof(float));
     if (!encode) {
         gs_throw(gs_error_VMerror, "out of memory: encode.\n");
         return NULL;

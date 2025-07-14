@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -305,7 +305,10 @@ begin_tiling(tiling_state_t *pts, gx_device_plane_extract *edev,
 {
     uint width_raster =
         bitmap_raster(width * edev->plane_dev->color_info.depth);
-    uint full_size = width_raster * height;
+    int64_t full_size;
+
+    if (check_64bit_multiply(width_raster, height, &full_size) != 0)
+        return gs_note_error(gs_error_undefinedresult);
 
     pts->edev = edev;
     pts->data = data, pts->data_x = data_x, pts->raster = raster;

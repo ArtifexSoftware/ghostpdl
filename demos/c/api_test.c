@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -431,7 +431,7 @@ update(void *handle, void *device, int x, int y, int w, int h)
 void *
 aligned_malloc(size_t size, int alignment)
 {
-    char *ret = malloc(size + alignment*2);
+    char *ret = malloc(size + (size_t)alignment*2);
     int boost;
 
     if (ret == NULL)

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -181,6 +181,9 @@ gx_set_dash(gx_dash_params * dash, const float *pattern, uint length,
         }
     } else {
         uint size = length * sizeof(float);
+
+        if (length != 0 && size / length != sizeof(float))
+            return gs_note_error(gs_error_undefinedresult);
 
         if (pattern_length == 0)
             return_error(gs_error_rangecheck);

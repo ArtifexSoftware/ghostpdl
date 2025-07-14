@@ -604,8 +604,9 @@ bjc_print_page_mono(gx_device_printer * pdev, gp_file * file)
 
     uint raster = gdev_prn_raster(pdev);
     uint cmplen;
+    size_t rsize = (raster << 1) + 1;
     byte *row = gs_alloc_bytes(pdev->memory, raster, "bjc mono file buffer");
-    byte *cmp = gs_alloc_bytes(pdev->memory, (raster << 1) + 1,
+    byte *cmp = gs_alloc_bytes(pdev->memory, rsize,
                                "bjc mono comp buffer"); /*worst case */
     byte *outrow; /* misc variable for send a row */
     int y;
@@ -675,10 +676,11 @@ bjc_print_page_gray(gx_device_printer * pdev, gp_file * file)
 
     uint width =   pdev->width; /* Because grayscale */
     uint raster = (pdev->width >> 3) + ( (pdev->width % 8) ? 1:0);
+    size_t rsize = (raster << 1) + 1;
     uint cmplen;
     byte *row = gs_alloc_bytes(pdev->memory, width, "bjc gray file buffer");
     byte *dit = gs_alloc_bytes(pdev->memory, raster, "bjc gray dither buffer");
-    byte *cmp = gs_alloc_bytes(pdev->memory, (raster << 1) + 1,
+    byte *cmp = gs_alloc_bytes(pdev->memory, rsize,
                                "bjc gray comp buffer"); /*worst case */
     byte *out; /* misc variable for send a row */
     int y;
@@ -763,9 +765,10 @@ bjc_print_page_cmyk(gx_device_printer * pdev, gp_file * file)
     uint raster = bitmap_raster(pdev->width);
     uint a_raster;                             /* a tmp variable */
     uint cmplen;
-    byte *row = gs_alloc_bytes(pdev->memory, raster*4,
+    size_t cmpsize = (raster << 1) + 1, rsize = raster * 4;
+    byte *row = gs_alloc_bytes(pdev->memory, rsize,
                                "bjc cmyk file buffer"); /* one for each component */
-    byte *cmp = gs_alloc_bytes(pdev->memory, (raster << 1) + 1,
+    byte *cmp = gs_alloc_bytes(pdev->memory, cmpsize,
                                "bjc cmyk comp buffer"); /*worst case */
     byte *rows[4];
     byte *outrow; /* misc variable for send a row */
@@ -884,11 +887,12 @@ bjc_print_page_color(gx_device_printer * pdev, gp_file * file)
     uint width =   pdev->width; /* Because grayscale */
     uint raster = (pdev->width >> 3) + ( (pdev->width % 8) ? 1:0);
     uint cmplen;
-    byte *row = gs_alloc_bytes(pdev->memory, width*4,
+    size_t cmpsize = (raster << 1) + 1, rsize = raster * 4;
+    byte *row = gs_alloc_bytes(pdev->memory, rsize,
                                "bjc true file buffer"); /* one for each component */
-    byte *dit = gs_alloc_bytes(pdev->memory, raster*4,
+    byte *dit = gs_alloc_bytes(pdev->memory, rsize,
                                "bjc true dither buffer");
-    byte *cmp = gs_alloc_bytes(pdev->memory, (raster << 1) + 1,
+    byte *cmp = gs_alloc_bytes(pdev->memory, cmpsize,
                                "bjc true comp buffer"); /*worst case */
     byte *rowC = dit;                 /*C*/
     byte *rowM = dit + raster;        /*M*/

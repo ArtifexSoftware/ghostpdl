@@ -451,7 +451,7 @@ static int pdfi_read_name(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_n
 
         /* If we ran out of memory, increase the buffer size */
         if (index++ >= size - 1) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_name");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, (size_t)size + 256, "pdfi_read_name");
             if (NewBuf == NULL) {
                 gs_free_object(ctx->memory, Buffer, "pdfi_read_name error");
                 return_error(gs_error_VMerror);
@@ -550,7 +550,7 @@ static int pdfi_read_hexstring(pdf_context *ctx, pdf_c_stream *s, uint32_t indir
         Buffer[index] = (fromhex(hex0) << 4) + fromhex(hex1);
 
         if (index++ >= size - 1) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_hexstring");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, (size_t)size + 256, "pdfi_read_hexstring");
             if (NewBuf == NULL) {
                 code = gs_note_error(gs_error_VMerror);
                 goto exit;
@@ -602,7 +602,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
 
     do {
         if (index >= size - 1) {
-            NewBuf = (char *)gs_alloc_bytes(ctx->memory, size + 256, "pdfi_read_string");
+            NewBuf = (char *)gs_alloc_bytes(ctx->memory, (size_t)size + 256, "pdfi_read_string");
             if (NewBuf == NULL) {
                 gs_free_object(ctx->memory, Buffer, "pdfi_read_string error");
                 return_error(gs_error_VMerror);

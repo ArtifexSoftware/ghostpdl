@@ -576,9 +576,10 @@ lips4v_write_image_data(gx_device_vector * vdev, byte * buf, int tbyte,
                         int reverse)
 {
     stream *s = gdev_vector_stream(vdev);
-    byte *cbuf = gs_alloc_bytes(vdev->memory, tbyte * 3 / 2,
+    size_t bufsize1 = tbyte * 3 / 2, bufsize2 = tbyte * 3;
+    byte *cbuf = gs_alloc_bytes(vdev->memory, bufsize1,
                                 "lips4v_write_image_data(cbuf)");
-    byte *cbuf_rle = gs_alloc_bytes(vdev->memory, tbyte * 3,
+    byte *cbuf_rle = gs_alloc_bytes(vdev->memory, bufsize2,
                                     "lips4v_write_image_data(cbuf_rle)");
     int Len, Len_rle;
 
@@ -1932,7 +1933,12 @@ lips4v_copy_mono(gx_device * dev, const byte * data,
         int i, j;
         uint width_bytes = (w + 7) >> 3;
         uint num_bytes = round_up(width_bytes, 4) * h;
-        byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
+        byte *buf;
+
+        if (h != 0 && num_bytes / h != round_up(width_bytes, 4))
+            return gs_note_error(gs_error_undefinedresult);
+
+        buf = gs_alloc_bytes(vdev->memory, num_bytes,
                                    "lips4v_copy_mono(buf)");
 
         if (buf == NULL)
@@ -2021,7 +2027,12 @@ lips4v_copy_color(gx_device * dev,
     {
         int i;
         uint num_bytes = width_bytes * h;
-        byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
+        byte *buf;
+
+        if (h != 0 && num_bytes / h != width_bytes)
+            return gs_note_error(gs_error_undefinedresult);
+
+        buf = gs_alloc_bytes(vdev->memory, num_bytes,
                                    "lips4v_copy_color(buf)");
 
         if (buf == NULL)
@@ -2103,7 +2114,12 @@ lips4v_fill_mask(gx_device * dev,
         int i;
         uint width_bytes = (w + 7) >> 3;
         uint num_bytes = round_up(width_bytes, 4) * h;
-        byte *buf = gs_alloc_bytes(vdev->memory, num_bytes,
+        byte *buf;
+
+        if (h != 0 && num_bytes / h != round_up(width_bytes, 4))
+            return gs_note_error(gs_error_undefinedresult);
+
+        buf = gs_alloc_bytes(vdev->memory, num_bytes,
                                    "lips4v_fill_mask(buf)");
 
         if (buf == NULL)
@@ -2385,6 +2401,10 @@ lips4v_image_plane_data(gx_image_enum_common_t * info,
             (pie->width * pie->bits_per_pixel / pdev->ncomp +
              7) / 8 * pdev->ncomp;
         tbyte = width_bytes * height;
+
+        if (height != 0 && tbyte / height != width_bytes)
+            return gs_note_error(gs_error_undefinedresult);
+
         buf = gs_alloc_bytes(vdev->memory, tbyte, "lips4v_image_data(buf)");
 
         if (buf == NULL)

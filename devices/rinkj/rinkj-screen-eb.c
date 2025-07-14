@@ -139,7 +139,7 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
   int i;
   int n_planes = z->n_planes;
   int xs = z->width_out;
-  int xsb;
+  size_t xsb;
   int status = 0;
   const uchar ** data_permuted = NULL;
   int cmyk_permutation[] = { 3, 0, 1, 2 };
@@ -177,7 +177,7 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
   out_buf = (uchar **)calloc (n_planes, sizeof(char *));
   if (out_buf == NULL)
       goto out;
-  data_permuted = (const uchar **)malloc (n_planes * sizeof(char *));
+  data_permuted = (const uchar **)malloc ((size_t)n_planes * sizeof(char *));
   if (data_permuted == NULL)
       goto out;
 

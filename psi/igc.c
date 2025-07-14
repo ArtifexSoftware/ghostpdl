@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1043,7 +1043,7 @@ static int
 gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
 {
     if (pms->next == 0) {	/* Try to allocate another segment. */
-        uint count;
+        size_t count;
 
         for (count = ms_size_desired; count >= ms_size_min; count >>= 1) {
             pms->next = (gc_mark_stack *)

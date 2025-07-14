@@ -87,12 +87,14 @@ rpdl_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_c
     int code = 0;
     int bpl = gdev_mem_bytes_per_scan_line(pdev);
     int maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
+    size_t Bufsize;
 
     /* printer initialize */
     if (pdev->PageCount == 0)
         rpdl_printer_initialize(pdev, prn_stream, num_coipes);
 
-    if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, bpl * 3 / 2 + 1, maxY, "rpdl_print_page_copies(CompBuf)")))
+    Bufsize = bpl * 3 / 2 + 1;
+    if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, Bufsize, maxY, "rpdl_print_page_copies(CompBuf)")))
         return_error(gs_error_VMerror);
 
     lprn->NegativePrint = false; /* Not Support */
@@ -101,7 +103,7 @@ rpdl_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int num_c
     if (code < 0)
         return code;
 
-    gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, bpl * 3 / 2 + 1, maxY, "rpdl_print_page_copies(CompBuf)");
+    gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, Bufsize, maxY, "rpdl_print_page_copies(CompBuf)");
 
     gp_fprintf(prn_stream, "\014");	/* Form  Feed */
 

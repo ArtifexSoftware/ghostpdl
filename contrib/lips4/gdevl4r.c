@@ -622,11 +622,12 @@ lips_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, lips_prin
     int code = 0;
     int bpl = gdev_mem_bytes_per_scan_line(pdev);
     int maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
+    size_t Bufsize = bpl * 3 / 2 + 1;
 
     /* Initialize printer. */
     lips_job_start(pdev, ptype, prn_stream, num_copies);
 
-    if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, bpl * 3 / 2 + 1, maxY, "(CompBuf)")))
+    if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, Bufsize, maxY, "(CompBuf)")))
         return_error(gs_error_VMerror);
 
     lprn->NegativePrint = false; /* not support */
@@ -635,7 +636,7 @@ lips_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, lips_prin
     if (code < 0)
         return code;
 
-    gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, bpl * 3 / 2 + 1, maxY, "(CompBuf)");
+    gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, Bufsize, maxY, "(CompBuf)");
 
     /* eject page */
     lips_job_end(pdev, prn_stream);
@@ -662,18 +663,21 @@ lips4type_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int 
     int code = 0;
     int bpl = gdev_mem_bytes_per_scan_line(pdev);
     int maxY = lprn->BlockLine / lprn->nBh * lprn->nBh;
+    size_t Bufsize1, Bufsize2;
 
     /* Initialize printer. */
     lips_job_start(pdev, ptype, prn_stream, num_copies);
 
     if (pdev->color_info.depth == 1)
       {
-        if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, bpl * 3 / 2 + 1, maxY, "(CompBuf)")))
+        Bufsize1 = bpl * 3 / 2 + 1;
+        if (!(lprn->CompBuf = gs_malloc(pdev->memory->non_gc_memory, Bufsize1, maxY, "(CompBuf)")))
           return_error(gs_error_VMerror);
 
         /* This buffer is used by lips_rle_encode(), which can require double
         input size plus 2 bytes. */
-        if (!(lprn->CompBuf2 = gs_malloc(pdev->memory->non_gc_memory, bpl * 2 + 2, maxY, "(CompBuf2)")))
+        Bufsize2 = bpl * 2 + 2;
+        if (!(lprn->CompBuf2 = gs_malloc(pdev->memory->non_gc_memory, Bufsize2, maxY, "(CompBuf2)")))
           return_error(gs_error_VMerror);
 
         if (lprn->NegativePrint) {
@@ -692,8 +696,8 @@ lips4type_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream, int 
         if (code < 0)
           return code;
 
-        gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, bpl * 3 / 2 + 1, maxY, "(CompBuf)");
-        gs_free(pdev->memory->non_gc_memory, lprn->CompBuf2, bpl * 3 / 2 + 1, maxY, "(CompBuf2)");
+        gs_free(pdev->memory->non_gc_memory, lprn->CompBuf, Bufsize1, maxY, "(CompBuf)");
+        gs_free(pdev->memory->non_gc_memory, lprn->CompBuf2, Bufsize2, maxY, "(CompBuf2)");
       }
     else
       {
@@ -930,17 +934,20 @@ lips4c_output_page(gx_device_printer * pdev, gp_file * prn_stream)
     int nBytesPerLine = gdev_prn_raster(pdev);
     int Xpixel = nBytesPerLine / num_components;
     int lnum = 0;
+    size_t Bufsize1 = Xpixel * num_components + (Xpixel * num_components + 127) * 129 / 128;
+    size_t Bufsize2 = (Xpixel * num_components + (Xpixel * num_components + 127) * 129 / 128) * NUM_LINES_4C;
+    size_t Bufsize3 = Xpixel * num_components * 2;
 
     /* Memory Allocate */
     if (!(pBuff = (byte *) gs_malloc(pdev->memory->non_gc_memory, nBytesPerLine, sizeof(byte), "lips4c_compress_output_page(pBuff)")))
         return_error(gs_error_VMerror);
     if (!(prevBuff = (byte *) gs_malloc(pdev->memory->non_gc_memory, nBytesPerLine, sizeof(byte), "lips4c_compress_output_page(prevBuff)")))
         return_error(gs_error_VMerror);
-    if (!(ComBuff = (byte *) gs_malloc(pdev->memory->non_gc_memory, Xpixel * num_components + (Xpixel * num_components + 127) * 129 / 128, sizeof(byte), "lips4c_compress_output_page(ComBuff)")))
+    if (!(ComBuff = (byte *) gs_malloc(pdev->memory->non_gc_memory, Bufsize1, sizeof(byte), "lips4c_compress_output_page(ComBuff)")))
         return_error(gs_error_VMerror);
-    if (!(TotalBuff = (byte *) gs_malloc(pdev->memory->non_gc_memory, (Xpixel * num_components + (Xpixel * num_components + 127) * 129 / 128) * NUM_LINES_4C, sizeof(byte), "lips4c_compress_output_page(TotalBuff)")))
+    if (!(TotalBuff = (byte *) gs_malloc(pdev->memory->non_gc_memory, Bufsize2, sizeof(byte), "lips4c_compress_output_page(TotalBuff)")))
         return_error(gs_error_VMerror);
-    if (!(diffBuff = (byte *) gs_malloc(pdev->memory->non_gc_memory, Xpixel * num_components * 2, sizeof(byte), "lips_print_page")))
+    if (!(diffBuff = (byte *) gs_malloc(pdev->memory->non_gc_memory, Bufsize3, sizeof(byte), "lips_print_page")))
         return_error(gs_error_VMerror);
 
     /* make output data */
@@ -958,9 +965,9 @@ lips4c_output_page(gx_device_printer * pdev, gp_file * prn_stream)
     /* Free Memory */
     gs_free(pdev->memory->non_gc_memory, pBuff, nBytesPerLine, sizeof(byte), "lips4c_compress_output_page(pBuff)");
     gs_free(pdev->memory->non_gc_memory, prevBuff, nBytesPerLine, sizeof(byte), "lips4c_compress_output_page(prevBuff)");
-    gs_free(pdev->memory->non_gc_memory, ComBuff, Xpixel * num_components + (Xpixel * num_components + 127) * 129 / 128, sizeof(byte), "lips4c_compress_output_page(ComBuff)");
-    gs_free(pdev->memory->non_gc_memory, TotalBuff, (Xpixel * num_components + (Xpixel * num_components + 127) * 129 / 128) * NUM_LINES_4C, sizeof(byte), "lips4c_compress_output_page(TotalBuff)");
-    gs_free(pdev->memory->non_gc_memory, diffBuff, Xpixel * num_components * 2, sizeof(byte), "lips_print_page");
+    gs_free(pdev->memory->non_gc_memory, ComBuff, Bufsize1, sizeof(byte), "lips4c_compress_output_page(ComBuff)");
+    gs_free(pdev->memory->non_gc_memory, TotalBuff, Bufsize2, sizeof(byte), "lips4c_compress_output_page(TotalBuff)");
+    gs_free(pdev->memory->non_gc_memory, diffBuff, Bufsize3, sizeof(byte), "lips_print_page");
 
     return 0;
 }

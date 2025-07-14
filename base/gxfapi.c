@@ -2038,7 +2038,7 @@ gs_fapi_init(gs_memory_t *mem)
 
     servs =
         (gs_fapi_server **) gs_alloc_bytes_immovable(mem->non_gc_memory,
-                                                     (num_servers +
+                                                     (size_t)(num_servers +
                                                       1) *
                                                      sizeof(gs_fapi_server *),
                                                      "gs_fapi_init");

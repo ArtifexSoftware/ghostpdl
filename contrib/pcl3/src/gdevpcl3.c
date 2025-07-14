@@ -1479,6 +1479,7 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
     j,
     *lengths,
     planes;
+  size_t alloc_size = 0;
 
   /* Make sure out cleanup code will cope with partially-initialised data. */
   memset(&rd, 0, sizeof(pcl_RasterData)); /* Belt and braces. */
@@ -1504,13 +1505,15 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
   /* Initialize raster data structure */
   rd.global = &dev->file_data;
   planes = eprn_number_of_bitplanes((eprn_Device *)dev);
-  lengths = (unsigned int *)malloc(planes*sizeof(unsigned int));
+  alloc_size = planes*sizeof(unsigned int);
+  lengths = (unsigned int *)malloc(alloc_size);
   if (!lengths) {
     rc = gs_note_error(gs_error_VMerror);
     goto end;
   }
   eprn_number_of_octets((eprn_Device *)dev, lengths);
-  rd.next = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
+  alloc_size = planes*sizeof(pcl_OctetString);
+  rd.next = (pcl_OctetString *)malloc(alloc_size);
   if (!rd.next) {
     rc = gs_note_error(gs_error_VMerror);
     goto end;
@@ -1519,7 +1522,7 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
     rd.next[j].str = NULL;
   }
   if (pcl_cm_is_differential(dev->file_data.compression)) {
-    rd.previous = (pcl_OctetString *)malloc(planes*sizeof(pcl_OctetString));
+    rd.previous = (pcl_OctetString *)malloc(alloc_size);
     if (!rd.previous) {
       rc = gs_note_error(gs_error_VMerror);
       goto end;
@@ -1528,7 +1531,8 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
       rd.previous[j].str = NULL;
     }
     for (j = 0; j < planes; j++) {
-      rd.previous[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
+      alloc_size = lengths[j]*sizeof(eprn_Octet);
+      rd.previous[j].str = (pcl_Octet *)malloc(alloc_size);
       if (!rd.previous[j].str) {
         rc = gs_note_error(gs_error_VMerror);
         goto end;
@@ -1537,7 +1541,8 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
   }
   rd.width = 8*lengths[0];      /* all colorants have equal resolution */
   for (j = 0; j < planes; j++) {
-    rd.next[j].str = (pcl_Octet *)malloc(lengths[j]*sizeof(eprn_Octet));
+    alloc_size = lengths[j]*sizeof(eprn_Octet);
+    rd.next[j].str = (pcl_Octet *)malloc(alloc_size);
     if (!rd.next[j].str) {
       rc = gs_note_error(gs_error_VMerror);
       goto end;
@@ -1550,8 +1555,9 @@ static int pcl3_print_page(gx_device_printer *device, gp_file *out)
       rd.workspace_allocated = lengths[j];
   for (j = 0;
       j < 2 && (j != 1 || dev->file_data.compression == pcl_cm_delta); j++) {
+    alloc_size = rd.workspace_allocated*sizeof(pcl_Octet);
     rd.workspace[j] =
-      (pcl_Octet *)malloc(rd.workspace_allocated*sizeof(pcl_Octet));
+      (pcl_Octet *)malloc(alloc_size);
     if (!rd.workspace[j]) {
       rc = gs_note_error(gs_error_VMerror);
       goto end;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -139,7 +139,7 @@ static int resize(ramfile * file,int size)
                 if(!newsize) newsize = 1;
                 while(newsize < newblocks) newsize *= 2;
             }
-            buf = gs_alloc_bytes(file->fs->memory, newsize * sizeof(char*), "ramfs resize");
+            buf = gs_alloc_bytes(file->fs->memory, (size_t)newsize * sizeof(char*), "ramfs resize");
             if (!buf)
                 return gs_note_error(gs_error_VMerror);
             memcpy(buf, file->data, file->blocklist_size * sizeof(char *));

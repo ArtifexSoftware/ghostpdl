@@ -1430,7 +1430,7 @@ static int pdfi_create_iccbased(pdf_context *ctx, pdf_array *color_array, int in
         switch (pdfi_type_of(Name)) {
             case PDF_STRING:
             case PDF_NAME:
-                cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + 1, "pdfi_create_iccbased (profile name)");
+                cname = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)Name)->length + (size_t)1, "pdfi_create_iccbased (profile name)");
                 if (cname == NULL) {
                     code = gs_note_error(gs_error_VMerror);
                     goto done;
@@ -2055,7 +2055,7 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
     pcs_alt = NULL;
     pcs->params.separation.mem = ctx->memory;
     pcs->params.separation.sep_type = sep_type;
-    pcs->params.separation.sep_name = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, name->length + 1, "pdfi_setseparationspace(ink)");
+    pcs->params.separation.sep_name = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, (size_t)name->length + 1, "pdfi_setseparationspace(ink)");
     if (pcs->params.separation.sep_name == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto pdfi_separation_error;
@@ -2253,7 +2253,7 @@ all_error:
         if (code < 0)
             goto pdfi_devicen_error;
 
-        pcs->params.device_n.names[ix] = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, ink_name->length + 1, "pdfi_setdevicenspace(ink)");
+        pcs->params.device_n.names[ix] = (char *)gs_alloc_bytes(ctx->memory->non_gc_memory, (size_t)ink_name->length + 1, "pdfi_setdevicenspace(ink)");
         if (pcs->params.device_n.names[ix] == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto pdfi_devicen_error;
@@ -2328,7 +2328,7 @@ all_error:
                 goto pdfi_devicen_error;
 
             pcs->params.device_n.num_process_names = pdfi_array_size(Components);
-            pcs->params.device_n.process_names = (char **)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, pdfi_array_size(Components) * sizeof(char *), "pdfi_devicen(Processnames)");
+            pcs->params.device_n.process_names = (char **)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, (size_t)pdfi_array_size(Components) * sizeof(char *), "pdfi_devicen(Processnames)");
             if (pcs->params.device_n.process_names == NULL) {
                 code = gs_error_VMerror;
                 goto pdfi_devicen_error;
@@ -2345,7 +2345,7 @@ all_error:
                 switch (pdfi_type_of(name)) {
                     case PDF_NAME:
                     case PDF_STRING:
-                        pcs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, ((pdf_name *)name)->length + 1, "pdfi_devicen(Processnames)");
+                        pcs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, ((pdf_name *)name)->length + (size_t)1, "pdfi_devicen(Processnames)");
                         if (pcs->params.device_n.process_names[ix] == NULL) {
                             pdfi_countdown(Components);
                             pdfi_countdown(name);
@@ -2409,7 +2409,7 @@ all_error:
                     goto pdfi_devicen_error;
                 }
 
-                colorant_name = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, ((pdf_name *)Colorant)->length + 1, "pdfi_devicen(colorant)");
+                colorant_name = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, ((pdf_name *)Colorant)->length + (size_t)1, "pdfi_devicen(colorant)");
                 if (colorant_name == NULL) {
                     rc_decrement_cs(colorant_space, "pdfi_devicen(colorant)");
                     pdfi_countdown(Space);

@@ -134,7 +134,7 @@ gs_cspace_new_DeviceN(
         gs_free_object(pmem, pcs, "gs_cspace_new_DeviceN");
         return code;
     }
-    pnames = (char **)gs_alloc_bytes(pcsdevn->mem, num_components * sizeof(char *), "gs_cspace_new_DeviceN");
+    pnames = (char **)gs_alloc_bytes(pcsdevn->mem, (size_t)num_components * sizeof(char *), "gs_cspace_new_DeviceN");
     if (pnames == 0) {
         gs_free_object(pmem, pcsdevn->map, ".gs_cspace_build_DeviceN(map)");
         gs_free_object(pmem, pcs, "gs_cspace_new_DeviceN");

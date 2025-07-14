@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -771,7 +771,7 @@ urf_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     int dst_height = gx_downscaler_scale_rounded(src_height, factor);
     int dst_res    = gx_downscaler_scale_rounded((int)pdev->HWResolution[0], factor);
     gx_downscaler_t ds;
-    int line_size = (dst_width * num_comps * dst_bpc + 31) & ~31;
+    size_t line_size = (dst_width * num_comps * dst_bpc + 31) & ~31;
     byte *linebuf, *line, *prev;
     int matching_lines = 0;
     int (*encode_line)(int, const byte *, int, gp_file *);

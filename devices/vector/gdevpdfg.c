@@ -62,7 +62,7 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
 
     if (pdev->vgstack_depth >= pdev->vgstack_size) {
         pdf_viewer_state *new_vgstack = (pdf_viewer_state *)gs_alloc_bytes(pdev->pdf_memory,
-            (pdev->vgstack_size + 5) * sizeof(pdf_viewer_state), "increase graphics state stack size");
+            (size_t)(pdev->vgstack_size + 5) * sizeof(pdf_viewer_state), "increase graphics state stack size");
         if (new_vgstack == 0)
             return_error(gs_error_VMerror);
         memset(new_vgstack, 0x00, (pdev->vgstack_size + 5) * sizeof(pdf_viewer_state));
@@ -101,7 +101,7 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     if (pdev->dash_pattern) {
         if (pdev->vgstack[i].dash_pattern)
             gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "free gstate copy dash");
-        pdev->vgstack[i].dash_pattern = (float *)gs_alloc_bytes(pdev->memory->non_gc_memory, pdev->dash_pattern_size * sizeof(float), "gstate copy dash");
+        pdev->vgstack[i].dash_pattern = (float *)gs_alloc_bytes(pdev->memory->non_gc_memory, (size_t)pdev->dash_pattern_size * sizeof(float), "gstate copy dash");
         if (pdev->vgstack[i].dash_pattern == NULL)
             return_error(gs_error_VMerror);
         memcpy(pdev->vgstack[i].dash_pattern, pdev->dash_pattern, pdev->dash_pattern_size * sizeof(float));
@@ -151,7 +151,7 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
     if (s->dash_pattern) {
         if (pdev->dash_pattern)
             gs_free_object(pdev->memory->stable_memory, pdev->dash_pattern, "vector free dash pattern");
-        pdev->dash_pattern = (float *)gs_alloc_bytes(pdev->memory->stable_memory, s->dash_pattern_size * sizeof(float), "vector allocate dash pattern");
+        pdev->dash_pattern = (float *)gs_alloc_bytes(pdev->memory->stable_memory, (size_t)s->dash_pattern_size * sizeof(float), "vector allocate dash pattern");
         if (pdev->dash_pattern == NULL)
             return_error(gs_error_VMerror);
         memcpy(pdev->dash_pattern, s->dash_pattern, sizeof(float)*s->dash_pattern_size);
@@ -788,7 +788,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
         return_error(gs_error_VMerror);
 
     samples = (unsigned int)pow(2, pcs->params.device_n.num_components);
-    data_buff = gs_alloc_bytes(pdev->memory, (unsigned int)pdev->color_info.num_components * samples, "Convert DeviceN");
+    data_buff = gs_alloc_bytes(pdev->memory, (unsigned int)pdev->color_info.num_components * (size_t)samples, "Convert DeviceN");
     if (data_buff == 0) {
         COS_FREE(pca, "convert DeviceN");
         return_error(gs_error_VMerror);

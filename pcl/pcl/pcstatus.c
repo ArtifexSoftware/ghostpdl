@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -483,7 +483,7 @@ status_symbol_sets(stream * s, pcl_state_t * pcs, pcl_data_storage_t storage)
     /* total up built-in symbol sets, downloaded ones */
     nid = pl_dict_length(&pcs->soft_symbol_sets, false) +
         pl_dict_length(&pcs->built_in_symbol_sets, false);
-    idlist = (ushort *) gs_alloc_bytes(pcs->memory, nid * sizeof(ushort),
+    idlist = (ushort *) gs_alloc_bytes(pcs->memory, (size_t)nid * sizeof(ushort),
                                        "status_symbol_sets(idlist)");
     if (idlist == NULL)
         return e_Memory;

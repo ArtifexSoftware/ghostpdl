@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -51,7 +51,7 @@ int pdfi_push(pdf_context *ctx, pdf_obj *o)
         if (ctx->stack_size >= MAX_STACK_SIZE)
             return_error(gs_error_pdf_stackoverflow);
 
-        new_stack = (pdf_obj **)gs_alloc_bytes(ctx->memory, (ctx->stack_size + INITIAL_STACK_SIZE) * sizeof (pdf_obj *), "pdfi_push_increase_interp_stack");
+        new_stack = (pdf_obj **)gs_alloc_bytes(ctx->memory, (size_t)(ctx->stack_size + INITIAL_STACK_SIZE) * sizeof (pdf_obj *), "pdfi_push_increase_interp_stack");
         if (new_stack == NULL)
             return_error(gs_error_VMerror);
 

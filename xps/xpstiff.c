@@ -1031,21 +1031,21 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
         break;
 
     case StripOffsets:
-        tiff->stripoffsets = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
+        tiff->stripoffsets = (unsigned*) xps_alloc(ctx, (size_t)count * sizeof(unsigned));
         if (!tiff->stripoffsets)
             return gs_throw(gs_error_VMerror, "could not allocate strip offsets");
         code = xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
         break;
 
     case StripByteCounts:
-        tiff->stripbytecounts = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
+        tiff->stripbytecounts = (unsigned*) xps_alloc(ctx, (size_t)count * sizeof(unsigned));
         if (!tiff->stripbytecounts)
             return gs_throw(gs_error_VMerror, "could not allocate strip byte counts");
         code = xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
         break;
 
     case ColorMap:
-        tiff->colormap = (unsigned*) xps_alloc(ctx, count * sizeof(unsigned));
+        tiff->colormap = (unsigned*) xps_alloc(ctx, (size_t)count * sizeof(unsigned));
         if (!tiff->colormap)
             return gs_throw(gs_error_VMerror, "could not allocate color map");
         code = xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);

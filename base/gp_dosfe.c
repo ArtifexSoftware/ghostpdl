@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -45,7 +45,7 @@ file_enum *
 gp_enumerate_files_init_impl(gs_memory_t * mem, const char *pat, uint patlen)
 {
     file_enum *pfen = gs_alloc_struct(mem, file_enum, &st_file_enum, "gp_enumerate_files");
-    int pat_size = 2 * patlen + 1;
+    size_t pat_size = 2 * patlen + 1;
     char *pattern;
     char *p;
     int hsize = 0;

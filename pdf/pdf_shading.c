@@ -561,7 +561,7 @@ static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shadi
         pcc->pattern = 0;
         params->Background = pcc;
 
-        temp = (double *)gs_alloc_bytes(ctx->memory, num_comp * sizeof(double), "temporary array of doubles");
+        temp = (double *)gs_alloc_bytes(ctx->memory, (size_t)num_comp * sizeof(double), "temporary array of doubles");
         if (temp == NULL) {
             code = gs_error_VMerror;
             goto get_shading_common_error;

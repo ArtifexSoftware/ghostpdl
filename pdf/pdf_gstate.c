@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -348,7 +348,7 @@ int pdfi_setdash_impl(pdf_context *ctx, pdf_array *a, double phase_d)
     double temp;
     int i, code;
 
-    dash_array = (float *)gs_alloc_bytes(ctx->memory, pdfi_array_size(a) * sizeof (float),
+    dash_array = (float *)gs_alloc_bytes(ctx->memory, (size_t)pdfi_array_size(a) * sizeof (float),
                                          "temporary float array for setdash");
     if (dash_array == NULL)
         return_error(gs_error_VMerror);
@@ -1624,7 +1624,7 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
     memset(pocs, 0x00, NumComponents * sizeof(gx_ht_order_component));
     pdht->components = pocs;
     pdht->num_comp = NumComponents;
-    phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, sizeof(gs_halftone_component) * NumComponents, "pdfi_do_halftone");
+    phtc = (gs_halftone_component *)gs_alloc_bytes(ctx->memory, (size_t)sizeof(gs_halftone_component) * NumComponents, "pdfi_do_halftone");
     if (phtc == 0) {
         code = gs_note_error(gs_error_VMerror);
         goto error;

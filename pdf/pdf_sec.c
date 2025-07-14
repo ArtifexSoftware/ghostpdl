@@ -230,7 +230,7 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
     if (NewLen > 127)
         NewLen = 127;
 
-    Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8, "R5 password test");
+    Test = (char *)gs_alloc_bytes(ctx->memory, (size_t)NewLen + 8, "R5 password test");
     if (Test == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto error;
@@ -256,7 +256,7 @@ static int check_user_password_R5(pdf_context *ctx, char *Password, int Len, int
     gs_free_object(ctx->memory, Test, "R5 password test");
 
     /* Password + last 8 bytes of /U */
-    Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8, "R5 password test");
+    Test = (char *)gs_alloc_bytes(ctx->memory, (size_t)NewLen + 8, "R5 password test");
     if (Test == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto error;
@@ -632,7 +632,7 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     if (NewLen > 127)
         NewLen = 127;
 
-    Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8 + 48, "r5 password test");
+    Test = (char *)gs_alloc_bytes(ctx->memory, (size_t)NewLen + 8 + 48, "r5 password test");
     if (Test == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto error;
@@ -660,7 +660,7 @@ static int check_owner_password_R5(pdf_context *ctx, char *Password, int Len, in
     gs_free_object(ctx->memory, Test, "R5 password test");
 
     /* Password + last 8 bytes of /O */
-    Test = (char *)gs_alloc_bytes(ctx->memory, NewLen + 8 + 48, "R5 password test");
+    Test = (char *)gs_alloc_bytes(ctx->memory, (size_t)NewLen + 8 + 48, "R5 password test");
     if (Test == NULL) {
         code = gs_note_error(gs_error_VMerror);
         goto error;
@@ -1044,7 +1044,7 @@ static int pdfi_read_Encrypt_dict(pdf_context *ctx, int *KeyLen)
     if (!pdfi_name_is((pdf_name *)o, "Standard")) {
         char *Str = NULL;
 
-        Str = (char *)gs_alloc_bytes(ctx->memory, ((pdf_name *)o)->length + 1, "temp string for warning");
+        Str = (char *)gs_alloc_bytes(ctx->memory, (size_t)((pdf_name *)o)->length + 1, "temp string for warning");
         if (Str == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto done;

@@ -200,7 +200,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
          * persistent copy of the name data, so we have to make one, which means it leaks.
          */
         pstr->size = strlen(buf);
-        pstr->data = gs_alloc_bytes(pfont->memory, pstr->size + 1, "glyph to name");
+        pstr->data = gs_alloc_bytes(pfont->memory, (size_t)pstr->size + 1, "glyph to name");
         if ( pstr->data == 0 )
             return -1;
 
@@ -266,7 +266,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
            may be freed.  Track the allocated memory in our
            font 'wrapper' so we can free it when we free tha font wrapper.
          */
-        mydata = gs_alloc_bytes(pfont->memory, pstr->size + 1, "glyph to name");
+        mydata = gs_alloc_bytes(pfont->memory, (size_t)pstr->size + 1, "glyph to name");
         if ( mydata == 0 )
             return -1;
         memcpy(mydata, pascal_stringp + 1, pstr->size);
@@ -275,7 +275,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
         mydata[pstr->size] = 0;
 
         if (font->names == NULL) {
-            font->names = (char **)gs_alloc_bytes(pfont->memory, 256 * sizeof (char *), "names storage");
+            font->names = (char **)gs_alloc_bytes(pfont->memory, (size_t)256 * sizeof (char *), "names storage");
             if (font->names == NULL) {
                 gs_free_object(pfont->memory, (byte *)pstr->data, "free string on error");
                 pstr->data = NULL;
@@ -288,7 +288,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
         }
         if (font->next_name_index > font->max_name_index) {
             char **temp = NULL;
-            temp = (char **)gs_alloc_bytes(pfont->memory, (font->max_name_index + 256) * sizeof (char *), "names storage");
+            temp = (char **)gs_alloc_bytes(pfont->memory, ((size_t)font->max_name_index + 256) * sizeof (char *), "names storage");
             if (temp == NULL) {
                 gs_free_object(pfont->memory, (byte *)pstr->data, "free string on error");
                 pstr->data = NULL;

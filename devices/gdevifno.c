@@ -286,7 +286,7 @@ inferno_print_page(gx_device_printer *pdev, gp_file *f)
         int ldepth;
         int ppb[] = {8, 4, 2, 1};	/* pixels per byte */
         int bpp[] = {1, 2, 4, 8};	/* bits per pixel */
-        int gsbpl;
+        size_t gsbpl;
         ulong u;
         ushort us;
         int code = 0;

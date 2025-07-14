@@ -59,7 +59,7 @@ dot24_print_page (gx_device_printer *pdev, gp_file *prn_stream, char *init_strin
   int y_high;
   int bits_per_column;
   uint line_size;
-  uint in_size;
+  size_t in_size;
   byte *in;
   uint out_size;
   byte *out;

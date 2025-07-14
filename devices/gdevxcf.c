@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1274,7 +1274,7 @@ static int
 xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
 {
     int code = 0;
-    int raster = gdev_prn_raster(pdev);
+    size_t raster = gdev_prn_raster(pdev);
     int tile_i, tile_j;
     byte **tile_data;
     byte *line;
@@ -1287,7 +1287,7 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
 
     line = gs_alloc_bytes(pdev->memory, raster, "xcf_write_image_data");
     tile_data = (byte **)gs_alloc_bytes(pdev->memory,
-                                        xc->n_tiles_x * sizeof(byte *),
+                                        (size_t)xc->n_tiles_x * sizeof(byte *),
                                         "xcf_write_image_data");
     if (line == NULL || tile_data ==  NULL) {
         code = gs_error_VMerror;
@@ -1295,7 +1295,7 @@ xcf_write_image_data(xcf_write_ctx *xc, gx_device_printer *pdev)
     }
     memset(tile_data, 0, xc->n_tiles_x * sizeof(byte *));
     for (tile_i = 0; tile_i < xc->n_tiles_x; tile_i++) {
-        int tile_bytes = xcf_tile_sizeof(xc, tile_i) * bytes_pp;
+        size_t tile_bytes = xcf_tile_sizeof(xc, tile_i) * bytes_pp;
 
         tile_data[tile_i] = gs_alloc_bytes(pdev->memory, tile_bytes,
                                            "xcf_write_image_data");

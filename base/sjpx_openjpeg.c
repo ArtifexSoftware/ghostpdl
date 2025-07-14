@@ -513,12 +513,12 @@ static int decode_image(stream_jpxd_state * const state)
     rowbytes =  (state->width*state->bpp*state->out_numcomps+7)/8;
     state->totalbytes = (ulong)rowbytes*state->height;
 
-    state->pdata = (int **)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int*)*state->image->numcomps, 1, "decode_image(pdata)");
+    state->pdata = (int **)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int*)*(size_t)state->image->numcomps, 1, "decode_image(pdata)");
     if (!state->pdata)
         return_error(gs_error_VMerror);
 
     /* compensate for signed data (signed => unsigned) */
-    state->sign_comps = (int *)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int)*state->image->numcomps, 1, "decode_image(sign_comps)");
+    state->sign_comps = (int *)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int)*(size_t)state->image->numcomps, 1, "decode_image(sign_comps)");
     if (!state->sign_comps)
         return_error(gs_error_VMerror);
 

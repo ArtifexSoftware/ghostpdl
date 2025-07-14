@@ -1052,7 +1052,7 @@ static int psdf_copy_param_string_array(gs_memory_t *mem, gs_param_list * plist,
                 gs_free_object(mem->non_gc_memory, (byte *)da->data[ix].data, "freeing old string array copy");
             gs_free_object(mem->non_gc_memory, (byte *)da->data, "freeing old string array");
         }
-        da->data = (const gs_param_string *)gs_alloc_bytes(mem->non_gc_memory, sa->size * sizeof(gs_param_string), "allocate new string array");
+        da->data = (const gs_param_string *)gs_alloc_bytes(mem->non_gc_memory, (size_t)sa->size * sizeof(gs_param_string), "allocate new string array");
         if (da->data == NULL)
             return_error(gs_note_error(gs_error_VMerror));
         memset((byte *)da->data, 0x00, sa->size * sizeof(gs_param_string));

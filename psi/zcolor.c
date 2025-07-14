@@ -3764,7 +3764,7 @@ static int setseparationspace(i_ctx_t * i_ctx_p, ref *sepspace, int *stage, int 
     pcs->params.separation.sep_type = sep_type;
     pcs->params.separation.mem = imemory->non_gc_memory;
     name_string_ref(imemory, &sname, &sname);
-    pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&sname) + 1, "Separation name");
+    pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, (size_t)r_size(&sname) + 1, "Separation name");
     if (pcs->params.separation.sep_name == NULL)
         return_error(gs_error_VMerror);
 
@@ -4172,7 +4172,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
             mem = devn_cs->params.device_n.mem->non_gc_memory;
             switch (r_type(&space[0])) {
                 case t_string:
-                    sep_name = (char *)gs_alloc_bytes(mem, r_size(&space[0]) + 1, "devicencolorants_cont");
+                    sep_name = (char *)gs_alloc_bytes(mem, (size_t)r_size(&space[0]) + 1, "devicencolorants_cont");
                     if (sep_name == NULL)
                         return_error(gs_error_VMerror);
                     memcpy(sep_name, space[0].value.bytes, r_size(&space[0]));
@@ -4183,7 +4183,7 @@ static int devicencolorants_cont(i_ctx_t *i_ctx_p)
                         ref nref;
 
                         name_string_ref(imemory, &space[0], &nref);
-                        sep_name = (char *)gs_alloc_bytes(mem, r_size(&nref) + 1, "devicencolorants_cont");
+                        sep_name = (char *)gs_alloc_bytes(mem, (size_t)r_size(&nref) + 1, "devicencolorants_cont");
                         if (sep_name == NULL)
                             return_error(gs_error_VMerror);
                         memcpy(sep_name, nref.value.bytes, r_size(&nref));
@@ -4395,7 +4395,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                  * space structure. Note, using non-GC memory for storage.
                  */
                 devn_cs->params.device_n.num_process_names = r_size(parr);
-                devn_cs->params.device_n.process_names = (char **)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, devn_cs->params.device_n.num_process_names * sizeof(char *), "DeviceN Process Components array");
+                devn_cs->params.device_n.process_names = (char **)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, (size_t)devn_cs->params.device_n.num_process_names * sizeof(char *), "DeviceN Process Components array");
                 if (devn_cs->params.device_n.process_names == NULL)
                     return_error(gs_error_VMerror);
 
@@ -4410,7 +4410,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                         return gs_note_error(gs_error_typecheck);
                     }
                     name_string_ref(devn_cs->params.device_n.mem, &name, &name_string);
-                    devn_cs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, r_size(&name_string) + 1, "Component name");
+                    devn_cs->params.device_n.process_names[ix] = (char *)gs_alloc_bytes(devn_cs->params.device_n.mem->non_gc_memory, (size_t)r_size(&name_string) + 1, "Component name");
                     if (devn_cs->params.device_n.process_names[ix] == NULL)
                         return_error(gs_error_VMerror);
                     memcpy(devn_cs->params.device_n.process_names[ix], name_string.value.bytes, r_size(&name_string));
@@ -4517,7 +4517,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                 return code;
             pcs->params.separation.sep_type = sep_type;
             pcs->params.separation.mem = imemory->non_gc_memory;
-            pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, r_size(&tname) + 1, "Separation name");
+            pcs->params.separation.sep_name = (char *)gs_alloc_bytes(pcs->params.separation.mem, (size_t)r_size(&tname) + 1, "Separation name");
             if (pcs->params.separation.sep_name == NULL)
                 return_error(gs_error_VMerror);
             memcpy(pcs->params.separation.sep_name, tname.value.bytes, r_size(&tname));
@@ -4562,7 +4562,7 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
                     name_string_ref(imemory, &sname, &sname);
                     /* falls through */
                 case t_string:
-                    names[i] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, r_size(&sname) + 1, "Ink name");
+                    names[i] = (char *)gs_alloc_bytes(pcs->params.device_n.mem->non_gc_memory, (size_t)r_size(&sname) + 1, "Ink name");
                     if (names[i] == NULL)
                         return_error(gs_error_VMerror);
                     memcpy(names[i], sname.value.bytes, r_size(&sname));
@@ -4810,10 +4810,10 @@ static int devicentransform(i_ctx_t *i_ctx_p, ref *devicenspace, int *usealterna
             check_op(pfn->params.m);
 
             /* Allocate memory to hold the input and output values */
-            in = (float *)gs_alloc_bytes(i_ctx_p->pgs->memory, pfn->params.m * sizeof(float), "devicen_transform");
+            in = (float *)gs_alloc_bytes(i_ctx_p->pgs->memory, (size_t)pfn->params.m * sizeof(float), "devicen_transform");
             if (in == NULL)
                 return gs_note_error(gs_error_VMerror);
-            out = (float *)gs_alloc_bytes(i_ctx_p->pgs->memory, pfn->params.n * sizeof(float), "devicen_transform");
+            out = (float *)gs_alloc_bytes(i_ctx_p->pgs->memory, (size_t)pfn->params.n * sizeof(float), "devicen_transform");
             if (out == NULL) {
                 gs_free_object(i_ctx_p->pgs->memory, in, "devicen_transform");
                 return gs_note_error(gs_error_VMerror);
@@ -5286,7 +5286,7 @@ static int indexedbasecolor(i_ctx_t * i_ctx_p, ref *space, int base, int *cont)
         push(pcs->params.indexed.n_comps);
         op -= pcs->params.indexed.n_comps - 1;
 
-        rval = (float *)gs_alloc_bytes(imemory, pcs->params.indexed.n_comps * sizeof(float), "indexedbasecolor");
+        rval = (float *)gs_alloc_bytes(imemory, (size_t)pcs->params.indexed.n_comps * sizeof(float), "indexedbasecolor");
         if (rval == NULL)
             return gs_note_error(gs_error_VMerror);
 

@@ -166,7 +166,7 @@ eps_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high,
         int in_y_mult = ((y_24pin | y_9pin_high) ? 3 : 1);
         int line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         /* Note that in_size is a multiple of 8. */
-        int in_size = line_size * (8 * in_y_mult);
+        size_t in_size = line_size * (8 * in_y_mult);
         byte *buf1 = NULL;
         byte *buf2 = NULL;
         byte *in;

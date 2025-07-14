@@ -478,7 +478,7 @@ static int eprn_read_media_data(mediasize_table *tables, eprn_Eprn *eprn, gs_mem
     {
       eprn_PageDescription *new_list;
       new_list = (eprn_PageDescription *)
-        realloc(list, (read+1)*sizeof(eprn_PageDescription));
+        realloc(list, ((size_t)read+1)*sizeof(eprn_PageDescription));
       if (new_list == NULL) {
         eprintf2("%s" ERRPREF
           "Memory allocation failure in eprn_read_media_data(): %s.\n",

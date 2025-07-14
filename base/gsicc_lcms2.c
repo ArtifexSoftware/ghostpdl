@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -395,12 +395,12 @@ gscms_transform_color_buffer(gx_device *dev, gsicc_link_t *icclink,
             int y, i;
 
             temp_src = (byte*)gs_alloc_bytes(dev->memory->non_gc_memory,
-                                              source_size * input_buff_desc->num_chan,
+                                              (size_t)source_size * input_buff_desc->num_chan,
                                               "gscms_transform_color_buffer");
             if (temp_src == NULL)
                 return_error(gs_error_VMerror);
             temp_des = (byte*) gs_alloc_bytes(dev->memory->non_gc_memory,
-                                              des_size * output_buff_desc->num_chan,
+                                              (size_t)des_size * output_buff_desc->num_chan,
                                               "gscms_transform_color_buffer");
             if (temp_des == NULL)
                 return_error(gs_error_VMerror);

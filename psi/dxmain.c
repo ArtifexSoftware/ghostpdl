@@ -572,14 +572,14 @@ static int display_size(void *handle, void *device, int width, int height,
     switch (color) {
         case DISPLAY_COLORS_NATIVE:
             if (depth == DISPLAY_DEPTH_8) {
-                img->rgbbuf = (guchar *)malloc(width * height * 3);
+                img->rgbbuf = (guchar *)malloc((size_t)width * height * 3);
                 if (img->rgbbuf == NULL)
                     return -1;
                 break;
             }
             else if (depth == DISPLAY_DEPTH_16) {
                 /* need to convert to 24RGB */
-                img->rgbbuf = (guchar *)malloc(width * height * 3);
+                img->rgbbuf = (guchar *)malloc((size_t)width * height * 3);
                 if (img->rgbbuf == NULL)
                     return -1;
             }
@@ -587,7 +587,7 @@ static int display_size(void *handle, void *device, int width, int height,
                 return gs_error_rangecheck;	/* not supported */
         case DISPLAY_COLORS_GRAY:
             if (depth == DISPLAY_DEPTH_8) {
-                img->rgbbuf = (guchar *)malloc(width * height * 3);
+                img->rgbbuf = (guchar *)malloc((size_t)width * height * 3);
                 if (img->rgbbuf == NULL)
                     return -1;
                 break;
@@ -602,7 +602,7 @@ static int display_size(void *handle, void *device, int width, int height,
                     break;
                 else {
                     /* need to convert to 24RGB */
-                    img->rgbbuf = (guchar *)malloc(width * height * 3);
+                    img->rgbbuf = (guchar *)malloc((size_t)width * height * 3);
                     if (img->rgbbuf == NULL)
                         return -1;
                 }
@@ -613,7 +613,7 @@ static int display_size(void *handle, void *device, int width, int height,
         case DISPLAY_COLORS_CMYK:
             if ((depth == DISPLAY_DEPTH_1) || (depth == DISPLAY_DEPTH_8)) {
                 /* need to convert to 24RGB */
-                img->rgbbuf = (guchar *)malloc(width * height * 3);
+                img->rgbbuf = (guchar *)malloc((size_t)width * height * 3);
                 if (img->rgbbuf == NULL)
                     return -1;
                 /* We already know about the CMYK components */
@@ -642,7 +642,7 @@ static int display_size(void *handle, void *device, int width, int height,
             /* we will convert it just before displaying */
             if (depth != DISPLAY_DEPTH_8)
                 return -1;	/* not supported */
-            img->rgbbuf = (guchar *)malloc(width * height * 3);
+            img->rgbbuf = (guchar *)malloc((size_t)width * height * 3);
             if (img->rgbbuf == NULL)
                 return -1;
             break;
@@ -1204,7 +1204,7 @@ int main(int argc, char *argv[])
             DISPLAY_COLORS_RGB | DISPLAY_ALPHA_NONE | DISPLAY_DEPTH_8 |
             DISPLAY_BIGENDIAN | DISPLAY_TOPFIRST);
     nargc = argc + 1;
-    nargv = (char **)malloc(nargc * sizeof(char *));
+    nargv = (char **)malloc((size_t)nargc * sizeof(char *));
     if (nargv == NULL)
         return 1;
 
@@ -1227,7 +1227,7 @@ int main(int argc, char *argv[])
 
             code = gsapi_get_default_device_list(instance, &default_devs, &len);
             if (code >= 0) {
-                our_default_devs = malloc(len + strlen(OUR_DEFAULT_DEV_STR) + 1);
+                our_default_devs = malloc((size_t)len + strlen(OUR_DEFAULT_DEV_STR) + 1);
                 if (our_default_devs) {
                     memcpy(our_default_devs, OUR_DEFAULT_DEV_STR, strlen(OUR_DEFAULT_DEV_STR));
                     memcpy(our_default_devs + strlen(OUR_DEFAULT_DEV_STR), default_devs, len);

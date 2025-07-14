@@ -2412,7 +2412,8 @@ opvp_open(gx_device *dev)
         pdev->globals.apiEntry_0_2->QueryColorSpace) {
         int n = sizeof(cspace_available);
         int nn = n;
-        opvp_cspace_t *p = malloc(n*sizeof(opvp_cspace_t));
+        size_t csize = n*sizeof(opvp_cspace_t);
+        opvp_cspace_t *p = malloc(csize);
 
         if (p == NULL)
             return_error(gs_error_VMerror);
@@ -3178,7 +3179,7 @@ opvp_copy_mono(
 
     if (reverse) {
         /* 0/1 reverse image */
-        int n = adj_raster*h;
+        size_t n = adj_raster*h;
 
         if (buff == data) {
             /* buff was not allocated from this function yet */
@@ -3272,12 +3273,14 @@ opvp_copy_color(
 
     /* data offset */
     if (data_x) {
+        size_t bufsize = 0;
         depth = opdev->color_info.depth;
         pixel = (depth + 7) >> 3;
         byte_length = pixel * w;
         adj_raster = ((byte_length + 3) >> 2) << 2;
+        bufsize = adj_raster * h;
 
-        buff = mybuf = malloc(adj_raster * h);
+        buff = mybuf = malloc(bufsize);
         if (!mybuf) {
             /* memory error */
             return -1;

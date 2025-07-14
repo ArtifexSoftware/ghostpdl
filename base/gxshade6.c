@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -677,7 +677,7 @@ wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs)
        from the wild. */
     pfs->wedge_vertex_list_elem_count_max = max_level * (1 << max_level) * 2;
     pfs->wedge_vertex_list_elem_buffer = (wedge_vertex_list_elem_t *)gs_alloc_bytes(memory,
-            sizeof(wedge_vertex_list_elem_t) * pfs->wedge_vertex_list_elem_count_max,
+            sizeof(wedge_vertex_list_elem_t) * (size_t)pfs->wedge_vertex_list_elem_count_max,
             "alloc_wedge_vertex_list_elem_buffer");
     if (pfs->wedge_vertex_list_elem_buffer == NULL)
         return_error(gs_error_VMerror);

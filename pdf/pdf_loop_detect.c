@@ -59,7 +59,7 @@ static int pdfi_loop_detector_add_object_unchecked(pdf_context *ctx, uint64_t ob
     if (ctx->loop_detection_entries == ctx->loop_detection_size) {
         uint64_t *New;
 
-        New = (uint64_t *)gs_alloc_bytes(ctx->memory, (ctx->loop_detection_size + INITIAL_LOOP_TRACKER_SIZE) * sizeof (uint64_t), "re-allocate loop tracking array");
+        New = (uint64_t *)gs_alloc_bytes(ctx->memory, (size_t)(ctx->loop_detection_size + INITIAL_LOOP_TRACKER_SIZE) * (size_t)sizeof (uint64_t), "re-allocate loop tracking array");
         if (New == NULL) {
             return_error(gs_error_VMerror);
         }

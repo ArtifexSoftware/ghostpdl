@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -104,13 +104,13 @@ cl_cache_read_init(CL_CACHE *cache, int nslots, int64_t block_size, int64_t file
 
     if ((filesize+block_size)/block_size < nslots)
         nslots = (filesize + block_size)/block_size;	/* limit at blocks needed for entire file */
-    cache->slots = (CL_CACHE_SLOT *)gs_alloc_bytes(cache->memory, nslots * sizeof(CL_CACHE_SLOT),
+    cache->slots = (CL_CACHE_SLOT *)gs_alloc_bytes(cache->memory, (size_t)nslots * sizeof(CL_CACHE_SLOT),
                                                        "CL_CACHE slots array");
     if (cache->slots == NULL) {
         gs_free_object(cache->memory, cache, "Free CL_CACHE for IFILE");
         cache = NULL;			/* cache not possible */
     } else {
-        cache->slots[0].base = (byte *)gs_alloc_bytes(cache->memory, nslots * block_size,
+        cache->slots[0].base = (byte *)gs_alloc_bytes(cache->memory, (size_t)nslots * block_size,
                                                        "CL_CACHE_SLOT data");
         if (cache->slots[0].base == NULL) {
             gs_free_object(cache->memory, cache->slots, "Free CL_CACHE for IFILE");

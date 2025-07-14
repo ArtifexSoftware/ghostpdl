@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -180,7 +180,7 @@ lj3100sw_print_page_copies(gx_device_printer *pdev, gp_file *prn_stream, int num
         int printer_width  = width[high_resolution ? 1 : 0];
         int paper_height = pdev->height;
         int paper_width  = pdev->width;
-        int line_size = gdev_prn_raster(pdev);
+        size_t line_size = gdev_prn_raster(pdev);
         gs_memory_t *mem = pdev->memory;
         byte *in = (byte *)gs_malloc(mem, line_size, 1, "lj3100sw_print_page");
         byte *data;

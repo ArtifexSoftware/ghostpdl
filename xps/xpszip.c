@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -230,7 +230,7 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
         return gs_rethrow(gs_error_rangecheck, "invalid number of entries in central directory disk (can't happen)");
 
     ctx->zip_count = count;
-    ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * count);
+    ctx->zip_table = xps_alloc(ctx, sizeof(xps_entry_t) * (size_t)count);
     if (!ctx->zip_table)
         return gs_rethrow(gs_error_VMerror, "cannot allocate zip entry table");
 
@@ -267,11 +267,11 @@ xps_read_zip_dir(xps_context_t *ctx, int start_offset)
         if (ctx->zip_table[i].csize < 0 || ctx->zip_table[i].usize < 0)
             return gs_throw(gs_error_ioerror, "cannot read zip entries larger than 2GB");
 
-        ctx->zip_table[i].name = xps_alloc(ctx, namesize + 1);
+        ctx->zip_table[i].name = xps_alloc(ctx, (size_t)namesize + 1);
         if (!ctx->zip_table[i].name)
             return gs_rethrow(gs_error_VMerror, "cannot allocate zip entry name");
 
-        read = xps_fread(ctx->zip_table[i].name, 1, namesize, ctx->file);
+        read = xps_fread(ctx->zip_table[i].name, 1, (size_t)namesize, ctx->file);
         if (read != namesize)
             return gs_throw1(gs_error_ioerror, "failed to read %d bytes", namesize);
 
@@ -638,7 +638,7 @@ xps_reorder_pages(xps_context_t *ctx)
     }
 
     /* Create an array of pointers to the current pages */
-    page_ptr_array = xps_alloc(ctx, sizeof(xps_page_t*) * count);
+    page_ptr_array = xps_alloc(ctx, (size_t)sizeof(xps_page_t*) * count);
     if (page_ptr_array == NULL)
         return gs_throw(gs_error_VMerror, "out of memory: xps_reorder_pages\n");
 

@@ -592,7 +592,7 @@ make_table_template(gx_device     * pdev,
     scanlines = ibox->q.y-base_y;
     /* +1+adjust simplifies the loop below */
     index = (int *)gs_alloc_bytes(pdev->memory,
-                                  (scanlines+1+adjust) * sizeof(*index),
+                                  (size_t)(scanlines+1+adjust) * sizeof(*index),
                                   "scanc index buffer");
     if (index == NULL)
         return_error(gs_error_VMerror);

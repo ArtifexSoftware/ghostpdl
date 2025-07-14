@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1477,17 +1477,17 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
                 lcFiles = DragQueryFile(hdrop, (UINT)(-1), (LPSTR)NULL, 0);
                 if (cFiles < lcFiles) {
                     free(szFiles);
-                    szFiles = malloc(lcFiles * sizeof(char*));
+                    szFiles = malloc((size_t)lcFiles * sizeof(char*));
                     if (!szFiles) {
                         cFiles = 0;
                         return 0;
                     }
-                    memset(szFiles, 0x00, lcFiles * sizeof(char*));
+                    memset(szFiles, 0x00, (size_t)lcFiles * sizeof(char*));
                     cFiles = lcFiles;
                 }
                 for (i=0; i<lcFiles; i++) {
                     Len = DragQueryFile(hdrop, i, NULL, 0);
-                    szFiles[i] = malloc(Len+1);
+                    szFiles[i] = malloc((size_t)Len+1);
                     if (szFiles[i] != 0) {
                         error = DragQueryFile(hdrop, i, szFiles[i], Len+1);
                         if (error != 0) {

@@ -209,7 +209,7 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                     int i, size = pdf_ps_stack_count_to_mark(cs, PDF_PS_OBJ_ARR_MARK);
 
                     if (size > 0 && arraydepth > 0) {
-                        arr = (pdf_ps_stack_object_t *) gs_alloc_bytes(cs->pdfi_ctx->memory, size * sizeof(pdf_ps_stack_object_t), "pdfi_pscript_interpret(pdf_ps_stack_object_t");
+                        arr = (pdf_ps_stack_object_t *) gs_alloc_bytes(cs->pdfi_ctx->memory, (size_t)size * sizeof(pdf_ps_stack_object_t), "pdfi_pscript_interpret(pdf_ps_stack_object_t");
                         if (arr == NULL) {
                             code = gs_note_error(gs_error_VMerror);
                             /* clean up the stack, including the mark object */
@@ -266,7 +266,7 @@ pdfi_pscript_interpret(pdf_ps_ctx_t *cs, byte *pdfpsbuf, int64_t buflen)
                         pdfpsbuf = n + 1;
                         goto retry_as_oper;
                     }
-                    numbuf = gs_alloc_bytes(cs->pdfi_ctx->memory, len + 1, "ps pdf number buffer");
+                    numbuf = gs_alloc_bytes(cs->pdfi_ctx->memory, (size_t)len + 1, "ps pdf number buffer");
                     if (numbuf == NULL) {
                         code = gs_note_error(gs_error_VMerror);
                     }
@@ -370,7 +370,7 @@ ps_font_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
               if (pdf_ps_name_cmp(&s->cur[-1], "XUID")) {
                   if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_ARRAY) && uid_is_valid(&priv->gsu.gst1.UID) == false) {
                       int i, size = s->cur[0].size;
-                      long *xvals = (long *)gs_alloc_bytes(mem, size *sizeof(long), "ps_font_def_func(xuid vals)");
+                      long *xvals = (long *)gs_alloc_bytes(mem, (size_t)size *sizeof(long), "ps_font_def_func(xuid vals)");
 
                       if (xvals != NULL) {
                           for (i = 0; i < size; i++) {
@@ -1087,7 +1087,7 @@ ps_font_array_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *bufend)
         int size = s->cur[0].val.i;
 
         if (size > 0) {
-            arr = (pdf_ps_stack_object_t *) gs_alloc_bytes(mem, size *sizeof(pdf_ps_stack_object_t), "ps_font_array_func(encoding array)");
+            arr = (pdf_ps_stack_object_t *) gs_alloc_bytes(mem, (size_t)size *sizeof(pdf_ps_stack_object_t), "ps_font_array_func(encoding array)");
             if (arr != NULL) {
                 code = pdf_ps_stack_pop(s, 1);
                 if (code < 0) {

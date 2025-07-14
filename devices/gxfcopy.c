@@ -334,7 +334,7 @@ copy_subrs(gs_font_type1 *pfont, bool global, gs_subr_info_t *psi,
            gs_memory_t *mem)
 {
     int i, code;
-    uint size;
+    size_t size;
     gs_glyph_data_t gdata;
     byte *data;
     uint *starts;
@@ -833,7 +833,7 @@ compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs,
                 return_error(gs_error_rangecheck); /* abnormal glyph recursion */
             if (info0.num_pieces > countof(pieces0) / 2) {
                 pieces = (gs_glyph *)gs_alloc_bytes(cfont->memory,
-                    sizeof(gs_glyph) * info0.num_pieces * 2, "compare_glyphs");
+                    sizeof(gs_glyph) * (size_t)info0.num_pieces * 2, "compare_glyphs");
                 if (pieces == 0)
                     return_error(gs_error_VMerror);
             }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -115,7 +115,8 @@ sparc_print_page(gx_device_printer *pdev, FILE *prn)
   struct lpvi_page lpvipage;
   struct lpvi_err lpvierr;
   char *out_buf;
-  int out_size, code = 0;
+  size_t out_size;
+  int code = 0;
 
   if (ioctl(fileno(prn),LPVIIOC_GETPAGE,&lpvipage)!=0)
     {

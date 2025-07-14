@@ -300,7 +300,7 @@ static int pdfi_dict_find_key(pdf_context *ctx, pdf_dict *d, const pdf_name *Key
     char *Test = NULL;
     int index = 0;
 
-    Test = (char *)gs_alloc_bytes(ctx->memory, Key->length + 1, "pdfi_dict_find_key");
+    Test = (char *)gs_alloc_bytes(ctx->memory, (size_t)Key->length + 1, "pdfi_dict_find_key");
     if (Test == NULL)
         return_error(gs_error_VMerror);
 
@@ -930,7 +930,7 @@ int pdfi_dict_put_obj(pdf_context *ctx, pdf_dict *d, pdf_obj *Key, pdf_obj *valu
         }
     }
 
-    new_list = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, (d->size + 1) * sizeof(pdf_dict_entry), "pdfi_dict_put reallocate dictionary key/values");
+    new_list = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, (size_t)(d->size + 1) * sizeof(pdf_dict_entry), "pdfi_dict_put reallocate dictionary key/values");
     if (new_list == NULL) {
         return_error(gs_error_VMerror);
     }
@@ -993,7 +993,7 @@ int pdfi_dict_put_unchecked(pdf_context *ctx, pdf_dict *d, const char *Key, pdf_
         } while(1);
     }
 
-    new_list = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, (d->size + 1) * sizeof(pdf_dict_entry), "pdfi_dict_put reallocate dictionary key/values");
+    new_list = (pdf_dict_entry *)gs_alloc_bytes(ctx->memory, (size_t)(d->size + 1) * sizeof(pdf_dict_entry), "pdfi_dict_put reallocate dictionary key/values");
     if (new_list == NULL) {
         return_error(gs_error_VMerror);
     }

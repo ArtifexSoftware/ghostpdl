@@ -480,7 +480,7 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
             }
             if (plfont->next_name_index > plfont->max_name_index) {
                 char **temp = NULL;
-                temp = (char **)gs_alloc_bytes(pfont->memory, (plfont->max_name_index + 256) * sizeof (char *), "names storage");
+                temp = (char **)gs_alloc_bytes(pfont->memory, (size_t)(plfont->max_name_index + 256) * sizeof (char *), "names storage");
                 if (temp == NULL) {
                     gs_free_object(pfont->memory, (byte *)pstr->data, "free string on error");
                     pstr->data = NULL;

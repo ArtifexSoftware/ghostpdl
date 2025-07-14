@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -353,7 +353,7 @@ stc_print_page(gx_device_printer * pdev, gp_file *prn_stream)
 
    int  npass;           /* # of print-passes (softweave) */
 
-   int    ext_size;      /* size of a ghostscript-scanline */
+   size_t    ext_size;      /* size of a ghostscript-scanline */
    byte  *ext_line;      /* dyn: for this scanline */
 
    int    alg_size;      /* size of a scanline for the dithering-algorithm */

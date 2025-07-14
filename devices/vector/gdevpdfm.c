@@ -489,7 +489,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
         unsigned int src_pg;
 
         if (pdf_key_eq(pair, "/SrcPg")){
-            unsigned char *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, (pair[1].size + 1) * sizeof(unsigned char),
+            unsigned char *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, (size_t)(pair[1].size + 1) * sizeof(unsigned char),
                         "pdf_xmp_write_translated");
 
             if (buf0 == NULL)
@@ -614,7 +614,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
             DO_NOTHING;
         else {
             int i, j=0;
-            unsigned char *temp, *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, pair[1].size * 2 * sizeof(unsigned char),
+            unsigned char *temp, *buf0 = (unsigned char *)gs_alloc_bytes(pdev->memory, (size_t)(pair[1].size) * 2 * sizeof(unsigned char),
                         "pdf_xmp_write_translated");
             if (buf0 == NULL)
                 return_error(gs_error_VMerror);
@@ -914,7 +914,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
             if (Dest.data[i] == '/') {
                 i++;
 
-                DestString.data = gs_alloc_bytes(pdev->memory->stable_memory, (Dest.size * 2) + 1, "DEST pdfmark temp string");
+                DestString.data = gs_alloc_bytes(pdev->memory->stable_memory, ((size_t)Dest.size * 2) + 1, "DEST pdfmark temp string");
                 if (DestString.data == 0)
                     return_error(gs_error_VMerror);
                 DestString.size = (Dest.size * 2) + 1;
@@ -2580,7 +2580,7 @@ pdfmark_MP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 
     if (count != 1) return_error(gs_error_rangecheck);
 
-    tag = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
+    tag = (char *)gs_alloc_bytes(pdev->memory, (size_t)(pairs[0].size + 1) * sizeof(unsigned char),
                 "pdfmark_MP");
     if (tag == NULL)
         return_error(gs_error_VMerror);
@@ -2644,7 +2644,7 @@ pdfmark_DP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
         /* convert inline propdict to C string with object names replaced by refs */
         code = pdf_replace_names(pdev, &pairs[1], &pairs[1]);
         if (code<0) return code;
-        cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[1].size + 1) * sizeof(unsigned char),
+        cstring = (char *)gs_alloc_bytes(pdev->memory, (size_t)(pairs[1].size + 1) * sizeof(unsigned char),
             "pdfmark_DP");
         if (cstring == NULL)
             return_error(gs_error_VMerror);
@@ -2669,7 +2669,7 @@ pdfmark_DP(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             return code;
     }
 
-    cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
+    cstring = (char *)gs_alloc_bytes(pdev->memory, (size_t)(pairs[0].size + 1) * sizeof(unsigned char),
                 "pdfmark_DP");
     if (cstring == NULL)
         return_error(gs_error_VMerror);
@@ -2700,7 +2700,7 @@ pdfmark_BMC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 
     if (count != 1) return_error(gs_error_rangecheck);
 
-    tag = (char *)gs_alloc_bytes(pdev->memory, (pairs[0].size + 1) * sizeof(unsigned char),
+    tag = (char *)gs_alloc_bytes(pdev->memory, (size_t)(pairs[0].size + 1) * sizeof(unsigned char),
                 "pdfmark_BMC");
     if (tag == NULL)
         return_error(gs_error_VMerror);
@@ -2798,7 +2798,7 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             /* convert inline propdict to C string with object names replaced by refs */
             code = pdf_replace_names(pdev, &pairs[1], &pairs[1]);
             if (code<0) return code;
-            cstring = (char *)gs_alloc_bytes(pdev->memory, (pairs[1].size + 1) * sizeof(unsigned char),
+            cstring = (char *)gs_alloc_bytes(pdev->memory, (size_t)(pairs[1].size + 1) * sizeof(unsigned char),
                 "pdfmark_BDC");
             if (cstring == NULL)
                 return_error(gs_error_VMerror);
@@ -2859,7 +2859,7 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
         }
     }
 
-    cstring = (char *)gs_alloc_bytes(pdev->memory, (esc_size + 1) * sizeof(unsigned char),
+    cstring = (char *)gs_alloc_bytes(pdev->memory, (size_t)(esc_size + 1) * sizeof(unsigned char),
                 "pdfmark_BDC");
     if (cstring == NULL)
         return_error(gs_error_VMerror);

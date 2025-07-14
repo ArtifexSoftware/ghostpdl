@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -167,14 +167,14 @@ atx_print_page(gx_device_printer *pdev, gp_file *f, int max_width_bytes)
     int page_length_100ths =
         (int)ceil((height / pdev->HWResolution[1] + top_bottom_skip) * 100);
     gs_memory_t *mem = pdev->memory;
-    int raster = gx_device_raster((gx_device *)pdev, true);
+    size_t raster = gx_device_raster((gx_device *)pdev, true);
     int width = pdev->width;
     byte *buf;
     /*
      * ATX_COMPRESSED_DATA only takes a 1-byte (word) count.
      * Thus no compressed scan line can take more than 510 bytes.
      */
-    int compressed_raster = min(raster / 2, 510); /* require 50% compression */
+    size_t compressed_raster = min(raster / 2, 510); /* require 50% compression */
     byte *compressed;
     int blank_lines, lnum;
     int code = 0;

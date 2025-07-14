@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1106,7 +1106,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 
         size = gp_utf8_to_uint16(NULL, device);
         if (size >= 0)
-            unidev = malloc(size*sizeof(wchar_t));
+            unidev = malloc((size_t)size*sizeof(wchar_t));
         if (unidev == NULL)
             goto cleanup;
         gp_utf8_to_uint16(unidev, device);
@@ -1149,14 +1149,14 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 
     size = gp_utf8_to_uint16(NULL, driver);
     if (size >= 0)
-        unidriver = malloc(size * sizeof(wchar_t));
+        unidriver = malloc((size_t)size * sizeof(wchar_t));
     if (unidriver == NULL)
         goto cleanup;
     gp_utf8_to_uint16(unidriver, driver);
 
     size = gp_utf8_to_uint16(NULL, output);
     if (size >= 0)
-        unioutput = malloc(size * sizeof(wchar_t));
+        unioutput = malloc((size_t)size * sizeof(wchar_t));
     if (unioutput == NULL)
         goto cleanup;
     gp_utf8_to_uint16(unioutput, output);

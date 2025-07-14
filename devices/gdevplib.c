@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -182,7 +182,7 @@ void *gs_band_donor_band_get(void *opaque,
     eprintf6("gs_band_donor_band_get[%dx%dx%dx%d (stride=%d bandHeight=%d)]\n",
              uWidth, uHeight, uBitDepth, uComponents, uStride, uBandHeight);
 #endif
-    my_buffer = (void *)malloc(uStride * uComponents * uBandHeight);
+    my_buffer = (void *)malloc((size_t)uStride * uComponents * uBandHeight);
 
 #ifdef DEBUG_PRINT
     q = my_buffer;
@@ -578,7 +578,7 @@ plib_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
         line_ptrs = (byte **)
             gs_alloc_byte_array(mdev->memory,
                                 (mdev->num_planar_planes ?
-                                 full_height * mdev->num_planar_planes :
+                                 (size_t)full_height * mdev->num_planar_planes :
                                  setup_height),
                                 sizeof(byte *), "setup_buf_device");
         if (line_ptrs == 0)

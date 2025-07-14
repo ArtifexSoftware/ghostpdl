@@ -263,7 +263,7 @@ xps_parse_abbreviated_geometry(xps_context_t *ctx, char *geom)
     float smooth_x, smooth_y; /* saved cubic bezier control point for smooth curves */
     int reset_smooth;
 
-    args = xps_alloc(ctx, sizeof(char*) * (strlen(geom) + 1));
+    args = xps_alloc(ctx, (size_t)sizeof(char*) * (strlen(geom) + 1));
     if (!args) {
         gs_throw(gs_error_VMerror, "out of memory: args.\n");
         return;
@@ -1236,7 +1236,7 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
                         dash_mem_count = dash_mem_count * 2;
                     else
                         dash_mem_count = dash_mem_count + ADDITIVE_DASH_SIZE;
-                    dash_array = (float*) xps_realloc(ctx, dash_array, sizeof(float) * dash_mem_count);
+                    dash_array = (float*) xps_realloc(ctx, dash_array, (size_t)sizeof(float) * dash_mem_count);
                     if (dash_array == NULL)
                     {
                         gs_throw(gs_error_VMerror, "out of memory: dash_array realloc.\n");

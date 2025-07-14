@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -838,7 +838,7 @@ static void obj_cvs_ref(i_ctx_t *i_ctx_p, const ref *in, ref *out)
     code = obj_cvs(imemory, in, buf, len, &rlen, NULL);
     if (code == gs_error_rangecheck) {
         len = rlen;
-        buf = gs_alloc_bytes(imemory, len + 1, "obj_cvs_ref");
+        buf = gs_alloc_bytes(imemory, (size_t)len + 1, "obj_cvs_ref");
         if (!buf)
             code = -1;
         else

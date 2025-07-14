@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -114,7 +114,7 @@ static int process_pdfmark(gs_memory_t *mem, gx_device *device, char *pdfmark)
     /* We need an extra one for a dummy CTM */
     tokens++;
 
-    parray = (gs_param_string *)gs_alloc_bytes(mem, tokens * sizeof(gs_param_string), "temporary pdfmark array");
+    parray = (gs_param_string *)gs_alloc_bytes(mem, (size_t)tokens * sizeof(gs_param_string), "temporary pdfmark array");
     if (!parray) {
         gs_free_object(mem, copy, "working buffer for pdfmark processing");
         return -1;

@@ -189,7 +189,7 @@ gx_begin_image3x_generic(gx_device * dev,
         /* Also allocate a row buffer for the pixel data. */
         penum->pixel.data =
             gs_alloc_bytes(mem,
-                           (penum->pixel.width * pim->BitsPerComponent *
+                           ((size_t)penum->pixel.width * pim->BitsPerComponent *
                             penum->num_components + 7) >> 3,
                            "gx_begin_image3x(pixel.data)");
         if (penum->pixel.data == 0) {
@@ -464,7 +464,7 @@ check_image3x_mask(const gs_image3x_t *pim, const gs_image3x_mask_t *pimm,
         /* Allocate a buffer for the data. */
         pmcs->data =
             gs_alloc_bytes(mem,
-                           (pmcs->width * pimm->MaskDict.BitsPerComponent + 7) >> 3,
+                           ((size_t)pmcs->width * pimm->MaskDict.BitsPerComponent + 7) >> 3,
                            "gx_begin_image3x(mask data)");
         if (pmcs->data == 0)
             return_error(gs_error_VMerror);

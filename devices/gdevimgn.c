@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -164,9 +164,9 @@
      A swatch is four bytes (32 bits) wide by 32 bytes high,
      totalling 128 bytes.  */
 #define HorzBytesPerSw 4
-#define HorzBitsPerSw (HorzBytesPerSw * 8)
+#define HorzBitsPerSw ((size_t)HorzBytesPerSw * 8)
 #define VertBytesPerSw 32
-#define TotalBytesPerSw (HorzBytesPerSw * VertBytesPerSw)
+#define TotalBytesPerSw ((size_t)HorzBytesPerSw * VertBytesPerSw)
 
 /*-------------------------------------------*/
 /* Attempt at optimization to something faster than byte-by-byte copying.

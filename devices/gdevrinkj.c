@@ -822,12 +822,12 @@ rinkj_add_lut(rinkj_device *rdev, rinkj_lutset *lutset, char plane, gp_file *f)
     }
     chain->next = NULL;
     chain->n_graph = n_graph;
-    chain->graph_x = (double *)gs_alloc_bytes(rdev->memory, sizeof(double) * n_graph, "rinkj_add_lut");
+    chain->graph_x = (double *)gs_alloc_bytes(rdev->memory, (size_t)sizeof(double) * n_graph, "rinkj_add_lut");
     if (chain->graph_x == NULL) {
         gs_free_object(rdev->memory, chain, "rinkj_add_lut");
         return -1;
     }
-    chain->graph_y = (double *)gs_alloc_bytes(rdev->memory, sizeof(double) * n_graph, "rinkj_add_lut");
+    chain->graph_y = (double *)gs_alloc_bytes(rdev->memory, (size_t)sizeof(double) * n_graph, "rinkj_add_lut");
     if (chain->graph_y == NULL) {
         gs_free_object(rdev->memory, chain->graph_x, "rinkj_add_lut");
         gs_free_object(rdev->memory, chain, "rinkj_add_lut");
@@ -986,7 +986,7 @@ static int
 rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
 {
     rinkj_device *rdev = (rinkj_device *)pdev;
-    int raster = gdev_prn_raster(rdev);
+    size_t raster = gdev_prn_raster(rdev);
     byte *line;
     byte *plane_data[MAX_CHAN];
     const byte *split_plane_data[MAX_CHAN];
@@ -1012,7 +1012,7 @@ rinkj_write_image_data(gx_device_printer *pdev, RinkjDevice *cmyk_dev)
     }
     if (rdev->icc_link != NULL) {
 
-        cache = (rinkj_color_cache_entry *)gs_alloc_bytes(pdev->memory, RINKJ_CCACHE_SIZE * sizeof(rinkj_color_cache_entry), "rinkj_write_image_data");
+        cache = (rinkj_color_cache_entry *)gs_alloc_bytes(pdev->memory, RINKJ_CCACHE_SIZE * (size_t)sizeof(rinkj_color_cache_entry), "rinkj_write_image_data");
         if (cache == NULL) {
             /* i == n_planes_out from above */
             while (--i >= 0)

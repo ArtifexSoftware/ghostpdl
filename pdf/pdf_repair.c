@@ -41,7 +41,7 @@ static int pdfi_repair_add_object(pdf_context *ctx, int64_t obj, int64_t gen, gs
             return_error(gs_error_VMerror);
         }
         memset(ctx->xref_table, 0x00, sizeof(xref_table_t));
-        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (obj + 1) * sizeof(xref_entry), "repair xref table");
+        ctx->xref_table->xref = (xref_entry *)gs_alloc_bytes(ctx->memory, (size_t)(obj + 1) * sizeof(xref_entry), "repair xref table");
         if (ctx->xref_table->xref == NULL){
             gs_free_object(ctx->memory, ctx->xref_table, "failed to allocate xref table entries for repair");
             ctx->xref_table = NULL;
@@ -60,7 +60,7 @@ static int pdfi_repair_add_object(pdf_context *ctx, int64_t obj, int64_t gen, gs
         if (ctx->xref_table->xref_size < (obj + 1)) {
             xref_entry *new_xrefs;
 
-            new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (obj + 1) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
+            new_xrefs = (xref_entry *)gs_alloc_bytes(ctx->memory, (size_t)(obj + 1) * sizeof(xref_entry), "read_xref_stream allocate xref table entries");
             if (new_xrefs == NULL){
                 pdfi_countdown(ctx->xref_table);
                 ctx->xref_table = NULL;

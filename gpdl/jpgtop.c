@@ -612,6 +612,8 @@ jpg_impl_process(pl_interp_implementation_t * impl, stream_cursor_read * pr)
             /* Now we've got the data from the image header, we can
              * make the gs image instance */
             jpg->byte_width = (jpg->bpp>>3)*jpg->width;
+            if (jpg->width != 0 && jpg->byte_width / (jpg->bpp>>3) != jpg->width)
+                return gs_note_error(gs_error_undefinedresult);
 
             jpg->nulldev = gs_currentdevice(jpg->pgs);
             rc_increment(jpg->nulldev);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -121,9 +121,9 @@ static int
 ljet5_print_page(gx_device_printer * pdev, gp_file * prn_stream)
 {
     gs_memory_t *mem = pdev->memory;
-    uint line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
-    uint line_size_words = (line_size + W - 1) / W;
-    uint out_size = line_size + (line_size / 127) + 1;
+    size_t line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
+    size_t line_size_words = (line_size + W - 1) / W;
+    size_t out_size = line_size + (line_size / 127) + 1;
     word *line = (word *)gs_alloc_byte_array(mem, line_size_words, W, "ljet5(line)");
     byte *out = gs_alloc_bytes(mem, out_size, "ljet5(out)");
     int code = 0;
