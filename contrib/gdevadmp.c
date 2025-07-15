@@ -257,7 +257,7 @@
 #define ERRDEVTYPE DRIVERNAME ": Driver selection failed.\n"
 #define ERRDIRSELECT DRIVERNAME ": Setting directionality failed.\n"
 #define ERREXITING DRIVERNAME ": Output is likely corrupt -- delete the file or reset your printer.\n" DRIVERNAME ": Exiting.\n"
-#define ERRGPCSL DRIVERNAME ": gdev_prn_copy_scan_lines returned an unexpected values:\n" DRIVERNAME ":(code=%d,line_size=%d)\n"
+#define ERRGPCSL DRIVERNAME ": gdev_prn_copy_scan_lines returned an unexpected values:\n" DRIVERNAME ":(code=%d,line_size=%"PRId64")\n"
 #define ERRGPGL DRIVERNAME ": gdev_prn_get_lines returned an unexpected value: %d\n"
 #define ERRHWMARGINS DRIVERNAME ": HWMargins must not be less than 18pt on any side.\n"
 #define ERRLHNLQ DRIVERNAME ": Near letter quality line height failure.\n"

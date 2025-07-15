@@ -943,7 +943,7 @@ rinkj_escp_flush (RinkjEscp *z)
                                          color[i],
                                          rle,
                                          z->head_bps,
-                                         xsb_out & 0xff,
+                                         (int)(xsb_out & 0xff),
                                          (xsb_out >> 8) & 0xff,
                                          m & 0xff, m >> 8);
       if (status < 0)

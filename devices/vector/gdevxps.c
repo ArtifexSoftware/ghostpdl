@@ -2363,7 +2363,7 @@ xps_begin_typed_image(gx_device               *dev,
     if (csindex == gs_color_space_index_Indexed ||
         csindex == gs_color_space_index_Separation ||
         csindex == gs_color_space_index_DeviceN) {
-        bsize = (pim->Width + 15) * icc_profile->num_comps;
+        bsize = ((unsigned int)pim->Width + 15) * icc_profile->num_comps;
         pie->devc_buffer = gs_alloc_bytes(mem, bsize, "xps_begin_typed_image(devc_buffer)");
         if (pie->devc_buffer == 0) {
             gs_free_object(mem, pie, "xps_begin_typed_image");

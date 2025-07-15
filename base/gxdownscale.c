@@ -2687,7 +2687,7 @@ gx_downscaler_init_cm_halftone(gx_downscaler_t      *ds,
         int h = ds->dev->height;
         int n = ds->dev->color_info.num_components;
         cal_skew *skew;
-        byte *buffer = gs_alloc_bytes((size_t)ds->dev->memory, w*n, "skew_row");
+        byte *buffer = gs_alloc_bytes(ds->dev->memory, (size_t)w*n, "skew_row");
         if (buffer == NULL)
             return_error(gs_error_VMerror);
         skew = cal_skew_init(ds->dev->memory->gs_lib_ctx->core->cal_ctx,

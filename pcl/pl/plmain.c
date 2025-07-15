@@ -423,7 +423,7 @@ pl_main_run_string_begin(pl_main_instance_t *minst)
 static int
 ensure_buf_size(pl_main_instance_t *minst, int len)
 {
-    size_t max = minst->buf_max;
+    int max = minst->buf_max;
 
     if (len < max)
         return 0;

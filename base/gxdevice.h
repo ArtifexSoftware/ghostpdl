@@ -695,18 +695,8 @@ static inline int check_64bit_multiply(int64_t x, int64_t y, int64_t *result)
 {
     *result = x * y;
 
-    if ((x != 0 && *result / x != y) || *result > max_size_t)
+    if (x != 0 && (*result) / x != y)
         return -1;
-
-#if 0
-    if (x != 0){
-        if(*result / x == y) {
-            if (*result <= max_size_t)
-                return 0;
-        }
-    }
-    return -1;
-#endif
     return 0;
 }
 

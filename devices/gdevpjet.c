@@ -145,7 +145,7 @@ pj_common_print_page(gx_device_printer *pdev, gp_file *prn_stream, int y_origin,
         gp_fprintf(prn_stream, "\033*t%dR", X_DPI);
 
         /* set the line width */
-        gp_fprintf(prn_stream, "\033*r%dS", data_size);
+        gp_fprintf(prn_stream, "\033*r%"PRId64"S", data_size);
 
         /* set the number of color planes */
         gp_fprintf(prn_stream, "\033*r%dU", 3);		/* always 3 */

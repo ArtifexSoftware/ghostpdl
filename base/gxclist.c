@@ -1015,9 +1015,8 @@ clist_icc_writetable(gx_device_clist_writer *cldev)
     for ( k = 0; k < number_entries; k++ ){
         rend_is_valid = curr_entry->icc_profile->rend_is_valid;
         curr_entry->icc_profile->rend_is_valid = curr_entry->render_is_valid;
-        curr_entry->serial_data.file_position = clist_icc_addprofile(cldev, curr_entry->icc_profile, &size_data);
+        curr_entry->serial_data.file_position = clist_icc_addprofile(cldev, curr_entry->icc_profile, &curr_entry->serial_data.size);
         curr_entry->icc_profile->rend_is_valid = rend_is_valid;
-        curr_entry->serial_data.size = size_data;
         gsicc_adjust_profile_rc(curr_entry->icc_profile, -1, "clist_icc_writetable");
         curr_entry->icc_profile = NULL;
         curr_entry = curr_entry->next;
