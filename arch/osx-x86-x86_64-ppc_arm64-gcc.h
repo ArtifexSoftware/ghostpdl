@@ -59,6 +59,7 @@
 #define ARCH_ALIGN_PTR_MOD 8
 #define ARCH_ALIGN_FLOAT_MOD 4
 #define ARCH_ALIGN_DOUBLE_MOD 8
+#define ARCH_ALIGN_UINT64_T_MOD 8
 
          /* ---------------- Scalar sizes ---------------- */
 
@@ -103,6 +104,7 @@
 #define ARCH_ALIGN_PTR_MOD 8
 #define ARCH_ALIGN_FLOAT_MOD 4
 #define ARCH_ALIGN_DOUBLE_MOD 8
+#define ARCH_ALIGN_UINT64_T_MOD 8
 
  /* ---------------- Scalar sizes ---------------- */
 
@@ -150,6 +152,7 @@
 #define ARCH_ALIGN_PTR_MOD 4
 #define ARCH_ALIGN_FLOAT_MOD 4
 #define ARCH_ALIGN_DOUBLE_MOD 4
+#define ARCH_ALIGN_UINT64_T_MOD 8
 
  /* ---------------- Scalar sizes ---------------- */
 
