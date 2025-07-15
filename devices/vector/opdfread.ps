@@ -1,6 +1,6 @@
 %!PS-Adobe-2.0
 %
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2025 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -1040,10 +1040,10 @@ currentdict end readonly def
   } if                                                  % id obj node
   1 index exch /Context exch put                        % id obj
   dup /ImmediateExec true put
-  % This gets restored at the end of ExecuteStream if IsPage is true.
-  /pagesave save def
   dup /IsPage true put
   SetPageSize {dup /Context get //SetupPageView exec} if
+  % This gets restored at the end of ExecuteStream if IsPage is true.
+  /pagesave save def
 } bind def
 
 /FontFileDaemon % <id> <obj> <font_descriptor> FontFileDaemon <id> <obj>
