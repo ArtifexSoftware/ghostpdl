@@ -97,6 +97,7 @@ const gx_device_tiff gs_tiffgray_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0
 };
@@ -147,6 +148,7 @@ const gx_device_tiff gs_tiffscaled_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0
 };
@@ -187,6 +189,7 @@ const gx_device_tiff gs_tiffscaled8_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0
 };
@@ -227,6 +230,7 @@ const gx_device_tiff gs_tiffscaled24_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0
 };
@@ -267,6 +271,7 @@ const gx_device_tiff gs_tiffscaled32_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0
 };
@@ -304,6 +309,7 @@ const gx_device_tiff gs_tiffscaled4_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0
 };
@@ -572,6 +578,7 @@ const gx_device_tiff gs_tiff32nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0
 };
@@ -602,6 +609,7 @@ const gx_device_tiff gs_tiff64nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     false, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0
 };

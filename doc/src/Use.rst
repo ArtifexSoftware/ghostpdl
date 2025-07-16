@@ -2207,6 +2207,10 @@ For details about the ICC controls see the document `GS9 Color Management`_.
 
    Note that if the build is performed with ``COMPILE_INITS=1``, then the profiles contained in ``gs/iccprofiles`` will be placed in the ROM file system. If a directory is specified on the command line using ``-sICCProfilesDir=``, that directory is searched before the ``iccprofiles/`` directory of the ROM file system is searched.
 
+**-dEmbedProfiler=** *bool*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   Some devices (TIFF, JPEG and PNG) can embed the ICC profile which was used as the device colour space of the output (eg CMYK for tiff32nc). This can be useful if, for example, the input was in a xolour space different from the output, or a mixture of colour spaces. The embedded ICC profile will represent the colour values used by the ICC colour manager in XYZ space. However, if your workflow does not use end to end colour management, this embedded profile can be unhelpful. Setting this switch to 'false' will prevent the profile being embedded.
+   
 .. note ::
 
    A note for Windows users, Artifex recommends the use of the forward slash delimiter due to the special interpretation of ``\"`` by the Microsoft C startup code. See `Parsing C Command-Line Arguments`_ for more information.

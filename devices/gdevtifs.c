@@ -92,6 +92,8 @@ tiff_get_some_params(gx_device * dev, gs_param_list * plist, int which)
 
     if ((code = param_write_bool(plist, "BigEndian", &tfdev->BigEndian)) < 0)
         ecode = code;
+    if ((code = param_write_bool(plist, "EmbedProfile", &tfdev->EmbedProfile)) < 0)
+        ecode = code;
 #if (TIFFLIB_VERSION >= 20111221)
     if ((code = param_write_bool(plist, "UseBigTIFF", &tfdev->UseBigTIFF)) < 0)
         ecode = code;
@@ -146,6 +148,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
     int ecode = 0;
     int code;
     const char *param_name;
+    bool embed_profile = tfdev->EmbedProfile;
     bool big_endian = tfdev->BigEndian;
     bool usebigtiff = tfdev->UseBigTIFF;
     bool write_datetime = tfdev->write_datetime;
@@ -156,6 +159,16 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
 
     /* Read BigEndian option as bool */
     switch (code = param_read_bool(plist, (param_name = "BigEndian"), &big_endian)) {
+        default:
+            ecode = code;
+            param_signal_error(plist, param_name, ecode);
+        case 0:
+        case 1:
+            break;
+    }
+
+    /* Read EmbedProfile option as bool */
+    switch (code = param_read_bool(plist, (param_name = "EmbedProfile"), &embed_profile)) {
         default:
             ecode = code;
             param_signal_error(plist, param_name, ecode);
@@ -259,6 +272,7 @@ tiff_put_some_params(gx_device * dev, gs_param_list * plist, int which)
         return code;
 
     tfdev->BigEndian = big_endian;
+    tfdev->EmbedProfile = embed_profile;
     tfdev->UseBigTIFF = usebigtiff;
     tfdev->write_datetime = write_datetime;
     tfdev->Compression = compr;
@@ -346,6 +360,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
                                 int                adjustWidth,
                                 bool               writedatetime)
 {
+    gx_device_tiff *const tiffdev = (gx_device_tiff *)pdev;
     int width = gx_downscaler_scale(pdev->width, factor);
     int height = gx_downscaler_scale(pdev->height, factor);
     int xpi = gx_downscaler_scale((int)pdev->x_pixels_per_inch, factor);
@@ -415,7 +430,7 @@ int tiff_set_fields_for_printer(gx_device_printer *pdev,
             icc_profile = pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
 
         if (icc_profile->num_comps == pdev->color_info.num_components &&
-            icc_profile->data_cs != gsCIELAB && !(pdev->icc_struct->usefastcolor)) {
+            icc_profile->data_cs != gsCIELAB && !(pdev->icc_struct->usefastcolor) && tiffdev->EmbedProfile) {
             TIFFSetField(tif, TIFFTAG_ICCPROFILE, icc_profile->buffer_size,
                 icc_profile->buffer);
         }

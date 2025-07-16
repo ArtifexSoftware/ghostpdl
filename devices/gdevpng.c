@@ -78,16 +78,17 @@ static dev_proc_put_image(pngalpha_put_image);
 static dev_proc_get_params(pngalpha_get_params);
 static dev_proc_put_params(pngalpha_put_params);
 static dev_proc_create_buf_device(pngalpha_create_buf_device);
-static dev_proc_get_params(png_get_params_downscale);
-static dev_proc_put_params(png_put_params_downscale);
-static dev_proc_get_params(png_get_params_downscale_mfs);
-static dev_proc_put_params(png_put_params_downscale_mfs);
+static dev_proc_get_params(png_get_params);
+static dev_proc_put_params(png_put_params);
+static dev_proc_get_params(png_get_params_mfs);
+static dev_proc_put_params(png_put_params_mfs);
 static dev_proc_dev_spec_op(pngalpha_spec_op);
 
 typedef struct gx_device_png_s gx_device_png;
 struct gx_device_png_s {
     gx_device_common;
     gx_prn_device_common;
+    bool EmbedProfile;
     gx_downscaler_params downscale;
 };
 
@@ -100,6 +101,7 @@ const gx_device_png gs_pngmono_device =
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
            1, 1, 1, 1, 2, 2, png_print_page),
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
@@ -124,6 +126,7 @@ const gx_device_png gs_png16_device = {
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
            3, 4, 1, 1, 2, 2, png_print_page),
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
@@ -148,6 +151,7 @@ const gx_device_png gs_png256_device = {
            X_DPI, Y_DPI,
            0, 0, 0, 0,		/* margins */
            3, 8, 5, 5, 6, 6, png_print_page),
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
@@ -159,8 +163,8 @@ pnggray_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_gray_bg(dev);
 
-    set_dev_proc(dev, get_params, png_get_params_downscale);
-    set_dev_proc(dev, put_params, png_put_params_downscale);
+    set_dev_proc(dev, get_params, png_get_params);
+    set_dev_proc(dev, put_params, png_put_params);
     set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
     set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
@@ -171,6 +175,7 @@ const gx_device_png gs_pnggray_device =
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  1, 8, 255, 0, 256, 0, png_print_page),
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
@@ -182,8 +187,8 @@ pngmonod_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_gray_bg(dev);
 
-    set_dev_proc(dev, get_params, png_get_params_downscale_mfs);
-    set_dev_proc(dev, put_params, png_put_params_downscale_mfs);
+    set_dev_proc(dev, get_params, png_get_params_mfs);
+    set_dev_proc(dev, put_params, png_put_params_mfs);
     set_dev_proc(dev, encode_color, gx_default_8bit_map_gray_color);
     set_dev_proc(dev, decode_color, gx_default_8bit_map_color_gray);
 }
@@ -194,6 +199,7 @@ const gx_device_png gs_pngmonod_device =
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  1, 8, 255, 0, 256, 0, png_print_page_monod),
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
@@ -205,8 +211,8 @@ png16m_initialize_device_procs(gx_device *dev)
 {
     gdev_prn_initialize_device_procs_rgb_bg(dev);
 
-    set_dev_proc(dev, get_params, png_get_params_downscale);
-    set_dev_proc(dev, put_params, png_put_params_downscale);
+    set_dev_proc(dev, get_params, png_get_params);
+    set_dev_proc(dev, put_params, png_put_params);
 
     /* The prn macros used in previous versions of the code leave
      * encode_color and decode_color set to NULL (which are then rewritten
@@ -221,6 +227,7 @@ const gx_device_png gs_png16m_device =
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  3, 24, 255, 255, 256, 256, png_print_page),
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
@@ -245,6 +252,7 @@ const gx_device_png gs_png48_device =
                  X_DPI, Y_DPI,
                  0, 0, 0, 0,	/* margins */
                  3, 48, 0, 65535, 1, 65536, png_print_page),
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS
 };
 
@@ -260,6 +268,7 @@ typedef struct gx_device_pngalpha_s gx_device_pngalpha;
 struct gx_device_pngalpha_s {
     gx_device_common;
     gx_prn_device_common;
+    bool EmbedProfile;
     gx_downscaler_params downscale;
     int background;
 };
@@ -315,6 +324,7 @@ const gx_device_pngalpha gs_pngalpha_device = {
         offset_margin_values(0, 0, 0, 0, 0, 0),
         std_device_part3_(),
         prn_device_body_rest_(png_print_page),
+        1, /*EmbedProfile */
         GX_DOWNSCALER_PARAMS_DEFAULTS,
         0xffffff	/* white background */
 };
@@ -350,6 +360,7 @@ const gx_device_pngalpha gs_png16malpha_device = {
         offset_margin_values(0, 0, 0, 0, 0, 0),
         std_device_part3_(),
         prn_device_body_rest_(png_print_page),
+        1, /*EmbedProfile */
         GX_DOWNSCALER_PARAMS_DEFAULTS,
         0xffffff	/* white background */
 };
@@ -357,12 +368,16 @@ const gx_device_pngalpha gs_png16malpha_device = {
 /* ------ Private definitions ------ */
 
 static int
-png_get_params_downscale(gx_device * dev, gs_param_list * plist)
+png_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
 
     ecode = 0;
+
+    if ((ecode = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
+        code = ecode;
+
     if ((code = gx_downscaler_write_params(plist, &pdev->downscale, 0)) < 0)
         ecode = code;
 
@@ -374,10 +389,21 @@ png_get_params_downscale(gx_device * dev, gs_param_list * plist)
 }
 
 static int
-png_put_params_downscale(gx_device *dev, gs_param_list *plist)
+png_put_params(gx_device *dev, gs_param_list *plist)
 {
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
+    gs_param_name param_name;
+    bool bparam = false;
+
+    code = param_read_bool(plist, (param_name = "EmbedProfile"), &bparam);
+    if ( code == 0 ) {
+        pdev->EmbedProfile = bparam;
+    }
+    else if ( code < 1 ) {
+        ecode = code;
+        param_signal_error(plist, param_name, code);
+    }
 
     ecode = gx_downscaler_read_params(plist, &pdev->downscale, 0);
 
@@ -389,10 +415,13 @@ png_put_params_downscale(gx_device *dev, gs_param_list *plist)
 }
 
 static int
-png_get_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
+png_get_params_mfs(gx_device *dev, gs_param_list *plist)
 {
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
+
+    if ((ecode = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
+        code = ecode;
 
     ecode = gx_downscaler_write_params(plist, &pdev->downscale,
                                       GX_DOWNSCALER_PARAMS_MFS);
@@ -405,10 +434,21 @@ png_get_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
 }
 
 static int
-png_put_params_downscale_mfs(gx_device *dev, gs_param_list *plist)
+png_put_params_mfs(gx_device *dev, gs_param_list *plist)
 {
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
+    gs_param_name param_name;
+    bool bparam = false;
+
+    code = param_read_bool(plist, (param_name = "EmbedProfile"), &bparam);
+    if ( code == 0 ) {
+        pdev->EmbedProfile = bparam;
+    }
+    else if ( code < 1 ) {
+        ecode = code;
+        param_signal_error(plist, param_name, code);
+    }
 
     ecode = gx_downscaler_read_params(plist, &pdev->downscale,
                                       GX_DOWNSCALER_PARAMS_MFS);
@@ -685,7 +725,7 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
             /* PNG can only be RGB or gray.  No CIELAB :(  */
             if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) {
                 if (icc_profile->num_comps == pdev->color_info.num_components &&
-                    !(pdev->icc_struct->usefastcolor)) {
+                    !(pdev->icc_struct->usefastcolor && pdev->EmbedProfile)) {
                     png_set_iCCP(png_ptr, info_ptr, icc_profile->name,
                         PNG_COMPRESSION_TYPE_DEFAULT, icc_profile->buffer,
                         icc_profile->buffer_size);
@@ -716,7 +756,7 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
             /* PNG can only be RGB or gray.  No CIELAB :(  */
             if (icc_profile->data_cs == gsRGB || icc_profile->data_cs == gsGRAY) {
                 if (icc_profile->num_comps == pdev->color_info.num_components &&
-                    !(pdev->icc_struct->usefastcolor)) {
+                    !(pdev->icc_struct->usefastcolor) && pdev->EmbedProfile) {
                     info_ptr->iccp_name = icc_profile->name;
                     info_ptr->iccp_profile = icc_profile->buffer;
                     info_ptr->iccp_proflen = icc_profile->buffer_size;
@@ -885,6 +925,8 @@ pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
     int background;
     int code, ecode;
+    gs_param_name param_name;
+    bool bparam = false;
 
     /* BackgroundColor in format 16#RRGGBB is used for bKGD chunk */
     switch(code = param_read_int(plist, "BackgroundColor", &background)) {
@@ -897,6 +939,15 @@ pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
         default:
             param_signal_error(plist, "BackgroundColor", code);
             break;
+    }
+
+    code = param_read_bool(plist, (param_name = "EmbedProfile"), &bparam);
+    if ( code == 0 ) {
+        ppdev->EmbedProfile = bparam;
+    }
+    else if ( code < 1 ) {
+        ecode = code;
+        param_signal_error(plist, param_name, code);
     }
 
     if ((ecode = gx_downscaler_read_params(plist, &ppdev->downscale, 0)) < 0)
@@ -915,13 +966,16 @@ pngalpha_get_params(gx_device * pdev, gs_param_list * plist)
 {
     gx_device_pngalpha *ppdev = (gx_device_pngalpha *)pdev;
     int code = gdev_prn_get_params(pdev, plist);
-    int ecode;
-    if (code >= 0)
+    int ecode = 0;
+
+    if (code >= 0) {
         code = param_write_int(plist, "BackgroundColor",
                                 &(ppdev->background));
-    ecode = 0;
-    if ((ecode = gx_downscaler_write_params(plist, &ppdev->downscale, 0)) < 0)
-        code = ecode;
+        if ((ecode = param_write_int(plist, "EmbedProfile", &ppdev->EmbedProfile)) < 0)
+            code = ecode;
+        if ((ecode = gx_downscaler_write_params(plist, &ppdev->downscale, 0)) < 0)
+            code = ecode;
+    }
 
     return code;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -36,6 +36,7 @@ typedef struct gx_device_tiff_s {
     long MaxStripSize;
     long AdjustWidth;            /* 0 = no adjust, 1 = adjust to fax values, >1 = adjust to this */
     bool write_datetime;
+    bool EmbedProfile;
     gx_downscaler_params downscale;
     gsicc_link_t *icclink;
     TIFF *tif;                  /* TIFF file opened on gx_device_common.file */

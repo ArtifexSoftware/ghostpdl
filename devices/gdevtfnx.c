@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -75,6 +75,7 @@ const gx_device_tiff gs_tiff12nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0 /* icclink */
 };
@@ -91,6 +92,7 @@ const gx_device_tiff gs_tiff24nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0 /* icclink */
 };
@@ -107,6 +109,7 @@ const gx_device_tiff gs_tiff48nc_device = {
     TIFF_DEFAULT_STRIP_SIZE,
     0, /* Adjust size */
     true, /* write_datetime */
+    1, /* EmbedProfile */
     GX_DOWNSCALER_PARAMS_DEFAULTS,
     0 /* icclink */
 };

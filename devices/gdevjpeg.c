@@ -31,6 +31,7 @@ typedef struct gx_device_jpeg_s {
     int JPEGQ;			/* quality on IJG scale */
     float QFactor;		/* quality per DCTEncode conventions */
     /* JPEGQ overrides QFactor if both are specified. */
+    bool EmbedProfile;
 
     /** 1.0 default 2.0 is twice as big
      */
@@ -80,6 +81,7 @@ const gx_device_jpeg gs_jpeg_device =
                      X_DPI, Y_DPI, 0, 0, 0, 0, 24, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
  0.0,				/* QFactor: 0 indicates not specified */
+ 1,                 /* Embed an ICC profile in the output */
  { 1.0, 1.0 },                  /* ViewScale 1 to 1 */
  { 0.0, 0.0 },                  /* translation 0 */
  GX_DOWNSCALER_PARAMS_DEFAULTS
@@ -107,6 +109,7 @@ const gx_device_jpeg gs_jpeggray_device =
                  jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
  0.0,				/* QFactor: 0 indicates not specified */
+ 1,                 /* Embed an ICC profile in the output */
  { 1.0, 1.0 },                  /* ViewScale 1 to 1 */
  { 0.0, 0.0 },                   /* translation 0 */
  GX_DOWNSCALER_PARAMS_DEFAULTS
@@ -135,6 +138,7 @@ const gx_device_jpeg gs_jpegcmyk_device =
                      X_DPI, Y_DPI, 0, 0, 0, 0, 32, jpeg_print_page),
  0,				/* JPEGQ: 0 indicates not specified */
  0.0,				/* QFactor: 0 indicates not specified */
+ 1,                 /* Embed an ICC profile in the output */
  { 1.0, 1.0 },                  /* ViewScale 1 to 1 */
  { 0.0, 0.0 },                   /* translation 0 */
  GX_DOWNSCALER_PARAMS_DEFAULTS
@@ -199,6 +203,8 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
         ecode = code;
     if ((ecode = param_write_int(plist, "JPEGQ", &jdev->JPEGQ)) < 0)
         code = ecode;
+    if ((ecode = param_write_int(plist, "EmbedProfile", &jdev->EmbedProfile)) < 0)
+        code = ecode;
     if ((ecode = param_write_float(plist, "QFactor", &jdev->QFactor)) < 0)
         code = ecode;
     float2double = jdev->ViewScale.x;
@@ -228,6 +234,7 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     int jq = jdev->JPEGQ;
     float qf = jdev->QFactor;
     float fparam;
+    bool embed_profile = jdev->EmbedProfile, bparam;
 
     ecode = gx_downscaler_read_params(plist, &jdev->downscale, 0);
 
@@ -301,6 +308,16 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
         ecode = code;
         param_signal_error(plist, param_name, code);
     }
+
+    code = param_read_bool(plist, (param_name = "EmbedProfile"), &bparam);
+    if ( code == 0 ) {
+        jdev->EmbedProfile = bparam;
+    }
+    else if ( code < 1 ) {
+        ecode = code;
+        param_signal_error(plist, param_name, code);
+    }
+
     code = gdev_prn_put_params(dev, plist);
     if (code < 0)
         return code;
@@ -445,7 +462,7 @@ jpeg_print_page(gx_device_printer * pdev, gp_file * prn_stream)
         pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE] != NULL) {
         cmm_profile_t *icc_profile = pdev->icc_struct->device_profile[GS_DEFAULT_DEVICE_PROFILE];
         if (icc_profile->num_comps == pdev->color_info.num_components &&
-            !(pdev->icc_struct->usefastcolor)) {
+            !(pdev->icc_struct->usefastcolor) && jdev->EmbedProfile) {
             state.icc_profile = icc_profile;
         }
     }
