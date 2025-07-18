@@ -401,8 +401,8 @@ png_put_params(gx_device *dev, gs_param_list *plist)
         pdev->EmbedProfile = bparam;
     }
     else if ( code < 1 ) {
-        ecode = code;
         param_signal_error(plist, param_name, code);
+        return code;
     }
 
     ecode = gx_downscaler_read_params(plist, &pdev->downscale, 0);
@@ -420,8 +420,8 @@ png_get_params_mfs(gx_device *dev, gs_param_list *plist)
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
 
-    if ((ecode = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
-        code = ecode;
+    if ((code = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
+        ecode = code;
 
     ecode = gx_downscaler_write_params(plist, &pdev->downscale,
                                       GX_DOWNSCALER_PARAMS_MFS);
@@ -446,8 +446,8 @@ png_put_params_mfs(gx_device *dev, gs_param_list *plist)
         pdev->EmbedProfile = bparam;
     }
     else if ( code < 1 ) {
-        ecode = code;
         param_signal_error(plist, param_name, code);
+        return code;
     }
 
     ecode = gx_downscaler_read_params(plist, &pdev->downscale,
@@ -941,12 +941,12 @@ pngalpha_put_params(gx_device * pdev, gs_param_list * plist)
             break;
     }
 
-    code = param_read_bool(plist, (param_name = "EmbedProfile"), &bparam);
-    if ( code == 0 ) {
+    ecode = param_read_bool(plist, (param_name = "EmbedProfile"), &bparam);
+    if ( ecode == 0 ) {
         ppdev->EmbedProfile = bparam;
     }
-    else if ( code < 1 ) {
-        ecode = code;
+    else if ( ecode < 1 ) {
+        code = ecode;
         param_signal_error(plist, param_name, code);
     }
 
