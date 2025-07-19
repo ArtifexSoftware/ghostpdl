@@ -375,8 +375,8 @@ png_get_params(gx_device * dev, gs_param_list * plist)
 
     ecode = 0;
 
-    if ((ecode = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
-        code = ecode;
+    if ((code = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
+        ecode = code;
 
     if ((code = gx_downscaler_write_params(plist, &pdev->downscale, 0)) < 0)
         ecode = code;
@@ -423,8 +423,8 @@ png_get_params_mfs(gx_device *dev, gs_param_list *plist)
     if ((code = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
         ecode = code;
 
-    ecode = gx_downscaler_write_params(plist, &pdev->downscale,
-                                      GX_DOWNSCALER_PARAMS_MFS);
+    if ((code = gx_downscaler_write_params(plist, &pdev->downscale, GX_DOWNSCALER_PARAMS_MFS)) < 0)
+        ecode = code;
 
     code = gdev_prn_get_params(dev, plist);
     if (code < 0)
