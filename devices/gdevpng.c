@@ -375,7 +375,7 @@ png_get_params(gx_device * dev, gs_param_list * plist)
 
     ecode = 0;
 
-    if ((code = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
+    if ((code = param_write_bool(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
         ecode = code;
 
     if ((code = gx_downscaler_write_params(plist, &pdev->downscale, 0)) < 0)

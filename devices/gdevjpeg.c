@@ -203,7 +203,7 @@ jpeg_get_params(gx_device * dev, gs_param_list * plist)
         ecode = code;
     if ((ecode = param_write_int(plist, "JPEGQ", &jdev->JPEGQ)) < 0)
         code = ecode;
-    if ((ecode = param_write_int(plist, "EmbedProfile", &jdev->EmbedProfile)) < 0)
+    if ((ecode = param_write_bool(plist, "EmbedProfile", &jdev->EmbedProfile)) < 0)
         code = ecode;
     if ((ecode = param_write_float(plist, "QFactor", &jdev->QFactor)) < 0)
         code = ecode;
