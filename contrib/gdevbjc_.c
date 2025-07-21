@@ -887,8 +887,8 @@ bjc_print_page_color(gx_device_printer * pdev, gp_file * file)
     uint width =   pdev->width; /* Because grayscale */
     uint raster = (pdev->width >> 3) + ( (pdev->width % 8) ? 1:0);
     uint cmplen;
-    size_t cmpsize = (raster << 1) + 1, rsize = raster * 4;
-    byte *row = gs_alloc_bytes(pdev->memory, rsize,
+    size_t cmpsize = (raster << 1) + 1, rsize = raster * 4, wsize = width * 4;
+    byte *row = gs_alloc_bytes(pdev->memory, wsize,
                                "bjc true file buffer"); /* one for each component */
     byte *dit = gs_alloc_bytes(pdev->memory, rsize,
                                "bjc true dither buffer");
