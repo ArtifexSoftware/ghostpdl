@@ -530,6 +530,11 @@ pdf_impl_set_param(pl_interp_implementation_t *impl,
             if (code < 0)
                 return code;
         }
+        if (argis(param, "PDFCACHE")) {
+            code = plist_value_get_int(&pvalue, &ctx->args.PDFCacheSize);
+            if (code < 0)
+                return code;
+        }
         if (argis(param, "PDFDEBUG")) {
             code = plist_value_get_bool(&pvalue, &ctx->args.pdfdebug);
             if (code < 0)

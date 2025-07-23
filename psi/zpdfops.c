@@ -1055,6 +1055,12 @@ static int apply_interpreter_params(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, ref *pdi
     int code = gs_error_typecheck;
     ref *pvalueref;
 
+    if (dict_find_string(pdictref, "PDFCACHE", &pvalueref) > 0) {
+        if (!r_has_type(pvalueref, t_integer))
+            goto error;
+        pdfctx->ctx->args.PDFCacheSize = pvalueref->value.intval;
+    }
+
     if (dict_find_string(pdictref, "PDFDEBUG", &pvalueref) > 0) {
         if (!r_has_type(pvalueref, t_boolean))
             goto error;

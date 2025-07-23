@@ -63,13 +63,19 @@ static int pdfi_add_to_cache(pdf_context *ctx, pdf_obj *o)
     if (o->object_num > ctx->xref_table->xref_size)
         return_error(gs_error_rangecheck);
 
-    if (ctx->cache_entries == MAX_OBJECT_CACHE_SIZE)
+#if DEBUG_CACHE
+        dbgmprintf1(ctx->memory, "Adding object %d\n", o->object_num);
+#endif
+    if (ctx->cache_entries == ctx->args.PDFCacheSize)
     {
 #if DEBUG_CACHE
         dbgmprintf(ctx->memory, "Cache full, evicting LRU\n");
 #endif
         if (ctx->cache_LRU) {
             entry = ctx->cache_LRU;
+#if DEBUG_CACHE
+            dbgmprintf1(ctx->memory, "Evicting %d\n", entry->o->object_num);
+#endif
             ctx->cache_LRU = entry->next;
             if (entry->next)
                 ((pdf_obj_cache_entry *)entry->next)->previous = NULL;
@@ -126,6 +132,17 @@ static void pdfi_promote_cache_entry(pdf_context *ctx, pdf_obj_cache_entry *cach
     }
 #endif
     return;
+}
+
+int pdfi_cache_object(pdf_context *ctx, pdf_obj *o)
+{
+    if (o->object_num == 0)
+        return 0;
+    if (ctx->xref_table->xref[o->object_num].cache == NULL)
+        return pdfi_add_to_cache(ctx, o);
+    else
+        pdfi_promote_cache_entry(ctx, ctx->xref_table->xref[o->object_num].cache);
+    return 0;
 }
 
 /* This one's a bit of an oddity, its used for fonts. When we build a PDF font object

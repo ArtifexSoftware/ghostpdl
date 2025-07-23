@@ -1251,6 +1251,74 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
                 *Key = *Value = NULL;
                 return code;
             }
+            /* The file Bug690138.pdf has font dictionaries which contain ToUnicode keys where
+             * the value is an indirect reference to the same font object. If we replace the
+             * indirect reference in the dictionary with the font dictionary it becomes self
+             * referencing and never counts down to 0, leading to a memory leak.
+             * This is clearly an error, so flag it and don't replace the indirect reference.
+             */
+            if ((o) < (pdf_obj *)(uintptr_t)(TOKEN__LAST_KEY)) {
+                /* "FAST" object, therefore can't be a problem. */
+                pdfi_countdown(d->list[*index].value);
+                d->list[*index].value = o;
+            } else if (o->object_num == 0 || o->object_num != d->object_num) {
+                pdfi_countdown(d->list[*index].value);
+                d->list[*index].value = o;
+            } else {
+                code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefinedresult), NULL, E_DICT_SELF_REFERENCE, "pdfi_dict_next", NULL);
+                return code;
+            }
+            *Value = o;
+            pdfi_countup(*Value);
+            break;
+        } else {
+            *Value = d->list[*index].value;
+            pdfi_countup(*Value);
+            break;
+        }
+    }
+
+    pdfi_countup(*Key);
+    (*index)++;
+    return 0;
+}
+
+int pdfi_dict_next_no_store_R(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index)
+{
+    int code;
+
+    if (pdfi_type_of(d) != PDF_DICT)
+        return_error(gs_error_typecheck);
+
+    while (1) {
+        if (*index >= d->entries) {
+            *Key = NULL;
+            *Value= NULL;
+            return gs_error_undefined;
+        }
+
+        /* If we find NULL keys skip over them. This should never
+         * happen as we check the number of entries above, and we
+         * compact dictionaries on deletion of key/value pairs.
+         * This is a belt and braces check in case creation of the
+         * dictionary somehow ends up with NULL keys in the allocated
+         * section.
+         */
+        *Key = d->list[*index].key;
+        if (*Key == NULL) {
+            (*index)++;
+            continue;
+        }
+
+        if (pdfi_type_of(d->list[*index].value) == PDF_INDIRECT) {
+            pdf_indirect_ref *r = (pdf_indirect_ref *)d->list[*index].value;
+            pdf_obj *o;
+
+            code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
+            if (code < 0) {
+                *Key = *Value = NULL;
+                return code;
+            }
             *Value = o;
             break;
         } else {
@@ -1271,6 +1339,14 @@ int pdfi_dict_first(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Valu
 
     *i = 0;
     return pdfi_dict_next(ctx, d, Key, Value, index);
+}
+
+int pdfi_dict_first_no_store_R(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value, uint64_t *index)
+{
+    uint64_t *i = index;
+
+    *i = 0;
+    return pdfi_dict_next_no_store_R(ctx, d, Key, Value, index);
 }
 
 int pdfi_dict_key_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, uint64_t *index)

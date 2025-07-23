@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2025 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: Using Ghostscript
@@ -448,6 +448,13 @@ Switches for PDF files
 
 Here are some command line options specific to PDF:
 
+
+``-dPDFCACHE``
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+A new addition for the 'C' PDF interpreter. This interpreter maintains a small cache of recently used objects which were indirectly referenced. If the same object is used again finding it in the cache is much faster than re-reading it from the PDF file. This controls the number of objects maintained in the cache, the default is 200.
+
+Note; this is not the total number of objects retained in memory by the interpreter which is highly variable. In most cases altering this value will not make any appreciable difference but some very oddly constructed PDF file may benefit from a larger cache.
 
 ``-dPDFINFO``
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""

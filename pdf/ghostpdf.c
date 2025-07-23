@@ -1964,6 +1964,7 @@ pdf_context *pdfi_create_context(gs_memory_t *mem)
     ctx->args.preservemarkedcontent = true;
     ctx->args.preserveembeddedfiles = true;
     ctx->args.preservedocview = true;
+    ctx->args.PDFCacheSize = MAX_OBJECT_CACHE_SIZE;
     /* NOTE: For testing certain annotations on cluster, might want to set this to false */
     ctx->args.printed = false; /* True if OutputFile is set, false otherwise see pdftop.c, pdf_impl_set_param() */
 

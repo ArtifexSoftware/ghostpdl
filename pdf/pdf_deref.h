@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2023 Artifex Software, Inc.
+/* Copyright (C) 2020-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -16,6 +16,7 @@
 #ifndef PDF_DEREFERENCE
 #define PDF_DEREFERENCE
 
+int pdfi_cache_object(pdf_context *ctx, pdf_obj *o);
 int replace_cache_entry(pdf_context *ctx, pdf_obj *o);
 int is_compressed_object(pdf_context *ctx, uint32_t obj, uint32_t gen);
 int pdfi_dereference(pdf_context *ctx, uint64_t obj, uint64_t gen, pdf_obj **object);

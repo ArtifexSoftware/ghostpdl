@@ -174,6 +174,7 @@ typedef struct cmd_args_s {
 
     bool ignoretounicode;
     bool nonativefontmap;
+    int  PDFCacheSize;
 } cmd_args_t;
 
 typedef struct encryption_state_s {
