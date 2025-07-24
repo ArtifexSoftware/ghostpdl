@@ -1641,7 +1641,6 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, pdf_array **fonts_arr
             Value = NULL;
             code = pdfi_dict_next(ctx, tracker.spot_dict, (pdf_obj **)&Key, &Value, &index);
         }
-        code = 0;
         *spots_array = new_array;
     }
 
