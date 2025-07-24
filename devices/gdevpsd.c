@@ -1245,10 +1245,13 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
     psd_device *pdev_psd = (psd_device *)dev;
     bool has_tags = (pdev_psd->color_model == psd_DEVICE_CMYKT ||
             pdev_psd->color_model == psd_DEVICE_RGBT);
+    bool is_rgb = (pdev_psd->color_model == psd_DEVICE_RGB ||
+                   pdev_psd->color_model == psd_DEVICE_RGBT);
+#define NUM_CMYK_COMPONENTS 4
+    int num_base_comp = is_rgb ? 3 : NUM_CMYK_COMPONENTS;
 
     xc->f = file;
 
-#define NUM_CMYK_COMPONENTS 4
     for (i = 0; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++) {
         if (dev->devn_params.std_colorant_names[i] == NULL)
             break;
@@ -1274,17 +1277,17 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
                 dev->icc_struct->spotnames == NULL)
                 xc->n_extra_channels = dev->devn_params.page_spot_colors;
             else {
-                if (dev->devn_params.separations.num_separations <= (dev->color_info.max_components - NUM_CMYK_COMPONENTS))
+                if (dev->devn_params.separations.num_separations <= (dev->color_info.max_components - num_base_comp))
                     xc->n_extra_channels = dev->devn_params.separations.num_separations;
                 else
-                    xc->n_extra_channels = dev->color_info.max_components - NUM_CMYK_COMPONENTS;
+                    xc->n_extra_channels = dev->color_info.max_components - num_base_comp;
             }
         } else {
             /* Have to figure out how many in the order list were not std
                colorants */
             spot_count = 0;
             for (i = 0; i < dev->devn_params.num_separation_order_names; i++) {
-                if (dev->devn_params.separation_order_map[i] >= NUM_CMYK_COMPONENTS) {
+                if (dev->devn_params.separation_order_map[i] >= num_base_comp) {
                     spot_count++;
                 }
             }
@@ -1313,7 +1316,7 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
             xc->num_channels -= has_tags;
             for (i = 0; i < dev->devn_params.num_separation_order_names; i++) {
                 int sep_order_num = dev->devn_params.separation_order_map[i];
-                if (sep_order_num >= NUM_CMYK_COMPONENTS) {
+                if (sep_order_num >= num_base_comp) {
                     xc->chnl_to_position[xc->num_channels] = sep_order_num;
                     xc->chnl_to_orig_sep[xc->num_channels++] = sep_order_num;
                 }
