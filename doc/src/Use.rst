@@ -181,15 +181,15 @@ Once you invoke Ghostscript you can also find out what devices are available by 
 
 .. code-block:: bash
 
-   (epson) selectdevice
+   <</OutputDevice /epson>> setpagedevice
    (myfile.ps) run
 
-All output then goes to the Epson printer instead of the display until you do something to change devices. You can switch devices at any time by using the ``selectdevice`` procedure, for instance like one of these:
+All output then goes to the Epson printer instead of the display until you do something to change devices. You can switch devices at any time by using the ``setpagedevice`` operator, for instance like one of these:
 
 .. code-block:: bash
 
-   (x11alpha) selectdevice
-   (epson) selectdevice
+   <</OutputDevice /x11alpha>> setpagedevice
+   <</OutputDevice /epson>> setpagedevice
 
 
 
@@ -2387,7 +2387,7 @@ Other parameters
 
       --permit-devices=devicelist
 
-   ``devicelist`` is a list of devices known to Ghostscript, separated by the OS-specific path list separator (eg ':' on Linux, ';' on Windows and OS/2), which may be selected using the ``/OutputDevice`` key in a dictionary supplied to ``setpagedevice`` or the Ghostscript-specific extension PostSript operator ``selectdevice``. The device names must be as they are known to Ghostscript (use ``gs --help`` for a list). Attempting to select a device not on this list will result in an ``invalidaccess`` error. For convenience the single character '``*``' may be used to permit any device.
+   ``devicelist`` is a list of devices known to Ghostscript, separated by the OS-specific path list separator (eg ':' on Linux, ';' on Windows and OS/2), which may be selected using the ``/OutputDevice`` key in a dictionary supplied to ``setpagedevice``. The device names must be as they are known to Ghostscript (use ``gs --help`` for a list). Attempting to select a device not on this list will result in an ``invalidaccess`` error. For convenience the single character '``*``' may be used to permit any device.
 
    In addition some devices have parameters which are inherently unsafe (e.g. the IJS device's ``IjsServer`` parameter). Attempting to alter these parameters after ``SAFER`` is active will result in an ``invalidaccess`` error. These parameters can only be set from the command line when ``SAFER`` is selected.   
 

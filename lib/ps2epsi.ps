@@ -19,7 +19,7 @@
 % indicates that there is more than a single page in the input file.
 
 % Expected invocation:
-%   gs -q -dNOOUTERSAVE -dNODISPLAY -dLastPage=1 -sOutputFile=out.epsi --permit-file-read=in.ps -- ps2epsi.ps in.ps
+%   gs -q -dNOOUTERSAVE -dNODISPLAY -dLastPage=1 -sOutputFile=out.epsi --permit-file-read=in.ps --permit-devices=eps2write;bit -- ps2epsi.ps in.ps
 
 % Usually this will be invoked by the ps2epsi script (or .bat or .cmd versions)
 
@@ -121,8 +121,8 @@ if
 closefile			% will be opened by bit device
 /Pname exch def
 
-(bit) selectdevice
 <<
+  /OutputDevice /bit
   /GrayValues 256		% Gray, not monochrome
   /OutputFile Pname
   /TextAlphaBits 4

@@ -894,9 +894,6 @@ currentdict /.makeinternaldict .undef
            { /undefinedfilename signalerror }
           ifelse
         } .internalbind def
-/selectdevice
-        { (    **** The selectdevice operator has been deprecated and will be removed in the next release.\n    **** You should use the setpagedevice operator and a dictionary parameter\n    **** containing the /OutputDevice key instead.\n) print
-        finddevice setdevice .setdefaultscreen } .internalbind odef
 /signalerror		% <object> <errorname> signalerror -
         { /errordict .systemvar exch get exec } .internalbind def
 /signaloperror {	% <object> <errorname> signaloperror -
