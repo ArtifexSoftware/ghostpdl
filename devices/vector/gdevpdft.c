@@ -204,7 +204,6 @@ pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
             param.data = (const byte *)pdev->PendingOC;
             param.size = strlen(pdev->PendingOC);
             code = pdf_refer_named(pdev, &param, &pco);
-            gs_free_object(pdev->memory, pdev->PendingOC, "");
             if(code < 0)
                 return code;
 
@@ -213,7 +212,8 @@ pdf_make_form_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
             if (code < 0)
                 return code;
 
-            pdev->PendingOC = 0;
+            gs_free_object(pdev->memory->non_gc_memory, pdev->PendingOC, "");
+            pdev->PendingOC = NULL;
         }
     }
     return cos_dict_put_c_key_object(form_dict, "/Group", (cos_object_t *)group_dict);

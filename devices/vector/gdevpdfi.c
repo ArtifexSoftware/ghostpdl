@@ -1186,7 +1186,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
             pdev->image_mask_is_SMask = true;
 
             if (pdev->PendingOC)
-                gs_free_object(pdev->memory, pdev->PendingOC, "");
+                gs_free_object(pdev->memory->non_gc_memory, pdev->PendingOC, "");
             OC = pdev->PendingOC = NULL;
             code = gx_begin_image3x_generic((gx_device *)pdev, pgs, pmat, pic,
                                             prect, pdcolor, pcpath, mem,
@@ -3107,8 +3107,8 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             {
                 char *object = data;
                 if (pdev->PendingOC)
-                    gs_free_object(pdev->memory, pdev->PendingOC, "");
-                pdev->PendingOC = (char *)gs_alloc_bytes(pdev->memory, strlen(object) + 1, "");
+                    gs_free_object(pdev->memory->non_gc_memory, pdev->PendingOC, "");
+                pdev->PendingOC = (char *)gs_alloc_bytes(pdev->memory->non_gc_memory, strlen(object) + 1, "");
                 if (pdev->PendingOC == NULL)
                     return_error(gs_error_VMerror);
                 memcpy(pdev->PendingOC, object, strlen(object) + 1);
