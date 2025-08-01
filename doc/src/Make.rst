@@ -860,7 +860,11 @@ We recommend installing ``gcc`` and ``GNU make``, and using the Autoconf-based m
 
 Other combinations are known to work, but are less well supported.
 
-Recent veresions of Ghostscript can trigger a 'TOC overflow' error with some compilers on AIX. If this occurs, use the linker flag ``-bbigtoc``, which can either be added to your configure options:
+Modern Ghostscript overflows the default 64Kb 'table of contents' size on AIX, and require the linker to be instructed to create the larger TOC format with the linker option ``-bbigtoc``.
+
+Versions 10.06.0 and later do so automatically when the 'configure' script creates the Makefile.
+
+For versions prior to 10.06.0 the option can either be added to your configure options:
 
 
 .. code-block:: bash

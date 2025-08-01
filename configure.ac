@@ -331,6 +331,7 @@ case $host in
             CC_DBG_FLAGS_TO_TRY="-gdwarf-2 -g3 -O0"
             SET_DT_SONAME="so"
             CC_VISIBILITY_FLAGS_TO_TRY="-fvisibility=hidden"
+            LDFLAGS="-Wl,-bbigtoc $LD_FLAGS"
         fi
         ;;
 esac
