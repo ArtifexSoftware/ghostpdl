@@ -1248,6 +1248,13 @@ int pdfi_dict_next(pdf_context *ctx, pdf_dict *d, pdf_obj **Key, pdf_obj **Value
 
             code = pdfi_dereference(ctx, r->ref_object_num, r->ref_generation_num, &o);
             if (code < 0) {
+                if (code == gs_error_circular_reference) {
+                    /* Replace circular references with NULL objects to prevent future
+                     * circular dereferencing.
+                     */
+                    pdfi_countdown(d->list[*index].value);
+                    d->list[*index].value = PDF_NULL_OBJ;
+                }
                 *Key = *Value = NULL;
                 return code;
             }
