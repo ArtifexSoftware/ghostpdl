@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -450,16 +450,6 @@ pattern_paint_cleanup_core(i_ctx_t *i_ctx_p, bool is_error)
     if (pdev != NULL) {
         /* grestore will free the device, so close it first. */
         (*dev_proc(pdev, close_device)) ((gx_device *) pdev);
-        /* The accumulator device is allocated in "system" memory
-           but the target device may be allocated in the prevailing
-           VM mode (local/global) of the input file, and thus potentially
-           subject to save/restore - which may cause bad things if the
-           accumator hangs around until the end of job restore, which can
-           happen in the even of an error during the PaintProc, so
-           null that pointer for that case.
-         */
-        if (is_error)
-            pdev->target = NULL;
     }
     if (pdev == NULL) {
         gx_device *cdev = r_ptr(esp + 2, gx_device);
