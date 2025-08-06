@@ -17,6 +17,7 @@
 
 #include "pdf_int.h"
 #include "pdf_stack.h"
+#include "pdf_deref.h"
 #include "pdf_page.h"
 #include "pdf_file.h"
 #include "pdf_dict.h"
