@@ -2342,7 +2342,7 @@ do_arg_match(const char **arg, const char *match, size_t match_len)
     if (strncmp(s, match, match_len) != 0)
         return 0;
     s += match_len;
-    if (*s == '=')
+    if (*s == '=' || *s == '#')
         *arg = ++s;
     else if (*s != 0)
         return 0;
