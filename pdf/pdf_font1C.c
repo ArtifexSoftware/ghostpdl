@@ -2490,6 +2490,14 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pfont->cidata.common.CIDSystemInfo.Ordering.size = cffcid->ordering->length;
                 pfont->cidata.common.CIDSystemInfo.Supplement = cffcid->supplement;
 
+                /* We don't need to bounds check these strings because they were checked when parsing
+                 * from the CFF stream.
+                 */
+                memcpy(pfont->font_name.chars, cffpriv.font_name.chars, cffpriv.font_name.size);
+                pfont->font_name.size = cffpriv.font_name.size;
+                memcpy(pfont->key_name.chars, cffpriv.key_name.chars, cffpriv.key_name.size);
+                pfont->key_name.size = cffpriv.key_name.size;
+
                 cffcid->FontDescriptor = (pdf_dict *) fontdesc;
                 fontdesc = NULL;
 
@@ -2729,6 +2737,14 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
                 pfont->cidata.common.CIDSystemInfo.Ordering.size = cffcid->ordering->length;
                 pfont->cidata.common.CIDSystemInfo.Supplement = cffcid->supplement;
                 pfont->client_data = cffcid;
+
+                /* We don't need to bounds check these strings because they were checked when parsing
+                 * from the CFF stream.
+                 */
+                memcpy(pfont->font_name.chars, cffpriv.font_name.chars, cffpriv.font_name.size);
+                pfont->font_name.size = cffpriv.font_name.size;
+                memcpy(pfont->key_name.chars, cffpriv.key_name.chars, cffpriv.key_name.size);
+                pfont->key_name.size = cffpriv.key_name.size;
 
                 cffcid->object_num = font_dict->object_num;
                 cffcid->generation_num = font_dict->generation_num;
