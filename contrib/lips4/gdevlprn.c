@@ -207,7 +207,7 @@ lprn_print_image(gx_device_printer * pdev, gp_file * fp)
 {
     gx_device_lprn *const lprn = (gx_device_lprn *) pdev;
     int y;
-    int bpl = gdev_mem_bytes_per_scan_line(pdev);
+    int bpl = gdev_mem_bytes_per_scan_line(pdev), check = 0;
     Bubble *bbtbl;
     Bubble *bbl;
     int i;
@@ -262,6 +262,10 @@ lprn_print_image(gx_device_printer * pdev, gp_file * fp)
         }
         ri = start_y_block + num_y_blocks;	/* read position */
         read_y = ri % maxY;	/* end of read position */
+        check = bpl * read_y;
+        /* Ensure the calculation in gdev_prn_copy_scan_lines below will not overflow */
+        if (bpl != 0 && check / bpl != read_y)
+            return_error(gs_error_rangecheck);
         code = gdev_prn_copy_scan_lines(pdev, ri, lprn->ImageBuf + bpl * read_y, bpl * lprn->nBh);
         if (code < 0)
             goto error;
