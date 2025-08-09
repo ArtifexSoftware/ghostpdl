@@ -1145,7 +1145,7 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
         /* Put the Resources dictionary back in cache (or promote it) in case checking ColorSpace dict
          * created so many cache entires it flushed Resources from cache
          */
-        code = pdfi_cache_object(ctx, Resources_dict);
+        code = pdfi_cache_object(ctx, (pdf_obj *)Resources_dict);
         if (code < 0) {
             if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_CACHE_FAIL, "pdfi_check_Resources", "")) < 0)
                 return code;
@@ -1163,7 +1163,7 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
         /* Put the Resources dictionary back in cache (or promote it) in case checking Shading dict
          * created so many cache entires it flushed Resources from cache
          */
-        code = pdfi_cache_object(ctx, Resources_dict);
+        code = pdfi_cache_object(ctx, (pdf_obj *)Resources_dict);
         if (code < 0) {
             if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_CACHE_FAIL, "pdfi_check_Resources", "")) < 0)
                 return code;
@@ -1182,7 +1182,7 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
     /* Put the Resources dictionary back in cache (or promote it) in case checking XObject dict
      * created so many cache entires it flushed Resources from cache
      */
-    code = pdfi_cache_object(ctx, Resources_dict);
+    code = pdfi_cache_object(ctx, (pdf_obj *)Resources_dict);
     if (code < 0) {
         if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_CACHE_FAIL, "pdfi_check_Resources", "")) < 0)
             return code;
@@ -1201,7 +1201,7 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
     /* Put the Resources dictionary back in cache (or promote it) in case checking Pattern dict
      * created so many cache entires it flushed Resources from cache
      */
-    code = pdfi_cache_object(ctx, Resources_dict);
+    code = pdfi_cache_object(ctx, (pdf_obj *)Resources_dict);
     if (code < 0) {
         if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_CACHE_FAIL, "pdfi_check_Resources", "")) < 0)
             return code;
@@ -1222,7 +1222,7 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
     /* Put the Resources dictionary back in cache (or promote it) in case checking Font dict
      * created so many cache entires it flushed Resources from cache
      */
-    code = pdfi_cache_object(ctx, Resources_dict);
+    code = pdfi_cache_object(ctx, (pdf_obj *)Resources_dict);
     if (code < 0) {
         if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_CACHE_FAIL, "pdfi_check_Resources", "")) < 0)
             return code;
@@ -1240,7 +1240,7 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
     /* Put the Resources dictionary back in cache (or promote it) in case checking ExtGState dict
      * created so many cache entires it flushed Resources from cache
      */
-    code = pdfi_cache_object(ctx, Resources_dict);
+    code = pdfi_cache_object(ctx, (pdf_obj *)Resources_dict);
     if (code < 0) {
         if ((code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_CACHE_FAIL, "pdfi_check_Resources", "")) < 0)
             return code;
@@ -1650,7 +1650,7 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, pdf_array **fonts_arr
      */
     code = pdfi_dict_knownget_type(ctx, page_dict, "Resources", PDF_DICT, (pdf_obj **)&Resources);
     if (code > 0) {
-        code = pdfi_cache_object(ctx, Resources);
+        code = pdfi_cache_object(ctx, (pdf_obj *)Resources);
         if (code < 0)
             code = pdfi_set_warning_stop(ctx, code, NULL, W_PDF_CACHE_FAIL, "pdfi_check_Resources", "");
         pdfi_countdown(Resources);
