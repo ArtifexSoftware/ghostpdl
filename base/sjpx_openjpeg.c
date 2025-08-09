@@ -406,7 +406,7 @@ ycc_to_rgb_16(unsigned char *row, unsigned long row_size)
 
 static int decode_image(stream_jpxd_state * const state)
 {
-    int numprimcomp = 0, alpha_comp = -1, compno, rowbytes;
+    int numprimcomp = 0, alpha_comp = -1, compno, rowbytes, bps;
 
     /* read header */
     if (!opj_read_header(state->stream, state->codec, &(state->image)))
@@ -510,8 +510,23 @@ static int decode_image(stream_jpxd_state * const state)
         state->bpp = 16;
 
     /* calculate  total data */
-    rowbytes =  (state->width*state->bpp*state->out_numcomps+7)/8;
+    bps = state->bpp * state->out_numcomps;
+
+    /* Overflow check, almost certainly superfluous, but let's be certain */
+    if (state->out_numcomps != 0 && bps / state->out_numcomps != state->bpp)
+        return_error(gs_error_rangecheck);
+
+    rowbytes = state->width * bps;
+    /* Overflow check */
+    if ((bps != 0 && rowbytes / bps != state->width) || rowbytes > max_int - 8)
+        return_error(gs_error_rangecheck);
+
+    rowbytes = (rowbytes + 7) / 8;
+
     state->totalbytes = (ulong)rowbytes*state->height;
+    /* Overflow check */
+    if (rowbytes != 0 && state->totalbytes / rowbytes != state->height)
+        return_error(gs_error_rangecheck);
 
     state->pdata = (int **)gs_alloc_byte_array(state->memory->non_gc_memory, sizeof(int*)*(size_t)state->image->numcomps, 1, "decode_image(pdata)");
     if (!state->pdata)
