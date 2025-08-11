@@ -2120,6 +2120,9 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
     if (code < 0)
         goto pdfi_devicen_error;
 
+    if (pdfi_array_size(inks) > GS_CLIENT_COLOR_MAX_COMPONENTS)
+            return_error(gs_error_limitcheck);
+
     for (ix = 0;ix < pdfi_array_size(inks);ix++) {
         pdf_name *ink_name = NULL;
 
