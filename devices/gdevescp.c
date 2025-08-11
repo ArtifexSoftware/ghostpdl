@@ -113,16 +113,35 @@ escp2_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 {
         int line_size = gdev_prn_raster((gx_device_printer *)pdev);
         int band_size = 24;	/* 1, 8, or 24 */
-        size_t in_size = line_size * band_size;
+        size_t in_size = line_size * band_size, out_size;
 
-        byte *buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "escp2_print_page(buf1)");
-        byte *buf2 = (byte *)gs_malloc(pdev->memory, in_size, 1, "escp2_print_page(buf2)");
-        byte *in = buf1;
-        byte *out = buf2;
+        byte *buf1 = NULL;
+        byte *buf2 = NULL;
+        byte *in = NULL;
+        byte *out = NULL;
 
         int skip, lnum, top, bottom, left, width;
         int code = 0, count, i;
 
+        /* Handle totally incompressible data. If we get a sequence of at least 3 identical bytes, then we will encode
+         * this as a repeat count byte and a value, for a total of 2 bytes. The maximum uncompressed run after this is
+         * 128 bytes, which will be encoded as a length count byte and the incompressible data for a total of 129 bytes.
+         * Thus if we get any compressible data at all, it will cover the requireed expansion of the incompressible data.
+         * So we only have to worry, essentially, about completely incompressible data. This is of course a concocted
+         * case, no real data would fit this.
+         * We need to find out how many 128 byte runs, treating remainders as a full run, would fit in the input
+         * data, and add that many bytes to the size of the output data. This ensures the actual output data
+         * can't overrun the output buffer.
+         */
+        out_size = in_size + ((in_size + 127 ) / 128);
+
+        in = buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "escp2_print_page(buf1)");
+        out = buf2 = (byte *)gs_malloc(pdev->memory, out_size, 1, "escp2_print_page(buf2)");
+
+        if (buf1 == NULL || buf2 == NULL) {
+            code = gs_note_error(gs_error_VMerror);
+            goto xit;
+        }
         /*
         ** Check for valid resolution:
         **
