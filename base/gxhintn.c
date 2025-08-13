@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -18,6 +18,7 @@
 
 #include "memory_.h"
 #include "math_.h"
+#include "assert_.h"
 #include "gx.h"
 #include "gxfixed.h"
 #include "gxarith.h"
@@ -459,11 +460,15 @@ static inline void t1_hinter__init_outline(t1_hinter * self)
 
 static void t1_hinter__compute_rat_transform_coef(t1_hinter * self)
 {
+    double heigt_transform_coef = self->heigt_transform_coef == 0 ? 1.0 : self->heigt_transform_coef;
+
+    assert(self->heigt_transform_coef != 0.0);
+
     /* Round towards zero for a better view of mirrored characters : */
-    self->heigt_transform_coef_rat = (int19)(self->heigt_transform_coef * self->ctmf.denominator + 0.5);
-    self->width_transform_coef_rat = (int19)(self->width_transform_coef * self->ctmf.denominator + 0.5);
-    self->heigt_transform_coef_inv = (int19)(self->ctmi.denominator / self->heigt_transform_coef + 0.5);
-    self->width_transform_coef_inv = (int19)(self->ctmi.denominator / self->width_transform_coef + 0.5);
+    self->heigt_transform_coef_rat = (int19)(heigt_transform_coef * self->ctmf.denominator + 0.5);
+    self->width_transform_coef_rat = (int19)(heigt_transform_coef * self->ctmf.denominator + 0.5);
+    self->heigt_transform_coef_inv = (int19)(self->ctmi.denominator / heigt_transform_coef + 0.5);
+    self->width_transform_coef_inv = (int19)(self->ctmi.denominator / heigt_transform_coef + 0.5);
 }
 
 static inline void t1_hinter__adjust_matrix_precision(t1_hinter * self, fixed xx, fixed yy)
