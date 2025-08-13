@@ -1187,8 +1187,10 @@ create_2d_gauss_filter(double *filter, int x_size, int y_size,
             filter[index_y * x_size + index_x] = val;
         }
     }
-    for (j = 0; j < total_size; j++) {
-        filter[j]/=sum;
+    if (sum) {
+        for (j = 0; j < total_size; j++) {
+            filter[j]/=sum;
+        }
     }
 #if RAW_SCREEN_DUMP
     code = htsc_dump_float_image(filter, y_size, x_size, max_val/sum, "guass_filt", mem);
