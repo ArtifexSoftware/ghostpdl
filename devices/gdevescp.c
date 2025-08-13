@@ -138,6 +138,10 @@ escp2_print_page(gx_device_printer *pdev, gp_file *prn_stream)
         in = buf1 = (byte *)gs_malloc(pdev->memory, in_size, 1, "escp2_print_page(buf1)");
         out = buf2 = (byte *)gs_malloc(pdev->memory, out_size, 1, "escp2_print_page(buf2)");
 
+        /*
+        ** Check buffer allocations:
+        */
+
         if (buf1 == NULL || buf2 == NULL) {
             code = gs_note_error(gs_error_VMerror);
             goto xit;
@@ -157,15 +161,6 @@ escp2_print_page(gx_device_printer *pdev, gp_file *prn_stream)
                (pdev->y_pixels_per_inch == 360 ||
                 pdev->y_pixels_per_inch == 180) )) )
                    return_error(gs_error_rangecheck);
-
-        /*
-        ** Check buffer allocations:
-        */
-
-        if ( buf1 == 0 || buf2 == 0 ) {
-           code = gs_error_VMerror;
-           goto xit;
-        }
 
         /*
         ** Reset printer, enter graphics mode:
