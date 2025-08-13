@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -578,7 +578,10 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
             }
             else {
                 check_ostack(O_STACK_PAD - stack_depth_adjust);
-                ref_stack_push(&o_stack, O_STACK_PAD - stack_depth_adjust);
+                code = ref_stack_push(&o_stack, O_STACK_PAD - stack_depth_adjust);
+                if (code < 0)
+                    return code;
+
                 for (i=0;i<O_STACK_PAD - stack_depth_adjust;i++)
                     make_null(op - i);
             }
