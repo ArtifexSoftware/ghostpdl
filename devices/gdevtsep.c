@@ -2317,7 +2317,7 @@ tiffsep_print_page(gx_device_printer * pdev, gp_file * file)
              * which ones we want. So always render all the components. This is actually
              * what we had been doing pre the downscaler refactor anyway! */
             code = gx_downscaler_init_planar(&ds, (gx_device *)pdev,
-                                             8, dst_bpc, tfdev->color_info.num_components,
+                                             8, dst_bpc, num_comp,
                                              &tfdev->downscale,
                                              &params);
             if (code < 0)

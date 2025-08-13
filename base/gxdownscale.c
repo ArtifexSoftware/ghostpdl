@@ -3031,8 +3031,6 @@ int gx_downscaler_get_bits_rectangle(gx_downscaler_t      *ds,
     int                   num_planes_to_downscale;
 
     n = ds->dev->width;
-    if (ds->dev->color_info.depth > ds->dev->color_info.num_components*8+8)
-       n *= 2;
 
     n = (n*ds->src_bpc+7)/8;
 
