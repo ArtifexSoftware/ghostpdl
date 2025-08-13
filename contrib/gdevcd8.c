@@ -2513,9 +2513,6 @@ do_gcr(int bytecount, byte * inbyte, const byte kvalues[256],
           debug_print_string(output, strlen(output));
         }
 #endif /* 0 */
-        if (   *cyan > 255)    *cyan = 255;
-        if (*magenta > 255) *magenta = 255;
-        if ( *yellow > 255)  *yellow = 255;
 
         *cyan = *(cvalues + *cyan);
         *magenta = *(mvalues + *magenta);
