@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -306,8 +306,7 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
     const int rotation =
     (landscape ? (pmat->yx < 0 ? 90 : -90) : pmat->xx < 0 ? 180 : 0);
     const double f0 = ph->frequency, a0 = ph->angle;
-    const double T =
-    fabs((landscape ? pmat->yx / pmat->xy : pmat->xx / pmat->yy));
+    double T = 1.0;
     gs_point uv0;
 
 #define u0 uv0.x
@@ -316,6 +315,14 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
     double f = 0, a = 0;
     double e_best = 1000;
     bool better;
+
+    if (landscape) {
+        if (pmat->xy)
+            T = fabs(pmat->yx / pmat->xy);
+    } else {
+        if (pmat->yy)
+            T = fabs(pmat->xx / pmat->yy);
+    }
 
     /*
      * We need to find a vector in device space whose length is
