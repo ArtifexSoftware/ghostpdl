@@ -2025,6 +2025,8 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     memset(linebuf, 0, sizeof(linebuf));
     node = calloc(1, sizeof(romfs_inode));
     node->name = rom_filename;	/* without -P prefix, with -d rom_prefix */
+    node->data = NULL;
+    node->data_lengths = NULL;
 
     merge_to_ps(os_prefix, initfile, in, config, verbose);
 
@@ -2107,9 +2109,9 @@ process_initfile(char *initfile, char *gconfig_h, const char *os_prefix,
     /* write data for this file */
     inode_write(out, node, compression, *inode_count, totlen, splits, verbose);
     /* clean up */
-    inode_clear(node);
     (*inode_count)++;
 done:
+    inode_clear(node);
     free(node);
     free(cbuf);
     free(ubuf);
