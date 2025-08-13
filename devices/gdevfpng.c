@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -326,13 +326,17 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
     {
         stream.avail_in = 1;
         err = deflate(&stream, Z_NO_FLUSH);
-        if (err != Z_OK)
+        if (err != Z_OK) {
+            (void)deflateEnd(&stream);
             return_error(gs_error_VMerror);
+        }
         stream.next_in = p;
         stream.avail_in = w*3;
         err = deflate(&stream, (y == 0 ? (lastband ? Z_FINISH : Z_FULL_FLUSH) : Z_NO_FLUSH));
-        if (err != Z_OK)
+        if (err != Z_OK) {
+            (void)deflateEnd(&stream);
             return_error(gs_error_VMerror);
+        }
         p += raster;
         stream.next_in = &paeth;
     }
