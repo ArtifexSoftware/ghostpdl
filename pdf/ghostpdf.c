@@ -28,6 +28,7 @@
 #include "pdf_gstate.h"
 #include "stream.h"
 #include "strmio.h"
+#include "assert_.h"
 #include "pdf_colour.h"
 #include "pdf_font.h"
 #include "pdf_text.h"
@@ -701,7 +702,10 @@ pdfi_report_errors(pdf_context *ctx)
                     if (ctx->pdf_errors[i] & 1 << j) {
                         int error_num = (i * sizeof(char) * 8) + j;
 
-                        errprintf(ctx->memory, "\t%s\n", pdf_error_strings[error_num]);
+                        /* Bits higher than E_PDF_MAX_ERROR - 1 in pdf_errors should never be set, but just in case */
+                        assert(error_num < E_PDF_MAX_ERROR);
+                        if (error_num < E_PDF_MAX_ERROR)
+                            errprintf(ctx->memory, "\t%s\n", pdf_error_strings[error_num]);
                     }
                 }
             }
@@ -717,7 +721,10 @@ pdfi_report_errors(pdf_context *ctx)
                     if (ctx->pdf_warnings[i] & 1 << j) {
                         int warning_num = (i * sizeof(char) * 8) + j;
 
-                        outprintf(ctx->memory, "\t%s\n", pdf_warning_strings[warning_num]);
+                        /* Bits higher than W_PDF_MAX_WARNING - 1 in pdf_warnings should never be set, but just in case */
+                        assert(warning_num < W_PDF_MAX_WARNING);
+                        if (warning_num < W_PDF_MAX_WARNING)
+                            outprintf(ctx->memory, "\t%s\n", pdf_warning_strings[warning_num]);
                     }
                 }
             }

@@ -60,7 +60,7 @@ PDFINCLUDES=$(PDFSRC)*.h $(GLGEN)arch.h $(strmio_h) $(stream_h) $(gsmatrix_h) $(
 	$(jpeglib__h) $(sdct_h) $(spdiffx_h)
 
 $(PDFOBJ)ghostpdf.$(OBJ): $(PDFSRC)ghostpdf.c $(PDFINCLUDES) $(plmain_h) $(stream_h) $(strmio_h) \
-	$(gsmchunk_h) $(gsstate_h) $(gsicc_manage_h) $(PDF_MAK) $(MAKEDIRS)
+	$(assert__h) $(gsmchunk_h) $(gsstate_h) $(gsicc_manage_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)ghostpdf.c $(PDFO_)ghostpdf.$(OBJ)
 
 $(PDFOBJ)pdf_dict.$(OBJ): $(PDFSRC)pdf_dict.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)
