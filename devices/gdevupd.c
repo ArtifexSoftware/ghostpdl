@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3058,6 +3058,12 @@ upd_open_map(upd_device *udev)
 
             while(((iy+2) < upd->float_a[cmap->xfer].size) &&
                   (fy > XFVAL(iy+1))) ++iy;
+
+            /* Shouldn't happen, but just in case */
+            if (XFVAL(iy+1) == (float)0.0) {
+                imap = 0;
+                break;
+            }
 
             fx  = iy + (fy - XFVAL(iy))/(XFVAL(iy+1) - XFVAL(iy));
 
