@@ -314,8 +314,10 @@ static int fpng_process(void *arg, gx_device *dev, gx_device *bdev, const gs_int
         stream.next_in = &sub;
         stream.avail_in = 1;
         err = deflate(&stream, Z_FULL_FLUSH);
-        if (err != Z_OK)
+        if (err != Z_OK) {
+            (void)deflateEnd(&stream);
             return_error(gs_error_VMerror);
+        }
         stream.next_out = &buffer->data[0];
         stream.avail_out = buffer->size;
         stream.total_out = 0;
