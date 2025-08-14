@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -248,7 +248,7 @@ gx_ciedefg_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *m
     rc_increment_cs(palt_cs);
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
     if ((*ppcs_icc)->cmm_icc_profile_data == NULL)
-        gs_throw(gs_error_VMerror, "Failed to create ICC profile");
+        return gs_throw(gs_error_VMerror, "Failed to create ICC profile");
     code = gsicc_create_fromdefg(pcs, &((*ppcs_icc)->cmm_icc_profile_data->buffer),
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory,
                     abc_caches, lmn_caches, defg_caches);
@@ -531,7 +531,7 @@ gx_ciedef_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *me
     rc_increment_cs(palt_cs);
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
     if ((*ppcs_icc)->cmm_icc_profile_data == NULL)
-        gs_throw(gs_error_VMerror, "Failed to create ICC profile");
+        return gs_throw(gs_error_VMerror, "Failed to create ICC profile");
     code = gsicc_create_fromdef(pcs, &((*ppcs_icc)->cmm_icc_profile_data->buffer),
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory,
                     abc_caches, lmn_caches, def_caches);
@@ -643,7 +643,7 @@ gx_cieabc_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, bool *islab,
     rc_increment_cs(palt_cs);
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
     if ((*ppcs_icc)->cmm_icc_profile_data == NULL)
-        gs_throw(gs_error_VMerror, "Failed to create ICC profile");
+        return gs_throw(gs_error_VMerror, "Failed to create ICC profile");
     code = gsicc_create_fromabc(pcs, &((*ppcs_icc)->cmm_icc_profile_data->buffer),
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory,
                     abc_caches, lmn_caches, islab);
@@ -757,7 +757,7 @@ gx_ciea_to_icc(gs_color_space **ppcs_icc, gs_color_space *pcs, gs_memory_t *memo
     rc_increment_cs(palt_cs);
     (*ppcs_icc)->cmm_icc_profile_data = gsicc_profile_new(NULL, memory, NULL, 0);
     if ((*ppcs_icc)->cmm_icc_profile_data == NULL)
-        gs_throw(gs_error_VMerror, "Failed to create ICC profile");
+        return gs_throw(gs_error_VMerror, "Failed to create ICC profile");
     code = gsicc_create_froma(pcs, &((*ppcs_icc)->cmm_icc_profile_data->buffer),
                     &((*ppcs_icc)->cmm_icc_profile_data->buffer_size), memory,
                     a_cache, lmn_caches);
