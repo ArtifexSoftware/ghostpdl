@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1398,7 +1398,7 @@ i_resize_object(gs_memory_t * mem, void *obj, size_t new_num_elements,
         return NULL;
 #endif
 
-    if (new_size_rounded != (obj_size_t)new_size_rounded)
+    if (new_size_rounded != (obj_size_t)new_size_rounded || new_size_rounded < new_size)
         return NULL;
 
     if (old_size_rounded == new_size_rounded) {
