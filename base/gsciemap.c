@@ -853,8 +853,11 @@ gs_colorspace_set_icc_equivalent(gs_color_space *pcs, bool *islab,
     int code = 0;
 
     *islab = false;  /* For non CIEABC cases */
-    if (pcs->icc_equivalent != NULL || !gs_color_space_is_PSCIE(pcs))
+    if (pcs->icc_equivalent != NULL)
         return 0;
+
+    if (!gs_color_space_is_PSCIE(pcs))
+        return_error(gs_error_unknownerror);
 
     switch( color_space_index ) {
        case gs_color_space_index_CIEDEFG:
@@ -871,6 +874,7 @@ gs_colorspace_set_icc_equivalent(gs_color_space *pcs, bool *islab,
             break;
         default:
              /* do nothing.  Sould never happen */
+             code = gs_note_error(gs_error_unknownerror);
              break;
     }
     return code;
