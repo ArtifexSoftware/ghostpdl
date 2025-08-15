@@ -915,6 +915,39 @@ currentdict /.pdf_hook_DSC_Creator undef
     /currentdistillerparams cvx /undefined signalerror
   } if
   .currentdistillerparams
+
+  % Ugly hackery to work around Adobe Duotone definitions and their incorrect tint transform
+  %
+  % Bug #708734 for a DeviceGray example
+  % The colorspace is defined as :
+  %
+  % /PhotoshopDuotoneColorSpace [/DeviceN [(Black)][/DeviceGray] {} bind
+  %
+  % Notice that /Black is 'upside down' wrt DeviceGray 0 Black == 1 Gray and vice versa
+  % So if we use the tint transform we'll get the wrong answer (inverted black/white)
+  % Acrobat (and presumably Photoshop) have a different definition of the space when the
+  % device doesn't support /Black (eg displays) which works correctly.
+  %
+  % Currently the PostScript code to determine which space to use calls currentdistillerparams
+  % and check ColorConversionStrategy to see if its /sRGB, if it is, then it uses the
+  % alternative space.
+  %
+  % This doesn't give us a 'correct' result, that would require a DeviceN definition with a
+  % modified (correct) tint transform, which we can't readily do because there is no bound
+  % function we can replace. This is as good as it gets.
+
+  userdict/Adobe_AGM_Core known {
+    userdict /Adobe_AGM_Core get
+    /PhotoshopDuotoneList known
+    {
+      %% We're calling currentdistillerparams in the middle of defining a PhotoshOP Duotone
+      %% this happens when Distiller produced PostScript wants to know if it should use the
+      %% (broken) Duotone definition, or use the alternate. We need it to use the alternate
+      %% because the Duotone has an incorrect tint transform.
+      %% We can do this by lying about the ColorConversionStrategy
+      dup /ColorConversionStrategy /sRGB put
+    } if
+  } if
 } .internalbind odef
 
 % Patch 'where' so that the distiller operators are only visible
