@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -171,6 +171,7 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
             )
             return_error(gs_error_typecheck);
         if (r_size(&rmisc) != 4 ||
+            r_size(&rprefix) > 4 ||
             rmisc.value.bytes[0] > MAX_CMAP_CODE_SIZE - r_size(&rprefix) ||
             rmisc.value.bytes[1] > 1 ||
             rmisc.value.bytes[2] > CODE_VALUE_MAX ||
