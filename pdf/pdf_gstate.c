@@ -1345,6 +1345,10 @@ static int build_type6_halftone(pdf_context *ctx, pdf_stream *halftone_stream, p
     ptp->height = h;
     ptp->height2 = 0;
 
+    if (ptp->width < 1 || ptp->width > max_int ||
+        ptp->height < 1 || ptp->height > max_int)
+        return_error(gs_error_rangecheck);
+
     ptp->bytes_per_sample = 1;
     ptp->transfer = 0;
     ptp->transfer_closure.proc = 0;
@@ -1398,6 +1402,10 @@ static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
     if (code < 0)
         return code;
     ptp->width2 = ptp->height2 = h;
+
+    if (ptp->width2 < 1 || ptp->width2 > max_int ||
+        ptp->width < 1 || ptp->width > max_int)
+        return_error(gs_error_rangecheck);
 
     ptp->bytes_per_sample = 1;
     ptp->transfer = 0;
@@ -1467,6 +1475,12 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
         return code;
     ptp->height2 = h;
 
+    if (ptp->width < 1 || ptp->width > max_int ||
+        ptp->height < 1 || ptp->height > max_int ||
+        ptp->width2 < 0 || ptp->width2 > max_int ||
+        ptp->height2 < 0 || ptp->height2 > max_int)
+        return_error(gs_error_rangecheck);
+
     ptp->bytes_per_sample = 2;
     ptp->transfer = 0;
     ptp->transfer_closure.proc = 0;
@@ -1479,7 +1493,7 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
     phtc->comp_number = gs_cname_to_colorant_number(ctx->pgs, (byte *)name, len, 1);
 
     if (ptp->width2 != 0 && ptp->height2 != 0) {
-        length = ((ptp->width * ptp->height) + (ptp->width2 * ptp->height2)) * 2;
+        length = (((int64_t)ptp->width * ptp->height) + ((int64_t)ptp->width2 * ptp->height2)) * 2;
     } else {
         length = (int64_t)ptp->width * (int64_t)ptp->height * 2;
     }
