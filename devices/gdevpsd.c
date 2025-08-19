@@ -555,6 +555,34 @@ const psd_device gs_psdrgbtags_device =
 };
 
 /*
+ * PSD device with RGB process color model.
+ */
+const psd_device gs_psdrgbtags16_device =
+{
+    psd_device_body(psdtags_initialize_device_procs, "psdrgbtags16",
+                    ARCH_SIZEOF_GX_COLOR_INDEX, /* Number of components - need a nominal 1 bit for each */
+                    GX_CINFO_POLARITY_ADDITIVE,
+                    ARCH_SIZEOF_GX_COLOR_INDEX * 16, 65535, 65535, GX_CINFO_SEP_LIN, "DeviceRGB"),
+    /* devn_params specific parameters */
+    { 16,	/* Bits per color - must match ncomp, depth, etc. above */
+      DevRGBTComponents,	/* Names of color model colorants */
+      3,			/* Number colorants for RGB. Tags added to extra in DevRGBTComponents */
+      0,			/* MaxSeparations has not been specified */
+      -1,			/* PageSpotColors has not been specified */
+      {0},			/* SeparationNames */
+      0,			/* SeparationOrder names */
+      {0, 1, 2, 3, 4, 5, 6, 7 },/* Initial component SeparationOrder */
+      1				/* Num reserved components */
+    },
+    { true },			/* equivalent CMYK colors for spot colors */
+    /* PSD device specific parameters */
+    psd_DEVICE_RGBT,		/* Color model */
+    GS_SOFT_MAX_SPOTS,		/* max_spots */
+    false,                      /* colorants not locked */
+    GX_DOWNSCALER_PARAMS_DEFAULTS
+};
+
+/*
  * PSD device with CMYK process color model and spot color support.
  */
 static void
