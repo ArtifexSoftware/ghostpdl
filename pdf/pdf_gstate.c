@@ -1345,8 +1345,8 @@ static int build_type6_halftone(pdf_context *ctx, pdf_stream *halftone_stream, p
     ptp->height = h;
     ptp->height2 = 0;
 
-    if (ptp->width < 1 || ptp->width > max_int ||
-        ptp->height < 1 || ptp->height > max_int)
+    if (ptp->width < 1 || w > max_int ||
+        ptp->height < 1 || h > max_int)
         return_error(gs_error_rangecheck);
 
     ptp->bytes_per_sample = 1;
@@ -1403,8 +1403,8 @@ static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
         return code;
     ptp->width2 = ptp->height2 = h;
 
-    if (ptp->width2 < 1 || ptp->width2 > max_int ||
-        ptp->width < 1 || ptp->width > max_int)
+    if (w < 1 || w > max_int ||
+        h < 1 || h > max_int)
         return_error(gs_error_rangecheck);
 
     ptp->bytes_per_sample = 1;
@@ -1463,6 +1463,10 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
         return code;
     ptp->height = h;
 
+    if (ptp->width < 1 || w > max_int ||
+        ptp->height < 1 || h > max_int)
+        return_error(gs_error_rangecheck);
+
     w = 0;
     code = pdfi_dict_get_int(ctx, halftone_dict, "Width2", &w);
     if (code < 0 && code != gs_error_undefined)
@@ -1475,10 +1479,8 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
         return code;
     ptp->height2 = h;
 
-    if (ptp->width < 1 || ptp->width > max_int ||
-        ptp->height < 1 || ptp->height > max_int ||
-        ptp->width2 < 0 || ptp->width2 > max_int ||
-        ptp->height2 < 0 || ptp->height2 > max_int)
+    if (ptp->width2 < 0 || w > max_int ||
+        ptp->height2 < 0 || h > max_int)
         return_error(gs_error_rangecheck);
 
     ptp->bytes_per_sample = 2;
