@@ -1145,7 +1145,11 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
         gp_uint16_to_utf8(driverbuf, unidrvbuf);
     }
     driver = gs_strtok(driverbuf, ",", &dbuflast);
+    if (driver == NULL)
+        goto cleanup;
     output = gs_strtok(NULL, ",", &dbuflast);
+    if (output == NULL)
+        goto cleanup;
 
     size = gp_utf8_to_uint16(NULL, driver);
     if (size >= 0)

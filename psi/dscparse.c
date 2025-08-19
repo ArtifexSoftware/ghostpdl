@@ -1093,18 +1093,20 @@ dsc_read_line(CDSC *dsc)
              */
             char begindata[MAXSTR+1], *bdatalast = NULL;
             int cnt;
-            const char *numberof, *bytesorlines;
+            const char *numberof = NULL, *bytesorlines = NULL;
             cnt = dsc->line_length;
             if (dsc->line_length > sizeof(begindata)-1)
                 cnt = sizeof(begindata)-1;
             memcpy(begindata, dsc->line, cnt);
             begindata[cnt] = '\0';
             numberof = gs_strtok(begindata+12, " \r\n", &bdatalast);
-            gs_strtok(NULL, " \r\n", &bdatalast);	/* dump type */
-            bytesorlines = gs_strtok(NULL, " \r\n", &bdatalast);
-            if (bytesorlines == NULL)
-                bytesorlines = "Bytes";
-
+            if (numberof != NULL) {
+                if (gs_strtok(NULL, " \r\n", &bdatalast) != NULL) {	/* dump type */
+                    bytesorlines = gs_strtok(NULL, " \r\n", &bdatalast);
+                    if (bytesorlines == NULL)
+                        bytesorlines = "Bytes";
+                }
+            }
             if ( (numberof == NULL) || (bytesorlines == NULL) ) {
                 /* invalid usage of %%BeginData */
                 /* ignore that we ever saw it */
