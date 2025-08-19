@@ -1260,6 +1260,9 @@ $(DD)psdcmyktags.dev : $(psd_) $(GLD)page.dev $(GDEV) $(DEVS_MAK) $(MAKEDIRS)
 $(DD)psdrgb16.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev $(GDEV)
 	$(SETDEV) $(DD)psdrgb16 $(psd_)
 
+$(DD)psdrgbtags16.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev $(GDEV)
+	$(SETDEV) $(DD)psdrgbtags16 $(psd_)
+
 $(DD)psdcmyk16.dev : $(DEVS_MAK) $(psd_) $(GLD)page.dev $(GDEV)
 	$(SETDEV) $(DD)psdcmyk16 $(psd_)
 
