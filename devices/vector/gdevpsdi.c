@@ -267,7 +267,12 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
             templat = lossless_template;
         } else if (templat == NULL || templat == &s_zlibE_template ||
                    templat == &s_LZWE_template) {
-            templat = &s_DCTE_template;
+            /* Although technically we can have a JPEG with width/height of65535 the DCT Encoder
+             * limits the dimensions to 65500. If the image would break that, then don't use
+             * DCT Encoding, or this will throw an error later.
+             */
+            if (pim->Width < 65500 && pim->Height < 65500)
+                templat = &s_DCTE_template;
         }
         dict = pdip->ACSDict;
     } else if (!lossless)
