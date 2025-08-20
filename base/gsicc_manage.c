@@ -712,7 +712,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
             srcgtag->cmyk_rend_cond[k].cmm = gsCMM_DEFAULT;
             srcgtag->gray_rend_cond[k].cmm = gsCMM_DEFAULT;
         }
-        while (start || strlen(curr_ptr) > 0) {
+        while (start || (curr_ptr != NULL && strlen(curr_ptr) > 0)) {
             if (start) {
                 curr_ptr = gs_strtok(buffer_ptr, "\t, \n\r", &last);
                 start = false;
