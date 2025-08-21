@@ -2573,32 +2573,35 @@ opvp_get_initial_matrix(gx_device *dev, gs_matrix *pmat)
 {
     gx_device_opvp * opdev = (gx_device_opvp *)dev;
     opvp_ctm_t omat;
+    bool is_opdev = (strncmp(dev->dname, gs_oprp_device.dname, strlen(gs_oprp_device.dname)) == 0 || strncmp(dev->dname, gs_opvp_device.dname, strlen(gs_opvp_device.dname)) == 0);
 
     gx_default_get_initial_matrix(dev,pmat);
-    if (opdev->globals.zooming) {
-        /* gs matrix */
-        pmat->xx *= opdev->globals.zoom[0];
-        pmat->xy *= opdev->globals.zoom[1];
-        pmat->yx *= opdev->globals.zoom[0];
-        pmat->yy *= opdev->globals.zoom[1];
-        pmat->tx = pmat->tx * opdev->globals.zoom[0] + opdev->globals.shift[0];
-        pmat->ty = pmat->ty * opdev->globals.zoom[1] + opdev->globals.shift[1];
-    }
+    if (is_opdev == true) {
+        if (opdev->globals.zooming) {
+            /* gs matrix */
+            pmat->xx *= opdev->globals.zoom[0];
+            pmat->xy *= opdev->globals.zoom[1];
+            pmat->yx *= opdev->globals.zoom[0];
+            pmat->yy *= opdev->globals.zoom[1];
+            pmat->tx = pmat->tx * opdev->globals.zoom[0] + opdev->globals.shift[0];
+            pmat->ty = pmat->ty * opdev->globals.zoom[1] + opdev->globals.shift[1];
+        }
 
-    if (opdev->is_open) {
-        /* call ResetCTM */
-        if (opdev->globals.apiEntry->opvpResetCTM) {
-            opdev->globals.apiEntry->opvpResetCTM(opdev->globals.printerContext);
-        } else {
-            /* call SetCTM */
-            omat.a = 1;
-            omat.b = 0;
-            omat.c = 0;
-            omat.d = 1;
-            omat.e = 0;
-            omat.f = 0;
-            if (opdev->globals.apiEntry->opvpSetCTM) {
-                opdev->globals.apiEntry->opvpSetCTM(opdev->globals.printerContext, &omat);
+        if (opdev->is_open) {
+            /* call ResetCTM */
+            if (opdev->globals.apiEntry->opvpResetCTM) {
+                opdev->globals.apiEntry->opvpResetCTM(opdev->globals.printerContext);
+            } else {
+                /* call SetCTM */
+                omat.a = 1;
+                omat.b = 0;
+                omat.c = 0;
+                omat.d = 1;
+                omat.e = 0;
+                omat.f = 0;
+                if (opdev->globals.apiEntry->opvpSetCTM) {
+                    opdev->globals.apiEntry->opvpSetCTM(opdev->globals.printerContext, &omat);
+                }
             }
         }
     }
