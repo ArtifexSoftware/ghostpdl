@@ -1832,7 +1832,6 @@ opvp_get_sizestring(float width, float height)
     char nbuff[OPVP_BUFF_SIZE];
     char nbuff1[OPVP_BUFF_SIZE / 2];
     char nbuff2[OPVP_BUFF_SIZE / 2];
-    static char *buff = NULL;
 
     memset((void*)nbuff, 0, OPVP_BUFF_SIZE);
     memset((void*)nbuff1, 0, OPVP_BUFF_SIZE / 2);
@@ -1844,7 +1843,7 @@ opvp_get_sizestring(float width, float height)
                 opvp_adjust_num_string(nbuff1),
                 opvp_adjust_num_string(nbuff2));
 
-    return opvp_alloc_string(&buff, nbuff);
+    return opvp_alloc_string(NULL, nbuff);
 }
 
 static  char *
@@ -1852,7 +1851,7 @@ opvp_get_mediasize(gx_device *pdev)
 {
     int i;
     char wbuff[OPVP_BUFF_SIZE];
-    static char *buff = NULL;
+    char *buff = NULL;
     const char *region;
     const char *name;
     float width;
@@ -1905,6 +1904,8 @@ opvp_gen_page_info(gx_device *dev)
     bool landscape;
     char tbuff[OPVP_BUFF_SIZE];
     gx_device_opvp *opdev = (gx_device_opvp*)dev;
+    char *string_size = NULL;
+    char *media_size = NULL;
 
     /* copies */
     if (!(opdev->globals.inkjet)) {
@@ -1917,15 +1918,20 @@ opvp_gen_page_info(gx_device *dev)
 
     landscape = (dev->MediaSize[0] < dev->MediaSize[1] ? false
                                                        : true);
+    string_size = opvp_get_sizestring(dev->x_pixels_per_inch, dev->y_pixels_per_inch);
+    media_size = opvp_get_mediasize(dev);
+
     memset((void*)tbuff, 0, OPVP_BUFF_SIZE);
-    snprintf(tbuff, OPVP_BUFF_SIZE - 1,
+    gs_snprintf(tbuff, OPVP_BUFF_SIZE - 1,
        "MediaCopy=%d;DeviceResolution=deviceResolution_%s;"
        "MediaPageRotation=%s;MediaSize=%s",
        num_copies,
-       opvp_get_sizestring(dev->x_pixels_per_inch, dev->y_pixels_per_inch),
+       string_size,
        (landscape ? "landscape" : "portrait"),
-       opvp_get_mediasize(dev));
+       media_size);
 
+    free(string_size);
+    free(media_size);
     opvp_alloc_string(&buff, tbuff);
 
     return buff;
