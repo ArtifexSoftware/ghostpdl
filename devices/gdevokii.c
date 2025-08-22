@@ -118,6 +118,9 @@ okiibm_print_page1(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high
         if (x_dpi / 60 >= sizeof(graphics_modes_9)/sizeof(graphics_modes_9[0])) {
             return_error(gs_error_rangecheck);
         }
+        if (pdev->HWResolution[1] != 72 && pdev->HWResolution[1] != 144)
+            return_error(gs_error_configurationerror);
+
         in_y_mult = (y_9pin_high ? 2 : 1);
         line_size = gdev_mem_bytes_per_scan_line((gx_device *)pdev);
         /* Note that in_size is a multiple of 8. */
@@ -128,6 +131,9 @@ okiibm_print_page1(gx_device_printer *pdev, gp_file *prn_stream, int y_9pin_high
         out = buf2;
         out_y_mult = 1;
         start_graphics = graphics_modes_9[x_dpi / 60];
+        if (start_graphics < 0)
+            return_error(gs_error_configurationerror);
+
         first_pass = (start_graphics == 3 ? 1 : 0);
         last_pass = first_pass * 2;
         y_passes = (y_9pin_high ? 2 : 1);
