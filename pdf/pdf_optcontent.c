@@ -361,6 +361,85 @@ pdfi_oc_check_OCMD(pdf_context *ctx, pdf_dict *ocdict)
     return is_visible;
 }
 
+static bool pdfi_must_check_usage(pdf_context *ctx, int64_t object)
+{
+    pdf_dict *D = NULL, *EventDict = NULL;
+    pdf_array *AS = NULL, *OCGs = NULL;
+    pdf_name *Event = NULL;
+    bool check = false;
+    int i, code = 0;
+
+    if (ctx->OCProperties != NULL) {
+        if (pdfi_dict_knownget_type(ctx, ctx->OCProperties, "D", PDF_DICT, (pdf_obj **)&D)) {
+            if (pdfi_dict_knownget_type(ctx, D, "AS", PDF_ARRAY, (pdf_obj **)&AS)) {
+                for (i = 0; i < pdfi_array_size(AS); i++) {
+                    code = pdfi_array_get(ctx, AS, i, (pdf_obj **)&EventDict);
+                    if (code < 0)
+                        goto exit;
+                    if (pdfi_type_of(EventDict) == PDF_DICT) {
+                        if (pdfi_dict_knownget_type(ctx, EventDict, "Event", PDF_NAME, (pdf_obj **)&Event)) {
+                            if (ctx->args.printed) {
+                                if (Event->length == 5 && strncmp((const char *)Event->data, "Print", 5) == 0) {
+                                    if (pdfi_dict_knownget_type(ctx, EventDict, "OCGs", PDF_ARRAY, (pdf_obj **)&OCGs)) {
+                                        pdfi_countdown(Event);
+                                        Event = NULL;
+                                        pdfi_countdown(EventDict);
+                                        EventDict = NULL;
+                                        break;
+                                    }
+                                }
+                            } else {
+                                if (Event->length == 4 && strncmp((const char *)Event->data, "View", 4) == 0) {
+                                    if (pdfi_dict_knownget_type(ctx, EventDict, "OCGs", PDF_ARRAY, (pdf_obj **)&OCGs)) {
+                                        pdfi_countdown(Event);
+                                        Event = NULL;
+                                        pdfi_countdown(EventDict);
+                                        EventDict = NULL;
+                                        break;
+                                    }
+                                }
+                            }
+                            pdfi_countdown(Event);
+                            Event = NULL;
+                        }
+                    }
+                    pdfi_countdown(EventDict);
+                    EventDict = NULL;
+                }
+                pdfi_countdown(AS);
+                AS = NULL;
+                if (OCGs) {
+                    pdf_obj *Group = NULL;
+
+                    for (i = 0; i < pdfi_array_size(OCGs); i++) {
+                        code = pdfi_array_get(ctx, OCGs, i, (pdf_obj **)&Group);
+                        if (code < 0)
+                            goto exit;
+                        if (Group->object_num == object) {
+                            pdfi_countdown(Group);
+                            check = true;
+                            goto exit;
+                        }
+                        pdfi_countdown(Group);
+                        Group == NULL;
+                    }
+                    pdfi_countdown(OCGs);
+                    OCGs = NULL;
+                }
+            }
+            pdfi_countdown(D);
+            D = NULL;
+        }
+    }
+exit:
+    pdfi_countdown(OCGs);
+    pdfi_countdown(Event);
+    pdfi_countdown(EventDict);
+    pdfi_countdown(AS);
+    pdfi_countdown(D);
+    return check;
+}
+
 /* Check if an OCG or OCMD is visible, passing in OC dict */
 bool
 pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
@@ -379,7 +458,7 @@ pdfi_oc_is_ocg_visible(pdf_context *ctx, pdf_dict *ocdict)
         is_visible = pdfi_oc_check_OCMD(ctx, ocdict);
     } else if (pdfi_name_is(type, "OCG")) {
         is_visible = pdfi_get_default_OCG_val(ctx, ocdict);
-        if (is_visible)
+        if (pdfi_must_check_usage(ctx, ocdict->object_num))
             is_visible = pdfi_oc_check_OCG_usage(ctx, ocdict);
     } else {
         char str[100];
