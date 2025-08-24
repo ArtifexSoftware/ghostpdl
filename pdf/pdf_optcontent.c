@@ -421,7 +421,7 @@ static bool pdfi_must_check_usage(pdf_context *ctx, int64_t object)
                             goto exit;
                         }
                         pdfi_countdown(Group);
-                        Group == NULL;
+                        Group = NULL;
                     }
                     pdfi_countdown(OCGs);
                     OCGs = NULL;
