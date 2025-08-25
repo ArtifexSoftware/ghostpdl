@@ -1291,8 +1291,14 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
             if (uid_is_XUID(&cfont->UID)){
                 int size = uid_XUID_size(&cfont->UID);
                 long *xvalues = uid_XUID_values(&cfont->UID);
-                if (xvalues && size >= 2 && xvalues[0] == 1000000) {
-                    if (xvalues[size - 1] != pdfont->XUID)
+
+                if (xvalues && size == 3 && xvalues[0] == 1000000) {
+                    int XUIDi = 0;
+
+                    for (XUIDi = 0;XUIDi < size; XUIDi++)
+                        if (pdfont->XUID_Vals[XUIDi] != xvalues[XUIDi])
+                            break;
+                    if (XUIDi < size)
                         continue;
                 }
             }
@@ -1554,7 +1560,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     pdf_standard_font_t *const psfa =
         pdev->text->outline_fonts->standard_fonts;
     int code = 0;
-    long XUID = 0;
+    long XUID[3] = {0,0,0};
+    int XUIDi = 0;
     gs_font_base *bfont = (gs_font_base *)font;
 
     if (pdev->version < psdf_version_level2_with_TT) {
@@ -1606,8 +1613,9 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     if (uid_is_XUID(&bfont->UID)){
         int size = uid_XUID_size(&bfont->UID);
         long *xvalues = uid_XUID_values(&bfont->UID);
-        if (xvalues && size >= 2 && xvalues[0] == 1000000) {
-            XUID = xvalues[size - 1];
+        if (xvalues && size == 3 && xvalues[0] == 1000000) {
+            for (XUIDi = 0;XUIDi < size; XUIDi++)
+                XUID[XUIDi] = xvalues[XUIDi];
         }
     }
 
@@ -1630,7 +1638,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         code = pdf_make_font3_resource(pdev, font, ppdfont);
         if (code < 0)
             return code;
-        (*ppdfont)->XUID = XUID;
+        for (XUIDi = 0;XUIDi < 3; XUIDi++)
+            (*ppdfont)->XUID_Vals[XUIDi] = XUID[XUIDi];
         return 1;
     default:
         return_error(gs_error_invalidfont);
@@ -1672,7 +1681,9 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
         )
         return code;
 
-    pdfont->XUID = XUID;
+    for (XUIDi = 0;XUIDi < 3; XUIDi++)
+        pdfont->XUID_Vals[XUIDi] = XUID[XUIDi];
+
     pdf_do_subset_font(pdev, pfd->base_font, -1);
     if (!embed)
         pfd->base_font->do_subset = false;
