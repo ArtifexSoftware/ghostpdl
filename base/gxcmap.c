@@ -1044,7 +1044,7 @@ cmap_rgb_halftoned(frac r, frac g, frac b, gx_device_color * pdc,
         for (i = 0; i < n; i++)
             cm_comps[i] = gx_map_color_frac(pgs,
                                 cm_comps[i], effective_transfer[i]);
-        for (; i < n; i++)
+        for (; i < nc; i++)
             cm_comps[i] = frac_1 - gx_map_color_frac(pgs,
                         (frac)(frac_1 - cm_comps[i]), effective_transfer[i]);
     }
