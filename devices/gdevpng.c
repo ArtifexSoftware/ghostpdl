@@ -420,7 +420,7 @@ png_get_params_mfs(gx_device *dev, gs_param_list *plist)
     gx_device_png *pdev = (gx_device_png *)dev;
     int code, ecode;
 
-    if ((code = param_write_int(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
+    if ((code = param_write_bool(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
         ecode = code;
 
     if ((code = gx_downscaler_write_params(plist, &pdev->downscale, GX_DOWNSCALER_PARAMS_MFS)) < 0)
@@ -971,7 +971,7 @@ pngalpha_get_params(gx_device * pdev, gs_param_list * plist)
     if (code >= 0) {
         code = param_write_int(plist, "BackgroundColor",
                                 &(ppdev->background));
-        if ((ecode = param_write_int(plist, "EmbedProfile", &ppdev->EmbedProfile)) < 0)
+        if ((ecode = param_write_bool(plist, "EmbedProfile", &ppdev->EmbedProfile)) < 0)
             code = ecode;
         if ((ecode = gx_downscaler_write_params(plist, &ppdev->downscale, 0)) < 0)
             code = ecode;
