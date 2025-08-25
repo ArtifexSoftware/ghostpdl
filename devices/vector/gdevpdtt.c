@@ -1292,10 +1292,10 @@ pdf_find_font_resource(gx_device_pdf *pdev, gs_font *font,
                 int size = uid_XUID_size(&cfont->UID);
                 long *xvalues = uid_XUID_values(&cfont->UID);
 
-                if (xvalues && size == 3 && xvalues[0] == 1000000) {
+                if (xvalues && size >= 3 && xvalues[0] == 1000000) {
                     int XUIDi = 0;
 
-                    for (XUIDi = 0;XUIDi < size; XUIDi++)
+                    for (XUIDi = 0;XUIDi < 3; XUIDi++)
                         if (pdfont->XUID_Vals[XUIDi] != xvalues[XUIDi])
                             break;
                     if (XUIDi < size)
@@ -1613,8 +1613,8 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     if (uid_is_XUID(&bfont->UID)){
         int size = uid_XUID_size(&bfont->UID);
         long *xvalues = uid_XUID_values(&bfont->UID);
-        if (xvalues && size == 3 && xvalues[0] == 1000000) {
-            for (XUIDi = 0;XUIDi < size; XUIDi++)
+        if (xvalues && size >= 3 && xvalues[0] == 1000000) {
+            for (XUIDi = 0;XUIDi < 3; XUIDi++)
                 XUID[XUIDi] = xvalues[XUIDi];
         }
     }
