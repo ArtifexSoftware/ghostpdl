@@ -270,7 +270,8 @@ gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
             penum->use_cie_range = (get_cie_range(penum->pcs) != NULL);
         }
     }
-    if (!gx_device_uses_std_cmap_procs(penum->dev, penum->pgs)) {
+    if (!gx_device_uses_std_cmap_procs(penum->dev, penum->pgs) ||
+        penum->dev->color_info.depth > ARCH_SIZEOF_COLOR_INDEX) {
         *render_fn = &image_render_color_DeviceN;
         return code;
     }
