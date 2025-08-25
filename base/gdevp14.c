@@ -2457,9 +2457,16 @@ pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profi
         &render_cond);
 
 #if RAW_DUMP
-    dump_raw_buffer(dev->ctx->memory,
-        height, width, (*buf)->n_planes, (*buf)->planestride,
-        (*buf)->rowstride, "pdf14_put_image_color_convert_pre", *buf_ptr, (*buf)->deep);
+#if !ARCH_IS_BIG_ENDIAN
+    if (was_blended && (*buf)->deep)
+      dump_raw_buffer_be(dev->ctx->memory,
+          height, width, (*buf)->n_planes, (*buf)->planestride,
+          (*buf)->rowstride, "pdf14_put_image_color_convert_pre", *buf_ptr, (*buf)->deep);
+    else
+#endif
+      dump_raw_buffer(dev->ctx->memory,
+          height, width, (*buf)->n_planes, (*buf)->planestride,
+          (*buf)->rowstride, "pdf14_put_image_color_convert_pre", *buf_ptr, (*buf)->deep);
     global_index++;
 #endif
 
