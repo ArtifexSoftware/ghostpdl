@@ -1041,11 +1041,12 @@ int pdfi_prep_collection(pdf_context *ctx, uint64_t *TotalFiles, char ***names_a
                                                 char Buffer[2048];
                                                 int bytes;
 
-                                                bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 2048, s);
+                                                bytes = pdfi_read_bytes(ctx, (byte *)Buffer, 1, 2047, s);
                                                 pdfi_close_file(ctx, s);
                                                 s = NULL;
                                                 /* Assertion; the smallest real PDF file is at least 400 bytes */
                                                 if (bytes >= 400) {
+                                                    Buffer[bytes] = 0x00;
                                                     if (strstr(Buffer, "%PDF-") == NULL)
                                                         code = -1;
                                                 } else
