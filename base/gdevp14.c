@@ -9397,7 +9397,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         /* we need to copy them (allocating new names) so the colorants are in the */
         /* same order as the target device.                                        */
         if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
-            code = devn_copy_params(target, (gx_device *)pdev);
+            code = devn_copy_params(target, (gx_device *)*pdev);
             if (code < 0)
                 return code;
         }
@@ -10507,7 +10507,7 @@ get_pdf14_clist_device_proto(gx_device          *dev,
     /* overprint overide */
     if (pdf14pct->params.overprint_sim_push &&
         blend_cs_state == PDF14_BLEND_CS_UNSPECIFIED) {
-        int has_tags = device_encodes_tags(dev);
+
         if (pdf14pct->params.num_spot_colors_int > 0) {
             dev_cs = PDF14_DeviceCMYKspot;
             num_spots = pdf14pct->params.num_spot_colors_int;
