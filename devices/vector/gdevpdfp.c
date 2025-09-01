@@ -358,7 +358,7 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
                 break;
             case UseOCRAlways:
                 ocrstr.data = (const byte *)"Always";
-                ocrstr.size = 8;
+                ocrstr.size = 6;
                 ocrstr.persistent = false;
                 break;
         }

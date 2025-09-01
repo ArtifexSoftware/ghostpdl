@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2024 Artifex Software, Inc.
+/* Copyright (C) 2020-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -688,7 +688,7 @@ int ocr_bitmap_to_unicodes(void *state,
 #endif
 
                 const unsigned char *graph = (unsigned char *)res_it->GetUTF8Text(tesseract::RIL_SYMBOL);
-                if (graph && graph[0] != 0) {
+                if (graph && graph[0] != 0 && count < max_chars) {
                     /* Quick and nasty conversion from UTF8 to unicode. */
                     if (graph[0] < 0x80)
                         unicode[count] = graph[0];
