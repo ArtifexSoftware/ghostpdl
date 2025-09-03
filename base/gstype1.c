@@ -462,7 +462,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                                     pcis->flex_count = flex_max;	/* not inside flex */
                                     continue;
                                 case 1:
-                                    CS_CHECK_POP(csp, cstack);
+                                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
+                                        return_error(gs_error_invalidfont);
                                     code = t1_hinter__flex_beg(h);
                                     if (code < 0)
                                         return code;
@@ -470,7 +471,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                                     csp -= 2;
                                     continue;
                                 case 2:
-                                    CS_CHECK_POP(csp, cstack);
+                                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
+                                        return_error(gs_error_invalidfont);
                                     if (pcis->flex_count >= flex_max)
                                         return_error(gs_error_invalidfont);
                                     code = t1_hinter__flex_point(h);
@@ -479,7 +481,8 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                                     csp -= 2;
                                     continue;
                                 case 3:
-                                    CS_CHECK_POP(csp, cstack);
+                                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
+                                        return_error(gs_error_invalidfont);
                                     /* Assume the next opcode is a `pop'. */
                                     /* See above as to why we don't just */
                                     /* look ahead in the opcode stream. */
