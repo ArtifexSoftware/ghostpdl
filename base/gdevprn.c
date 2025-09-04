@@ -953,6 +953,9 @@ gdev_prn_output_page_aux(gx_device * pdev, int num_copies, int flush, bool seeka
 
     prn_finish_bg_print(ppdev);		/* finish any previous background printing */
 
+    if (pdev->width < 1 || pdev->height < 1 || pdev->HWResolution[0] <= 0 || pdev->HWResolution[1] <= 0)
+        return_error(gs_error_configurationerror);
+
     if (num_copies > 0 && ppdev->saved_pages_list != NULL) {
         /* We are putting pages on a list */
         if ((code = gx_saved_pages_list_add(ppdev)) < 0)
