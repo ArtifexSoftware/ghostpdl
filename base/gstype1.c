@@ -512,6 +512,12 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                                 case 18:
                                     num_results = 6;
   blend:
+                                    /* We need to check for the number of operands value on the stack */
+                                    CS_CHECK_POP(csp, cstack);
+                                    /* Then check that all those operands are available on the stack */
+                                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[-fixed2int_var(csp[-1])], cstack))
+                                        return_error(gs_error_invalidfont);
+
                                     code = gs_type1_blend(pcis, csp,
                                                           num_results);
                                     if (code < 0)
