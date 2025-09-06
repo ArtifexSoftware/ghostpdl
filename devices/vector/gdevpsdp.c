@@ -1281,7 +1281,7 @@ exit:
             if (params.PSPageOptions.size != 0 && params.PSPageOptions.data != pdev->params.PSPageOptions.data) {
                 int ix;
 
-                for (ix = 0; ix < pdev->params.PSPageOptions.size;ix++)
+                for (ix = 0; ix < params.PSPageOptions.size;ix++)
                     gs_free_object(mem->non_gc_memory, (byte *)params.PSPageOptions.data[ix].data, "freeing old string array copy");
                 gs_free_object(mem->non_gc_memory, (byte *)params.PSPageOptions.data, "freeing old string array");
             }
