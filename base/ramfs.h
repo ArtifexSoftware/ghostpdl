@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -45,6 +45,7 @@ typedef struct _ramfs_enum ramfs_enum;
 #define RAMFS_NOMEM 6
 #define RAMFS_NOSPACE 7
 #define RAMFS_BADRANGE 8
+#define RAMFS_DELETEOPENFILE 9
 
 /* Open mode flags */
 #define RAMFS_READ   s_mode_read      /* 1 */
