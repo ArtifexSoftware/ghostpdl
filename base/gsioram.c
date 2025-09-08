@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -123,6 +123,8 @@ ramfs_errno_to_code(int error_number) {
         return_error(gs_error_VMerror);
     case RAMFS_BADRANGE:
         return_error(gs_error_rangecheck);
+    case RAMFS_DELETEOPENFILE:
+        return_error(gs_error_ioerror);
     /* just in case */
     default:
         return_error(gs_error_ioerror);

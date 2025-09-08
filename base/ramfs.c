@@ -217,9 +217,10 @@ ramhandle * ramfs_open(gs_memory_t *mem, ramfs* fs,const char * filename,int mod
         thisdirent->inode = file;
         thisdirent->next = fs->files;
         fs->files = thisdirent;
+    } else {
+        file = thisdirent->inode;
+        file->refcount++;
     }
-    file = thisdirent->inode;
-    file->refcount++;
 
     handle = gs_alloc_struct(fs->memory, ramhandle, &st_ramhandle, "new ram directory entry");
     if(!handle) {
@@ -245,9 +246,6 @@ static void unlink_node(ramfile * inode)
 {
     int c;
 
-    --inode->refcount;
-    if(inode->refcount) return;
-
     /* remove the file and its data */
     for(c=0;c<inode->blocks;c++) {
         gs_free_object(inode->fs->memory, inode->data[c], "unlink node");
@@ -271,6 +269,11 @@ int ramfs_unlink(ramfs * fs,const char *filename)
         }
         if(strcmp(thisdirent->filename,filename) == 0) break;
         last = &(thisdirent->next);
+    }
+
+    if (thisdirent->inode->refcount != 0) {
+        fs->last_error = RAMFS_DELETEOPENFILE;
+        return -1;
     }
 
     unlink_node(thisdirent->inode);
@@ -482,7 +485,7 @@ static int ramfile_truncate(ramhandle * handle,int size)
 void ramfile_close(ramhandle * handle)
 {
     ramfile * file = handle->file;
-    unlink_node(file);
+    file->refcount--;
     gs_free_object(handle->file->fs->memory, handle, "ramfs close");
 }
 
