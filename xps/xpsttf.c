@@ -143,7 +143,7 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     ulong format;
     int numGlyphs;
     uint glyph_name_index;
-    const byte *postp; /* post table pointer */
+    const byte *postp, *indexp; /* post table pointer */
     xps_font_t *font = pfont->client_data;
 
     if (glyph >= GS_MIN_GLYPH_INDEX) {
@@ -217,7 +217,11 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
     }
 
     /* glyph name index starts at post + 34 each entry is 2 bytes */
-    glyph_name_index = u16(postp + 34 + (glyph * 2));
+    indexp = postp + 34 + (glyph * 2);
+    if (indexp > (postp + table_length - 2))
+        return gs_throw(-1, "post table format error");
+
+    glyph_name_index = u16(indexp);
 
     /* this shouldn't happen */
     if ( glyph_name_index > 0x7fff )
@@ -249,6 +253,8 @@ xps_true_callback_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *ps
         {
             pascal_stringp += ((int)(*pascal_stringp)+1);
             glyph_name_index--;
+            if (pascal_stringp >= postp + table_length)
+                return gs_throw(-1, "data out of range");
         }
 
         /* length byte */
