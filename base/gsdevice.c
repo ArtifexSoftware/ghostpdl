@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -462,7 +462,10 @@ gs_opendevice(gx_device *dev)
 
         if (code < 0)
             return_error(code);
-        dev->is_open = true;
+        while (dev) {
+            dev->is_open = true;
+            dev = dev->child;
+        }
         return 1;
     }
 }
