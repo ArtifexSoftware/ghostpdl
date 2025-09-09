@@ -88,7 +88,7 @@ typedef struct wedge_vertex_list_elem_s wedge_vertex_list_elem_t;
 struct wedge_vertex_list_elem_s {
     gs_fixed_point p;
     int level;
-    bool divide_count;
+    int divide_count;
     wedge_vertex_list_elem_t *next, *prev;
 };
 typedef struct {
