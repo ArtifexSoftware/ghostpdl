@@ -16,6 +16,8 @@ Ghostscript Release Dates
 Version 10
 -------------------
 
+Version 10.06.0 (2025-09-09)
+
 Version 10.05.1 (2025-04-29)
 
 Version 10.05.0 (2025-03-12)

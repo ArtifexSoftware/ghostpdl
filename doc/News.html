@@ -5,38 +5,20 @@
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
-<h2><a name="Version10.05.1"></a>Version 10.05.1 (2025-04-29)</h2>
+<h2><a name="Version10.06.0"></a>Version 10.06.0 (2025-09-09)</h2>
 <p> Highlights in this release include:
 <ul>
 </li>
 <li>
-<p>The 10.05.1 patch release addresses:
+<p>The 10.06.0 release is a maintenance release:
 <ul>
-<li>
-<p>An overflow issue in Freetype on platforms where <code>long</code> is a 4 byte (rather than 8 byte) type (Microsoft Windows, for example)
-causing corrupted glyph rendering at higher resolutions
-</li>
-<li>
-<p>An issue with embedded files, affecting Zugferd format PDF creation.
-</li>
-<li>
-<p>Broken logic in PDF Optional Content processing
-</li>
-<li>
-<p>Potential slow down due to searching for identifiable font files
-</li>
-<li>
-<p>A small number of extreme edge case segmentation faults.
-</li>
 </ul>
 </li>
 <li>
-<p>This release addresses CVEs: CVE-2025-27835, CVE-2025-27832, CVE-2025-27831, CVE-2025-27836, CVE-2025-27830, CVE-2025-27833, CVE-2025-27837, CVE-2025-27834, CVE-2025-46646
-</li>
+<p>This release addresses CVEs: TBC</li>
 <li>
-<p>The 10.05.1 release deprecates the non-standard operator &quot;selectdevice&quot;,
-all code should now be using the standard &quot;setpagedevice&quot; operator. &quot;selectdevice&quot; will be removed
-in the 10.06.0 release.
+<p>The 10.06.0 removes the non-standard operator &quot;selectdevice&quot;,
+all code should now be using the standard &quot;setpagedevice&quot; operator.
 </li>
 <li>
 <p>We now support production of PDF/X-1a and PDF/X-4a in addition to the existing support for PDF/X-3
@@ -62,15 +44,14 @@ community demand for the feature.
 </ul>
 <p>For a list of open issues, or to report problems,
 please visit <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a>.
-<h3><a name="10.05.1_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="10.06.0_Incompatible_changes"></a>Incompatible changes</h3>
 <h4>Included below are incompatible changes from recent releases (the
 specific release in question is listed in parentheses). We include these,
 for now, as we are aware that not everyone upgrades with every release.</h4>
 <ul>
 <li>
-<p>(10.05.1) The 10.05.1 release deprecates the non-standard operator &quot;selectdevice&quot;,
-all code should now be using the standard &quot;setpagedevice&quot; operator. &quot;selectdevice&quot; will be removed
-in the 10.06.0 release.
+<p>The 10.06.0 removes the non-standard operator &quot;selectdevice&quot;,
+all code should now be using the standard &quot;setpagedevice&quot; operator.
 </li>
 <li>
 <p><b>IMPORTANT:</b> (10.04.0) we added protection for device selection from PostScript input. This will mean that, by default,
@@ -153,12 +134,12 @@ change in behaviour compared to the old code which, on Windows, was case
 in that it now supports (although does not enforce) case sensitivity.
 </li>
 </ul>
-<h3><a name="10.05.1_changelog"></a>Changelog</h3>
+<h3><a name="10.06.0_changelog"></a>Changelog</h3>
 <p>From 9.55.0 onwards, in recognition of how unwieldy very large HTML files can become
 (History9.html had reached 8.1Mb!), we intend to only include the summary highlights (above).
 <p>For anyone wanting the full details of the changes in
 a release, we ask them to look at the history in our public git repository:
-<a href="https://cgit.ghostscript.com/cgi-bin/cgit.cgi/ghostpdl.git/log/?h=gs10.05.1">ghostpdl-10.05.1</a> log.
+<a href="https://cgit.ghostscript.com/cgi-bin/cgit.cgi/ghostpdl.git/log/?h=gs10.06.0">ghostpdl-10.06.0</a> log.
 <p>If this change does not draw negative feedback, History?.htm file(s) will be removed from the release archives.
 
 <!-- [2.0 end contents] ==================================================== -->
@@ -180,7 +161,7 @@ license.  Refer to licensing information at <a href="https://www.artifex.com">ht
 or contact Artifex Software, Inc., 39 Mesa Street, Suite 108A, San Francisco, CA 94129, USA,
 
 <p>
-<small>Ghostscript version 10.05.1, 29 April 2025
+<small>Ghostscript version 10.06.0, 9 September 2025
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
