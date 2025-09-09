@@ -1175,6 +1175,15 @@ xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
     if (tiff->rowsperstrip > tiff->imagelength)
         tiff->rowsperstrip = tiff->imagelength;
 
+    if (tiff->bitspersample != 1 && tiff->bitspersample != 4 && tiff->bitspersample != 8 && tiff->bitspersample != 16)
+        return gs_rethrow(error, "Illegal BitsPerSample in TIFF header");
+
+    if (tiff->samplesperpixel != 1 && tiff->samplesperpixel != 3 && tiff->samplesperpixel != 4 && tiff->samplesperpixel != 5)
+        return gs_rethrow(error, "Illegal SamplesPerPixel in TIFF header");
+
+    if (tiff->compression < 1 || (tiff->compression > 5 && (tiff->compression != 7 && tiff->compression != 32773)))
+        return gs_rethrow(error, "Illegal Compression in TIFF header");
+
     error = xps_decode_tiff_strips(ctx, tiff, image);
     if (error)
         return gs_rethrow(error, "could not decode image data");
