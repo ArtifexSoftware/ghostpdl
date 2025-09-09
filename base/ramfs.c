@@ -232,7 +232,7 @@ ramhandle * ramfs_open(gs_memory_t *mem, ramfs* fs,const char * filename,int mod
     handle->filepos = 0;
     handle->mode = mode;
 
-    if(mode & RAMFS_TRUNC) {
+    if(mode & RAMFS_TRUNC && file->size != 0) {
         resize(file,0);
     }
     return handle;
