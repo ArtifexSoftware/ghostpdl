@@ -191,7 +191,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     row_alpha = data;
     out_raster = bitmap_raster(width * (size_t)byte_depth);
-    if (check_64bit_multiply(out_raster, ncomps, &product) != 0)
+    if (check_64bit_multiply(out_raster, ncomps, (int64_t *) &product) != 0)
         return gs_note_error(gs_error_undefinedresult);
     gb_buff = gs_alloc_bytes(mem, product, "copy_alpha_hl_color(gb_buff)");
     if (gb_buff == 0) {
