@@ -370,17 +370,17 @@ static bool pdfi_must_check_usage(pdf_context *ctx, int64_t object)
     int i, code = 0;
 
     if (ctx->OCProperties != NULL) {
-        if (pdfi_dict_knownget_type(ctx, ctx->OCProperties, "D", PDF_DICT, (pdf_obj **)&D)) {
-            if (pdfi_dict_knownget_type(ctx, D, "AS", PDF_ARRAY, (pdf_obj **)&AS)) {
+        if (pdfi_dict_knownget_type(ctx, ctx->OCProperties, "D", PDF_DICT, (pdf_obj **)&D) > 0) {
+            if (pdfi_dict_knownget_type(ctx, D, "AS", PDF_ARRAY, (pdf_obj **)&AS) > 0) {
                 for (i = 0; i < pdfi_array_size(AS); i++) {
                     code = pdfi_array_get(ctx, AS, i, (pdf_obj **)&EventDict);
                     if (code < 0)
                         goto exit;
                     if (pdfi_type_of(EventDict) == PDF_DICT) {
-                        if (pdfi_dict_knownget_type(ctx, EventDict, "Event", PDF_NAME, (pdf_obj **)&Event)) {
+                        if (pdfi_dict_knownget_type(ctx, EventDict, "Event", PDF_NAME, (pdf_obj **)&Event) > 0) {
                             if (ctx->args.printed) {
                                 if (Event->length == 5 && strncmp((const char *)Event->data, "Print", 5) == 0) {
-                                    if (pdfi_dict_knownget_type(ctx, EventDict, "OCGs", PDF_ARRAY, (pdf_obj **)&OCGs)) {
+                                    if (pdfi_dict_knownget_type(ctx, EventDict, "OCGs", PDF_ARRAY, (pdf_obj **)&OCGs) > 0) {
                                         pdfi_countdown(Event);
                                         Event = NULL;
                                         pdfi_countdown(EventDict);
@@ -390,7 +390,7 @@ static bool pdfi_must_check_usage(pdf_context *ctx, int64_t object)
                                 }
                             } else {
                                 if (Event->length == 4 && strncmp((const char *)Event->data, "View", 4) == 0) {
-                                    if (pdfi_dict_knownget_type(ctx, EventDict, "OCGs", PDF_ARRAY, (pdf_obj **)&OCGs)) {
+                                    if (pdfi_dict_knownget_type(ctx, EventDict, "OCGs", PDF_ARRAY, (pdf_obj **)&OCGs) > 0) {
                                         pdfi_countdown(Event);
                                         Event = NULL;
                                         pdfi_countdown(EventDict);
