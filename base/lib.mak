@@ -2060,51 +2060,92 @@ $(GLOBJ)szlibd.$(OBJ) : $(GLOBJ)szlibd_$(SHARE_ZLIB).$(OBJ) $(LIB_MAK) $(MAKEDIR
 
 sbrotlic_=$(GLOBJ)sbrotlic.$(OBJ)
 
+$(GLOBJ)sbrotlic_.$(OBJ) : $(GLSRC)sbrotlic.c $(AK) $(std_h)\
+ $(gserrors_h) $(gsmemory_h) \
+ $(gsstruct_h) $(gstypes_h)\
+ $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=0$(_D) $(GLO_)sbrotlic_.$(OBJ) $(C_) $(GLSRC)sbrotlic.c
+
 $(GLOBJ)sbrotlic_1.$(OBJ) : $(GLSRC)sbrotlic.c $(AK) $(std_h)\
  $(gserrors_h) $(gsmemory_h) \
  $(gsstruct_h) $(gstypes_h)\
  $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
-	$(GLBROTLICC) $(GLO_)sbrotlic_1.$(OBJ) $(C_) $(GLSRC)sbrotlic.c
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=1$(_D) $(GLO_)sbrotlic_1.$(OBJ) $(C_) $(GLSRC)sbrotlic.c
 
 $(GLOBJ)sbrotlic_0.$(OBJ) : $(GLSRC)sbrotlic.c $(AK) $(std_h)\
  $(gserrors_h) $(gsmemory_h) \
  $(gsstruct_h) $(gstypes_h) $(brotli_h)\
  $(strimpl_h) $(sbrotlix_h_0) $(LIB_MAK) $(MAKEDIRS)
-	$(GLBROTLICC) $(GLO_)sbrotlic_0.$(OBJ) $(C_) $(GLSRC)sbrotlic.c
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=1$(_D) $(GLO_)sbrotlic_0.$(OBJ) $(C_) $(GLSRC)sbrotlic.c
 
 $(GLOBJ)sbrotlic.$(OBJ) : $(GLOBJ)sbrotlic_$(SHARE_BROTLI).$(OBJ) $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)sbrotlic_$(SHARE_BROTLI).$(OBJ) $(GLOBJ)sbrotlic.$(OBJ)
 
 sbrotlie_=$(sbrotlic_) $(GLOBJ)sbrotlie.$(OBJ)
-$(GLD)sbrotlie.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)brotlie.dev $(sbrotlie_) \
+
+$(GLD)sbrotlie_.dev : $(LIB_MAK) $(ECHOGS_XE) $(sbrotlie_) \
  $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)sbrotlie $(sbrotlie_)
-	$(ADDMOD) $(GLD)sbrotlie -include $(ZGENDIR)$(D)brotlie.dev
+	$(SETMOD) $(GLD)sbrotlie_ $(sbrotlie_)
+
+$(GLD)sbrotlie_0.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)brotlie.dev $(sbrotlie_) \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sbrotlie_0 $(sbrotlie_)
+	$(ADDMOD) $(GLD)sbrotlie_0 -include $(ZGENDIR)$(D)brotlie.dev
+
+$(GLD)sbrotlie_1.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)brotlie.dev $(sbrotlie_) \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sbrotlie_1 $(sbrotlie_)
+	$(ADDMOD) $(GLD)sbrotlie_1 -include $(ZGENDIR)$(D)brotlie.dev
+
+$(GLD)sbrotlie.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sbrotlie_$(SHARE_BROTLI).dev $(sbrotlie_) \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLD)sbrotlie_$(SHARE_BROTLI).dev $(GLD)sbrotlie.dev
+
+$(GLOBJ)sbrotlie_.$(OBJ) : $(GLSRC)sbrotlie.c $(AK) $(std_h)\
+ $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=0$(_D) $(GLO_)sbrotlie_.$(OBJ) $(C_) $(GLSRC)sbrotlie.c
 
 $(GLOBJ)sbrotlie_1.$(OBJ) : $(GLSRC)sbrotlie.c $(AK) $(std_h)\
  $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
-	$(GLBROTLICC) $(GLO_)sbrotlie_1.$(OBJ) $(C_) $(GLSRC)sbrotlie.c
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=1$(_D) $(GLO_)sbrotlie_1.$(OBJ) $(C_) $(GLSRC)sbrotlie.c
 
 $(GLOBJ)sbrotlie_0.$(OBJ) : $(GLSRC)sbrotlie.c $(AK) $(std_h)\
  $(strimpl_h) $(sbrotlix_h_0) $(brotli_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLBROTLICC) $(GLO_)sbrotlie_0.$(OBJ) $(C_) $(GLSRC)sbrotlie.c
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=1$(_D) $(GLO_)sbrotlie_0.$(OBJ) $(C_) $(GLSRC)sbrotlie.c
 
 $(GLOBJ)sbrotlie.$(OBJ) : $(GLOBJ)sbrotlie_$(SHARE_BROTLI).$(OBJ)  $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)sbrotlie_$(SHARE_BROTLI).$(OBJ) $(GLOBJ)sbrotlie.$(OBJ)
 
 sbrotlid_=$(sbrotlic_) $(GLOBJ)sbrotlid.$(OBJ)
-$(GLD)sbrotlid.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)brotlid.dev $(sbrotlid_) \
+$(GLD)sbrotlid_.dev : $(LIB_MAK) $(ECHOGS_XE) $(sbrotlid_) \
  $(LIB_MAK) $(MAKEDIRS)
-	$(SETMOD) $(GLD)sbrotlid $(sbrotlid_)
-	$(ADDMOD) $(GLD)sbrotlid -include $(ZGENDIR)$(D)brotlid.dev
+	$(SETMOD) $(GLD)sbrotlid_ $(sbrotlid_)
+
+$(GLD)sbrotlid_0.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)brotlid.dev $(sbrotlid_) \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sbrotlid_0 $(sbrotlid_)
+	$(ADDMOD) $(GLD)sbrotlid_0 -include $(ZGENDIR)$(D)brotlid.dev
+
+$(GLD)sbrotlid_1.dev : $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)brotlid.dev $(sbrotlid_) \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)sbrotlid_1 $(sbrotlid_)
+	$(ADDMOD) $(GLD)sbrotlid_1 -include $(ZGENDIR)$(D)brotlid.dev
+
+$(GLD)sbrotlid.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)sbrotlid_$(SHARE_BROTLI).dev \
+ $(LIB_MAK) $(MAKEDIRS)
+	$(CP_) $(GLD)sbrotlid_$(SHARE_BROTLI).dev $(GLD)sbrotlid.dev
+
+$(GLOBJ)sbrotlid_.$(OBJ) : $(GLSRC)sbrotlid.c $(AK) $(std_h) $(memory__h)\
+ $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=0$(_D) $(GLO_)sbrotlid_.$(OBJ) $(C_) $(GLSRC)sbrotlid.c
 
 $(GLOBJ)sbrotlid_1.$(OBJ) : $(GLSRC)sbrotlid.c $(AK) $(std_h) $(memory__h)\
  $(strimpl_h) $(sbrotlix_h_1) $(LIB_MAK) $(MAKEDIRS)
-	$(GLBROLICC) $(GLO_)sbrotlid_1.$(OBJ) $(C_) $(GLSRC)sbrotlid.c
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=1$(_D) $(GLO_)sbrotlid_1.$(OBJ) $(C_) $(GLSRC)sbrotlid.c
 
 $(GLOBJ)sbrotlid_0.$(OBJ) : $(GLSRC)sbrotlid.c $(AK) $(std_h) $(memory__h)\
  $(strimpl_h) $(sbrotlix_h_0) $(brotli_h) $(LIB_MAK) $(MAKEDIRS)
-	$(GLBROTLICC) $(GLO_)sbrotlid_0.$(OBJ) $(C_) $(GLSRC)sbrotlid.c
+	$(GLBROTLICC) $(D_)ENABLE_BROTLI=1$(_D) $(GLO_)sbrotlid_0.$(OBJ) $(C_) $(GLSRC)sbrotlid.c
 
 $(GLOBJ)sbrotlid.$(OBJ) : $(GLOBJ)sbrotlid_$(SHARE_BROTLI).$(OBJ) $(LIB_MAK) $(MAKEDIRS)
 	$(CP_) $(GLOBJ)sbrotlid_$(SHARE_BROTLI).$(OBJ) $(GLOBJ)sbrotlid.$(OBJ)

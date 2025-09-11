@@ -19,7 +19,7 @@
 #	BROTLIGENDIR - the generated intermediate file directory
 #	BROTLIOBJDIR - the object directory
 #	SHARE_BROTLI - 0 to compile brotli, 1 to share
-#	BROTLI_NAME - if SHARE_BROTLI=1, the name of the shared library
+#	BROTLI_COMMON_NAME,  BROTLI_ENCODE_NAME, BROTLI_DECODE_NAME- if SHARE_BROTLI=1, the name of the shared libraries
 #	BROTLIAUXDIR - the directory for auxiliary objects
 
 # This partial makefile compiles the brotli library for use in Ghostscript.
@@ -68,8 +68,14 @@ brotlic_= \
 	  $(BROTLIOBJ)shared_dictionary.$(OBJ) \
 	  $(BROTLIOBJ)transform.$(OBJ)
 
-$(BROTLIGEN)brotlic.dev : $(BROTLI_MAK) $(ECHOGS_XE) $(brotlic_)
-	$(SETMOD) $(BROTLIGEN)brotlic $(brotlic_)
+$(BROTLIGEN)brotlic_0.dev : $(BROTLI_MAK) $(ECHOGS_XE) $(brotlic_)
+	$(SETMOD) $(BROTLIGEN)brotlic_0 $(brotlic_)
+
+$(BROTLIGEN)brotlic_1.dev : $(BROTLI_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(BROTLIGEN)brotlic_1 -lib $(BROTLI_COMMON_NAME)
+
+$(BROTLIGEN)brotlic.dev : $(BROTLI_MAK) $(BROTLIGEN)brotlic_$(SHARE_BROTLI).dev $(MAKEDIRS)
+	$(CP_) $(BROTLIGEN)brotlic_$(SHARE_BROTLI).dev $(BROTLIGEN)brotlic.dev
 
 $(BROTLIOBJ)constants.$(OBJ) : $(BROTLISRC)c$(D)common$(D)constants.c $(BROTLIDEP)
 	$(BROTLICC) $(BROTLIO_)constants.$(OBJ) $(C_) $(BROTLISRC)c$(D)common$(D)constants.c
@@ -95,9 +101,10 @@ $(BROTLIGEN)brotlie.dev : $(BROTLI_MAK) $(BROTLIGEN)brotlie_$(SHARE_BROTLI).dev 
  $(MAKEDIRS)
 	$(CP_) $(BROTLIGEN)brotlie_$(SHARE_BROTLI).dev $(BROTLIGEN)brotlie.dev
 
-$(BROTLIGEN)brotli_1.dev : $(BROTLI_MAK) $(BROTLI_MAK) $(ECHOGS_XE) \
+$(BROTLIGEN)brotlie_1.dev : $(BROTLI_MAK) $(ECHOGS_XE) $(BROTLIGEN)brotlic.dev \
  $(MAKEDIRS)
-	$(SETMOD) $(BROTLIGEN)brotlie_1 -lib $(BROTLI_NAME)
+	$(SETMOD) $(BROTLIGEN)brotlie_1 -lib $(BROTLI_ENCODE_NAME)
+	$(ADDMOD) $(BROTLIGEN)brotlie_1 -include $(BROTLIGEN)brotlic.dev
 
 brotlie_= \
 	  $(BROTLIOBJ)backward_references.$(OBJ) \
@@ -194,6 +201,11 @@ $(BROTLIOBJ)utf8_util.$(OBJ) : $(BROTLISRC)c$(D)enc$(D)utf8_util.c $(BROTLIDEP)
 
 $(BROTLIGEN)brotlid.dev : $(BROTLI_MAK) $(BROTLIGEN)brotlid_$(SHARE_BROTLI).dev $(MAKEDIRS)
 	$(CP_) $(BROTLIGEN)brotlid_$(SHARE_BROTLI).dev $(BROTLIGEN)brotlid.dev
+
+$(BROTLIGEN)brotlid_1.dev : $(BROTLI_MAK) $(ECHOGS_XE) $(BROTLIGEN)brotlic.dev \
+ $(MAKEDIRS)
+	$(SETMOD) $(BROTLIGEN)brotlid_1 -lib $(BROTLI_DECODE_NAME)
+	$(ADDMOD) $(BROTLIGEN)brotlid_1 -include $(BROTLIGEN)brotlic.dev
 
 brotlid_= \
 	  $(BROTLIOBJ)bit_reader.$(OBJ) \

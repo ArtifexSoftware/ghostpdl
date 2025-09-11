@@ -23,6 +23,7 @@
 #include "strimpl.h"
 #include "sbrotlix.h"
 
+#if defined(ENABLE_BROTLI) && ENABLE_BROTLI==1
 /* Provide brotli-compatible allocation and freeing functions. */
 void *
 s_brotli_alloc(void *zmem, size_t size)
@@ -38,3 +39,4 @@ s_brotli_free(void *zmem, void *data)
 
     gs_free_object(mem, data, "s_brotli_free");
 }
+#endif

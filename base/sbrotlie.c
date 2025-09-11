@@ -19,8 +19,14 @@
 #include "strimpl.h"
 #include "sbrotlix.h"
 
+#if defined(ENABLE_BROTLI) && ENABLE_BROTLI==1
+#define ENABLE_BROTLI_ENCODE 1
 #include "brotli/encode.h"
+#else
+#define ENABLE_BROTLI_ENCODE 0
+#endif
 
+#if ENABLE_BROTLI_ENCODE
 /* Set defaults for stream parameters. */
 void
 s_brotliE_set_defaults(stream_state * st)
@@ -130,6 +136,40 @@ brotliE_final(const gs_memory_t *mem, void *st)
         ss->enc_state = NULL;
     }
 }
+#else
+void
+s_brotliE_set_defaults(stream_state * st)
+{
+    (void)st;
+}
+static int
+s_brotliE_init(stream_state * st)
+{
+    (void)st;
+    return ERRC;
+}
+static int
+s_brotliE_process(stream_state * st, stream_cursor_read * pr,
+                  stream_cursor_write * pw, bool last)
+{
+    (void)st;
+    (void)pr;
+    (void)pw;
+    (void)last;
+    return ERRC;
+}
+static void
+s_brotliE_release(stream_state * st)
+{
+    (void)st;
+}
+static void
+brotliE_final(const gs_memory_t *mem, void *st)
+{
+    (void)mem;
+    (void)st;
+}
+#endif
 
 gs_public_st_simple_final(st_brotlie_state, stream_brotlie_state,
   "brotli encode state", brotliE_final);

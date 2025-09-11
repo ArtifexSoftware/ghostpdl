@@ -1632,40 +1632,53 @@ AC_ARG_WITH([local-brotli], AS_HELP_STRING([--without-local-brotli],
 
 AC_MSG_CHECKING([for local brotli source])
 BROTLIDIR=src
-AUX_SHARED_BROTLI=
+SHARE_BROTLI=
 BROTLICFLAGS=""
 
-if test x"$with_local_brotli" = x"no" ; then
-  AC_MSG_RESULT([skip])
-  AC_CHECK_LIB(z, deflate, [
-    AC_CHECK_HEADERS(zlib.h, [SHARE_BROTLI=1; AUX_SHARED_BROTLI="-l\$(BROTLI_NAME)"])
-  ])
-else
-  if test -d $srcdir/brotli; then
-        AC_MSG_RESULT([yes])
-        SHARE_BROTLI=0
-        BROTLIDIR=$srcdir/brotli
+BROTLI_COMMON_NAME=""
+BROTLI_ENCODE_NAME=""
+BROTLI_DECODE_NAME=""
 
-        if test x"$GCC" = x"yes"; then
-          BROTLICFLAGS="-Wno-write-strings"
-        fi
+if test x"$with_local_brotli" = x"no" || [[ ! -d $srcdir/brotli ]] ; then
+  AC_MSG_RESULT([no.])
+
+  AC_CHECK_LIB(brotlicommon, BrotliDefaultAllocFunc, [
+          AC_CHECK_HEADERS(brotli/shared_dictionary.h, [BROTLI_COMMON_NAME="brotlicommon"])
+        ], [], [-lbrotlicommon])
+
+  AC_CHECK_LIB(brotlienc, BrotliEncoderCreateInstance, [
+          AC_CHECK_HEADERS(brotli/encode.h, [BROTLI_ENCODE_NAME="brotlienc"])
+        ], [], [-lbrotlicommon])
+
+
+  AC_CHECK_LIB(brotlidec, BrotliDecoderCreateInstance, [
+          AC_CHECK_HEADERS(brotli/decode.h, [BROTLI_DECODE_NAME="brotlidec"])
+        ], [], [-lbrotlicommon])
+
+  if test x"$BROTLI_COMMON_NAME" = x"" || test x"$BROTLI_ENCODE_NAME" = x"" || test x"$BROTLI_DECODE_NAME" = x"" ; then
+    BROTLI_COMMON_NAME=""
+    BROTLI_ENCODE_NAME=""
+    BROTLI_DECODE_NAME=""
   else
-        AC_MSG_RESULT([no])
-        AC_CHECK_LIB(brotli, deflate, [
-          AC_CHECK_HEADERS(brotli.h, [SHARE_BROTLI=1; AUX_SHARED_BROTLI="-l\$(BROTLI_NAME)"])
-        ])
+    SHARE_BROTLI=1
+  fi
+else
+  AC_MSG_RESULT([yes])
+  SHARE_BROTLI=0
+  BROTLIDIR=$srcdir/brotli
+  if test x"$GCC" = x"yes"; then
+    BROTLICFLAGS="-Wno-write-strings"
   fi
 fi
 if test -z "$SHARE_BROTLI"; then
-  AC_MSG_ERROR([I did not find a copy of brotli on your system.
-  Please either install it, or unpack a copy of the source in a
-  local directory named 'brotli'. See https://github.com/google/brotli
-  for more information.
-  ])
+  AC_MSG_WARN([I did not find a copy of brotli on your system.])
 fi
 
+AC_SUBST(BROTLI_COMMON_NAME)
+AC_SUBST(BROTLI_ENCODE_NAME)
+AC_SUBST(BROTLI_DECODE_NAME)
+
 AC_SUBST(SHARE_BROTLI)
-AC_SUBST(AUX_SHARED_BROTLI)
 AC_SUBST(BROTLICFLAGS)
 AC_SUBST(BROTLIDIR)
 

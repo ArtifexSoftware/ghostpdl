@@ -20,8 +20,14 @@
 #include "strimpl.h"
 #include "sbrotlix.h"
 
+#if defined(ENABLE_BROTLI) && ENABLE_BROTLI==1
+#define ENABLE_BROTLI_DECODE 1
 #include "brotli/decode.h"
+#else
+#define ENABLE_BROTLI_DECODE 0
+#endif
 
+#if ENABLE_BROTLI_DECODE
 /* Initialize the filter. */
 static int
 s_brotliD_init(stream_state * st)
@@ -95,6 +101,35 @@ brotliD_final(const gs_memory_t *mem, void *st)
         ss->dec_state = NULL;
     }
 }
+#else
+static int
+s_brotliD_init(stream_state * st)
+{
+    (void)st;
+    return ERRC;
+}
+static void
+brotliD_final(const gs_memory_t *mem, void *st)
+{
+    (void)mem;
+    (void)st;
+}
+static int
+s_brotliD_process(stream_state * st, stream_cursor_read * pr,
+                stream_cursor_write * pw, bool ignore_last)
+{
+    (void)st;
+    (void)pr;
+    (void)pw;
+    (void)ignore_last;
+    return ERRC;
+}
+static void
+s_brotliD_release(stream_state * st)
+{
+    (void)st;
+}
+#endif
 
 gs_public_st_simple_final(st_brotlid_state, stream_brotlid_state,
         "brotli decode state", brotliD_final);
