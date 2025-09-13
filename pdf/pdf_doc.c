@@ -917,6 +917,10 @@ int pdfi_get_page_dict(pdf_context *ctx, pdf_dict *d, uint64_t page_num, uint64_
                         code = pdfi_dict_get_no_store_R(ctx, child, "PageRef", (pdf_obj **)&page_dict);
                         if (code < 0)
                             goto exit;
+                        if (pdfi_type_of(page_dict) != PDF_DICT) {
+                            code = gs_note_error(gs_error_typecheck);
+                            goto exit;
+                        }
                         code = pdfi_merge_dicts(ctx, page_dict, inheritable);
                         *target = page_dict;
                         pdfi_countup(*target);
