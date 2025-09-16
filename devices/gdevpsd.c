@@ -1760,7 +1760,7 @@ psd_write_image_data(psd_write_ctx *xc, gx_device_printer *pdev)
         return_error(gs_error_VMerror);
 
     code = gx_downscaler_init_planar(&ds, (gx_device *)pdev,
-                                     bpc, bpc, num_comp,
+                                     bpc, bpc, pdev->color_info.num_components,
                                      &psd_dev->downscale,
                                      &params);
     if (code < 0)
