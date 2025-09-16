@@ -276,6 +276,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 
     if (h == 0)
         return 0;
+    devc1.tag = devc2.tag = device_current_tag(dev);
     pnext = penum->dda.pixel0;
     xrun = xl = dda_current(pnext.x);
     irun = fixed2int_var_rounded(xrun);
@@ -626,6 +627,7 @@ image_render_icc16(gx_image_enum * penum, const byte * buffer, int data_x,
         return gs_rethrow(-1, "ICC Link not created during image render icc16");
     }
     gx_get_cmapper(&data, pgs, dev, has_transfer, must_halftone, gs_color_select_source);
+    data.devc.tag = device_current_tag(dev);
     mapper = data.set_color;
     /* Needed for device N */
     code = dev_proc(dev, get_profile)(dev, &dev_profile);

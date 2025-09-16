@@ -1248,6 +1248,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
             int scaled_x_prev = 0;
             gx_dda_fixed save_x_dda = pss->params.scale_dda.x;
 
+            devc.tag = device_current_tag(dev);
             devc.type = gx_dc_type_none; /* Needed for coverity, in call to color_is_pure() if color_handler is NULL. */
             stream_w.limit = out + pss->params.WidthOut *
                 max(spp_decode * sizeofPixelOut, ARCH_SIZEOF_COLOR_INDEX) - 1;
@@ -1696,6 +1697,8 @@ irii_inner_template(gx_image_enum * penum, int xo, int xe, int spp_cm, unsigned 
     int scaled_h = 0;
     int scaled_y = 0;
 
+    devc.tag = device_current_tag(dev);
+
     if (abs_interp_limit > 1) {
         scaled_h = interpolate_scaled_expanded_height(1, pss);
         scaled_y = yo + (dy * dda_current(pss->params.scale_dda.y));
@@ -1922,6 +1925,7 @@ static int irii_inner_32bpp_4spp_1abs(gx_image_enum * penum, int xo, int xe, int
     int code;
     int ry = yo + penum->line_xy * dy;
 
+    devc.tag = device_current_tag(dev);
     for (x = xo; x < xe;) {
 
 #ifdef DEBUG
@@ -1999,6 +2003,7 @@ static int irii_inner_24bpp_3spp_1abs(gx_image_enum * penum, int xo, int xe, int
     int code;
     int ry = yo + penum->line_xy * dy;
 
+    devc.tag = device_current_tag(dev);
     for (x = xo; x < xe;) {
 #ifdef DEBUG
         if (gs_debug_c('B')) {
@@ -2072,6 +2077,7 @@ static int irii_inner_8bpp_1spp_1abs(gx_image_enum * penum, int xo, int xe, int 
     int code;
     int ry = yo + penum->line_xy * dy;
 
+    devc.tag = device_current_tag(dev);
     for (x = xo; x < xe;) {
 #ifdef DEBUG
         if (gs_debug_c('B')) {
@@ -2363,6 +2369,7 @@ image_render_interpolate_landscape(gx_image_enum * penum,
             int scaled_w = 0;
             gx_dda_fixed save_x_dda;
 
+            devc.tag = device_current_tag(dev);
             if (abs_interp_limit > 1) {
                 save_x_dda = pss->params.scale_dda.x;
             }
@@ -2750,6 +2757,7 @@ image_render_interpolate_landscape_icc(gx_image_enum * penum,
             int scaled_w = 0;
             gx_dda_fixed save_x_dda;
 
+            devc.tag = device_current_tag(dev);
             if (abs_interp_limit > 1) {
                 save_x_dda = pss->params.scale_dda.x;
             }
