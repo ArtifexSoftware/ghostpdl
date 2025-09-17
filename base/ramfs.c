@@ -121,7 +121,11 @@ int ramfs_error(const ramfs* fs) { return fs->last_error; }
 
 static int resize(ramfile * file,int size)
 {
-    int newblocks = (size+RAMFS_BLOCKSIZE-1)/RAMFS_BLOCKSIZE;
+    /* A resize request larger than an int will fail at a higher level
+       so doing the following calculation as unsigned should be sufficient to
+       avoid overflow at this level.
+     */
+    int newblocks = (int)(((unsigned int)size)+RAMFS_BLOCKSIZE-1)/RAMFS_BLOCKSIZE;
     void *buf;
 
     if(newblocks > file->blocks) {
