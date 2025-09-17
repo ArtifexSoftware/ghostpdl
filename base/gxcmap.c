@@ -1153,7 +1153,8 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
             /* Find the black channel location */
             black_index = dev_proc(dev, get_color_comp_index)(dev, "Black",
                                     strlen("Black"), SEPARATION_NAME);
-            cm_comps[black_index] = frac_1 - gx_map_color_frac(pgs,
+            if (black_index < GX_DEVICE_COLOR_MAX_COMPONENTS)
+                cm_comps[black_index] = frac_1 - gx_map_color_frac(pgs,
                                     (frac)(frac_1 - cm_comps[black_index]),
                                     effective_transfer[black_index]);
         } else if (pgs->effective_transfer_non_identity_count != 0)
