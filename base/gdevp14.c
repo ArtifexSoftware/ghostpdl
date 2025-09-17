@@ -7357,6 +7357,8 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
 
     if_debug0m('v', dev->memory, "[v]pdf14_push_color_model\n");
 
+    assert(dev->color_info.num_components == dev->num_planar_planes || dev->num_planar_planes == 0);
+
     group_color = gs_alloc_struct(dev->memory->stable_memory,
                                pdf14_group_color_t, &st_pdf14_clr,
                                "pdf14_push_color_model");
@@ -9228,10 +9230,14 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     gx_device_set_target((gx_device_forward *)p14dev, target);
     p14dev->pad = target->pad;
     p14dev->log2_align_mod = target->log2_align_mod;
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
+    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0) {
         p14dev->num_planar_planes = p14dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
-    else if (pdf14pct->params.overprint_sim_push && target->num_planar_planes != 0)
+        p14dev->color_info.num_components = p14dev->num_planar_planes;
+    }
+    else if (pdf14pct->params.overprint_sim_push && target->num_planar_planes != 0) {
         p14dev->num_planar_planes = p14dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
+        p14dev->color_info.num_components = p14dev->num_planar_planes;
+    }
     else
         p14dev->num_planar_planes = target->num_planar_planes;
     p14dev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
