@@ -6044,6 +6044,7 @@ get_pdf14_device_proto(gx_device       *dev,
                                                  &blend_cs_state);
     bool deep = device_is_deep(dev);
     int num_spots = pdf14pct->params.num_spot_colors;
+    bool has_tags = device_encodes_tags(dev);
 
     /* overprint overide */
     if (pdf14pct->params.overprint_sim_push &&
@@ -6058,10 +6059,10 @@ get_pdf14_device_proto(gx_device       *dev,
     switch (dev_cs) {
         case PDF14_DeviceGray:
             *pdevproto = gs_pdf14_Gray_device;
-            pdevproto->color_info.max_components = 1;
+            pdevproto->color_info.max_components = 1 + has_tags;
             pdevproto->color_info.num_components =
-                                    pdevproto->color_info.max_components;
-            pdevproto->color_info.depth = 8<<deep;
+                                    pdevproto->color_info.max_components + has_tags;
+            pdevproto->color_info.depth = pdevproto->color_info.num_components * (8<<deep);
             pdevproto->color_info.max_gray = deep ? 65535 : 255;
             pdevproto->color_info.gray_index = 0; /* Avoid halftoning */
             pdevproto->color_info.dither_grays = deep ? 65536 : 256;
@@ -6069,14 +6070,18 @@ get_pdf14_device_proto(gx_device       *dev,
             break;
         case PDF14_DeviceRGB:
             *pdevproto = gs_pdf14_RGB_device;
-            pdevproto->color_info.depth = 24<<deep;
+            pdevproto->color_info.max_components += has_tags;
+            pdevproto->color_info.num_components += has_tags;
+            pdevproto->color_info.depth = pdevproto->color_info.num_components * (8<<deep);
             pdevproto->color_info.max_gray = deep ? 65535 : 255;
             pdevproto->color_info.dither_grays = deep ? 65536 : 256;
             pdevproto->sep_device = false;
             break;
         case PDF14_DeviceCMYK:
             *pdevproto = gs_pdf14_CMYK_device;
-            pdevproto->color_info.depth = 32<<deep;
+            pdevproto->color_info.max_components += has_tags;
+            pdevproto->color_info.num_components += has_tags;
+            pdevproto->color_info.depth = pdevproto->color_info.num_components * (8<<deep);
             pdevproto->color_info.max_gray = deep ? 65535 : 255;
             pdevproto->color_info.dither_grays = deep ? 65536 : 256;
             pdevproto->sep_device = false;
@@ -6092,12 +6097,18 @@ get_pdf14_device_proto(gx_device       *dev,
              */
             if (num_spots >= 0) {
                 pdevproto->color_info.num_components =
-                    pdevproto->devn_params.num_std_colorant_names + num_spots;
+                    pdevproto->devn_params.num_std_colorant_names + num_spots + has_tags;
                 if (pdevproto->color_info.num_components > GS_CLIENT_COLOR_MAX_COMPONENTS)
                     pdevproto->color_info.num_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
                 pdevproto->color_info.depth =
                                     pdevproto->color_info.num_components * (8<<deep);
                 pdevproto->sep_device = true;
+            }
+            else
+            {
+                pdevproto->color_info.max_components += has_tags;
+                pdevproto->color_info.num_components += has_tags;
+                pdevproto->color_info.depth = pdevproto->color_info.num_components * (8<<deep);
             }
             break;
         case PDF14_DeviceRGBspot:
@@ -6111,12 +6122,18 @@ get_pdf14_device_proto(gx_device       *dev,
              */
             if (num_spots >= 0) {
                 pdevproto->color_info.num_components =
-                    pdevproto->devn_params.num_std_colorant_names + num_spots;
+                    pdevproto->devn_params.num_std_colorant_names + num_spots + has_tags;
                 if (pdevproto->color_info.num_components > GS_CLIENT_COLOR_MAX_COMPONENTS)
                     pdevproto->color_info.num_components = GS_CLIENT_COLOR_MAX_COMPONENTS;
                 pdevproto->color_info.depth =
                     pdevproto->color_info.num_components * (8 << deep);
                 pdevproto->sep_device = true;
+            }
+            else
+            {
+                pdevproto->color_info.max_components += has_tags;
+                pdevproto->color_info.num_components += has_tags;
+                pdevproto->color_info.depth = pdevproto->color_info.num_components * (8<<deep);
             }
             break;
         case PDF14_DeviceCustom:
@@ -9221,6 +9238,8 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
                          (const gx_device *) &dev_proto, mem);
     if (code < 0)
         return code;
+
+    p14dev->graphics_type_tag = target->graphics_type_tag;
 
     /* Copying the params across will add tags to the colorinfo as required. */
     code = gs_pdf14_device_copy_params((gx_device *)p14dev, target);
