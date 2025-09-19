@@ -907,7 +907,7 @@ static forceinline pdf14_buf*
 template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool has_matte, bool deep, bool endian_swap)
+    bool has_matte, bool deep, bool endian_swap, bool lose_channels)
 {
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -956,7 +956,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         *did_alloc = true;
         des_rowstride = ((width + 3) & -4)<<deep;
         des_planestride = height * des_rowstride;
-        des_n_planes = src_n_planes + diff;
+        des_n_planes = src_n_planes + diff - (lose_channels ? diff : 0);
         des_n_chan = src_n_chan + diff;
         des_data = gs_alloc_bytes(ctx->memory,
                                   des_planestride * des_n_planes + CAL_SLOP,
@@ -970,7 +970,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         des_ptr = des_data;
         for (j = 0; j < height; j++) {
             for (k = 0; k < (src_n_planes - src_profile->num_comps); k++) {
-                memcpy(des_ptr + des_planestride * (k + des_profile->num_comps),
+                memcpy(des_ptr + des_planestride * (k + des_profile->num_comps - (lose_channels ? diff : 0)),
                        src_ptr + src_planestride * (k + src_profile->num_comps),
                        width<<deep);
             }
@@ -1062,14 +1062,14 @@ static pdf14_buf*
 pdf14_transform_color_buffer_no_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool deep, bool endian_swap)
+    bool deep, bool endian_swap, bool lose_channels)
 {
     if (deep)
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, false, true, endian_swap);
+            des_profile, x0, y0, width, height, did_alloc, false, true, endian_swap, lose_channels);
     else
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, false, false, endian_swap);
+            des_profile, x0, y0, width, height, did_alloc, false, false, endian_swap, lose_channels);
 }
 
 static pdf14_buf*
@@ -1080,10 +1080,10 @@ pdf14_transform_color_buffer_with_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_devic
 {
     if (deep)
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, true, true, endian_swap);
+            des_profile, x0, y0, width, height, did_alloc, true, true, endian_swap, false);
     else
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, true, false, endian_swap);
+            des_profile, x0, y0, width, height, did_alloc, true, false, endian_swap, false);
 }
 
 /**
@@ -1748,7 +1748,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
                 result = pdf14_transform_color_buffer_no_matte(pgs, ctx, dev,
                     tos, tos->data, curr_icc_profile, nos->group_color_info->icc_profile,
                     tos->rect.p.x, tos->rect.p.y, tos->rect.q.x - tos->rect.p.x,
-                    tos->rect.q.y - tos->rect.p.y, &did_alloc, tos->deep, false);
+                    tos->rect.q.y - tos->rect.p.y, &did_alloc, tos->deep, false, false);
             }
             if (result == NULL) {
                 /* Clean up and return error code */
@@ -2445,7 +2445,7 @@ typedef void(*blend_image_row_proc_t) (const byte *gs_restrict buf_ptr,
 static int
 pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profile_t* src_profile,
                         cmm_dev_profile_t* dev_target_profile, pdf14_buf** buf,
-                        byte** buf_ptr, bool was_blended, int x, int y, int width, int height)
+                        byte** buf_ptr, bool was_blended, int x, int y, int width, int height, bool lose_channels)
 {
     pdf14_buf* cm_result = NULL;
     cmm_profile_t* des_profile;
@@ -2489,7 +2489,7 @@ pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profi
 
     cm_result = pdf14_transform_color_buffer_no_matte(pgs, dev->ctx, (gx_device*) dev, *buf,
         *buf_ptr, src_profile, des_profile, x, y, width,
-        height, &did_alloc, (*buf)->deep, endian_swap);
+        height, &did_alloc, (*buf)->deep, endian_swap, lose_channels);
 
     if (cm_result == NULL)
         return_error(gs_error_VMerror);
@@ -2642,7 +2642,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                alpha data.  We choose the later. */
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile,
                 dev_target_profile, &buf, &buf_ptr, false, rect.p.x, rect.p.y,
-                width, height);
+                width, height, false);
             if (code < 0)
                 return code;
 
@@ -2686,7 +2686,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
                alpha for the output device or hand back the wrong color space with
                alpha data.  We choose the later. */
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile, dev_target_profile,
-                &buf, &buf_ptr, true, rect.p.x, rect.p.y, width, height);
+                &buf, &buf_ptr, true, rect.p.x, rect.p.y, width, height, false);
             if (code < 0)
                 return code;
 
@@ -3196,6 +3196,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     bool target_sep_device = dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0);
     bool has_spots = pdev->ctx->num_spots > 0;
     bool blend_spots = !target_sep_device && has_spots;
+    bool lose_channels = false;
 
     /* Check if group color space is CMYK based */
     code = dev_proc(target, get_profile)(target, &dev_target_profile);
@@ -3219,7 +3220,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
 
         cm_result = pdf14_transform_color_buffer_no_matte(pgs, pdev->ctx, (gx_device *)dev, buf,
             buf->data, src_profile, pgs->icc_manager->default_cmyk, 0, 0, buf->rect.q.x,
-            buf->rect.q.y, &did_alloc, buf->deep, false);
+            buf->rect.q.y, &did_alloc, buf->deep, false, false);
         if (cm_result == NULL)
             return_error(gs_error_VMerror);
 
@@ -3248,6 +3249,8 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     des_profile = dev_target_profile->device_profile[GS_DEFAULT_DEVICE_PROFILE];
     if (!gsicc_profiles_equal(des_profile, src_profile))
         color_mismatch = true;
+    if (des_profile->data_cs == gsNCHANNEL)
+        lose_channels = true;
 
     /* Check if target supports alpha */
     supports_alpha = dev_proc(target, dev_spec_op)(target, gxdso_supports_alpha, NULL, 0);
@@ -3304,7 +3307,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
                alpha data.  We choose the later. */
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile,
                         dev_target_profile, &buf, &buf_ptr, false, rect.p.x,
-                        rect.p.y, width, height);
+                        rect.p.y, width, height, false);
             if (code < 0)
                 return code;
 
@@ -3431,8 +3434,9 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
 
         /* Map to the destination color space */
         if (color_mismatch) {
+            int num_channels_to_lose = lose_channels ? des_profile->num_comps - src_profile->num_comps : 0;
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile, dev_target_profile,
-                &buf, &buf_ptr, true, rect.p.x, rect.p.y, width, height);
+                &buf, &buf_ptr, true, rect.p.x, rect.p.y, width, height, lose_channels);
             if (code < 0)
                 return code;
 
@@ -3440,7 +3444,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
             rowstride = buf->rowstride;
             planestride = buf->planestride;
             num_comp = buf->n_chan;
-            tag_offset = buf->has_tags ? buf->n_chan : 0;
+            tag_offset = buf->has_tags ? (buf->n_chan - num_channels_to_lose) : 0;
         }
 
 #if RAW_DUMP
