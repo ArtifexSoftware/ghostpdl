@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -180,10 +180,29 @@ fn_ElIn_make_scaled(const gs_function_ElIn_t *pfn,
     if (psfn == 0)
         return_error(gs_error_VMerror);
     psfn->params = pfn->params;
-    psfn->params.C0 = c0 =
-        fn_copy_values(pfn->params.C0, pfn->params.n, sizeof(float), mem);
-    psfn->params.C1 = c1 =
-        fn_copy_values(pfn->params.C1, pfn->params.n, sizeof(float), mem);
+
+    /* If C0 or C1 is NULL here, we know from gs_function_ElIn_init() that n == 1. */
+    if (pfn->params.C0) {
+        c0 = fn_copy_values(pfn->params.C0, pfn->params.n, sizeof(float), mem);
+    } else {
+        c0 = gs_alloc_byte_array(mem, 1, sizeof(float), "fn_ElIn_make_scaled C0");
+        if (c0 == 0)
+            return_error(gs_error_VMerror);
+        c0[0] = 0.0f; /* default c0 */
+    }
+
+    if (pfn->params.C1) {
+        c1 = fn_copy_values(pfn->params.C1, pfn->params.n, sizeof(float), mem);
+    } else {
+        c1 = gs_alloc_byte_array(mem, 1, sizeof(float), "fn_ElIn_make_scaled C1");
+        if (c1 == 0)
+            return_error(gs_error_VMerror);
+        c1[0] = 1.0f; /* default c1 */
+    }
+
+    psfn->params.C0 = c0;
+    psfn->params.C1 = c1;
+
     if ((code = ((c0 == 0 && pfn->params.C0 != 0) ||
                  (c1 == 0 && pfn->params.C1 != 0) ?
                  gs_note_error(gs_error_VMerror) : 0)) < 0 ||
