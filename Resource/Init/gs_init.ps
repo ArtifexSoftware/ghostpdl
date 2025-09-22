@@ -2317,8 +2317,11 @@ gsave
 <1b45> cvn { } def		% PJL reset prologue (ESC E)
 <1b451b> cvn <1b> cvn load def	% PJL reset epilogue (ESC E + UEL)
 (\001M) cvn			% TBCP initiator
- { currentfile /TBCPDecode filter cvx exec
- } .internalbind def
+ { (\n!! ERROR !!\n) print
+ (In-job PJL tried to select TBCP communications Protocol which is no longer supported.\n) print
+ (You must recreate the input file without requiring TBCP support.\n\n) print
+ /TBCPDecode /filter /undefined signalerror.
+ } odef
 /@PJL				% H-P job control
  {
    % Windows 2000 driver includes PJL into %%BeginFeature block.
