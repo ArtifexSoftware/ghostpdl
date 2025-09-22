@@ -866,7 +866,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                          COS_OBJECT_VALUE(&avalue, adict));
         } else if (pdf_key_eq(Action + 1, "/GoTo"))
             pdfmark_put_pair(pcd, Action);
-        else if (Action[1].size < 30) {
+        else {
             /* Hack: we could substitute names in pdfmark_process,
                now should recognize whether it was done.
                Not a perfect method though.
