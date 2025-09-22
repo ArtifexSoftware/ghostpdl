@@ -296,31 +296,38 @@ static int pdfi_trans_set_mask(pdf_context *ctx, pdfi_int_gstate *igs, int color
             } else {
                 int i, components = pdfi_array_size(BC);
                 double num;
+                int cspace_cmps;
 
                 if (components > GS_CLIENT_COLOR_MAX_COMPONENTS) {
                     if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_limitcheck), NULL, E_PDF_GROUP_BAD_BC_TOO_BIG, "pdfi_trans_set_mask", NULL)) < 0)
                         goto exit;
                 } else {
-                    if (gs_color_space_num_components(params.ColorSpace) != components) {
-                        pdfi_set_warning(ctx, 0, NULL, W_PDF_GROUP_BAD_BC, "pdfi_trans_set_mask", NULL);
-                        components = min(components, gs_color_space_num_components(params.ColorSpace));
+                    if ((cspace_cmps = gs_color_space_num_components(params.ColorSpace)) < 0) {
+                        if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_undefinedresult), NULL, E_PDF_GROUP_BAD_CS, "pdfi_trans_set_mask", NULL)) < 0)
+                            goto exit;
                     }
+                    else {
+                        if (gs_color_space_num_components(params.ColorSpace) != components) {
+                            pdfi_set_warning(ctx, 0, NULL, W_PDF_GROUP_BAD_BC, "pdfi_trans_set_mask", NULL);
+                            components = min(components, gs_color_space_num_components(params.ColorSpace));
+                        }
 
-                    for (i=0; i < components; i++) {
-                        code = pdfi_array_get_number(ctx, BC, i, &num);
-                        if (code < 0)
-                            break;
-                        params.Background[i] = (float)num;
+                        for (i=0; i < components; i++) {
+                            code = pdfi_array_get_number(ctx, BC, i, &num);
+                            if (code < 0)
+                                break;
+                            params.Background[i] = (float)num;
+                        }
+                        params.Background_components = components;
+
+                        /* TODO: Not sure how to handle this...  recheck PS code (pdf_draw.ps/gssmask) */
+                        /* This should be "currentgray" for the color that we put in params.ColorSpace,
+                         * It looks super-convoluted to actually get this value.  Really?
+                         * (see zcurrentgray())
+                         * For now, use simple definition from PLRM2 and assume it is RGB or CMYK
+                         */
+                        pdfi_set_GrayBackground(&params);
                     }
-                    params.Background_components = components;
-
-                    /* TODO: Not sure how to handle this...  recheck PS code (pdf_draw.ps/gssmask) */
-                    /* This should be "currentgray" for the color that we put in params.ColorSpace,
-                     * It looks super-convoluted to actually get this value.  Really?
-                     * (see zcurrentgray())
-                     * For now, use simple definition from PLRM2 and assume it is RGB or CMYK
-                     */
-                    pdfi_set_GrayBackground(&params);
                 }
             }
         }

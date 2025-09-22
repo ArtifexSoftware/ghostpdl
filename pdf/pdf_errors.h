@@ -60,6 +60,7 @@ PARAM(E_DICT_SELF_REFERENCE,           "dictionary contains a key which (indirec
 PARAM(E_IMAGE_MASKWITHCOLOR,           "Image has both ImageMask and ColorSpace keys."),
 PARAM(E_PDF_INVALID_DECRYPT_LEN,       "Invalid /Length in Encryption dictionary (not in range 40-128 or not a multiple of 8)."),
 PARAM(E_PDF_GROUP_NO_CS,               "Group attributes dictionary is missing /CS"),
+PARAM(E_PDF_GROUP_BAD_CS,              "Group attributes dictionary has an invalid /CS"),
 PARAM(E_BAD_GROUP_DICT,                "Error retrieving Group dictionary for a page or XObject"),
 PARAM(E_BAD_HALFTONE,                  "Error setting a halftone"),
 PARAM(E_PDF_BADENCRYPT,                "Encrypt diciotnary not a dictionary"),
