@@ -822,7 +822,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
                     cc.paint.values[0] = 1;
                 else {
                     int cascade = 0;
-                    while (cc.paint.values[cascade] == 1 && cascade < samples) {
+                    while (cascade < pcs->params.device_n.num_components && cc.paint.values[cascade] == 1) {
                         cc.paint.values[cascade++] = 0;
                     }
                     cc.paint.values[cascade] = 1;
