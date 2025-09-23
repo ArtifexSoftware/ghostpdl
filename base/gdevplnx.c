@@ -60,6 +60,7 @@ static dev_proc_copy_color(plane_copy_color);
 static dev_proc_copy_alpha(plane_copy_alpha);
 static dev_proc_fill_path(plane_fill_path);
 static dev_proc_stroke_path(plane_stroke_path);
+static dev_proc_fill_stroke_path(plane_fill_stroke_path);
 static dev_proc_fill_mask(plane_fill_mask);
 static dev_proc_fill_parallelogram(plane_fill_parallelogram);
 static dev_proc_fill_triangle(plane_fill_triangle);
@@ -79,6 +80,7 @@ plane_initialize_device_procs(gx_device *dev)
     set_dev_proc(dev, copy_alpha, plane_copy_alpha);
     set_dev_proc(dev, fill_path, plane_fill_path);
     set_dev_proc(dev, stroke_path, plane_stroke_path);
+    set_dev_proc(dev, fill_stroke_path, plane_fill_stroke_path);
     set_dev_proc(dev, fill_mask, plane_fill_mask);
     set_dev_proc(dev, fill_parallelogram, plane_fill_parallelogram);
     set_dev_proc(dev, fill_triangle, plane_fill_triangle);
@@ -593,6 +595,26 @@ plane_stroke_path(gx_device *dev,
     default /*REDUCE_FAILED*/:
         return gx_default_stroke_path(dev, pgs, ppath, params, pdevc, pcpath);
     }
+}
+
+static int
+plane_fill_stroke_path(gx_device *dev,
+    const gs_gstate *pgs, gx_path *ppath,
+    const gx_fill_params * params_fill,
+    const gx_device_color * pdevc_fill,
+    const gx_stroke_params * params_stroke,
+    const gx_device_color * pdevc_stroke,
+    const gx_clip_path * pcpath)
+{
+    int code;
+
+    code = dev_proc(dev, fill_path)(dev, pgs, ppath, params_fill, pdevc_fill, pcpath);
+    if (code < 0)
+        return code;
+
+    code = dev_proc(dev, stroke_path)(dev, pgs, ppath, params_stroke, pdevc_stroke, pcpath);
+
+    return code;
 }
 
 static int
