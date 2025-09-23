@@ -1172,7 +1172,10 @@ exit:
     }
 
     if (working_array != NULL) {
-        for (i = 0; i < NumEmbeddedFiles;i++)
+        /* Each embedded file stores an embedded file name, and a scratch file name
+         * Hence we need to iterate NumEmbeddedFiles * 2 to free _all_ the strings.
+         */
+        for (i = 0; i < NumEmbeddedFiles * 2;i++)
             gs_free_object(ctx->memory, working_array[i], "free collection temporary filenames");
         gs_free_object(ctx->memory, working_array, "free collection working array");
     }
