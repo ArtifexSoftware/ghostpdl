@@ -1158,6 +1158,7 @@ exit:
         if (*names_array == NULL)
             code = gs_note_error(gs_error_VMerror);
         else {
+            memset((*names_array), 0x00, *TotalFiles * (size_t)2 * sizeof(char *));
             for (i = 0; i < NumEmbeddedFiles;i++) {
                 if (working_array[i * 2] != NULL && working_array[(i * 2) + 1] != NULL) {
                     (*names_array)[ix * 2] = working_array[i * 2];

@@ -765,9 +765,12 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
                     goto error;
 
                 for (ix=0; ix < TotalFiles * 2; ix++) {
-                    char *ptr = names_array[ix];
+                    char *ptr;
                     byte *sbody;
                     ref *pelement;
+
+                    if ((ptr = names_array[ix]) == NULL)
+                        continue;
 
                     size = 0;
                     do {
