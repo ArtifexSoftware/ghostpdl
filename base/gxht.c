@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -227,25 +227,35 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_gstate * pgs,
     } else {
         int i = 0;
 
-        /* Ensure the halftone saved in the device colour matches one of the
-         * object-type device halftones. It should not be possible for this not
-         * to be the case, but an image with a procedural data source which executes
-         * more grestores than gsaves can restore away the halftone that was in
-         * force at the start of the image, while we're trying to still use it.
-         * If that happens we cna't do anything but throw an error.
+        /* We can get here with pgs being NULL from the clist. In that case we can't check the saved halftone
+         * against the graphics state, because there is no graphics state. But I believe it should not be
+         * possible for this to cause a problem with the clist.
          */
-        for (i=0;i < HT_OBJTYPE_COUNT;i++) {
-            if (pdevc->colors.binary.b_ht == pgs->dev_ht[i])
-                break;
+        if (pgs != NULL) {
+            /* Ensure the halftone saved in the device colour matches one of the
+             * object-type device halftones. It should not be possible for this not
+             * to be the case, but an image with a procedural data source which executes
+             * more grestores than gsaves can restore away the halftone that was in
+             * force at the start of the image, while we're trying to still use it.
+             * If that happens we cna't do anything but throw an error.
+             */
+            for (i=0;i < HT_OBJTYPE_COUNT;i++) {
+                if (pdevc->colors.binary.b_ht == pgs->dev_ht[i])
+                    break;
+            }
+            if (i == HT_OBJTYPE_COUNT)
+                return_error(gs_error_unknownerror);
         }
-        if (i == HT_OBJTYPE_COUNT)
-            return_error(gs_error_unknownerror);
         porder = &pdevc->colors.binary.b_ht->components[component_index].corder;
 
     }
     pcache = porder->cache;
-    if (pcache->order.bit_data != porder->bit_data)
+    if (pcache->order.bit_data != porder->bit_data) {
+        /* I don't think this should be possible, but just in case */
+        if (pgs == NULL)
+            return_error(gs_error_unknownerror);
         gx_ht_init_cache(pgs->memory, pcache, porder);
+    }
     /*
      * We do not load the cache now.  Instead we wait until we are ready
      * to actually render the color.  This allows multiple colors to be
