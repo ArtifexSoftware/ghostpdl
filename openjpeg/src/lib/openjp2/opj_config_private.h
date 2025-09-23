@@ -5,7 +5,7 @@
 /*** SET BY GS CONFIGURE SCRIPT ****/
 /* #define OPJ_HAVE_INTTYPES_H 	1 */
 
-#define OPJ_PACKAGE_VERSION "2.5.3"
+#define OPJ_PACKAGE_VERSION "2.5.4"
 
 /* Not used by openjp2*/
 /*#define HAVE_MEMORY_H 1*/
