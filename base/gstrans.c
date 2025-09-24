@@ -837,7 +837,8 @@ gs_push_pdf14trans_device(gs_gstate * pgs, bool is_pattern, bool retain,
     if (dev_profile->spotnames != NULL && dev_profile->spotnames->count > 4) {
         /* Making an assumption here, that list is CMYK + extra.
            An error should have been thrown by the target device if not. */
-        int avail_page_spots = pgs->device->color_info.num_components - 4;
+        int has_tags = device_encodes_tags(pgs->device);
+        int avail_page_spots = pgs->device->color_info.num_components - 4 - has_tags;
         params.num_spot_colors_int = avail_page_spots;
         params.num_spot_colors = avail_page_spots;
 
