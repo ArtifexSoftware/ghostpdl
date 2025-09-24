@@ -185,7 +185,7 @@ fn_ElIn_make_scaled(const gs_function_ElIn_t *pfn,
     if (pfn->params.C0) {
         c0 = fn_copy_values(pfn->params.C0, pfn->params.n, sizeof(float), mem);
     } else {
-        c0 = gs_alloc_byte_array(mem, 1, sizeof(float), "fn_ElIn_make_scaled C0");
+        c0 = (float *)gs_alloc_byte_array(mem, 1, sizeof(float), "fn_ElIn_make_scaled C0");
         if (c0 == 0)
             return_error(gs_error_VMerror);
         c0[0] = 0.0f; /* default c0 */
@@ -194,7 +194,7 @@ fn_ElIn_make_scaled(const gs_function_ElIn_t *pfn,
     if (pfn->params.C1) {
         c1 = fn_copy_values(pfn->params.C1, pfn->params.n, sizeof(float), mem);
     } else {
-        c1 = gs_alloc_byte_array(mem, 1, sizeof(float), "fn_ElIn_make_scaled C1");
+        c1 = (float *)gs_alloc_byte_array(mem, 1, sizeof(float), "fn_ElIn_make_scaled C1");
         if (c1 == 0)
             return_error(gs_error_VMerror);
         c1[0] = 1.0f; /* default c1 */
