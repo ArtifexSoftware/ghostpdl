@@ -8680,7 +8680,7 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
     }
     /* Copy tags untransformed. */
     if (nc < ncomps)
-        cv[nc] = cm_comps[nc];
+        cv[nc] = dev->graphics_type_tag;
 
     /* If output device supports devn, we need to make sure we send it the
        proper color type.  We now support Gray + spots as devn colors */
@@ -8732,12 +8732,13 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     }
     /* Copy tags untransformed. */
     if (nc < ncomps)
-        cv[nc] = cm_comps[nc];
+        cv[nc] = dev->graphics_type_tag;
 
     /* If output device supports devn, we need to make sure we send it the
        proper color type.  We now support RGB + spots as devn colors */
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
+            pdc->colors.devn.values[i] = cv[i];
             pdc->colors.devn.values[i] = cv[i];
         pdc->type = gx_dc_type_devn;
     } else {
@@ -8788,7 +8789,7 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     }
     /* Copy tags untransformed. */
     if (nc < ncomps)
-        cv[nc] = cm_comps[nc];
+        cv[nc] = dev->graphics_type_tag;
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
@@ -8871,7 +8872,7 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
 
     /* Copy tags untransformed. */
     if (nc < ncomps)
-        cv[nc] = cm_comps[nc];
+        cv[nc] = dev->graphics_type_tag;
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
@@ -8930,7 +8931,7 @@ pdf14_cmap_devicen_direct(const	frac * pcc,
         cv[i] = frac2cv(frac_1 - gx_map_color_frac(pgs, (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
     /* Copy tags untransformed. */
     if (nc < ncomps)
-        cv[nc] = cm_comps[nc];
+        cv[nc] = dev->graphics_type_tag;
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
