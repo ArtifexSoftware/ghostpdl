@@ -907,7 +907,7 @@ static forceinline pdf14_buf*
 template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool has_matte, bool deep, bool endian_swap, bool lose_channels)
+    bool has_matte, bool deep, bool endian_swap, int num_channels_to_lose)
 {
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icc_link;
@@ -956,7 +956,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         *did_alloc = true;
         des_rowstride = ((width + 3) & -4)<<deep;
         des_planestride = height * des_rowstride;
-        des_n_planes = src_n_planes + diff - (lose_channels ? diff : 0);
+        des_n_planes = src_n_planes + diff - num_channels_to_lose;
         des_n_chan = src_n_chan + diff;
         des_data = gs_alloc_bytes(ctx->memory,
                                   des_planestride * des_n_planes + CAL_SLOP,
@@ -970,7 +970,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
         des_ptr = des_data;
         for (j = 0; j < height; j++) {
             for (k = 0; k < (src_n_planes - src_profile->num_comps); k++) {
-                memcpy(des_ptr + des_planestride * (k + des_profile->num_comps - (lose_channels ? diff : 0)),
+                memcpy(des_ptr + des_planestride * (k + des_profile->num_comps - num_channels_to_lose),
                        src_ptr + src_planestride * (k + src_profile->num_comps),
                        width<<deep);
             }
@@ -1062,14 +1062,14 @@ static pdf14_buf*
 pdf14_transform_color_buffer_no_matte(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     pdf14_buf *src_buf, byte *src_data, cmm_profile_t *src_profile,
     cmm_profile_t *des_profile, int x0, int y0, int width, int height, bool *did_alloc,
-    bool deep, bool endian_swap, bool lose_channels)
+    bool deep, bool endian_swap, int num_channels_to_lose)
 {
     if (deep)
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, false, true, endian_swap, lose_channels);
+            des_profile, x0, y0, width, height, did_alloc, false, true, endian_swap, num_channels_to_lose);
     else
         return template_transform_color_buffer(pgs, ctx, dev, src_buf, src_data, src_profile,
-            des_profile, x0, y0, width, height, did_alloc, false, false, endian_swap, lose_channels);
+            des_profile, x0, y0, width, height, did_alloc, false, false, endian_swap, num_channels_to_lose);
 }
 
 static pdf14_buf*
@@ -2445,7 +2445,7 @@ typedef void(*blend_image_row_proc_t) (const byte *gs_restrict buf_ptr,
 static int
 pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profile_t* src_profile,
                         cmm_dev_profile_t* dev_target_profile, pdf14_buf** buf,
-                        byte** buf_ptr, bool was_blended, int x, int y, int width, int height, bool lose_channels)
+                        byte** buf_ptr, bool was_blended, int x, int y, int width, int height, int num_channels_to_lose)
 {
     pdf14_buf* cm_result = NULL;
     cmm_profile_t* des_profile;
@@ -2489,7 +2489,7 @@ pdf14_put_image_color_convert(const pdf14_device* dev, gs_gstate* pgs, cmm_profi
 
     cm_result = pdf14_transform_color_buffer_no_matte(pgs, dev->ctx, (gx_device*) dev, *buf,
         *buf_ptr, src_profile, des_profile, x, y, width,
-        height, &did_alloc, (*buf)->deep, endian_swap, lose_channels);
+        height, &did_alloc, (*buf)->deep, endian_swap, num_channels_to_lose);
 
     if (cm_result == NULL)
         return_error(gs_error_VMerror);
@@ -3434,9 +3434,21 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
 
         /* Map to the destination color space */
         if (color_mismatch) {
-            int num_channels_to_lose = lose_channels ? des_profile->num_comps - src_profile->num_comps : 0;
+            /* We started out with the original process colorants, and spots. If we have an
+             * nchannel output profile, this can mean that the first few spots might come from
+             * that and the rest from the document itself. e.g:
+             *        C, M, Y, K, ICC_COLOR_0, ICC_COLOR_1, Spot 1, Spot 2
+             * Then we might have a blend space that changes the process colorants:
+             *        R, G, B, ICC_COLOR_0, ICC_COLOR_1, Spot 1, Spot 2
+             * Now we're about to convert 'RGB' back to 'CMYKII'.
+             * If we're not careful, we'll end up with:
+             *        C, M, Y, K, ICC_COLOR_0, ICC_COLOR_1, ICC_COLOR_0, ICC_COLOR_1, Spot 1, Spot 2
+             * so we might need to lose some channels.      ^^^^^^^^^^^^^^^^^^^^^^^^
+             */
+            int num_original_process_colorants = target->color_info.num_components - has_tags - buf->num_spots;
+            int num_channels_to_lose = lose_channels ? des_profile->num_comps - num_original_process_colorants : 0;
             code = pdf14_put_image_color_convert(pdev, pgs, src_profile, dev_target_profile,
-                &buf, &buf_ptr, true, rect.p.x, rect.p.y, width, height, lose_channels);
+                &buf, &buf_ptr, true, rect.p.x, rect.p.y, width, height, num_channels_to_lose);
             if (code < 0)
                 return code;
 
