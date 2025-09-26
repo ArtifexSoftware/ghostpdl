@@ -1090,6 +1090,8 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
             pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);
         if (i < ncomps)
             pdc->colors.devn.values[i] = cm_comps[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
     } else {
         for (i = 0; i < nc; i++)
@@ -1180,6 +1182,8 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
             pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);
         if (i < ncomps)
             pdc->colors.devn.values[i] = cm_comps[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
     } else {
         for (i = 0; i < nc; i++)
@@ -1552,6 +1556,8 @@ cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * pgs,
     if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
 
         /* Let device set the tags if present */
@@ -1725,6 +1731,8 @@ cmap_devicen_direct(const frac * pcc,
         }
         if (i < ncomps)
             pdc->colors.devn.values[i] = cm_comps[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
         /* For additive devices, we should invert the process colors
          * here! But how do we know how many process colors we have?
