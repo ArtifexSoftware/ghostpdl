@@ -319,6 +319,8 @@ psd_spec_op(gx_device *pdev, int op, void *data, int datasize)
             for (ii = 0; ii < pdev->color_info.num_components; ii++) {
                 pdc->colors.devn.values[ii] = 0;
             }
+            for (; ii < GX_DEVICE_COLOR_MAX_COMPONENTS; ii++)
+                pdc->colors.devn.values[ii] = 0;
 
             if (pcs->cmm_icc_profile_data->data_cs == gsCMYK) {
 

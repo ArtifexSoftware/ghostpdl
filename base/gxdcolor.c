@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -707,7 +707,7 @@ gx_devn_read_color(
     int                 size )
 {
     gx_color_index      mask = 0;
-    uchar                 i;
+    uchar               i;
     uchar               ncomps = dev->color_info.num_components;
     int                 pos;
     int                 num_bytes;
@@ -745,6 +745,8 @@ gx_devn_read_color(
             "%d ", values[i]);
         mask >>= 1;
     }
+    for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+        values[i] = 0;
     if_debug0m(gs_debug_flag_clist_color, dev->memory, "]\n");
     return num_bytes;
 }

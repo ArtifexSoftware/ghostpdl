@@ -8687,6 +8687,8 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
     } else {
         /* encode as a color index */
@@ -8739,7 +8741,8 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
-            pdc->colors.devn.values[i] = cv[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
     } else {
         /* encode as a color index */
@@ -8796,6 +8799,8 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
     } else {
         /* encode as a color index */
@@ -8879,6 +8884,8 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
     if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
     } else {
         /* encode as a color index */
@@ -8938,6 +8945,8 @@ pdf14_cmap_devicen_direct(const	frac * pcc,
     if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
+        for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+            pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
     } else {
     /* encode as a color index */

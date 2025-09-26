@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -52,6 +52,8 @@ gx_hl_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
     /* Note: All the stepping math is done with frac color values */
 
     devc.type = gx_dc_type_devn;
+    for (i = n; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
+         devc.colors.devn.values[i] = 0;
 
     if (j < fixed2int(fa->clip->p.y) ||
             j > fixed2int_ceiling(fa->clip->q.y)) /* Must be compatible to the clipping logic. */
