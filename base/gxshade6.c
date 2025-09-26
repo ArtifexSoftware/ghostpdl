@@ -1314,6 +1314,8 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
     int code;
     gx_device_color devc;
 
+    if (pdevc)
+        pdevc->tag = pfs->dev->graphics_type_tag;
 #ifdef PACIFY_VALGRIND
     /* This is a hack to get us around some valgrind warnings seen
      * when transparency is in use with the clist. We run through
