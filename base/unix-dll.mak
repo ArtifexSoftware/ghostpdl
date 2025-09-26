@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2025 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -325,7 +325,9 @@ so-only-subtarget:
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) GENOPT='$(GENOPT)' GS_LDFLAGS='$(LDFLAGS) $(GS_LDFLAGS_SO)'\
          PCL_LDFLAGS='$(LDFLAGS) $(PCL_LDFLAGS_SO)' XPS_LDFLAGS='$(LDFLAGS) $(XPS_LDFLAGS_SO)' \
          PDL_LDFLAGS='$(LDFLAGS) $(PDL_LDFLAGS_SO)' PDF_LDFLAGS='$(LDFLAGS) $(PDF_LDFLAGS_SO)' \
-         CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' prefix=$(prefix)
+         CFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCFLAGS) $(AC_CFLAGS) $(XCFLAGS)' \
+         CXXFLAGS='$(CFLAGS_STANDARD) $(CFLAGS_SO) $(GCXXFLAGS) $(AC_CFLAGS) $(XCFLAGS)' \
+         prefix=$(prefix)
 
 so-only-stripped-subtarget: so-only-subtarget
 	$(MAKE) $(SUB_MAKE_OPTION) $(SODEFS) gs-so-strip $(PCL_TARGET)-so-strip $(XPS_TARGET)-so-strip $(GPDL_TARGET)-so-strip$ (PDF_TARGET)-so-strip
