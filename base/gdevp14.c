@@ -10703,7 +10703,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     uchar k;
     bool deep = device_is_deep(target);
     cmm_profile_t *icc_profile;
-
+    int nc;
 
     code = dev_proc(target, get_profile)(target,  &dev_profile);
     if (code < 0)
@@ -10721,22 +10721,24 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     if (code < 0)
         return code;
 
+    nc = pdev->color_info.num_components;
     /* If we are not using a blending color space, the number of color planes
        should not exceed that of the target */
     if (!(pdev->blend_cs_state != PDF14_BLEND_CS_UNSPECIFIED || pdev->overprint_sim)) {
-        if (pdev->color_info.num_components > target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)pdev))
-            pdev->color_info.num_components = target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)pdev);
+        if (nc > target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)pdev))
+            nc = target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)pdev);
         if (pdev->color_info.max_components > target->color_info.max_components)
             pdev->color_info.max_components = target->color_info.max_components;
     }
+    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
+        nc = pdev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
+
+    pdev->color_info.num_components = nc;
+    pdev->num_planar_planes = nc;
     pdev->color_info.depth = pdev->color_info.num_components * (8<<deep);
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
-        pdev->num_planar_planes = pdev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
-    else
-        pdev->num_planar_planes = target->num_planar_planes;
     pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     pdev->op_state = pgs->is_fill_color ? PDF14_OP_STATE_FILL : PDF14_OP_STATE_NONE;
