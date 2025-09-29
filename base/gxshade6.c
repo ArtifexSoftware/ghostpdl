@@ -1314,8 +1314,6 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
     int code;
     gx_device_color devc;
 
-    if (pdevc)
-        pdevc->tag = pfs->dev->graphics_type_tag;
 #ifdef PACIFY_VALGRIND
     /* This is a hack to get us around some valgrind warnings seen
      * when transparency is in use with the clist. We run through
@@ -1345,15 +1343,16 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
      */
      if (frac_values) {
         int i;
-	int n = pfs->dev->color_info.num_components;
-	for (i = pfs->num_components; i < n; i++) {
+        int n = pfs->dev->color_info.num_components;
+        for (i = pfs->num_components; i < n; i++) {
             frac_values[i] = 0;
-	}
+        }
     }
 #endif
 
-    if (DEBUG_COLOR_INDEX_CACHE && pdevc == NULL)
+    if (pdevc == NULL)
         pdevc = &devc;
+    pdevc->tag = pfs->dev->graphics_type_tag;
     if (pfs->pcic) {
         code = gs_cached_color_index(pfs->pcic, c->cc.paint.values, pdevc, frac_values);
         if (code < 0)
@@ -1367,9 +1366,6 @@ patch_color_to_device_color_inline(const patch_fill_state_t *pfs,
         const gs_color_space *pcs = pfs->direct_space;
 
         if (pcs != NULL) {
-
-            if (pdevc == NULL)
-                pdevc = &devc;
             memcpy(fcc.paint.values, c->cc.paint.values,
                         sizeof(fcc.paint.values[0]) * pfs->num_components);
             code = pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pgs,
