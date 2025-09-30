@@ -7609,6 +7609,8 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     cmm_profile_t *new_profile = pdf14pct->params.iccprofile;
     cmm_profile_t *old_profile = NULL;
 
+    assert(dev->num_planar_planes == 0 || dev->num_planar_planes == dev->color_info.num_components);
+
     dev_proc(dev, get_profile)(dev, &dev_profile);
     gsicc_extract_profile(GS_UNKNOWN_TAG, dev_profile, &old_profile,
         &render_cond);
@@ -10734,7 +10736,6 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
         nc = pdev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
 
     pdev->color_info.num_components = nc;
-    pdev->num_planar_planes = nc;
     pdev->color_info.depth = pdev->color_info.num_components * (8<<deep);
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
@@ -10760,6 +10761,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     gx_device_fill_in_procs((gx_device *)pdev);
     /* Copying the params adds the tags to the color_info if required. */
     gs_pdf14_device_copy_params((gx_device *)pdev, target);
+    pdev->num_planar_planes = pdev->color_info.num_components;
     gx_device_set_target((gx_device_forward *)pdev, target);
 
     /* Components shift, etc have to be based upon 8 bit */
