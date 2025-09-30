@@ -1089,7 +1089,7 @@ cmap_rgb_direct(frac r, frac g, frac b, gx_device_color * pdc,
         for (i = 0; i < nc; i++)
             pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);
         if (i < ncomps)
-            pdc->colors.devn.values[i] = cm_comps[i];
+            pdc->colors.devn.values[i] = cm_comps[i], i++;
         for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
             pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
@@ -1180,7 +1180,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
         for (i = 0; i < nc; i++)
             pdc->colors.devn.values[i] = frac2cv(cm_comps[i]);
         if (i < ncomps)
-            pdc->colors.devn.values[i] = cm_comps[i];
+            pdc->colors.devn.values[i] = cm_comps[i], i++;
         for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
             pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
@@ -1729,7 +1729,7 @@ cmap_devicen_direct(const frac * pcc,
                             (frac)(frac_1 - cm_comps[i]), effective_transfer[i]));
         }
         if (i < ncomps)
-            pdc->colors.devn.values[i] = cm_comps[i];
+            pdc->colors.devn.values[i] = cm_comps[i], i++;
         for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
             pdc->colors.devn.values[i] = 0;
         pdc->type = gx_dc_type_devn;
