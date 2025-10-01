@@ -10761,7 +10761,8 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     gx_device_fill_in_procs((gx_device *)pdev);
     /* Copying the params adds the tags to the color_info if required. */
     gs_pdf14_device_copy_params((gx_device *)pdev, target);
-    pdev->num_planar_planes = pdev->color_info.num_components;
+    if (target->num_planar_planes > 0)
+        pdev->num_planar_planes = pdev->color_info.num_components;
     gx_device_set_target((gx_device_forward *)pdev, target);
 
     /* Components shift, etc have to be based upon 8 bit */
