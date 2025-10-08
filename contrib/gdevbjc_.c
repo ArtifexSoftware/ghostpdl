@@ -948,7 +948,7 @@ bjc_print_page_color(gx_device_printer * pdev, gp_file * file)
                                  ppdev->compose);
 
         if(bjc_invert_cmyk_bytes(rowC, rowM, rowY, rowK,
-                                 raster, ~ppdev->inverse, lastmask,
+                                 raster, !ppdev->inverse, lastmask,
                                  &skipc)) {
             if (skip) bjc_put_raster_skip(file, skip);
             skip = 1;

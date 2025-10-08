@@ -1072,7 +1072,8 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 static int
 gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
 {
-    bool have_format = false, field;
+    bool have_format = false;
+    int32_t field;
     uint width[2], int_width = sizeof(int) * 3, w = 0;
     uint i;
 

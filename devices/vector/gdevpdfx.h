@@ -880,7 +880,7 @@ struct gx_device_pdf_s {
                         Used only with uncached charprocs. */
     bool PS_accumulator; /* A flag to determine whether a given
                          accumulator is for a PostScript type 3 font or not. */
-    bool Scaled_accumulator; /* We scale teh CTM when accumulating type 3 fonts */
+    int32_t Scaled_accumulator; /* We scale teh CTM when accumulating type 3 fonts */
     bool accumulating_a_global_object; /* ps2write only.
                         Accumulating a global object (such as a named Form,
                         so that resources used in it must also be global.
