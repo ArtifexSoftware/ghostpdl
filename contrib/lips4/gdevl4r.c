@@ -50,37 +50,6 @@ static dev_proc_image_out(lips_image_out);
 static dev_proc_image_out(lips2p_image_out);
 static dev_proc_image_out(lips4_image_out);
 
-#define lips_device(dtype, procs, dname, xdpi, ydpi, lm, bm, rm, tm, color_bits,\
-                    print_page_copies, image_out, cassetFeed, username)\
-{        std_device_std_color_full_body(dtype, &procs, dname,\
-          (int)((long)(DEFAULT_WIDTH_10THS) * (xdpi) / 10),\
-          (int)((long)(DEFAULT_HEIGHT_10THS) * (ydpi) / 10),\
-          xdpi, ydpi, color_bits,\
-          (float)(-(lm) * (xdpi)), (float)(-(tm) * (ydpi)),\
-          (float)((lm) * 72.0), (float)((bm) * 72.0f),\
-          (float)((rm) * 72.0), (float)((tm) * 72.0f)\
-        ),\
-       lp_device_body_rest_(print_page_copies, image_out),\
-           cassetFeed, username, LIPS_PJL_DEFAULT,\
-           0, 0, 0, 0, 0, 0, 0, -1\
-}
-
-#define lips4_device(dtype, procs, dname, xdpi, ydpi, lm, bm, rm, tm, color_bits,\
-                    print_page_copies, image_out, cassetFeed, username)\
-{        std_device_std_color_full_body(dtype, &procs, dname,\
-          (int)((long)(DEFAULT_WIDTH_10THS) * (xdpi) / 10),\
-          (int)((long)(DEFAULT_HEIGHT_10THS) * (ydpi) / 10),\
-          xdpi, ydpi, color_bits,\
-          (float)(-(lm) * (xdpi)), (float)(-(tm) * (ydpi)),\
-          (float)((lm) * 72.0), (float)((bm) * 72.0),\
-          (float)((rm) * 72.0), (float)((tm) * 72.0)\
-        ),\
-       lp_duplex_device_body_rest_(print_page_copies, image_out),\
-  cassetFeed,\
-  username, LIPS_PJL_DEFAULT, 0, 0, 0, 0, 0, 0, 0, -1,\
-  0, LIPS_NUP_DEFAULT, LIPS_FACEUP_DEFAULT,\
-  LIPS_MEDIATYPE_DEFAULT \
-}
 
 typedef struct gx_device_lips_s gx_device_lips;
 struct gx_device_lips_s {
@@ -98,6 +67,43 @@ struct gx_device_lips4_s {
     lips_params_common;
     lips4_params_common;
 };
+
+gs_public_st_suffix_add0_final(st_device_lips, gx_device_lips,
+                               "gx_device_lips", device_lips_enum_ptrs,
+                               device_lips_reloc_ptrs, gx_device_finalize,
+                               st_device_printer);
+
+#define lips_device(dtype, procs, dname, xdpi, ydpi, lm, bm, rm, tm, color_bits,\
+                    print_page_copies, image_out, cassetFeed, username)\
+{        std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_lips, \
+          (int)((long)(DEFAULT_WIDTH_10THS) * (xdpi) / 10),\
+          (int)((long)(DEFAULT_HEIGHT_10THS) * (ydpi) / 10),\
+          xdpi, ydpi, color_bits,\
+          (float)(-(lm) * (xdpi)), (float)(-(tm) * (ydpi)),\
+          (float)((lm) * 72.0), (float)((bm) * 72.0f),\
+          (float)((rm) * 72.0), (float)((tm) * 72.0f)\
+        ),\
+       lp_device_body_rest_(print_page_copies, image_out),\
+           cassetFeed, username, LIPS_PJL_DEFAULT,\
+           0, 0, 0, 0, 0, 0, 0, -1\
+}
+
+#define lips4_device(dtype, procs, dname, xdpi, ydpi, lm, bm, rm, tm, color_bits,\
+                    print_page_copies, image_out, cassetFeed, username)\
+{        std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_lips, \
+          (int)((long)(DEFAULT_WIDTH_10THS) * (xdpi) / 10),\
+          (int)((long)(DEFAULT_HEIGHT_10THS) * (ydpi) / 10),\
+          xdpi, ydpi, color_bits,\
+          (float)(-(lm) * (xdpi)), (float)(-(tm) * (ydpi)),\
+          (float)((lm) * 72.0), (float)((bm) * 72.0),\
+          (float)((rm) * 72.0), (float)((tm) * 72.0)\
+        ),\
+       lp_duplex_device_body_rest_(print_page_copies, image_out),\
+  cassetFeed,\
+  username, LIPS_PJL_DEFAULT, 0, 0, 0, 0, 0, 0, 0, -1,\
+  0, LIPS_NUP_DEFAULT, LIPS_FACEUP_DEFAULT,\
+  LIPS_MEDIATYPE_DEFAULT \
+}
 
 static void
 lips2p_initialize_device_procs(gx_device *dev)
