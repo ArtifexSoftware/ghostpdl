@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -88,7 +88,7 @@ typedef struct wedge_vertex_list_elem_s wedge_vertex_list_elem_t;
 struct wedge_vertex_list_elem_s {
     gs_fixed_point p;
     int level;
-    bool divide_count;
+    int32_t divide_count;
     wedge_vertex_list_elem_t *next, *prev;
 };
 typedef struct {
