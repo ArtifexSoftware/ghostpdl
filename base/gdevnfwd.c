@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -876,6 +876,11 @@ gx_forward_composite(gx_device * dev, gx_device ** pcdev,
         /* If a new compositor was made that wrapped tdev, then that
          * compositor should be our target now. */
         gx_device_set_target((gx_device_forward *)dev, *pcdev);
+        /* Changing the return code to 0 means the reference isn't
+           propogated
+         */
+        rc_decrement((*pcdev), "gx_forward_composite");
+        *pcdev = NULL;
         code = 0; /* We have not made a new compositor that wrapped dev. */
     }
     return code;
