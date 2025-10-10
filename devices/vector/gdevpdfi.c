@@ -2097,7 +2097,13 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
             code = pdf_end_and_do_image(pdev, &pie->writer, &pie->mat, info->id, do_image);
         pie->writer.alt_writer_count--; /* For GC. */
     } else {
+        /* This closes the stream pointed to by PassThroughWriter
+           so we need to NULL that pointer
+         */
         code = pdf_end_image_binary(pdev, &pie->writer, data_height);
+        pdev->PassThroughWriter = NULL;
+        pdev->JPX_PassThrough = false;
+        pdev->JPEG_PassThrough = false;
         code = pdf_end_abort_image(pdev, &pie->writer);
         pie->writer.alt_writer_count--; /* For GC. */
     }
