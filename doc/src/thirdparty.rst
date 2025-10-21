@@ -109,6 +109,11 @@ The table below details the third party libraries that Ghostscript and/or GhostP
 
        "a permissive free software license"
      - http://www.zlib.net/
+   * - brotli
+     - 1.0.9
+     - brotli compression/decompression
+     - MIT
+     - https://github.com/google/brotli
    * - libtiff
      - 4.7.0
      - TIFF image encoding/decoding
