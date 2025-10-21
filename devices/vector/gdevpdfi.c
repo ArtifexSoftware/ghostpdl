@@ -3002,6 +3002,12 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             pdev->JPEG_PassThrough = pdev->params.PassThroughJPEGImages;
             return 1;
             break;
+        case gxdso_set_JPEG_PassThrough:
+            pdev->params.PassThroughJPEGImages = *((bool *)data);
+            if (*((bool *)data) == 0 && pdev->JPEG_PassThrough)
+                pdev->JPEG_PassThrough = 0;
+            return 0;
+            break;
         case gxdso_JPEG_passthrough_begin:
             return 0;
             break;
@@ -3025,6 +3031,12 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             pdev->JPX_PassThrough = pdev->params.PassThroughJPXImages;
             return 1;
             break;
+        case gxdso_set_JPX_PassThrough:
+            pdev->params.PassThroughJPXImages = *((bool *)data);
+            if (*((bool *)data) == 0 && pdev->JPX_PassThrough)
+                pdev->JPX_PassThrough = 0;
+            return 0;
+            break;
         case gxdso_JPX_passthrough_begin:
             return 0;
             break;
@@ -3044,6 +3056,7 @@ gdev_pdf_dev_spec_op(gx_device *pdev1, int dev_spec_op, void *data, int size)
             pdev->PassThroughWriter = 0;
             return 0;
             break;
+
         case gxdso_event_info:
             {
                 dev_param_req_t *request = (dev_param_req_t *)data;

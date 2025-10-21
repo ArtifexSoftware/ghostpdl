@@ -370,6 +370,13 @@ enum {
     gxdso_JPX_passthrough_begin,
     gxdso_JPX_passthrough_data,
     gxdso_JPX_passthrough_end,
+    /* Currently only used by some customer software. This is used to set/reset
+     * JPX and JPEG PassThrough (only available in pdfwrite at the moment).
+     * We need this if we are modifying image data (eg colour management)
+     * because otherwise pdfwrite simply retains the original image data.
+     */
+    gxdso_set_JPEG_PassThrough,
+    gxdso_set_JPX_PassThrough,
 
     gxdso_supports_iccpostrender,
     /* Retrieve the last device in a device chain
