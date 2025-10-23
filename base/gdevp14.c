@@ -6283,6 +6283,8 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
         pdev->num_planar_planes = target->num_planar_planes;
     pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
+    if (dev_proto.initialize_device_procs != NULL)
+        dev_proto.initialize_device_procs((gx_device *)&dev_proto);
     pdev->procs = dev_proto.procs;
     if (deep) {
         set_dev_proc(pdev, encode_color, pdf14_encode_color16);
@@ -10882,6 +10884,10 @@ pdf14_recreate_clist_device(gs_memory_t	*mem, gs_gstate *	pgs,
     if (code < 0)
         return code;
     pdev->color_info = dev_proto.color_info;
+
+    if (dev_proto.initialize_device_procs != NULL)
+        dev_proto.initialize_device_procs((gx_device *)&dev_proto);
+
     pdev->procs = dev_proto.procs;
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
@@ -11114,7 +11120,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
         switch (pdf14pct->params.pdf14_op) {
             case PDF14_PUSH_DEVICE:
                 /* Re-activate the PDF 1.4 compositor */
-                pdev->saved_target_color_info = pdev->target->color_info;
+/*                pdev->saved_target_color_info = pdev->target->color_info; */
                 pdev->target->color_info = pdev->color_info;
                 pdev->saved_target_encode_color = dev_proc(pdev->target, encode_color);
                 pdev->saved_target_decode_color = dev_proc(pdev->target, decode_color);
