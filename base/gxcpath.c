@@ -691,7 +691,7 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
         ((code = gx_path_is_rectangle(ppath, &new_box)) ||
          gx_path_is_void(ppath))
         ) {
-        int changed = 0;
+        int changed = 0, same = 0;
 
         if (!code) {
             /* The new path is void. */
@@ -721,19 +721,31 @@ gx_cpath_intersect_with_params(gx_clip_path *pcpath, /*const*/ gx_path *ppath_or
                 new_box.q.y = int2fixed(fixed2int_pixround(new_box.q.y + adjust_yu));
             }
             /* Intersect the two rectangles if necessary. */
-            if (old_box.p.x >= new_box.p.x)
-                new_box.p.x = old_box.p.x, ++changed;
-            if (old_box.p.y >= new_box.p.y)
-                new_box.p.y = old_box.p.y, ++changed;
-            if (old_box.q.x <= new_box.q.x)
-                new_box.q.x = old_box.q.x, ++changed;
-            if (old_box.q.y <= new_box.q.y)
-                new_box.q.y = old_box.q.y, ++changed;
+            if (old_box.p.x == new_box.p.x)
+                ++same;
+            else
+                if (old_box.p.x > new_box.p.x)
+                    new_box.p.x = old_box.p.x, ++changed, ++same;
+            if (old_box.p.y == new_box.p.y)
+                ++same;
+            else
+                if (old_box.p.y > new_box.p.y)
+                    new_box.p.y = old_box.p.y, ++changed, ++same;
+            if (old_box.q.x == new_box.q.x)
+                ++same;
+            else
+                if (old_box.q.x < new_box.q.x)
+                    new_box.q.x = old_box.q.x, ++changed, ++same;
+            if (old_box.q.y == new_box.q.y)
+                ++same;
+            else
+                if (old_box.q.y <= new_box.q.y)
+                    new_box.q.y = old_box.q.y, ++changed, ++same;
             /* Check for a degenerate rectangle. */
             if (new_box.q.x < new_box.p.x || new_box.q.y < new_box.p.y)
                 new_box.p = new_box.q, changed = 1;
         }
-        if (changed == 4) {
+        if (same == 4) {
             /* The new box/path is the same as the old. */
             return 0;
         }
