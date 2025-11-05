@@ -2382,10 +2382,14 @@ escv_fill_mask(gx_device * dev,
 
 static image_enum_proc_plane_data(escv_image_plane_data);
 static image_enum_proc_end_image(escv_image_end_image);
+static int escv_image_flush(gx_image_enum_common_t* info);
+static bool escv_image_planes_wanted(const gx_image_enum_common_t* info, byte* wanted);
+
 static const gx_image_enum_procs_t escv_image_enum_procs =
   {
-    escv_image_plane_data, escv_image_end_image
-  };
+    escv_image_plane_data, escv_image_end_image,
+    escv_image_flush, escv_image_planes_wanted
+};
 
 /* Start processing an image. */
 static int
@@ -2463,9 +2467,14 @@ escv_begin_typed_image(gx_device               *dev,
   }
   if (!can_do) {
 fallback:
-    return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
-                                        pdcolor, pcpath, mem,
-                                        &pie->default_info);
+      code = gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
+          pdcolor, pcpath, mem,
+          &pie->default_info);
+      if (code >= 0) {
+          memcpy(pie, pie->default_info, sizeof(gx_image_enum_common_t));
+          pie->procs = &escv_image_enum_procs;
+      }
+      return code;
   }
 
   if (pim->ImageMask || (pim->BitsPerComponent == 1 && num_components == 1)) {
@@ -2833,6 +2842,27 @@ escv_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
   code = gdev_vector_end_image(vdev, (gdev_vector_image_enum_t *) pie, draw_last, pdev->white);
   return code;
+}
+static int
+escv_image_flush(gx_image_enum_common_t* info)
+{
+    gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
+    gx_device* saved_dev = pie->dev;
+    int code = 0;
+
+    code = pie->default_info->procs->flush(pie->default_info);
+    return code;
+}
+
+static bool
+escv_image_planes_wanted(const gx_image_enum_common_t* info, byte* wanted)
+{
+    gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
+    if (pie->default_info->procs->planes_wanted)
+        return pie->default_info->procs->planes_wanted(pie->default_info, wanted);
+    else
+        memset(wanted, 0xff, info->num_planes);
+    return true;
 }
 
 static int escv_write_begin(gx_device *dev, int bits, int x, int y, int sw, int sh, int dw, int dh, int roll)

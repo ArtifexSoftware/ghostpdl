@@ -956,7 +956,7 @@ gdev_vector_end_image(gx_device_vector * vdev,
         }
         code = 1;
     }
-    if (vdev->bbox_device) {
+    if (vdev->bbox_device && pie->bbox_info) {
         int bcode = gx_image_end(pie->bbox_info, draw_last);
 
         if (bcode < 0)

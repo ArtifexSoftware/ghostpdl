@@ -321,6 +321,8 @@ static  dev_proc_fill_rectangle(opvp_fill_rectangle);
 static  dev_proc_begin_typed_image(opvp_begin_typed_image);
 static  image_enum_proc_plane_data(opvp_image_plane_data);
 static  image_enum_proc_end_image(opvp_image_end_image);
+static  image_enum_proc_flush(opvp_image_flush);
+static  image_enum_proc_planes_wanted(opvp_image_planes_wanted);
 
 gs_public_st_suffix_add0_final(
     st_device_opvp,
@@ -1415,7 +1417,9 @@ static  const
 gx_image_enum_procs_t opvp_image_enum_procs =
 {
     opvp_image_plane_data,
-    opvp_image_end_image
+    opvp_image_end_image,
+    opvp_image_flush,
+    opvp_image_planes_wanted
 };
 typedef enum _FastImageSupportMode {
     FastImageDisable,
@@ -4807,6 +4811,28 @@ opvp_image_end_image(gx_image_enum_common_t *info, bool draw_last)
     }
 
     return gdev_vector_end_image(vdev, vinfo, draw_last, vdev->white);
+}
+
+static int
+opvp_image_flush(gx_image_enum_common_t* info)
+{
+    gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
+    gx_device* saved_dev = pie->dev;
+    int code = 0;
+
+    code = pie->default_info->procs->flush(pie->default_info);
+    return code;
+}
+
+static bool
+opvp_image_planes_wanted(const gx_image_enum_common_t* info, byte* wanted)
+{
+    gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
+    if (pie->default_info->procs->planes_wanted)
+        return pie->default_info->procs->planes_wanted(pie->default_info, wanted);
+    else
+        memset(wanted, 0xff, info->num_planes);
+    return true;
 }
 
 /* ----- vector driver procs ----- */

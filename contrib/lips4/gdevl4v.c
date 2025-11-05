@@ -2153,8 +2153,12 @@ lips4v_fill_mask(gx_device * dev,
 
 static image_enum_proc_plane_data(lips4v_image_plane_data);
 static image_enum_proc_end_image(lips4v_image_end_image);
+static int lips4v_image_flush(gx_image_enum_common_t* info);
+static bool lips4v_image_planes_wanted(const gx_image_enum_common_t* info, byte* wanted);
+
 static const gx_image_enum_procs_t lips4v_image_enum_procs = {
-    lips4v_image_plane_data, lips4v_image_end_image
+    lips4v_image_plane_data, lips4v_image_end_image,
+    lips4v_image_flush, lips4v_image_planes_wanted
 };
 
 /* Start processing an image. */
@@ -2237,9 +2241,14 @@ lips4v_begin_typed_image(gx_device               *dev,
     }
     if (!can_do) {
 fallback:
-        return gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
+        code = gx_default_begin_typed_image(dev, pgs, pmat, pic, prect,
                                             pdcolor, pcpath, mem,
                                             &pie->default_info);
+        if (code >= 0) {
+            memcpy(pie, pie->default_info , sizeof(gx_image_enum_common_t));
+            pie->procs = &lips4v_image_enum_procs;
+        }
+        return code;
     }
     else if (index == gs_color_space_index_DeviceGray) {
         gx_drawing_color dcolor;
@@ -2456,4 +2465,25 @@ lips4v_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     code = gdev_vector_end_image(vdev, (gdev_vector_image_enum_t *) pie,
                                  draw_last, pdev->white);
     return code;
+}
+static int
+lips4v_image_flush(gx_image_enum_common_t* info)
+{
+    gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
+    gx_device* saved_dev = pie->dev;
+    int code = 0;
+
+    code = pie->default_info->procs->flush(pie->default_info);
+    return code;
+}
+
+static bool
+lips4v_image_planes_wanted(const gx_image_enum_common_t* info, byte* wanted)
+{
+    gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
+    if (pie->default_info->procs->planes_wanted)
+        return pie->default_info->procs->planes_wanted(pie->default_info, wanted);
+    else
+        memset(wanted, 0xff, info->num_planes);
+    return true;
 }
