@@ -315,7 +315,10 @@ pdfi_open_CIDFont_substitute_file(pdf_context *ctx, pdf_dict *font_dict, pdf_dic
                 pdfi_countdown(mname);
 
                 if (ctx->args.nocidfallback == true) {
-                    code = gs_note_error(gs_error_invalidfont);
+                    if (ctx->args.pdfstoponerror == true)
+                        code = gs_note_error(gs_error_Fatal);
+                    else
+                        code = gs_note_error(gs_error_invalidfont);
                 }
                 else {
                     if (ctx->args.cidfsubstpath.data == NULL) {
@@ -1207,7 +1210,8 @@ int pdfi_load_font(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict,
     }
     if (ppdffont == NULL || code < 0) {
         *ppfont = NULL;
-        code = gs_note_error(gs_error_invalidfont);
+        if (code != gs_error_Fatal)
+            code = gs_note_error(gs_error_invalidfont);
     }
     else {
         ppdffont->substitute = (substitute != font_embedded);
@@ -1672,7 +1676,7 @@ int pdfi_Tf(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     code = pdfi_load_resource_font(ctx, stream_dict, page_dict, fontname, point_size);
 
     /* If we failed to load font, try to load an internal one */
-    if (code < 0)
+    if (code != gs_error_Fatal && code < 0)
         code = pdfi_font_set_internal_name(ctx, fontname, point_size);
  exit0:
     pdfi_countdown(fontname);
