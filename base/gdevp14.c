@@ -70,6 +70,7 @@
 #endif
 #include "assert_.h"
 #include "gxgetbit.h"
+#include "gdevkrnlsclass.h"
 
 #if RAW_DUMP
 unsigned int global_index = 0;
@@ -9447,9 +9448,14 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         max_bitmap = max(target->space_params.MaxBitmap, target->space_params.BufferSpace);
         ((gx_device_pdf14_accum *)new_target)->space_params.BufferSpace = max_bitmap;
 
-        new_target->PageHandlerPushed = true;
-        new_target->ObjectHandlerPushed = true;
-        new_target->NupHandlerPushed = true;
+        /* This is used to mark the various internal subclass devices as having already
+         * been pushed, so that opening the device won't result in us trying to push
+         * them again, which leads to trouble.
+         */
+        code = mark_internal_subclass_devices(new_target);
+        if (code < 0)
+            return code;
+
         /* if the device has separations already defined (by SeparationOrderNames) */
         /* we need to copy them (allocating new names) so the colorants are in the */
         /* same order as the target device.                                        */
