@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -21,6 +21,33 @@
 
 #include "gsiparm3.h"
 #include "gxiparam.h"
+
+/*
+ * We implement ImageType 3 images by interposing a mask clipper in
+ * front of an ordinary ImageType 1 image.  Note that we build up the
+ * mask row-by-row as we are processing the image.
+ *
+ * We export a generalized form of the begin_image procedure for use by
+ * the PDF and PostScript writers.
+ */
+typedef struct gx_image3_enum_s {
+    gx_image_enum_common;
+    gx_device *mdev;		/* gx_device_memory in default impl. */
+    gx_device *pcdev;		/* gx_device_mask_clip in default impl. */
+    gx_image_enum_common_t *mask_info;
+    gx_image_enum_common_t *pixel_info;
+    gs_image3_interleave_type_t InterleaveType;
+    int num_components;		/* (not counting mask) */
+    int bpc;			/* BitsPerComponent */
+    int mask_width, mask_height, mask_full_height;
+    int pixel_width, pixel_height, pixel_full_height;
+    byte *mask_data;		/* (if chunky) */
+    byte *pixel_data;		/* (if chunky) */
+    /* The following are the only members that change dynamically. */
+    int mask_y;
+    int pixel_y;
+    int mask_skip;		/* # of mask rows to skip, see below */
+} gx_image3_enum_t;
 
 /*
  * The machinery for splitting an ImageType3 image into pixel and mask data
