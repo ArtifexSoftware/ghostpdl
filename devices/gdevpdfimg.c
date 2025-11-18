@@ -160,19 +160,27 @@ pdfimage_write_args_comment(gx_device_pdf_image *pdev, stream *s)
     const char * const *argv = NULL;
     const char *arg;
     int towrite, length, i, j, argc;
+    int w;
 
     argc = gs_lib_ctx_get_args(pdev->memory->gs_lib_ctx, &argv);
 
-    stream_write(s, (byte *)"%%Invocation:", 13);
+    w = stream_write(s, (byte *)"%%Invocation:", 13);
+    if (w != 13)
+        return_error(gs_error_ioerror);
+
     length = 12;
     for (i=0;i < argc; i++) {
         arg = argv[i];
 
         if ((strlen(arg) + length) > 255) {
-            stream_write(s, (byte *)"\n%%+ ", 5);
+            w = stream_write(s, (byte *)"\n%%+ ", 5);
+            if (w != 5)
+                return_error(gs_error_ioerror);
             length = 5;
         } else {
-            stream_write(s, (byte *)" ", 1);
+            w = stream_write(s, (byte *)" ", 1);
+            if (w != 1)
+                return_error(gs_error_ioerror);
             length++;
         }
 
@@ -185,17 +193,26 @@ pdfimage_write_args_comment(gx_device_pdf_image *pdev, stream *s)
 
         for (j=0;j < towrite;j++) {
             if (arg[j] == 0x0A) {
-                stream_write(s, (byte *)"<0A>", 4);
+                w = stream_write(s, (byte *)"<0A>", 4);
+                if (w != 4)
+                    return_error(gs_error_ioerror);
             } else {
                 if (arg[j] == 0x0D) {
-                    stream_write(s, (byte *)"<0D>", 4);
+                    w = stream_write(s, (byte *)"<0D>", 4);
+                    if (w != 4)
+                        return_error(gs_error_ioerror);
                 } else {
-                    stream_write(s, (byte *)&arg[j], 1);
+                    w = stream_write(s, (byte *)&arg[j], 1);
+                    if (w != 1)
+                        return_error(gs_error_ioerror);
                 }
             }
         }
     }
-    stream_write(s, (byte *)"\n", 1);
+    w = stream_write(s, (byte *)"\n", 1);
+    if (w != 1)
+        return_error(gs_error_ioerror);
+
     return 0;
 }
 
@@ -239,9 +256,17 @@ static int gdev_pdf_image_begin_page(gx_device_pdf_image *pdf_dev,
         }
         swrite_file(pdf_dev->strm, pdf_dev->file, pdf_dev->strm_buf, pdf_dev->width * (pdf_dev->color_info.depth / 8));
 
-        stream_puts(pdf_dev->strm, "%PDF-1.3\n");
-        stream_puts(pdf_dev->strm, "%\307\354\217\242\n");
-        pdfimage_write_args_comment(pdf_dev,pdf_dev->strm);
+        code = stream_puts(pdf_dev->strm, "%PDF-1.3\n");
+        if (code < 0)
+            return code;
+
+        code = stream_puts(pdf_dev->strm, "%\307\354\217\242\n");
+        if (code < 0)
+            return code;
+
+        code = pdfimage_write_args_comment(pdf_dev,pdf_dev->strm);
+        if (code < 0)
+            return code;
 
         if (pdf_dev->ocr.file_init) {
             code = pdf_dev->ocr.file_init(pdf_dev);
@@ -467,57 +492,103 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
 
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->ImageObjectNumber);
     pprintd1(pdf_dev->strm, "<<\n/Length %d 0 R\n", page->LengthObjectNumber);
-    stream_puts(pdf_dev->strm, "/Subtype /Image\n");
+    code = stream_puts(pdf_dev->strm, "/Subtype /Image\n");
+    if (code < 0)
+        return code;
     pprintd1(pdf_dev->strm, "/Width %d\n", width);
     pprintd1(pdf_dev->strm, "/Height %d\n", height);
     switch(num_comps) {
         case 1:
-            stream_puts(pdf_dev->strm, "/ColorSpace /DeviceGray\n");
-            stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+            code = stream_puts(pdf_dev->strm, "/ColorSpace /DeviceGray\n");
+            if (code < 0)
+                return code;
+            code = stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+            if (code < 0)
+                return code;
             break;
         case 3:
-            stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
-            stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+            code = stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
+            if (code < 0)
+                return code;
+            code = stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+            if (code < 0)
+                return code;
             break;
         case 4:
-            stream_puts(pdf_dev->strm, "/ColorSpace /DeviceCMYK\n");
-            stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+            code = stream_puts(pdf_dev->strm, "/ColorSpace /DeviceCMYK\n");
+            if (code < 0)
+                return code;
+            code = stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+            if (code < 0)
+                return code;
             break;
     }
     switch (pdf_dev->Compression) {
         case COMPRESSION_LZW:
-            stream_puts(pdf_dev->strm, "/Filter /LZWDecode\n");
-            stream_puts(pdf_dev->strm, ">>\nstream\n");
+            code = stream_puts(pdf_dev->strm, "/Filter /LZWDecode\n");
+            if (code < 0)
+                return code;
+            code = stream_puts(pdf_dev->strm, ">>\nstream\n");
+            if (code < 0)
+                return code;
             stream_pos = stell(pdf_dev->strm);
-            encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_LZWE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_LZWE_template, pdf_dev->memory->non_gc_memory);
+            if (code < 0)
+                return code;
             break;
         case COMPRESSION_FLATE:
-            stream_puts(pdf_dev->strm, "/Filter /FlateDecode\n");
-            stream_puts(pdf_dev->strm, ">>\nstream\n");
+            code = stream_puts(pdf_dev->strm, "/Filter /FlateDecode\n");
+            if (code < 0)
+                return code;
+            code = stream_puts(pdf_dev->strm, ">>\nstream\n");
+            if (code < 0)
+                return code;
             stream_pos = stell(pdf_dev->strm);
-            encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
+            if (code < 0)
+                return code;
             break;
         case COMPRESSION_BROTLI:
-            stream_puts(pdf_dev->strm, "/Filter /BrotliDecode\n");
-            stream_puts(pdf_dev->strm, ">>\nstream\n");
+            code = stream_puts(pdf_dev->strm, "/Filter /BrotliDecode\n");
+            if (code < 0)
+                return code;
+            code = stream_puts(pdf_dev->strm, ">>\nstream\n");
+            if (code < 0)
+                return code;
             stream_pos = stell(pdf_dev->strm);
-            encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_brotliE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_brotliE_template, pdf_dev->memory->non_gc_memory);
+            if (code < 0)
+                return code;
             break;
         case COMPRESSION_JPEG:
-            stream_puts(pdf_dev->strm, "/Filter /DCTDecode\n");
-            stream_puts(pdf_dev->strm, ">>\nstream\n");
+            code = stream_puts(pdf_dev->strm, "/Filter /DCTDecode\n");
+            if (code < 0)
+                return code;
+            code = stream_puts(pdf_dev->strm, ">>\nstream\n");
+            if (code < 0)
+                return code;
             stream_pos = stell(pdf_dev->strm);
-            encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_DCTE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_DCTE_template, pdf_dev->memory->non_gc_memory);
+            if (code < 0)
+                return code;
             break;
         case COMPRESSION_RLE:
-            stream_puts(pdf_dev->strm, "/Filter /RunLengthDecode\n");
-            stream_puts(pdf_dev->strm, ">>\nstream\n");
+            code = stream_puts(pdf_dev->strm, "/Filter /RunLengthDecode\n");
+            if (code < 0)
+                return code;
+            code = stream_puts(pdf_dev->strm, ">>\nstream\n");
+            if (code < 0)
+                return code;
             stream_pos = stell(pdf_dev->strm);
-            encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_RLE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_RLE_template, pdf_dev->memory->non_gc_memory);
+            if (code < 0)
+                return code;
             break;
         default:
         case COMPRESSION_NONE:
-            stream_puts(pdf_dev->strm, ">>\nstream\n");
+            code = stream_puts(pdf_dev->strm, ">>\nstream\n");
+            if (code < 0)
+                return code;
             stream_pos = stell(pdf_dev->strm);
             break;
     }
@@ -529,7 +600,9 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
             break;
         if (pdf_dev->ocr.line)
            pdf_dev->ocr.line(pdf_dev, data);
-        stream_write(pdf_dev->strm, data, width * num_comps);
+        code = stream_write(pdf_dev->strm, data, width * num_comps);
+        if (code != width * num_comps)
+            code = gs_note_error(gs_error_ioerror);
     }
 
     if (code < 0) {
@@ -544,11 +617,16 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
         case COMPRESSION_BROTLI:
         case COMPRESSION_JPEG:
         case COMPRESSION_RLE:
-            s_close_filters(&pdf_dev->strm, s);
+            code = s_close_filters(&pdf_dev->strm, s);
             break;
         default:
         case COMPRESSION_NONE:
             break;
+    }
+    if (code < 0) {
+        gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
+        gx_downscaler_fin(&ds);
+        return code;
     }
 
     stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
@@ -556,24 +634,35 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
 
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->LengthObjectNumber);
     pprintd1(pdf_dev->strm, "%d\n", page->LengthOffset - stream_pos - 18); /* 18 is the length of \nendstream\nendobj\n we need to take that off for the stream length */
-    stream_puts(pdf_dev->strm, "endobj\n");
+    code = stream_puts(pdf_dev->strm, "endobj\n");
+    if (code < 0)
+        return code;
 
     page->PageStreamOffset = stell(pdf_dev->strm);
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->PageStreamObjectNumber);
     pprintd1(pdf_dev->strm, "<<\n/Filter/FlateDecode/Length %d 0 R\n>>\nstream\n", page->PageLengthObjectNumber);
     stream_pos = stell(pdf_dev->strm);
-    encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
+    code = encode((gx_device *)pdf_dev, &pdf_dev->strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
+    if (code < 0)
+        return code;
+
     if (pdf_dev->ocr.end_page)
         stream_puts(pdf_dev->strm, "q\n");
     gs_snprintf(Buffer, sizeof(Buffer), "%f 0 0 %f 0 0 cm\n/Im1 Do", ((double)pdf_dev->width / pdf_dev->HWResolution[0]) * 72, ((double)pdf_dev->height / pdf_dev->HWResolution[1]) * 72);
-    stream_puts(pdf_dev->strm, Buffer);
+    code = stream_puts(pdf_dev->strm, Buffer);
+    if (code < 0)
+        return code;
     if (pdf_dev->ocr.end_page) {
         stream_puts(pdf_dev->strm, "\nQ");
         pdf_dev->ocr.end_page(pdf_dev);
     }
-    s_close_filters(&pdf_dev->strm, s);
+    code = s_close_filters(&pdf_dev->strm, s);
+    if (code < 0)
+        return code;
     len = stell(pdf_dev->strm) - stream_pos;
-    stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
+    code = stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
+    if (code < 0)
+        return code;
 
     page->PageLengthOffset = stell(pdf_dev->strm);
     pprintd2(pdf_dev->strm, "%d 0 obj\n%d\nendobj\n", page->PageLengthObjectNumber, len);
@@ -581,13 +670,19 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
     page->PageDictOffset = stell(pdf_dev->strm);
     pprintd1(pdf_dev->strm, "%d 0 obj\n", page->PageDictObjectNumber);
     pprintd1(pdf_dev->strm, "<<\n/Contents %d 0 R\n", page->PageStreamObjectNumber);
-    stream_puts(pdf_dev->strm, "/Type /Page\n/Parent 2 0 R\n");
+    code = stream_puts(pdf_dev->strm, "/Type /Page\n/Parent 2 0 R\n");
+    if (code < 0)
+        return code;
     gs_snprintf(Buffer, sizeof(Buffer), "/MediaBox [0 0 %f %f]\n", ((double)pdf_dev->width / pdf_dev->HWResolution[0]) * 72, ((double)pdf_dev->height / pdf_dev->HWResolution[1]) * 72);
-    stream_puts(pdf_dev->strm, Buffer);
+    code = stream_puts(pdf_dev->strm, Buffer);
+    if (code < 0)
+        return code;
     pprintd1(pdf_dev->strm, "/Resources <<\n/XObject <<\n/Im1 %d 0 R\n>>\n", page->ImageObjectNumber);
     if (pdf_dev->ocr.file_init)
         pprintd1(pdf_dev->strm, "/Font <<\n/Ft0 %d 0 R\n>>\n", PDFIMG_STATIC_OBJS);
-    stream_puts(pdf_dev->strm, ">>\n>>\nendobj\n");
+    code = stream_puts(pdf_dev->strm, ">>\n>>\nendobj\n");
+    if (code < 0)
+        return code;
 
     gx_downscaler_fin(&ds);
     gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
@@ -596,11 +691,12 @@ pdf_image_downscale_and_print_page(gx_device_printer *dev,
     return code;
 }
 
-static void write_fileID(stream *s, const byte *str, int size)
+static int write_fileID(stream *s, const byte *str, int size)
 {
     const stream_template *templat;
     stream_AXE_state state;
     stream_state *st = NULL;
+    int status, nw;
 
     templat = &s_AXE_template;
     st = (stream_state *) & state;
@@ -610,17 +706,19 @@ static void write_fileID(stream *s, const byte *str, int size)
         byte buf[100];		/* size is arbitrary */
         stream_cursor_read r;
         stream_cursor_write w;
-        int status;
 
         stream_cursor_read_init(&r, str, size);
 
         do {
             stream_cursor_write_init(&w, buf, sizeof(buf));
             status = (*templat->process) (st, &r, &w, true);
-            stream_write(s, buf, (uint) (w.ptr + 1 - buf));
+            nw = stream_write(s, buf, (uint) (w.ptr + 1 - buf));
+            if (nw != ((int) (w.ptr + 1 - buf)))
+                status = gs_note_error(gs_error_ioerror);
         }
         while (status == 1);
     }
+    return (status < 0 ? status : 0);
 }
 
 static int
@@ -635,6 +733,7 @@ pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDa
     uint ignore;
     stream *s = s_MD5E_make_stream(mem, fileID, 16);
     long secs_ns[2];
+    int code;
 
     if (s == NULL)
         return_error(gs_error_VMerror);
@@ -645,44 +744,76 @@ pdf_compute_fileID(gx_device_pdf_image * pdev, byte fileID[16], char *CreationDa
 #else
     gp_get_realtime(secs_ns);
 #endif
-    sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
+    code = sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
+    if (code < 0)
+        return code;
 #ifdef CLUSTER
     /* Don't have the ID's vary by filename output in the cluster testing.
      * This prevents us comparing gs to gpdl results, and makes it harder
      * to manually reproduce results. */
-    sputs(s, (const byte *)"ClusterTest.pdf", strlen("ClusterTest.pdf"), &ignore);
+    code = sputs(s, (const byte *)"ClusterTest.pdf", strlen("ClusterTest.pdf"), &ignore);
 #else
-    sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
+    code = sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
 #endif
+    if (code < 0)
+        return code;
 
-    stream_puts(s, "/ModDate ");
-    stream_puts(s, CreationDate);
-    stream_puts(s, "\n/CreationDate ");
-    stream_puts(s, CreationDate);
-    stream_puts(s, "\n/Title (");
-    stream_puts(s, Title);
-    stream_puts(s, ")\n/Producer (");
-    stream_puts(s, Producer);
-    stream_puts(s, ")\n");
+    code = stream_puts(s, "/ModDate ");
+    if (code < 0)
+        return code;
+    code = stream_puts(s, CreationDate);
+    if (code < 0)
+        return code;
+    code = stream_puts(s, "\n/CreationDate ");
+    if (code < 0)
+        return code;
+    code = stream_puts(s, CreationDate);
+    if (code < 0)
+        return code;
+    code = stream_puts(s, "\n/Title (");
+    if (code < 0)
+        return code;
+    code = stream_puts(s, Title);
+    if (code < 0)
+        return code;
+    code = stream_puts(s, ")\n/Producer (");
+    if (code < 0)
+        return code;
+    code = stream_puts(s, Producer);
+    if (code < 0)
+        return code;
+    code = stream_puts(s, ")\n");
+    if (code < 0)
+        return code;
 
-    sclose(s);
+    code = sclose(s);
+    if (code < 0)
+        return code;
     gs_free_object(mem, s, "pdf_compute_fileID");
     return 0;
 }
 
-static void write_xref_entry (stream *s, gs_offset_t Offset)
+static int write_xref_entry (stream *s, gs_offset_t Offset)
 {
     char O[11];
     int i;
+    int code = 0;
 
     if (Offset > 9999999999){
         Offset = 0;
     }
     gs_snprintf(O, sizeof(O), "%d", Offset);
-    for (i=0; i< (10 - strlen(O)); i++)
-        stream_puts(s, "0");
-    stream_puts(s, O);
-    stream_puts(s, " 00000 n \n");
+    for (i=0; i < (10 - strlen(O)) && code >= 0; i++)
+        code = stream_puts(s, "0");
+    if (code < 0)
+        return code;
+    code = stream_puts(s, O);
+    if (code < 0)
+        return code;
+    code = stream_puts(s, " 00000 n \n");
+    if (code < 0)
+        return code;
+    return 0;
 }
 
 static void
@@ -700,7 +831,7 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
     pdfimage_page *page = pdf_dev->Pages;
     struct tm tms;
     time_t t;
-    int timeoffset;
+    int timeoffset, code;
     char timesign;
     char CreationDate[26], Title[] = "Untitled", Producer[256];
 
@@ -710,18 +841,24 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
         pdf_store_default_Producer(Producer);
 
         pdf_dev->RootOffset = stell(pdf_dev->strm);
-        stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n/Info 3 0 R\n>>\nendobj\n");
+        code = stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n/Info 3 0 R\n>>\nendobj\n");
+        if (code < 0)
+            return code;
 
         pdf_dev->PagesOffset = stell(pdf_dev->strm);
         pprintd1(pdf_dev->strm, "2 0 obj\n<<\n/Count %d\n", pdf_dev->NumPages);
-        stream_puts(pdf_dev->strm, "/Kids [");
+        code = stream_puts(pdf_dev->strm, "/Kids [");
+        if (code < 0)
+            return code;
 
         while(page){
             pprintd1(pdf_dev->strm, "%d 0 R ", page->PageDictObjectNumber);
             page = page->next;
         }
 
-        stream_puts(pdf_dev->strm, "]\n/Type /Pages\n>>\nendobj\n");
+        code = stream_puts(pdf_dev->strm, "]\n/Type /Pages\n>>\nendobj\n");
+        if (code < 0)
+            return code;
 
 #ifdef CLUSTER
         memset(&t, 0, sizeof(t));
@@ -744,75 +881,120 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
             timesign, timeoffset / 60, timeoffset % 60);
 
         pdf_dev->InfoOffset = stell(pdf_dev->strm);
-        stream_puts(pdf_dev->strm, "3 0 obj\n<<\n/Producer");
-        stream_puts(pdf_dev->strm, Producer);
-        stream_puts(pdf_dev->strm, "\n/CreationDate");
-        stream_puts(pdf_dev->strm, CreationDate);
-        stream_puts(pdf_dev->strm, "\n>>\nendobj\n");
+        code = stream_puts(pdf_dev->strm, "3 0 obj\n<<\n/Producer");
+        if (code < 0)
+            return code;
+        code = stream_puts(pdf_dev->strm, Producer);
+        if (code < 0)
+            return code;
+        code = stream_puts(pdf_dev->strm, "\n/CreationDate");
+        if (code < 0)
+            return code;
+        code = stream_puts(pdf_dev->strm, CreationDate);
+        if (code < 0)
+            return code;
+        code = stream_puts(pdf_dev->strm, "\n>>\nendobj\n");
+        if (code < 0)
+            return code;
 
         pdf_dev->xrefOffset = stell(pdf_dev->strm);
         if (PCLm)
             pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", pdf_dev->NextObject);
         else
             pprintd1(pdf_dev->strm, "xref\n0 %d\n0000000000 65536 f \n", (pdf_dev->NumPages * PDFIMG_OBJS_PER_PAGE) + PDFIMG_STATIC_OBJS + pdf_dev->ocr.file_objects);
-        write_xref_entry(pdf_dev->strm, pdf_dev->RootOffset);
-        write_xref_entry(pdf_dev->strm, pdf_dev->PagesOffset);
-        write_xref_entry(pdf_dev->strm, pdf_dev->InfoOffset);
+        code = write_xref_entry(pdf_dev->strm, pdf_dev->RootOffset);
+        if (code < 0)
+            return code;
+        code = write_xref_entry(pdf_dev->strm, pdf_dev->PagesOffset);
+        if (code < 0)
+            return code;
+        code = write_xref_entry(pdf_dev->strm, pdf_dev->InfoOffset);
+        if (code < 0)
+            return code;
         if (pdf_dev->ocr.file_objects) {
             int i;
 
-            for (i = 0; i < OCR_MAX_FILE_OBJECTS; i++)
+            for (i = 0; i < OCR_MAX_FILE_OBJECTS && code >= 0; i++)
                 if (pdf_dev->ocr.file_object_offset[i])
-                    write_xref_entry(pdf_dev->strm, pdf_dev->ocr.file_object_offset[i]);
+                    code = write_xref_entry(pdf_dev->strm, pdf_dev->ocr.file_object_offset[i]);
+
+            if (code < 0)
+                return code;
         }
 
         if (!PCLm) {
             page = pdf_dev->Pages;
-            while(page){
-                write_xref_entry(pdf_dev->strm, page->ImageOffset);
-                write_xref_entry(pdf_dev->strm, page->LengthOffset);
-                write_xref_entry(pdf_dev->strm, page->PageStreamOffset);
-                write_xref_entry(pdf_dev->strm, page->PageDictOffset);
-                write_xref_entry(pdf_dev->strm, page->PageLengthOffset);
+            while(page && code >= 0){
+                code = write_xref_entry(pdf_dev->strm, page->ImageOffset);
+                if (code < 0)
+                    break;
+                code = write_xref_entry(pdf_dev->strm, page->LengthOffset);
+                if (code < 0)
+                    break;
+                code = write_xref_entry(pdf_dev->strm, page->PageStreamOffset);
+                if (code < 0)
+                    break;
+                code = write_xref_entry(pdf_dev->strm, page->PageDictOffset);
+                if (code < 0)
+                    break;
+                code = write_xref_entry(pdf_dev->strm, page->PageLengthOffset);
+                if (code < 0)
+                    break;
                 page = page->next;
             }
+            if (code < 0)
+                return code;
             pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Root 1 0 R\n/ID [", (pdf_dev->NumPages * PDFIMG_OBJS_PER_PAGE) + PDFIMG_STATIC_OBJS + pdf_dev->ocr.file_objects);
             pdf_compute_fileID(pdf_dev, fileID, CreationDate, Title, Producer);
-            write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
-            write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            code = write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            if (code < 0)
+                return code;
+            code = write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            if (code < 0)
+                return code;
             pprintd1(pdf_dev->strm, "]\n>>\nstartxref\n%d\n%%%%EOF\n", pdf_dev->xrefOffset);
         } else {
             gs_offset_t streamsize, R = 0;
             char Buffer[1024];
 
-            sflush(pdf_dev->xref_stream.strm);
+            code = sflush(pdf_dev->xref_stream.strm);
             streamsize = gp_ftell(pdf_dev->xref_stream.file);
-            if (gp_fseek(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
+            if (code < 0 || gp_fseek(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
                 return_error(gs_error_ioerror);
 
-            while(streamsize > 0) {
+            while(streamsize > 0 && code > 0) {
                 if (streamsize > 1024) {
                     streamsize -= gp_fpread(Buffer, 1024, R, pdf_dev->xref_stream.file);
                     R += 1024;
-                    stream_write(pdf_dev->strm, Buffer, 1024);
+                    code = stream_write(pdf_dev->strm, Buffer, 1024);
+                    if (code != 1024)
+                        code = gs_note_error(gs_error_ioerror);
                 }
                 else {
                     gp_fpread(Buffer, streamsize, R, pdf_dev->xref_stream.file);
-                    stream_write(pdf_dev->strm, Buffer, streamsize);
+                    code = stream_write(pdf_dev->strm, Buffer, streamsize);
+                    if (code != streamsize)
+                        code = gs_note_error(gs_error_ioerror);
                     streamsize = 0;
                 }
             }
-            if (gp_fseek(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
+            if (code < 0 || gp_fseek(pdf_dev->xref_stream.file, 0, SEEK_SET) != 0)
                 return_error(gs_error_ioerror);
 
             pprintd1(pdf_dev->strm, "trailer\n<<\n/Size %d\n/Root 1 0 R\n/ID [", pdf_dev->NextObject);
             pdf_compute_fileID(pdf_dev, fileID, CreationDate, Title, Producer);
-            write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
-            write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            code = write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            if (code < 0)
+                return code;
+            code = write_fileID(pdf_dev->strm, (const byte *)&fileID, 16);
+            if (code < 0)
+                return code;
             pprintd1(pdf_dev->strm, "]\n>>\nstartxref\n%d\n%%%%EOF\n", pdf_dev->xrefOffset);
         }
 
-        sflush(pdf_dev->strm);
+        code = sflush(pdf_dev->strm);
+        if (code < 0)
+            return code;
         pdf_dev->strm->file = NULL; /* Don't close underlying file when we free the stream */
         gs_free_object(pdf_dev->memory->non_gc_memory, pdf_dev->strm, "pdfimage_close(strm)");
         pdf_dev->strm = 0;
@@ -1491,20 +1673,27 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
     }
 
     Read = 0;
-    while(stream_pos > 0) {
+    while(stream_pos > 0 && code > 0) {
         if (stream_pos > 1024) {
             stream_pos -= gp_fpread(Buffer, 1024, Read, pdf_dev->temp_stream.file);
             Read += 1024;
-            stream_write(pdf_dev->strm, Buffer, 1024);
+            code = stream_write(pdf_dev->strm, Buffer, 1024);
+            if (code != 1024)
+                code = gs_note_error(gs_error_ioerror);
         }
         else {
             gp_fpread(Buffer, stream_pos, Read, pdf_dev->temp_stream.file);
-            stream_write(pdf_dev->strm, Buffer, stream_pos);
+            code = stream_write(pdf_dev->strm, Buffer, stream_pos);
+            if (code != stream_pos)
+                code = gs_note_error(gs_error_ioerror);
             stream_pos = 0;
         }
     }
-
-    stream_puts(pdf_dev->strm, "endstream\nendobj\n");
+    if (code < 0)
+        return code;
+    code = stream_puts(pdf_dev->strm, "endstream\nendobj\n");
+    if (code < 0)
+        return code;
 
     if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
         gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
@@ -1515,105 +1704,141 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
     pdf_dev->temp_stream.save = pdf_dev->temp_stream.strm;
     switch (pdf_dev->Compression) {
         case COMPRESSION_FLATE:
-            encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
             break;
         case COMPRESSION_BROTLI:
-            encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_brotliE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_brotliE_template, pdf_dev->memory->non_gc_memory);
             break;
         case COMPRESSION_JPEG:
-            encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_DCTE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_DCTE_template, pdf_dev->memory->non_gc_memory);
             break;
         case COMPRESSION_RLE:
-            encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_RLE_template, pdf_dev->memory->non_gc_memory);
+            code = encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_RLE_template, pdf_dev->memory->non_gc_memory);
             break;
         default:
             break;
     }
+
+    if (code < 0)
+        return code;
 
     Read = 0;
     for (row = 0; row < height;row++) {
         code = gx_downscaler_getbits(&ds, data, row);
         if (code < 0)
             break;
-        stream_write(pdf_dev->temp_stream.strm, data, width * num_comps);
+        code = stream_write(pdf_dev->temp_stream.strm, data, width * num_comps);
+        if (code != width * num_comps) {
+            code = gs_note_error(gs_error_ioerror);
+            break;
+        }
         Read++;
         if (Read == pdf_dev->StripHeight) {
             uint R = 0;
 
-            if (pdf_dev->temp_stream.save != pdf_dev->temp_stream.strm)
-                s_close_filters(&pdf_dev->temp_stream.strm, pdf_dev->temp_stream.save);
-            sflush(pdf_dev->temp_stream.strm);
+            if (pdf_dev->temp_stream.save != pdf_dev->temp_stream.strm) {
+                code = s_close_filters(&pdf_dev->temp_stream.strm, pdf_dev->temp_stream.save);
+                if (code < 0)
+                    break;
+            }
+            code = sflush(pdf_dev->temp_stream.strm);
+            if (code < 0)
+                break;
             stream_pos = gp_ftell(pdf_dev->temp_stream.file);
 
             page->ImageOffset = stell(pdf_dev->strm);
             write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
             pprintd1(pdf_dev->strm, "%d 0 obj\n", page->ImageObjectNumber++);
             pprintd1(pdf_dev->strm, "<<\n/Length %d\n", stream_pos);
-            stream_puts(pdf_dev->strm, "/Subtype /Image\n");
+            code = stream_puts(pdf_dev->strm, "/Subtype /Image\n");
+            if (code < 0)
+                break;
             pprintd1(pdf_dev->strm, "/Width %d\n", width);
             pprintd1(pdf_dev->strm, "/Height %d\n", Read);
             if (dev->color_info.max_components == 1)
-                stream_puts(pdf_dev->strm, "/ColorSpace /DeviceGray\n");
+                code = stream_puts(pdf_dev->strm, "/ColorSpace /DeviceGray\n");
             else
-                stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
-            stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+                code = stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
+            if (code < 0)
+                break;
+            code = stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+            if (code < 0)
+                break;
             switch (pdf_dev->Compression) {
                 case COMPRESSION_FLATE:
-                    stream_puts(pdf_dev->strm, "/Filter /FlateDecode\n");
-                    stream_puts(pdf_dev->strm, ">>\nstream\n");
+                    code = stream_puts(pdf_dev->strm, "/Filter /FlateDecode\n");
+                    if (code < 0)
+                        break;
+                    code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                     break;
                 case COMPRESSION_BROTLI:
-                    stream_puts(pdf_dev->strm, "/Filter /BrotliDecode\n");
-                    stream_puts(pdf_dev->strm, ">>\nstream\n");
+                    code = stream_puts(pdf_dev->strm, "/Filter /BrotliDecode\n");
+                    if (code < 0)
+                        break;
+                    code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                     break;
                 case COMPRESSION_JPEG:
-                    stream_puts(pdf_dev->strm, "/Filter /DCTDecode\n");
-                    stream_puts(pdf_dev->strm, ">>\nstream\n");
+                    code = stream_puts(pdf_dev->strm, "/Filter /DCTDecode\n");
+                    if (code < 0)
+                        break;
+                    code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                     break;
                 case COMPRESSION_RLE:
-                    stream_puts(pdf_dev->strm, "/Filter /RunLengthDecode\n");
-                    stream_puts(pdf_dev->strm, ">>\nstream\n");
+                    code = stream_puts(pdf_dev->strm, "/Filter /RunLengthDecode\n");
+                    if (code < 0)
+                        break;
+                    code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                     break;
                 default:
                 case COMPRESSION_LZW:
                 case COMPRESSION_NONE:
-                    stream_puts(pdf_dev->strm, ">>\nstream\n");
+                    code = stream_puts(pdf_dev->strm, ">>\nstream\n");
+                    if (code < 0)
+                        break;
                     break;
             }
-            if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+
+            if (code < 0 || gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
                 gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
                 gx_downscaler_fin(&ds);
-                return_error(gs_error_ioerror);
+                code = gs_note_error(gs_error_ioerror);
+                break;
             }
 
-            while(stream_pos > 0) {
+            while(stream_pos > 0 && code >= 0) {
                 if (stream_pos > 1024) {
                     stream_pos -= gp_fpread(Buffer, 1024, R, pdf_dev->temp_stream.file);
                     R += 1024;
-                    stream_write(pdf_dev->strm, Buffer, 1024);
+                    code = stream_write(pdf_dev->strm, Buffer, 1024);
+                    if (code != 1024)
+                        code = gs_note_error(gs_error_ioerror);
                 }
                 else {
                     memset(Buffer, 0xf5, 1024);
                     gp_fpread(Buffer, stream_pos, R, pdf_dev->temp_stream.file);
-                    stream_write(pdf_dev->strm, Buffer, stream_pos);
+                    code = stream_write(pdf_dev->strm, Buffer, stream_pos);
+                    if (code != stream_pos)
+                        code = gs_note_error(gs_error_ioerror);
                     stream_pos = 0;
                 }
             }
+            if (code < 0)
+                break;
 
-            stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
+            code = stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
 
-            if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+            if (code < 0 || gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
                 gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
                 gx_downscaler_fin(&ds);
-                return_error(gs_error_ioerror);
+                code = gs_note_error(gs_error_ioerror);
             }
 
             switch (pdf_dev->Compression) {
                 case COMPRESSION_FLATE:
-                    encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
+                    code = encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_zlibE_template, pdf_dev->memory->non_gc_memory);
                     break;
                 case COMPRESSION_BROTLI:
-                    encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_brotliE_template, pdf_dev->memory->non_gc_memory);
+                    code = encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_brotliE_template, pdf_dev->memory->non_gc_memory);
                     break;
                 case COMPRESSION_JPEG:
                     {
@@ -1621,22 +1846,28 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
 
                         if (height - (row + 1) < pdf_dev->StripHeight)
                             pdf_dev->StripHeight = height - (row + 1);
-                        encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_DCTE_template, pdf_dev->memory->non_gc_memory);
+                        code = encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_DCTE_template, pdf_dev->memory->non_gc_memory);
                         pdf_dev->StripHeight = t;
                     }
                     break;
                 case COMPRESSION_RLE:
-                    encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_RLE_template, pdf_dev->memory->non_gc_memory);
+                    code = encode((gx_device *)pdf_dev, &pdf_dev->temp_stream.strm, &s_RLE_template, pdf_dev->memory->non_gc_memory);
                     break;
                 default:
                     break;
             }
+            if (code < 0)
+                break;
             Read = 0;
 
             page->ImageOffset = stell(pdf_dev->strm);
-            write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
+            code = write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
+            if (code < 0)
+                break;
             pprintd1(pdf_dev->strm, "%d 0 obj\n", page->ImageObjectNumber++);
-            stream_puts(pdf_dev->strm, "<</Length 14>>\nstream\nq /image Do Q\nendstream\nendobj\n");
+            code = stream_puts(pdf_dev->strm, "<</Length 14>>\nstream\nq /image Do Q\nendstream\nendobj\n");
+            if (code < 0)
+                break;
         }
     }
 
@@ -1652,64 +1883,93 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
         pdf_dev->StripHeight = Read;
         if (pdf_dev->temp_stream.save != pdf_dev->temp_stream.strm)
             s_close_filters(&pdf_dev->temp_stream.strm, pdf_dev->temp_stream.save);
-        sflush(pdf_dev->temp_stream.strm);
+        code = sflush(pdf_dev->temp_stream.strm);
+        if (code < 0)
+            return code;
         stream_pos = gp_ftell(pdf_dev->temp_stream.file);
 
         page->ImageOffset = stell(pdf_dev->strm);
-        write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
+        code = write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
+        if (code < 0)
+            return code;
         pprintd1(pdf_dev->strm, "%d 0 obj\n", page->ImageObjectNumber++);
         pprintd1(pdf_dev->strm, "<<\n/Length %d\n", stream_pos);
-        stream_puts(pdf_dev->strm, "/Subtype /Image\n");
+        code = stream_puts(pdf_dev->strm, "/Subtype /Image\n");
+        if (code < 0)
+            return code;
         pprintd1(pdf_dev->strm, "/Width %d\n", width);
         pprintd1(pdf_dev->strm, "/Height %d\n", Read);
         if (dev->color_info.max_components == 1)
-            stream_puts(pdf_dev->strm, "/ColorSpace /DeviceGray\n");
+            code = stream_puts(pdf_dev->strm, "/ColorSpace /DeviceGray\n");
         else
-            stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
-        stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+            code = stream_puts(pdf_dev->strm, "/ColorSpace /DeviceRGB\n");
+
+        if (code < 0)
+            return code;
+
+        code = stream_puts(pdf_dev->strm, "/BitsPerComponent 8\n");
+        if (code < 0)
+            return code;
+
         switch (pdf_dev->Compression) {
             case COMPRESSION_FLATE:
-                stream_puts(pdf_dev->strm, "/Filter /FlateDecode\n");
-                stream_puts(pdf_dev->strm, ">>\nstream\n");
+                code = stream_puts(pdf_dev->strm, "/Filter /FlateDecode\n");
+                if (code < 0)
+                    break;
+                code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                 break;
             case COMPRESSION_BROTLI:
-                stream_puts(pdf_dev->strm, "/Filter /BrotliDecode\n");
-                stream_puts(pdf_dev->strm, ">>\nstream\n");
+                code = stream_puts(pdf_dev->strm, "/Filter /BrotliDecode\n");
+                if (code < 0)
+                    break;
+                code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                 break;
             default:
             case COMPRESSION_JPEG:
-                stream_puts(pdf_dev->strm, "/Filter /DCTDecode\n");
-                stream_puts(pdf_dev->strm, ">>\nstream\n");
+                code = stream_puts(pdf_dev->strm, "/Filter /DCTDecode\n");
+                if (code < 0)
+                    break;
+                code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                 break;
             case COMPRESSION_RLE:
-                stream_puts(pdf_dev->strm, "/Filter /RunLengthDecode\n");
-                stream_puts(pdf_dev->strm, ">>\nstream\n");
+                code = stream_puts(pdf_dev->strm, "/Filter /RunLengthDecode\n");
+                if (code < 0)
+                    break;
+                code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                 break;
             case COMPRESSION_LZW:
             case COMPRESSION_NONE:
-                stream_puts(pdf_dev->strm, ">>\nstream\n");
+                code = stream_puts(pdf_dev->strm, ">>\nstream\n");
                 break;
         }
-        if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
+        if (code < 0 || gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
             gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
             gx_downscaler_fin(&ds);
             return_error(gs_error_ioerror);
         }
 
-        while(stream_pos > 0) {
+        while(stream_pos > 0 && code >= 0) {
             if (stream_pos > 1024) {
                 stream_pos -= gp_fpread(Buffer, 1024, R, pdf_dev->temp_stream.file);
                 R += 1024;
-                stream_write(pdf_dev->strm, Buffer, 1024);
+                code = stream_write(pdf_dev->strm, Buffer, 1024);
+                if (code != 1024)
+                    code = gs_note_error(gs_error_ioerror);
             }
             else {
                 gp_fpread(Buffer, stream_pos, R, pdf_dev->temp_stream.file);
-                stream_write(pdf_dev->strm, Buffer, stream_pos);
+                code = stream_write(pdf_dev->strm, Buffer, stream_pos);
+                if (code != stream_pos)
+                    code = gs_note_error(gs_error_ioerror);
                 stream_pos = 0;
             }
         }
+        if (code < 0)
+            return code;
 
-        stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
+        code = stream_puts(pdf_dev->strm, "\nendstream\nendobj\n");
+        if (code < 0)
+            return code;
 
         if (gp_fseek(pdf_dev->temp_stream.file, 0, SEEK_SET) != 0) {
             gs_free_object(dev->memory, data, "pdf_image_print_page(data)");
@@ -1717,9 +1977,13 @@ PCLm_downscale_and_print_page(gx_device_printer *dev,
             return_error(gs_error_ioerror);
         }
         page->ImageOffset = stell(pdf_dev->strm);
-        write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
+        code = write_xref_entry(pdf_dev->xref_stream.strm, page->ImageOffset);
+        if (code < 0)
+            return code;
         pprintd1(pdf_dev->strm, "%d 0 obj\n", page->ImageObjectNumber++);
-        stream_puts(pdf_dev->strm, "<</Length 14>>\nstream\nq /image Do Q\nendstream\nendobj\n");
+        code = stream_puts(pdf_dev->strm, "<</Length 14>>\nstream\nq /image Do Q\nendstream\nendobj\n");
+        if (code < 0)
+            return code;
         pdf_dev->StripHeight = saved;
     }
     pdf_dev->NextObject = page->ImageObjectNumber;
