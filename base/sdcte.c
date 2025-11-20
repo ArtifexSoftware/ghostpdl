@@ -92,6 +92,7 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
                (uint) (pr->limit - pr->ptr), last);
     dest->next_output_byte = pw->ptr + 1;
     dest->free_in_buffer = pw->limit - pw->ptr;
+
     switch (ss->phase) {
         case 0:		/* not initialized yet */
             if (gs_jpeg_start_compress(ss, TRUE) < 0)
@@ -216,6 +217,14 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
 
                 if_debug1m('w', st->memory, "[wde]next_scanline=%u\n",
                            jcdp->cinfo.next_scanline);
+                /* As per comment in jcmarker.c we need up to 700 bytes
+                   available to avoid a JERR_CANT_SUSPEND error mid-tag.
+                   So poke the stream code to empty the write buffer for
+                   us.
+                 */
+                if (!last && (uint) (pw->limit - pw->ptr) < 700) {
+                    return 1;
+                }
                 if ((uint) (pr->limit - pr->ptr) < ss->scan_line_size) {
                     if (last)
                         return ERRC;	/* premature EOD */
