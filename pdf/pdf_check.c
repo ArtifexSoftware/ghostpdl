@@ -892,17 +892,73 @@ static int pdfi_check_Font(pdf_context *ctx, pdf_dict *font, pdf_dict *page_dict
             }
         }
 
-        code = pdfi_dict_get(ctx, font, "BaseFont", &array_obj);
-        if (code >= 0) {
-            code = pdfi_dict_put(ctx, font_info_dict, "BaseFont", array_obj);
-            if (code < 0) {
-                pdfi_countdown(array_obj);
-                pdfi_countdown(font_info_dict);
-                return code;
+        /* Try to get font name with fallback:
+         * 1. Try /BaseFont (standard for most fonts)
+         * 2. Try /FontDescriptor/FontName (common for Type 3 fonts)
+         * 3. Try /Name as last resort
+         */
+        {
+            pdf_obj *font_name = NULL;
+            int lookup_code;
+            bool found = false;
+
+            lookup_code = pdfi_dict_get(ctx, font, "BaseFont", &font_name);
+            if (lookup_code >= 0 && pdfi_type_of(font_name) == PDF_NAME) {
+                code = pdfi_dict_put(ctx, font_info_dict, "BaseFont", font_name);
+                pdfi_countdown(font_name);
+                if (code < 0) {
+                    pdfi_countdown(font_info_dict);
+                    return code;
+                }
+                found = true;
+            } else {
+                pdfi_countdown(font_name);
+                font_name = NULL;
             }
+
+            if (!found) {
+                lookup_code = pdfi_dict_get(ctx, font, "FontDescriptor", &font_name);
+                if (lookup_code >= 0 && pdfi_type_of(font_name) == PDF_DICT) {
+                    pdf_dict *font_desc = (pdf_dict *)font_name;
+                    pdf_obj *desc_font_name = NULL;
+
+                    lookup_code = pdfi_dict_get(ctx, font_desc, "FontName", &desc_font_name);
+                    pdfi_countdown(font_name);
+                    font_name = NULL;
+
+                    if (lookup_code >= 0 && pdfi_type_of(desc_font_name) == PDF_NAME) {
+                        code = pdfi_dict_put(ctx, font_info_dict, "BaseFont", desc_font_name);
+                        pdfi_countdown(desc_font_name);
+                        if (code < 0) {
+                            pdfi_countdown(font_info_dict);
+                            return code;
+                        }
+                        found = true;
+                    } else {
+                        pdfi_countdown(desc_font_name);
+                    }
+                } else {
+                    pdfi_countdown(font_name);
+                    font_name = NULL;
+                }
+            }
+
+            if (!found) {
+                lookup_code = pdfi_dict_get(ctx, font, "Name", &font_name);
+                if (lookup_code >= 0 && pdfi_type_of(font_name) == PDF_NAME) {
+                    code = pdfi_dict_put(ctx, font_info_dict, "BaseFont", font_name);
+                    pdfi_countdown(font_name);
+                    if (code < 0) {
+                        pdfi_countdown(font_info_dict);
+                        return code;
+                    }
+                } else {
+                    pdfi_countdown(font_name);
+                }
+            }
+
+            array_obj = NULL;
         }
-        pdfi_countdown(array_obj);
-        array_obj = NULL;
 
         code = pdfi_dict_get(ctx, font, "ToUnicode", &array_obj);
         if (code >= 0)
