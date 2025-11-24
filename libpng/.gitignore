@@ -31,31 +31,109 @@
 # Compiled executables
 *.app/
 *.exe
+a.out
 
 # Debug files
 *.dSYM/
+*.dmp
 *.idb
 *.pdb
 *.su
+*.sym
+*.tds
+core
+core.[0-9]*
+!core/
 
-# Libpng configuration and build artifacts
+# Tag files
+TAGS
+.TAGS
+!TAGS/
+tags
+.tags
+!tags/
+gtags.files
+GTAGS
+GRTAGS
+GPATH
+GSYMS
+cscope.files
+cscope.out
+cscope.*.out
+
+# Text editing and text processing artifacts
+\#*\#
+.\#*
+[._]*.sw[a-p]
+[._]sw[a-p]
+*.bak
+*.orig
+*.rej
+*.tmp
+*~
+
+# IDE files and directories
+## Eclipse
+.cproject/
+.project/
+.settings/
+## Embarcadero RAD Studio
+*.cbproj.*
+__recovery/
+## JetBrains
+.idea/
+## NetBeans
+nbbuild/
+nbdist/
+nbproject/
+## Visual Studio 2015 and newer
+.vs/
+## Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
+## Xcode 9 and newer
+xcuserdata/
+## (Various)
+*.*cache
+*.cache*
+[._]*_history
+.history/
+[Bb]ackup*/
+CMakeLists.txt.user*
+CMakeUserPresets.json
+
+# Local files created or used by coding agents
+*.local
+*.local.*
+
+# Build, test and CI output directories
+[._]build*/
+/[Bb]uild/
+/[Oo]ut/
+*[Dd]ebug/
+[Dd]ebug*/
+*[Rr]elease/
+[Rr]elease*/
+
+# Libpng configuration and auxiliary build artifacts
 *.out
-.deps/
+*out.png
+[._]deps/
+[._]libs/
 .dirstamp
 /Makefile
 /autom4te.cache/
-/config.guess~
-/config.h.in~
+/config*~
+/config.h
 /config.log
 /config.status
-/config.sub~
-/configure~
-/install-sh~
-/libpng-config
-/libpng.pc
+/install*~
+/libpng*-config
+/libpng*.pc
 /libpng.vers
-/libpng16-config
-/libpng16.pc
 /libtool
 /stamp-h1
 pnglibconf.[ch]
@@ -63,17 +141,16 @@ pnglibconf.dfn
 pnglibconf.pre
 pngprefix.h
 
-# Libpng test artifacts
-png-fix-itxt
-pngcp
-pngfix
-pngimage
-pngstest
-pngtest
-pngunknown
-pngvalid
-timepng
-pngout.png
-
-# Libpng CI artifacts
-out/
+# Libpng test programs, scripts and artifacts
+/test-suite.log
+/tests/*.log
+/tests/*.trs
+/png-fix-itxt
+/pngcp
+/pngfix
+/pngimage
+/pngstest
+/pngtest
+/pngunknown
+/pngvalid
+/timepng
