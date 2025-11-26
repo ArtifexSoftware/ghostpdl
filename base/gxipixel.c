@@ -319,9 +319,7 @@ gx_image_enum_begin(gx_device * dev, const gs_gstate * pgs,
      */
 
     /* Ask the device if we are in a pattern accumulator */
-    in_pattern_accumulator = (dev_proc(dev, dev_spec_op)(dev, gxdso_in_pattern_accumulator, NULL, 0));
-    if (in_pattern_accumulator < 0)
-        in_pattern_accumulator = 0;
+    in_pattern_accumulator = ((dev_proc(dev, dev_spec_op)(dev, gxdso_in_pattern_accumulator, NULL, 0)) > 0);
 
     /* Figure out if we are orthogonal */
     if (mat.xy == 0 && mat.yx == 0)
