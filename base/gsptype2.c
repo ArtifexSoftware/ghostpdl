@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -231,7 +231,7 @@ gx_dc_pattern2_fill_rectangle(const gx_device_color * pdevc, int x, int y,
                               gs_logical_operation_t lop,
                               const gx_rop_source_t * source)
 {
-    if (dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_is_cpath_accum, NULL, 0)) {
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_is_cpath_accum, NULL, 0) > 0) {
         /* Performing a conversion of imagemask into a clipping path.
            Fall back to the device procedure. */
         return dev_proc(dev, fill_rectangle)(dev, x, y, w, h, (gx_color_index)0/*any*/);

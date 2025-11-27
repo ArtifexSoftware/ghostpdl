@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -278,7 +278,7 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
     gx_clip_path *pcpath = 0;
     int code;
     gs_overprint_params_t op_params = { 0 };
-    bool op_active = dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprint_active, NULL, 0);
+    bool op_active = (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprint_active, NULL, 0) > 0);
     bool text_op_fill = ((pgs->overprint || (!pgs->overprint && op_active)) &&
         (pgs->text_rendering_mode == 0));
     bool text_op_stroke = ((pgs->stroke_overprint || (!pgs->stroke_overprint && op_active)) &&

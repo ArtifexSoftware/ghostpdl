@@ -3194,7 +3194,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     gx_image_plane_t planes[GS_IMAGE_MAX_COMPONENTS];
     pdf14_buf *cm_result = NULL;
     bool did_alloc;
-    bool target_sep_device = dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0);
+    bool target_sep_device = (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0);
     bool has_spots = pdev->ctx->num_spots > 0;
     bool blend_spots = !target_sep_device && has_spots;
     bool lose_channels = false;
@@ -3254,7 +3254,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
         lose_channels = true;
 
     /* Check if target supports alpha */
-    supports_alpha = dev_proc(target, dev_spec_op)(target, gxdso_supports_alpha, NULL, 0);
+    supports_alpha = (dev_proc(target, dev_spec_op)(target, gxdso_supports_alpha, NULL, 0) > 0);
     code = 0;
 
     buf_ptr = buf->data + (rect.p.y - buf->rect.p.y) * buf->rowstride + ((rect.p.x - buf->rect.p.x) << deep);
@@ -3519,7 +3519,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
      * DevN device space with colors names taken from the devn_params, and
      * use that instead. */
     if (des_profile->num_comps != target->color_info.num_components &&
-        dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0))
+        dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0)
     {
         int num_std;
         gs_devn_params *devn_params =  dev_proc(target, ret_devn_params)(target);
@@ -8689,7 +8689,7 @@ pdf14_cmap_gray_direct(frac gray, gx_device_color * pdc, const gs_gstate * pgs,
 
     /* If output device supports devn, we need to make sure we send it the
        proper color type.  We now support Gray + spots as devn colors */
-    if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
+    if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0) > 0) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
         for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
@@ -8743,7 +8743,7 @@ pdf14_cmap_rgb_direct(frac r, frac g, frac b, gx_device_color *	pdc,
 
     /* If output device supports devn, we need to make sure we send it the
        proper color type.  We now support RGB + spots as devn colors */
-    if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
+    if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0) > 0) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
         for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
@@ -8801,7 +8801,7 @@ pdf14_cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
-    if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
+    if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0) > 0) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
         for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
@@ -8886,7 +8886,7 @@ pdf14_cmap_separation_direct(frac all, gx_device_color * pdc, const gs_gstate * 
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
-    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0) > 0) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
         for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
@@ -8947,7 +8947,7 @@ pdf14_cmap_devicen_direct(const	frac * pcc,
 
     /* if output device supports devn, we need to make sure we send it the
        proper color type */
-    if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0)) {
+    if (dev_proc(trans_device, dev_spec_op)(trans_device, gxdso_supports_devn, NULL, 0) > 0) {
         for (i = 0; i < ncomps; i++)
             pdc->colors.devn.values[i] = cv[i];
         for (; i < GX_DEVICE_COLOR_MAX_COMPONENTS; i++)
@@ -9358,7 +9358,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     /* if the device has separations already defined (by SeparationOrderNames) */
     /* we need to copy them (allocating new names) so the colorants are in the */
     /* same order as the target device.                                        */
-    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0) {
         code = devn_copy_params(target, (gx_device *)p14dev);
         if (code < 0) {
             *pdev = NULL;
@@ -9459,7 +9459,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         /* if the device has separations already defined (by SeparationOrderNames) */
         /* we need to copy them (allocating new names) so the colorants are in the */
         /* same order as the target device.                                        */
-        if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+        if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0) {
             code = devn_copy_params(target, (gx_device *)*pdev);
             if (code < 0)
                 return code;
@@ -10823,7 +10823,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     /* if the device has separations already defined (by SeparationOrderNames) */
     /* we need to copy them (allocating new names) so the colorants are in the */
     /* same order as the target device.                                        */
-    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0)) {
+    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0) {
         code = devn_copy_params(target, (gx_device *)pdev);
         if (code < 0)
             return code;

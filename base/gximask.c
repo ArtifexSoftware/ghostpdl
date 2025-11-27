@@ -40,7 +40,7 @@ gx_image_fill_masked_start(gx_device *dev, const gx_device_color *pdevc, bool tr
                            gx_device **cdev)
 {
     if ((lop == lop_default) && (gx_dc_is_pattern2_color(pdevc) || gx_dc_is_pattern1_color_clist_based(pdevc))) {
-        if (!dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_can_accum, NULL, gs_no_id)) {
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_pattern_can_accum, NULL, gs_no_id) <= 0) {
             extern_st(st_device_cpath_accum);
             gx_device_cpath_accum *pcdev;
             gs_fixed_rect cbox;

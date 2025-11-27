@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -232,7 +232,7 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
                the full DeviceN colors (whicn can include one or more \None
                enrties). Display a warning about this if in debug mode */
 #ifdef DEBUG
-            if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_devn, NULL, 0))
+            if (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_devn, NULL, 0) > 0)
                 gs_warn("Separation preview may be inaccurate due to presence of \\None colorants");
 #endif
             return;

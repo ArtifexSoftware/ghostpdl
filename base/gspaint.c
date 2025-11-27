@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -327,8 +327,7 @@ static int do_fill(gs_gstate *pgs, int rule)
     if (code < 0)
         goto out;
 
-    if (pgs->overprint || (!pgs->overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
-        gxdso_overprint_active, NULL, 0))) {
+    if (pgs->overprint || (!pgs->overprint && (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprint_active, NULL, 0) > 0))) {
         gs_overprint_params_t op_params = { 0 };
 
         if_debug0m(gs_debug_flag_overprint, pgs->memory,
@@ -463,8 +462,7 @@ do_stroke(gs_gstate * pgs)
         goto out;
 
 
-    if (pgs->stroke_overprint || (!pgs->stroke_overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
-        gxdso_overprint_active, NULL, 0))) {
+    if (pgs->stroke_overprint || (!pgs->stroke_overprint && (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprint_active, NULL, 0) > 0))) {
         gs_overprint_params_t op_params = { 0 };
 
         /* PS2 does not have the concept of fill and stroke colors. Here we need to possibly correct
@@ -719,8 +717,8 @@ static int do_fill_stroke(gs_gstate *pgs, int rule, int *restart)
         }
     }
 
-    if (pgs->stroke_overprint || (!pgs->stroke_overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
-        gxdso_overprint_active, NULL, 0))) {
+    if (pgs->stroke_overprint || (!pgs->stroke_overprint && (dev_proc(pgs->device, dev_spec_op)(pgs->device,
+        gxdso_overprint_active, NULL, 0)) > 0)) {
         if_debug0m(gs_debug_flag_overprint, pgs->memory,
             "[overprint] StrokeFill Stroke Set Overprint\n");
         code = gs_do_set_overprint(pgs);

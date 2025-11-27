@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -205,9 +205,7 @@ gs_rectfill(gs_gstate * pgs, const gs_rect * pr, uint count)
     gx_device_color *pdc = gs_currentdevicecolor_inline(pgs);
     const gs_gstate *pgs2 = (const gs_gstate *)pgs;
     bool hl_color_available = gx_hld_is_hl_color_available(pgs2, pdc);
-    bool hl_color = (hl_color_available &&
-                dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_hlcolor,
-                                  NULL, 0));
+    bool hl_color = (hl_color_available && (dev_proc(pdev, dev_spec_op)(pdev, gxdso_supports_hlcolor, NULL, 0) > 0));
     bool center_of_pixel = (pgs->fill_adjust.x == 0 && pgs->fill_adjust.y == 0);
     bool black_vector = false;
 

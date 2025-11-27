@@ -463,16 +463,17 @@ static int pdfi_LZW_filter(pdf_context *ctx, pdf_dict *d, stream *source, stream
 static int PS_JPXD_PassThrough(void *d, byte *Buffer, int Size)
 {
     gx_device *dev = (gx_device *)d;
+    int code = 0;
 
     if (Buffer == NULL) {
         if (Size == 0)
-            dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_end, NULL, 0);
+            code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_end, NULL, 0);
         else
-            dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_begin, NULL, 0);
+            code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_begin, NULL, 0);
     } else {
-        dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_data, Buffer, Size);
+        code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPX_passthrough_data, Buffer, Size);
     }
-    return 0;
+    return code;
 }
 
 /*
@@ -609,16 +610,17 @@ private_st_jpeg_decompress_data();
 static int PDF_DCTD_PassThrough(void *d, byte *Buffer, int Size)
 {
     gx_device *dev = (gx_device *)d;
+    int code = 0;
 
     if (Buffer == NULL) {
         if (Size == 0)
-            dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_end, NULL, 0);
+            code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_end, NULL, 0);
         else
-            dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_begin, NULL, 0);
+            code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_begin, NULL, 0);
     } else {
-        dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_data, Buffer, Size);
+        code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_data, Buffer, Size);
     }
-    return 0;
+    return code;
 }
 
 static int pdfi_DCT_filter(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *decode,

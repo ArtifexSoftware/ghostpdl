@@ -273,7 +273,7 @@ using_transparency_pattern(gs_gstate *pgs)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
 
-    return ((!gs_color_writes_pure(pgs)) && dev_proc(dev, dev_spec_op)(dev, gxdso_supports_pattern_transparency, NULL, 0));
+    return ((!gs_color_writes_pure(pgs)) && (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_pattern_transparency, NULL, 0) > 0));
 }
 
 static inline bool

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -55,16 +55,17 @@ find_stream_memory(i_ctx_t *i_ctx_p, int npop, uint *space)
 static int PS_DCTD_PassThrough(void *d, byte *Buffer, int Size)
 {
     gx_device *dev = (gx_device *)d;
+    int code = 0;
 
     if (Buffer == NULL) {
         if (Size == 0)
-            dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_end, NULL, 0);
+            code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_end, NULL, 0);
         else
-            dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_begin, NULL, 0);
+            code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_begin, NULL, 0);
     } else {
-        dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_data, Buffer, Size);
+        code = dev_proc(dev, dev_spec_op)(dev, gxdso_JPEG_passthrough_data, Buffer, Size);
     }
-    return 0;
+    return code;;
 }
 
 /* <source> <dict> DCTDecode/filter <file> */

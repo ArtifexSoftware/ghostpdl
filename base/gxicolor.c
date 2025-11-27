@@ -1171,7 +1171,7 @@ image_render_color_DeviceN(gx_image_enum *penum_orig, const byte *buffer, int da
     pdevc = &devc1;
     pdevc_next = &devc2;
     /* In case these are devn colors */
-    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0)) {
+    if (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0) > 0) {
         for (i = 0; i < GS_CLIENT_COLOR_MAX_COMPONENTS; i++) {
             pdevc->colors.devn.values[i] = 0;
             pdevc_next->colors.devn.values[i] = 0;

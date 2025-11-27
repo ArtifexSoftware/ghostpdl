@@ -646,7 +646,7 @@ gs_do_set_overprint(gs_gstate * pgs)
            sep or devicen colors needs special consideration if the device
            is in a additive blend mode.  This could
            be written more compactly, but it would be unreadable. */
-        if (dev_proc(dev, dev_spec_op)(dev, gxdso_pdf14_sep_device, NULL, 0) &&
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_pdf14_sep_device, NULL, 0) > 0 &&
             (dev->color_info.polarity != GX_CINFO_POLARITY_SUBTRACTIVE)) {
             if (pcs_index == gs_color_space_index_Separation) {
                 if (!(pcs->params.separation.color_type == SEP_MIX ||

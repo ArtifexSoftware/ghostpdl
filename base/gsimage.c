@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -223,8 +223,8 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
             return code;
     }
 
-    if (pgs->overprint || (!pgs->overprint && dev_proc(pgs->device, dev_spec_op)(pgs->device,
-        gxdso_overprint_active, NULL, 0))) {
+    if (pgs->overprint || (!pgs->overprint && (dev_proc(pgs->device, dev_spec_op)(pgs->device,
+        gxdso_overprint_active, NULL, 0)) > 0)) {
         gs_overprint_params_t op_params = { 0 };
 
         if_debug0m(gs_debug_flag_overprint, pgs->memory,
@@ -411,7 +411,7 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 
         gx_image_end(pie, false);
         if (dev_proc(cdev, dev_spec_op)(cdev,
-                    gxdso_pattern_is_cpath_accum, NULL, 0))
+                    gxdso_pattern_is_cpath_accum, NULL, 0) > 0)
             gx_device_retain((gx_device *)cdev, false);
         return 1;
     }
@@ -719,7 +719,7 @@ gs_image_cleanup(gs_image_enum * penum, gs_gstate *pgs)
     free_row_buffers(penum, penum->num_planes, "gs_image_cleanup(row)");
     if (penum->info != 0) {
         if (dev_proc(penum->info->dev, dev_spec_op)(penum->info->dev,
-                    gxdso_pattern_is_cpath_accum, NULL, 0)) {
+                    gxdso_pattern_is_cpath_accum, NULL, 0) > 0) {
             /* Performing a conversion of imagemask into a clipping path. */
             gx_device *cdev = penum->info->dev;
 

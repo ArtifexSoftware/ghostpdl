@@ -158,7 +158,7 @@ void pdfi_device_set_flags(pdf_context *ctx)
     ctx->device_state.PassUserUnit = pdfi_device_check_param_bool(dev, "PassUserUnit");
 
     /* See if it is a DeviceN (spot capable) */
-    ctx->device_state.spot_capable = dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0);
+    ctx->device_state.spot_capable = (dev_proc(dev, dev_spec_op)(dev, gxdso_supports_devn, NULL, 0) > 0);
 
     ctx->device_state.ModifiesPageSize = pdfi_device_check_param_bool(dev, "ModifiesPageSize");
     ctx->device_state.ModifiesPageOrder = pdfi_device_check_param_bool(dev, "ModifiesPageOrder");
