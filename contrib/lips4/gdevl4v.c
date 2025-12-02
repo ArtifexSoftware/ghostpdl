@@ -1492,13 +1492,11 @@ lips4v_get_params(gx_device * dev, gs_param_list * plist)
                                  &pdev->toner_density)) < 0)
         code = ncode;
 
-    if (pdev->toner_saving_set >= 0 &&
-        (code = (pdev->toner_saving_set ?
+    if ((code = (pdev->toner_saving_set ?
                  param_write_bool(plist, LIPS_OPTION_TONERSAVING,
                                   &pdev->
                                   toner_saving) : param_write_null(plist,
-                                                                   LIPS_OPTION_TONERSAVING)))
-        < 0)
+                                                                   LIPS_OPTION_TONERSAVING))) < 0)
         code = ncode;
 
     if (pdev->Duplex_set >= 0 &&
@@ -1676,23 +1674,22 @@ lips4v_put_params(gx_device * dev, gs_param_list * plist)
         break;
     }
 
-    if (pdev->toner_saving_set >= 0)
-        switch (code =
-                param_read_bool(plist, (param_name = LIPS_OPTION_TONERSAVING),
-                                &toner_saving)) {
-            case 0:
-            toner_saving_set = 1;
-            break;
-            default:
-            if ((code = param_read_null(plist, param_name)) == 0) {
-                toner_saving_set = 0;
-                break;
-            }
-            ecode = code;
-            param_signal_error(plist, param_name, ecode);
-            case 1:
-            break;
-        }
+    switch (code =
+    	    param_read_bool(plist, (param_name = LIPS_OPTION_TONERSAVING),
+    			    &toner_saving)) {
+    	case 0:
+    	toner_saving_set = 1;
+    	break;
+    	default:
+    	if ((code = param_read_null(plist, param_name)) == 0) {
+    	    toner_saving_set = 0;
+    	    break;
+    	}
+    	ecode = code;
+    	param_signal_error(plist, param_name, ecode);
+    	case 1:
+    	break;
+    }
 
     if (pdev->Duplex_set >= 0)	/* i.e., Duplex is supported */
         switch (code = param_read_bool(plist, (param_name = "Duplex"),
@@ -2470,7 +2467,6 @@ static int
 lips4v_image_flush(gx_image_enum_common_t* info)
 {
     gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
-    gx_device* saved_dev = pie->dev;
     int code = 0;
 
     code = pie->default_info->procs->flush(pie->default_info);

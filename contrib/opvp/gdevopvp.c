@@ -4817,7 +4817,6 @@ static int
 opvp_image_flush(gx_image_enum_common_t* info)
 {
     gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
-    gx_device* saved_dev = pie->dev;
     int code = 0;
 
     code = pie->default_info->procs->flush(pie->default_info);
