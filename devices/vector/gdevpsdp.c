@@ -1126,7 +1126,8 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
         params.AlwaysOutline.data = params.NeverOutline.data = NULL;
         params.AlwaysOutline.size = params.NeverOutline.size = 0;
         params.AlwaysEmbed.data = params.NeverEmbed.data = 0;
-        params.AlwaysEmbed.size = params.AlwaysEmbed.persistent = params.NeverEmbed.size = params.NeverEmbed.persistent = 0;
+        params.AlwaysEmbed.size = params.NeverEmbed.size = 0;
+	params.AlwaysEmbed.persistent = params.NeverEmbed.persistent = false;
         params.PSPageOptions.data = NULL;
         params.PSPageOptions.size = 0;
     }

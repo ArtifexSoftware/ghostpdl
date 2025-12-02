@@ -503,7 +503,6 @@ pdfi_setpattern_type1(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_di
     templat.YStep = YStep;
     templat.uses_transparency = transparency;
     templat.BM_Not_Normal = BM_Not_Normal;
-    /* templat.uses_transparency = false; /* disable */
 
     code = pdfi_gsave(ctx);
     if (code < 0)

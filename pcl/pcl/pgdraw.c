@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -322,7 +322,7 @@ hpgl_set_graphics_dash_state(hpgl_state_t * pgls)
     bool adaptive;
     const hpgl_line_type_t *pat;
     float length;
-    float pattern[20];
+    float pattern[20] = {0};
     float offset;
     int count;
     int i;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -81,7 +81,7 @@ struct pdf_font_descriptor_s {
     pdf_font_descriptor_common_t common;
     pdf_base_font_t *base_font;
     font_type FontType;		/* (copied from base_font) */
-    bool embed;
+    int embed;
     struct cid_ {		/* (CIDFonts only) */
         cos_dict_t *Style;
         char Lang[3];		/* 2 chars + \0 */

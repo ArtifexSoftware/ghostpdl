@@ -234,7 +234,7 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
     int jq = jdev->JPEGQ;
     float qf = jdev->QFactor;
     float fparam;
-    bool embed_profile = jdev->EmbedProfile, bparam;
+    bool bparam;
 
     ecode = gx_downscaler_read_params(plist, &jdev->downscale, 0);
 

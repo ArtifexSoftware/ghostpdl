@@ -159,7 +159,6 @@ update_spots(psd_device *dev, gxdso_spot_info *si)
 {
     gs_devn_params *dst_params = &dev->devn_params;
     gs_devn_params *src_params = si->params;
-    gs_separations *dsep, *ssep;
     equivalent_cmyk_color_params *dequiv = &dev->equiv_cmyk_colors;
     equivalent_cmyk_color_params *sequiv = si->equiv;
     int i;
@@ -1382,7 +1381,7 @@ psd_setup(psd_write_ctx *xc, gx_devn_prn_device *dev, gp_file *file, int w, int 
                     int j;
                     const char *curr = "\377";
                     int curr_size = 1;
-                    bool compare;
+                    int compare;
 
                     for (j=xc->base_num_channels + has_tags; j < xc->num_channels; j++) {
                         devn_separation_name *separation_name;

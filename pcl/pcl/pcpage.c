@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -973,7 +973,7 @@ set_text_length(pcl_args_t * pargs, pcl_state_t * pcs)
 static int
 set_perforation_skip(pcl_args_t * pargs, pcl_state_t * pcs)
 {
-    bool new_skip = uint_arg(pargs);
+    int new_skip = (int)uint_arg(pargs);
 
     if ((new_skip != pcs->perforation_skip) && (new_skip <= 1))
         pcs->perforation_skip = new_skip;

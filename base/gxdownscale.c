@@ -3404,11 +3404,8 @@ int gx_downscaler_read_params(gs_param_list        *plist,
         case 1:
             break;
         case 0:
-            if (deskew >= 0) {
-                params->do_skew_detection = deskew;
-                break;
-            }
-            code = gs_error_rangecheck;
+            params->do_skew_detection = deskew;
+            break;
         default:
             param_signal_error(plist, param_name, code);
             return code;
