@@ -515,6 +515,8 @@ typedef struct pdf_viewer_state_s {
     float *dash_pattern;
     uint dash_pattern_size;
     gs_id soft_mask_id;
+    gx_path *clip_path;
+    gs_id clip_path_id;
 } pdf_viewer_state;
 
 /*

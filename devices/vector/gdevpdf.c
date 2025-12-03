@@ -3982,6 +3982,8 @@ error_cleanup:
         for (i=0;i < pdev->vgstack_size;i++) {
             if (pdev->vgstack[i].dash_pattern != NULL)
                 gs_free_object(pdev->memory->non_gc_memory, pdev->vgstack[i].dash_pattern, "pdfwrite final free stored dash in gstate");
+            if (pdev->vgstack[i].clip_path != 0)
+                gx_path_free(pdev->vgstack[i].clip_path, "pdf clip path");
         }
         gs_free_object(pdev->pdf_memory, pdev->vgstack, "pdf_close(graphics state stack)");
         pdev->vgstack = 0;

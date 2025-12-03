@@ -59,6 +59,7 @@ int
 pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
 {
     const int i = pdev->vgstack_depth;
+    int code = 0;
 
     if (pdev->vgstack_depth >= pdev->vgstack_size) {
         pdf_viewer_state *new_vgstack = (pdf_viewer_state *)gs_alloc_bytes(pdev->pdf_memory,
@@ -113,6 +114,26 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
             pdev->vgstack[i].dash_pattern_size = 0;
         }
     }
+    if (pdev->clip_path != 0) {
+        if (pdev->vgstack[i].clip_path != 0)
+            gx_path_free(pdev->vgstack[i].clip_path, "pdf clip path");
+
+        pdev->vgstack[i].clip_path = gx_path_alloc(pdev->pdf_memory->non_gc_memory, "pdf clip path");
+        if (pdev->vgstack[i].clip_path == 0)
+            return_error(gs_error_VMerror);
+
+        code = gx_path_copy(pdev->clip_path, pdev->vgstack[i].clip_path);
+        if (code < 0)
+            return code;
+
+        pdev->vgstack[i].clip_path_id = pdev->clip_path_id;
+    } else {
+        if (pdev->vgstack[i].clip_path != 0) {
+            gx_path_free(pdev->vgstack[i].clip_path, "pdf clip path");
+            pdev->vgstack[i].clip_path = 0;
+            pdev->vgstack[i].clip_path_id = 0;
+        }
+    }
     pdev->vgstack_depth++;
     if (s)
         stream_puts(s, "q\n");
@@ -123,6 +144,8 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
 static int
 pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
 {
+    int code = 0;
+
     pdev->transfer_ids[0] = s->transfer_ids[0];
     pdev->transfer_ids[1] = s->transfer_ids[1];
     pdev->transfer_ids[2] = s->transfer_ids[2];
@@ -163,6 +186,25 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
             pdev->dash_pattern_size = 0;
         }
     }
+
+    if (pdev->clip_path != 0) {
+        gx_path_free(pdev->clip_path, "pdf clip path");
+        pdev->clip_path = 0;
+        pdev->clip_path_id = 0;
+    }
+
+    if (s->clip_path != 0) {
+        pdev->clip_path = gx_path_alloc(pdev->pdf_memory, "pdf clip path");
+        if (pdev->clip_path == 0)
+            return_error(gs_error_VMerror);
+
+        code = gx_path_copy(s->clip_path, pdev->clip_path);
+        if (code < 0)
+            return code;
+
+        pdev->clip_path_id = s->clip_path_id;
+    }
+
     return 0;
 }
 
@@ -265,6 +307,8 @@ pdf_viewer_state_from_gs_gstate(gx_device_pdf * pdev,
     gx_hld_save_color(pgs, pdevc, &vs.saved_stroke_color);
     vs.fill_used_process_color = 0;
     vs.stroke_used_process_color = 0;
+    vs.clip_path = 0;
+    vs.clip_path_id = 0;
     /* pdf_load_viewer_state should never fail, as vs has a NULL
      * dash pattern, and therefore will not allocate. */
     (void)pdf_load_viewer_state(pdev, &vs);
@@ -3029,9 +3073,6 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
                 return code;
             code = cos_dict_put_c_key_string(resource_dict(*ppres),
                         "/SMask", (byte *)buf, strlen(buf));
-            if (code < 0)
-                return code;
-            code = pdf_save_viewer_state(pdev, pdev->strm);
             if (code < 0)
                 return code;
         }
