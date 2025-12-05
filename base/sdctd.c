@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -406,16 +406,28 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
             ss->phase = 4;
             /* falls through */
         case 4:		/* end of image; scan for EOI */
-            if (jddp->PassThrough && jddp->PassThroughfn)
-                (jddp->PassThroughfn)(jddp->device, Buf, pr->ptr - (Buf - 1));
-            if ((code = gs_jpeg_finish_decompress(ss)) < 0) {
-                code = ERRC;
-                goto error_out;
+            {
+                /* Slightly hacky: We want dctd_term_source() to call stream_dct_end_passthrough()
+                 * to cope with certain error conditions, BUT not at this stage, because gs_jpeg_finish_decompress()
+                 * is what can prompt libjpeg to flush through the last its input data, and we need the last of
+                 * that input data pushed to the PassThroughfn call.
+                 * Setting PassThrough to zero will prevent the final PassThroughfn happening during gs_jpeg_finish_decompress()
+                 */
+                int pt = jddp->PassThrough;
+                jddp->PassThrough = 0;
+                if ((code = gs_jpeg_finish_decompress(ss)) < 0) {
+                    code = ERRC;
+                    goto error_out;
+                }
+                pr->ptr =
+                    (jddp->faked_eoi ? pr->limit : src->next_input_byte - 1);
+                jddp->PassThrough = pt;
+                if (jddp->PassThrough && jddp->PassThroughfn)
+                    (jddp->PassThroughfn)(jddp->device, Buf, pr->ptr - (Buf - 1));
+                stream_dct_end_passthrough(jddp);
+                if (code == 0)
+                    return 0;
             }
-            pr->ptr =
-                (jddp->faked_eoi ? pr->limit : src->next_input_byte - 1);
-            if (code == 0)
-                return 0;
             ss->phase = 5;
             /* falls through */
         case 5:		/* we are DONE */

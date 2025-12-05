@@ -110,6 +110,5 @@ gs_jpeg_finish_decompress(stream_DCT_state * st)
         code = gs_note_error(gs_jpeg_log_error(st));
     if (code >= 0)
         code = (int)jpeg_finish_decompress(&st->data.decompress->dinfo);
-    stream_dct_end_passthrough(st->data.decompress);
     return code;
 }
