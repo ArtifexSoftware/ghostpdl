@@ -2439,7 +2439,7 @@ pdf14_get_buffer_information(const gx_device * dev,
     return 0;
 }
 
-typedef void(*blend_image_row_proc_t) (const byte *gs_restrict buf_ptr,
+typedef void (blend_image_row_proc_t) (const byte *gs_restrict buf_ptr,
     intptr_t planestride, int width, int num_comp, uint16_t bg, byte *gs_restrict linebuf);
 
 
@@ -2547,7 +2547,7 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
     bool deep = pdev->ctx->deep;
     intptr_t planestride;
     intptr_t rowstride;
-    blend_image_row_proc_t blend_row;
+    blend_image_row_proc_t *blend_row;
     bool color_mismatch = false;
     bool supports_alpha = false;
     int i;
