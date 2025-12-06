@@ -798,8 +798,13 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
         } else {
             if (pdfctx->ctx->Info != NULL) {
                 code = PDFobj_to_PSobj(i_ctx_p, pdfctx, (pdf_obj *)pdfctx->ctx->Info, (ref *)op);
-                if (code < 0)
-                    return code;
+                if (code < 0) {
+                    if (pdfctx->ctx->args.pdfstoponerror)
+                        return code;
+                    code = dict_create(1, op);
+                    if (code < 0)
+                        return code;
+                }
 
                 code = names_ref(imemory->gs_lib_ctx->gs_name_table, (const byte *)"NumPages", 8, &nameref, 1);
                 if (code < 0)
