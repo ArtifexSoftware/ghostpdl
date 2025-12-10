@@ -49,8 +49,6 @@
 #include "oper.h"
 #include "store.h"
 #include "gpcheck.h"
-#define FORCE_ASSERT_CHECKING 1
-#define DEBUG_TRACE_PS_OPERATORS 1
 #include "assert_.h"
 
 /*
