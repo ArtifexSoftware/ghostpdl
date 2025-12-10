@@ -76,6 +76,9 @@ public_st_dict_stack();
 public_st_exec_stack();
 public_st_op_stack();
 
+/* Forward reference */
+static int estack_underflow(i_ctx_t *);
+
 /*
  * Apply an operator.  When debugging, we route all operator calls
  * through a procedure.
@@ -86,12 +89,12 @@ static int
 do_call_operator(op_proc_t op_proc, i_ctx_t *i_ctx_p)
 {
     int code;
-    assert(e_stack.p >= e_stack.bot - 1 && e_stack.p < e_stack.top + 1);
+    assert((e_stack.p >= e_stack.bot - 1 || op_proc == estack_underflow) && e_stack.p < e_stack.top + 1);
     assert(o_stack.p >= o_stack.bot - 1 && o_stack.p < o_stack.top + 1);
     code = op_proc(i_ctx_p);
     if (gs_debug_c(gs_debug_flag_validate_clumps))
         ivalidate_clean_spaces(i_ctx_p);
-    assert(e_stack.p >= e_stack.bot - 1 && e_stack.p < e_stack.top + 1);
+    assert((e_stack.p >= e_stack.bot - 1 || op_proc == estack_underflow) && e_stack.p < e_stack.top + 1);
     assert(o_stack.p >= o_stack.bot - 1 && o_stack.p < o_stack.top + 1);
     return code; /* A good place for a conditional breakpoint. */
 }
@@ -144,7 +147,6 @@ struct stats_interp_s {
 #endif
 
 /* Forward references */
-static int estack_underflow(i_ctx_t *);
 static int interp(i_ctx_t **, const ref *, ref *);
 static int interp_exit(i_ctx_t *);
 static int zforceinterp_exit(i_ctx_t *i_ctx_p);
