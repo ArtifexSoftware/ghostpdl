@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2025 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -380,7 +380,35 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
         if (code < 0)
             return code;
 
-        if (gs_is_pdf14trans_compositor(pcte)) {
+        if (gs_is_overprint_compositor(pcte))
+        {
+            /* *pcdev is always returned containing a device capable of doing
+             * compositing. This may mean it is a new device. If this wants
+             * to be the new 'device' in the graphics state, then code will
+             * return as 1. */
+            if (code == 1) {
+                /* We want this device to stay ahead of the compositor; the newly created compositor has
+                 * inserted itself in front of our child device, so basically we want to replace
+                 * our current child with the newly created compositor. I hope !
+                 */
+                psubclass_data = (generic_subclass_data *)dev->subclass_data;
+                if (psubclass_data == NULL)
+                    return_error(gs_error_undefined);
+                psubclass_data->pre_composite_device = dev->child;
+                psubclass_data->saved_finalize_method = (*pcdev)->finalize;
+                (*pcdev)->finalize = subclass_composite_front_finalize;
+
+                (*pcdev)->child = dev->child;
+                dev->child = *pcdev;
+                (*pcdev)->parent = dev;
+                while (dev) {
+                    memcpy(&dev->color_info, &(*pcdev)->color_info, sizeof(gx_device_color_info));
+                    dev->num_planar_planes = dev->child->num_planar_planes;
+                    dev = dev->parent;
+                }
+            }
+        }
+        else if (gs_is_pdf14trans_compositor(pcte)) {
             switch(pct->params.pdf14_op)
             {
                 case PDF14_POP_DEVICE:
@@ -443,7 +471,6 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                     }
                     break;
             }
-
         }
         /* We are inserting the compositor code after this device, or the compositor
          * did not create a new compositor. Either way we don't want the compositor code
