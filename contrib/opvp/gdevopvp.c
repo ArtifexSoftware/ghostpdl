@@ -4819,7 +4819,10 @@ opvp_image_flush(gx_image_enum_common_t* info)
     gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
     int code = 0;
 
-    code = pie->default_info->procs->flush(pie->default_info);
+    if (pie->default_info && pie->default_info->procs->flush != NULL)
+        code = pie->default_info->procs->flush(pie->default_info);
+    if (pie->bbox_info && pie->bbox_info->procs->flush != NULL)
+        code = pie->bbox_info->procs->flush(pie->bbox_info);
     return code;
 }
 
@@ -4827,10 +4830,13 @@ static bool
 opvp_image_planes_wanted(const gx_image_enum_common_t* info, byte* wanted)
 {
     gdev_vector_image_enum_t* pie = (gdev_vector_image_enum_t*)info;
-    if (pie->default_info->procs->planes_wanted)
+    if (pie->default_info && pie->default_info->procs->planes_wanted)
         return pie->default_info->procs->planes_wanted(pie->default_info, wanted);
-    else
+    else {
+        if (pie->bbox_info && pie->bbox_info->procs->planes_wanted)
+            return pie->bbox_info->procs->planes_wanted(pie->bbox_info, wanted);
         memset(wanted, 0xff, info->num_planes);
+    }
     return true;
 }
 
