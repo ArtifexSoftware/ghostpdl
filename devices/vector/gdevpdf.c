@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -430,8 +430,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
         char buf[PDF_MAX_PRODUCER];
 
         pdf_store_default_Producer(buf);
-        if (pdev->CompatibilityLevel <= 1.7)
-            cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
+        cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
                                   strlen(buf));
     }
     /*
@@ -2874,6 +2873,65 @@ static int discard_dict_refs(void *client_data, const byte *key_data, uint key_s
     return 0;
 }
 
+/* Count up the maximum size of all the keys in the /Info dictionary (including NULL terminators) */
+static int count_Info(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v)
+{
+    int *Size = (int *)client_data;
+    *Size += key_size + 1;
+    return 0;
+}
+
+/* Retrieve a copy of all the keys in the /Info dictionary, each key is NULL terminated and the whole is double NULL terminated.
+ * We assume the buffer is large enough to hold all the keys, and has been initialised with all NULLs. We do not return the
+ * ModDate and CreationDate keys, because those are still permitted in the Info dictionary in PDF 2.0.
+ */
+static int get_Info(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v)
+{
+    char *Buffer = (char *)client_data, *ptr = Buffer;
+
+    if (key_size == 8 && !strncmp((const char *)key_data, "/ModDate", 7))
+        return 0;
+    if (key_size == 13 && !strncmp((const char *)key_data, "/CreationDate", 12))
+        return 0;
+    if (Buffer[0] == 0x00) {
+        memcpy(Buffer, key_data, key_size);
+        return 0;
+    }
+    while (*ptr != 0x00 || *(ptr + 1) != 0x00)
+        ptr++;
+    memcpy(ptr + 1, key_data, key_size);
+    return 0;
+}
+
+/* Remove all the keys *except* ModDate and CreationDtae from the Info dictionary. This is used for production of
+ * PDF 2.0 where only these keys 'should' be used. We need to keep them in the Info dictionary until the last minute
+ * because the XMP Metadata uses them, if we delete them before writing the XMP metadata then they won't get written
+ * out there either, and we want them in the XMP block.
+ */
+static int reduce_Info(gx_device_pdf *pdev)
+{
+    int Size = 0, code;
+    char *Buffer, *ptr;
+
+    code = cos_dict_forall(pdev->Info, &Size, count_Info);
+    if (code >= 0) {
+        Buffer = (char *)gs_alloc_bytes(pdev->pdf_memory, Size + 1, "working Info buffer");
+        if (Buffer == NULL)
+            return 0;
+        memset(Buffer, 0x00, Size + 1);
+        code = cos_dict_forall(pdev->Info, Buffer, get_Info);
+        if (code >= 0) {
+            ptr = Buffer;
+            while (*ptr != 0x00 && ptr < Buffer + Size) {
+                (void)cos_dict_delete_c_key(pdev->Info, ptr);
+                ptr += strlen(ptr) + 1;
+            }
+        }
+        gs_free_object(pdev->pdf_memory, Buffer, "working Info buffer");
+    }
+    return 0;
+}
+
 /* Close the device. */
 static int
 pdf_close(gx_device * dev)
@@ -3131,6 +3189,14 @@ pdf_close(gx_device * dev)
             if (code >= 0)
                 code = code1;
         }
+        /* We don't want to write some key/value pairs into the document information dictionary when we are producing
+         * PDF 2.0, because the 2.0 spec deprecates the /Info dictionary (Bah) and states we 'should' only write
+         * ModDate and CreationDate. But if we don't put the keys in the dictionary then the XMP metadata
+         * won't contain them either, and we do want things like the Producer in there.
+         * So, now that we've written the XMP metadata, we can remove any keys we don't want in the /Info dictionary.
+         */
+        if (pdev->CompatibilityLevel >= 2.0)
+            reduce_Info(pdev);
 
         /* Write the Catalog. */
 
