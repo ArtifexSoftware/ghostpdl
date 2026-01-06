@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -69,6 +69,14 @@ static int pdfi_loop_detector_add_object_unchecked(pdf_context *ctx, uint64_t ob
         ctx->loop_detection = New;
     }
     ctx->loop_detection[ctx->loop_detection_entries++] = object;
+
+    /* 1000 is an arbitrary limit, it is intended to ensure we don't process files where objects are nested so deeply
+     * that processing them leads to a C exec stack overflow. This allows objects to be nested 500 deep, with a mark
+     * (to clear the object) for each one which really ought to be more than adequate.
+     */
+    if (ctx->loop_detection_entries > 1000) {
+        return_error(gs_error_Fatal);
+    }
     return 0;
 }
 

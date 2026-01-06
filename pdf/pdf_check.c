@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1231,7 +1231,11 @@ static int pdfi_check_Resources(pdf_context *ctx, pdf_dict *Resources_dict,
         if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_BAD_RESOURCE, "pdfi_check_Resources", "XObject")) < 0)
             return code;
     }
-    (void)pdfi_check_XObject_dict(ctx, (pdf_dict *)d, page_dict, tracker);
+    code = pdfi_check_XObject_dict(ctx, (pdf_dict *)d, page_dict, tracker);
+    if (code == gs_error_Fatal) {
+        if ((code = pdfi_set_error_stop(ctx, code, NULL, E_PDF_BAD_RESOURCE, "pdfi_check_Resources", "XObject")) < 0)
+            return code;
+    }
     pdfi_countdown(d);
     d = NULL;
 
@@ -1535,7 +1539,7 @@ static int pdfi_check_page_inner(pdf_context *ctx, pdf_dict *page_dict,
  */
 int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, pdf_array **fonts_array, pdf_array **spots_array, bool do_setup)
 {
-    int code;
+    int code, code1;
     int spots = 0;
     pdfi_check_tracker_t tracker;
     pdf_dict *Resources = NULL;
@@ -1661,6 +1665,7 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, pdf_array **fonts_arr
         ctx->page.has_OP = false;
 
  exit:
+    code1 = code;
     if (fonts_array != NULL) {
         *fonts_array = tracker.font_array;
         pdfi_countup(*fonts_array);
@@ -1722,5 +1727,7 @@ int pdfi_check_page(pdf_context *ctx, pdf_dict *page_dict, pdf_array **fonts_arr
 
 error:
     (void)pdfi_check_free_tracker(ctx, &tracker);
+    if (code1 < 0)
+        return code1;
     return code;
 }
