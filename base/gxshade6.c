@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -802,7 +802,7 @@ curve_samples(patch_fill_state_t *pfs,
 
 #       if LAZY_WEDGES
             /* Restrict lengths for a reasonable memory consumption : */
-            k1 = ilog2(L / fixed_1 / (1 << (LAZY_WEDGES_MAX_LEVEL - 1)));
+            k1 = ilog2(L / fixed_1 / (1 << ((int)ceil(pfs->smoothness * 31)) ));
             k = max(k, k1);
 #       endif
 #       if QUADRANGLES
