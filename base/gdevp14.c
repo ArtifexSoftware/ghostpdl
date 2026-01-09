@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -4450,7 +4450,11 @@ pdf14_fill_stroke_prefill(gx_device* dev, gs_gstate* pgs, gx_path* ppath,
 
     if ((pgs->fillconstantalpha == 0.0 && pgs->strokeconstantalpha == 0.0) ||
         (pgs->ctm.xx == 0.0 && pgs->ctm.xy == 0.0 && pgs->ctm.yx == 0.0 && pgs->ctm.yy == 0.0))
+    {
+        *op_ca_eq_CA = true;
+        *path_empty = true;
         return 0;
+    }
 
     /* The clip box returned here is scaled up by path_log2scale, so we need
      * to scale down by this later. */
@@ -9100,6 +9104,8 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
                         state_data->alpha_buf_path_scale);
                     if (code < 0)
                         goto cleanup;
+                    if (pdf14_abuf->path_empty)
+                        pdf14_abuf->group_needed = 0;
                 }
                 code = gs_update_trans_marking_params(pgs);
                 break;
