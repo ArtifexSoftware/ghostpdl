@@ -801,8 +801,26 @@ curve_samples(patch_fill_state_t *pfs,
 #       endif
 
 #       if LAZY_WEDGES
-            /* Restrict lengths for a reasonable memory consumption : */
-            k1 = ilog2(L / fixed_1 / (1 << ((int)ceil(pfs->smoothness * 31)) ));
+            /* The code here is voodoo that dates back to 2004 when Igor first committed
+             * the shading code rewrite. It used to claim to "Restrict lengths for a reasonable
+             * memory consumption", and just to use the formulation below based upon LAZY_WEDGES_MAX_LEVEL.
+             * In bug 700989, we came across a Shading where we were "restricting the length" too much,
+             * so Ken came up with an alternative formulation that makes it depend upon the smoothness
+             * parameter. This is really voodoo of a different form, albeit voodoo that's based at least
+             * on something plausible!
+             * What we know is that for the file in that bug to render correctly, a smoothness value of
+             * 0.02 (the default) needs to give a k1 value no smaller than 7.
+             * It also seems likely that this only needs to be changed for Type 1 shadings (ones based
+             * on functions) as the others are likely to be (at least mostly) continuous.
+             * This logic may be subject to future optimisations/improvements/blood rituals.
+             */
+            if (pfs->Function) {
+                /* New 'smoothness based' logic. */
+                k1 = ilog2(L / fixed_1 / (1 << ((int)ceil(pfs->smoothness * 30)) ));
+            } else {
+                /* Igor's original logic. */
+                k1 = ilog2(L / fixed_1 / (1 << (LAZY_WEDGES_MAX_LEVEL - 1)));
+            }
             k = max(k, k1);
 #       endif
 #       if QUADRANGLES
