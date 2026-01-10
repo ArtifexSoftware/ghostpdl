@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -34,7 +34,7 @@ static int process_spot(gx_ht_order *, gs_gstate *,
                          gs_spot_halftone *, gs_memory_t *);
 static int process_threshold(gx_ht_order *, gs_gstate *,
                               gs_threshold_halftone *, gs_memory_t *);
-static int process_threshold2(gx_ht_order *, gs_gstate *,
+int process_threshold2(gx_ht_order *, gs_gstate *,
                                gs_threshold2_halftone *, gs_memory_t *);
 static int process_client_order(gx_ht_order *, gs_gstate *,
                                  gs_client_order_halftone *, gs_memory_t *);
@@ -429,7 +429,7 @@ process_threshold(gx_ht_order * porder, gs_gstate * pgs,
 }
 
 /* Process an extended threshold plane. */
-static int
+int
 process_threshold2(gx_ht_order * porder, gs_gstate * pgs,
                    gs_threshold2_halftone * phtp, gs_memory_t * mem)
 {

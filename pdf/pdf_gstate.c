@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1369,7 +1369,10 @@ static int build_type6_halftone(pdf_context *ctx, pdf_stream *halftone_stream, p
         goto error;
 
     /* Guard against a returned buffer larger than a gs_const_bytestring can hold */
-    if (length > max_uint) {
+    /* We must also take care that we have sufficient data for the process_threshold2()
+     * function, which will attempt to read width * height bytes.
+     */
+    if (length > max_uint || length < w * h) {
         code = gs_note_error(gs_error_rangecheck);
         goto error;
     }
@@ -1427,7 +1430,10 @@ static int build_type10_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
         goto error;
 
     /* Guard against a returned buffer larger than a gs_const_bytestring can hold */
-    if (length > max_uint) {
+    /* We must also take care that we have sufficient data for the process_threshold2()
+     * function, which will attempt to read width * height bytes.
+     */
+    if (length > max_uint || length < w * h) {
         code = gs_note_error(gs_error_rangecheck);
         goto error;
     }
@@ -1508,7 +1514,10 @@ static int build_type16_halftone(pdf_context *ctx, pdf_stream *halftone_stream, 
         goto error;
 
     /* Guard against a returned buffer larger than a gs_const_bytestring can hold */
-    if (length > max_uint) {
+    /* We must also take care that we have sufficient data for the process_threshold2()
+     * function, which will attempt to read width * height bytes.
+     */
+    if (length > max_uint || length < w * h) {
         code = gs_note_error(gs_error_rangecheck);
         goto error;
     }
@@ -1716,6 +1725,9 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                             code = build_type6_halftone(ctx, (pdf_stream *)Value, page_dict, porder1, phtc1, str, str_len);
                             if (code < 0)
                                 goto error;
+                            code = process_threshold2(porder1, ctx->pgs, &phtc1->params.threshold2, ctx->memory);
+                            if (code < 0)
+                                goto error;
                             break;
                         case 10:
                             if (pdfi_type_of(Value) != PDF_STREAM) {
@@ -1725,6 +1737,9 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                             code = build_type10_halftone(ctx, (pdf_stream *)Value, page_dict, porder1, phtc1, str, str_len);
                             if (code < 0)
                                 goto error;
+                            code = process_threshold2(porder1, ctx->pgs, &phtc1->params.threshold2, ctx->memory);
+                            if (code < 0)
+                                goto error;
                             break;
                         case 16:
                             if (pdfi_type_of(Value) != PDF_STREAM) {
@@ -1732,6 +1747,9 @@ static int build_type5_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                                 goto error;
                             }
                             code = build_type16_halftone(ctx, (pdf_stream *)Value, page_dict, porder1, phtc1, str, str_len);
+                            if (code < 0)
+                                goto error;
+                            code = process_threshold2(porder1, ctx->pgs, &phtc1->params.threshold2, ctx->memory);
                             if (code < 0)
                                 goto error;
                             break;

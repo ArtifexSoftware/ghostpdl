@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -29,6 +29,9 @@
 
 /* Sort a sampled halftone order by sample value. */
 void gx_sort_ht_order(gx_ht_bit *, uint);
+
+/* (Internal) procedure to process threshold arrays, non-static for use by PDF interpreter */
+int process_threshold2(gx_ht_order *, gs_gstate *, gs_threshold2_halftone *, gs_memory_t *);
 
 /* (Internal) procedures for constructing halftone orders. */
 int gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
