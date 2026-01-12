@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -43,6 +43,7 @@
 #include "gscolor.h"    /* For gs_setgray() and friends */
 #include "gsicc.h"      /* For gs_cspace_build_ICC() */
 #include "gsstate.h"    /* For gs_gdsvae() and gs_grestore() */
+#include "gxdevsop.h"
 
 /* Forward definitions for a routine we need */
 static int pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int index,
@@ -2627,7 +2628,9 @@ static int pdfi_create_DeviceGray(pdf_context *ctx, gs_color_space **ppcs)
     int code = 0;
 
     if (ppcs != NULL) {
-        if (ctx->page.DefaultGray_cs != NULL) {
+        /* Bug 709017: Don't return DefaultGray_cs if we are within a softmask */
+        if (ctx->page.DefaultGray_cs != NULL &&
+            (dev_proc(ctx->pgs->device, dev_spec_op)(ctx->pgs->device, gxdso_in_smask_construction, NULL, 0) <= 0)) {
             *ppcs = ctx->page.DefaultGray_cs;
             rc_increment(*ppcs);
         } else {
@@ -2656,7 +2659,9 @@ static int pdfi_create_DeviceRGB(pdf_context *ctx, gs_color_space **ppcs)
     int code = 0;
 
     if (ppcs != NULL) {
-        if (ctx->page.DefaultRGB_cs != NULL) {
+        /* Bug 709017: Don't return DefaultRGB_cs if we are within a softmask */
+        if (ctx->page.DefaultRGB_cs != NULL &&
+            (dev_proc(ctx->pgs->device, dev_spec_op)(ctx->pgs->device, gxdso_in_smask_construction, NULL, 0) <= 0)) {
             *ppcs = ctx->page.DefaultRGB_cs;
             rc_increment(*ppcs);
         } else {
@@ -2684,7 +2689,9 @@ static int pdfi_create_DeviceCMYK(pdf_context *ctx, gs_color_space **ppcs)
     int code = 0;
 
     if (ppcs != NULL) {
-        if (ctx->page.DefaultCMYK_cs != NULL) {
+        /* Bug 709017: Don't return DefaultCMYK_cs if we are within a softmask */
+        if (ctx->page.DefaultCMYK_cs != NULL &&
+            (dev_proc(ctx->pgs->device, dev_spec_op)(ctx->pgs->device, gxdso_in_smask_construction, NULL, 0) <= 0)) {
             *ppcs = ctx->page.DefaultCMYK_cs;
             rc_increment(*ppcs);
         } else {
