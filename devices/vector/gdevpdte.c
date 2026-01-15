@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -432,7 +432,7 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
          *
          */
         if (pdfont->cmap_ToUnicode != NULL) {
-            if (pdfont->u.simple.Encoding != NULL) {
+            if (pdfont->FontType != ft_composite && pdfont->u.simple.Encoding != NULL) {
                 if (length <= 2)
                     gs_cmap_ToUnicode_add_pair(pdfont->cmap_ToUnicode, ch, unicode, length);
             } else
