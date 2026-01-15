@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -873,6 +873,32 @@ gx_forward_composite(gx_device * dev, gx_device ** pcdev,
     /* the compositor may have changed color_info. Pick up the new value */
     dev->color_info = tdev->color_info;
     if (code == 1) {
+        /* This code below is not entirely clear, it has been modified on a couple of occasions, and introduced problems.
+         * See bug #703265 and #708876 and the relevant commits.
+         * What is happening here is special handling for forwarding devices when we insert a compositor.
+         * Consider the situation where we have this device setup:
+         *     pattern-clist->clipper->image4
+         * Now we insert (eg) an overprint compositor. What we *want* is this:
+         *     pattern-clist->clipper->compositor->image4
+         * But if we simply return the '1' what we will end up with is this:
+         *     pattern-clist->compositor->image4
+         * Because returning '1' to the caller causes it to make the compositor the target of the calling device.
+         *
+         * So what we do is alter the target of the forwarding device (clipper) to point to the compositor, and then
+         * lie to the caller and say we did *NOT* push a compositor, so it does not change the target of the calling device.
+         *
+         * Previously we then set *pcdev to NULL, but that is problematic; the apply_composite function in gxclrast.c, which
+         * currently seems to be the only place that calls this method, **assumes** that after calling the 'composite' method,
+         * the device returned in *pcdev is unchanged (and a compositor) or we have pushed a compositor and returned the new
+         * compositor in *pcdev. It then proceeds to treat that device as a compositor device, and calls methods that only exist
+         * in compositor devices. If we return NULL in *pcdev that causes a crash.
+         *
+         * So instead we leave *pcdev pointing at the compositr. This leaves us with the problem that we need to count down *pcdev
+         * if we pushed a compositor (because when we return '0' the caller won't count it down) but at the same time leave *pcdev
+         * retaining a reference to it. So we're breaking the reference counting here, technically :-(
+         * But the only way to do this 'properly' would be an extensive rewrite.
+         */
+
         /* If a new compositor was made that wrapped tdev, then that
          * compositor should be our target now. */
         gx_device_set_target((gx_device_forward *)dev, *pcdev);
@@ -880,7 +906,6 @@ gx_forward_composite(gx_device * dev, gx_device ** pcdev,
            propogated
          */
         rc_decrement((*pcdev), "gx_forward_composite");
-        *pcdev = NULL;
         code = 0; /* We have not made a new compositor that wrapped dev. */
     }
     return code;
