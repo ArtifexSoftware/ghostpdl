@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -845,7 +845,7 @@ s_opjd_release(stream_state *ss)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
 
-    if (state->PassThrough && state->PassThroughfn && state->StartedPassThrough) {
+    if (state->PassThrough && state->PassThroughfn) {
         state->StartedPassThrough = 0;
         (state->PassThroughfn)(state->device, NULL, 0);
     }
