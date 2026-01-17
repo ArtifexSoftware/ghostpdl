@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1652,11 +1652,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_gstate * pgs,
     }
 
     if (pdev->JPEG_PassThrough || pdev->JPX_PassThrough) {
-/*        if (pie->writer.alt_writer_count > 1) {
-            s_close_filters(&pie->writer.binary[0].strm, uncompressed);
-            memset(pie->writer.binary + 1, 0, sizeof(pie->writer.binary[1]));
-            memset(pie->writer.binary + 2, 0, sizeof(pie->writer.binary[1]));
-        }*/
         pdev->PassThroughWriter = pie->writer.binary[0].strm;
         pie->writer.alt_writer_count = 1;
     }
@@ -2071,7 +2066,13 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
             if (code < 0)
                 return code;
         }
+        /* This closes the stream pointed to by PassThroughWriter
+           so we need to NULL that pointer
+         */
         code = pdf_end_image_binary(pdev, &pie->writer, data_height);
+        pdev->PassThroughWriter = NULL;
+        pdev->JPX_PassThrough = false;
+        pdev->JPEG_PassThrough = false;
         /* The call above possibly decreases pie->writer.alt_writer_count in 2. */
         if (code < 0)
             return code;
