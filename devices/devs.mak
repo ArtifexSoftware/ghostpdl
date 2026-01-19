@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -743,6 +743,7 @@ $(DD)pdfwrite.dev : $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
  $(GLD)szlibe.dev $(GLD)psdf.dev $(GLD)gsagl.dev $(GLD)sarc4.dev $(DD)pdtext.dev $(libocr_dev) $(GDEV)\
+ $(GLD)sbrotlie.dev \
  $(DEVS_MAK) $(MAKEDIRS)
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
@@ -761,6 +762,7 @@ $(DD)pdfwrite.dev : $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf $(GLD)gsagl
 	$(ADDMOD) $(DD)pdfwrite -include $(DD)pdtext
 	$(ADDMOD) $(DD)pdfwrite $(ocr_i_)
+	$(ADDMOD) $(DD)pdfwrite $(GLD)sbrotlie
 
 gdevpdfb_h=$(DEVVECSRC)gdevpdfb.h
 gdevpdfc_h=$(DEVVECSRC)gdevpdfc.h
