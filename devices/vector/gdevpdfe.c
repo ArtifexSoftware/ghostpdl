@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -728,7 +728,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                 pdf_xml_tag_end(s);
                 pdf_xml_tag_open_beg(s, "pdf:Producer");
                 pdf_xml_tag_end(s);
-                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
+                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "'UnknownProducer'",
                         pdf_xml_data_write);
                 if (code < 0)
                     return code;
@@ -737,7 +737,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
 
                 pdf_xml_tag_open_beg(s, "pdf:Keywords");
                 pdf_xml_tag_end(s);
-                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Keywords", "Unknown",
+                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Keywords", "'Unknown'",
                         pdf_xml_data_write);
                 if (code < 0)
                     return code;
@@ -751,7 +751,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                     pdf_xml_tag_end(s);
                     pdf_xml_tag_open_beg(s, "pdf:Producer");
                     pdf_xml_tag_end(s);
-                    code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
+                    code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "'UnknownProducer'",
                             pdf_xml_data_write);
                     if (code < 0)
                         return code;
@@ -771,7 +771,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                     pdf_xml_newline(s);
                 } else {
                     pdf_xml_attribute_name(s, "pdf:Producer");
-                    code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "UnknownProducer",
+                    code = pdf_xmp_write_docinfo_item(pdev, s,  "/Producer", "'UnknownProducer'",
                             pdf_xml_attribute_value_data);
                     if (code < 0)
                         return code;
@@ -814,7 +814,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
             {
                 pdf_xml_tag_open_beg(s, "xmp:CreatorTool");
                 pdf_xml_tag_end(s);
-                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Creator", "UnknownApplication",
+                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Creator", "'UnknownApplication'",
                         pdf_xml_data_write);
                 if (code < 0)
                     return code;
@@ -867,7 +867,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                         pdf_xml_attribute_value(s, "x-default");
                         pdf_xml_tag_end(s);
                         {
-                           code = pdf_xmp_write_docinfo_item(pdev, s,  "/Title", "Untitled",
+                           code = pdf_xmp_write_docinfo_item(pdev, s,  "/Title", "'Untitled'",
                                     pdf_xml_data_write);
                             if (code < 0)
                                 return code;
@@ -888,7 +888,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                         {
                             pdf_xml_tag_open(s, "rdf:li");
                             {
-                                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Author", "Unknown",
+                                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Author", "'Unknown'",
                                             pdf_xml_data_write);
                                 if (code < 0)
                                     return code;
@@ -909,7 +909,7 @@ pdf_write_document_metadata(gx_device_pdf *pdev, const byte digest[6])
                             pdf_xml_attribute_value(s, "x-default");
                             pdf_xml_tag_end(s);
                             {
-                                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Subject", "No Subject",
+                                code = pdf_xmp_write_docinfo_item(pdev, s,  "/Subject", "'No Subject'",
                                             pdf_xml_data_write);
                                 if (code < 0)
                                     return code;
