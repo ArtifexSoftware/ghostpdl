@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3057,11 +3057,21 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
         char buf[20];
 
         if (pgs->soft_mask_id == 0) {
+            char *buf = "/None";
+
             code = pdf_open_contents(pdev, PDF_IN_STREAM);
             if (code < 0)
                 return code;
             if (pdev->vgstack_depth > pdev->vgstack_bottom) {
                 code = pdf_restore_viewer_state(pdev, pdev->strm);
+                if (code < 0)
+                    return code;
+            } else {
+                code = pdf_open_gstate(pdev, ppres);
+                if (code < 0)
+                    return code;
+                code = cos_dict_put_c_key_string(resource_dict(*ppres),
+                            "/SMask", (byte *)buf, strlen(buf));
                 if (code < 0)
                     return code;
             }
