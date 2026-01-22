@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -46,7 +46,7 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
     gx_device *dev;
     const int y = penum->y;
     int y_end = min(y + height, penum->rect.h);
-    int width_spp = penum->rect.w * penum->spp;
+    int width_spp;
     int num_planes = penum->num_planes;
     int num_components_per_plane = 1;
 
@@ -69,6 +69,14 @@ gx_image1_plane_data(gx_image_enum_common_t * info,
         *rows_used = 0;
         return 0;
     }
+
+    /* width_spp is an 'int' and is passed in various places as an int (or sometimes uint) data type. Since this could
+     * be (usually is) a 32-bit type we need to ensure we do not overflow an int. We specifically test against 'int'
+     * rather than '32-bit' in case int isn't 32-bit on this system.
+     */
+    if (check_int_multiply(penum->rect.w, penum->spp, &width_spp) != 0)
+        return gs_note_error(gs_error_undefinedresult);
+
     dev = setup_image_device(penum);
 
     /* Now render complete rows. */

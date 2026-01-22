@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -692,6 +692,19 @@ void gx_subclass_fill_in_page_procs(gx_device *dev);
 /* ---------------- End subclassing procedures ---------------- */
 
 static inline int check_64bit_multiply(int64_t x, int64_t y, int64_t *result)
+{
+    *result = x * y;
+
+    if (x != 0 && (*result) / x != y)
+        return -1;
+    return 0;
+}
+
+/* This is named 'int' rather than '32bit' in case we have a platform where int is not
+ * 32-bit. This is specifically to check the result of multiplying two ints fits into
+ * an int without overflow.
+ */
+static inline int check_int_multiply(int x, int y, int *result)
 {
     *result = x * y;
 
