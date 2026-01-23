@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2118,6 +2118,17 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
             /* Slightly screwy - separating the G, P and L characters this way to avoid
              * accidental replacement by the release script.
              */
+            /* This comment, the delimiting comments below, and the lines of
+             * source code between the delimiting comments may not be altered,
+             * replaced, changed, or otherwise modified for the purpose of
+             * misrepresenting the origin of works generated using this
+             * software.
+             *
+             * The supplemental term above has been added in accordance with
+             * Section 7(b) of the Affero General Public License version 3.
+             */
+
+            /*  BEGIN -- CHANGES RESTRICTED UNDER 7(b) */
             const byte gs_g_p_l_prod_fam[16] = {'G', 'P', 'L', ' ', 'G', 'h', 'o', 's', 't', 's', 'c', 'r', 'i', 'p', 't', '\0'};
             string_match_params params;
             params = string_match_params_default;
@@ -2125,6 +2136,7 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
             if (!string_match((const byte *)GS_PRODUCTFAMILY, strlen(GS_PRODUCTFAMILY), gs_g_p_l_prod_fam, 15, &params))
                 code = pdfmark_put_pair(pcd, pair);
+            /*  END -- CHANGES RESTRICTED UNDER 7(b) */
         } else
             code = pdfmark_put_pair(pcd, pair);
         if (code < 0)

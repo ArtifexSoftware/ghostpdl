@@ -429,9 +429,21 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     {
         char buf[PDF_MAX_PRODUCER];
 
+        /* This comment, the delimiting comments below, and the lines of
+         * source code between the delimiting comments may not be altered,
+         * replaced, changed, or otherwise modified for the purpose of
+         * misrepresenting the origin of works generated using this
+         * software.
+         *
+         * The supplemental term above has been added in accordance with
+         * Section 7(b) of the Affero General Public License version 3.
+         */
+
+        /*  BEGIN -- CHANGES RESTRICTED UNDER 7(b) */
         pdf_store_default_Producer(buf);
         cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
                                   strlen(buf));
+        /*  END -- CHANGES RESTRICTED UNDER 7(b) */
     }
     /*
      * Acrobat Distiller sets CreationDate and ModDate to the current

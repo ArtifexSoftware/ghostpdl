@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -838,8 +838,6 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
     if (pdf_dev->strm != NULL) {
         byte fileID[16];
 
-        pdf_store_default_Producer(Producer);
-
         pdf_dev->RootOffset = stell(pdf_dev->strm);
         code = stream_puts(pdf_dev->strm, "1 0 obj\n<<\n/Pages 2 0 R\n/Type /Catalog\n/Info 3 0 R\n>>\nendobj\n");
         if (code < 0)
@@ -881,12 +879,26 @@ static int pdf_image_finish_file(gx_device_pdf_image *pdf_dev, int PCLm)
             timesign, timeoffset / 60, timeoffset % 60);
 
         pdf_dev->InfoOffset = stell(pdf_dev->strm);
+
+        /* This comment, the delimiting comments below, and the lines of
+         * source code between the delimiting comments may not be altered,
+         * replaced, changed, or otherwise modified for the purpose of
+         * misrepresenting the origin of works generated using this
+         * software.
+         *
+         * The supplemental term above has been added in accordance with
+         * Section 7(b) of the Affero General Public License version 3.
+         */
+
+        /*  BEGIN -- CHANGES RESTRICTED UNDER 7(b) */
         code = stream_puts(pdf_dev->strm, "3 0 obj\n<<\n/Producer");
         if (code < 0)
             return code;
+        pdf_store_default_Producer(Producer);
         code = stream_puts(pdf_dev->strm, Producer);
         if (code < 0)
             return code;
+        /*  END -- CHANGES RESTRICTED UNDER 7(b) */
         code = stream_puts(pdf_dev->strm, "\n/CreationDate");
         if (code < 0)
             return code;

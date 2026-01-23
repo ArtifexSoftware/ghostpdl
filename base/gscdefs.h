@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,6 +17,18 @@
 #  define gscdefs_INCLUDED
 
 
+/* This comment, the delimiting comments below, and the lines of
+ * source code between the delimiting comments may not be altered,
+ * replaced, changed, or otherwise modified for the purpose of
+ * misrepresenting the origin of works generated using this
+ * software.
+ *
+ * The supplemental term above has been added in accordance with
+ * Section 7(b) of the Affero General Public License version 3.
+ */
+
+/*  BEGIN -- CHANGES RESTRICTED UNDER 7(b) */
+
 /* If we are cluster testing, then we want to nobble stuff
  * that might change between versions. */
 #ifdef CLUSTER
@@ -24,7 +36,20 @@
 #define    GS_PRODUCTFAMILY "GPL Ghostscript"
 #undef     GS_PRODUCT
 #define    GS_PRODUCT GS_PRODUCTFAMILY
+#else
+
+/* def GS_PRODFAM */
+#  define GS_PRODUCTFAMILY\
+        "GPL Ghostscript"
+/* end def GS_PRODFAM */
+
+/* def GS_PROD */
+#  define GS_PRODUCT\
+        GS_PRODUCTFAMILY " GIT PRERELEASE"
+/* end def GS_PROD */
+
 #endif
+/*  END -- CHANGES RESTRICTED UNDER 7(b) */
 
 #define GS_STRINGIZE2(s) #s
 #define GS_STRINGIZE(s) GS_STRINGIZE2(s)
@@ -37,16 +62,6 @@
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
         "Copyright (C) 2025 Artifex Software, Inc.  All rights reserved."
-#endif
-
-#ifndef GS_PRODUCTFAMILY
-#  define GS_PRODUCTFAMILY\
-        "GPL Ghostscript"
-#endif
-
-#ifndef GS_PRODUCT
-#  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
 #endif
 
 /* Prototypes for configuration definitions in gconfig.c. */
