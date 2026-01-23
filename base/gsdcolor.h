@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -376,11 +376,12 @@ struct gx_device_color_saved_s {
         } devn;
         struct _pattern {
             gs_id id;
-        }		pattern;
+            gs_matrix step_matrix;
+        }               pattern;
         struct _pattern2 {
             gs_id id;
             bool shfill;
-        }		pattern2;
+        }               pattern2;
     }                       colors;
     gs_int_point            phase;
 };

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -192,12 +192,18 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
         pattern_id = gs_dc_get_pattern_id(pdcolor);
 
         if (pattern_id != gs_no_id && pcls->pattern_id == pattern_id) {
-            /* The pattern is known, write its id only.
-               Note that gx_dc_pattern_write must process this case especially. */
-            /* Note that id is gs_no_id when the pattern supplies an empty tile.
-               In this case the full serialized pattern is shorter (left == 0),
-               so go with it. */
-            left = sizeof(pattern_id);
+            if (psdc->colors.pattern.step_matrix.tx == pdcolor->colors.pattern.p_tile->step_matrix.tx &&
+                psdc->colors.pattern.step_matrix.ty == pdcolor->colors.pattern.p_tile->step_matrix.ty) {
+                /* The pattern is known, write its id only.
+                   Note that gx_dc_pattern_write must process this case especially. */
+                /* Note that id is gs_no_id when the pattern supplies an empty tile.
+                   In this case the full serialized pattern is shorter (left == 0),
+                   so go with it. */
+                left = sizeof(pattern_id);
+            } else {
+                /* FIXME: Potential for another case here where we write the pattern id and and phase.
+                 * Again, would need matching logic in gx_dc_pattern_write. */
+            }
         }
     }
 

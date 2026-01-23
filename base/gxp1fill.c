@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -221,6 +221,12 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 
         bbox.p.x = x0, bbox.p.y = y0;
         bbox.q.x = x1, bbox.q.y = y1;
+        if_debug4m('T', mem,
+          "[T]bbox=(%d,%d) (%d,%d)\n",
+                    x0, y0, x1, y1);
+        if_debug6m('T', mem,
+          "[T]step_matrix=(%g,%g,%g,%g,%g,%g)\n",
+                    step_matrix.xx, step_matrix.xy, step_matrix.yx, step_matrix.yy, step_matrix.tx, step_matrix.ty);
         code = gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
         if (code < 0)
             return code;
