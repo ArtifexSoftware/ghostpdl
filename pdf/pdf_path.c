@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,6 +25,7 @@
 #include "pdf_optcontent.h"
 #include "gspath.h"         /* For gs_moveto() and friends */
 #include "gspaint.h"        /* For gs_fill() and friends */
+#include "gxdevsop.h"               /* For special ops */
 
 typedef enum path_segment_e {
     pdfi_moveto_seg,
@@ -225,8 +226,17 @@ int pdfi_moveto (pdf_context *ctx)
     int code;
     double xy[2];
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_moveto", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_moveto", NULL);
+        if (code < 0)
+            return code;
+    }
 
     code = pdfi_destack_reals(ctx, xy, 2);
     if (code < 0)
@@ -240,8 +250,18 @@ int pdfi_lineto (pdf_context *ctx)
     int code;
     double xy[2];
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_lineto", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_lineto", NULL);
+        if (code < 0)
+            return code;
+    }
 
     code = pdfi_destack_reals(ctx, xy, 2);
     if (code < 0)
@@ -255,8 +275,18 @@ static int pdfi_fill_inner(pdf_context *ctx, bool use_eofill)
     int code=0, code1;
     pdfi_trans_state_t state;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_fill_inner", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_fill_inner", NULL);
+        if (code < 0)
+            return code;
+    }
 
     if (pdfi_oc_is_off(ctx))
         goto exit;
@@ -309,8 +339,18 @@ int pdfi_stroke(pdf_context *ctx)
     int code=0, code1;
     pdfi_trans_state_t state;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_stroke", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_stroke", NULL);
+        if (code < 0)
+            return code;
+    }
 
     if (pdfi_oc_is_off(ctx))
         goto exit;
@@ -346,8 +386,18 @@ int pdfi_closepath_stroke(pdf_context *ctx)
 {
     int code;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_closepath_stroke", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_closepath_stroke", NULL);
+        if (code < 0)
+            return code;
+    }
 
     code = StorePathSegment(ctx, pdfi_closepath_seg, NULL);
     if (code < 0)
@@ -365,8 +415,18 @@ int pdfi_curveto(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_curveto", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_curveto", NULL);
+        if (code < 0)
+            return code;
+    }
 
     return StorePathSegment(ctx, pdfi_curveto_seg, (double *)&Values);
 }
@@ -380,8 +440,18 @@ int pdfi_v_curveto(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_v_curveto", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_v_curveto", NULL);
+        if (code < 0)
+            return code;
+    }
 
     return StorePathSegment(ctx, pdfi_v_curveto_seg, (double *)&Values);
 }
@@ -395,16 +465,38 @@ int pdfi_y_curveto(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_y_curveto", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_y_curveto", NULL);
+        if (code < 0)
+            return code;
+    }
 
     return StorePathSegment(ctx, pdfi_y_curveto_seg, (double *)&Values);
 }
 
 int pdfi_closepath(pdf_context *ctx)
 {
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_closepath", NULL);
+    int code;
+
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_closepath", NULL);
+        if (code < 0)
+            return code;
+    }
 
     return StorePathSegment(ctx, pdfi_closepath_seg, NULL);
 }
@@ -439,8 +531,18 @@ int pdfi_newpath(pdf_context *ctx)
     code1 = gs_newpath(ctx->pgs);
     if (code == 0) code = code1;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_newpath", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_newpath", NULL);
+        if (code < 0)
+            return code;
+    }
 
     return code;
 }
@@ -449,8 +551,18 @@ int pdfi_b(pdf_context *ctx)
 {
     int code;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_b", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_b", NULL);
+        if (code < 0)
+            return code;
+    }
 
     code = StorePathSegment(ctx, pdfi_closepath_seg, NULL);
     if (code < 0)
@@ -463,8 +575,18 @@ int pdfi_b_star(pdf_context *ctx)
 {
     int code;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_b_star", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_b_star", NULL);
+        if (code < 0)
+            return code;
+    }
 
     code = StorePathSegment(ctx, pdfi_closepath_seg, NULL);
     if (code < 0)
@@ -479,8 +601,18 @@ static int pdfi_B_inner(pdf_context *ctx, bool use_eofill)
     int code=0, code1=0;
     pdfi_trans_state_t state;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_B_inner", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_B_inner", NULL);
+        if (code < 0)
+            goto exit;
+    }
 
     if (pdfi_oc_is_off(ctx))
         goto exit;
@@ -527,8 +659,18 @@ int pdfi_clip(pdf_context *ctx)
 {
     int code = gs_clip(ctx->pgs);
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_B_clip", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_B_clip", NULL);
+        if (code < 0)
+            return code;
+    }
 
     return code;
 }
@@ -537,8 +679,18 @@ int pdfi_eoclip(pdf_context *ctx)
 {
     int code = gs_eoclip(ctx->pgs);
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_eoclip", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_eoclip", NULL);
+        if (code < 0)
+            return code;
+    }
 
      return code;
 }
@@ -552,8 +704,18 @@ int pdfi_rectpath(pdf_context *ctx)
     if (code < 0)
         return code;
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_rectpath", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_rectpath", NULL);
+        if (code < 0)
+            return code;
+    }
 
     return StorePathSegment(ctx, pdfi_re_seg, (double *)&Values);
 }

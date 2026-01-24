@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -43,8 +43,16 @@ int pdfi_BT(pdf_context *ctx)
     bool illegal_BT = false;
 
     if (ctx->text.BlockDepth != 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_NESTEDTEXTBLOCK, "pdfi_BT", NULL);
         illegal_BT = true;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_NESTEDTEXTBLOCK, "pdfi_BT", NULL);
+        if (code < 0)
+            return code;
     }
 
     gs_make_identity(&m);
@@ -1205,7 +1213,7 @@ int pdfi_TJ(pdf_context *ctx)
 
     /* Save the CTM for later restoration */
     saved = ctm_only(ctx->pgs);
-    initial_point_valid = (gs_currentpoint(ctx->pgs, &initial_point) >= 0);
+    ctx->text.initial_current_point_valid = initial_point_valid = (gs_currentpoint(ctx->pgs, &initial_point) >= 0);
 
     /* Calculate the text rendering matrix, see section 1.7 PDF Reference
      * page 409, section 5.3.3 Text Space details.

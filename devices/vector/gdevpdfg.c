@@ -212,11 +212,17 @@ pdf_load_viewer_state(gx_device_pdf *pdev, pdf_viewer_state *s)
 int
 pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
 {
-    const int i = --pdev->vgstack_depth;
+    int i;
 
-    if (i < pdev->vgstack_bottom || i < 0) {
-        if ((pdev->ObjectFilter & FILTERIMAGE) == 0)
+    if (pdev->vgstack_depth == 0)
+        return 0;
+
+    i = --pdev->vgstack_depth;
+
+    if (i < pdev->vgstack_bottom) {
+        if ((pdev->ObjectFilter & FILTERIMAGE) == 0) {
             return_error(gs_error_unregistered); /* Must not happen. */
+        }
         else
             return 0;
     }
@@ -3567,7 +3573,7 @@ pdf_prepare_fill_stroke(gx_device_pdf *pdev, const gs_gstate *pgs, bool for_text
 
     if (pdev->context != PDF_IN_STREAM) {
         code = pdf_try_prepare_fill_stroke(pdev, pgs, for_text);
-        if (code != gs_error_interrupt) /* See pdf_open_gstate */
+        if (code < 0 && code != gs_error_interrupt) /* See pdf_open_gstate */
             return code;
         code = pdf_open_contents(pdev, PDF_IN_STREAM);
         if (code < 0)

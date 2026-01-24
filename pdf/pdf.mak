@@ -1,4 +1,4 @@
-# Copyright (C) 2018-2025 Artifex Software, Inc.
+# Copyright (C) 2018-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -143,7 +143,7 @@ $(PDFOBJ)pdf_text.$(OBJ): $(PDFSRC)pdf_text.c $(PDFINCLUDES) \
 
 $(PDFOBJ)pdf_shading.$(OBJ): $(PDFSRC)pdf_shading.c $(PDFINCLUDES) \
 	$(gsfunc3_h) $(gxshade_h) $(gsptype2_h) $(gsfunc0_h) \
-	$(gscolor3_h) $(gsstate_h) $(PDF_MAK) $(MAKEDIRS)
+	$(gscolor3_h) $(gxdevsop_h) $(gsstate_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_shading.c $(PDFO_)pdf_shading.$(OBJ)
 
 $(PDFOBJ)pdf_func.$(OBJ): $(PDFSRC)pdf_func.c $(PDFINCLUDES) \
@@ -158,7 +158,7 @@ $(PDFOBJ)pdf_image.$(OBJ): $(PDFSRC)pdf_image.c $(PDFINCLUDES) \
 	$(PDFCCC) $(PDFSRC)pdf_image.c $(PDFO_)pdf_image.$(OBJ)
 
 $(PDFOBJ)pdf_page.$(OBJ): $(PDFSRC)pdf_page.c $(PDFINCLUDES) \
-	$(gscoord_h) $(gspaint_h) $(gsstate_h) $(gspath2_h) $(PDF_MAK) $(MAKEDIRS)
+	$(gscoord_h) $(gspaint_h) $(gsstate_h) $(gxdevsop_h) $(gspath2_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_page.c $(PDFO_)pdf_page.$(OBJ)
 
 $(PDFOBJ)pdf_annot.$(OBJ): $(PDFSRC)pdf_annot.c $(PDFINCLUDES) $(gspath2_h) $(gxfarith_h) \
@@ -211,7 +211,7 @@ $(PDFOBJ)pdf_pattern.$(OBJ): $(PDFSRC)pdf_pattern.c $(PDFINCLUDES) \
 	$(PDFCCC) $(PDFSRC)pdf_pattern.c $(PDFO_)pdf_pattern.$(OBJ)
 
 $(PDFOBJ)pdf_path.$(OBJ): $(PDFSRC)pdf_path.c $(PDFINCLUDES) $(gstypes_h) \
-	$(gspath_h) $(gspaint_h) $(PDF_MAK) $(MAKEDIRS)
+	$(gxdevsop_h) $(gspath_h) $(gspaint_h) $(PDF_MAK) $(MAKEDIRS)
 	$(PDFCCC) $(PDFSRC)pdf_path.c $(PDFO_)pdf_path.$(OBJ)
 
 $(PDFOBJ)pdf_loop_detect.$(OBJ): $(PDFSRC)pdf_loop_detect.c $(PDFINCLUDES) $(PDF_MAK) $(MAKEDIRS)

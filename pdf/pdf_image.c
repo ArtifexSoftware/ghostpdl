@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -48,8 +48,20 @@
 
 int pdfi_BI(pdf_context *ctx)
 {
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_BI", NULL);
+    int code;
+
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_BI", NULL);
+        if (code < 0)
+            return code;
+    }
 
     return pdfi_mark_stack(ctx, PDF_DICT_MARK);
 }
@@ -2229,7 +2241,15 @@ int pdfi_ID(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_c_
     pdf_stream *image_stream;
 
     if (ctx->text.BlockDepth != 0) {
-        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_ID", NULL)) < 0)
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_ID", NULL);
+        if (code < 0)
             return code;
     }
 
@@ -2260,7 +2280,16 @@ error:
 
 int pdfi_EI(pdf_context *ctx)
 {
+    int code;
+
     if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
         return pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_EI", NULL);
     }
 
@@ -2788,8 +2817,16 @@ int pdfi_Do(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     }
 
     if (ctx->text.BlockDepth != 0) {
-        if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_Do", NULL)) < 0)
-            goto exit1;
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_Do", NULL);
+        if (code < 0)
+            goto exit;
     }
 
     code = pdfi_loop_detector_mark(ctx);

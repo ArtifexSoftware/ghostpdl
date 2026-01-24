@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -37,6 +37,7 @@
 #include "gsfunc0.h"    /* For gs_function */
 #include "gscolor3.h"   /* For gs_shfill() */
 #include "gsstate.h"    /* For gs_setoverprintmode */
+#include "gxdevsop.h"               /* For special ops */
 
 static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, const float *shading_domain, int num_inputs, pdf_dict *shading_dict, pdf_dict *page_dict)
 {
@@ -853,8 +854,18 @@ int pdfi_shading(pdf_context *ctx, pdf_dict *stream_dict, pdf_dict *page_dict)
     if (pdfi_count_stack(ctx) < 1)
         return_error(gs_error_stackunderflow);
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_shading", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_shading", NULL);
+        if (code < 0)
+            return code;
+    }
 
     if (pdfi_oc_is_off(ctx)) {
         pdfi_pop(ctx, 1);

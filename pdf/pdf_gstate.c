@@ -170,8 +170,20 @@ int pdfi_concat(pdf_context *ctx)
         return_error(gs_error_stackunderflow);
     }
 
-    if (ctx->text.BlockDepth != 0)
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_OPINVALIDINTEXT, "pdfi_concat", NULL);
+    if (ctx->text.BlockDepth != 0) {
+        /* We deliberately do not set BlockDepth to 0 here, because we can recover from a 'cm' inside a text block
+         * even if it is illegal. So we preserve the text block and just do the cm.
+         */
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_OPINVALIDINTEXT, "pdfi_concat", NULL);
+        if (code < 0)
+            return code;
+    }
 
     code = pdfi_destack_reals(ctx, Values, 6);
     if (code < 0)
@@ -232,7 +244,7 @@ int pdfi_op_Q(pdf_context *ctx)
     if (code >= 0 && ctx->device_state.preserve_tr_mode && ctx->text.TextClip && gs_currenttextrenderingmode(ctx->pgs) < 4) {
         gx_device *dev = gs_currentdevice_inline(ctx->pgs);
 
-        ctx->text.TextClip = 0;
+        ctx->text.TextClip = false;
         code = dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
         if (code < 0 && code == gs_error_undefined)
             code = 0;

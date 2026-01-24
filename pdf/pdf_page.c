@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -40,6 +40,7 @@
 #include "gspaint.h"        /* For gs_erasepage() */
 #include "gsstate.h"        /* For gs_initgraphics() */
 #include "gspath2.h"        /* For gs_rectclip() */
+#include "gxdevsop.h"               /* For special ops */
 
 static int pdfi_process_page_contents(pdf_context *ctx, pdf_dict *page_dict)
 {
@@ -189,9 +190,18 @@ static int pdfi_process_one_page(pdf_context *ctx, pdf_dict *page_dict)
     local_restore_stream_state(ctx, &local_entry_save);
 
     if (ctx->text.BlockDepth != 0) {
-        pdfi_set_warning(ctx, 0, NULL, W_PDF_UNBLANACED_BT, "pdfi_process_one_page", "");
         ctx->text.BlockDepth = 0;
+        if (ctx->text.TextClip) {
+            gx_device *dev = gs_currentdevice_inline(ctx->pgs);
+
+            ctx->text.TextClip = false;
+            (void)dev_proc(dev, dev_spec_op)(dev, gxdso_hilevel_text_clip, (void *)0, 1);
+        }
+        code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_UNBLANACED_BT, "pdfi_process_one_page", NULL);
+        if (code < 0)
+            return code;
     }
+
     return code;
 }
 
