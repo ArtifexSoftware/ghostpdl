@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -465,7 +465,7 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
         gs_char position=0;
 
         code = bfont->procs.glyph_info((gs_font *)bfont, glyph, pmat, members, &info);
-        if (code == gs_error_VMerror)
+        if (code == gs_error_VMerror || code == gs_error_invalidfont)
             return code;
         if (code < 0) {
             /*

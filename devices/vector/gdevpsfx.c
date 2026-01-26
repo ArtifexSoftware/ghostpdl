@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -289,6 +289,10 @@ type1_next(gs_type1_state *pcis)
                 case 18:
                     num_results = 6;
                 blend:
+                    CS_CHECK_POP(csp, pcis->ostack);
+                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[-fixed2int_var(csp[-1])], pcis->ostack))
+                        return_error(gs_error_invalidfont);
+
                     code = gs_type1_blend(pcis, csp, num_results);
                     if (code < 0)
                         return code;
