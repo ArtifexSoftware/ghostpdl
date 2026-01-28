@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -183,6 +183,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
     gx_color_value *composite;
     byte *gb_buff;
     int x_curr, w_curr, gb_buff_start;
+    int has_tags = device_encodes_tags(dev);
 
     byte_depth = bpp / ncomps;
     shift = 16 - byte_depth;
@@ -288,7 +289,7 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                     /* We need to do the weighting by the alpha value */
                     alpha += (alpha>>7); /* Expand from 0..255->0..256 */
                     /* First get the old color */
-                    for (k = 0; k < ncomps; k++) {
+                    for (k = 0; k < ncomps-has_tags; k++) {
                         /* We only have 8 and 16 bit depth to worry about.
                            However, this stuff should really be done with
                            the device encode/decode procedure. */
@@ -307,11 +308,14 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                            the old and the new */
                         blend_cv[k] =  ((curr_cv[k]<<8) +
                                         (((long) src_cv[k] - (long) curr_cv[k]) * alpha))>>8;
-                        composite = &(blend_cv[0]);
                     }
+                    /* DO NOT BLEND TAGS. */
+                    if (has_tags)
+                        blend_cv[k] = curr_cv[k] | src_cv[k];
+                    composite = &(blend_cv[0]);
                 }
                 /* Update our plane data buffers.  Just reuse the current one */
-                for (k = 0; k < ncomps; k++) {
+                for (k = 0; k < ncomps-has_tags; k++) {
                     byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
                     switch (word_width) {
                         case 2:
@@ -319,6 +323,11 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                         case 1:
                             *ptr++ = composite[k] >> shift;
                     }
+                }
+                if (has_tags)
+                {
+                    byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
+                    *ptr++ = composite[k];
                 }
             } /* else on alpha != 0 */
         } /* loop on x */
