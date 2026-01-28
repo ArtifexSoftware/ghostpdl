@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -196,10 +196,22 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
         params.op_state = OP_STATE_NONE;
         if (params.retain_any_comps) {
             if (pcs->params.separation.sep_type != SEP_NONE) {
-                int mcomp = pcmap->color_map[0];
+                if (pcs->params.separation.named_color_supported) {
+                    /* This color will not actually be the device_n color any more.
+                     * It will have been substituted with the named color replacement.
+                     * Therefore the drawn comps will be different. */
+                    /* FIXME: For now, we assume the replacement color uses
+                     * C,M,Y and K. To do better, we'd either need to look at the
+                     * device color (but this is problematic, as we may have scaled light
+                     * components to 0), or we'd need to get this from the named color
+                     * code itself. Possibly by another entry in color_component_map. */
+                    params.drawn_comps = 15;
+                } else {
+                    int mcomp = pcmap->color_map[0];
 
-                if (mcomp >= 0)
-                    gs_overprint_set_drawn_comp( params.drawn_comps, mcomp);
+                    if (mcomp >= 0)
+                        gs_overprint_set_drawn_comp( params.drawn_comps, mcomp);
+                }
             }
         }
         /* Only DeviceCMYK can use overprint mode */
