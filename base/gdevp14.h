@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -79,30 +79,19 @@ typedef pdf14_procs_s pdf14_procs_t;
 
 /* A stack structure for the softmask buffers.
    The mask will be pdf14 buffers that are wrapped
-   in a refernce counted structure.  We need this to
+   in a reference counted structure.  We need this to
    be referenced counted since we need to be able to push
    multiple copies of the same buffer on the
    stack as we get multiple q operations when
    a soft mask is present in the graphic state. */
 
-typedef struct pdf14_rcmask_s pdf14_rcmask_t;
-
-struct pdf14_rcmask_s {
-
-    pdf14_buf   *mask_buf;
-    rc_header rc;
-    gs_memory_t *memory;
-
-};
-
 typedef struct pdf14_mask_s pdf14_mask_t;
 
 struct pdf14_mask_s {
-
-    pdf14_rcmask_t *rc_mask;
+    rc_header     rc;
+    pdf14_buf    *mask_buf;
     pdf14_mask_t *previous;
-    gs_memory_t *memory;
-
+    gs_memory_t  *memory;
 };
 
 /* A structure to hold information about the group color related

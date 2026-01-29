@@ -132,7 +132,6 @@ static int pdf14_tile_pattern_fill(gx_device * pdev,
                 const gs_gstate * pgs, gx_path * ppath,
                 const gx_fill_params * params,
                 const gx_device_color * pdevc, const gx_clip_path * pcpath);
-static pdf14_mask_t * pdf14_mask_element_new(gs_memory_t * memory);
 #ifdef DEBUG
 static void pdf14_debug_mask_stack_state(pdf14_ctx *ctx);
 #endif
@@ -166,11 +165,7 @@ gs_private_st_ptrs1(st_pdf14_clr, pdf14_group_color_t, "pdf14_clr",
 
 gs_private_st_ptrs2(st_pdf14_mask, pdf14_mask_t, "pdf_mask",
                     pdf14_mask_enum_ptrs, pdf14_mask_reloc_ptrs,
-                    rc_mask, previous);
-
-gs_private_st_ptrs1(st_pdf14_rcmask, pdf14_rcmask_t, "pdf_rcmask",
-                    pdf14_rcmask_enum_ptrs, pdf14_rcmask_reloc_ptrs,
-                    mask_buf);
+                    mask_buf, previous);
 
 gs_private_st_ptrs1(st_pdf14_smaskcolor, pdf14_smaskcolor_t, "pdf14_smaskcolor",
                     pdf14_smaskcolor_enum_ptrs, pdf14_smaskcolor_reloc_ptrs,
@@ -996,7 +991,7 @@ template_transform_color_buffer(gs_gstate *pgs, pdf14_ctx *ctx, gx_device *dev,
     if (has_matte &&
         /* Should always happen, but check for safety */
         ((mask_stack = ctx->mask_stack) != NULL) &&
-        ((maskbuf = mask_stack->rc_mask->mask_buf) != NULL) &&
+        ((maskbuf = mask_stack->mask_buf) != NULL) &&
          (maskbuf->data != NULL))
     {
         resolve_matte(maskbuf, src_data, src_planestride, src_rowstride, width, height, src_profile, deep);
@@ -1190,10 +1185,9 @@ pdf14_buf_free(pdf14_buf *buf)
     pdf14_group_color_t *group_color_info = buf->group_color_info;
     gs_memory_t *memory = buf->memory;
 
-    if (buf->mask_stack && buf->mask_stack->rc_mask)
-        rc_decrement(buf->mask_stack->rc_mask, "pdf14_buf_free");
+    if (buf->mask_stack)
+        rc_decrement(buf->mask_stack, "pdf14_buf_free");
 
-    gs_free_object(memory, buf->mask_stack, "pdf14_buf_free");
     gs_free_object(memory, buf->transfer_fn, "pdf14_buf_free");
     gs_free_object(memory, buf->matte, "pdf14_buf_free");
     gs_free_object(memory, buf->data, "pdf14_buf_free");
@@ -1211,33 +1205,6 @@ pdf14_buf_free(pdf14_buf *buf)
     gs_free_object(memory, buf, "pdf14_buf_free");
 }
 
-static void
-rc_pdf14_maskbuf_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
-{
-    /* Ending the mask buffer. */
-    pdf14_rcmask_t *rcmask = (pdf14_rcmask_t * ) ptr_in;
-    /* free the pdf14 buffer. */
-    if ( rcmask->mask_buf != NULL ){
-        pdf14_buf_free(rcmask->mask_buf);
-    }
-    gs_free_object(mem, rcmask, "rc_pdf14_maskbuf_free");
-}
-
-static	pdf14_rcmask_t *
-pdf14_rcmask_new(gs_memory_t *memory)
-{
-    pdf14_rcmask_t *result;
-
-    result = gs_alloc_struct(memory, pdf14_rcmask_t, &st_pdf14_rcmask,
-                             "pdf14_maskbuf_new");
-    if (result == NULL)
-        return NULL;
-    rc_init_free(result, memory, 1, rc_pdf14_maskbuf_free);
-    result->mask_buf = NULL;
-    result->memory = memory;
-    return result;
-}
-
 static	pdf14_ctx *
 pdf14_ctx_new(gx_device *dev, bool deep)
 {
@@ -1249,7 +1216,10 @@ pdf14_ctx_new(gx_device *dev, bool deep)
         return result;
     result->stack = NULL;
     result->mask_stack = pdf14_mask_element_new(memory);
-    result->mask_stack->rc_mask = pdf14_rcmask_new(memory);
+    if (result->mask_stack == NULL) {
+        gs_free_object(memory, result, "pdf14_ctx_new");
+        return NULL;
+    }
     result->memory = memory;
     result->smask_depth = 0;
     result->smask_blend = false;
@@ -1269,8 +1239,7 @@ pdf14_ctx_free(pdf14_ctx *ctx)
     }
     if (ctx->mask_stack) {
         /* A mask was created but was not used in this band. */
-        rc_decrement(ctx->mask_stack->rc_mask, "pdf14_ctx_free");
-        gs_free_object(ctx->memory, ctx->mask_stack, "pdf14_ctx_free");
+        rc_decrement(ctx->mask_stack, "pdf14_ctx_free");
     }
     for (buf = ctx->stack; buf != NULL; buf = next) {
         next = buf->saved;
@@ -1603,13 +1572,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
 #ifdef DEBUG
     pdf14_debug_mask_stack_state(ctx);
 #endif
-    if (mask_stack == NULL) {
-        maskbuf = NULL;
-    }
-    else {
-        maskbuf = mask_stack->rc_mask->mask_buf;
-    }
-
+    maskbuf = (mask_stack == NULL) ? NULL : mask_stack->mask_buf;
     if (maskbuf != NULL && maskbuf->matte != NULL)
         has_matte = true;
 
@@ -1696,10 +1659,7 @@ pdf14_pop_transparency_group(gs_gstate *pgs, pdf14_ctx *ctx,
            push occurs to use it.  If one does not occur, but instead we find
            ourselves popping from a parent group, then this softmask is no
            longer needed.  We will rc_decrement and set it to NULL. */
-        rc_decrement(ctx->mask_stack->rc_mask, "pdf14_pop_transparency_group");
-        if (ctx->mask_stack->rc_mask == NULL ){
-            gs_free_object(ctx->memory, ctx->mask_stack, "pdf14_pop_transparency_group");
-        }
+        rc_decrement(ctx->mask_stack, "pdf14_pop_transparency_group");
         ctx->mask_stack = NULL;
     }
     ctx->mask_stack = mask_stack;  /* Restore the mask saved by pdf14_push_transparency_group. */
@@ -1861,9 +1821,8 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
        mask of the containing group. Save the containing droup's mask
        in buf->mask_stack */
     buf->mask_stack = ctx->mask_stack;
-    if (buf->mask_stack){
-        rc_increment(buf->mask_stack->rc_mask);
-    }
+    if (buf->mask_stack)
+        rc_increment(buf->mask_stack);
 #if RAW_DUMP
     /* Dump the current buffer to see what we have. */
     if (ctx->stack->planestride > 0 ){
@@ -1913,27 +1872,6 @@ pdf14_push_transparency_mask(pdf14_ctx *ctx, gs_int_rect *rect,	uint16_t bg_alph
     return 0;
 }
 
-static void pdf14_free_mask_stack(pdf14_ctx *ctx, gs_memory_t *memory)
-{
-    pdf14_mask_t *mask_stack = ctx->mask_stack;
-
-    if (mask_stack->rc_mask != NULL) {
-        pdf14_mask_t *curr_mask = mask_stack;
-        pdf14_mask_t *old_mask;
-        while (curr_mask != NULL) {
-            /* Force to decrement until free */
-            while (curr_mask->rc_mask != NULL)
-                rc_decrement(curr_mask->rc_mask, "pdf14_free_mask_stack");
-            old_mask = curr_mask;
-            curr_mask = curr_mask->previous;
-            gs_free_object(old_mask->memory, old_mask, "pdf14_free_mask_stack");
-        }
-    } else {
-        gs_free_object(memory, mask_stack, "pdf14_free_mask_stack");
-    }
-    ctx->mask_stack = NULL;
-}
-
 static	int
 pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
 {
@@ -1972,36 +1910,29 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
            rc decrement to match the increment that occured was made.  Also,
            if this is the last ref count of the rc_mask, we should free the
            buffer now since no other groups need it. */
-        rc_decrement(tos->mask_stack->rc_mask,
-                     "pdf14_pop_transparency_mask(tos->mask_stack->rc_mask)");
-        if (tos->mask_stack->rc_mask) {
-            if (tos->mask_stack->rc_mask->rc.ref_count == 1){
-                rc_decrement(tos->mask_stack->rc_mask,
-                            "pdf14_pop_transparency_mask(tos->mask_stack->rc_mask)");
-            }
-        }
+        rc_decrement(tos->mask_stack, "pdf14_pop_transparency_mask");
         tos->mask_stack = NULL;
     }
+
     if (tos->data == NULL ) {
         /* This can occur in clist rendering if the soft mask does
            not intersect the current band.  It would be nice to
            catch this earlier and just avoid creating the structure
            to begin with.  For now we need to delete the structure
            that was created.  Only delete if the alpha value is 65535 */
+        if (ctx->mask_stack != NULL) {
+            rc_decrement(ctx->mask_stack, "pdf14_free_mask_stack");
+            ctx->mask_stack = NULL;
+        }
         if ((tos->alpha == 65535 && tos->is_ident) ||
             (!tos->is_ident && (tos->transfer_fn[tos->alpha>>8] == 255))) {
             pdf14_buf_free(tos);
-            if (ctx->mask_stack != NULL) {
-                pdf14_free_mask_stack(ctx, ctx->memory);
-            }
         } else {
             /* Assign as mask buffer */
-            if (ctx->mask_stack != NULL) {
-                pdf14_free_mask_stack(ctx, ctx->memory);
-            }
             ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
-            ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
-            ctx->mask_stack->rc_mask->mask_buf = tos;
+            if (ctx->mask_stack == NULL)
+                return gs_note_error(gs_error_VMerror);
+            ctx->mask_stack->mask_buf = tos;
         }
         ctx->smask_blend = false;  /* just in case */
     } else {
@@ -2119,17 +2050,26 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
                softmask and now is getting a replacement. We need to clean
                up the softmask stack before doing this free and creating
                a new stack. Bug 693312 */
-            pdf14_free_mask_stack(ctx, ctx->memory);
+            rc_decrement(ctx->mask_stack, "pdf14_pop_transparency_mask(ctx->mask_stack)");
         }
         ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
         if (ctx->mask_stack == NULL)
             return gs_note_error(gs_error_VMerror);
-        ctx->mask_stack->rc_mask = pdf14_rcmask_new(ctx->memory);
-        if (ctx->mask_stack->rc_mask == NULL)
-            return gs_note_error(gs_error_VMerror);
-        ctx->mask_stack->rc_mask->mask_buf = tos;
+        ctx->mask_stack->mask_buf = tos;
     }
     return code;
+}
+
+static void
+rc_pdf14_mask_element_free(gs_memory_t * mem, void *ptr_in, client_name_t cname)
+{
+    /* Ending the mask buffer. */
+    pdf14_mask_t *mask = (pdf14_mask_t *)ptr_in;
+    /* free the pdf14 buffer. */
+    if (mask->mask_buf != NULL) {
+        pdf14_buf_free(mask->mask_buf);
+    }
+    gs_free_object(mem, mask, "rc_pdf14_mask_element_free");
 }
 
 static pdf14_mask_t *
@@ -2141,10 +2081,13 @@ pdf14_mask_element_new(gs_memory_t *memory)
                              "pdf14_mask_element_new");
     if (result == NULL)
         return NULL;
-    /* Get the reference counted mask */
-    result->rc_mask = NULL;
-    result->previous = NULL;
+
+    rc_init_free(result, memory, 1, rc_pdf14_mask_element_free);
+
+    result->mask_buf = NULL;
     result->memory = memory;
+    result->previous = NULL;
+
     return result;
 }
 
@@ -2165,9 +2108,8 @@ pdf14_push_transparency_state(gx_device *dev, gs_gstate *pgs)
        Don't do anything if there is no mask present.*/
     if (ctx->mask_stack != NULL) {
         new_mask = pdf14_mask_element_new(ctx->memory);
-        /* Duplicate and make the link */
-        new_mask->rc_mask = ctx->mask_stack->rc_mask;
-        rc_increment(new_mask->rc_mask);
+        if (new_mask == NULL)
+            return gs_note_error(gs_error_VMerror);
         new_mask->previous = ctx->mask_stack;
         ctx->mask_stack = new_mask;
     }
@@ -2193,10 +2135,7 @@ pdf14_pop_transparency_state(gx_device *dev, gs_gstate *pgs)
     if (ctx->mask_stack != NULL) {
         old_mask = ctx->mask_stack;
         ctx->mask_stack = ctx->mask_stack->previous;
-        if (old_mask->rc_mask) {
-            rc_decrement(old_mask->rc_mask, "pdf14_pop_transparency_state");
-        }
-        gs_free_object(old_mask->memory, old_mask, "pdf14_pop_transparency_state");
+        rc_decrement(old_mask, "pdf14_pop_transparency_state");
         /* We need to have some special handling here for when we have nested
            soft masks.  There may be a copy in the stack that we may need to
            adjust. */
@@ -3839,7 +3778,7 @@ pdf14_discard_trans_layer(gx_device *dev, gs_gstate * pgs)
         pdf14_group_color_t *procs, *prev_procs;
 
         if (ctx->mask_stack != NULL) {
-            pdf14_free_mask_stack(ctx, ctx->memory);
+            rc_decrement(ctx->mask_stack, "pdf14_discard_trans_layer");
         }
 
         /* Now the stack of buffers */
@@ -7984,11 +7923,9 @@ pdf14_begin_transparency_mask(gx_device	*dev,
         pdf14_ctx *ctx = pdev->ctx;
 
         /* free up any maskbuf on the current tos */
-        if (ctx->mask_stack) {
-            if (ctx->mask_stack->rc_mask->mask_buf != NULL ) {
-                pdf14_buf_free(ctx->mask_stack->rc_mask->mask_buf);
-                ctx->mask_stack->rc_mask->mask_buf = NULL;
-            }
+        if (ctx->mask_stack != NULL && ctx->mask_stack->mask_buf != NULL ) {
+            pdf14_buf_free(ctx->mask_stack->mask_buf);
+            ctx->mask_stack->mask_buf = NULL;
         }
         return 0;
     }
