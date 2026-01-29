@@ -311,7 +311,17 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                     }
                     /* DO NOT BLEND TAGS. */
                     if (has_tags)
+                    {
+                        byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
+                        curr_cv[k] = 0;
+                        switch (word_width) {
+                            case 2:
+                                curr_cv[k] += (*ptr++ << 8);
+                            case 1:
+                                curr_cv[k] += *ptr;
+                        }
                         blend_cv[k] = curr_cv[k] | src_cv[k];
+                    }
                     composite = &(blend_cv[0]);
                 }
                 /* Update our plane data buffers.  Just reuse the current one */
@@ -327,7 +337,12 @@ gx_default_copy_alpha_hl_color(gx_device * dev, const byte * data, int data_x,
                 if (has_tags)
                 {
                     byte *ptr = ((src_planes[k]) + (sx - data_x) * word_width);
-                    *ptr++ = composite[k];
+                    switch (word_width) {
+                        case 2:
+                            *ptr++ = composite[k] >> 8;
+                        case 1:
+                            *ptr++ = composite[k];
+                    }
                 }
             } /* else on alpha != 0 */
         } /* loop on x */

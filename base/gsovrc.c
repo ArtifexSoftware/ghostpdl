@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -944,9 +944,12 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
         /* We are coming here via copy_alpha_hl_color due to the use of AA.
            We will want to handle the overprinting here */
         int bytespercomp;
+        int has_tags = device_encodes_tags(dev);
 
         depth = tdev->color_info.depth;
         num_comps = tdev->color_info.num_components;
+        if (has_tags)
+            comps_orig |= 1<<(num_comps-1);
 
         fit_fill(tdev, x, y, w, h);
         byte_depth = depth / num_comps;
