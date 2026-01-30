@@ -9232,7 +9232,10 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         p14dev->color_info.num_components = p14dev->num_planar_planes;
     }
     else
+    {
+        p14dev->color_info.num_components = target->color_info.num_components;
         p14dev->num_planar_planes = target->num_planar_planes;
+    }
     p14dev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     p14dev->alpha = 1.0;
