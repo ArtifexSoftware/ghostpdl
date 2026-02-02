@@ -12680,11 +12680,9 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
     target_get_color_comp_index = dev_proc(tdev, get_color_comp_index);
 
     /* The pdf14_clist_composite may have set the color procs.
-       We need the real target procs, but not if we are doing simulated
-       overprint */
+       We need the real target procs. */
     if ((target_get_color_comp_index == pdf14_cmykspot_get_color_comp_index ||
-         target_get_color_comp_index == pdf14_rgbspot_get_color_comp_index) &&
-        !pdev->overprint_sim)
+         target_get_color_comp_index == pdf14_rgbspot_get_color_comp_index))
         target_get_color_comp_index =
             ((pdf14_clist_device *)pdev)->saved_target_get_color_comp_index;
     /*
@@ -12794,6 +12792,14 @@ pdf14_spot_get_color_comp_index(gx_device *dev, const char *pname,
         /* Indicate that we need to find equivalent CMYK color. */
         pdev->op_pequiv_cmyk_colors.color[sep_num].color_info_valid = false;
         pdev->op_pequiv_cmyk_colors.all_color_info_valid = false;
+
+        /* If we're doing an overprint simulation, then the target device
+         * (for instance) might not know about this colorant. This is annoying
+         * as the target can't then output the correct names. Call the target
+         * get_color_comp_index routine and ignore the result to give it a
+         * chance to stash it. */
+        if (pdev->overprint_sim && target_get_color_comp_index != NULL)
+            (void)(*target_get_color_comp_index)(tdev, pname, name_size, component_type);
 
         return color_component_number;
     }
