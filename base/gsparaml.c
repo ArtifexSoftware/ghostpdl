@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -410,6 +410,7 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                     array_type = gs_param_type_string_array;
                 }
                 parray = (gs_param_string *)array_data;
+                p1++; // Skip '('
                 parray[index].data = (const byte *)p1;
                 while (*p1 && *p1 != ')')
                     p1++;
@@ -417,6 +418,7 @@ process_array(gs_memory_t *mem, gs_c_param_list *plist, gs_param_name key, char 
                     goto return_minus_one;
                 parray[index].size = p1 - (char *)(parray[index].data);
                 parray[index++].persistent = false;
+                p1++; // Skip ')'
                 break;
             case '[':
                 /* Nested arrays, not supported */
