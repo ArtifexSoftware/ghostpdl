@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -371,6 +371,7 @@ struct gx_clist_state_s {
    (offset_temp = cldev->tile_table[(pcls)->tile_index].offset) != 0 &&\
    ((tile_slot *)(cldev->data + offset_temp))->id == (tid))
     gs_id pattern_id;		/* the last stored pattern id. */
+    gs_point step_phase;	/* the last stored step phase. */
     gs_int_point tile_phase;	/* most recent tile phase */
     gs_int_point screen_phase[2];	/* most recent screen phase */
     gx_color_index tile_colors[2];	/* most recent tile colors */
@@ -402,6 +403,7 @@ struct gx_clist_state_s {
          { gx_no_color_index, gx_no_color_index },\
         { gx_dc_type_none },\
         0, gx_no_bitmap_id, gs_no_id,\
+         { 0, 0 }, /* step_phase */ \
          { 0, 0 }, { {0, 0}, {0, 0}}, { gx_no_color_index, gx_no_color_index },\
         { {NULL}, {NULL} },\
          { 0, 0, 0, 0 }, lop_default, 0, 0, 0, 0, initial_known,\
