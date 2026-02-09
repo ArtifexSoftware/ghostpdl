@@ -771,8 +771,8 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
             /* Use unrounded coordinates. */
             pprintg4(s, "%g %g %g %g re",
                 fixed2float(rect.p.x), fixed2float(rect.p.y),
-                fixed2float(rect.q.x - rect.p.x),
-                fixed2float(rect.q.y - rect.p.y));
+                fixed2float(rect.q.x) - fixed2float(rect.p.x),
+                fixed2float(rect.q.y) - fixed2float(rect.p.y));
             pprints1(s, " %s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
         } else {
             gdev_vector_dopath_state_t state;
@@ -2302,7 +2302,7 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect,
         }
         pprintg4(pdev->strm, "%g %g %g %g re f\n",
                 fixed2float(box1.p.x) / scale, fixed2float(box1.p.y) / scale,
-                fixed2float(box1.q.x - box1.p.x) / scale, fixed2float(box1.q.y - box1.p.y) / scale);
+                (fixed2float(box1.q.x) - fixed2float(box1.p.x)) / scale, (fixed2float(box1.q.y) - fixed2float(box1.p.y)) / scale);
         if (psmat != NULL)
             stream_puts(pdev->strm, "Q\n");
         if (pdev->Eps2Write) {

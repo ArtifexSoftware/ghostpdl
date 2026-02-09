@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -152,7 +152,7 @@ psdf_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
         return code;
     pprintg4(gdev_vector_stream(vdev), "%g %g %g %g re\n",
              fixed2float(x0), fixed2float(y0),
-             fixed2float(x1 - x0), fixed2float(y1 - y0));
+             fixed2float(x1) - fixed2float(x0), fixed2float(y1) - fixed2float(y0));
     return (*vdev_proc(vdev, endpath)) (vdev, type);
 }
 
