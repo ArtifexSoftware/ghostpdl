@@ -2347,6 +2347,18 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
         return_error(gs_error_rangecheck);
     }
     pmie = (pdf_image_enum *)pminfo[i];
+    if (pmie->writer.alt_writer_count == 3) {
+        cos_stream_t *s;
+
+        s = cos_stream_from_pipeline(pmie->writer.binary[1].strm);
+        s_close_filters(&pmie->writer.binary[1].strm, pmie->writer.binary[1].target);
+        s->cos_procs->release((cos_object_t *)s, "pdf_image_choose_filter");
+        s->written = 1;
+        s_close_filters(&pmie->writer.binary[2].strm, pmie->writer.binary[2].target);
+        pmie->writer.binary[1].strm = pmie->writer.binary[2].strm = 0; /* for GC */
+        pmie->writer.binary[1].target = pmie->writer.binary[2].target = 0;
+        pmie->writer.alt_writer_count = 1;
+    }
     /*
      * Add the SMask entry to the image dictionary, and, if needed,
      * the Matte entry to the mask dictionary.
@@ -2388,12 +2400,33 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
         }
 
         if (DoMatte) {
+            int i = 0;
+            cos_stream_t *s;
+            cos_dict_t *pcd;
+            int code;
+
+#if 0
+            for (i = 0;i < 2; i++) {
+                s = cos_stream_from_pipeline(pmie->writer.binary[i].strm);
+                if (s == 0L)
+                    return gs_note_error(gs_error_ioerror);
+
+                pcd = cos_stream_dict(s);
+                code = cos_dict_put_c_key_floats((gx_device_pdf *)dev,
+                                    pcd,
+                                    "/Matte", pixm->Matte,
+                                    num_components);
+                if (code < 0)
+                    return code;
+            }
+#else
             code = cos_dict_put_c_key_floats((gx_device_pdf *)dev,
                                     (cos_dict_t *)pmie->writer.pres->object,
                                     "/Matte", pixm->Matte,
                                     num_components);
             if (code < 0)
                 return code;
+#endif
         }
     }
 /* Don't put SMask here because pmie->writer.pres->object may be substituted
