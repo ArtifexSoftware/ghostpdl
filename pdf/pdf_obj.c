@@ -452,6 +452,9 @@ static int pdfi_bufstream_increase(pdf_context *ctx, pdfi_bufstream_t *stream, u
     byte *data = NULL;
     uint64_t newsize;
 
+    if (needed > max_int || stream->len > (max_int - needed) / 2)
+        return_error(gs_error_rangecheck);
+
     newsize = stream->len * 2 + needed;
     data = gs_alloc_bytes(ctx->memory, newsize, "pdfi_bufstream_increase(data)");
     if (!data)
