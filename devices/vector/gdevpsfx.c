@@ -552,6 +552,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
                 return_error(gs_error_invalidfont);
             if (*csp == int2fixed(3))
                 replace_hints = true;
+            if (cis.os_count < 2 + fixed2int(csp[-1]))
+                return_error(gs_error_invalidfont);
             if (*csp == int2fixed(12) || *csp == int2fixed(13))
                 cis.os_count -= fixed2int(csp[-1]);
             cis.os_count -= 2;
@@ -606,6 +608,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             CHECK_OP();
             if (first) {
                 if (width_on_stack) {
+                    if (cis.os_count < 1)
+                        return_error(gs_error_invalidfont);
                     type2_put_fixed(s, *csp); /* width */
                     /* We need to move all the stored numeric values up by
                      * one in the stack, eliminating the width, so that later
@@ -697,6 +701,9 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             continue;
         case CE_OFFSET + ce1_setcurrentpoint:
             if (first) {
+                if (cis.os_count < 2)
+                    return_error(gs_error_invalidfont);
+
                 /*  A workaround for fonts which use ce1_setcurrentpoint
                     in an illegal way for shifting a path.
                     See t1_hinter__setcurrentpoint for more information. */
@@ -857,6 +864,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             case 12:
             case 13:
                 /* Counter control is not implemented. */
+                if (cis.os_count < 2 + fixed2int(csp[-1]))
+                    return_error(gs_error_invalidfont);
                 cis.os_count -= 2 + fixed2int(csp[-1]);
                 continue;
             }
