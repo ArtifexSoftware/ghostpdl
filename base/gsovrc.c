@@ -949,7 +949,7 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
         depth = tdev->color_info.depth;
         num_comps = tdev->color_info.num_components;
         if (has_tags)
-            comps_orig |= 1<<(num_comps-1);
+            comps_orig |= (gx_color_index)1<<(num_comps-1);
 
         fit_fill(tdev, x, y, w, h);
         byte_depth = depth / num_comps;
