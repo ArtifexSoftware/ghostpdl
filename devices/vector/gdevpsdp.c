@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -188,6 +188,9 @@ static const char *const AutoRotatePages_names[] = {
 };
 static const char *const ColorConversionStrategy_names[] = {
     psdf_ccs_names, 0
+};
+static const char *const BlendConversionStrategy_names[] = {
+    psdf_bcs_names, 0
 };
 static const char *const DownsampleType_names[] = {
     psdf_ds_names, 0
@@ -488,6 +491,10 @@ gdev_psdf_get_param(gx_device *dev, char *Param, void *list)
         return(psdf_write_name(plist, "ColorConversionStrategy",
                 ColorConversionStrategy_names[(int)pdev->params.ColorConversionStrategy]));
     }
+    if (strcmp(Param, "BlendConversionStrategy") == 0) {
+        return(psdf_write_name(plist, "BlendConversionStrategy",
+                BlendConversionStrategy_names[(int)pdev->params.BlendConversionStrategy]));
+    }
     if (strcmp(Param, "CalCMYKProfile") == 0) {
         return(psdf_write_string_param(plist, "CalCMYKProfile",
                                         &pdev->params.CalCMYKProfile));
@@ -572,6 +579,11 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
 
     code = psdf_write_name(plist, "ColorConversionStrategy",
                 ColorConversionStrategy_names[(int)pdev->params.ColorConversionStrategy]);
+    if (code < 0)
+        return code;
+
+    code = psdf_write_name(plist, "BlendConversionStrategy",
+                BlendConversionStrategy_names[(int)pdev->params.BlendConversionStrategy]);
     if (code < 0)
         return code;
 
@@ -1197,6 +1209,15 @@ gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
         psdf_put_enum(plist, "ColorConversionStrategy",
                       (int)params.ColorConversionStrategy,
                       ColorConversionStrategy_names, &ecode);
+    if (ecode < 0) {
+        code = ecode;
+        goto exit;
+    }
+
+    params.BlendConversionStrategy = (enum psdf_blend_conversion_strategy)
+        psdf_put_enum(plist, "BlendConversionStrategy",
+                      (int)params.BlendConversionStrategy,
+                      BlendConversionStrategy_names, &ecode);
     if (ecode < 0) {
         code = ecode;
         goto exit;

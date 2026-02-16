@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2025 Artifex Software, Inc.
+.. Copyright (C) 2001-2026 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: High Level Devices
@@ -895,7 +895,15 @@ All other color spaces are converted appropriately. ``Separation`` and :title:`d
 
 The ``PreserveSeparation`` switch now controls whether the :title:`pdfwrite` family of devices will attempt to preserve ``Separation`` spaces. If this is set to false then all ``Separation`` colours will be converted into the current device space specified by ``ProcessColorModel``.
 
+As of 10.07.0 there is a new switch which determines how transparency blending spaces are handled. The ``BlendConversionStrategy`` switch takes the values ``None``, ``Simple`` or ``Managed`` (default is Simple). This switch is only consulted when ColorConversionStrategy is not set to ``LeaveColorUnchanged``.
 
+The purpose of this control is to enable production of PDF/A (and potentially other subsets of PDF) which require the content to be specified in a specific olour space (eg CMYK) and also support transparency. The ColorConversionStrategt controls the colour space pf marks on the page, but transparency blending Groups do not make marks on the page. Nevertheless the specifications require that either these spaces must be the same as the color space for marks, or there must be s Default(Gray|RGB|CMYK) color profile, which allows for controlled conversion into the blend space.
+
+If BlendConversionStrategy is set to ``None`` then the blending space will be left untouched (this may cause PDF/A-3 production to fail), if set to ``Simple`` then the space will be replaced by the ColorConversionStrategy color space and if set to ``Managed`` then the current matching Default space will be added to the page, and the blend space left 'as-is'. The default is ``Simple``.
+
+In general we expect that the majority of files being produced as PDF/A-3 which have transparency do not actually use transparency features, a Group has been included at a Page or XObject level because the creating application 'might' use transparency at some point. In this case the Simple approach will work well and will produce files no larger than before.
+
+For content which really does use transparency, there can be a considerable difference between applying transparency in CMYK (4 color subtracrtive space) and RGB (3 color additive space), this can be seen in some of the classic example files such as SciencePoster. So for users creating such files, who require color fidelity, the ``Managed`` value will insert an appropriate Default(Gray|RGB|CMYK) space.
 
 Setting page orientation
 """"""""""""""""""""""""""""""""""""""""""""
@@ -1333,6 +1341,9 @@ To create a document, please follow the instructions for `Creating a PDF/X docum
 - Specify the ``-dPDFA`` option to specify ``PDF/A-1``, ``-dPDFA=2`` for ``PDF/A-2`` or ``-dPDFA=3`` for ``PDF/A-3``.
 
 - Specify ``-sColorConversionStrategy=RGB``, ``-sColorConversionStrategy=CMYK`` or ``-sColorConversionStrategy=UseDeviceIndependentColor``.
+
+
+- For PDF/A versions which permit transparency; specify ``-sBlendConversionStrategy=Simple`` or ``-sBlendConversionStrategy=Managed``.
 
 - Specify a PDF/A definition file before running the input document. It provides additional information to be included in the output document. A sample PDF/A definition file may be found in ``gs/lib/PDFA_def.ps``. You will need to modify the content of this file; in particular you must alter the ``/ICCProfile`` so that it points to a valid ICC profile for your ``OutputIntent``. The string '(...)' defining the ICCProfile must be a fully qualified device and path specification appropriate for your Operating System.
 

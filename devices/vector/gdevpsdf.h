@@ -130,6 +130,14 @@ typedef struct psdf_distiller_params_s {
         "UseDeviceIndependentColor", "UseDeviceIndependentColorForImages",\
         "sRGB", "CMYK", "Gray", "RGB", "ByObjectType"
 
+    enum psdf_blend_conversion_strategy {
+        bcs_None,
+        bcs_Simple,
+        bcs_Managed
+    } BlendConversionStrategy;
+#define psdf_bcs_names\
+    "None", "Simple", "Managed"
+
     bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
     enum psdf_transfer_function_info {
@@ -212,6 +220,7 @@ extern const stream_template s_zlibE_template;
     {0},	    /* calRGBProfile */ \
     {0},	    /* sRGBProfile */ \
     ccs_LeaveColorUnchanged, /* ColorConversionStrategy */ \
+    bcs_Simple, /* BlendConversionStrategy */ \
     0,		    /* PreserveHalftoneInfo (false) */ \
     0,		    /* PreserveOverprintSettings (false) */ \
     tfi_Preserve,   /* TransferFunctionInfo */ \

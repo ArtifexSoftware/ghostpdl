@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,6 +25,7 @@
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
 #include "gsccolor.h"
+#include "gsicc_manage.h"
 
 static int
 pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams)
@@ -72,13 +73,177 @@ pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * ppa
 
 }
 
+static int WriteDefaultSpaces(gx_device_pdf * pdev, const gs_gstate * pgs, cos_value_t *cs_value)
+{
+    cmm_profile_t *pprofile = NULL;
+    gs_color_space cs, *pcs;
+    gs_color_space_type t;
+    cos_stream_t *pcstream;
+    cos_array_t *pca;
+    cos_dict_t *Resources = NULL, *ColorSpaces = NULL;
+    int code = 0;
+    const cos_value_t *pcos = NULL;
+    pdf_color_space_t *ppcs;
+    pdf_resource_t *pres = NULL;
+    gs_color_space_index target;
+
+    /* Check type before using */
+    if (cs_value->value_type != COS_VALUE_CONST)
+        return_error(gs_error_typecheck);
+    /* Compare its value to find out which space we want */
+    if (strncmp((const char *)cs_value->contents.chars.data, "/DeviceGray", 11) == 0)
+        target = gs_color_space_index_DeviceGray;
+    else
+        if (strncmp((const char *)cs_value->contents.chars.data, "/DeviceRGB", 10) == 0)
+            target = gs_color_space_index_DeviceRGB;
+        else
+            if (strncmp((const char *)cs_value->contents.chars.data, "/DeviceCMYK", 11) == 0)
+                target = gs_color_space_index_DeviceCMYK;
+            else
+                return_error(gs_error_rangecheck);
+
+    /* Retrieve/Create the Resources->ColorSpace dictionary in the Pages tree */
+    Resources = (cos_dict_t *)cos_dict_find(pdev->Pages, (const byte *)"/Resources", 10);
+    if (Resources == NULL) {
+        Resources = cos_dict_alloc(pdev, "WriteDefaultSpaces");
+        if (Resources == NULL)
+            return_error(gs_error_undefined);
+        code = cos_dict_put_c_key_object(pdev->Pages, "/Resources", (cos_object_t *)Resources);
+        if (code < 0)
+            return code;
+    }
+
+    /* Then the ColorSpace sub-dictionary */
+    ColorSpaces = (cos_dict_t *)cos_dict_find(Resources, (const byte *)"/ColorSpace", 11);
+    if(ColorSpaces == NULL) {
+        ColorSpaces = cos_dict_alloc(pdev, "WriteDefaultSpaces");
+        if (ColorSpaces == NULL)
+            return_error(gs_error_undefined);
+        code = cos_dict_put_c_key_object(Resources, "/ColorSpace", (cos_object_t *)ColorSpaces);
+        if (code < 0)
+            return code;
+    }
+
+    /* Now check to see if we already have a /Default space, if so just exit. */
+    switch(target) {
+        case gs_color_space_index_DeviceGray:
+            pcos = cos_dict_find_c_key(ColorSpaces, "/DefaultGray");
+            break;
+        case gs_color_space_index_DeviceRGB:
+            pcos = cos_dict_find_c_key(ColorSpaces, "/DefaultRGB");
+            break;
+        case gs_color_space_index_DeviceCMYK:
+            pcos = cos_dict_find_c_key(ColorSpaces, "/DefaultCMYK");
+            break;
+        default:
+            return_error(gs_error_rangecheck);
+            break;
+    }
+    /* If we've already written the relevant Default space, don't write another one! */
+    if (pcos != NULL)
+        return 0;
+
+    /* This is all a bit hairy, but there seems to be no easy way to achieve this
+     * Probably could export some static functions from the ICC code, but this works too. Just manufacture
+     * enough of a colour space to retrieve the ICC profile.
+     */
+    cs.cmm_icc_profile_data = NULL;
+    t.index = target;
+    cs.type = &t;
+    pprofile = gsicc_get_gscs_profile(&cs, pgs->icc_manager);
+    if (pprofile == NULL)
+        return_error(gs_error_undefined);
+    /* gsicc_get_gscs_profile() does not count up the returned reference. We
+     * deliberately don't count it up here; we're only using it temporarily.
+     */
+
+    /* Now manufacture a colour space to attach the profile to. */
+    pcs = gs_cspace_new_ICC(pdev->memory, (gs_gstate *)pgs, 4);
+    if (pcs == NULL)
+        return_error(gs_error_undefined);
+
+    switch(target) {
+        case gs_color_space_index_DeviceGray:
+            pcs->ICC_Alternate_space = gs_ICC_Alternate_DeviceGray;
+            break;
+        case gs_color_space_index_DeviceRGB:
+            pcs->ICC_Alternate_space = gs_ICC_Alternate_DeviceRGB;
+            break;
+        case gs_color_space_index_DeviceCMYK:
+            pcs->ICC_Alternate_space = gs_ICC_Alternate_DeviceCMYK;
+            break;
+    }
+
+    pcs->cmm_icc_profile_data = pprofile;
+
+    /* Create an array. */
+    pca = cos_array_alloc(pdev, "WriteDefaultSpaces");
+    if (pca == 0) {
+        rc_decrement(pcs, "WriteDefaultSpaces");
+        return_error(gs_error_VMerror);
+    }
+
+    /* Turn the array in to a PDF colour space, using the GS colour space */
+    code = pdf_iccbased_color_space(pdev, pgs, NULL, pcs, pca);
+    if (code < 0) {
+        rc_decrement(pcs, "WriteDefaultSpaces");
+        cos_release((cos_object_t *)pca, "WriteDefaultSpaces");
+        return code;
+    }
+
+    /*
+     * Register the color space as a resource, since it must be referenced
+     * by name rather than directly.
+     */
+    {
+        if (code < 0 ||
+            (code = pdf_alloc_resource(pdev, resourceColorSpace, pcs->id,
+                                       &pres, -1)) < 0
+            ) {
+            COS_FREE(pca, "pdf_color_space");
+            return code;
+        }
+        pdf_reserve_object_id(pdev, pres, 0);
+
+        switch(target) {
+            case gs_color_space_index_DeviceGray:
+                memcpy(pres->rname, "DefaultGray", 11);
+                pres->rname[11] = 0;
+                break;
+            case gs_color_space_index_DeviceRGB:
+                memcpy(pres->rname, "DefaultRGB", 10);
+                pres->rname[10] = 0;
+                break;
+            case gs_color_space_index_DeviceCMYK:
+                memcpy(pres->rname, "DefaultCMYK", 11);
+                pres->rname[11] = 0;
+                break;
+        }
+
+        ppcs = (pdf_color_space_t *)pres;
+        ppcs->serialized = 0;
+        ppcs->serialized_size = 0;
+        ppcs->ranges = 0;
+        pca->id = pres->object->id;
+        COS_FREE(pres->object, "pdf_color_space");
+        pres->object = (cos_object_t *)pca;
+        cos_write_object(COS_OBJECT(pca), pdev, resourceColorSpace);
+    }
+
+    code = pdf_add_resource(pdev, Resources, "/ColorSpace", pres);
+
+    rc_decrement(pcs, "WriteDefaultSpaces");
+    cos_release((cos_object_t *)pca, "WriteDefaultSpaces");
+    return code;
+}
+
 static int
 pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams,
                             const gs_gstate * pgs, cos_dict_t **pdict)
 {
     pdf_resource_t *pres_group;
     cos_dict_t *group_dict;
-    int code;
+    int code = 0;
     cos_value_t cs_value;
 
     code = pdf_alloc_resource(pdev, resourceGroup, gs_no_id, &pres_group, -1);
@@ -118,10 +283,46 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
                     &pdf_color_space_names, false, NULL, 0, false);
         if (code < 0)
             return code;
-        code = cos_dict_put_c_key(group_dict, "/CS", &cs_value);
-        if (code < 0)
-            return code;
+        switch(pdev->params.BlendConversionStrategy) {
+            case bcs_Managed:
+                if (pdev->params.ColorConversionStrategy != ccs_LeaveColorUnchanged) {
+                    if (pdev->params.ColorConversionStrategy < ccs_CMYK || pdev->params.ColorConversionStrategy == ccs_ByObjectType)
+                        return_error(gs_error_rangecheck);
+                    code = WriteDefaultSpaces(pdev, pgs, &cs_value);
+                }
+                if (code < 0)
+                    return code;
+                /* Fall through */
+            case bcs_None:
+                code = cos_dict_put_c_key(group_dict, "/CS", &cs_value);
+                break;
+            case bcs_Simple:
+                switch(pdev->params.ColorConversionStrategy) {
+                    case ccs_LeaveColorUnchanged:
+                        code = cos_dict_put_c_key(group_dict, "/CS", &cs_value);
+                        break;
+                    case ccs_UseDeviceIndependentColor:
+                    case ccs_UseDeviceIndependentColorForImages:
+                    case ccs_ByObjectType:
+                    case ccs_sRGB:
+                        return_error(gs_error_rangecheck);
+                        break;
+
+                    case ccs_CMYK:
+                        code = cos_dict_put_c_key_string(group_dict, "/CS", (const byte *)"/DeviceCMYK", 11);
+                        break;
+                    case ccs_Gray:
+                        code = cos_dict_put_c_key_string(group_dict, "/CS", (const byte *)"/DeviceGray", 11);
+                        break;
+                    case ccs_RGB:
+                        code = cos_dict_put_c_key_string(group_dict, "/CS", (const byte *)"/DeviceRGB", 10);
+                        break;
+                }
+                break;
+        }
     }
+    if (code < 0)
+        return code;
     group_dict = NULL; /* The next line invalidates it. */
     code = pdf_substitute_resource(pdev, &pres_group, resourceGroup, NULL, false);
     if (code < 0)
