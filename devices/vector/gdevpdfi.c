@@ -2405,28 +2405,12 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
             cos_dict_t *pcd;
             int code;
 
-#if 0
-            for (i = 0;i < 2; i++) {
-                s = cos_stream_from_pipeline(pmie->writer.binary[i].strm);
-                if (s == 0L)
-                    return gs_note_error(gs_error_ioerror);
-
-                pcd = cos_stream_dict(s);
-                code = cos_dict_put_c_key_floats((gx_device_pdf *)dev,
-                                    pcd,
-                                    "/Matte", pixm->Matte,
-                                    num_components);
-                if (code < 0)
-                    return code;
-            }
-#else
             code = cos_dict_put_c_key_floats((gx_device_pdf *)dev,
                                     (cos_dict_t *)pmie->writer.pres->object,
                                     "/Matte", pixm->Matte,
                                     num_components);
             if (code < 0)
                 return code;
-#endif
         }
     }
 /* Don't put SMask here because pmie->writer.pres->object may be substituted
