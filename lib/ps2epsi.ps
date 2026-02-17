@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2026 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -57,7 +57,7 @@ dup EPSFheader ne {
   % InputFile was not EPSF
   pop		% discard the first line of the InputFile
   % run the file through eps2write (into a tempfile) to make an EPSF
-  (_ps2epsi) (w+) .tempfile closefile /TName exch def
+  /TName (%ram%epsi.tmp) def
   /SAVE save def
   << /OutputDevice /eps2write /OutputFile TName >> setpagedevice
   InputFile run
@@ -117,9 +117,11 @@ dup (%%BeginPreview) anchorsearch exch pop {	% discard the match or extra copy o
 if
 /LineAfterEndComments exch def
 
-//null (w+) .tempfile
-closefile			% will be opened by bit device
-/Pname exch def
+%//null (w+) .tempfile
+%closefile			% will be opened by bit device
+%/Pname exch def
+
+/Pname (%ram%preview.tmp) def
 
 <<
   /OutputDevice /bit

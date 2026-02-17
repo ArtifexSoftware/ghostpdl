@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -40,6 +40,8 @@ typedef struct _ramfs_enum ramfs_enum;
 */
 
 /* Error constants */
+#define RAMFS_NOERROR 0
+#define RAMFS_EOF 1
 #define RAMFS_NOTFOUND 2
 #define RAMFS_NOACCESS 5
 #define RAMFS_NOMEM 6
@@ -78,5 +80,31 @@ int ramfile_tell(ramhandle * handle);
 int ramfile_size(ramhandle * handle);
 void ramfile_close(ramhandle * handle);
 int ramfile_error(ramhandle * handle);
+
+/* gp_file implementation */
+typedef struct {
+    gp_file base;
+    ramhandle *handle;
+    int error;
+} gp_file_RAM;
+
+int gp_file_ram_close(gp_file *rf);
+int gp_file_ram_getc(gp_file *rf);
+int gp_file_ram_putc(gp_file *rf, int);
+int gp_file_ram_read(gp_file *rf, size_t size, unsigned int count, void *buf);
+int gp_file_ram_write(gp_file *rf, size_t size, unsigned int count, const void *buf);
+int gp_file_ram_seek(gp_file *rf, gs_offset_t offset, int whence);
+gs_offset_t gp_file_ram_tell(gp_file *rf);
+int gp_file_ram_eof(gp_file *rf);
+gp_file *gp_file_ram_dup(gp_file *rf, const char *mode);
+int gp_file_ram_seekable(gp_file *rf);
+int gp_file_ram_pread(gp_file *rf, size_t count, gs_offset_t offset, void *buf);
+int gp_file_ram_pwrite(gp_file *rf, size_t count, gs_offset_t offset, const void *buf);
+int gp_file_ram_is_char_buffered(gp_file *rf);
+void gp_file_ram_fflush(gp_file *rf);
+int gp_file_ram_ferror(gp_file *rf);
+FILE *gp_file_ram_get_file(gp_file *rf);
+void gp_file_ram_clearerror(gp_file *rf);
+gp_file *gp_file_ram_reopen(gp_file *f, const char *fname, const char *mode);
 
 #endif /* __RAMFS_H__ */
