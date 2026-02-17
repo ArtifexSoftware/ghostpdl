@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -501,4 +501,178 @@ int ramfile_tell(ramhandle* handle)
 int ramfile_eof(ramhandle* handle)
 {
     return (handle->filepos >= handle->file->size);
+}
+
+int gp_file_ram_close(gp_file *rf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+
+    ramfile_close(f->handle);
+
+    return 0;
+}
+
+int gp_file_ram_getc(gp_file *rf)
+{
+    char c = 0;
+    int code = 0;
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+
+    code = ramfile_read(f->handle, &c, 1);
+    if (code == 0) {
+        f->error = RAMFS_EOF;
+        return -1;
+    }
+
+    return c;
+}
+
+int gp_file_ram_putc(gp_file *rf, int c)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+    int code = 0;
+
+    code = ramfile_write(f->handle, &c, 1);
+    if (code < 1) {
+        f->error = f->handle->last_error;
+        return EOF;
+    }
+
+    return 0;
+}
+
+int gp_file_ram_read(gp_file *rf, size_t size, unsigned int count, void *buf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+    int code = 0;
+
+    code = ramfile_read(f->handle, buf, count);
+    f->error = f->handle->last_error;
+    return code;
+}
+
+int gp_file_ram_write(gp_file *rf, size_t size, unsigned int count, const void *buf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+    int code = 0;
+
+    code = ramfile_write(f->handle, buf, count);
+    f->error = f->handle->last_error;
+    return code;
+}
+
+int gp_file_ram_seek(gp_file *rf, gs_offset_t offset, int whence)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+    int code = 0;
+
+    code = ramfile_seek(f->handle, offset, whence);
+    f->error = f->handle->last_error;
+    return code;
+}
+
+gs_offset_t gp_file_ram_tell(gp_file *rf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+    gs_offset_t code = 0;
+
+    code = (gs_offset_t)ramfile_tell(f->handle);
+    f->error = f->handle->last_error;
+    return code;
+}
+
+int gp_file_ram_eof(gp_file *rf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+    if (f->error == RAMFS_EOF)
+        return 1;
+    return 0;
+}
+
+gp_file *gp_file_ram_dup(gp_file *rf, const char *mode)
+{
+    return NULL;
+}
+
+int gp_file_ram_seekable(gp_file *rf)
+{
+    return 1;
+}
+
+int gp_file_ram_pread(gp_file *rf, size_t count, gs_offset_t offset, void *buf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+    int code = 0;
+
+    gs_offset_t old = (gs_offset_t)ramfile_tell(f->handle);
+    code = ramfile_seek(f->handle, offset, SEEK_SET);
+    if (code < 0) {
+        f->error = f->handle->last_error;
+        return -1;
+    }
+    code = ramfile_read(f->handle, buf, count);
+    (void)ramfile_seek(f->handle, old, SEEK_SET);
+    if (code < count) {
+        f->error = f->handle->last_error;
+        return -1;
+    }
+    return code;
+}
+
+int gp_file_ram_pwrite(gp_file *rf, size_t count, gs_offset_t offset, const void *buf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+    int code = 0;
+
+    gs_offset_t old = (gs_offset_t)ramfile_tell(f->handle);
+    code = ramfile_seek(f->handle, offset, SEEK_SET);
+    if (code < 0) {
+        f->error = f->handle->last_error;
+        return -1;
+    }
+    code = ramfile_write(f->handle, buf, count);
+    (void)ramfile_seek(f->handle, old, SEEK_SET);
+    if (code < count) {
+        f->error = f->handle->last_error;
+        return -1;
+    }
+    return code;
+}
+
+int gp_file_ram_is_char_buffered(gp_file *rf)
+{
+    return 0;
+}
+
+void gp_file_ram_fflush(gp_file *rf)
+{
+    return;
+}
+
+int gp_file_ram_ferror(gp_file *rf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+
+    if(f->error > RAMFS_EOF)
+        return 1;
+    return 0;
+}
+
+FILE *gp_file_ram_get_file(gp_file *rf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+
+    return (FILE *)f->handle;
+}
+
+void gp_file_ram_clearerror(gp_file *rf)
+{
+    gp_file_RAM *f = (gp_file_RAM *)rf;
+
+    f->error = 0;
+}
+
+gp_file *gp_file_ram_reopen(gp_file *f, const char *fname, const char *mode)
+{
+    return NULL;
 }

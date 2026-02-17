@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -50,6 +50,8 @@
 static iodev_proc_init(iodev_ram_init);
 static iodev_proc_finit(iodev_ram_finit);
 static iodev_proc_open_file(ram_open_file);
+static iodev_proc_fopen(ram_fopen);
+static iodev_proc_fclose(ram_fclose);
 static iodev_proc_delete_file(ram_delete);
 static iodev_proc_rename_file(ram_rename);
 static iodev_proc_file_status(ram_status);
@@ -62,7 +64,7 @@ static void ram_finalize(const gs_memory_t *memory, void * vptr);
 const gx_io_device gs_iodev_ram = {
     "%ram%", "FileSystem", {
         iodev_ram_init, iodev_ram_finit, iodev_no_open_device,
-        ram_open_file, iodev_no_fopen, iodev_no_fclose,
+        ram_open_file, ram_fopen, ram_fclose,
         ram_delete, ram_rename, ram_status,
         ram_enumerate_init, ram_enumerate_next, ram_enumerate_close,
         ram_get_params, iodev_no_put_params
@@ -212,6 +214,96 @@ ram_open_file(gx_io_device * iodev, const char *fname, uint len,
     gs_free_object(mem, namestr, "free temporary filename string");
     /* XXX free stream stuff? */
     return code;
+}
+
+static const gp_file_ops_t gp_file_RAM_prototype =
+{
+    gp_file_ram_close,
+    gp_file_ram_getc,
+    gp_file_ram_putc,
+    gp_file_ram_read,
+    gp_file_ram_write,
+    gp_file_ram_seek,
+    gp_file_ram_tell,
+    gp_file_ram_eof,
+    gp_file_ram_dup,
+    gp_file_ram_seekable,
+    gp_file_ram_pread,
+    gp_file_ram_pwrite,
+    gp_file_ram_is_char_buffered,
+    gp_file_ram_fflush,
+    gp_file_ram_ferror,
+    gp_file_ram_get_file,
+    gp_file_ram_clearerror,
+    gp_file_ram_reopen
+};
+
+static gp_file_RAM *gp_file_RAM_alloc(const gs_memory_t *mem)
+{
+    return (gp_file_RAM *)gp_file_alloc(mem->non_gc_memory,
+                         &gp_file_RAM_prototype,
+                         sizeof(gp_file_RAM),
+                         "gp_file_RAM");
+}
+
+int ram_fopen(gx_io_device *iodev, const char *fname, const char *access,
+              gp_file **pfile, char *rfname, uint rnamelen, gs_memory_t *mem)
+{
+    ramfs_state* state = (ramfs_state *)iodev->state;
+    gp_file_RAM **file = (gp_file_RAM **)pfile;
+    int i, mode = 0;
+
+    *file = gp_file_RAM_alloc(mem);
+    if (*file == NULL)
+        return 0;
+
+    for (i=0;i<strlen(access);i++) {
+        if (access[i] == 'r')
+            mode |= RAMFS_READ;
+        else {
+            if (access[i] == 'w') {
+                mode |= RAMFS_WRITE;
+                mode |= RAMFS_CREATE;
+                mode |= RAMFS_TRUNC;
+            }
+            else
+            {
+                if (access[i] == 'a') {
+                    mode |= RAMFS_APPEND;
+                    mode |= RAMFS_CREATE;
+                }
+                else {
+                    if (access[i] == '+') {
+                        if (mode & RAMFS_WRITE)
+                            mode |= RAMFS_READ;
+                        else
+                            mode |= RAMFS_WRITE;
+                    }
+                    else
+                        if (access[i] == 'b')
+                            ;
+                        else
+                            return 0;
+                }
+            }
+        }
+    }
+    (*file)->handle = ramfs_open(iodev->memory, state->fs, fname, mode);
+    if ((*file)->handle == NULL)
+        return_error(gs_error_undefinedfilename);
+
+    if (rfname != NULL && rfname != fname)
+        strcpy(rfname, fname);
+
+    return 0;
+}
+
+int ram_fclose(gx_io_device *iodev, gp_file *file)
+{
+    gp_file_RAM *pfile = (gp_file_RAM *)file;
+
+    ramfile_close(pfile->handle);
+    return 0;
 }
 
 /* Initialize a stream for reading an OS file. */

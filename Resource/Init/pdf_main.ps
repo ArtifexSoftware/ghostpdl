@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2025 Artifex Software, Inc.
+% Copyright (C) 2001-2026 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -1165,7 +1165,7 @@ currentdict /PDFSwitches undef
         } ifelse
         dup (%stdin) (r) file eq {
           % Copy PDF from stdin to temporary file then run it.
-          //null (w+) /.tempfile .systemvar exec exch 3 1 roll
+          //null (w+) .tempfile exch 3 1 roll
           % stack: tempname stdin tempfile
           64000 string
           {
@@ -1224,8 +1224,8 @@ currentdict /EnablePageHandlerDevice undef
    } {
      pop //false
    } ifelse {
-    //null (w) /.tempfile   % strm (name) null (w) /.tempfile
-    .systemvar exec         % strm (name) file
+    //null (w) .tempfile    % strm (name) null (w) .tempfile
+                            % strm (name) file
     3 -1 roll               % (name) file strm
     32768 string            % (name) file strm (buf)
     { 3 copy readstring     % (name) file strm (buf) file (data) bool
