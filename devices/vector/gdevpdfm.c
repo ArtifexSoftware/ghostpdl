@@ -2854,7 +2854,7 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
                 return code;
     }
 
-    /* We need to make sure we escape any white space in the tag */
+    /* We need to make sure we escape any white space and delimeters in the tag */
     for (i = 0;i < pairs[0].size;i++) {
         switch(pairs[0].data[i]) {
             case 0x00:
@@ -2863,7 +2863,23 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             case 0x0c:
             case 0x0d:
             case 0x20:
+            case 0x25:
+            case 0x28:
+            case 0x29:
+            case 0x3c:
+            case 0x3e:
+            case 0x5b:
+            case 0x5d:
+            case 0x7b:
+            case 0x7d:
                 esc_size += 3;
+                break;
+            case 0x2f:
+                esc_size++;
+                /* The buffer includes the initial "/" for names, so don't escape that */
+                if (i > 0) {
+                    esc_size += 2;
+                }
                 break;
             default:
                 esc_size++;
@@ -2876,6 +2892,7 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
     if (cstring == NULL)
         return_error(gs_error_VMerror);
 
+
     esc_size = 0;
     for (i = 0;i < pairs[0].size;i++) {
         switch(pairs[0].data[i]) {
@@ -2885,9 +2902,27 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             case 0x0c:
             case 0x0d:
             case 0x20:
+            case 0x25:
+            case 0x28:
+            case 0x29:
+            case 0x3c:
+            case 0x3e:
+            case 0x5b:
+            case 0x5d:
+            case 0x7b:
+            case 0x7d:
                 cstring[esc_size++] = '#';
                 cstring[esc_size++] = (pairs[0].data[i] >> 4) + 0x30;
                 cstring[esc_size++] = (pairs[0].data[i] & 0x0f) + 0x30;
+                break;
+            case 0x2f:
+                if (i > 0) {
+                    cstring[esc_size++] = '#';
+                    cstring[esc_size++] = (pairs[0].data[i] >> 4) + 0x30;
+                    cstring[esc_size++] = (pairs[0].data[i] & 0x0f) + 0x30;
+                }
+                else
+                    cstring[esc_size++] = pairs[0].data[i];
                 break;
             default:
                 cstring[esc_size++] = pairs[0].data[i];
