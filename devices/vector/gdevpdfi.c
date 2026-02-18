@@ -2400,9 +2400,6 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_gstate *pgs,
         }
 
         if (DoMatte) {
-            int i = 0;
-            cos_stream_t *s;
-            cos_dict_t *pcd;
             int code;
 
             code = cos_dict_put_c_key_floats((gx_device_pdf *)dev,
