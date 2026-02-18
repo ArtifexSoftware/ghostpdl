@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -645,7 +645,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     int num_bytes;
     int k;
     static const char *const srcgtag_keys[] = {GSICC_SRCGTAG_KEYS};
-    cmm_profile_t *icc_profile;
+    cmm_profile_t *icc_profile = NULL;
     cmm_srcgtag_profile_t *srcgtag;
     bool start = true;
     gsicc_cmm_t cmm = gsCMM_DEFAULT;
