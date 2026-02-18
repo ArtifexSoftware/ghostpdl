@@ -2280,8 +2280,6 @@ error:
 
 int pdfi_EI(pdf_context *ctx)
 {
-    int code;
-
     if (ctx->text.BlockDepth != 0) {
         ctx->text.BlockDepth = 0;
         if (ctx->text.TextClip) {
