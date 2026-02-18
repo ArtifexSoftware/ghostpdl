@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -418,7 +418,7 @@ static int
 png_get_params_mfs(gx_device *dev, gs_param_list *plist)
 {
     gx_device_png *pdev = (gx_device_png *)dev;
-    int code, ecode;
+    int code, ecode = 0;
 
     if ((code = param_write_bool(plist, "EmbedProfile", &pdev->EmbedProfile)) < 0)
         ecode = code;
