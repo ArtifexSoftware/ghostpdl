@@ -79,7 +79,6 @@ static int WriteDefaultSpaces(gx_device_pdf * pdev, const gs_gstate * pgs, cos_v
     cmm_profile_t *pprofile = NULL;
     gs_color_space cs, *pcs;
     gs_color_space_type t;
-    cos_stream_t *pcstream;
     cos_array_t *pca;
     cos_dict_t *Resources = NULL, *ColorSpaces = NULL;
     int code = 0;
@@ -173,6 +172,8 @@ static int WriteDefaultSpaces(gx_device_pdf * pdev, const gs_gstate * pgs, cos_v
         case gs_color_space_index_DeviceCMYK:
             pcs->ICC_Alternate_space = gs_ICC_Alternate_DeviceCMYK;
             break;
+        default:
+            return_error(gs_error_undefined);
     }
 
     pcs->cmm_icc_profile_data = pprofile;
@@ -219,6 +220,8 @@ static int WriteDefaultSpaces(gx_device_pdf * pdev, const gs_gstate * pgs, cos_v
                 memcpy(pres->rname, "DefaultCMYK", 11);
                 pres->rname[11] = 0;
                 break;
+            default:
+                 return_error(gs_error_undefined);
         }
 
         ppcs = (pdf_color_space_t *)pres;
