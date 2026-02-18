@@ -26,6 +26,7 @@
 #include "gdevpdfo.h"
 #include "gsccolor.h"
 #include "gsicc_manage.h"
+#include "gdevpdfc.h"
 
 static int
 pdf_make_soft_mask_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams)
