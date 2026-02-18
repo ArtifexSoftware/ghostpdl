@@ -3063,7 +3063,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
         char buf[20];
 
         if (pgs->soft_mask_id == 0) {
-            char *buf = "/None";
+            char *buf = (char *)"/None";
 
             code = pdf_open_contents(pdev, PDF_IN_STREAM);
             if (code < 0)
