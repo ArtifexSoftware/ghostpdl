@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2024 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -42,6 +42,7 @@ FT_MAK=$(GLSRC)freetype.mak $(TOP_MAKEFILES)
 
 # file complements for each component
 ft_autofit=\
+	$(FTOBJ)afadjust.$(OBJ) \
 	$(FTOBJ)afcjk.$(OBJ) \
 	$(FTOBJ)afdummy.$(OBJ) \
 	$(FTOBJ)afglobal.$(OBJ) \
@@ -52,7 +53,8 @@ ft_autofit=\
 	$(FTOBJ)afmodule.$(OBJ) \
 	$(FTOBJ)afblue.$(OBJ) \
 	$(FTOBJ)afranges.$(OBJ) \
-	$(FTOBJ)afshaper.$(OBJ)
+	$(FTOBJ)afshaper.$(OBJ) \
+	$(FTOBJ)ft-hb.$(OBJ)
 
 ft_base=\
 	$(FTOBJ)ftadvanc.$(OBJ) \
@@ -259,6 +261,9 @@ $(FTGEN)freetype_0.dev : $(FT_MAK) $(ECHOGS_XE) \
 $(FTOBJ)afangles.$(OBJ) : $(FTSRC)autofit$(D)afangles.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afangles.$(OBJ) $(C_) $(FTSRC)autofit$(D)afangles.c
 
+$(FTOBJ)afadjust.$(OBJ) : $(FTSRC)autofit$(D)afadjust.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
+	$(FTCC) $(FTO_)afadjust.$(OBJ) $(C_) $(FTSRC)autofit$(D)afadjust.c
+
 $(FTOBJ)afcjk.$(OBJ) : $(FTSRC)autofit$(D)afcjk.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afcjk.$(OBJ) $(C_) $(FTSRC)autofit$(D)afcjk.c
 
@@ -294,6 +299,9 @@ $(FTOBJ)afranges.$(OBJ) : $(FTSRC)autofit$(D)afranges.c $(FT_MAK) $(GENFTCONFH) 
 
 $(FTOBJ)afshaper.$(OBJ) : $(FTSRC)autofit$(D)afshaper.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
 	$(FTCC) $(FTO_)afshaper.$(OBJ) $(C_) $(FTSRC)autofit$(D)afshaper.c
+
+$(FTOBJ)ft-hb.$(OBJ) : $(FTSRC)autofit$(D)ft-hb.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
+	$(FTCC) $(FTO_)ft-hb.$(OBJ) $(C_) $(FTSRC)autofit$(D)ft-hb.c
 
 $(FTOBJ)ftadvanc.$(OBJ) : $(FTSRC)base$(D)ftadvanc.c $(FT_MAK) $(GENFTCONFH) $(MAKEDIRS)
 	$(FTCC) $(FTO_)ftadvanc.$(OBJ) $(C_) $(FTSRC)base$(D)ftadvanc.c
