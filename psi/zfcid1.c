@@ -94,6 +94,9 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
         if (code > 0)
             code = dict_find_string_with_type(fdict, "SubstNWP", &SubstNWP, t_dictionary);
         if (code > 0) {
+            if (!r_has_type(Decoding, t_dictionary) || !r_has_type(TT_cmap,  t_dictionary) || !r_has_type(SubstNWP, t_array))
+                return_error(gs_error_typecheck);
+
             code = cid_to_TT_charcode(pfont->memory, Decoding, TT_cmap, SubstNWP, cid, &c, &src_type, &dst_type);
             if (code >= 0)
                 gnum = c;

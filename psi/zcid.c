@@ -112,6 +112,8 @@ cid_to_TT_charcode(const gs_memory_t *mem,
             return code;
         if ((code = array_get(mem, SubstNWP, i + 3, &rs)) < 0)
             return code;
+        if (!r_has_type(&rb, t_integer) || !r_has_type(&re, t_integer) || !r_has_type(&rs, t_integer))
+            return_error(gs_error_typecheck);
         nb = rb.value.intval;
         ne = re.value.intval;
         ns = rs.value.intval;
