@@ -125,6 +125,9 @@ s_file_read_seek(register stream * s, gs_offset_t pos)
     gs_offset_t end = s->cursor.r.limit - s->cbuf + 1;
     gs_offset_t offset = pos - s->position;
 
+    if (s->cbuf == NULL)
+        return ERRC;
+
     if (offset >= 0 && offset <= end) {  /* Staying within the same buffer */
         s->cursor.r.ptr = s->cbuf + offset - 1;
         return 0;
