@@ -158,6 +158,10 @@ gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph
 {
     ref *v, n;
     uchar *unicode_return = (uchar *)u;
+
+    if (glyph == GS_NO_GLYPH)
+        return 0;
+
     if (glyph >= GS_MIN_CID_GLYPH) {
         uint cid = glyph - GS_MIN_CID_GLYPH;
 
