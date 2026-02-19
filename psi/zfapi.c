@@ -2095,7 +2095,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                 return gs_fapi_glyph_invalid_format;
 
             if (r_has_type(glyph, t_integer)
-                && dict_find_string(pdr, "CFFCharStrings", &CFFCharStrings) > 0) {
+                && dict_find_string(pdr, "CFFCharStrings", &CFFCharStrings) > 0 && r_has_type(CFFCharStrings, t_dictionary)) {
                 ref *g2;
                 if (dict_find(CFFCharStrings, glyph, &g2) <= 0) {
                     ref nd;

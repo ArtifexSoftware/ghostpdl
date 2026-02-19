@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -321,6 +321,10 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
     if (r_has_type(pcstr, t_integer)
        && dict_find_string(pdr, "CFFCharStrings", &cffcstr) > 0) {
         ref *pcstr2;
+
+        if (!r_has_type(cffcstr, t_dictionary))
+            return_error(gs_error_typecheck);
+
         if (dict_find(cffcstr, pcstr, &pcstr2) <= 0) {
             ref nd;
             make_int(&nd, 0);
