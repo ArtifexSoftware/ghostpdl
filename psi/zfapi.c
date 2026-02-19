@@ -2956,8 +2956,12 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                 ref cc32;
                 ref *gid;
                 make_int(&cc32, 32);
-                if (dict_find(TT_cmap, &cc32, &gid) > 0)
-                    c = gid->value.intval;
+                if (dict_find(TT_cmap, &cc32, &gid) > 0) {
+                    if (!r_has_type(gid, t_integer))
+                        code = gs_note_error(gs_error_typecheck);
+                    else
+                        c = gid->value.intval;
+                }
             }
             cr->char_codes[0] = c;
             /* fixme : process the narrow/wide/proportional mapping type,
