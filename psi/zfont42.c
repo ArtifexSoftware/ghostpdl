@@ -137,6 +137,8 @@ font_string_array_param(const gs_memory_t *mem, os_ptr op, const char *kstr, ref
     if (dict_find_string(op, kstr, &pvsa) <= 0)
         return_error(gs_error_invalidfont);
     *psa = *pvsa;
+    if (!r_has_type(pvsa, t_array))
+        return_error(gs_error_typecheck);
     /*
      * We only check the first element of the array now, as a sanity test;
      * elements are checked as needed by string_array_access_proc.
