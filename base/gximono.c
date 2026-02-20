@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1388,11 +1388,6 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
                             }           /* at loop exit xn will be >= xr */
                         }
                     } else {
-                        /* CMYK case */
-                        /* Apply initial offset */
-                        for (k = 0; k < spp_out; k++) {
-                            devc_contone[k] = devc_contone[k] + position;
-                        }
                         /* CMYK case */
                         for (k=0; k<src_size; k++) {
                             dev_value = &(color_cache[*psrc++ * spp_out]);
