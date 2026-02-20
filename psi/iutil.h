@@ -88,7 +88,7 @@ int obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint *
 /* Get an element from an array (packed or not). */
 int array_get(const gs_memory_t *mem, const ref *, long, ref *);
 
-static inline array_get_with_type(const gs_memory_t *mem, const ref *aref, long index_long, ref *pref, ref_type type)
+static inline int array_get_with_type(const gs_memory_t *mem, const ref *aref, long index_long, ref *pref, ref_type type)
 {
     int code = array_get(mem, aref, index_long, pref);
     if (code >= 0)
