@@ -693,7 +693,7 @@ sub_font_params(gs_memory_t *mem, const ref *op, gs_matrix *pmat, gs_matrix *pom
     if ((dict_find_string((porigfont != NULL ? porigfont : op), "FontInfo", &pfontinfo) > 0) &&
         r_has_type(pfontinfo, t_dictionary) &&
         (dict_find_string(pfontinfo, "OrigFontName", &pfontname) > 0) && (r_has_type(pfontname, t_name) || r_has_type(pfontname, t_string))) {
-        if ((dict_find_string(pfontinfo, "OrigFontStyle", &pfontstyle) > 0) && (r_has_type(pfontname, t_name) || r_has_type(pfontname, t_string)) &&
+        if ((dict_find_string(pfontinfo, "OrigFontStyle", &pfontstyle) > 0) && (r_has_type(pfontstyle, t_name) || r_has_type(pfontstyle, t_string)) &&
                 r_size(pfontstyle) > 0) {
             const byte *tmpStr1 = pfontname->value.const_bytes;
             const byte *tmpStr2 = pfontstyle->value.const_bytes;
