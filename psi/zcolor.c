@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -290,7 +290,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
         if (r_has_type(op, t_dictionary)) {
             ref     *pImpl, pPatInst;
 
-            if ((code = dict_find_string(op, "Implementation", &pImpl)) < 0)
+            if ((code = dict_find_string_with_type(op, "Implementation", &pImpl,t_array)) < 0)
                 return code;
             if (code > 0) {
                 code = array_get(imemory, pImpl, 0, &pPatInst);
@@ -2211,6 +2211,9 @@ static int comparedictkey(i_ctx_t * i_ctx_p, ref *CIEdict1, ref *CIEdict2, char 
     if (r_type(tempref1) == t_null)
         return 1;
 
+    if (!r_is_array(tempref1))
+        return 0;
+
     code = comparearrays(i_ctx_p, tempref1, tempref2, 0);
 
     if (code > 0)
@@ -2293,7 +2296,7 @@ static int hashdictkey(i_ctx_t * i_ctx_p, ref *CIEdict1, char *key, gs_md5_state
     if (code <= 0)
         return 1;
 
-    if (r_type(tempref1) == t_null)
+    if (r_type(tempref1) == t_null || !r_is_array(tempref1))
         return 1;
 
     return hasharray(i_ctx_p, tempref1, md5);
@@ -2611,7 +2614,7 @@ static int cieadomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
      * values from that
      */
     code = dict_find_string(&CIEdict, "RangeA", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         code = get_cie_param_array(imemory, tempref, 2, ptr);
         if (code < 0)
             return code;
@@ -2635,7 +2638,7 @@ static int ciearange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
      * values from that
      */
     code = dict_find_string(&CIEdict, "RangeA", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         code = get_cie_param_array(imemory, tempref, 2, ptr);
         if (code < 0)
             return code;
@@ -2873,7 +2876,7 @@ static int cieabcdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     /* If we have a RangeABC, get the values from that */
     code = dict_find_string(&CIEdict, "RangeABC", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         code = get_cie_param_array(imemory, tempref, 6, ptr);
         if (code < 0)
             return code;
@@ -2894,7 +2897,7 @@ static int cieabcrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     /* If we have a RangeABC, get the values from that */
     code = dict_find_string(&CIEdict, "RangeABC", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         code = get_cie_param_array(imemory, tempref, 6, ptr);
         if (code < 0)
             return code;
@@ -3163,7 +3166,7 @@ static int ciedefdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     /* If we have a RangeDEF, get the values from that */
     code = dict_find_string(&CIEdict, "RangeDEF", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         code = get_cie_param_array(imemory, tempref, 6, ptr);
         if (code < 0)
             return code;
@@ -3184,7 +3187,7 @@ static int ciedefrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     /* If we have a RangeDEF, get the values from that */
     code = dict_find_string(&CIEdict, "RangeDEF", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         code = get_cie_param_array(imemory, tempref, 6, ptr);
         if (code < 0)
             return code;
@@ -3475,7 +3478,7 @@ static int ciedefgdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     /* If we have a RangeDEFG, get the values from that */
     code = dict_find_string(&CIEdict, "RangeDEFG", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         code = get_cie_param_array(imemory, tempref, 8, ptr);
         if (code < 0)
             return code;
@@ -3496,7 +3499,7 @@ static int ciedefgrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     /* If we have a RangeDEFG, get the values from that */
     code = dict_find_string(&CIEdict, "RangeDEFG", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         code = get_cie_param_array(imemory, tempref, 8, ptr);
         if (code < 0)
             return code;
@@ -4421,6 +4424,10 @@ static int setdevicenspace(i_ctx_t * i_ctx_p, ref *devicenspace, int *stage, int
             if (dict_find_string(process, "ColorSpace", &cspace) <= 0) {
                 *stage = 0;
                 return gs_note_error(gs_error_undefined);
+            }
+            if (!r_has_type(cspace, t_name) && !r_is_array(cspace)) {
+                *stage = 0;
+                return gs_note_error(gs_error_typecheck);
             }
             *stage = 4;
             *cont = 1;
@@ -5512,7 +5519,7 @@ static int patterncomponent(i_ctx_t * i_ctx_p, ref *space, int *n)
         if (r_has_type(op, t_dictionary)) {
             ref     *pImpl, pPatInst;
 
-            code = dict_find_string(op, "Implementation", &pImpl);
+            code = dict_find_string_with_type(op, "Implementation", &pImpl, t_array);
         if (code > 0) {
             code = array_get(imemory, pImpl, 0, &pPatInst);
             if (code < 0)
@@ -5830,7 +5837,7 @@ static int labrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     /* If we have a Range entry, get the values from that */
     code = dict_find_string(&CIEdict, "Range", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         for (i=0;i<4;i++) {
             code = array_get(imemory, tempref, i, &valref);
             if (code < 0)
@@ -5863,7 +5870,7 @@ static int labdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     /* If we have a Range, get the values from that */
     code = dict_find_string(&CIEdict, "Range", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         for (i=0;i<4;i++) {
             code = array_get(imemory, tempref, i, &valref);
             if (code < 0)
@@ -5949,7 +5956,7 @@ static int checkGamma(i_ctx_t * i_ctx_p, ref *CIEdict, int numvalues)
     ref *tempref, valref;
 
     code = dict_find_string(CIEdict, "Gamma", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         if (numvalues > 1) {
             /* Array of gammas (RGB) */
             if (!r_is_array(tempref))
@@ -6000,7 +6007,7 @@ static int hashcalgrayspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
         return 0;
     check_read_type(cgdict1, t_dictionary);
 
-    code = dict_find_string(&cgdict1, "WhitePoint", &tempref);
+    code = dict_find_string_with_type(&cgdict1, "WhitePoint", &tempref, t_array);
     if (code > 0) {
         code = hasharray(i_ctx_p, tempref, md5);
     }
@@ -6011,7 +6018,7 @@ static int hashcalgrayspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
         }
     }
 
-    code = dict_find_string(&cgdict1, "BlackPoint", &tempref);
+    code = dict_find_string_with_type(&cgdict1, "BlackPoint", &tempref, t_array);
     if (code > 0) {
         code = hasharray(i_ctx_p, tempref, md5);
     }
@@ -6145,7 +6152,7 @@ static int hashcalrgbspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
         return 0;
     check_read_type(crgbdict1, t_dictionary);
 
-    code = dict_find_string(&crgbdict1, "WhitePoint", &tempref);
+    code = dict_find_string_with_type(&crgbdict1, "WhitePoint", &tempref, t_array);
     if (code > 0) {
         code = hasharray(i_ctx_p, tempref, md5);
     }
@@ -6156,7 +6163,7 @@ static int hashcalrgbspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
         }
     }
 
-    code = dict_find_string(&crgbdict1, "BlackPoint", &tempref);
+    code = dict_find_string_with_type(&crgbdict1, "BlackPoint", &tempref, t_array);
     if (code > 0) {
         code = hasharray(i_ctx_p, tempref, md5);
     }
@@ -6167,7 +6174,7 @@ static int hashcalrgbspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
         }
     }
 
-    code = dict_find_string(&crgbdict1, "Matrix", &tempref);
+    code = dict_find_string_with_type(&crgbdict1, "Matrix", &tempref, t_array);
     if (code > 0) {
         code = hasharray(i_ctx_p, tempref, md5);
     }
@@ -6179,7 +6186,7 @@ static int hashcalrgbspace(i_ctx_t *i_ctx_p, ref *space, gs_md5_state_t *md5)
         }
     }
 
-    code = dict_find_string(&crgbdict1, "Gamma", &tempref);
+    code = dict_find_string_with_type(&crgbdict1, "Gamma", &tempref, t_array);
     if (code > 0) {
         code = hasharray(i_ctx_p, tempref, md5);
     }
@@ -6678,7 +6685,7 @@ static int iccdomain(i_ctx_t * i_ctx_p, ref *space, float *ptr)
 
     components = tempref->value.intval;
     code = dict_find_string(&ICCdict, "Range", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         for (i=0;i<components * 2;i++) {
             code = array_get(imemory, tempref, i, &valref);
             if (code < 0)
@@ -6713,7 +6720,7 @@ static int iccrange(i_ctx_t * i_ctx_p, ref *space, float *ptr)
         return gs_note_error(gs_error_typecheck);
     components = tempref->value.intval;
     code = dict_find_string(&ICCdict, "Range", &tempref);
-    if (code > 0 && !r_has_type(tempref, t_null)) {
+    if (code > 0 && r_is_array(tempref)) {
         for (i=0;i<components * 2;i++) {
             code = array_get(imemory, tempref, i, &valref);
             if (code < 0)
