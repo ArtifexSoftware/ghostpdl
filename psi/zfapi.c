@@ -531,7 +531,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                 ref *Private, *GlobalSubrs;
 
                 if (pfont->FontType == ft_encrypted2) {
-                    if (dict_find_string(pdr, "Private", &Private) <= 0) {
+                    if (dict_find_string_with_type(pdr, "Private", &Private, t_dictionary) <= 0) {
                         *ret = 0;
                         break;
                     }
@@ -549,11 +549,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Private, *Subrs;
 
-                if (dict_find_string(pdr, "Private", &Private) <= 0) {
+                if (dict_find_string_with_type(pdr, "Private", &Private, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Private, "Subrs", &Subrs) <= 0) {
+                if (dict_find_string_with_type(Private, "Subrs", &Subrs, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -564,7 +564,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *CharStrings;
 
-                if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+                if (dict_find_string_with_type(pdr, "CharStrings", &CharStrings, t_dictionary) <= 0)
                     *ret = 0;
                 else
                     *ret = dict_maxlength(CharStrings);
@@ -585,11 +585,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Info, *Axes;
 
-                if (dict_find_string(pdr, "FontInfo", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "FontInfo", &Info, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Info, "BlendAxisTypes", &Axes) <= 0) {
+                if (dict_find_string_with_type(Info, "BlendAxisTypes", &Axes, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -600,11 +600,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Info, *FontInfo;
 
-                if (dict_find_string(pdr, "Blend", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Info, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Info, "FontInfo", &FontInfo) <= 0) {
+                if (dict_find_string_with_type(Info, "FontInfo", &FontInfo, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -615,11 +615,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Info, *Private;
 
-                if (dict_find_string(pdr, "Blend", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Info, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Info, "Private", &Private) <= 0) {
+                if (dict_find_string_with_type(Info, "Private", &Private, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -635,11 +635,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Info, *Array;
 
-                if (dict_find_string(pdr, "FontInfo", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "FontInfo", &Info, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Info, "BlendDesignPositions", &Array) <= 0) {
+                if (dict_find_string_with_type(Info, "BlendDesignPositions", &Array, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -650,11 +650,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Info, *Array;
 
-                if (dict_find_string(pdr, "FontInfo", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "FontInfo", &Info, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Info, "BlendDesignMap", &Array) <= 0) {
+                if (dict_find_string_with_type(Info, "BlendDesignMap", &Array, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -665,15 +665,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Info, *Array, SubArray;
 
-                if (dict_find_string(pdr, "FontInfo", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "FontInfo", &Info, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Info, "BlendDesignMap", &Array) <= 0) {
+                if (dict_find_string_with_type(Info, "BlendDesignMap", &Array, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, Array, index, &SubArray) < 0) {
+                if (array_get_with_type(ff->memory, Array, index, &SubArray, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -733,16 +733,16 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendFontBBox_length:
             {
                 ref *Blend, *bfbbox, bfbbox0;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
 
-                if (dict_find_string(Blend, "FontBBox", &bfbbox) <= 0) {
+                if (dict_find_string_with_type(Blend, "FontBBox", &bfbbox, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (!r_has_type(bfbbox, t_array) || array_get(ff->memory, bfbbox, 0, &bfbbox0) < 0) {
+                if (array_get_with_type(ff->memory, bfbbox, 0, &bfbbox0, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -753,21 +753,21 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Blend, *bfbbox, subbfbbox, val;
                 int aind, ind;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "FontBBox", &bfbbox) <= 0) {
+                if (dict_find_string_with_type(Blend, "FontBBox", &bfbbox, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
                 ind = index % 4;
                 aind = (index - ind) /4;
-                if (array_get(ff->memory, bfbbox, aind, &subbfbbox) < 0) {
+                if (array_get_with_type(ff->memory, bfbbox, aind, &subbfbbox, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, &subbfbbox, ind, &val) < 0) {
+                if (array_get_with_type(ff->memory, &subbfbbox, ind, &val, t_integer) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -778,15 +778,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendBlueValues_length:
             {
                 ref *Priv, *Blend, *bbv;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueValues", &bbv) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueValues", &bbv, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -797,19 +797,19 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Priv, *Blend, *bbv, sub;
 
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueValues", &bbv) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueValues", &bbv, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, bbv, index, &sub) < 0) {
+                if (array_get_with_type(ff->memory, bbv, index, &sub, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -820,21 +820,21 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Priv, *Blend, *bbv, sub, r;
                 int aind = 0;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueValues", &bbv) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueValues", &bbv, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
                 while (1) {
-                    if ((code = array_get(ff->memory, bbv, aind++, &sub)) < 0) {
+                    if ((code = array_get_with_type(ff->memory, bbv, aind++, &sub, t_array)) < 0) {
                         *ret = 0;
                         break;
                     }
@@ -846,7 +846,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                 if (code < 0)
                     break;
 
-                if (array_get(ff->memory, &sub, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, &sub, index, &r, t_integer) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -857,15 +857,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendOtherBlues_length:
             {
                 ref *Priv, *Blend, *bob;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "OtherBlues", &bob) <= 0) {
+                if (dict_find_string_with_type(Priv, "OtherBlues", &bob, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -875,20 +875,20 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendOtherBlues_count:
             {
                 ref *Priv, *Blend, *bob, sub;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "OtherBlues", &bob) <= 0) {
+                if (dict_find_string_with_type(Priv, "OtherBlues", &bob, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
-                 if (array_get(ff->memory, bob, index, &sub) < 0) {
+                 if (array_get_with_type(ff->memory, bob, index, &sub, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -899,21 +899,21 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Priv, *Blend, *bob, sub, r;
                 int aind = 0;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "OtherBlues", &bob) <= 0) {
+                if (dict_find_string_with_type(Priv, "OtherBlues", &bob, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
                 while (1) {
-                    if ((code = array_get(ff->memory, bob, aind++, &sub)) < 0)
+                    if ((code = array_get_with_type(ff->memory, bob, aind++, &sub, t_array)) < 0)
                         break;
                     if (index - (int)r_size(&sub) < 0) {
                         break;
@@ -924,7 +924,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, &sub, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, &sub, index, &r, t_integer) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -935,15 +935,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendBlueScale_count:
             {
                 ref *Priv, *Blend, *bbs;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueScale", &bbs) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueScale", &bbs, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -953,15 +953,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendBlueShift_count:
             {
                 ref *Priv, *Blend, *bbs;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueShift", &bbs) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueShift", &bbs, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -971,19 +971,19 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendBlueShift:
             {
                 ref *Priv, *Blend, *bbs, r;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueShift", &bbs) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueShift", &bbs, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, bbs, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, bbs, index, &r, t_integer) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -994,15 +994,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendBlueFuzz_count:
             {
                 ref *Priv, *Blend, *bbf;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueFuzz", &bbf) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueFuzz", &bbf, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -1012,19 +1012,19 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendBlueFuzz:
             {
                 ref *Priv, *Blend, *bbf, r;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueFuzz", &bbf) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueFuzz", &bbf, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, bbf, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, bbf, index, &r, t_integer) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1035,15 +1035,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendForceBold_count:
             {
                 ref *Priv, *Blend, *bfb;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "ForceBold", &bfb) <= 0) {
+                if (dict_find_string_with_type(Priv, "ForceBold", &bfb, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -1053,19 +1053,19 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendForceBold:
             {
                 ref *Priv, *Blend, *bfb, r;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueFuzz", &bfb) <= 0) {
+                if (dict_find_string_with_type(Priv, "ForceBold", &bfb, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, bfb, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, bfb, index, &r, t_boolean) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1075,15 +1075,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendStdHW_length:
             {
                 ref *Priv, *Blend, *stdhw;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StdHW", &stdhw) <= 0) {
+                if (dict_find_string_with_type(Priv, "StdHW", &stdhw, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -1093,20 +1093,20 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendStdHW_count:
             {
                 ref *Priv, *Blend, *stdhw, sub;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StdHW", &stdhw) <= 0) {
+                if (dict_find_string_with_type(Priv, "StdHW", &stdhw, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
-                if (array_get(ff->memory, stdhw, index, &sub) < 0) {
+                if (array_get_with_type(ff->memory, stdhw, index, &sub, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1117,21 +1117,21 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Priv, *Blend, *stdhw, sub, r;
                 int aind = 0;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StdHW", &stdhw) <= 0) {
+                if (dict_find_string_with_type(Priv, "StdHW", &stdhw, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
                 while (1) {
-                    if ((code = array_get(ff->memory, stdhw, aind++, &sub)) < 0)
+                    if ((code = array_get_with_type(ff->memory, stdhw, aind++, &sub, t_array)) < 0)
                         break;
                     if (index - (int)r_size(&sub) < 0) {
                         break;
@@ -1142,7 +1142,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, &sub, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, &sub, index, &r, t_integer) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1153,15 +1153,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendStdVW_length:
             {
                 ref *Priv, *Blend, *stdvw;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StdVW", &stdvw) <= 0) {
+                if (dict_find_string_with_type(Priv, "StdVW", &stdvw, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -1171,21 +1171,20 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendStdVW_count:
             {
                 ref *Priv, *Blend, *stdvw, sub;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
+                    *ret = 0;
+                    break;
+                }
+                if (dict_find_string_with_type(Priv, "StdVW", &stdvw, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
-                if (dict_find_string(Priv, "StdVW", &stdvw) <= 0) {
-                    *ret = 0;
-                    break;
-                }
-
-                if (array_get(ff->memory, stdvw, index, &sub) < 0) {
+                if (array_get_with_type(ff->memory, stdvw, index, &sub, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1196,21 +1195,21 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Priv, *Blend, *stdvw, sub, r;
                 int aind = 0;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StdVW", &stdvw) <= 0) {
+                if (dict_find_string_with_type(Priv, "StdVW", &stdvw, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
                 while (1) {
-                    if ((code = array_get(ff->memory, stdvw, aind++, &sub)) < 0)
+                    if ((code = array_get_with_type(ff->memory, stdvw, aind++, &sub, t_array)) < 0)
                         break;
                     if (index - (int)r_size(&sub) < 0) {
                         break;
@@ -1221,7 +1220,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, &sub, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, &sub, index, &r, t_integer) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1232,11 +1231,11 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendStemSnapH_length:
             {
                 ref *Priv, *Blend, *ssh;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -1250,20 +1249,20 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendStemSnapH_count:
             {
                 ref *Priv, *Blend, *bssh, sub;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StemSnapH", &bssh) <= 0) {
+                if (dict_find_string_with_type(Priv, "StemSnapH", &bssh, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
-                if (array_get(ff->memory, bssh, index, &sub) < 0) {
+                if (array_get_with_type(ff->memory, bssh, index, &sub, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1274,21 +1273,21 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Priv, *Blend, *bssh, sub, r;
                 int aind = 0;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StemSnapH", &bssh) <= 0) {
+                if (dict_find_string_with_type(Priv, "StemSnapH", &bssh, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
                 while (1) {
-                    if ((code = array_get(ff->memory, bssh, aind++, &sub)) < 0)
+                    if ((code = array_get_with_type(ff->memory, bssh, aind++, &sub, t_array)) < 0)
                         break;
                     if (index - (int)r_size(&sub) < 0) {
                         break;
@@ -1299,7 +1298,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, &sub, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, &sub, index, &r, t_integer) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1310,15 +1309,15 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendStemSnapV_length:
             {
                 ref *Priv, *Blend, *ssv;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StdHW", &ssv) <= 0) {
+                if (dict_find_string_with_type(Priv, "StemSnapV", &ssv, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -1328,20 +1327,20 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
         case gs_fapi_font_feature_BlendStemSnapV_count:
             {
                 ref *Priv, *Blend, *bssv, sub;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StemSnapV", &bssv) <= 0) {
+                if (dict_find_string_with_type(Priv, "StemSnapV", &bssv, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
-                if (array_get(ff->memory, bssv, index, &sub) < 0) {
+                if (array_get_with_type(ff->memory, bssv, index, &sub, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1352,21 +1351,21 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
             {
                 ref *Priv, *Blend, *bssv, sub, r;
                 int aind = 0;
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "StemSnapV", &bssv) <= 0) {
+                if (dict_find_string_with_type(Priv, "StemSnapV", &bssv, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
 
                 while (1) {
-                    if ((code = array_get(ff->memory, bssv, aind++, &sub)) < 0)
+                    if ((code = array_get_with_type(ff->memory, bssv, aind++, &sub, t_array)) < 0)
                         break;
                     if (index - (int)r_size(&sub) < 0) {
                         break;
@@ -1377,7 +1376,7 @@ FAPI_FF_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, &sub, index, &r) < 0) {
+                if (array_get_with_type(ff->memory, &sub, index, &r, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1413,12 +1412,12 @@ FAPI_FF_get_long(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, unsig
                 ulong size = 0;
                 long i;
                 const char *name[2] = { "Subrs", "GlobalSubrs" };
-                if (dict_find_string(pdr, "Private", &Private) <= 0) {
+                if (dict_find_string_with_type(pdr, "Private", &Private, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
                 for (k = 0; k < 2; k++) {
-                    if (dict_find_string(Private, name[k], &Subrs) > 0)
+                    if (dict_find_string_with_type(Private, name[k], &Subrs, t_array) > 0)
                         for (i = r_size(Subrs) - 1; i >= 0; i--) {
                             array_get(pfont->memory, Subrs, i, &v);
                             if (r_type(&v) == t_string) {
@@ -1502,15 +1501,15 @@ FAPI_FF_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, floa
                 int array_index = index / 8;
 
                 index %= 8;
-                if (dict_find_string(pdr, "FontInfo", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "FontInfo", &Info, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Info, "BlendDesignPositions", &Array) <= 0) {
+                if (dict_find_string_with_type(Info, "BlendDesignPositions", &Array, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, Array, array_index, &SubArray) < 0) {
+                if (array_get_with_type(ff->memory, Array, array_index, &SubArray, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1533,19 +1532,19 @@ FAPI_FF_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, floa
                 int array_index = index / 64;
 
                 index %= 8;
-                if (dict_find_string(pdr, "FontInfo", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "FontInfo", &Info, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                  }
-                if (dict_find_string(Info, "BlendDesignMap", &Array) <= 0) {
+                if (dict_find_string_with_type(Info, "BlendDesignMap", &Array, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, Array, array_index, &SubArray) < 0) {
+                if (array_get_with_type(ff->memory, Array, array_index, &SubArray, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
-                if (array_get(ff->memory, &SubArray, index, &SubSubArray) < 0) {
+                if (array_get_with_type(ff->memory, &SubArray, index, &SubSubArray, t_array) < 0) {
                     *ret = 0;
                     break;
                 }
@@ -1568,15 +1567,15 @@ FAPI_FF_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, floa
             {
                 ref *Priv, *Blend, *bbs, r;
 
-                if (dict_find_string(pdr, "Blend", &Blend) <= 0) {
+                if (dict_find_string_with_type(pdr, "Blend", &Blend, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Blend, "Private", &Priv) <= 0) {
+                if (dict_find_string_with_type(Blend, "Private", &Priv, t_dictionary) <= 0) {
                     *ret = 0;
                     break;
                 }
-                if (dict_find_string(Priv, "BlueScale", &bbs) <= 0) {
+                if (dict_find_string_with_type(Priv, "BlueScale", &bbs, t_array) <= 0) {
                     *ret = 0;
                     break;
                 }
@@ -1588,6 +1587,8 @@ FAPI_FF_get_float(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, floa
                    *ret = r.value.realval;
                else if (r_has_type(&r, t_integer))
                    *ret = (float)r.value.intval;
+               else
+                   code = gs_note_error(gs_error_typecheck);
             }
             break;
     }
@@ -1607,19 +1608,15 @@ FAPI_FF_get_name(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index,
             {
                 ref *Info, *Axes;
 
-                if (dict_find_string(pdr, "FontInfo", &Info) <= 0) {
+                if (dict_find_string_with_type(pdr, "FontInfo", &Info, t_dictionary) <= 0) {
                     code = gs_note_error(gs_error_undefined);
                     break;
                 }
-                if (dict_find_string(Info, "BlendAxisTypes", &Axes) <= 0) {
+                if (dict_find_string_with_type(Info, "BlendAxisTypes", &Axes, t_array) <= 0) {
                     code = gs_note_error(gs_error_undefined);
                     break;
                 }
-                if (!r_has_type(Axes, t_array)) {
-                    code = gs_note_error(gs_error_undefined);
-                    break;
-                }
-                if (array_get(ff->memory, Axes, index, &name) < 0) {
+                if (array_get_with_type(ff->memory, Axes, index, &name, t_name) < 0) {
                     code = gs_note_error(gs_error_undefined);
                     break;
                 }
@@ -1749,12 +1746,12 @@ FAPI_FF_get_gsubr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
     ref *pdr = pfont_dict(((gs_font_base *) ff->client_font_data2));
     ref *Private, *GlobalSubrs, subr;
 
-    if (dict_find_string(pdr, "Private", &Private) <= 0)
+    if (dict_find_string_with_type(pdr, "Private", &Private, t_dictionary) <= 0)
         return 0;
-    if (dict_find_string(Private, "GlobalSubrs", &GlobalSubrs) <= 0)
+    if (dict_find_string_with_type(Private, "GlobalSubrs", &GlobalSubrs, t_array) <= 0)
         return 0;
-    if (array_get(ff->memory,
-                  GlobalSubrs, index, &subr) < 0 || r_type(&subr) != t_string)
+    if (array_get_with_type(ff->memory,
+                  GlobalSubrs, index, &subr, t_string) < 0)
         return 0;
     return (get_type1_data(ff, &subr, buf, buf_length));
 }
@@ -1765,12 +1762,11 @@ FAPI_FF_get_subr(gs_fapi_font *ff, int index, byte *buf, int buf_length)
     ref *pdr = pfont_dict(((gs_font_base *) ff->client_font_data2));
     ref *Private, *Subrs, subr;
 
-    if (dict_find_string(pdr, "Private", &Private) <= 0)
+    if (dict_find_string_with_type(pdr, "Private", &Private, t_dictionary) <= 0)
         return 0;
-    if (dict_find_string(Private, "Subrs", &Subrs) <= 0)
+    if (dict_find_string_with_type(Private, "Subrs", &Subrs, t_array) <= 0)
         return 0;
-    if (array_get(ff->memory, Subrs, index, &subr) < 0
-        || r_type(&subr) != t_string)
+    if (array_get_with_type(ff->memory, Subrs, index, &subr, t_string) < 0)
         return 0;
     return (get_type1_data(ff, &subr, buf, buf_length));
 }
@@ -1784,19 +1780,15 @@ FAPI_FF_get_raw_subr(gs_fapi_font *ff, int index, byte *buf,
     int code = 0;
 
     do {
-        if (dict_find_string(pdr, "Private", &Private) <= 0) {
+        if (dict_find_string_with_type(pdr, "Private", &Private, t_dictionary) <= 0) {
             code = gs_note_error(gs_error_undefined);
             break;
         }
-        if (dict_find_string(Private, "Subrs", &Subrs) <= 0) {
+        if (dict_find_string_with_type(Private, "Subrs", &Subrs, t_array) <= 0) {
             code = gs_note_error(gs_error_undefined);
             break;
         }
-        if (array_get(ff->memory, Subrs, index, &subr) < 0) {
-            code = gs_note_error(gs_error_undefined);
-            break;
-        }
-        if (r_type(&subr) != t_string) {
+        if (array_get_with_type(ff->memory, Subrs, index, &subr, t_string) < 0) {
             code = gs_note_error(gs_error_undefined);
             break;
         }
@@ -1831,7 +1823,7 @@ FAPI_FF_get_charstring_name(gs_fapi_font *ff, int index, byte *buf,
     ref *CharStrings, eltp[2], string;
 
     do {
-        if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0) {
+        if (dict_find_string_with_type(pdr, "CharStrings", &CharStrings, t_dictionary) <= 0) {
             code = gs_note_error(gs_error_undefined);
             break;
         }
@@ -1861,7 +1853,7 @@ FAPI_FF_get_charstring(gs_fapi_font *ff, int index, byte *buf,
     ref *CharStrings, eltp[2];
 
     do {
-        if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0) {
+        if (dict_find_string_with_type(pdr, "CharStrings", &CharStrings, t_dictionary) <= 0) {
             code = gs_note_error(gs_error_undefined);
             break;
         }
@@ -1980,7 +1972,7 @@ get_charstring(gs_fapi_font *ff, int char_code, ref **proc, ref *char_name)
     if (ff->is_type1) {
         if (ff->is_cid)
             return -1;
-        if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+        if (dict_find_string_with_type(pdr, "CharStrings", &CharStrings, t_dictionary) <= 0)
             return -1;
 
         if (ff->char_data != NULL) {
@@ -2079,7 +2071,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                         (ff->memory, (const byte *)".notdef", 7, &char_name, -1) < 0)
                         return gs_fapi_glyph_invalid_format;
             }
-            if (dict_find_string(pdr, "CharStrings", &CharStrings) <= 0)
+            if (dict_find_string_with_type(pdr, "CharStrings", &CharStrings, t_dictionary) <= 0)
                 return gs_fapi_glyph_invalid_format;
 
             if (dict_find(CharStrings, &char_name, &glyph) <= 0) {
@@ -2095,7 +2087,7 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                 return gs_fapi_glyph_invalid_format;
 
             if (r_has_type(glyph, t_integer)
-                && dict_find_string(pdr, "CFFCharStrings", &CFFCharStrings) > 0 && r_has_type(CFFCharStrings, t_dictionary)) {
+                && dict_find_string_with_type(pdr, "CFFCharStrings", &CFFCharStrings, t_dictionary) > 0 && r_has_type(CFFCharStrings, t_dictionary)) {
                 ref *g2;
                 if (dict_find(CFFCharStrings, glyph, &g2) <= 0) {
                     ref nd;
@@ -2770,7 +2762,7 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
         if (pbfont->FontType == ft_CID_TrueType && font_file_path) {
             ref *pdr2, *fidr, *dummy;
             pdr2 = pfont_dict(gs_rootfont(igs));
-            if (dict_find_string(pdr2, "FontInfo", &fidr) > 0 &&
+            if (dict_find_string_with_type(pdr2, "FontInfo", &fidr, t_dictionary) > 0 &&
                 dict_find_string(fidr, "GlyphNames2Unicode", &dummy) > 0)
             {
                 unsigned char uc[4] = {0};
@@ -3013,9 +3005,9 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                 }
                 else {
                     ref *cstr, *refcode;
-                    code = dict_find_string(pdr, "CharStrings", &cstr);
+                    code = dict_find_string_with_type(pdr, "CharStrings", &cstr, t_dictionary);
                     if (code > 0) {
-                        code = dict_find_string(cstr, ".notdef", &refcode);
+                        code = dict_find_string_with_type(cstr, ".notdef", &refcode, t_integer);
                         if (code > 0) {
                             cr->char_codes[0] = refcode->value.intval;
                         }
@@ -3297,7 +3289,7 @@ FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
                  * Note we only have to deal with mistakenly being given a name object
                  * here, the out of range CID is handled later
                  */
-                if ((dict_find_string(op - 1, "CharStrings", &chstrs)) <= 0) {
+                if ((dict_find_string_with_type(op - 1, "CharStrings", &chstrs, t_dictionary)) <= 0) {
                     return_error(gs_error_undefined);
                 }
 
