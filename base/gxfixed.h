@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -93,7 +93,7 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed2int_pixround_perfect(x) ((x) < 0 && ((x) & (fixed_1 - fixed_epsilon)) == fixed_half \
         ? (int)_fixed_rshift(x) + 1 : fixed2int_pixround(x))
 #define fixed_is_int(x) !((x)&_fixed_fraction_v)
-#if ARCH_INTS_ARE_SHORT & !ARCH_IS_BIG_ENDIAN
+#if ARCH_INTS_ARE_SHORT && !ARCH_IS_BIG_ENDIAN
 /* Do some of the shifting and extraction ourselves. */
 #  define _fixed_hi(x) *((const uint *)&(x)+1)
 #  define _fixed_lo(x) *((const uint *)&(x))
