@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -145,7 +145,7 @@ zSFD(i_ctx_t *i_ctx_p)
          */
         if ((code = dict_int_param(op, "EODCount", 0, max_int, 0, &count)) < 0)
             return code;
-        if (dict_find_string(op, "EODString", &sop) <= 0)
+        if (dict_find_string_with_type(op, "EODString", &sop, t_string) <= 0)
             return_error(gs_error_rangecheck);
         state.count = count;
         npop = 0;

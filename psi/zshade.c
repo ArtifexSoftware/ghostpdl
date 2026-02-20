@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -178,7 +178,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
         }
         params.ColorSpace = pcs;
         rc_increment_cs(pcs);
-        if (dict_find_string(op, "Background", &pvalue) > 0) {
+        if (dict_find_string_with_type(op, "Background", &pvalue, t_array) > 0) {
             gs_client_color *pcc =
                 ialloc_struct(gs_client_color, &st_client_color,
                               "build_shading");
@@ -198,7 +198,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
             }
         }
     }
-    if (dict_find_string(op, "BBox", &pvalue) <= 0)
+    if (dict_find_string_with_type(op, "BBox", &pvalue, t_array) <= 0)
         params.have_BBox = false;
     else if ((code = dict_floats_param(imemory, op, "BBox",
                                        4, box, NULL)) == 4) {

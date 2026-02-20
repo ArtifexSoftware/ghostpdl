@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -189,7 +189,7 @@ static int common_transparency_group(i_ctx_t *i_ctx_p, pdf14_compositor_operatio
         return code;
     /* If the CS is not given in the transparency group dict, set to NULL   */
     /* so that the transparency code knows to inherit from the parent layer */
-    if (dict_find_string(dop, "CS", &dummy) <= 0) {
+    if (dict_find_string(dop, "CS", &dummy) <= 0 || (!r_has_type(dummy, t_name) && !r_has_type(dummy, t_array))) {
         params.ColorSpace = NULL;
     } else {
         /* the PDF interpreter sets the colorspace, so use it */
@@ -277,7 +277,7 @@ zbegintransparencymaskgroup(i_ctx_t *i_ctx_p)
     check_op(6);
     check_type(*dop, t_dictionary);
     check_dict_read(*dop);
-    if (dict_find_string(dop, "Subtype", &pparam) <= 0)
+    if (dict_find_string_with_type(dop, "Subtype", &pparam, t_name) <= 0)
         return_error(gs_error_rangecheck);
     if ((code = enum_param(imemory, pparam, subtype_names)) < 0)
         return code;
@@ -401,7 +401,7 @@ zimage3x(i_ctx_t *i_ctx_p)
     check_dict_read(*op);
     memset(&image, 0, sizeof(gs_image3x_t));
     gs_image3x_t_init(&image, NULL);
-    if (dict_find_string(op, "DataDict", &pDataDict) <= 0)
+    if (dict_find_string_with_type(op, "DataDict", &pDataDict, t_dictionary) <= 0)
         return_error(gs_error_rangecheck);
     check_type(*pDataDict, t_dictionary);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
@@ -438,7 +438,7 @@ image_params *pip_data, const char *dict_name,
     int ignored;
     int code, mcode;
 
-    if (dict_find_string(op, dict_name, &pMaskDict) <= 0)
+    if (dict_find_string_with_type(op, dict_name, &pMaskDict, t_dictionary) <= 0)
         return 1;
     if (!r_has_type(pMaskDict, t_dictionary))
         return gs_note_error(gs_error_typecheck);

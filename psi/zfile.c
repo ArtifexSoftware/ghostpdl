@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -140,7 +140,7 @@ check_file_permissions_reduced(i_ctx_t *i_ctx_p, const char *fname, int len,
     }
 
     /* Assuming a reduced file name. */
-    if (dict_find_string(&(i_ctx_p->userparams), permitgroup, &permitlist) <= 0)
+    if (dict_find_string_with_type(&(i_ctx_p->userparams), permitgroup, &permitlist, t_array) <= 0)
         return 0;       /* if Permissions not found, just allow access */
 
     for (i=0; i<r_size(permitlist); i++) {
