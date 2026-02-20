@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -88,11 +88,34 @@ int dict_alloc(gs_ref_memory_t *, uint maxlength, ref * pdref);
  */
 int dict_find(const ref * pdref, const ref * key, ref ** ppvalue);
 
+/* As above, but checks that the value has the requested type */
+static inline int
+dict_find_with_type(const ref * pdref, const ref * key, ref ** ppvalue, ref_type type)
+{
+    int code = dict_find(pdref, key, ppvalue);
+    if (code > 0)
+        if ((type == t_array) ? !r_is_array(*ppvalue) : !r_has_type(*ppvalue, type))
+            code = gs_note_error(gs_error_typecheck);
+    return code;
+}
+
 /*
  * Look up a (constant) C string in a dictionary.
  * Return 1 if found, <= 0 if not.
  */
 int dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue);
+
+/* As above, but checks that the value has the requested type */
+static inline int
+dict_find_string_with_type(const ref * pdref, const char *kstr, ref ** ppvalue, ref_type type)
+{
+    int code = dict_find_string(pdref, kstr, ppvalue);
+    if (code > 0)
+        if ((type == t_array) ? !r_is_array(*ppvalue) : !r_has_type(*ppvalue, type))
+            code = gs_note_error(gs_error_typecheck);
+    return code;
+}
+
 
 /*
  * Enter a key-value pair in a dictionary.

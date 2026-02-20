@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -87,6 +87,15 @@ int obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint *
 
 /* Get an element from an array (packed or not). */
 int array_get(const gs_memory_t *mem, const ref *, long, ref *);
+
+static inline array_get_with_type(const gs_memory_t *mem, const ref *aref, long index_long, ref *pref, ref_type type)
+{
+    int code = array_get(mem, aref, index_long, pref);
+    if (code >= 0)
+        if ((type == t_array) ? !r_is_array(pref) : !r_has_type(pref, type))
+            code = gs_note_error(gs_error_typecheck);
+    return code;
+}
 
 /* Get an element from a packed array. */
 /* (This works for ordinary arrays too.) */
