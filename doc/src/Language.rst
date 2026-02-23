@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2023 Artifex Software, Inc.
+.. Copyright (C) 2001-2026 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: Ghostscript and the PostScript Language
@@ -378,20 +378,6 @@ File operators
 
 ``<string> findlibfile <foundstring> <file> true``, ``<string> findlibfile <string> false``
    Opens the file of the given name for reading, searching through directories :ref:`as described in the usage documentation<Use_How Ghostscript finds files>`. If the search fails, ``findlibfile`` simply pushes false on the stack and returns, rather than causing an error.
-
-.. _Tempfile:
-
-``<prefix_string|null> <access_string> .tempfile <string> <file>``
-   Creates and opens a temporary file like the file operator, also returning the file name. There are three cases for the ``<prefix_string|null>`` operand:
-
-   - ``null``: create the file in the same directory and with the same name conventions as other temporary files created by the Ghostscript implementation on this platform. E.g., the temporary file might be named ``/tmp/gs_a1234``.
-
-   - A string that contains only alphanumeric characters, underline, and dash: create the file in the standard temporary directory, but use the ``<prefix_string>`` as the first part of the file name. E.g., if ``<prefix_string>`` is ``xx``, the temporary file might be named ``/tmp/xxa1234``.
-
-   - A string that is the beginning of an absolute file name: use the ``<prefix_string>`` as the first part of the file name. E.g., if ``<prefix_string>`` is ``/my/tmpdir/zz``, the temporary file might be named ``/my/tmpdir/zza1234``.
-
-    When running in ``SAFER`` mode, the absolute path must be one of the strings on the permit file writing list (see :ref:`-dSAFER<dSAFER>`) .
-
 
 Ghostscript also supports the following ``IODevice`` in addition to a subset of those defined in the Adobe documentation:
 
