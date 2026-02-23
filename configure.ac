@@ -1,4 +1,4 @@
-dnl Copyright (C) 2001-2025 Artifex Software, Inc.
+dnl Copyright (C) 2001-2026 Artifex Software, Inc.
 dnl All Rights Reserved.
 dnl
 dnl This software is provided AS-IS with no warranty, either express or
@@ -564,10 +564,13 @@ dnl Check for headers
 dnl --------------------------------------------------
 
 AC_HEADER_DIRENT
-AC_CHECK_HEADERS([errno.h fcntl.h malloc.h memory.h stdlib.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h unistd.h dirent.h ndir.h sys/dir.h sys/ndir.h inttypes.h])
+AC_CHECK_HEADERS([errno.h fcntl.h malloc.h memory.h stdlib.h strings.h sys/ioctl.h sys/param.h sys/time.h sys/times.h syslog.h dirent.h ndir.h sys/dir.h sys/ndir.h inttypes.h])
 
 AC_CHECK_HEADER([limits.h], [CFLAGS="$CFLAGS -DHAVE_LIMITS_H=1"])
 AC_CHECK_HEADER([string.h], [CFLAGS="$CFLAGS -DHAVE_STRING_H=1"])
+
+AC_CHECK_HEADER([unistd.h], [GCFLAGS="$GCFLAGS -DHAVE_UNISTD_H=1"],[GCFLAGS="$GCFLAGS -DHAVE_UNISTD_H=0"])
+AC_CHECK_HEADER([stdarg.h], [GCFLAGS="$GCFLAGS -DHAVE_STDARG_H=1"],[GCFLAGS="$GCFLAGS -DHAVE_STDARG_H=0"])
 
 dnl --------------------------------------------------
 dnl Sun, BSD possibly other makes don't have quite the
