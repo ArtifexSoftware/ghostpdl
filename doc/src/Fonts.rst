@@ -216,11 +216,7 @@ Font API (FAPI) is a feature which allows to attach third-party font renderers t
 
    Third-party font renderers may be incompatible with devices that can embed fonts in their output (such as pdfwrite), because such renderers may store fonts in a form from which Ghostscript cannot get the necessary information for embedding, for example, the Microtype fonts supplied with the UFST. Ghostscript can be configured to disable such renderers when such a device is being used.
 
-As of Ghostscript version 9.0, Ghostscript uses Freetype 2.4.x as the default font scaler/renderer.
-
-With this change, we added a new switch:``-dDisableFAPI=true`` to revert to the older behavior, just in case serious regression happens that cannot be resolved in a timely manner. It is intended that this switch will be removed once the FAPI/Freetype implementation has proven itself robust and reliable in the "real world".
-
-With version 9.18 released we have, for some time, regarded FAPI/Freetype as being the canonical glyph rendering solution for Ghostscript and associated products, and the non-FAPI rendering to be deprecated. As such, the ``-dDisableFAPI=true`` option is also considered deprecated, and should be expected to be removed shortly after the next release.
+With version 9.18 released we have, for some time, regarded FAPI/Freetype as being the canonical glyph rendering solution for Ghostscript and associated products, and the non-FAPI rendering to be deprecated.
 
 To run Ghostscript with UFST, you first need to :ref:`build Ghostscript with the UFST bridge<Make_USFTBuild>`. Both bridges may run together.
 
