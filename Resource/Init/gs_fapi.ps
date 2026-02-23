@@ -29,30 +29,6 @@ languagelevel 2 .setlanguagelevel
   /.EmbedFontObjects 0
 .dicttomark def
 
-/is_device_compatible_to_FAPI    % - is_device_compatible_to_FAPI <bool>
-{
-  //true % removed a bogus check against EmbedFontObjectsQuery
-  %
-  % Temporary switch to allow override of FAPI and fallback to GS font rendering
-  % to be removed at some date after FT integration is completed and released.
-  %
-  /DisableFAPI where {
-  /DisableFAPI get not and
-  }if
-  % The code above assumes that only the requested parameter is rendered.
-  % The commented-out code below may be useful for general case.
-  % Keeping it for a while.
-  % counttomark 2 idiv {
-  %   exch /.EmbedFontObjects eq {
-  %     counttomark 1 add 1 roll cleartomark
-  %     0 eq exit
-  %   } if
-  % } repeat
-  % dup mark eq {
-  %   pop //true
-  % } if
-} .internalbind def
-
 %----------------------------- Process FAPIconfig -----------------------
 
 % The HookDiskFonts and HookEmbeddedFonts take a simple array setting normally.
@@ -181,12 +157,8 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 { dup type /dicttype eq { dup /FAPI known } { //false } ifelse
 } .internalbind def
 
-/IsActive       % <record> IsActive <bool>
-{ pop //is_device_compatible_to_FAPI exec
-} .internalbind def
-
 /FontRecordVirtualMethods //RecordVirtualMethodsStub dup length 2 add dict copy begin
-  /IsActive //IsActive def
+  /IsActive //true def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
   { currentglobal 3 1 roll //true setglobal
     //FontOptions //complete_instance exec
@@ -197,7 +169,7 @@ currentdict end def
 
 /CIDFontRecordVirtualMethods //RecordVirtualMethodsStub dup length 3 add dict copy begin
   /GetCSI //TranslateCSI def
-  /IsActive //IsActive def
+  /IsActive //true def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
   { currentglobal 3 1 roll //true setglobal
     //CIDFontOptions //complete_instance exec
@@ -419,11 +391,8 @@ bind def
 } .internalbind def
 
 /FAPIhook  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
-{ //is_device_compatible_to_FAPI exec
-  { //FAPIhook_aux exec
-  } {
-    { (FAPIhook is disabled for the current device.\n) print flush } //FAPI_hook_debug exec
-  } ifelse
+{
+  //FAPIhook_aux exec
 } .internalbind def
 
 % ------------------ Redefine .buildfont* with FAPI : -----------------------
