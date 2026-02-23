@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -242,6 +242,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
         ref *pfid;
 
         array_get(pfont->memory, &fdepvector, i, &fdep);
+        check_type(fdep, t_dictionary);
         /* The lookup can't fail, because of the pre-check above. */
         dict_find_string(&fdep, "FID", &pfid);
         if (!r_has_type(pfid, t_fontID))

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1906,6 +1906,10 @@ sfnt_get_sfnt_length(ref *pdr, ulong *len)
                 for (i = 0; i < r_size(sfnts); i++) {
                     code = array_get(mem, sfnts, i, &sfnt_elem);
                     if (code < 0) break;
+                    if (!r_has_type(&sfnt_elem, t_string)) {
+                        code = gs_note_error(gs_error_typecheck);
+                        break;
+                    }
                     *len += r_size(&sfnt_elem);
                 }
             }

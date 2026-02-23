@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -74,7 +74,7 @@ acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
     if (!r_is_array(pref))
         return_error(gs_error_rangecheck);
     for (i=0; i < r_size(pref); i++) {
-        int code = array_get(mem, pref, i, &elem);
+        int code = array_get_with_type(mem, pref, i, &elem, t_array);
         if (code < 0)
             return code;
         elem_sz = r_size(&elem);
@@ -95,7 +95,7 @@ acquire_code_ranges(gs_cmap_adobe1_t *cmap, const ref *pref, gs_memory_t *mem)
     cmap->code_space.num_ranges = num_ranges;
 
     for (i = 0; i < r_size(pref); i++) {
-        array_get(mem, pref, i, &elem);
+        array_get_with_type(mem, pref, i, &elem, t_array);
         elem_sz = r_size(&elem);
         for (j = 0; j < elem_sz; j += 2) {
         ref rfirst, rlast;
@@ -132,7 +132,7 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
     if (!r_is_array(pref))
         return_error(gs_error_rangecheck);
     for (i=0; i < r_size(pref); i++) {
-        int code = array_get(mem, pref, i, &elem);
+        int code = array_get_with_type(mem, pref, i, &elem, t_array);
         if (code < 0)
             return code;
         elem_sz = r_size(&elem);
@@ -152,7 +152,7 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
 
     for (i = 0; i < r_size(pref); i++) {
         uint j;
-        array_get(mem, pref, i, &elem);
+        array_get_with_type(mem, pref, i, &elem, t_array);
         elem_sz = r_size(&elem);
         for (j = 0; j < elem_sz; j += 5) {
         ref rprefix, rmisc, rkeys, rvalues, rfxs;
