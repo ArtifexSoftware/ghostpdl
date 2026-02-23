@@ -2366,20 +2366,6 @@ readonly def
   //systemdict /SAFERUndefinePostScriptOperators .forceundef
 } .forcebind def % must be bound and hidden for .forceundef
 
-/tempfilepaths
-[
-  (TMPDIR) getenv not
-  {
-    (TEMP) getenv not
-    {
-      (TMP) getenv not
-      {
-        (/temp) (/tmp)
-      } if
-    } if
-  } if
-] def
-
 /.lockfileaccess {
   .currentpathcontrolstate
   {
@@ -2391,7 +2377,6 @@ readonly def
   }
   {
     [
-      //tempfilepaths (*) .generate_dir_list_templates
       /FONTPATH .systemvar (*) .generate_dir_list_templates
       /level2dict where {
           pop
@@ -2405,14 +2390,6 @@ readonly def
       } if
     ] {/PermitFileReading exch .addcontrolpath} forall
 
-    [
-      //tempfilepaths (*) .generate_dir_list_templates
-    ] {/PermitFileWriting exch .addcontrolpath} forall
-
-    [
-      //tempfilepaths (*) .generate_dir_list_templates
-    ] {/PermitFileControl exch .addcontrolpath} forall
-
     .activatepathcontrol
   } ifelse
 } .internalbind def
@@ -2422,7 +2399,6 @@ readonly def
     <<
       /PermitFileReading [
         currentuserparams /PermitFileReading get aload pop
-        //tempfilepaths (*) .generate_dir_list_templates
         /FONTPATH .systemvar (*) .generate_dir_list_templates
           % Library files :
         /LIBPATH  .systemvar (*) .generate_dir_list_templates
@@ -2442,21 +2418,12 @@ readonly def
           .generate_dir_list_templates
         } if
       ]
-      /PermitFileWriting [
-          currentuserparams /PermitFileWriting get aload pop
-          //tempfilepaths (*) .generate_dir_list_templates
-      ]
-      /PermitFileControl [
-          currentuserparams /PermitFileControl get aload pop
-          //tempfilepaths (*) .generate_dir_list_templates
-      ]
       /LockFilePermissions //true
     >> setuserparams
   }
   if
 } .forcebind def
 
-currentdict /tempfilepaths undef
 
 %% --- These are documented extensions ---
 /.locksafe {
