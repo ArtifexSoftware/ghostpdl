@@ -929,21 +929,27 @@ if test x$with_tesseract != xno; then
 
         save_cxxflags="$CXXFLAGS"
         save_ldflags="$LDFLAGS"
-        cxxflags_to_try="-std=c++17 -stdlib=libstdc++"
         CXXFLAGS_TO_USE=""
 
         AC_MSG_CHECKING([supported C++ compiler flags])
-        for flag in $cxxflags_to_try ; do
+        for flag in "-std=c++17 -stdlib=libstdc++" "-std=c++17" "-stdlib=libstdc++" ; do
           CXXFLAGS="$CXXFLAGS $flag"
 
-          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <cstdlib>]], [[return 0;]])],[
+          AC_COMPILE_IFELSE([AC_LANG_PROGRAM([
+          [
+            #include <cstdlib>
+            #include <cstdint>
+            #include <filesystem>
+          ]],
+          [[return 0;]])],
+          [
                   echo "   $flag"; CXXFLAGS_TO_USE="$CXXFLAGS_TO_USE $flag"
           ],[])
 
           CXXFLAGS="$old_cflags"
         done
 
-        if test x"$GXX" = x"no" || echo $CXXFLAGS_TO_USE | grep "std=c++17" ; then
+        if test x"$GXX" = x"no" || test "x$CXXFLAGS_TO_USE" != x; then
           if test x"$GXX" = x"no" ; then
             OCR_DEVS_WARNING_LINE1="C++ compiler does not appear to be gcc or compatible, attempting to continue anyway"
             OCR_DEVS_WARNING_LINE2="NOTE: that tesseract requires a C++17 compatible C++ compiler"
@@ -1073,7 +1079,7 @@ if test x$with_tesseract != xno; then
           TESSERACTINCLUDE="include \$(GLSRCDIR)/tesseract.mak"
           TESSERACT_LIBS="-lstdc++"
         else
-          OCR_DEVS_WARNING_LINE1="OCR devices disabled due to incompatible compiler: tesseract requires a C++17 compatible compiler"
+          OCR_DEVS_WARNING_LINE1="OCR devices disabled due to missing or incompatible C++ compiler or supporting libraries"
         fi
       fi
       AC_LANG_POP()
