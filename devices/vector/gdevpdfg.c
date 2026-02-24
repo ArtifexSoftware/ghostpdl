@@ -3063,7 +3063,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
         char buf[20];
 
         if (pgs->soft_mask_id == 0) {
-            char *buf = (char *)"/None";
+            char buf[256];
 
             code = pdf_open_contents(pdev, PDF_IN_STREAM);
             if (code < 0)
@@ -3072,7 +3072,9 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
                 code = pdf_restore_viewer_state(pdev, pdev->strm);
                 if (code < 0)
                     return code;
-            } else {
+            }
+            if (pdev->state.soft_mask_id != 0) {
+                gs_snprintf(buf, sizeof(buf), "/None", pgs->soft_mask_id);
                 code = pdf_open_gstate(pdev, ppres);
                 if (code < 0)
                     return code;
