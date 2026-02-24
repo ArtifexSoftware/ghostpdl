@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1050,13 +1050,15 @@ gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph
         byte *buf;
 
         sseek(s, pfont->data.glyf + glyph_start);
-        buf = (byte *)gs_alloc_string(pgd->memory, glyph_length, "default_get_outline");
+        buf = (byte *)gs_alloc_string(pgd->memory, glyph_length, "gs_type42_get_outline_from_TT_file");
         if (buf == 0)
             return_error(gs_error_VMerror);
-        gs_glyph_data_from_string(pgd, buf, glyph_length, (gs_font *)pfont);
         sgets(s, buf, glyph_length, &count);
-        if (count < glyph_length)
+        if (count < glyph_length) {
+            gs_free_string(pgd->memory, buf, glyph_length, "gs_type42_get_outline_from_TT_file");
             return_error(gs_error_invalidfont);
+        }
+        gs_glyph_data_from_string(pgd, buf, glyph_length, (gs_font *)pfont);
     }
     return 0;
 }

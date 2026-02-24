@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -181,31 +181,41 @@ gs_get_glyph_data_cached(gs_font_type42 *pfont, uint glyph_index, gs_glyph_data_
 
     if (pe == NULL || (*pe)->glyph_index != glyph_index) {
         int code;
+        bool new_elem = false;
+        gs_glyph_data_t egd;
 
         if (pe != NULL && gdcache->total_size > 32767 /* arbitrary */ &&
                           (*pe)->lock_count <= 0) {
-            /* Release the element's data, and move it : */
             e = *pe;
-            gdcache->total_size -= e->gd.bits.size + sizeof(*e);
-            e->gd.procs->free(&e->gd, "gs_get_glyph_data_cached");
-            gs_glyph_cache_elem__move_to_head(gdcache, pe);
         } else {
             /* Allocate new head element. */
+            new_elem = true;
             e = (gs_glyph_cache_elem *)gs_alloc_struct(gdcache->memory,
                 gs_glyph_cache_elem, &st_glyph_cache_elem, "gs_glyph_cache_elem");
             if (e == NULL)
                 return_error(gs_error_VMerror);
             memset(e, 0, sizeof(*e));
-            e->next = gdcache->list;
-            gdcache->list = e;
-            e->gd.memory = gdcache->memory;
         }
         /* Load the element's data : */
-        code = (*gdcache->read_data)(pfont, gdcache->s, glyph_index, &e->gd);
-        if (code < 0)
+        egd.memory = gdcache->memory;
+        code = (*gdcache->read_data)(pfont, gdcache->s, glyph_index, &egd);
+        if (code < 0) {
+            if (new_elem)
+                gs_free_object(gdcache->memory, e, "gs_get_glyph_data_cached");
             return code;
-        gdcache->total_size += e->gd.bits.size + sizeof(*e);
+        }
+        if (new_elem) {
+            e->next = gdcache->list;
+            gdcache->list = e;
+        } else {
+            /* Release the element's data, and move it : */
+            gdcache->total_size -= e->gd.bits.size + sizeof(*e);
+            e->gd.procs->free(&e->gd, "gs_get_glyph_data_cached");
+            gs_glyph_cache_elem__move_to_head(gdcache, pe);
+        }
+        e->gd = egd;
         e->glyph_index = glyph_index;
+        gdcache->total_size += e->gd.bits.size + sizeof(*e);
     } else {
         /* Move the element : */
         e = *pe;
