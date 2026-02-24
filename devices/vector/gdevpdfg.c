@@ -3074,7 +3074,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_gstate *pgs,
                     return code;
             }
             if (pdev->state.soft_mask_id != 0) {
-                gs_snprintf(buf, sizeof(buf), "/None", pgs->soft_mask_id);
+                gs_snprintf(buf, sizeof(buf), "/None");
                 code = pdf_open_gstate(pdev, ppres);
                 if (code < 0)
                     return code;
