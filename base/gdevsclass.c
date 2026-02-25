@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -363,8 +363,10 @@ static void subclass_composite_front_finalize(gx_device *dev)
 {
     generic_subclass_data *psubclass_data = (generic_subclass_data *)dev->parent->subclass_data;
 
-    dev->parent->child = psubclass_data->pre_composite_device;
-    psubclass_data->saved_finalize_method(dev);
+    if (psubclass_data->pre_composite_device != NULL)
+        dev->parent->child = psubclass_data->pre_composite_device;
+    if (psubclass_data->saved_finalize_method != NULL)
+        psubclass_data->saved_finalize_method(dev);
 }
 
 int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs_composite_t *pcte,
