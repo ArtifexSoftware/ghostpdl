@@ -401,6 +401,9 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                 (*pcdev)->finalize = subclass_composite_front_finalize;
 
                 (*pcdev)->child = dev->child;
+                /* We won't be pointing to the device anymore, so decrement the reference count */
+                rc_decrement(dev->child, "default_subclass_composite_front");
+
                 dev->child = *pcdev;
                 (*pcdev)->parent = dev;
                 while (dev) {
