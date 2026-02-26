@@ -365,6 +365,7 @@ static void subclass_composite_front_finalize(gx_device *dev)
 
     if (psubclass_data->pre_composite_device != NULL)
         dev->parent->child = psubclass_data->pre_composite_device;
+    rc_increment(psubclass_data->pre_composite_device);
     if (psubclass_data->saved_finalize_method != NULL)
         psubclass_data->saved_finalize_method(dev);
 }
@@ -401,6 +402,7 @@ int default_subclass_composite_front(gx_device *dev, gx_device **pcdev, const gs
                 (*pcdev)->finalize = subclass_composite_front_finalize;
 
                 (*pcdev)->child = dev->child;
+                dev->child->parent = *pcdev;
                 /* We won't be pointing to the device anymore, so decrement the reference count */
                 rc_decrement(dev->child, "default_subclass_composite_front");
 

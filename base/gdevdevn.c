@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -956,12 +956,13 @@ devn_generic_put_params(gx_device *pdev, gs_param_list *plist,
          * the old version. In particular this allows Nup to flush properly. */
         pdev->color_info = save_info;
         pdev->num_planar_planes = save_planes;
-        gs_closedevice(parent_dev);
+        gs_closedevice(pdev);
         /* Then put the shiny new color_info back in. */
-        pdev->color_info = resave_info;
-        pdev->num_planar_planes = resave_planes;
+        parent_dev->color_info = pdev->color_info = resave_info;
+        parent_dev->num_planar_planes = pdev->num_planar_planes = resave_planes;
         /* Reset the separable and linear shift, masks, bits. */
         set_linear_color_bits_mask_shift(pdev);
+        set_linear_color_bits_mask_shift(parent_dev);
     }
     /*
      * Also check for parameters which are being passed from the PDF 1.4
