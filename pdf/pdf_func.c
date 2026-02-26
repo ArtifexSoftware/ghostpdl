@@ -94,21 +94,30 @@ static const op_struct_t ops_table[] = {
 };
 
 /* Fix up an if or ifelse forward reference. */
-static void
+static int
 psc_fixup(byte *p, byte *to)
 {
     int skip = to - (p + 3);
 
+    if (skip > 0xFFFF)
+        return_error(gs_error_rangecheck);
+
     p[1] = (byte)(skip >> 8);
     p[2] = (byte)skip;
+    return 0;
 }
-static void psc_fixup_ifelse(byte *p)
+static int
+psc_fixup_ifelse(byte *p)
 {
     int iflen = (p[0] << 8) + p[1];
 
     iflen += 3;         /* To skip past the 'if' body and the 'else' header */
+    if (iflen > 0xFFFF)
+        return_error(gs_error_rangecheck);
+
     p[0] = (byte)(iflen >> 8);
     p[1] = (byte)iflen;
+    return 0;
 }
 
 /* Store an int in the  buffer */
@@ -189,11 +198,13 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                         if (clause == NULL) {
                             clause = p;
                             *p = (byte)PtCr_if;
-                            psc_fixup(p, ops + *size);
+                            if ((code = psc_fixup(p, ops + *size)) < 0)
+                                return code;
                         } else {
                             *p = (byte)PtCr_else;
-                            psc_fixup(p, ops + *size);
-                            psc_fixup_ifelse(clause + 1);
+                            if ((code = psc_fixup(p, ops + *size)) < 0 ||
+                                (code = psc_fixup_ifelse(clause + 1) < 0))
+                                return code;
                             clause = NULL;
                         }
                         p = ops + *size;
