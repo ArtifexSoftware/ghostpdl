@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -307,6 +307,7 @@ gdev_x_open(gx_device_X * xdev)
     code = gdev_x_setup_colors(xdev);
     if (code < 0) {
         XCloseDisplay(xdev->dpy);
+        xdev->dpy = NULL;
         return code;
     }
     /* Now that the color map is setup check if the device is separable. */
