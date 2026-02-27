@@ -9223,16 +9223,14 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     gx_device_set_target((gx_device_forward *)p14dev, target);
     p14dev->pad = target->pad;
     p14dev->log2_align_mod = target->log2_align_mod;
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0) {
-        p14dev->num_planar_planes = p14dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
-        p14dev->color_info.num_components = p14dev->num_planar_planes;
-    }
-    else if (pdf14pct->params.overprint_sim_push && target->num_planar_planes != 0) {
-        p14dev->num_planar_planes = p14dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
-        p14dev->color_info.num_components = p14dev->num_planar_planes;
-    }
-    else
-    {
+    if (pdf14pct->params.overprint_sim_push) {
+        p14dev->color_info.num_components = p14dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
+        if (target->num_planar_planes == 0) {
+            p14dev->num_planar_planes = 0;
+        } else {
+            p14dev->num_planar_planes = p14dev->color_info.num_components;
+        }
+    } else {
         p14dev->color_info.num_components = target->color_info.num_components;
         p14dev->num_planar_planes = target->num_planar_planes;
     }
