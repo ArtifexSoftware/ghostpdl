@@ -42,7 +42,7 @@ The table below details the third party libraries that Ghostscript and/or GhostP
      - MIT/eXpat License
      - http://expat.sourceforge.net/
    * - FreeType
-     - 2.14.1
+     - 2.14.2
      - Font scaling and rendering
 
        for Ghostscript
