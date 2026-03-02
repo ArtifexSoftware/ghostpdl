@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -811,8 +811,21 @@ load_glyph(gs_fapi_server * a_server, gs_fapi_font * a_fapi_font,
             && ft_face->glyph->format != FT_GLYPH_FORMAT_COMPOSITE) {
             if ((bitmap_raster(w) * h) < max_bitmap) {
                 FT_Render_Mode mode = FT_RENDER_MODE_MONO;
+                FT_UInt save_x_ppem = ft_face->glyph->face->size->metrics.x_ppem;
+                FT_UInt save_y_ppem = ft_face->glyph->face->size->metrics.y_ppem;
 
+                /* Workaround so we have more control over size of the glyph that freetype will render for us */
+                if (a_fapi_font->is_type1) {
+                    ft_face->glyph->face->size->metrics.x_ppem = ft_face->glyph->face->size->metrics.y_ppem = 1000;
+                }
+                else {
+                    ft_face->glyph->face->size->metrics.x_ppem = ft_face->glyph->face->size->metrics.y_ppem = 2048;
+                }
                 ft_error = FT_Render_Glyph(ft_face->glyph, mode);
+
+                ft_face->glyph->face->size->metrics.x_ppem = save_x_ppem;
+                ft_face->glyph->face->size->metrics.y_ppem = save_y_ppem;
+
                 if (ft_error != 0) {
                     (*a_glyph) = NULL;
                     return (gs_error_VMerror);
