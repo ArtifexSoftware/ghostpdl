@@ -148,6 +148,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
     } Registry[1];
 
     Registry[0].values = pcis->pfont->data.WeightVector.values;
+    Registry[0].size = pcis->pfont->data.WeightVector.count;
 
     switch (pcis->init_done) {
         case -1:
@@ -653,15 +654,22 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         {
                             int i, n = fixed2int_var(*csp);
                             int ind = fixed2int_var(csp[-3]);
-                            int offs = fixed2int_var(csp[-2]);
+                            int reg_offs = fixed2int_var(csp[-2]);
+                            int ta_offs = fixed2int_var(csp[-1]);
                             float *to;
-                            const fixed *from = pcis->transient_array + fixed2int_var(csp[-1]);
+                            const fixed *from = pcis->transient_array + ta_offs;
 
-                            if (!CS_CHECK_TRANSIENT_BOUNDS(from, pcis->transient_array))
+                            if (n < 0 || ind < 0 || reg_offs < 0 || ta_offs < 0)
+                                return_error(gs_error_invalidfont);
+
+                            if (!CS_CHECK_TRANSIENT_BOUNDS(from, pcis->transient_array) ||
+                                (n && !CS_CHECK_TRANSIENT_BOUNDS(from + n - 1, pcis->transient_array)))
                                 return_error(gs_error_invalidfont);
 
                             if (ind < countof(Registry)) {
-                                to = Registry[ind].values + offs;
+                                if (reg_offs + n > Registry[ind].size)
+                                    return_error(gs_error_invalidfont);
+                                to = Registry[ind].values + reg_offs;
                                 for (i = 0; i < n; ++i)
                                     to[i] = fixed2float(from[i]);
                             }
@@ -702,12 +710,20 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         {
                             int i, n = fixed2int_var(*csp);
                             int ind = fixed2int_var(csp[-2]);
+                            int ta_offs = fixed2int_var(csp[-1]);
                             const float *from;
-                            fixed *to = pcis->transient_array + fixed2int_var(csp[-1]);
+                            fixed *to = pcis->transient_array + ta_offs;
 
-                            if (!CS_CHECK_TRANSIENT_BOUNDS(to, pcis->transient_array))
+                            if (n < 0 || ind < 0 || ta_offs < 0)
                                 return_error(gs_error_invalidfont);
+
+                            if (!CS_CHECK_TRANSIENT_BOUNDS(to, pcis->transient_array) ||
+                                (n && !CS_CHECK_TRANSIENT_BOUNDS(to + n - 1, pcis->transient_array)))
+                                return_error(gs_error_invalidfont);
+
                             if (ind < countof(Registry)) {
+                                if (n > Registry[ind].size)
+                                    return_error(gs_error_invalidfont);
                                 from = Registry[ind].values;
                                 for (i = 0; i < n; ++i)
                                     to[i] = float2fixed(from[i]);
