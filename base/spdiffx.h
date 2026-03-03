@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -28,6 +28,9 @@
  * Some PS3 CET files require this to be at least 57.
  */
 #define s_PDiff_max_Colors 60
+#define s_PDiff_max_BPC 16
+
+#define s_PDiff_prev_size (s_PDiff_max_BPC / 8) * s_PDiff_max_Colors
 
 /* PixelDifferenceDecode / PixelDifferenceEncode */
 typedef struct stream_PDiff_state_s {
@@ -42,7 +45,7 @@ typedef struct stream_PDiff_state_s {
     int case_index;		/* switch index for case dispatch */
     /* The following are updated dynamically. */
     uint row_left;		/* # of bytes left in row */
-    uint prev[s_PDiff_max_Colors];	/* previous sample */
+    uint prev[s_PDiff_prev_size];	/* previous sample */
 } stream_PDiff_state;
 
 #define private_st_PDiff_state()	/* in spdiff.c */\
