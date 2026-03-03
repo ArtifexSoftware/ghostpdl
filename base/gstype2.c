@@ -420,21 +420,25 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                 if (CS_CHECK_CSTACK_BOUNDS(csp, cstack))
                 {
                     int n = fixed2int_var(*csp);
-                    int num_values = csp - cstack;
                     gs_font_type1 *pfont = pcis->pfont;
                     int k = pfont->data.WeightVector.count;
+                    int num_values = n * k;
                     int i, j;
                     cs_ptr base, deltas;
 
-                    base = csp - 1 - num_values;
+                    if (n <= 0 || num_values <= 0 ||
+                        !CS_CHECK_CSTACK_BOUNDS(csp - num_values, cstack))
+                        return_error(gs_error_invalidfont);
+
+                    base = csp - num_values;
                     deltas = base + n - 1;
                     for (j = 0; j < n; j++, base++, deltas += k - 1)
                         for (i = 1; i < k; i++)
                             *base += (fixed)(deltas[i] *
                                 pfont->data.WeightVector.values[i]);
+                    csp = base - 1;
                 } else
                     return gs_note_error(gs_error_invalidfont);
-                clear;
                 continue;
             case c2_hstemhm:
               hstem: check_first_operator(!((csp - cstack) & 1));
