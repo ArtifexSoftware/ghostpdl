@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -66,6 +66,9 @@ s_PDiffE_init(stream_state * st)
     };
 
     if (ss->Colors > s_PDiff_max_Colors)
+        return_error(gs_error_rangecheck);
+
+    if (ss->BitsPerComponent > s_PDiff_max_BPC)
         return_error(gs_error_rangecheck);
 
     ss->row_count = (bits_per_row + 7) >> 3;
