@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -271,7 +271,7 @@ gs_image_class_4_color(gx_image_enum * penum, irender_proc_t *render_fn)
         }
     }
     if (!gx_device_uses_std_cmap_procs(penum->dev, penum->pgs) ||
-        penum->dev->color_info.depth > ARCH_SIZEOF_COLOR_INDEX) {
+        penum->dev->color_info.depth > (ARCH_SIZEOF_COLOR_INDEX * 8)) {
         *render_fn = &image_render_color_DeviceN;
         return code;
     }
