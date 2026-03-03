@@ -2377,6 +2377,16 @@ ps_get_server_param(gs_fapi_server *I, const char *subtype, char **server_param,
     return 1;
 }
 
+static inline int
+base_font_param(const ref *pfdict, gs_font **ppfont)
+{
+    int code = font_param(pfdict, ppfont);
+    if (code >= 0 && (*ppfont)->FontType == ft_composite) {
+        code = gs_note_error(gs_error_invalidfont);
+    }
+    return code;
+}
+
 static int
 FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font *pfont,
                  int subfont, const char *font_file_path)
@@ -2522,7 +2532,7 @@ zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     int subfont;
 
     check_op(3);
-    code = font_param(op - 1, &pfont);
+    code = base_font_param(op - 1, &pfont);
     if (code < 0)
         return code;
 
@@ -2665,7 +2675,7 @@ zfapi_finish_render(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(op - 1, &pfont);
+    int code = base_font_param(op - 1, &pfont);
 
     if (code == 0) {
         gs_font_base *pbfont = (gs_font_base *) pfont;
@@ -3246,7 +3256,7 @@ FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
     int code;
 
     check_op(2);
-    code = font_param(osp - 1, &pfont);
+    code = base_font_param(osp - 1, &pfont);
 
     if (code == 0) {
         gs_font_base *pbfont = (gs_font_base *) pfont;
@@ -3468,7 +3478,7 @@ zFAPIpassfont(i_ctx_t *i_ctx_p)
      */
     check_type(*op, t_dictionary);
 
-    code = font_param(osp, &pfont);
+    code = base_font_param(osp, &pfont);
     if (code < 0)
         return code;
 
