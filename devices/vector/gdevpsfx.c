@@ -552,6 +552,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
                 return_error(gs_error_invalidfont);
             if (*csp == int2fixed(3))
                 replace_hints = true;
+            if (fixed2int(csp[-1]) < 0)
+                return_error(gs_error_invalidfont);
             if (cis.os_count < 2 + fixed2int(csp[-1]))
                 return_error(gs_error_invalidfont);
             if (*csp == int2fixed(12) || *csp == int2fixed(13))
@@ -864,6 +866,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
             case 12:
             case 13:
                 /* Counter control is not implemented. */
+                if (fixed2int(csp[-1]) < 0)
+                    return_error(gs_error_invalidfont);
                 if (cis.os_count < 2 + fixed2int(csp[-1]))
                     return_error(gs_error_invalidfont);
                 cis.os_count -= 2 + fixed2int(csp[-1]);
