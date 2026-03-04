@@ -974,8 +974,6 @@ JPX_CFLAGS = $JPX_CFLAGS -DUSE_JPIP -DUSE_OPENJPEG_JP2 -DOPJ_STATIC
 
 # The following reflects what we do in our headers, but applies it
 # to freetype without the need to "fork" the freetype code
-!if $(FT_BRIDGE) == 1
 !if $(MSVC_VERSION) >= 8
 FT_CFLAGS=-Dinline=__inline $(FT_CFLAGS)
-!endif
 !endif

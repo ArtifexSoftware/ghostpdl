@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -55,6 +55,8 @@ GLJBIG2CC=$(CC) $(I_)$(GLI_) $(II)$(JB2I_)$(_I) $(JB2CF_) $(GLF_) $(CCFLAGS)
 GLJASCC=$(CC) $(I_)$(JPXI_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_) $(CCFLAGS)
 GLJPXOPJCC=$(CC) $(I_)$(JPX_OPENJPEG_I_)$(D).. $(I_)$(JPX_OPENJPEG_I_) $(II)$(GLI_)$(_I) $(JPXCF_) $(GLF_) $(CCFLAGS)
 GLFTCC=$(CC) $(FT_CFLAGS) $(D_)FT_CONFIG_OPTIONS_H=\"$(FTCONFH)\"$(_D) $(CCFLAGS) $(GLCCFLAGS)
+
+FT_BRIDGE=1
 
 # We can't use $(CC_) for GLLCMS2MTCC because that includes /Za on
 # msvc builds, and lcms configures itself to depend on msvc extensions

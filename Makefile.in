@@ -251,7 +251,6 @@ EXTRACT_DIR=@EXTRACT_DIR@
 # the source tree is location. Otherwise, what library name to use
 # in linking to a shared implementation.
 
-FT_BRIDGE=@FT_BRIDGE@
 SHARE_FT=@SHARE_FT@
 FTSRCDIR=@FTSRCDIR@
 FT_CFLAGS=@FT_CFLAGS@ @FT_HIDDEN_CFLAGS@ -DSHARE_FT=@SHARE_FT@

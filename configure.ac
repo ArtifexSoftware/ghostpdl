@@ -138,7 +138,7 @@ if test x"$host" != x"$build" ; then
   echo $AUXFLAGS_MAK_LINE07 >> $AUXFLAGS_MAK.in
 
   AC_MSG_NOTICE([Begin recursive call to configure script (for auxiliary tools)])
-  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" CPPFLAGS="$CPPFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --with-local-brotli --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-freetype --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-jbig2dec --without-x --with-drivers=""
+  "$absolute_source_path/configure" CC="$CCAUX" CFLAGS="$CFLAGSAUX" CPPFLAGS="$CPPFLAGSAUX" LDFLAGS="$LDFLAGSAUX" CCAUX= CFLAGSAUX= CFLAGSAUX= MAKEFILE=$AUXFLAGS_MAK --host=$build --build=$build --enable-auxtools_only --disable-hidden-visibility --with-local-zlib --with-local-brotli --without-libtiff --disable-contrib --disable-fontconfig --disable-dbus --disable-cups --disable-openjpeg --disable-gtk --with-libiconv=no --without-libidn --without-libpaper --without-pdftoraster --without-ijs --without-jbig2dec --without-x --with-drivers=""
   status=$?
   cp config.log "$olddir/configaux.log"
   if test $status -eq 0 ; then
@@ -1328,14 +1328,12 @@ AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
 
-AC_ARG_ENABLE([freetype], AS_HELP_STRING([--disable-freetype],
-        [Disable freetype for font rasterization]))
-
 FT_BRIDGE=0
 SHARE_FT=0
 FTSRCDIR=src
 FT_CFLAGS=
 FT_LIBS=
+
 
 INSERT_UFST_BRIDGE_EQUAL_ONE=
 UFST_ROOT=
@@ -1475,7 +1473,6 @@ AC_SUBST(UFST_CFLAGS)
 AC_SUBST(UFST_LIB_EXT)
 AC_SUBST(FAPIUFST_MAK)
 
-AC_SUBST(FT_BRIDGE)
 AC_SUBST(SHARE_FT)
 AC_SUBST(FTSRCDIR)
 AC_SUBST(FT_CFLAGS)

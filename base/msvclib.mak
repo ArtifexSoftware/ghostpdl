@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -333,13 +333,6 @@ WITH_CUPS=0
 # See freetype.mak for more information.
 
 !ifdef UFST_BRIDGE
-!if "$(UFST_BRIDGE)"=="1"
-FT_BRIDGE=0
-!endif
-!endif
-
-!ifndef FT_BRIDGE
-FT_BRIDGE=1
 !endif
 
 !ifndef FTSRCDIR
@@ -348,11 +341,6 @@ FTSRCDIR=freetype
 !ifndef FT_CFLAGS
 FT_CFLAGS=-I$(FTSRCDIR)\include
 !endif
-
-!ifdef BITSTREAM_BRIDGE
-FT_BRIDGE=0
-!endif
-
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
