@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -109,11 +109,6 @@ PLATOPT=
 # Define conditinal name for UFST bridge :
 !ifdef UFST_ROOT
 UFST_LIB_EXT=.lib
-!endif
-
-# Define conditinal for FreeType bridge :
-!ifndef FT_BRIDGE
-FT_BRIDGE = 0
 !endif
 
 # Which CMS are we using?

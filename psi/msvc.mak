@@ -727,24 +727,11 @@ SO_PDFEXPORT_LIB=
 WITH_CUPS=0
 !endif
 
-# Define the directory where the FreeType2 library sources are stored.
-# See freetype.mak for more information.
-# Note that FT_BRIDGE=1 is now the only support configuration for anything
-# other than testing purposes (even when UFST_BRIDGE=1 - we require Freetype
-# for embedded/downloaded fonts.
-!ifndef FT_BRIDGE
-FT_BRIDGE=1
-!endif
-
 !ifndef FTSRCDIR
 FTSRCDIR=freetype
 !endif
 !ifndef FT_CFLAGS
 FT_CFLAGS=-I$(FTSRCDIR)\include
-!endif
-
-!ifdef BITSTREAM_BRIDGE
-FT_BRIDGE=0
 !endif
 
 # Define the directory where the IJG JPEG library sources are stored,
@@ -1565,28 +1552,28 @@ DEBUGDEFS=DEBUG=1 TDEBUG=1 $(RECURSIVEDEFS)
 RECURSIVEMAKE=nmake
 
 debug:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE)
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS)
 
 gsdebug:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) gs
 
 gpcl6debug:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) gpcl6
 
 gxpsdebug:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) gxps
 
 gpdfdebug:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(DEBUGDEFS) $(WINDEFS) gpdf
+	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(DEBUGDEFS) $(WINDEFS) gpdf
 
 gpdldebug:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) gpdl
 
 debugclean:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) clean
 
 debugbsc:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(DEBUGDEFS) bsc
 
 # --------------------- Memento targets --------------------- #
 # Simply set some definitions and call ourselves back         #
@@ -1594,28 +1581,28 @@ debugbsc:
 MEMENTODEFS=$(DEBUGDEFS) MEMENTO=1
 
 memento-target:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE)
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS)
 
 gsmemento:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) gs
 
 gpcl6memento:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) gpcl6
 
 gxpsmemento:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) gxps
 
 gpdfmemento:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(MEMENTODEFS) $(WINDEFS) gpdf
+	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(MEMENTODEFS) $(WINDEFS) gpdf
 
 gpdlmemento:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) gpdl
 
 mementoclean:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) clean
 
 mementobsc:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(MEMENTODEFS) bsc
 
 # --------------------- Profile targets --------------------- #
 # Simply set some definitions and call ourselves back         #
@@ -1624,28 +1611,28 @@ PROFILEDEFS=$(RECURSIVEDEFS) PROFILE=1
 
 profile:
 profile-target:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE)
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS)
 
 gsprofile:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) gs
 
 gpcl6profile:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) gpcl6
 
 gxpsprofile:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) gxps
 
 gpdfprofile:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" FT_BRIDGE=$(FT_BRIDGE) $(PROFILEDEFS) $(WINDEFS) gpdf
+	$(RECURSIVEMAKE) -f $(MAKEFILE) DEVSTUDIO="$(DEVSTUDIO)" $(PROFILEDEFS) $(WINDEFS) gpdf
 
 gpdlprofile:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) gpdl
 
 profileclean:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) clean
 
 profilebsc:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(PROFILEDEFS) bsc
 
 
 
@@ -1655,25 +1642,25 @@ profilebsc:
 SANITIZEDEFS=SANITIZE=1 $(RECURSIVEDEFS)
 
 sanitize:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE)
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS)
 
 gssanitize:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gs
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) gs
 
 gpcl6sanitze:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpcl6
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) gpcl6
 
 gxpssanitize:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gxps
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) gxps
 
 gpdlsanitize:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) gpdl
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) gpdl
 
 sanitizeclean:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) clean
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) clean
 
 sanitizebsc:
-	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) FT_BRIDGE=$(FT_BRIDGE) bsc
+	$(RECURSIVEMAKE) -f $(MAKEFILE) $(SANITIZEDEFS) bsc
 
 # ---------------------- UFST targets ---------------------- #
 # Simply set some definitions and call ourselves back        #

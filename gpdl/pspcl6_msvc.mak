@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -164,10 +164,6 @@ BAND_LIST_STORAGE=file
 
 !ifndef COMPILE_INITS
 COMPILE_INITS=1
-!endif
-
-!ifndef FT_BRIDGE
-FT_BRIDGE=1
 !endif
 
 SHARE_FT=0
