@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -196,7 +196,6 @@ PGDIRPREFIX=pg
 # the source tree is location. Otherwise, what library name to use
 # in linking to a shared implementation.
 
-FT_BRIDGE=1
 SHARE_FT=0
 FTSRCDIR=./freetype
 FT_CFLAGS=-I./freetype/include

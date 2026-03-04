@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -75,8 +75,6 @@ COMPILE_INITS?=1
 PSICFLAGS?=-DPSI_INCLUDED
 PDL_INCLUDE_FLAGS?=-DPCL_INCLUDED $(PSICFLAGS)
 
-# Choose FT_BRIDGE=1 to use the freetype rasterizer
-FT_BRIDGE?=1
 SHARE_FT?=0
 FTSRCDIR?=$(GLSRCDIR)/../freetype
 FT_CFLAGS?=-I$(FTSRCDIR)/include
