@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -3318,7 +3318,7 @@ get_mediawp(cmm_profile_t *src_profile, byte *mediawhitept)
 
     offset = readint32(buffer);
 
-    if (buffer_left < offset + 8)
+    if (buffer_left < offset + 8 || offset < 0)
         return false;
 
     buffer = &(src_profile->buffer[offset + 8]);  /* Add offset of 8 for XYZ tag and padding */
