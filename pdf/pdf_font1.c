@@ -784,7 +784,7 @@ pdfi_read_type1_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dic
     if (code < 0) {
         tmp = NULL;
         if (font_dict != NULL) {
-            if (pdfi_dict_get(ctx, font_dict, ".Path", &tmp) >= 0)
+            if (pdfi_dict_get_type(ctx, font_dict, ".Path", PDF_STRING, &tmp) >= 0)
             {
                 char fname[gp_file_name_sizeof + 1];
                 pdf_string *fobj = (pdf_string *)tmp;
