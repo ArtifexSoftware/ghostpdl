@@ -80,7 +80,7 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
             index = dict_first(pgdir);
             while (index >= 0) {
                 index = dict_next(pgdir, index, (ref *)&element);
-                if (index >= 0) {
+                if (index >= 0 && r_has_type(&(element[0]), t_integer)) {
                     if (element[0].value.intval > pdata->MaxCID)
                         pdata->MaxCID = element[0].value.intval;
                 }
