@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -514,10 +514,10 @@ static inline void
 pdfi_type1_font_priv_defaults(ps_font_interp_private *pfpriv)
 {
     pfpriv->gsu.gst1.data.lenIV = 4;
-    pfpriv->gsu.gst1.data.ExpansionFactor = 0.06;
+    pfpriv->gsu.gst1.data.ExpansionFactor = 0.06f;
     pfpriv->gsu.gst1.data.BlueShift = 7;
     pfpriv->gsu.gst1.data.BlueFuzz = 1;
-    pfpriv->gsu.gst1.data.BlueScale = 0.039625;
+    pfpriv->gsu.gst1.data.BlueScale = 0.039625f;
     uid_set_invalid(&pfpriv->gsu.gst1.UID);
 }
 
