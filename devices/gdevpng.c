@@ -676,8 +676,14 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
     }
     /* add comment */
 #ifdef CLUSTER
-    strncpy(software_key, "GPL Ghostscript", sizeof(software_key));
-    strncpy(software_text, "GPL Ghostscript", sizeof(software_text));
+    {
+        /* Slightly screwy - separating the G, P and L characters this way to avoid
+         * accidental replacement by the release script.
+         */
+        const byte gs_g_p_l_prod_fam[16] = {'G', 'P', 'L', ' ', 'G', 'h', 'o', 's', 't', 's', 'c', 'r', 'i', 'p', 't', '\0'};
+        strncpy(software_key, gs_g_p_l_prod_fam, sizeof(software_key));
+        strncpy(software_text, gs_g_p_l_prod_fam, sizeof(software_text));
+    }
 #else
     strncpy(software_key, "Software", sizeof(software_key));
     {
