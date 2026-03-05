@@ -200,6 +200,10 @@ gsicc_set_iccsmaskprofile(const char *pname,
     icc_profile->hash_is_valid = true;
     icc_profile->num_comps =
             gscms_get_input_channel_count(icc_profile->profile_handle, icc_profile->memory);
+    if (icc_profile->num_comps > ICC_MAX_CHANNELS) {
+        rc_free_icc_profile(mem, icc_profile, "gsicc_set_iccsmaskprofile");
+        return NULL;
+    }
     icc_profile->num_comps_out =
             gscms_get_output_channel_count(icc_profile->profile_handle, icc_profile->memory);
     icc_profile->data_cs =
@@ -1070,6 +1074,7 @@ gsicc_set_profile(gsicc_manager_t *icc_manager, const char* pname, int namelen,
                But set some basic stuff that we need. Take care of DeviceN
                profile now, since we don't know the number of components etc */
             icc_profile->num_comps = num_comps;
+            if (icc_profile->num_comps > ICC_MAX_CHANNELS) return gs_throw1(-1, "problems with profile %s",pname);
             icc_profile->num_comps_out = 3;
             gsicc_set_icc_range(&icc_profile);
             icc_profile->data_cs = default_space;

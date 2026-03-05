@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -291,6 +291,8 @@ zset_outputintent(i_ctx_t * i_ctx_p)
     if (r_type(pnval) != t_integer)
         return gs_note_error(gs_error_typecheck);
     ncomps = pnval->value.intval;
+    if (ncomps > ICC_MAX_CHANNELS)
+        return_error(gs_error_rangecheck);
 
     /* verify the DataSource entry. Creat profile from stream */
     if (dict_find_string(op, "DataSource", &pstrmval) <= 0)

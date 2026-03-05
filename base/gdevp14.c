@@ -2693,6 +2693,9 @@ pdf14_put_image(gx_device * dev, gs_gstate * pgs, gx_device * target)
 
     /* pcs takes a reference to the profile data it just retrieved. */
     gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "pdf14_put_image");
+    if (pcs->cmm_icc_profile_data->num_comps > ICC_MAX_CHANNELS)
+        return_error(gs_error_rangecheck);
+
     gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
     gs_image_t_init_adjust(&image, pcs, false);
     image.ImageMatrix.xx = (float)width;
@@ -3449,6 +3452,8 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
 
     /* pcs takes a reference to the profile data it just retrieved. */
     gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "pdf14_put_blended_image_cmykspot");
+    if (pcs->cmm_icc_profile_data->num_comps > ICC_MAX_CHANNELS)
+        return_error(gs_error_rangecheck);
     gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
 
     /* If we have more components to write out than are in the des_profile,
@@ -11342,6 +11347,10 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
                                   &(pcs->cmm_icc_profile_data), &render_cond);
             /* pcs takes a reference to the profile data it just retrieved. */
             gsicc_adjust_profile_rc(pcs->cmm_icc_profile_data, 1, "pdf14_clist_composite");
+            if (pcs->cmm_icc_profile_data->num_comps > ICC_MAX_CHANNELS) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto put_accum_error;
+            }
             gsicc_set_icc_range(&(pcs->cmm_icc_profile_data));
         } else {
              /* DeviceN case -- need to handle spot colors */

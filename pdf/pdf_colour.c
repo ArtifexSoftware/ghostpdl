@@ -3071,6 +3071,8 @@ static int pdfi_device_setoutputintent(pdf_context *ctx, pdf_dict *profile_dict,
     if (code < 0)
         goto exit;
     ncomps = (int)N;
+    if (ncomps > ICC_MAX_CHANNELS)
+        return_error(gs_error_rangecheck);
 
     picc_profile = gsicc_profile_new(stream, gs_gstate_memory(pgs), NULL, 0);
     if (picc_profile == NULL) {

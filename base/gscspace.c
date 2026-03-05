@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -225,6 +225,10 @@ gs_cspace_new_scrgb(gs_memory_t *pmem, gs_gstate * pgs)
     profile->hash_is_valid = true;
     profile->num_comps =
         gscms_get_input_channel_count(profile->profile_handle, profile->memory);
+    if (profile->num_comps > ICC_MAX_CHANNELS) {
+        rc_decrement(pcspace, "gs_cspace_new_scrgb");
+        return NULL;
+    }
     profile->num_comps_out =
         gscms_get_output_channel_count(profile->profile_handle, profile->memory);
     profile->data_cs =
