@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -448,11 +448,11 @@ gsicc_nocm_get_link(const gs_gstate *pgs, gx_device *dev,
         data_cs = gsGRAY;
     result->data_cs = data_cs;
 
-/* Set up for monitoring if not gray */
+    /* Set up for monitoring if not gray */
     if (pageneutralcolor && nocm_link->num_in != 1) {
         gsicc_mcm_set_link(result);
     }
-    result->valid = true;
+    result->validity = 1;
     /* Now release any tasks/threads waiting for these contents by unlocking */
     gx_monitor_leave(result->lock);	/* done with updating, let everyone run */
 

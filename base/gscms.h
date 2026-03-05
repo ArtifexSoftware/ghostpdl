@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -450,13 +450,13 @@ struct gsicc_link_s {
     gscms_procs_t procs;
     gsicc_hashlink_t hashcode;
     struct gsicc_link_cache_s *icc_link_cache;
-    int ref_count;
+    int ref_count;	/* All accesses to ref_count are protected by the link cache lock once the link is cached! */
+    int validity;	/* 1 once link is completely built and usable, 0 while building, -1 if failed to build. */
     gsicc_link_t *next;
-    gx_monitor_t *lock;		/* lock used while changing contents */
+    gx_monitor_t *lock;		/* lock used while changing contents (link cache lock can never be taken while holding this) */
     bool includes_softproof;
     bool includes_devlink;
     bool is_identity;  /* Used for noting that this is an identity profile */
-    bool valid;		/* true once link is completely built and usable */
     bool is_monitored;
     gscms_procs_t orig_procs;  /* procs to use after monitoring */
     gsicc_colorbuffer_t data_cs; /* needed for begin_monitor after end_monitor */
