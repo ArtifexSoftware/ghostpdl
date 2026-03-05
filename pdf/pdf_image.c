@@ -1335,6 +1335,7 @@ static int pdfi_create_JPX_Lab(pdf_context *ctx, pdf_obj **ColorSpace)
     code = pdfi_array_alloc(ctx, 3, &WhitePoint);
     if (code < 0)
         goto cleanupExit;
+    pdfi_countup(WhitePoint);
 
     for (i = 0; i < 3; i++) {
         code = pdfi_object_alloc(ctx, PDF_REAL, 0, (pdf_obj **)&num);
