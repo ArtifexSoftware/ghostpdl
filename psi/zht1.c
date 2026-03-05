@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -147,13 +147,16 @@ setcolorscreen_cleanup(i_ctx_t *i_ctx_p)
     gx_device_halftone *pdht = r_ptr(esp + 8, gx_device_halftone);
     bool global = (esp + 2)->value.boolval;
 
-    gs_free_object(pdht->rc.memory, pdht,
+    /* We might be getting called again, after these have been freed and turned into null objects, so check their type before freeing again */
+    if (r_is_struct(esp + 7))
+        gs_free_object(pdht->rc.memory, pdht,
                    "setcolorscreen_cleanup(device halftone)");
-    gs_free_object(pht->rc.memory, pht,
+    if (r_is_struct(esp + 8))
+        gs_free_object(pht->rc.memory, pht,
                    "setcolorscreen_cleanup(halftone)");
     /* See bug #707007, explicitly freed structures on the stacks need to be made NULL */
-    make_null(esp + 6);
     make_null(esp + 7);
+    make_null(esp + 8);
     ialloc_set_space(idmemory, (global ? avm_global : avm_local));
     return 0;
 }
