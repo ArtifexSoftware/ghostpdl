@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -742,6 +742,9 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
 
     memcpy(font, spdffont, sizeof(pdf_font_truetype));
     font->refcnt = 1;
+    font->pfont = (gs_font_base *)dpfont42;
+    dpfont42->client_data = (void *)font;
+
     font->filename = NULL;
     pdfi_countup(font->post);
 
@@ -778,9 +781,6 @@ pdfi_copy_truetype_font(pdf_context *ctx, pdf_font *spdffont, pdf_dict *font_dic
         }
         memcpy(dpfont42->data.gsub, spfont1->data.gsub, dpfont42->data.gsub_size);
     }
-
-    font->pfont = (gs_font_base *)dpfont42;
-    dpfont42->client_data = (void *)font;
 
     font->PDF_font = font_dict;
     font->object_num = font_dict->object_num;
