@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2361,6 +2361,11 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
     pdf_string *ordering = NULL;
     byte *fbuf = pfbuf;
 
+    if (fbuflen < 4) {
+        gs_free_object(ctx->memory, pfbuf, "pdfi_read_cff_font(fbuf)");
+        return_error(gs_error_invalidfont);
+    }
+
     if (!memcmp(fbuf, "OTTO", 4)) {
         int i, ntables;
         byte *p;
@@ -2375,7 +2380,7 @@ pdfi_read_cff_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream_dict,
 
         for (i = 0; i < ntables; i++) {
             p = fbuf + 12 + i * 16;
-            if (p >= fbuf + fbuflen)
+            if (p + 4 >= fbuf + fbuflen)
                 break;
 
             if (!memcmp(p, "CFF ", 4)) {
