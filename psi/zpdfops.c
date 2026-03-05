@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1342,7 +1342,7 @@ static int apply_interpreter_params(i_ctx_t *i_ctx_p, pdfctx_t *pdfctx, ref *pdi
             code = gs_note_error(gs_error_VMerror);
             goto error;
         }
-        memcpy(pdfctx->ctx->args.defaultfont.data, pvalueref->value.const_bytes, r_size(namstrp));
+        memcpy(pdfctx->ctx->args.defaultfont.data, namstrp->value.const_bytes, r_size(namstrp));
         pdfctx->ctx->args.defaultfont.size = r_size(namstrp);
     }
     if (dict_find_string(pdictref, "IgnoreToUnicode", &pvalueref) > 0) {
