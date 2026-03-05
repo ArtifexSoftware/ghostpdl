@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -529,7 +529,7 @@ static int pdfi_oc_levels_set(pdf_context *ctx, pdfi_oc_levels_t *levels, uint64
     if (index > levels->max_flags - 1) {
         /* Expand the flags buffer */
         newmax = levels->max_flags + NUM_CONTENT_LEVELS;
-        if (index > newmax)
+        if (index >= newmax)
             return_error(gs_error_Fatal); /* shouldn't happen */
         new = gs_alloc_bytes(ctx->memory, newmax, "pdfi_oc_levels_set (new data)");
         if (!new)
