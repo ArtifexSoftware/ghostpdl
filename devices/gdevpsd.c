@@ -1148,6 +1148,7 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
 {
     psd_device * const pdevn = (psd_device *) pdev;
     int code = 0, max_spots = pdevn->max_spots;
+    int has_tags = device_encodes_tags(pdev);
 
     code = gx_downscaler_read_params(plist, &pdevn->downscale,
                                      cmyk ? GX_DOWNSCALER_PARAMS_TRAP : 0);
@@ -1168,12 +1169,12 @@ psd_put_params_generic(gx_device * pdev, gs_param_list * plist, int cmyk)
                                   "MaxSpots",
                                   &max_spots)) {
         case 0:
-            if (max_spots >= 0 && max_spots <= GS_CLIENT_COLOR_MAX_COMPONENTS-4) {
+            if (max_spots >= 0 && max_spots <= GS_CLIENT_COLOR_MAX_COMPONENTS-4-has_tags) {
                 pdevn->max_spots = max_spots;
                 break;
             }
             emprintf1(pdevn->memory, "MaxSpots must be between 0 and %d\n",
-                      GS_CLIENT_COLOR_MAX_COMPONENTS-4);
+                      GS_CLIENT_COLOR_MAX_COMPONENTS-4-has_tags);
             code = gs_note_error(gs_error_rangecheck);
             /* fall through */
         default:
