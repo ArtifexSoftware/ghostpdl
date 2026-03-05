@@ -1664,6 +1664,7 @@ gsicc_set_device_profile_colorants(gx_device *dev, char *name_str)
         if (profile_struct->spotnames != NULL) {
             /* Free the linked list in this object */
             gsicc_free_spotnames(profile_struct->spotnames, mem);
+            profile_struct->spotnames = NULL;
             /* Free the main object */
             gs_free_object(mem, profile_struct->spotnames,
                            "gsicc_set_device_profile_colorants");
