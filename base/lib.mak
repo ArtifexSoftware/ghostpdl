@@ -2683,7 +2683,7 @@ $(GLD)cmaplib.dev : $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_) $(GLD)cidlib.dev \
 	$(ADDMOD) $(GLD)cmaplib -include $(GLD)cidlib
 
 $(GLOBJ)gsfcmap.$(OBJ) : $(GLSRC)gsfcmap.c $(AK) $(gx_h) $(gserrors_h)\
- $(memory__h) $(string__h) $(gsstruct_h) $(gsutil_h) $(gxfcmap_h) $(LIB_MAK) $(MAKEDIRS)
+ $(memory__h) $(string__h) $(gsstruct_h) $(gsutil_h) $(gxfcmap_h) $(gxdevice_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLCC) $(GLO_)gsfcmap.$(OBJ) $(C_) $(GLSRC)gsfcmap.c
 
 $(GLOBJ)gsfcmap1.$(OBJ) : $(GLSRC)gsfcmap1.c $(AK) $(gx_h)\

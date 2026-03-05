@@ -22,6 +22,7 @@
 #include "gsstruct.h"
 #include "gsutil.h"		/* for gs_next_ids */
 #include "gxfcmap.h"
+#include "gxdevice.h"
 
 typedef struct gs_cmap_identity_s {
     GS_CMAP_COMMON;
@@ -577,6 +578,15 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, i
         memcpy(cmap_name, pref, pref_len);
         memcpy(cmap_name + pref_len, sid, sid_len);
 #   endif
+    /* code is sacrifical here */
+    /* Realistically, we don't expect code maps larger than 2Gb
+     * Although this creation code handles that, later code to populate
+     * the map doesn't.
+     */
+    if (check_int_multiply(num_codes, value_size + 2, &code) < 0) {
+        return_error(gs_error_VMerror);
+    }
+
     code = gs_cmap_alloc(ppcmap, &st_cmap_ToUnicode,
               0, cmap_name, name_len, NULL, 0, &gs_cmap_ToUnicode_procs, mem);
     if (code < 0)
