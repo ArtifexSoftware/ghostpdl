@@ -2141,7 +2141,9 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                 int MetricsCount = gs_fapi_get_metrics_count(ff), mc =
                     MetricsCount << 1;
 
-                glyph_length = max((ushort) (l - mc), 0);       /* safety */
+                glyph_length = max((l - mc), 0);
+                if (glyph_length > 65535) /* We want limit this to a short int value */
+                    glyph_length = 0;
                 if (buf != 0 && glyph_length > 0)
                     memcpy(buf, data_ptr + mc,
                            min(glyph_length, buf_length) /* safety */ );
