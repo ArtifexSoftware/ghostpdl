@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -228,7 +228,7 @@ cie_table_param(const ref * ptref, gx_color_lookup_table * pclt,
         }
     }
     if (code < 0) {
-        gs_free_object((gs_memory_t *)mem, table, "cie_table_param");
+        gs_free_object((gs_memory_t *)mem->stable_memory, table, "cie_table_param");
         return code;
     }
     pclt->table = table;
