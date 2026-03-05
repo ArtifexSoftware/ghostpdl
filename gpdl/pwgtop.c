@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2023 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -479,7 +479,8 @@ bad_header:
                 pwg->state = ii_state_flush;
                 break;
             }
-            pwg->byte_width = (pwg->bpp>>3)*pwg->width;
+            if (check_uint32_multiply(pwg->width, (pwg->bpp>>3), &pwg->byte_width) != 0)
+                goto bad_header;
             if (pwg->bpl != pwg->byte_width)
                 goto bad_header;
 

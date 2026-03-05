@@ -1,4 +1,4 @@
-/* Copyright (C) 2017-2023 Artifex Software, Inc.
+/* Copyright (C) 2017-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,6 +19,8 @@
 #include "memory_.h"
 #include "strimpl.h"
 #include "spwgx.h"
+#include "gxdevice.h"
+#include "gserrors.h"
 
 /* ------ RunLengthDecode ------ */
 
@@ -58,9 +60,12 @@ s_PWGD_process(stream_state * st, stream_cursor_read * pr,
     register byte *q = pw->ptr;
     const byte *rlimit = pr->limit;
     byte *wlimit = pw->limit;
-    int bpp = (ss->bpp+7)>>3;
+    int bpp;
     int wb = ss->width * bpp;
     int line_pos = ss->line_pos;
+
+    if (check_int_multiply(ss->width, bpp, &wb) != 0)
+        return gs_note_error(gs_error_undefinedresult);
 
     if (ss->width > max_int / bpp)
         return ERRC;
