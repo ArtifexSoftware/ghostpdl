@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -914,8 +914,8 @@ pcl_show_chars_slow(pcl_state_t * pcs,
             } else {
                 if (use_rmargin && (pcs->cap.x == rmargin))
                     break;
-                else if (pcs->cap.x >= page_size) {
-                    pcs->cap.x = page_size;
+                else if (pcs->cap.x >= (coord)page_size) {
+                    pcs->cap.x = (coord)page_size;
                     break;
                 }
             }
@@ -972,18 +972,18 @@ pcl_show_chars_slow(pcl_state_t * pcs,
          * this is the case, go back to the original position.
          */
         if (pcs->last_was_BS) {
-            pcs->cap.x += pcs->last_width;
+            pcs->cap.x += (coord)pcs->last_width;
             pcs->last_was_BS = false;
         } else
-            pcs->cap.x += width;
+            pcs->cap.x += (coord)width;
 
         /* check for going beyond the margin if not wrapping */
         if (!wrap) {
             if (use_rmargin && (pcs->cap.x > rmargin)) {
-                pcs->cap.x = rmargin;
+                pcs->cap.x = (coord)rmargin;
                 break;
-            } else if (pcs->cap.x >= page_size) {
-                pcs->cap.x = page_size;
+            } else if (pcs->cap.x >= (coord)page_size) {
+                pcs->cap.x = (coord)page_size;
                 break;
             }
         }
