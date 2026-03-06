@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1510,7 +1510,7 @@ create_named_profile(gs_memory_t *mem, cmm_profile_t *named_profile)
         if (namedcolor_data[k].colorant_name == NULL) {
             /* Free up all that has been allocated so far */
             for (j = 0; j < k; j++) {
-                gs_free(mem, namedcolor_table, 1, namedcolor_data[j].name_size+1,
+                gs_free(mem, namedcolor_data[j].colorant_name, 1, namedcolor_data[j].name_size+1,
                     "create_named_profile");
             }
             gs_free(mem, namedcolor_data, num_entries, sizeof(gsicc_namedcolor_t),
