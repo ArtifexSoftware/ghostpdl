@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -977,7 +977,7 @@ run_stdin:
                 /* Slightly uncomfortable calling back up to a higher
                  * level, but we'll live with it. */
                 code = gsapi_set_param(gs_lib_ctx_get_interp_instance(minst->heap),
-                                       adef, eqp, gs_spt_parsed);
+                                       adef, eqp, gs_spt_parsed | gs_spt_more_to_come);
                 if (code < 0) {
                     arg_free((char *)adef, minst->heap);
                     return code;
