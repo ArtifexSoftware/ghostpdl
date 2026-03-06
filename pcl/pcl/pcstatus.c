@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -226,12 +226,9 @@ status_put_font(stream * s, pcl_state_t * pcs,
         void *value;
 
         idlist = (ushort *) gs_alloc_bytes(pcs->memory,
-                                           pl_dict_length(&pcs->
-                                                          soft_symbol_sets,
-                                                          false) +
-                                           pl_dict_length(&pcs->
-                                                          built_in_symbol_sets,
-                                                          false),
+                                           sizeof(ushort) *
+                                           (pl_dict_length(&pcs-> soft_symbol_sets, false) +
+                                           pl_dict_length(&pcs-> built_in_symbol_sets, false)),
                                            "status_fonts(idlist)");
         if (idlist == NULL)
             return e_Memory;
