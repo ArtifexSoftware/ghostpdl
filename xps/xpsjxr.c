@@ -170,7 +170,7 @@ xps_decode_jpegxr_alpha_block(jxr_image_t image, int mx, int my, int *data)
     {
         if (my + y >= output->height)
             return;
-        p = output->alpha + (my + y) * output->width + mx;
+        p = output->alpha + (my + y) * (size_t)output->width + mx;
         for (x = 0; x < 16; x++)
         {
             if (mx + x >= output->width)
