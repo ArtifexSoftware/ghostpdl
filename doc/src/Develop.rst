@@ -1,4 +1,4 @@
-.. Copyright (C) 2001-2025 Artifex Software, Inc.
+.. Copyright (C) 2001-2026 Artifex Software, Inc.
 .. All Rights Reserved.
 
 .. title:: Information for Ghostscript Developers
@@ -1284,9 +1284,7 @@ Note that the value.pdict, value.refs, or value.packed member of a ref must poin
 
 Files:
    psi/ialloc.c, psi/ialloc.h, psi/iastate.h, psi/iastruct.h, psi/ilocate.c, psi/imemory.h, psi/istruct.h.
-   save/.forgetsave/restore
-
-In addition to save and restore, Ghostscript provides a .forgetsave operator that makes things as though a given save had never happened. (In data base terminology, save is "begin transaction", restore is "abort transaction", and .forgetsave is "end/commit transaction"). .forgetsave was implemented for a specific commercial customer (who may no longer even be using it): it was a pain to make work, but it's in the code now, and should be maintained. See the extensive comments in psi/isave.c for more information about how these operations work.
+   save/restore
 
 Files:
    psi/idosave.h, psi/isave.c, psi/isave.h, psi/isstate.h, psi/store.h.

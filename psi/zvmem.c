@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -433,60 +433,10 @@ zvmstatus(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-/* ------ Non-standard extensions ------ */
-
-/* <save> .forgetsave - */
-static int
-zforgetsave(i_ctx_t *i_ctx_p)
-{
-    alloc_save_t *asave;
-    vm_save_t *vmsave;
-    int code = restore_check_operand(i_ctx_p, &asave, idmemory);
-
-    if (code < 0)
-        return 0;
-    vmsave = alloc_save_client_data(asave);
-    /* Reset l_new in all stack entries if the new save level is zero. */
-    restore_fix_stack(i_ctx_p, &o_stack, asave, false);
-    restore_fix_stack(i_ctx_p, &e_stack, asave, false);
-    restore_fix_stack(i_ctx_p, &d_stack, asave, false);
-    /*
-     * Forget the gsaves, by deleting the bottom gstate on
-     * the current stack and the top one on the saved stack and then
-     * concatenating the stacks together.
-     */
-    {
-        gs_gstate *pgs = igs;
-        gs_gstate *last;
-
-        while (gs_gstate_saved(last = gs_gstate_saved(pgs)) != 0)
-            pgs = last;
-        gs_gstate_swap_saved(last, vmsave->gsave);
-        gs_grestore(last);
-        gs_grestore(last);
-    }
-    /* Forget the save in the memory manager. */
-    code = alloc_forget_save_in(idmemory, asave);
-    if (code < 0)
-        return code;
-    {
-        uint space = icurrent_space;
-
-        ialloc_set_space(idmemory, avm_local);
-        /* See above for why we clear the gsave pointer here. */
-        vmsave->gsave = 0;
-        ifree_object(vmsave, "zrestore");
-        ialloc_set_space(idmemory, space);
-    }
-    pop(1);
-    return 0;
-}
-
 /* ------ Initialization procedure ------ */
 
 const op_def zvmem_op_defs[] =
 {
-    {"1.forgetsave", zforgetsave},
     {"1restore", zrestore},
     {"0save", zsave},
     {"0vmstatus", zvmstatus},

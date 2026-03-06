@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -138,7 +138,7 @@ $(PSOBJ)iname.$(OBJ) : $(PSSRC)iname.c $(GH) $(memory__h) $(string__h)\
 $(PSOBJ)isave.$(OBJ) : $(PSSRC)isave.c $(GH) $(memory__h)\
  $(ierrors_h) $(gsexit_h) $(gsstruct_h) $(gsutil_h)\
  $(iastate_h) $(iname_h) $(inamedef_h) $(isave_h) $(isstate_h) $(ivmspace_h)\
- $(ipacked_h) $(store_h) $(stream_h) $(igc_h) $(icstate_h) $(gsstate_h) \
+ $(ipacked_h) $(store_h) $(igc_h) $(icstate_h) $(gsstate_h) \
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)isave.$(OBJ) $(C_) $(PSSRC)isave.c
 
