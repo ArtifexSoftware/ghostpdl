@@ -1327,8 +1327,10 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
 
                     code = a_font->serialize_tt_font(a_font, own_font_data,
                                           open_args.memory_size);
-                    if (code < 0)
+                    if (code < 0) {
+                        FF_free(s->ftmemory, own_font_data);
                         return code;
+                    }
                 }
 
                 /* We always load incrementally. */
