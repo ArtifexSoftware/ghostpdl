@@ -346,6 +346,8 @@ font11_substitute_glyph_index_vertical(gs_font_type42 *pfont, uint glyph_index,
                     ei = i;
                 else
                     bi = i;
+                if (bi <= 0) /* Broken data */
+                    break;
             }
         }
     }
