@@ -490,7 +490,7 @@ xps_decode_tiff_jpeg(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, b
 }
 
 static inline int
-getcomp(byte *line, int x, int bpc)
+getcomp(byte *line, size_t x, int bpc)
 {
     switch (bpc)
     {
@@ -504,7 +504,7 @@ getcomp(byte *line, int x, int bpc)
 }
 
 static inline void
-putcomp(byte *line, int x, int bpc, int value)
+putcomp(byte *line, size_t x, int bpc, int value)
 {
     int maxval = (1 << bpc) - 1;
 
@@ -539,10 +539,10 @@ xps_unpredict_tiff(byte *line, int width, int comps, int bits)
     {
         for (k = 0; k < comps; k++)
         {
-            v = getcomp(line, i * comps + k, bits);
+            v = getcomp(line, (size_t)i * comps + k, bits);
             v = v + left[k];
             v = v % (1 << bits);
-            putcomp(line, i * comps + k, bits, v);
+            putcomp(line, (size_t)i * comps + k, bits, v);
             left[k] = v;
         }
     }
@@ -556,14 +556,14 @@ xps_unassocalpha_tiff(byte *line, int width, int comps, int bits)
 
     for (i = 0; i < width; i++)
     {
-        a = getcomp(line, i * comps + (comps - 1), bits);
+        a = getcomp(line, (size_t)i * comps + (comps - 1), bits);
         for (k = 0; k < (comps - 1); k++)
         {
             if (a > 0)
             {
-                v = getcomp(line, i * comps + k, bits);
+                v = getcomp(line, (size_t)i * comps + k, bits);
                 v = (v * m) / a;
-                putcomp(line, i * comps + k, bits, v);
+                putcomp(line, (size_t)i * comps + k, bits, v);
             }
         }
     }
@@ -579,10 +579,10 @@ xps_invert_tiff(byte *line, int width, int comps, int bits, int alpha)
     {
         for (k = 0; k < comps; k++)
         {
-            v = getcomp(line, i * comps + k, bits);
+            v = getcomp(line, (size_t)i * comps + k, bits);
             if (!alpha || k < comps - 1)
                 v = m - v;
-            putcomp(line, i * comps + k, bits, v);
+            putcomp(line, (size_t)i * comps + k, bits, v);
         }
     }
 }
@@ -614,15 +614,15 @@ xps_expand_colormap(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
 
     for (y = 0; y < image->height; y++)
     {
-        src = image->samples + (image->stride * y);
-        dst = samples + (stride * y);
+        src = image->samples + ((size_t)image->stride * y);
+        dst = samples + ((size_t)stride * y);
 
         for (x = 0; x < image->width; x++)
         {
             if (tiff->extrasamples)
             {
-                int c = getcomp(src, x * 2, image->bits);
-                int a = getcomp(src, x * 2 + 1, image->bits);
+                int c = getcomp(src, (size_t)x * 2, image->bits);
+                int a = getcomp(src, (size_t)x * 2 + 1, image->bits);
                 *dst++ = tiff->colormap[c + 0] >> 8;
                 *dst++ = tiff->colormap[c + maxval] >> 8;
                 *dst++ = tiff->colormap[c + maxval * 2] >> 8;
@@ -630,7 +630,7 @@ xps_expand_colormap(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
             }
             else
             {
-                int c = getcomp(src, x, image->bits);
+                int c = getcomp(src, (size_t)x, image->bits);
                 *dst++ = tiff->colormap[c + 0] >> 8;
                 *dst++ = tiff->colormap[c + maxval] >> 8;
                 *dst++ = tiff->colormap[c + maxval * 2] >> 8;
@@ -676,6 +676,8 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     image->height = tiff->imagelength;
     image->comps = tiff->samplesperpixel;
     image->bits = tiff->bitspersample;
+    if (image->width <= 0 || image->height <= 0 || image->comps <= 0 || image->bits <= 0)
+        return gs_throw(-1, "bad image dimension");
 
     if (check_64bit_multiply(image->width, image->comps, &stride_bits) ||
         check_64bit_multiply(stride_bits, image->bits, &stride_bits))
@@ -754,8 +756,8 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
         unsigned wlen = image->stride * tiff->rowsperstrip;
         byte *rp = tiff->bp + offset;
 
-        if (wp + wlen > image->samples + image->stride * image->height)
-            wlen = image->samples + image->stride * image->height - wp;
+        if (wp + wlen > image->samples + (size_t)image->stride * image->height)
+            wlen = image->samples + (size_t)image->stride * image->height - wp;
 
         if (rp + rlen > tiff->ep)
             return gs_throw(-1, "strip extends beyond the end of the file");
@@ -806,7 +808,7 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
             for (i = 0; i < rlen; i++)
                 rp[i] = bitrev[rp[i]];
 
-        wp += image->stride * tiff->rowsperstrip;
+        wp += (size_t)image->stride * tiff->rowsperstrip;
         strip ++;
     }
 

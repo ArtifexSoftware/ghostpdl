@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -22,6 +22,7 @@
  */
 
 #include "ghostxps.h"
+#include "gxdevice.h"
 
 /*
  * Un-interleave the alpha channel.
@@ -42,10 +43,10 @@ xps_isolate_alpha_channel_8(xps_context_t *ctx, xps_image_t *image)
 
     for (y = 0; y < image->height; y++)
     {
-        sp = image->samples + image->width * n * y;
-        dp = image->samples + image->width * (n - 1) * y;
-        ap = image->alpha + image->width * y;
-        for (x = 0; x < image->width; x++)
+        sp = image->samples + (size_t)image->width * n * y;
+        dp = image->samples + (size_t)image->width * (n - 1) * y;
+        ap = image->alpha + (size_t)image->width * y;
+        for (x = 0; x < (size_t)image->width; x++)
         {
             for (k = 0; k < n - 1; k++)
                 *dp++ = *sp++;
@@ -73,9 +74,9 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
 
     for (y = 0; y < image->height; y++)
     {
-        sp = ((unsigned short*)image->samples) + (image->width * n * y);
-        dp = ((unsigned short*)image->samples) + (image->width * (n - 1) * y);
-        ap = ((unsigned short*)image->alpha) + (image->width * y);
+        sp = ((unsigned short*)image->samples) + ((size_t)image->width * n * y);
+        dp = ((unsigned short*)image->samples) + ((size_t)image->width * (n - 1) * y);
+        ap = ((unsigned short*)image->alpha) + ((size_t)image->width * y);
         for (x = 0; x < image->width; x++)
         {
             for (k = 0; k < n - 1; k++)
@@ -86,7 +87,7 @@ xps_isolate_alpha_channel_16(xps_context_t *ctx, xps_image_t *image)
 
     image->hasalpha = 0;
     image->comps --;
-    image->stride = image->width * image->comps * 2;
+    image->stride = (size_t)image->width * image->comps * 2;
 }
 
 static int
@@ -239,16 +240,29 @@ xps_paint_image_brush_imp(xps_context_t *ctx, xps_image_t *image, int alpha)
 
     if (alpha)
     {
+        size_t z;
         colorspace = ctx->gray_lin;
         samples = image->alpha;
-        count = (image->width * image->bits + 7) / 8 * image->height;
+        if (check_size_multiply(image->width, image->bits, &z))
+            return gs_throw(-1, "image size overflow");
+        if (z & 7)
+            z = (z>>3)+1;
+        else
+            z = (z>>3);
+
+        if (check_size_multiply(z, image->height, &z))
+            return gs_throw(-1, "image size overflow");
+        if (z > (size_t)UINT_MAX)
+            return gs_throw(-1, "image size overflow");
+        count = z;
         used = 0;
     }
     else
     {
         colorspace = image->colorspace;
         samples = image->samples;
-        count = image->stride * image->height;
+        if (check_int_multiply(image->stride, image->height, (int *)&count))
+            return gs_throw(-1, "image size overflow");
         used = 0;
     }
 

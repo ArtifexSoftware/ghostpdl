@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -243,6 +243,8 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
     image->height = jddp.dinfo.output_height;
     image->comps = jddp.dinfo.output_components;
     image->bits = 8;
+    if (image->width <= 0 || image->height <= 0 || image->comps <= 0 || image->bits <= 0)
+        return gs_throw(-1, "bad image dimension");
     image->stride = image->width * image->comps;
     image->invert_decode = false;
 
@@ -290,7 +292,10 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
         image->yres = 96;
     }
 
-    wlen = image->stride * image->height;
+    if (check_int_multiply(image->stride, image->height, &wlen)) {
+        code = gs_throw(-1, "image dimensions overflow");
+        goto error;
+    }
     wbuf = xps_alloc(ctx, wlen);
     if (!wbuf) {
         code = gs_throw1(gs_error_VMerror, "out of memory allocating samples: %d", wlen);
