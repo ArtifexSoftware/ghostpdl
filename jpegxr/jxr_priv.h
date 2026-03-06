@@ -289,8 +289,8 @@ extern unsigned char _jxr_select_hp_index(jxr_image_t image, unsigned tx, unsign
 # define WIDTH_BLOCKS(image) (((image)->width1 + 16) >> 4)
 # define HEIGHT_BLOCKS(image) (((image)->height1 + 16) >> 4)
 
-# define EXTENDED_WIDTH_BLOCKS(image) (((image)->extended_width) >> 4)
-# define EXTENDED_HEIGHT_BLOCKS(image) (((image)->extended_height) >> 4)
+# define EXTENDED_WIDTH_BLOCKS(image) (((size_t)(image)->extended_width) >> 4)
+# define EXTENDED_HEIGHT_BLOCKS(image) (((size_t)(image)->extended_height) >> 4)
 
 /* TRUE if tiling is supported in this image. */
 # define TILING_FLAG(image) ((image)->header_flags1 & 0x80)
@@ -371,7 +371,7 @@ The k value is 0-14 and addresses the coefficient within the blk. */
 # define MACROBLK_CUR_HPCBP(image,c,tx,mx) (MACROBLK_CUR(image,c,tx,mx).hp_cbp)
 # define MACROBLK_UP1_HPCBP(image,c,tx,mx) (MACROBLK_UP1(image,c,tx,mx).hp_cbp)
 
-extern void _jxr_make_mbstore(jxr_image_t image, int include_up4);
+extern int _jxr_make_mbstore(jxr_image_t image, int include_up4);
 extern void _jxr_fill_strip(jxr_image_t image);
 extern void _jxr_rflush_mb_strip(jxr_image_t image, int tx, int ty, int my);
 extern void _jxr_wflush_mb_strip(jxr_image_t image, int tx, int ty, int my, int read_new);

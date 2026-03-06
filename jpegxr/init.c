@@ -68,6 +68,8 @@ static struct jxr_image* __make_jxr(void)
 {
     struct jxr_image*image = (struct jxr_image*) calloc(1, sizeof(struct jxr_image));
     int idx;
+    if (image == NULL)
+        return NULL;
     image->user_flags = 0;
     image->width1 = 0;
     image->height1 = 0;
@@ -99,7 +101,33 @@ static struct jxr_image* __make_jxr(void)
     return image;
 }
 
-static void make_mb_row_buffer(jxr_image_t image, unsigned use_height)
+static int
+make_mb_row_buffer_aux(jxr_image_t image, int ch, int format_scale, size_t block_count)
+{
+    int*data, *pred_dclp;
+    size_t idx;
+
+    image->mb_row_buffer[ch] = (struct macroblock_s*) calloc(block_count, sizeof(struct macroblock_s));
+    if (image->mb_row_buffer[ch] == NULL)
+        return -1;
+    data = (int*) calloc(block_count*format_scale, sizeof(int));
+    pred_dclp = (int*) calloc(block_count*7, sizeof(int));
+    if (data == NULL || pred_dclp == NULL) {
+        free(data);
+        free(pred_dclp);
+        return -1;
+    }
+
+    for (idx = 0 ; idx < block_count ; idx += 1) {
+        image->mb_row_buffer[ch][idx].data = data + format_scale*idx;
+        /* 7 (used as mutilpier) = 1 DC + 3 top LP + 3 left LP coefficients used for prediction */
+        image->mb_row_buffer[ch][idx].pred_dclp = pred_dclp + 7*idx;
+    }
+
+    return 0;
+}
+
+static int make_mb_row_buffer(jxr_image_t image, unsigned use_height)
 {
     size_t block_count = EXTENDED_WIDTH_BLOCKS(image) * use_height;
     int*data, *pred_dclp;
@@ -107,18 +135,8 @@ static void make_mb_row_buffer(jxr_image_t image, unsigned use_height)
     int format_scale;
     int ch;
 
-    image->mb_row_buffer[0] = (struct macroblock_s*) calloc(block_count, sizeof(struct macroblock_s));
-    data = (int*) calloc(block_count*256, sizeof(int));
-    pred_dclp = (int*) calloc(block_count*7, sizeof(int));
-    assert(image->mb_row_buffer[0]);
-    assert(data);
-    assert(pred_dclp);
-
-    for (idx = 0 ; idx < block_count ; idx += 1) {
-        image->mb_row_buffer[0][idx].data = data + 256*idx;
-        /* 7 (used as mutilpier) = 1 DC + 3 top LP + 3 left LP coefficients used for prediction */
-        image->mb_row_buffer[0][idx].pred_dclp = pred_dclp + 7*idx;
-    }
+    if (make_mb_row_buffer_aux(image, 0, 256, block_count))
+        return -1;
 
     format_scale = 256;
     if (image->use_clr_fmt == 2 /* YUV422 */) {
@@ -128,18 +146,10 @@ static void make_mb_row_buffer(jxr_image_t image, unsigned use_height)
     }
 
     for (ch = 1 ; ch < image->num_channels ; ch += 1) {
-        image->mb_row_buffer[ch] = (struct macroblock_s*) calloc(block_count, sizeof(struct macroblock_s));
-        data = (int*) calloc(block_count*format_scale, sizeof(int));
-        pred_dclp = (int*) calloc(block_count*7, sizeof(int));
-        assert(image->mb_row_buffer[ch]);
-        assert(data);
-        assert(pred_dclp);
-
-        for (idx = 0 ; idx < block_count ; idx += 1) {
-            image->mb_row_buffer[ch][idx].data = data + format_scale*idx;
-            image->mb_row_buffer[ch][idx].pred_dclp = pred_dclp + 7*idx;
-        }
+        if (make_mb_row_buffer_aux(image, ch, format_scale, block_count))
+            return -1;
     }
+    return 0;
 }
 
 /*
@@ -152,7 +162,7 @@ static void make_mb_row_buffer(jxr_image_t image, unsigned use_height)
 * The next 15 are the LP coefficients.
 * The remaining 240 are HP coefficients.
 */
-void _jxr_make_mbstore(jxr_image_t image, int up4_flag)
+int _jxr_make_mbstore(jxr_image_t image, int up4_flag)
 {
     int ch;
 
@@ -165,69 +175,109 @@ void _jxr_make_mbstore(jxr_image_t image, int up4_flag)
     assert(image->num_channels > 0);
 
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
-        unsigned idx;
+        size_t idx;
         if (up4_flag)
+        {
             image->strip[ch].up4 = (struct macroblock_s*)
-            calloc(EXTENDED_WIDTH_BLOCKS(image), sizeof(struct macroblock_s));
+                calloc(EXTENDED_WIDTH_BLOCKS(image), sizeof(struct macroblock_s));
+            if (image->strip[ch].up4 == NULL)
+                return -1;
+        }
         image->strip[ch].up3 = (struct macroblock_s*)
             calloc(EXTENDED_WIDTH_BLOCKS(image), sizeof(struct macroblock_s));
+        if (image->strip[ch].up3 == NULL)
+            return -1;
         image->strip[ch].up2 = (struct macroblock_s*)
             calloc(EXTENDED_WIDTH_BLOCKS(image), sizeof(struct macroblock_s));
+        if (image->strip[ch].up2 == NULL)
+            return -1;
         image->strip[ch].up1 = (struct macroblock_s*)
             calloc(EXTENDED_WIDTH_BLOCKS(image), sizeof(struct macroblock_s));
+        if (image->strip[ch].up1 == NULL)
+            return -1;
         image->strip[ch].cur = (struct macroblock_s*)
             calloc(EXTENDED_WIDTH_BLOCKS(image), sizeof(struct macroblock_s));
+        if (image->strip[ch].cur == NULL)
+            return -1;
 
         if (up4_flag) {
             image->strip[ch].up4[0].data = (int*)calloc(256 * EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+            if (image->strip[ch].up4[0].data == NULL)
+                return -1;
             for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
                 image->strip[ch].up4[idx].data = image->strip[ch].up4[idx-1].data + 256;
         }
         image->strip[ch].up3[0].data = (int*)calloc(256 * EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+        if (image->strip[ch].up3[0].data == NULL)
+            return -1;
         for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
             image->strip[ch].up3[idx].data = image->strip[ch].up3[idx-1].data + 256;
 
         image->strip[ch].up2[0].data = (int*)calloc(256 * EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+        if (image->strip[ch].up2[0].data == NULL)
+            return -1;
         for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
             image->strip[ch].up2[idx].data = image->strip[ch].up2[idx-1].data + 256;
 
         image->strip[ch].up1[0].data = (int*)calloc(256 * EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+        if (image->strip[ch].up1[0].data == NULL)
+            return -1;
         for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
             image->strip[ch].up1[idx].data = image->strip[ch].up1[idx-1].data + 256;
 
         image->strip[ch].cur[0].data = (int*)calloc(256 * EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+        if (image->strip[ch].cur[0].data == NULL)
+            return -1;
         for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
             image->strip[ch].cur[idx].data = image->strip[ch].cur[idx-1].data + 256;
 
         if (up4_flag) {
             image->strip[ch].up4[0].pred_dclp = (int*)calloc(7*EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+            if (image->strip[ch].up4[0].pred_dclp == NULL)
+                return -1;
             for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
                 image->strip[ch].up4[idx].pred_dclp = image->strip[ch].up4[idx-1].pred_dclp + 7;
         }
 
         image->strip[ch].up3[0].pred_dclp = (int*)calloc(7*EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+        if (image->strip[ch].up3[0].pred_dclp == NULL)
+            return -1;
         for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
             image->strip[ch].up3[idx].pred_dclp = image->strip[ch].up3[idx-1].pred_dclp + 7;
 
         image->strip[ch].up2[0].pred_dclp = (int*)calloc(7*EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+        if (image->strip[ch].up2[0].pred_dclp == NULL)
+            return -1;
         for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
             image->strip[ch].up2[idx].pred_dclp = image->strip[ch].up2[idx-1].pred_dclp + 7;
 
         image->strip[ch].up1[0].pred_dclp = (int*)calloc(7*EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+        if (image->strip[ch].up1[0].pred_dclp == NULL)
+            return -1;
         for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
             image->strip[ch].up1[idx].pred_dclp = image->strip[ch].up1[idx-1].pred_dclp + 7;
 
         image->strip[ch].cur[0].pred_dclp = (int*)calloc(7*EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+        if (image->strip[ch].cur[0].pred_dclp == NULL)
+            return -1;
         for (idx = 1 ; idx < EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
             image->strip[ch].cur[idx].pred_dclp = image->strip[ch].cur[idx-1].pred_dclp + 7;
 
         if(ch!= 0)
         {
             if(image->use_clr_fmt == 2 || image->use_clr_fmt == 1) /* 422 or 420 */
+            {
                 image->strip[ch].upsample_memory_x = (int*)calloc(16, sizeof(int));
+                if (image->strip[ch].upsample_memory_x == NULL)
+                    return -1;
+            }
 
             if(image->use_clr_fmt == 1)/* 420 */
+            {
                 image->strip[ch].upsample_memory_y = (int*)calloc(8*EXTENDED_WIDTH_BLOCKS(image), sizeof(int));
+                if (image->strip[ch].upsample_memory_y == NULL)
+                    return -1;
+            }
         }
         
     }
@@ -236,7 +286,8 @@ void _jxr_make_mbstore(jxr_image_t image, int up4_flag)
     that can hold an entire row of tiles. */
     if (FREQUENCY_MODE_CODESTREAM_FLAG(image)) { /* FREQUENCY MODE */
 
-        make_mb_row_buffer(image, EXTENDED_HEIGHT_BLOCKS(image));
+        if (make_mb_row_buffer(image, EXTENDED_HEIGHT_BLOCKS(image)))
+            return -1;
 
     } else { /* SPATIAL */
         if (INDEXTABLE_PRESENT_FLAG(image)) { 
@@ -250,7 +301,8 @@ void _jxr_make_mbstore(jxr_image_t image, int up4_flag)
                     max_tile_height = image->tile_row_height[idx];
             }
 
-            make_mb_row_buffer(image, max_tile_height);
+            if (make_mb_row_buffer(image, max_tile_height))
+                return -1;
 
             /* Save enough context MBs for 4 rows of
             macroblocks. */
@@ -266,8 +318,12 @@ void _jxr_make_mbstore(jxr_image_t image, int up4_flag)
                 int count = (ch==0)? 256 : format_scale;
                 image->mb_row_context[ch] = (struct macroblock_s*)
                     calloc(4*EXTENDED_WIDTH_BLOCKS(image), sizeof(struct macroblock_s));
+                if (image->mb_row_context[ch] == NULL)
+                    return -1;
                 image->mb_row_context[ch][0].data = (int*)
                     calloc(4*EXTENDED_WIDTH_BLOCKS(image)*count, sizeof(int));
+                if (image->mb_row_context[ch][0].data == NULL)
+                    return -1;
                 for (idx = 1 ; idx < 4*EXTENDED_WIDTH_BLOCKS(image) ; idx += 1)
                     image->mb_row_context[ch][idx].data = image->mb_row_context[ch][idx-1].data+count;
             }
@@ -281,11 +337,17 @@ void _jxr_make_mbstore(jxr_image_t image, int up4_flag)
     if (image->tile_columns > 1) {
         image->model_hp_buffer = (struct model_s*)
             calloc(image->tile_columns, sizeof(struct model_s));
+        if (image->model_hp_buffer == NULL)
+            return -1;
         image->hp_cbp_model_buffer = (struct cbp_model_s*)
             calloc(image->tile_columns, sizeof(struct cbp_model_s));
+        if (image->hp_cbp_model_buffer == NULL)
+            return -1;
     }
 
     image->cur_my = -1;
+
+    return 0;
 }
 
 jxr_image_t jxr_create_input(void)
@@ -303,6 +365,8 @@ jxr_image_t jxr_create_image(int width, int height, unsigned char * windowing)
         return 0;
 
     image = __make_jxr();
+    if (image == NULL)
+        return 0;
 
     if (windowing[0] == 1) {
         assert(((width+windowing[2]+windowing[4]) & 0x0f) == 0);

@@ -319,7 +319,8 @@ int jxr_write_image_bitstream(jxr_image_t image, FILE*fd)
             image->alpha->strip[0].up1 = image->alpha->strip[0].cur = NULL;
        
         jxr_set_INTERNAL_CLR_FMT(image->alpha, JXR_YONLY, 1);
-        _jxr_make_mbstore(image->alpha, 1);
+        rc = _jxr_make_mbstore(image->alpha, 1);
+        assert(rc >= 0);
         image->alpha->dc_component_mode = image->alpha->lp_component_mode = image->alpha->hp_component_mode = JXR_CM_UNIFORM;
         image->alpha->primary = 0;
         image->alpha->cur_my = -5;

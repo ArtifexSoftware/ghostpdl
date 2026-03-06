@@ -722,6 +722,15 @@ static inline uint32_t check_uint32_multiply(uint32_t x, uint32_t y, uint32_t *r
     return 0;
 }
 
+static inline size_t check_size_multiply(size_t x, size_t y, size_t *result)
+{
+    *result = x * y;
+
+    if (x != 0 && (*result) / x != y)
+        return (size_t)-1;
+    return 0;
+}
+
 int gx_init_non_threadsafe_device(gx_device *dev);
 
 

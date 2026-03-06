@@ -1430,6 +1430,8 @@ static int decompress_image(FILE *fd, jxr_container_t container, void *output_ha
 {
     int rc, idx;
     *pImage = jxr_create_input();
+    if (*pImage == NULL)
+        return -1;
     jxr_set_block_output(*pImage, write_file);
     jxr_set_pixel_format(*pImage, jxrc_image_pixelformat(container, 0));
     jxr_set_user_data(*pImage, output_handle);

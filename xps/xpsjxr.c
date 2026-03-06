@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -23,6 +23,7 @@
 #endif
 
 #include "jpegxr.h"
+#include "gxdevice.h"
 
 struct state { xps_context_t *ctx; xps_image_t *output; };
 
@@ -91,14 +92,18 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
 
     if (!output->samples)
     {
+        size_t z;
         gs_color_space *old_cs;
         output->width = jxr_get_IMAGE_WIDTH(image);
         output->height = jxr_get_IMAGE_HEIGHT(image);
         output->comps = jxr_get_IMAGE_CHANNELS(image);
         output->hasalpha = jxr_get_ALPHACHANNEL_FLAG(image);
         output->bits = 8;
-        output->stride = output->width * output->comps;
-        output->samples = xps_alloc(ctx, (size_t)output->stride * output->height);
+        if (check_int_multiply(output->width, output->comps, &output->stride))
+            gs_throw(gs_error_VMerror, "image too large\n");
+        if (check_size_multiply(output->stride, output->height, &z))
+            gs_throw(gs_error_VMerror, "image too large\n");
+        output->samples = xps_alloc(ctx, z);
         if (!output->samples) {
             gs_throw(gs_error_VMerror, "out of memory: output->samples.\n");
             return;
@@ -125,7 +130,7 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
     {
         if (my + y >= output->height)
             return;
-        p = output->samples + (my + y) * output->stride + mx * output->comps;
+        p = output->samples + (my + y) * (size_t)output->stride + mx * output->comps;
         for (x = 0; x < 16; x++)
         {
             if (mx + x >= output->width)
@@ -225,6 +230,11 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     output->invert_decode = false;
 
     image = jxr_create_input();
+    if (image == NULL) {
+        xps_free(ctx, name);
+        jxr_destroy_container(container);
+        return gs_throw(-1, "jxr creation failed");
+    }
     jxr_set_PROFILE_IDC(image, 111);
     jxr_set_LEVEL_IDC(image, 255);
     jxr_set_pixel_format(image, jxrc_image_pixelformat(container, 0));
@@ -262,6 +272,11 @@ xps_decode_jpegxr(xps_context_t *ctx, byte *buf, int len, xps_image_t *output)
     if (alpha_offset > 0)
     {
         image = jxr_create_input();
+        if (image == NULL) {
+            xps_free(ctx, name);
+            jxr_destroy_container(container);
+            return gs_throw(-1, "jxr creation failed");
+        }
         jxr_set_PROFILE_IDC(image, 111);
         jxr_set_LEVEL_IDC(image, 255);
         jxr_set_pixel_format(image, jxrc_image_pixelformat(container, 0));

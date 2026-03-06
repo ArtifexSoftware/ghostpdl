@@ -113,7 +113,9 @@ int jxr_read_image_bitstream(jxr_image_t image, FILE*fd)
     if (rc < 0) return rc;
 
     /* Make image structures that need header details. */
-    _jxr_make_mbstore(image, 0);
+    rc = _jxr_make_mbstore(image, 0);
+    if (rc < 0)
+        return rc;
 
     /* If there is an alpa channel, process the image place header
     for it. */
@@ -121,6 +123,8 @@ int jxr_read_image_bitstream(jxr_image_t image, FILE*fd)
         int ch;
 
         image->alpha = jxr_create_input();
+        if (image->alpha == NULL)
+            return -1;
         *image->alpha = *image;
 
         rc = r_image_plane_header(image->alpha, &bits, 1);
@@ -129,7 +133,9 @@ int jxr_read_image_bitstream(jxr_image_t image, FILE*fd)
         for(ch = 0; ch < image->num_channels; ch ++)
             memset(&image->alpha->strip[ch], 0, sizeof(image->alpha->strip[ch]));
 
-        _jxr_make_mbstore(image->alpha, 0);
+        rc = _jxr_make_mbstore(image->alpha, 0);
+        if (rc < 0)
+            return rc;
         image->alpha->primary = 0;
     }
 
