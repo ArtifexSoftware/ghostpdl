@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -29,6 +29,7 @@
 #include "szlibx.h"
 #include "scfx.h"
 #include "memory_.h"
+#include "gxdevice.h"
 
 /*
  * TIFF image loader. Should be enough to support TIFF files in XPS.
@@ -231,6 +232,8 @@ readlong(xps_tiff_t *tiff, unsigned int *v)
 static int
 xps_decode_tiff_uncompressed(xps_context_t *ctx, xps_tiff_t *tiff, byte *rp, byte *rl, byte *wp, byte *wl)
 {
+    if (rl - rp != wl - wp)
+        return gs_throw(-1, "mismatch in data sizes");
     memcpy(wp, rp, wl - wp);
     return gs_okay;
 }
@@ -660,6 +663,7 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     unsigned row;
     unsigned strip;
     unsigned i;
+    int64_t stride_bits;
     gs_color_space *old_cs;
 
     if (!tiff->rowsperstrip || !tiff->stripoffsets || !tiff->rowsperstrip)
@@ -672,7 +676,14 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     image->height = tiff->imagelength;
     image->comps = tiff->samplesperpixel;
     image->bits = tiff->bitspersample;
-    image->stride = (image->width * image->comps * image->bits + 7) / 8;
+
+    if (check_64bit_multiply(image->width, image->comps, &stride_bits) ||
+        check_64bit_multiply(stride_bits, image->bits, &stride_bits))
+        return gs_throw(-1, "image is too large");
+    stride_bits = (stride_bits + 7) / 8;
+    if (stride_bits > (int64_t)INT_MAX)
+        return gs_throw(-1, "image is too large");
+    image->stride = (int)stride_bits;
     image->invert_decode = false;
 
     old_cs = image->colorspace;
