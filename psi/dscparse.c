@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -637,8 +637,10 @@ dsc_add_page(CDSC *dsc, int ordinal, char *label)
     if (dsc->page_count >= dsc->page_chunk_length) {
         CDSCPAGE *new_page = (CDSCPAGE *)dsc_memalloc(dsc,
             (size_t)(CDSC_PAGE_CHUNK+dsc->page_count) * sizeof(CDSCPAGE));
-        if (new_page == NULL)
+        if (new_page == NULL) {
+            dsc->page_count--;
             return CDSC_ERROR;	/* out of memory */
+        }
         memcpy(new_page, dsc->page,
             dsc->page_count * sizeof(CDSCPAGE));
         dsc_memfree(dsc, dsc->page);
@@ -3777,7 +3779,9 @@ dsc_parse_page(CDSC *dsc)
     }
 
     page_number = dsc->page_count;
-    dsc_add_page(dsc, page_ordinal, page_label);
+    if (dsc_add_page(dsc, page_ordinal, page_label) == CDSC_ERROR)
+        return CDSC_ERROR;	/* no memory */
+
     dsc->page[page_number].begin = DSC_START(dsc);
     dsc->page[page_number].end = DSC_START(dsc);
 
