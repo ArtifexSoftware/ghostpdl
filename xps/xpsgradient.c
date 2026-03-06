@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -56,10 +56,10 @@ static int
 xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
     struct stop *stops, int maxcount)
 {
-    unsigned short sample_in[8], sample_out[8]; /* XPS allows up to 8 bands */
+    unsigned short sample_in[XPS_MAX_COLORS], sample_out[XPS_MAX_COLORS]; /* XPS allows up to 8 bands */
     gsicc_rendering_param_t rendering_params;
     gsicc_link_t *icclink = 0;
-    float sample[8];
+    float sample[XPS_MAX_COLORS];
     int before, after;
     int count;
     int i, k;
