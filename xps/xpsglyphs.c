@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -470,6 +470,14 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
             code_count = 1;
         if (glyph_count < 1)
             glyph_count = 1;
+        /* HACK. Impose an upper limit on code_count and glyph_count as a
+         * workaround for Bug 709192 Issue 558. An Indices value of
+         * (1:50000000) will cause us to generate 50000000 chars to
+         * render. */
+        if (code_count > 9)
+            code_count = 9;
+        if (glyph_count > 9)
+            glyph_count = 9;
 
         while (code_count--)
         {
