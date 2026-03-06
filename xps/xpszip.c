@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -341,7 +341,6 @@ xps_read_zip_part(xps_context_t *ctx, const char *partname)
     xps_entry_t *ent;
     xps_part_t *part;
     int count, size, offset, i;
-    int last_size;
     int code = 0;
     const char *name;
     int seen_last = 0;
@@ -384,15 +383,13 @@ xps_read_zip_part(xps_context_t *ctx, const char *partname)
         if (!ent)
             break;
         count ++;
-        last_size = size;
-        size += ent->usize;
-
         /* check for integer overflow */
-        if (size < last_size)
+        if (size > INT_MAX - ent->usize)
         {
             gs_throw1(-1, "part '%s' is too large", partname);
             return NULL;
         }
+        size += ent->usize;
     }
     if (!seen_last)
     {
