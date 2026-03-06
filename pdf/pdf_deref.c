@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2025 Artifex Software, Inc.
+/* Copyright (C) 2020-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -815,10 +815,14 @@ static int pdfi_deref_compressed(pdf_context *ctx, uint64_t obj, uint64_t gen, p
      * how many bytes we'd read, which would avoid us having to tear down and
      * rebuild the stream.
      */
-    if (compressed_stream)
+    if (compressed_stream) {
         pdfi_close_file(ctx, compressed_stream);
-    if (SubFile_stream)
+        compressed_stream = NULL;
+    }
+    if (SubFile_stream) {
         pdfi_close_file(ctx, SubFile_stream);
+        SubFile_stream = NULL;
+    }
 
     code = pdfi_seek(ctx, ctx->main_stream, pdfi_stream_offset(ctx, compressed_object), SEEK_SET);
     if (code < 0)
