@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1754,7 +1754,7 @@ int pdfi_add_paths_to_search_paths(pdf_context *ctx, const char *ppath, int l, b
             memset(pathstrings, 0x00, sizeof(gs_param_string) * (npaths + ctx->search_paths.num_font_paths));
 
             for (i = 0; i < ctx->search_paths.num_font_paths; i++) {
-                pathstrings[ctx->search_paths.num_font_paths + i] = ctx->search_paths.font_paths[i];
+                pathstrings[npaths + i] = ctx->search_paths.font_paths[i];
             }
             gs_free_object(ctx->memory, ctx->search_paths.font_paths, "old array of paths");
             ctx->search_paths.font_paths = pathstrings;
