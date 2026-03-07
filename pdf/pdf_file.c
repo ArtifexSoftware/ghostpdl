@@ -1480,6 +1480,7 @@ int pdfi_open_memory_stream_from_filtered_stream(pdf_context *ctx, pdf_stream *s
         gs_free_object(ctx->memory, *Buffer, "pdfi_open_memory_stream_from_filtered_stream");
         *Buffer = NULL;
         *new_pdf_stream = NULL;
+        return code;
     }
     return (int)bufferlen;
 }
