@@ -179,11 +179,10 @@ pdfi_parse_type4_func_stream(pdf_context *ctx, pdf_c_stream *function_stream, in
                     depth++;
                 } else {
                     /* recursion, move on 3 bytes, and parse the sub level */
-                    if (depth++ == MAX_PSC_FUNCTION_NESTING)
+                    if (depth == MAX_PSC_FUNCTION_NESTING)
                         return_error (gs_error_syntaxerror);
                     *size += 3;
                     code = pdfi_parse_type4_func_stream(ctx, function_stream, depth + 1, ops, size);
-                    depth --;
                     if (code < 0)
                         return code;
                     if (p) {
