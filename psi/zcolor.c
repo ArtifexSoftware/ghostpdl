@@ -3879,6 +3879,9 @@ static int validateseparationspace(i_ctx_t * i_ctx_p, ref **space)
     /* and also not /Separation */
     if (r_size(&sref) == 9 && strncmp((const char *)sref.value.const_bytes, "Separation", 9) == 0)
         return_error(gs_error_typecheck);
+    /* or /ICCBased */
+    if (r_size(&sref) == 8 && strncmp((const char *)sref.value.const_bytes, "ICCBased", 8) == 0)
+           return_error(gs_error_typecheck);
 
     ref_assign(*space, &altspace);
     return 0;
@@ -4705,6 +4708,9 @@ static int validatedevicenspace(i_ctx_t * i_ctx_p, ref **space)
     }
     /* and also not /Separation */
     if (r_size(&sref) == 9 && strncmp((const char *)sref.value.const_bytes, "Separation", 9) == 0)
+           return_error(gs_error_typecheck);
+    /* or /ICCBased */
+    if (r_size(&sref) == 8 && strncmp((const char *)sref.value.const_bytes, "ICCBased", 8) == 0)
            return_error(gs_error_typecheck);
 
     ref_assign(*space, &altspace);
@@ -6622,20 +6628,7 @@ static int validateiccspace(i_ctx_t * i_ctx_p, ref **r)
             if (sref.value.bytes && strncmp((const char *)sref.value.bytes, "Pattern", 7) == 0)
                 return_error(gs_error_typecheck);
         } else {
-            if (r_is_array(tempref)) {
-                code = array_get(imemory, tempref, 0, &valref);
-                if (code < 0)
-                    return code;
-                if (!r_has_type(&valref, t_name) && !r_has_type(&valref, t_string))
-                    return_error(gs_error_typecheck);
-                if (r_has_type(&valref, t_name))
-                    name_string_ref(imemory, &valref, &sref);
-                else
-                    sref.value.bytes = valref.value.bytes;
-                if (sref.value.bytes && strncmp((const char *)sref.value.bytes, "Pattern", 7) == 0)
-                    return_error(gs_error_typecheck);
-            } else
-                return_error(gs_error_typecheck);
+            return_error(gs_error_typecheck);
         }
     } else {
         ref nameref;
