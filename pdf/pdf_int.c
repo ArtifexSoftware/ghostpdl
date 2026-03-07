@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -154,6 +154,9 @@ int pdfi_read_bare_int(pdf_context *ctx, pdf_c_stream *s, int *parsed_int)
     int index = 0;
     int int_val = 0;
     int negative = 0;
+    int tenth_max_int = max_int / 10, tenth_max_uint = max_uint / 10;
+    bool overflowed = false;
+    int code = 0;
 
 restart:
     pdfi_skip_white(ctx, s);
@@ -177,7 +180,16 @@ restart:
         }
 
         if (c >= '0' && c <= '9') {
-            int_val = int_val*10 + c - '0';
+            if (!overflowed) {
+                if ((negative && int_val <= tenth_max_int) || (!negative && int_val <= tenth_max_uint))
+                    int_val = int_val*10 + c - '0';
+                else {
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_NUMBEROVERFLOW, "pdfi_read_num", NULL)) < 0) {
+                        return code;
+                    }
+                    overflowed = true;
+                }
+            }
         } else if (c == '.') {
             goto error;
         } else if (c == 'e' || c == 'E') {
