@@ -380,30 +380,38 @@ static int pdfi_shading4(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, Shading, stream_dict, page_dict);
     if (code < 0)
-        return code;
+        goto error;
 
     /* pdfi_build_mesh_shading checks the type of the Shading object, so we don't need to here */
     code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
     if (code < 0)
-        return code;
+        goto error;
 
     code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerFlag", &i);
     if (code < 0)
-        return code;
+        goto error;
 
-    if (i != 2 && i != 4 && i != 8)
-        return_error(gs_error_rangecheck);
+    if (i != 2 && i != 4 && i != 8) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto error;
+    }
 
     params.BitsPerFlag = i;
 
     code = gs_shading_FfGt_init(ppsh, &params, ctx->memory);
-    if (code < 0) {
-        gs_function_free(params.Function, true, ctx->memory);
-        params.Function = NULL;
-        gs_free_object(ctx->memory, params.Decode, "Decode");
-        return code;
-    }
+    if (code < 0)
+        goto error;
     return 0;
+
+error:
+    if (params.Function)
+        pdfi_free_function(ctx, params.Function);
+    if (params.DataSource.data.strm != NULL) {
+        s_close_filters(&params.DataSource.data.strm, params.DataSource.data.strm->strm);
+        gs_free_object(ctx->memory, params.DataSource.data.strm, "release mesh shading Data Source");
+    }
+    gs_free_object(ctx->memory, params.Decode, "Decode");
+    return code;
 }
 
 static int pdfi_shading5(pdf_context *ctx, gs_shading_params_t *pcommon,
@@ -420,30 +428,39 @@ static int pdfi_shading5(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, Shading, stream_dict, page_dict);
     if (code < 0)
-        return code;
+        goto error;
 
     /* pdfi_build_mesh_shading checks the type of the Shading object, so we don't need to here */
     code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
     if (code < 0)
-        return code;
+        goto error;
 
     code = pdfi_dict_get_int(ctx, shading_dict, "VerticesPerRow", &i);
     if (code < 0)
-        return code;
+        goto error;
 
-    if (i < 2)
-        return_error(gs_error_rangecheck);
+    if (i < 2) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto error;
+    }
 
     params.VerticesPerRow = i;
 
     code = gs_shading_LfGt_init(ppsh, &params, ctx->memory);
-    if (code < 0) {
-        gs_function_free(params.Function, true, ctx->memory);
-        params.Function = NULL;
-        gs_free_object(ctx->memory, params.Decode, "Decode");
-        return code;
-    }
+    if (code < 0)
+        goto error;
+
     return 0;
+
+error:
+    if (params.Function)
+        pdfi_free_function(ctx, params.Function);
+    if (params.DataSource.data.strm != NULL) {
+        s_close_filters(&params.DataSource.data.strm, params.DataSource.data.strm->strm);
+        gs_free_object(ctx->memory, params.DataSource.data.strm, "release mesh shading Data Source");
+    }
+    gs_free_object(ctx->memory, params.Decode, "Decode");
+    return code;
 }
 
 static int pdfi_shading6(pdf_context *ctx, gs_shading_params_t *pcommon,
@@ -460,30 +477,38 @@ static int pdfi_shading6(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, Shading, stream_dict, page_dict);
     if (code < 0)
-        return code;
+        goto error;
 
     /* pdfi_build_mesh_shading checks the type of the Shading object, so we don't need to here */
     code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
     if (code < 0)
-        return code;
+        goto error;
 
     code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerFlag", &i);
     if (code < 0)
-        return code;
+        goto error;
 
-    if (i != 2 && i != 4 && i != 8)
-        return_error(gs_error_rangecheck);
+    if (i != 2 && i != 4 && i != 8) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto error;
+    }
 
     params.BitsPerFlag = i;
 
     code = gs_shading_Cp_init(ppsh, &params, ctx->memory);
-    if (code < 0) {
-        gs_function_free(params.Function, true, ctx->memory);
-        params.Function = NULL;
-        gs_free_object(ctx->memory, params.Decode, "Decode");
-        return code;
-    }
+    if (code < 0)
+        goto error;
     return 0;
+
+error:
+    if (params.Function)
+        pdfi_free_function(ctx, params.Function);
+    if (params.DataSource.data.strm != NULL) {
+        s_close_filters(&params.DataSource.data.strm, params.DataSource.data.strm->strm);
+        gs_free_object(ctx->memory, params.DataSource.data.strm, "release mesh shading Data Source");
+    }
+    gs_free_object(ctx->memory, params.Decode, "Decode");
+    return code;
 }
 
 static int pdfi_shading7(pdf_context *ctx, gs_shading_params_t *pcommon,
@@ -500,7 +525,7 @@ static int pdfi_shading7(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = pdfi_build_mesh_shading(ctx, (gs_shading_mesh_params_t *)&params, Shading, stream_dict, page_dict);
     if (code < 0)
-        return code;
+        goto error;
 
     /* pdfi_build_mesh_shading checks the type of the Shading object, so we don't need to here */
     code = pdfi_dict_from_obj(ctx, Shading, &shading_dict);
@@ -509,21 +534,29 @@ static int pdfi_shading7(pdf_context *ctx, gs_shading_params_t *pcommon,
 
     code = pdfi_dict_get_int(ctx, shading_dict, "BitsPerFlag", &i);
     if (code < 0)
-        return code;
+        goto error;
 
-    if (i != 2 && i != 4 && i != 8)
-        return_error(gs_error_rangecheck);
+    if (i != 2 && i != 4 && i != 8) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto error;
+    }
 
     params.BitsPerFlag = i;
 
     code = gs_shading_Tpp_init(ppsh, &params, ctx->memory);
-    if (code < 0) {
-        gs_function_free(params.Function, true, ctx->memory);
-        params.Function = NULL;
-        gs_free_object(ctx->memory, params.Decode, "Decode");
-        return code;
-    }
+    if (code < 0)
+        goto error;
     return 0;
+
+error:
+    if (params.Function)
+        pdfi_free_function(ctx, params.Function);
+    if (params.DataSource.data.strm != NULL) {
+        s_close_filters(&params.DataSource.data.strm, params.DataSource.data.strm->strm);
+        gs_free_object(ctx->memory, params.DataSource.data.strm, "release mesh shading Data Source");
+    }
+    gs_free_object(ctx->memory, params.Decode, "Decode");
+    return code;
 }
 
 static int get_shading_common(pdf_context *ctx, pdf_dict *shading_dict, gs_shading_params_t *params)
