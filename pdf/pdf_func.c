@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2024 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -567,6 +567,11 @@ pdfi_build_function_3(pdf_context *ctx, gs_function_params_t * mnDR,
     code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Bounds, function_dict, "Bounds");
     if (code < 0)
         goto function_3_error;
+
+    if (code != params.k - 1) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto function_3_error;
+    }
 
     code = pdfi_make_float_array_from_dict(ctx, (float **)&params.Encode, function_dict, "Encode");
     if (code < 0)
