@@ -446,23 +446,29 @@ xps_find_image_brush_source_part(xps_context_t *ctx, char *base_uri, xps_item_t 
 int
 xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_item_t *root)
 {
-    xps_part_t *part;
-    xps_image_t *image;
+    xps_part_t *part = NULL;
+    xps_image_t *image = NULL;
     gs_color_space *colorspace;
     char *profilename = NULL;
     int code;
 
     code = xps_find_image_brush_source_part(ctx, base_uri, root, &part, &profilename);
-    if (code < 0)
-        return gs_rethrow(code, "cannot find image source");
+    if (code < 0) {
+        gs_rethrow(code, "cannot find image source");
+        goto fail;
+    }
 
     image = xps_alloc(ctx, sizeof(xps_image_t));
-    if (!image)
-        return gs_throw(-1, "out of memory: image struct");
+    if (!image) {
+        gs_throw(-1, "out of memory: image struct");
+        goto fail;
+    }
 
     code = xps_decode_image(ctx, part, image);
-    if (code < 0)
-        return gs_rethrow1(code, "cannot decode image '%s'", part->name);
+    if (code < 0) {
+        gs_rethrow1(code, "cannot decode image '%s'", part->name);
+        goto fail;
+    }
 
     /* Override any embedded colorspace profiles if the external one matches. */
     if (profilename)
@@ -478,15 +484,17 @@ xps_parse_image_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, 
     }
 
     code = xps_parse_tiling_brush(ctx, base_uri, dict, root, xps_paint_image_brush, image);
-    if (code < 0)
-        return gs_rethrow(-1, "cannot parse tiling brush");
+    if (code < 0) {
+        code = gs_rethrow(-1, "cannot parse tiling brush");
+    }
 
+fail:
     if (profilename)
         xps_free(ctx, profilename);
     xps_free_image(ctx, image);
     xps_free_part(ctx, part);
 
-    return 0;
+    return code;
 }
 
 int
@@ -513,6 +521,8 @@ xps_image_brush_has_transparency(xps_context_t *ctx, char *base_uri, xps_item_t 
 void
 xps_free_image(xps_context_t *ctx, xps_image_t *image)
 {
+    if (image == NULL)
+        return;
     rc_decrement(image->colorspace, "xps_free_image");
     if (image->samples)
         xps_free(ctx, image->samples);

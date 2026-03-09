@@ -262,11 +262,11 @@ xps_decode_jpeg(xps_context_t *ctx, byte *rbuf, int rlen, xps_image_t *image)
         image->invert_decode = true;
     }
 
-	if (extract_exif_resolution(jddp.dinfo.marker_list, &image->xres, &image->yres, NULL))
-		/* XPS prefers EXIF resolution to JFIF density */;
-	else if (extract_app13_resolution(jddp.dinfo.marker_list, &image->xres, &image->yres))
-		/* XPS prefers APP13 resolution to JFIF density */;
-	else if (jddp.dinfo.density_unit == 1)
+    if (extract_exif_resolution(jddp.dinfo.marker_list, &image->xres, &image->yres, NULL))
+        /* XPS prefers EXIF resolution to JFIF density */;
+    else if (extract_app13_resolution(jddp.dinfo.marker_list, &image->xres, &image->yres))
+        /* XPS prefers APP13 resolution to JFIF density */;
+    else if (jddp.dinfo.density_unit == 1)
     {
         /* According to the XPS specification we should also use the EXIF and APP13 marker segments
          * to set the resolution, but we don't and adding that would be more effort than we want to

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -45,6 +45,8 @@ xps_new_part(xps_context_t *ctx, const char *name, int size)
 void
 xps_free_part(xps_context_t *ctx, xps_part_t *part)
 {
+    if (part == NULL)
+        return;
     xps_free(ctx, part->name);
     xps_free(ctx, part->data);
     xps_free(ctx, part);
