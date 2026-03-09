@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -125,7 +125,7 @@ xps_high_level_pattern(xps_context_t *ctx)
     gs_matrix m;
     gs_rect bbox;
     gs_fixed_rect clip_box;
-    int code;
+    int code, code1;
     gx_device_color *pdc = gs_currentdevicecolor_inline(ctx->pgs);
     const gs_client_pattern *ppat = gs_getpattern(&pdc->ccolor);
     gs_pattern1_instance_t *pinst =
@@ -173,14 +173,12 @@ xps_high_level_pattern(xps_context_t *ctx)
     }
 
     code = xps_paint_tiling_brush(&pdc->ccolor, ctx->pgs);
-    if (code) {
-        gs_grestore(ctx->pgs);
-        return gs_rethrow(code, "high level pattern brush function failed");
-    }
+    if (code)
+        gs_rethrow(code, "high level pattern brush function failed");
 
-    code = gs_grestore(ctx->pgs);
-    if (code < 0)
-        return code;
+    code1 = gs_grestore(ctx->pgs);
+    if (code >= 0)
+        code = code1;
 
     {
         pattern_accum_param_s param;
@@ -188,8 +186,10 @@ xps_high_level_pattern(xps_context_t *ctx)
         param.graphics_state = (void *)ctx->pgs;
         param.pinst_id = pinst->id;
 
-        code = (*dev_proc(ctx->pgs->device, dev_spec_op))((gx_device *)ctx->pgs->device,
+        code1 = (*dev_proc(ctx->pgs->device, dev_spec_op))((gx_device *)ctx->pgs->device,
             gxdso_pattern_finish_accum, &param, sizeof(pattern_accum_param_s));
+        if (code >= 0)
+            code = code1;
     }
 
     return code;
