@@ -6389,6 +6389,9 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
     ref     ICCdict, *tempref, *altref=NULL, *nocie = NULL;
     int components, code;
     float range[8];
+    byte *body = NULL;
+    uint body_size = 0;
+    bool free_body = false;
 
     code = dict_find_string(systemdict, "NOCIE", &nocie);
     if (code > 0) {
@@ -6449,28 +6452,40 @@ static int seticcspace(i_ctx_t * i_ctx_p, ref *r, int *stage, int *cont, int CIE
                         return gs_note_error(gs_error_undefined);
                     /* Check for string based ICC and convert to a file */
                     if (r_has_type(tempref, t_string)){
-                        uint n = r_size(tempref);
                         ref rss;
-                        byte *body;
                         uint save_space = icurrent_space;
 
+                        body_size = r_size(tempref);
+
                         ialloc_set_space(idmemory, avm_system);
-                        body = ialloc_string(n, "seticcspace");
-                        ialloc_set_space(idmemory, save_space);
-                        if (!body)
+                        body = ialloc_string(body_size, "seticcspace");
+                        if (!body) {
+                            ialloc_set_space(idmemory, save_space);
                             return_error(gs_error_VMerror);
-                        memcpy(body, tempref->value.const_bytes, n);
-                        code = make_rss(i_ctx_p, &rss, body, n, avm_system, 0L, n, false);
+                        }
+                        memcpy(body, tempref->value.const_bytes, body_size);
+                        code = make_rss(i_ctx_p, &rss, body, body_size, avm_system, 0L, body_size, false);
                         if (code < 0) {
-                            ifree_string(body, n, "seticcspace");
+                            ifree_string(body, body_size, "seticcspace");
+                            ialloc_set_space(idmemory, save_space);
                             return code;
                         }
+                        ialloc_set_space(idmemory, save_space);
+                        free_body = true;
                         ref_assign(tempref, &rss);
                     }
                     /* Make space on operand stack to pass the ICC dictionary */
                     push(1);
                     ref_assign(op, &ICCdict);
                     code = seticc(i_ctx_p, components, op, (float *)&range);
+                    if (free_body) {
+                        /* We assigned a string in order to create a ReusableStream, now we need to free it */
+                        uint save_space = icurrent_space;
+                        ialloc_set_space(idmemory, avm_system);
+                        ifree_string(body, body_size, "seticcspace");
+                        ialloc_set_space(idmemory, save_space);
+                    }
+
                     if (code < 0) {
                         code = dict_find_string(&ICCdict, "Alternate", &altref); /* Alternate is optional */
                         if (code > 0 && (altref != NULL) && (r_type(altref) != t_null)) {
