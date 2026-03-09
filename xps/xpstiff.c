@@ -57,6 +57,7 @@ struct xps_tiff_s
 
     /* colormap */
     unsigned *colormap;
+    int colormap_max;
 
     /* assorted tags */
     unsigned subfiletype;
@@ -826,6 +827,9 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     /* RGBPal */
     if (tiff->photometric == 3 && tiff->colormap)
     {
+        if (tiff->colormap_max != (3<<tiff->bitspersample))
+            return gs_rethrow(-1, "colormap too short for image");
+
         error = xps_expand_colormap(ctx, tiff, image);
         if (error)
             return gs_rethrow(error, "could not expand colormap");
@@ -834,6 +838,9 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     /* B&W with palette */
     if (tiff->photometric == 1 && tiff->colormap)
     {
+        if (tiff->colormap_max != (3<<tiff->bitspersample))
+            return gs_rethrow(-1, "colormap too short for image");
+
         error = xps_expand_colormap(ctx, tiff, image);
         if (error)
             return gs_rethrow(error, "could not expand colormap");
@@ -1061,6 +1068,7 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
         tiff->colormap = (unsigned*) xps_alloc(ctx, (size_t)count * sizeof(unsigned));
         if (!tiff->colormap)
             return gs_throw(gs_error_VMerror, "could not allocate color map");
+        tiff->colormap_max = count;
         code = xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
         break;
 
@@ -1188,18 +1196,26 @@ xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
     if (tiff->rowsperstrip > tiff->imagelength)
         tiff->rowsperstrip = tiff->imagelength;
 
-    if (tiff->bitspersample != 1 && tiff->bitspersample != 4 && tiff->bitspersample != 8 && tiff->bitspersample != 16)
-        return gs_rethrow(error, "Illegal BitsPerSample in TIFF header");
+    if (tiff->bitspersample != 1 && tiff->bitspersample != 4 && tiff->bitspersample != 8 && tiff->bitspersample != 16) {
+        gs_rethrow(error, "Illegal BitsPerSample in TIFF header");
+        goto cleanup;
+    }
 
-    if (tiff->samplesperpixel != 1 && tiff->samplesperpixel != 3 && tiff->samplesperpixel != 4 && tiff->samplesperpixel != 5)
-        return gs_rethrow(error, "Illegal SamplesPerPixel in TIFF header");
+    if (tiff->samplesperpixel != 1 && tiff->samplesperpixel != 3 && tiff->samplesperpixel != 4 && tiff->samplesperpixel != 5) {
+        gs_rethrow(error, "Illegal SamplesPerPixel in TIFF header");
+        goto cleanup;
+    }
 
-    if (tiff->compression < 1 || (tiff->compression > 5 && (tiff->compression != 7 && tiff->compression != 32773)))
-        return gs_rethrow(error, "Illegal Compression in TIFF header");
+    if (tiff->compression < 1 || (tiff->compression > 5 && (tiff->compression != 7 && tiff->compression != 32773))) {
+        gs_rethrow(error, "Illegal Compression in TIFF header");
+        goto cleanup;
+    }
 
     error = xps_decode_tiff_strips(ctx, tiff, image);
-    if (error)
-        return gs_rethrow(error, "could not decode image data");
+    if (error) {
+        gs_rethrow(error, "could not decode image data");
+        goto cleanup;
+    }
 
     /*
      * Byte swap 16-bit images to big endian if necessary.
