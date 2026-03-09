@@ -30,6 +30,7 @@
 #include "ichar1.h"
 #include "iname.h"
 #include "store.h"
+#include "ipacked.h"
 
 /* Forward references */
 static int z42_string_proc(gs_font_type42 *, ulong, uint, const byte **);
@@ -349,18 +350,25 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
     if (glyph_space == GLYPH_SPACE_INDEX) {
         pgdict = &pfont_data(font)->u.type42.GlyphDirectory;
         if (!r_has_type(pgdict, t_dictionary)) {
+            const ref_packed *packed = pgdict->value.packed;
             ref gdef;
+            uint i;
 
-            for (;; (*pindex)++) {
-                if (array_get(font->memory, pgdict, (long)*pindex, &gdef) < 0) {
-                    *pindex = 0;
-                    return 0;
-                }
+            /* Advance to *pindex */
+            for (i = 0; i < (uint)*pindex; i++)
+                packed = packed_next(packed);
+
+            /* Scan forward for non-null */
+            for (; (uint)*pindex < r_size(pgdict); (*pindex)++) {
+                packed_get(font->memory, packed, &gdef);
+                packed = packed_next(packed);
                 if (!r_has_type(&gdef, t_null)) {
                     *pglyph = GS_MIN_GLYPH_INDEX + (*pindex)++;
                     return 0;
                 }
             }
+            *pindex = 0;
+            return 0;
         }
     } else
         pgdict = &pfont_data(font)->CharStrings;
