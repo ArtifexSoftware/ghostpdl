@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -28,9 +28,13 @@ xps_get_real_params(char *s, int num, float *x)
     if (s != NULL && *s != 0) {
         while (*s)
         {
+            char *s0;
             while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a)
                 s++;
+            s0 = s;
             x[k] = (float)strtod(s, &s);
+            if (s == s0)
+                return NULL; /* Failed to read */
             while (*s == 0x0d || *s == '\t' || *s == ' ' || *s == 0x0a)
                 s++;
             if (*s == ',')
@@ -618,6 +622,10 @@ xps_parse_poly_quadratic_bezier_segment(xps_context_t *ctx, xps_item_t *root, in
     {
         while (*s == ' ') s++;
         s = xps_get_point(s, &x[n], &y[n]);
+        if (s == NULL) {
+            gs_warn("PolyQuadraticBezierSegment element has malformed points");
+            return;
+        }
         n ++;
         if (n == 2)
         {
@@ -666,6 +674,10 @@ xps_parse_poly_bezier_segment(xps_context_t *ctx, xps_item_t *root, int stroking
     {
         while (*s == ' ') s++;
         s = xps_get_point(s, &x[n], &y[n]);
+        if (s == NULL) {
+            gs_warn("PolyBezierSegment element has malformed points");
+            return;
+        }
         n ++;
         if (n == 3)
         {
@@ -703,6 +715,10 @@ xps_parse_poly_line_segment(xps_context_t *ctx, xps_item_t *root, int stroking, 
     while (*s != 0)
     {
         s = xps_get_real_params(s, 2, &xy[0]);
+        if (s == NULL) {
+            gs_warn("PolyLineSegment element has malformed points");
+            return;
+        }
         if (stroking && !is_stroked)
             gs_moveto(ctx->pgs, xy[0], xy[1]);
         else
