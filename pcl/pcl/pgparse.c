@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -247,6 +247,9 @@ hpgl_arg(const gs_memory_t * mem, hpgl_parser_state_t * pst)
     }
     if (pst->done)
         return 0;
+    if (parg->count >= 21)
+        longjmp(*(pst->exit_to_parser), gs_error_syntaxerror);
+
     p = pst->source.ptr;
     rlimit = pst->source.limit;
     pvalue = &parg->scanned[parg->count];
