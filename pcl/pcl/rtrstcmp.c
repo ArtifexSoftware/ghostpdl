@@ -37,10 +37,12 @@ uncompress_0(pcl_seed_row_t * pout, const byte * pin, int in_size)
 {
     int nbytes = (in_size > pout->size ? pout->size : in_size);
 
-    memcpy(pout->pdata, pin, nbytes);
-    if (!pout->is_blank)
-        memset(pout->pdata + nbytes, 0, pout->size - nbytes);
-    pout->is_blank = (in_size == 0);
+    if (in_size >= 0) {
+        memcpy(pout->pdata, pin, nbytes);
+        if (!pout->is_blank)
+            memset(pout->pdata + nbytes, 0, pout->size - nbytes);
+        pout->is_blank = (in_size == 0);
+    }
 }
 
 /*
