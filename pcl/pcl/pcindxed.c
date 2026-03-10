@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -270,7 +270,7 @@ set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case 
                                  const byte * porder, int start, int num)
 {
     int i;
-    static const byte cmy_default[8 * 3] = {
+    static const byte cmy_default[(8 * 3) + 1] = {
         255, 255, 255,          /* white */
         0, 255, 255,            /* cyan */
         255, 0, 255,            /* magenta */
@@ -278,7 +278,8 @@ set_dev_specific_default_palette(pcl_cs_base_t * pbase, /* ignored in this case 
         255, 255, 0,            /* yellow */
         0, 255, 0,              /* green */
         255, 0, 0,              /* red */
-        0, 0, 0                 /* black */
+        0, 0, 0,                /* black */
+        0                       /* Sacrificial, for porder[i] = 7 and 'num' > 8 */
     };
 
     /* fill in the num_entries - 1 values from the RGB default */
@@ -501,7 +502,11 @@ set_default_entries(pcl_cs_indexed_t * pindexed, int start, int num, bool gl2)
 
     /* If 4-plane simple color KCMY graphics, set cnt for larger palette. */
     if (type == pcl_cspace_KCMY) {
-        cnt = 15;
+        /* This seems to be plain wrong, the size of the palette data is set from the number of bits, without
+         * regard to the colour space. I can't see any reason to set the number of entries to 15, and it
+         * overruns the palette if we do. So I'm commenting it out.
+         cnt = 15;
+         */
         porder = cmy_order_4;
     }
     /* set the default colors for up to the first 16 entries */
