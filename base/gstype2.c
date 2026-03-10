@@ -111,7 +111,6 @@ type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
     pcis->num_hints += (csp + 1 - cstack) >> 1;
     if (pcis->num_hints > max_total_stem_hints)
         pcis->num_hints = max_total_stem_hints;
-
     return 0;
 }
 
@@ -355,6 +354,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                      * tables.)
                      */
                     pcis->num_hints = 0;
+                    h->hint_count = 0;
                     /* do accent of seac */
                     ipsp = &pcis->ipstack[pcis->ips_count - 1];
                     cip = ipsp->cs_data.bits.data;
@@ -370,7 +370,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                          even though this is only allowed before hintmask and cntrmask.
                          Thanks to Felix Pahl.
                        */
-                      type2_vstem(pcis, csp - 2, cstack);
+                      if ((code = type2_vstem(pcis, csp - 2, cstack)) < 0)
+                          return code;
                       cstack [0] = csp [-1];
                       cstack [1] = csp [ 0];
                       csp = cstack + 1;
@@ -465,7 +466,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
             case c2_cntrmask:
                 if (CS_CHECK_CSTACK_BOUNDS(csp, cstack)) {
                     check_first_operator(!((csp - cstack) & 1));
-                    type2_vstem(pcis, csp, cstack);
+                    if ((code = type2_vstem(pcis, csp, cstack)) < 0)
+                        return code;
                 }
                 /*
                  * We should clear the stack here only if this is the
@@ -501,7 +503,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
               vstem:
                 if (CS_CHECK_CSTACK_BOUNDS(csp, cstack)) {
                     check_first_operator(!((csp - cstack) & 1));
-                    type2_vstem(pcis, csp, cstack);
+                    if ((code = type2_vstem(pcis, csp, cstack)) < 0)
+                        return code;
                 }else
                     return gs_note_error(gs_error_invalidfont);
                 clear;
