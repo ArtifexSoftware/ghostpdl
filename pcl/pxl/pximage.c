@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -946,6 +946,8 @@ pxReadImage(px_args_t * par, px_state_t * pxs)
 
     if (par->pv[1]->value.i == 0)
         return 0;               /* no data */
+    if (par->pv[3] != NULL && (par->pv[3]->value.i < 1 || par->pv[3]->value.i > 4))
+        return_error(gs_error_rangecheck);
     /* Make a quick check for the first call, when no data is available. */
     if (par->source.available == 0)
         return pxNeedData;
