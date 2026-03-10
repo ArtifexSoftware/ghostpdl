@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -302,12 +302,19 @@ uncompress_10(pcl_seed_row_t * pout, const byte * pin, int in_size)
 
 	offset = (val >> 3) & 0x3;
 	if (offset == 3) {
+        /* MAX_INT is MAX_UINT / 2 and we will multiply offset by 3. */
+        int max = ARCH_MAX_UINT / 6;
+
 	    do {
 		if (i <= 0) {
 		    if_debug0('w', "source end premature 1\n");
 		    goto tidy_up;
 		}
 		offset += *pin;
+        if (offset >= max) {
+		    if_debug0('w', "offset overflowed\n");
+		    goto tidy_up;
+        }
 		i--;
 	    } while (*pin++ == 0xff);
 	}
