@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -124,6 +124,7 @@ struct pl_main_instance_s
     long base_time[2];          /* starting time */
     int error_report;           /* -E# */
     bool pause;                 /* -dNOPAUSE => false */
+    bool safer;                  /* -dNOSAFER => false */
     gx_device *device;
     gs_gc_root_t *device_root;
     int device_index;
@@ -1291,7 +1292,6 @@ pl_main_languages_init(gs_memory_t * mem,        /* deallocator for devices */
         }
 
     }
-
     return 0;
 
  pmui_err:
@@ -1333,6 +1333,7 @@ pl_main_alloc_instance(gs_memory_t * mem)
     minst->pjl_from_args = false;
     minst->error_report = -1;
     minst->pause = true;
+    minst->safer = true;
     minst->device = 0;
     minst->implementation = NULL;
     minst->prev_non_pjl_implementation = NULL;
@@ -1515,6 +1516,10 @@ parse_floats(gs_memory_t * mem, uint arg_count, const char *arg, float *f)
 
 static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int64_t b)
 {
+    if (argis(arg, "NOSAFER")) {
+        pmi->safer = !b;
+        return 1;
+    }
     if (argis(arg, "BATCH"))
         return (b == 1) ? 0 : gs_note_error(gs_error_rangecheck);
     if (argis(arg, "NOPAUSE")) {
@@ -1554,7 +1559,8 @@ static int check_for_special_float(pl_main_instance_t * pmi, const char *arg, fl
         argis(arg, "DOINTERPOLATE") ||
         argis(arg, "NOCACHE") ||
         argis(arg, "SCANCONVERTERTYPE") ||
-        argis(arg, "RESETRESOURCES")) {
+        argis(arg, "RESETRESOURCES") ||
+        argis(arg, "NOSAFER")) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -1567,7 +1573,8 @@ static int check_for_special_str(pl_main_instance_t * pmi, const char *arg, gs_p
         argis(arg, "DOINTERPOLATE") ||
         argis(arg, "NOCACHE") ||
         argis(arg, "SCANCONVERTERTYPE") ||
-        argis(arg, "RESETRESOURCES")) {
+        argis(arg, "RESETRESOURCES") ||
+        argis(arg, "NOSAFER")) {
         return gs_note_error(gs_error_rangecheck);
     }
     return 1;
@@ -2800,6 +2807,13 @@ help:
     code = pl_main_post_args_init(pmi);
     if (code < 0)
         return code;
+
+    /* We must not activate path control until after the main args, because if we are running
+     * the PostScript interpreter then gs_init.ps needs to set the default device, and that
+     * will fail if we have active path control.
+     */
+    if (pmi->safer && !gs_is_path_control_active(pmi->memory))
+        gs_activate_path_control(pmi->memory, pmi->safer);
 
     gs_c_param_list_read(params);
     code = pl_top_create_device(pmi); /* create default device if needed */
