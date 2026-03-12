@@ -168,7 +168,7 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
         offset = 0;
     }
 
-    if (font->length < offset + 6)
+    if (font->length - 6 < offset)
     {
         gs_warn("subfont length insufficient for ntables read");
         return -1;
