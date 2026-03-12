@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -945,7 +945,7 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
                         skip = -1;
                         break;
                     case eReverseLandscape:
-                        dest += source_x * height + width - 1 - source_y;
+                        dest += (source_x + 1) * height - source_y - 1;
                         skip = height;
                         break;
                     default:
@@ -953,8 +953,9 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
                 }
                 if ((dest < pdata_min) || (pdata_max < dest + ((used - 1) * (int64_t)skip)))
                     return_error(gs_error_rangecheck);
-                for (i = 0; i < used; ++i, ++src, dest += skip)
+                for (i = 0; i < used; ++i, ++src, dest += skip) {
                     *dest = *src;
+                }
             }
             par->source.position += used;
             par->source.available -= used;
