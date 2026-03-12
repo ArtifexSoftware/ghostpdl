@@ -171,7 +171,7 @@ xps_read_cff_integer(byte *p, byte *e, int b0, int *val)
 }
 
 static int
-xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
+xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1, int depth)
 {
     struct { int ival; float fval; } args[CFF_ARGS_SIZE];
     int offset;
@@ -179,6 +179,9 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
 
     int privatelen = 0;
     int privateofs = 0;
+
+    if (depth > 16)
+        return gs_throw(-1, "too many nested dicts");
 
     memset(args, 0x00, sizeof(args));
 
@@ -383,7 +386,7 @@ xps_read_cff_dict(byte *p, byte *e, xps_font_t *font, gs_font_type1 *pt1)
         int code = xps_read_cff_dict(
                 font->cffdata + privateofs,
                 font->cffdata + privateofs + privatelen,
-                font, pt1);
+                font, pt1, depth+1);
         if (code < 0)
             return gs_rethrow(code, "cannot read private dictionary");
     }
@@ -577,7 +580,7 @@ xps_read_cff_file(xps_font_t *font, gs_font_type1 *pt1)
         return gs_throw(-1, "cannot read gsubr index");
 
     /* Read the top and private dictionaries */
-    code = xps_read_cff_dict(dictp, dicte, font, pt1);
+    code = xps_read_cff_dict(dictp, dicte, font, pt1, 0);
     if (code < 0)
         return gs_rethrow(code, "cannot read top dictionary");
 
