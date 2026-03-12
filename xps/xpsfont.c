@@ -41,7 +41,12 @@ static inline int u24(byte *p)
 
 static inline int u32(byte *p)
 {
-    return (p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3];
+    /* Casts to avoid UB here. Anything smaller than an int (such as a byte (unsigned char)) is promoted to a signed int before shifting.
+     * so p[0] << 24 where p[0] = 0x80 is officially UB. To avoid this, cast to uint32_t first. If uint32_t is smaller than an int,
+     * then p[0] << 24 won't overflow, so no problems. If uint32_t is the same size as int, we get no UB. We then cast the result to
+     * int32_t (no change), and then to int (to sign extend if required). It would have been much nicer if this function had been written
+     * to return uint32_t in the first place! */
+    return (int)(int32_t)(((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) | ((uint32_t)p[2] << 8) | (uint32_t)p[3]);
 }
 
 xps_font_t *
@@ -145,6 +150,13 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
 
         /* check if the buffer contains enough data to contain nfonts subfonts */
         int min_len = 12 + nfonts * 4;
+
+        if (nfonts < 0)
+        {
+            gs_warn("nfonts out of bounds");
+            return -1;
+        }
+
         if (min_len < 0 || font->length < min_len)
         {
             gs_warn("font data length too small");
@@ -185,9 +197,16 @@ xps_find_sfnt_table(xps_font_t *font, const char *name, int *lengthp)
         byte *entry = font->data + offset + 12 + i * 16;
         if (!memcmp(entry, name, 4))
         {
+            int ofs = u32(entry + 8);
+            int len = u32(entry + 12);
+            if (ofs < 0 || len < 0 || len + ofs < 0 || len + ofs > font->length)
+            {
+                gs_warn("table length invalid");
+                return -1;
+            }
             if (lengthp)
-                *lengthp = u32(entry + 12);
-            return u32(entry + 8);
+                *lengthp = len;
+            return ofs;
         }
     }
 
@@ -385,7 +404,7 @@ xps_select_font_encoding(xps_font_t *font, int idx)
     pid = u16(entry + 0);
     eid = u16(entry + 2);
     font->cmapsubtable = font->cmaptable + u32(entry + 4);
-    if (font->cmapsubtable >= font->length) {
+    if (font->cmapsubtable < 0 || font->cmapsubtable >= font->length) {
         font->cmapsubtable = 0;
         return 0;
     }
@@ -485,7 +504,7 @@ xps_encode_font_char_imp(xps_font_t *font, int code)
         {
             int startCharCode = u32(table + 12);
             int numChars = u32(table + 16);
-            if ( code < startCharCode || code >= startCharCode + numChars )
+            if (startCharCode < 0 || numChars < 0 || code < startCharCode || code >= startCharCode + numChars )
                 return 0;
             if (table + 20 + (code - startCharCode) * 4 + 3 >= tablemax)
                 return gs_error_invalidfont;
@@ -500,14 +519,14 @@ xps_encode_font_char_imp(xps_font_t *font, int code)
             byte *group = table + 16;
             int i;
 
-            if (group + nGroups*12 >= tablemax)
+            if (nGroups < 0 || group + nGroups*12 >= tablemax)
                 return gs_error_invalidfont;
             for (i = 0; i < nGroups; i++)
             {
                 int startCharCode = u32(group + 0);
                 int endCharCode = u32(group + 4);
                 int startGlyphID = u32(group + 8);
-                if ( code < startCharCode )
+                if ( startCharCode < 0 || endCharCode < 0 || startGlyphID < 0 || code < startCharCode )
                     return 0;
                 if ( code <= endCharCode )
                     return startGlyphID + (code - startCharCode);
@@ -537,24 +556,30 @@ static int
 xps_decode_font_char_imp(xps_font_t *font, int code)
 {
     byte *table, *t;
+    byte *tablemax;
 
     /* no cmap selected: return identity */
     if (font->cmapsubtable <= 0)
         return code;
 
     table = font->data + font->cmapsubtable;
-    if (table >= font->data + font->length)
+    tablemax = font->data + font->length;
+    if (table >= tablemax)
         return code;
 
     switch (u16(table))
     {
         case 0: /* Apple standard 1-to-1 mapping. */
+            if (table + 3 >= tablemax)
+                return gs_error_invalidfont;
             {
                 int i, length = u16(&table[2]) - 6;
 
                 if (length < 0 || length > 256)
                     return gs_error_invalidfont;
 
+                if (table + 6 + length >= tablemax)
+                    return gs_error_invalidfont;
                 for (i=0;i<length;i++) {
                     if (table[6 + i] == code)
                         return i;
@@ -562,6 +587,8 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
             }
             return 0;
         case 4: /* Microsoft/Adobe segmented mapping. */
+            if (table + 7 >= tablemax)
+                return gs_error_invalidfont;
             {
                 int segCount2 = u16(table + 6);
                 byte *endCount = table + 14;
@@ -572,7 +599,7 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
                 int i2;
 
                 if (segCount2 < 3 || segCount2 > 65535 ||
-                    idRangeOffset > font->data + font->length)
+                    idRangeOffset > tablemax)
                     return gs_error_invalidfont;
 
                 for (i2 = 0; i2 < segCount2 - 3; i2 += 2)
@@ -603,6 +630,8 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
             }
             return 0;
         case 6: /* Single interval lookup. */
+            if (table + 9 >= tablemax)
+                return gs_error_invalidfont;
             {
                 int ch, i, length = u16(&table[8]);
                 int firstCode = u16(&table[6]);
@@ -612,7 +641,7 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
 
                 for (i=0;i<length;i++) {
                     t = &table[10 + (i * 2)];
-                    if (t + 2 > font->data + font->length)
+                    if (t + 2 > tablemax)
                         return gs_error_invalidfont;
                     ch = u16(t);
                     if (ch == code)
@@ -621,12 +650,16 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
             }
             return 0;
         case 10: /* Trimmed array (like 6) */
+            if (table + 23 >= tablemax)
+                return gs_error_invalidfont;
             {
                 unsigned int ch, i, length = u32(&table[20]);
                 int firstCode = u32(&table[16]);
+                if (length < 0 || firstCode < 0)
+                    return gs_error_invalidfont;
                 for (i=0;i<length;i++) {
                     t = &table[10 + (i * 2)];
-                    if (t + 2 > font->data + font->length)
+                    if (t + 2 > tablemax)
                         return gs_error_invalidfont;
                     ch = u16(t);
                     if (ch == code)
@@ -635,16 +668,22 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
             }
             return 0;
         case 12: /* Segmented coverage. (like 4) */
+            if (table + 15 >= tablemax)
+                return gs_error_invalidfont;
             {
                 unsigned int nGroups = u32(&table[12]);
                 int Group;
 
+                if (table + 16 + nGroups * 12 >= tablemax)
+                    return gs_error_invalidfont;
                 for (Group=0;Group<nGroups;Group++)
                 {
                     int startCharCode = u32(&table[16 + (Group * 12)]);
                     int endCharCode = u32(&table[16 + (Group * 12) + 4]);
                     int startGlyphCode = u32(&table[16 + (Group * 12) + 8]);
 
+                    if (startCharCode < 0 || endCharCode < 0 || startGlyphCode < 0)
+                        return gs_error_invalidfont;
                     if (code >= startGlyphCode && code <= (startGlyphCode + (endCharCode - startCharCode))) {
                         return startGlyphCode + (code - startCharCode);
                     }
@@ -689,11 +728,12 @@ xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_
 {
 
     int head, format, loca, glyf;
-    int ofs, len;
+    int ofs, len, glyf_len, loca_len, head_len;
     int idx, i, n;
     int hadv, vadv, vorg;
     int vtop, ymax, desc;
     int scale;
+    byte *fontmax = font->data + font->length;
 
     /* some insane defaults */
 
@@ -730,21 +770,22 @@ xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_
     if (idx > n - 1)
         idx = n - 1;
 
-    hadv = u16(font->data + ofs + idx * 4);
+    if (idx * 4 + 2 <= len)
+        hadv = u16(font->data + ofs + idx * 4);
     vadv = 0;
 
     /*
      * Vertical metrics are hairy (with missing tables).
      */
 
-    head = xps_find_sfnt_table(font, "head", &len);
-    if (head > 0)
+    head = xps_find_sfnt_table(font, "head", &head_len);
+    if (head > 0 && head_len >= 20)
     {
         scale = u16(font->data + head + 18); /* units per em */
     }
 
     ofs = xps_find_sfnt_table(font, "OS/2", &len);
-    if (ofs > 0 && len > 70)
+    if (ofs > 0 && len >= 72)
     {
         vorg = s16(font->data + ofs + 68); /* sTypoAscender */
         desc = s16(font->data + ofs + 70); /* sTypoDescender */
@@ -771,30 +812,46 @@ xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_
         vadv = u16(font->data + ofs + idx * 4);
         vtop = u16(font->data + ofs + idx * 4 + 2);
 
-        glyf = xps_find_sfnt_table(font, "glyf", &len);
-        loca = xps_find_sfnt_table(font, "loca", &len);
-        if (head > 0 && glyf > 0 && loca > 0)
+        glyf = xps_find_sfnt_table(font, "glyf", &glyf_len);
+        loca = xps_find_sfnt_table(font, "loca", &loca_len);
+        if (head > 0 && glyf > 0 && loca > 0 && head_len >= 42)
         {
             format = u16(font->data + head + 50); /* indexToLocaFormat */
 
-            if (format == 0)
-                ofs = u16(font->data + loca + gid * 2) * 2;
-            else
-                ofs = u32(font->data + loca + gid * 4);
+            do /* So we can break out. */
+            {
+                if (format == 0)
+                {
+                    if (loca_len < gid*2 + 2)
+                        break;
+                    ofs = u16(font->data + loca + gid * 2) * 2;
+                }
+                else
+                {
+                    if (loca_len < gid*4 + 4)
+                        break;
+                    ofs = u32(font->data + loca + gid * 4);
+                }
+                if (ofs > 0 && ofs + 8 + 4 <= glyf_len)
+                {
+                    ymax = u16(font->data + glyf + ofs + 8); /* yMax */
 
-            ymax = u16(font->data + glyf + ofs + 8); /* yMax */
-
-            vorg = ymax + vtop;
+                    vorg = ymax + vtop;
+                }
+            }
+            while (0);
         }
     }
 
     ofs = xps_find_sfnt_table(font, "VORG", &len);
-    if (ofs > 0)
+    if (ofs > 0 && len >= 8)
     {
-        vorg = u16(font->data + ofs + 6);
+        vorg = u16(font->data + ofs + 4);
         n = u16(font->data + ofs + 6);
         for (i = 0; i < n; i++)
         {
+            if (8 + 4 * n >= len)
+                break;
             if (u16(font->data + ofs + 8 + 4 * i) == gid)
             {
                 vorg = s16(font->data + ofs + 8 + 4 * i + 2);
