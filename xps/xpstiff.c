@@ -1056,6 +1056,8 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
         break;
 
     case JPEGTables:
+        if (tiff->bp + value < tiff->bp || tiff->bp + value + count > tiff->ep)
+            return gs_throw(gs_error_unknownerror, "JPEGTables out of bounds");
         tiff->jpegtables = tiff->bp + value;
         tiff->jpegtableslen = count;
         break;
@@ -1187,7 +1189,10 @@ xps_decode_tiff(xps_context_t *ctx, byte *buf, int len, xps_image_t *image)
 
     error = xps_decode_tiff_header(ctx, tiff, buf, len);
     if (error)
-        return gs_rethrow(error, "cannot decode tiff header");
+    {
+        gs_rethrow(error, "cannot decode tiff header");
+        goto cleanup;
+    }
 
     if (!tiff->stripbytecounts)
     {
@@ -1258,16 +1263,17 @@ xps_tiff_has_alpha(xps_context_t *ctx, byte *buf, int len)
     xps_tiff_t *tiff = &tiffst;
 
     error = xps_decode_tiff_header(ctx, tiff, buf, len);
-    if (error)
-    {
-        gs_catch(error, "cannot decode tiff header");
-        return 0;
-    }
 
     if (tiff->profile) xps_free(ctx, tiff->profile);
     if (tiff->colormap) xps_free(ctx, tiff->colormap);
     if (tiff->stripoffsets) xps_free(ctx, tiff->stripoffsets);
     if (tiff->stripbytecounts) xps_free(ctx, tiff->stripbytecounts);
+
+    if (error)
+    {
+        gs_catch(error, "cannot decode tiff header");
+        return 0;
+    }
 
     return tiff->extrasamples == 2 || tiff->extrasamples == 1;
 }
