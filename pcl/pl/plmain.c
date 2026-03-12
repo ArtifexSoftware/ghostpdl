@@ -1534,10 +1534,6 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int6
         pmi->nocache = !!b;
         return 0;
     }
-    if (argis(arg, "SCANCONVERTERTYPE")) {
-        pmi->scanconverter = b;
-        return 0;
-    }
     if (argis(arg, "RESETRESOURCES")) {
         pmi->reset_resources = b;
         return 0;
