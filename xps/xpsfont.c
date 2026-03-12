@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -402,19 +402,25 @@ static int
 xps_encode_font_char_imp(xps_font_t *font, int code)
 {
     byte *table;
+    byte *tablemax;
 
     /* no cmap selected: return identity */
     if (font->cmapsubtable <= 0)
         return code;
 
     table = font->data + font->cmapsubtable;
+    tablemax = font->data + font->length;
 
     switch (u16(table))
     {
     case 0: /* Apple standard 1-to-1 mapping. */
+        if (table + code + 6 >= tablemax)
+            return gs_error_invalidfont;
         return table[code + 6];
 
     case 4: /* Microsoft/Adobe segmented mapping. */
+        if (table + 14 >= tablemax)
+            return gs_error_invalidfont;
         {
             int segCount2 = u16(table + 6);
             byte *endCount = table + 14;
@@ -461,29 +467,41 @@ xps_encode_font_char_imp(xps_font_t *font, int code)
         }
 
     case 6: /* Single interval lookup. */
+        if (table + 9 >= tablemax)
+            return gs_error_invalidfont;
         {
             int firstCode = u16(table + 6);
             int entryCount = u16(table + 8);
             if ( code < firstCode || code >= firstCode + entryCount )
                 return 0;
+            if (table + 11 + ((code - firstCode) << 1) >= tablemax)
+                return gs_error_invalidfont;
             return u16(table + 10 + ((code - firstCode) << 1));
         }
 
     case 10: /* Trimmed array (like 6) */
+        if (table + 19 >= tablemax)
+            return gs_error_invalidfont;
         {
             int startCharCode = u32(table + 12);
             int numChars = u32(table + 16);
             if ( code < startCharCode || code >= startCharCode + numChars )
                 return 0;
+            if (table + 20 + (code - startCharCode) * 4 + 3 >= tablemax)
+                return gs_error_invalidfont;
             return u32(table + 20 + (code - startCharCode) * 4);
         }
 
     case 12: /* Segmented coverage. (like 4) */
+        if (table + 15 >= tablemax)
+            return gs_error_invalidfont;
         {
             int nGroups = u32(table + 12);
             byte *group = table + 16;
             int i;
 
+            if (group + nGroups*12 >= tablemax)
+                return gs_error_invalidfont;
             for (i = 0; i < nGroups; i++)
             {
                 int startCharCode = u32(group + 0);
