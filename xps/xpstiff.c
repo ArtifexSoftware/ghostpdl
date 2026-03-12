@@ -946,6 +946,17 @@ xps_read_tiff_tag_value(unsigned *p, xps_tiff_t *tiff, unsigned type, unsigned o
 }
 
 
+static void *
+xps_alloc_table(void **table, xps_context_t *ctx, size_t size)
+{
+    if (*table)
+        xps_free(ctx, *table);
+    *table = NULL;
+    *table = xps_alloc(ctx, size);
+
+    return *table;
+}
+
 static int
 xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
 {
@@ -1034,8 +1045,7 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
         code = xps_read_tiff_tag_value(&tiff->extrasamples, tiff, type, value, 1);
         break;
     case ICCProfile:
-        tiff->profile = xps_alloc(ctx, count);
-        if (!tiff->profile)
+        if (!xps_alloc_table(&tiff->profile, ctx, count))
             return gs_throw(gs_error_VMerror, "could not allocate embedded icc profile");
         /* ICC profile data type is set to UNDEFINED.
          * TBYTE reading not correct in xps_read_tiff_tag_value */
@@ -1051,22 +1061,19 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
         break;
 
     case StripOffsets:
-        tiff->stripoffsets = (unsigned*) xps_alloc(ctx, (size_t)count * sizeof(unsigned));
-        if (!tiff->stripoffsets)
+        if (!xps_alloc_table(&tiff->stripoffsets, ctx, (size_t)count * sizeof(unsigned)))
             return gs_throw(gs_error_VMerror, "could not allocate strip offsets");
         code = xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
         break;
 
     case StripByteCounts:
-        tiff->stripbytecounts = (unsigned*) xps_alloc(ctx, (size_t)count * sizeof(unsigned));
-        if (!tiff->stripbytecounts)
+        if (!xps_alloc_table(&tiff->stripbytecounts, ctx, (size_t)count * sizeof(unsigned)))
             return gs_throw(gs_error_VMerror, "could not allocate strip byte counts");
         code = xps_read_tiff_tag_value(tiff->stripbytecounts, tiff, type, value, count);
         break;
 
     case ColorMap:
-        tiff->colormap = (unsigned*) xps_alloc(ctx, (size_t)count * sizeof(unsigned));
-        if (!tiff->colormap)
+        if (!xps_alloc_table(&tiff->colormap, ctx, (size_t)count * sizeof(unsigned)))
             return gs_throw(gs_error_VMerror, "could not allocate color map");
         tiff->colormap_max = count;
         code = xps_read_tiff_tag_value(tiff->colormap, tiff, type, value, count);
