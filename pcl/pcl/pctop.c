@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -343,7 +343,6 @@ pcl_impl_init_job(pl_interp_implementation_t * impl,       /* interp instance to
     pcli->pcs.res_set_on_command_line = pl_main_get_res_set_on_command_line(mem);
     pcli->pcs.high_level_device = pl_main_get_high_level_device(mem);
     pcli->pcs.supports_rasterops = pl_main_get_rasterop_support(mem);
-    gs_setscanconverter(pcli->pcs.pgs, pl_main_get_scanconverter(mem));
 
     /* Set the device into the pcl_state & gstate */
     stage = Ssetdevice;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1527,10 +1527,6 @@ static int check_for_special_int(pl_main_instance_t * pmi, const char *arg, int6
     }
     if (argis(arg, "NOCACHE")) {
         pmi->nocache = !!b;
-        return 0;
-    }
-    if (argis(arg, "SCANCONVERTERTYPE")) {
-        pmi->scanconverter = b;
         return 0;
     }
     if (argis(arg, "RESETRESOURCES")) {
