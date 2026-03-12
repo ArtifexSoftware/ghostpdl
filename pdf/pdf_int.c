@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -616,7 +616,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
         c = pdfi_read_byte(ctx, s);
 
         if (c < 0) {
-            if (nesting > 0 && (code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL) < 0)) {
+            if (nesting > 0 && (code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_UNESCAPEDSTRING, "pdfi_read_string", NULL)) < 0) {
                 gs_free_object(ctx->memory, Buffer, "pdfi_read_string error");
                 return code;
             }
@@ -905,7 +905,7 @@ static int pdfi_read_keyword(pdf_context *ctx, pdf_c_stream *s, uint32_t indirec
     } while (index < 255);
 
     if (index >= 255 || index == 0) {
-        if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, 0, "pdfi_read_keyword", NULL) < 0)) {
+        if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, 0, "pdfi_read_keyword", NULL)) < 0) {
             return code;
         }
         key = (index >= 255 ? TOKEN_TOO_LONG : TOKEN_INVALID_KEY);
@@ -1053,8 +1053,8 @@ rescan:
                     if (code < 0)
                         return code;
                 }
-                else if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_limitcheck), NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL) < 0)) {
-                    return code;
+                else if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_limitcheck), NULL, E_PDF_NESTEDTOODEEP, "pdfi_read_token", NULL)) < 0) {
+                        return code;
                 }
                 return 1;
             } else if (c == '>') {
@@ -1083,7 +1083,7 @@ rescan:
                     if (code < 0)
                         return code;
                 } else {
-                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_unmatchedmark), NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL) < 0)) {
+                    if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_unmatchedmark), NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL)) < 0) {
                         return code;
                     }
                     goto rescan;
@@ -1120,7 +1120,7 @@ rescan:
                 if (code < 0)
                     return code;
             } else {
-                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_unmatchedmark), NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL) < 0)) {
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_unmatchedmark), NULL, E_PDF_UNMATCHEDMARK, "pdfi_read_token", NULL)) < 0) {
                     return code;
                 }
                 goto rescan;
@@ -1144,7 +1144,7 @@ rescan:
             break;
         default:
             if (isdelimiter(c)) {
-                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, 0, "pdfi_read_token", NULL) < 0)) {
+                if ((code = pdfi_set_error_stop(ctx, gs_note_error(gs_error_syntaxerror), NULL, 0, "pdfi_read_token", NULL)) < 0) {
                     return code;
                 }
                 goto rescan;
