@@ -359,7 +359,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
             uint cidbase;
             int m, size;
 
-            if (stobj[i + 2].size < 1)
+            if (stobj[i + 2].size < 1 || stobj[i].size != stobj[i + 1].size)
                 continue;
 
             else if (stobj[i + 2].size == 1) {
@@ -439,6 +439,9 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
                 int m, size, keysize;
                 uint64_t kk;
                 uint codelo = 0, codehi = 0;
+
+                if (stobj[i + 2].size < 1 || stobj[i].size != stobj[i + 1].size)
+                    continue;
 
                 size = stobj[i].size;
                 for (m = 0; m < size; m++) {
