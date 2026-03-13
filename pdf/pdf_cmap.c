@@ -301,7 +301,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
 {
     pdf_cmap *pdficmap = (pdf_cmap *)s->client_data;
     int ncodemaps, to_pop = pdf_ps_stack_count_to_mark(s, PDF_PS_OBJ_MARK);
-    unsigned int i, j, k;
+    unsigned int i, j;
     pdfi_cmap_range_map_t *pdfir;
     pdf_ps_stack_object_t *stobj;
 
@@ -437,6 +437,7 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
             }
             else {
                 int m, size, keysize;
+                uint64_t kk;
                 uint codelo = 0, codehi = 0;
 
                 size = stobj[i].size;
@@ -451,8 +452,9 @@ static int cmap_endfbrange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, by
                 if (codehi <= codelo || stobj[i + 2].size < (codehi - codelo))
                     continue;
 
-                for (k = codelo; k <= codehi; k++) {
+                for (kk = (uint64_t)codelo; kk <= (uint64_t)codehi; kk++) {
                     uint cidbase;
+                    uint k = (uint)kk;
                     int ind = k - codelo;
 
                     if (stobj[i + 2].val.arr[ind].type != PDF_PS_OBJ_STRING)
