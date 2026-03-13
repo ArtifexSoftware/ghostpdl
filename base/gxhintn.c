@@ -1304,7 +1304,7 @@ int t1_hinter__flex_end(t1_hinter * self, fixed flex_height)
     const int32_t div_x = self->g2o_fraction << self->log2_pixels_x;
     const int32_t div_y = self->g2o_fraction << self->log2_pixels_y;
 
-    if (self->flex_count != 8)
+    if (self->flex_count != 8 || self->pole_count < 8)
         return_error(gs_error_invalidfont);
     /* We've got 8 poles accumulated in pole array. */
     pole0 = &self->pole[self->pole_count - 8];
