@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -174,6 +174,14 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
                     code = pcl_delete_soft_font(pcs, key.data, key.size, value);
                     if (code < 0)
                         return code;
+                    /* Since deleting the softfont also deletes any "synonyms" in
+                       the dictionary, it means the dictionary contents can change
+                       under our feet.
+                       The simplest solution is to start the enumeration with
+                       a clean slate. This isn't used often enough for the
+                       efficiency to be a worry.
+                     */
+                    pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
                 }
             break;
         case 2:
