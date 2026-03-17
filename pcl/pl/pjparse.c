@@ -1428,6 +1428,9 @@ pjl_process(pjl_parser_state * pst, void *pstate, stream_cursor_read * pr)
                 pst->line = temp;
                 pst->line_size += 256;
                 pst->line[pst->pos] = p[1], pst->pos++;
+            } else {
+                code = -1;
+                break;
             }
         } else
             pst->line[pst->pos] = p[1], pst->pos++;
