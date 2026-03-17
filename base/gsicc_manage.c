@@ -2126,9 +2126,7 @@ gsicc_set_device_profile(gx_device * pdev, gs_memory_t * mem,
     if (gsicc_verify_device_profiles(pdev) < 0)
         return gs_rethrow(-1, "Error in device profiles");
 
-    if (icc_profile->num_comps != 1 &&
-        icc_profile->num_comps != 3 &&
-        icc_profile->num_comps != 4) {
+    if (icc_profile->num_comps > 4) {
         /* NCLR Profile.  Set up default colorant names */
         code = gsicc_set_device_profile_colorants(pdev, NULL);
         if (code < 0)
