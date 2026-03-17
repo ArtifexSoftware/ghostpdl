@@ -175,16 +175,16 @@ gs_font_map_glyph_by_dict(const gs_memory_t *mem, const ref *map, gs_glyph glyph
                     if (vv.value.intval > 65535) {
                         if (length < 4)
                             return 4;
-                        unicode_return[0] = v->value.intval >> 24;
-                        unicode_return[1] = (v->value.intval & 0x00FF0000) >> 16;
-                        unicode_return[2] = (v->value.intval & 0x0000FF00) >> 8;
-                        unicode_return[3] = v->value.intval & 0xFF;
+                        unicode_return[0] = vv.value.intval >> 24;
+                        unicode_return[1] = (vv.value.intval & 0x00FF0000) >> 16;
+                        unicode_return[2] = (vv.value.intval & 0x0000FF00) >> 8;
+                        unicode_return[3] = vv.value.intval & 0xFF;
                         return 4;
                     } else {
                         if (length < 2)
                             return 2;
-                        unicode_return[0] = v->value.intval >> 8;
-                        unicode_return[1] = v->value.intval & 0xFF;
+                        unicode_return[0] = vv.value.intval >> 8;
+                        unicode_return[1] = vv.value.intval & 0xFF;
                         return 2;
                     }
                 }
