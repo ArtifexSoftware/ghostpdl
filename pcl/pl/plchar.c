@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -58,6 +58,7 @@
 /* Define whether to cache TrueType characters. */
 /* This would only be disabled for debugging. */
 #define CACHE_TRUETYPE_CHARS
+#define IF_COMPOUND_CHAR_LIMIT 8
 
 /* Structure descriptors */
 gs_private_st_ptrs1(st_pl_font_glyph, pl_font_glyph_t, "pl_font_glyph_t",
@@ -1113,11 +1114,12 @@ typedef struct intelli_metrics_s
 /* Merge the bounding box of a character into the composite box, */
 /* and set the escapement.  Return true if the character is defined. */
 static bool
-pl_intelli_merge_box(float wbox[6], const pl_font_t * plfont, gs_glyph glyph)
+pl_intelli_merge_box(float wbox[6], const pl_font_t * plfont, gs_glyph glyph, int depth)
 {
     const byte *cdata = pl_font_lookup_glyph(plfont, glyph)->data;
 
-    if (cdata == 0)
+    /* 8 is an arbitrary limit to catch circular referencing glyphs */
+    if (cdata == 0 || depth > IF_COMPOUND_CHAR_LIMIT)
         return false;
     wbox[1] = 0;
     if (cdata[3] == 4) {        /* Compound character.  Merge the component boxes; */
@@ -1125,9 +1127,12 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t * plfont, gs_glyph glyph)
         bool found = false;
         uint i;
 
-        for (i = 0; i < cdata[6]; ++i)
-            found |= pl_intelli_merge_box(wbox, plfont,
-                                          pl_get_uint16(cdata + 8 + i * 6));
+        for (i = 0; i < cdata[6]; ++i) {
+            gs_glyph g = (gs_glyph)pl_get_uint16(cdata + 8 + i * 6);
+            if (g == glyph)
+                return false;
+            found |= pl_intelli_merge_box(wbox, plfont, g, ++depth);
+        }
         wbox[0] = (float)pl_get_int16(cdata + 4);
         return found;
     }
@@ -1154,7 +1159,7 @@ pl_intelli_merge_box(float wbox[6], const pl_font_t * plfont, gs_glyph glyph)
 /* Do the work for rendering an Intellifont character. */
 /* The caller has done the setcachedevice. */
 static int
-pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
+pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph, int depth)
 {
     int code;
     const byte *cdata, *cdata_end;
@@ -1166,6 +1171,10 @@ pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
     font_glyph = pl_font_lookup_glyph(plfont, glyph);
     cdata = font_glyph->data;
     cdata_end = cdata + font_glyph->data_len;
+
+    /* 8 is an arbitrary limit to catch circular referencing glyphs */
+    if (depth > IF_COMPOUND_CHAR_LIMIT)
+        return_error(gs_error_invalidfont);
 
     if (cdata == 0) {
         if_debug1m('1', pgs->memory, "[1] no character data for glyph %ld\n",
@@ -1181,9 +1190,13 @@ pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph)
             const byte *edata = cdata + 8 + i * 6;
             double x_offset = pl_get_int16(edata + 2);
             double y_offset = pl_get_int16(edata + 4);
+            gs_glyph g = (gs_glyph)pl_get_uint16(edata);
+
+            if (g == glyph)
+                return_error(gs_error_invalidfont);
 
             gs_translate(pgs, x_offset, y_offset);
-            code = pl_intelli_show_char(pgs, plfont, pl_get_uint16(edata));
+            code = pl_intelli_show_char(pgs, plfont, g, ++depth);
             gs_setmatrix(pgs, &save_ctm);
             if (code < 0)
                 return code;
@@ -1460,7 +1473,7 @@ pl_intelli_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     wbox[0] = wbox[1] = 0;
     wbox[2] = wbox[3] = 65536.0;
     wbox[4] = wbox[5] = -65536.0;
-    if (!pl_intelli_merge_box(wbox, plfont, glyph)) {
+    if (!pl_intelli_merge_box(wbox, plfont, glyph, 0)) {
         wbox[2] = wbox[3] = wbox[4] = wbox[5] = 0;
         code = gs_setcachedevice(penum, pgs, wbox);
         return (code < 0 ? code : 0);
@@ -1468,7 +1481,7 @@ pl_intelli_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
     code = gs_setcachedevice(penum, pgs, wbox);
     if (code < 0)
         return code;
-    code = pl_intelli_show_char(pgs, plfont, glyph);
+    code = pl_intelli_show_char(pgs, plfont, glyph, 0);
     if (code < 0)
         return code;
     /* Since we don't take into account which side of the loops is */
