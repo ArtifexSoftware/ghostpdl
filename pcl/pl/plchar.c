@@ -566,14 +566,16 @@ pl_tt_get_outline(gs_font_type42 * pfont, uint index, gs_glyph_data_t * pdata)
         if (data_size <= 4) {
             /* empty outline */
             gs_glyph_data_from_null(pdata);
-        } else if (cdata[1] == 0) {
-            gs_glyph_data_from_bytes(pdata,
-                                     cdata,
-                                     6 + desc_size, data_size - 4, NULL);
-        } else if (cdata[1] == 1) {
+        } else if (cdata[1] == 0 && (6 + desc_size + data_size - 4) <= pfg->data_len) {
+            gs_glyph_data_from_bytes(pdata, cdata, 6 + desc_size, data_size - 4, NULL);
+        } else if (cdata[1] == 1 && (10 + data_size - 8) <= pfg->data_len) {
             gs_glyph_data_from_bytes(pdata, cdata, 10, data_size - 8, NULL);
-        } else if (cdata[1] == 2) {
+        } else if (cdata[1] == 2 && (12 + data_size - 10) <= pfg->data_len) {
             gs_glyph_data_from_bytes(pdata, cdata, 12, data_size - 10, NULL);
+        }
+        else {
+            /* invalid, treat as empty outline */
+            gs_glyph_data_from_null(pdata);
         }
     }
     return 0;
