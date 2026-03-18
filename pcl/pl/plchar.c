@@ -625,13 +625,20 @@ tt_find_table(gs_font_type42 * pfont, const char *tname, uint * plen)
  * unknown, return gs_error_invalidfont.
  */
 static int
-pl_cmap_lookup(const uint key, const byte * table, uint * pvalue)
-{                               /* Dispatch according to the table type. */
+pl_cmap_lookup(const uint key, const byte * table, size_t table_len, uint * pvalue)
+{
+    const byte *table_lim = table + table_len;
+
+    /* Dispatch according to the table type. */
     switch (pl_get_uint16(table)) {
         case 0:
             {                   /* Apple standard 1-to-1 mapping. */
-                *pvalue = table[key + 6];
-                if_debug2('J', "[J]%u => %u\n", key, *pvalue);
+                if (table + key + 6 < table_lim) {
+                    *pvalue = table[key + 6];
+                    if_debug2('J', "[J]%u => %u\n", key, *pvalue);
+                }
+                else
+                    return_error(gs_error_undefined);
                 break;
             }
         case 4:
@@ -643,6 +650,9 @@ pl_cmap_lookup(const uint key, const byte * table, uint * pvalue)
                 const byte *idRangeOffset = idDelta + segCount2;
                 /*const byte *glyphIdArray = idRangeOffset + segCount2; */
                 uint i2;
+
+                if (idRangeOffset > table_lim)
+                    return_error(gs_error_undefined);
 
                 for (i2 = 0; i2 < segCount2 - 3; i2 += 2) {
                     int delta, roff;
@@ -657,8 +667,15 @@ pl_cmap_lookup(const uint key, const byte * table, uint * pvalue)
                         if_debug1('J', "[J]%u out of range\n", key);
                         return_error(gs_error_undefined);
                     }
+                    if (endCount + i2 + 2 > table_lim) {
+                        break;
+                    }
                     if (key > pl_get_uint16(endCount + i2))
                         continue;
+
+                    if (idRangeOffset + i2 + 2 > table_lim) {
+                        break;
+                    }
                     delta = pl_get_int16(idDelta + i2);
                     roff = pl_get_int16(idRangeOffset + i2);
                     if (roff == 0) {
@@ -666,8 +683,11 @@ pl_cmap_lookup(const uint key, const byte * table, uint * pvalue)
                         if_debug2('J', "[J]%u => %u\n", key, *pvalue);
                         return 0;
                     }
-                    glyph = pl_get_uint16(idRangeOffset + i2 + roff +
-                                          ((key - start) << 1));
+
+                    if ((2 + idRangeOffset + i2 + roff + ((key - start) << 1)) > table_lim) {
+                        break;
+                    }
+                    glyph = pl_get_uint16(idRangeOffset + i2 + roff + ((key - start) << 1));
                     *pvalue = (glyph == 0 ? 0 : glyph + delta);
                     if_debug2('J', "[J]%u => %u\n", key, *pvalue);
                     return 0;
@@ -682,11 +702,21 @@ pl_cmap_lookup(const uint key, const byte * table, uint * pvalue)
             }
         case 6:
             {                   /* Single interval lookup. */
-                uint firstCode = pl_get_uint16(table + 6);
-                uint entryCount = pl_get_uint16(table + 8);
+                uint firstCode;
+                uint entryCount;
 
+                if (table + 10 > table_lim) {
+                    return_error(gs_error_undefined);
+                }
+
+                firstCode = pl_get_uint16(table + 6);
+                entryCount = pl_get_uint16(table + 8);
                 if (key < firstCode || key >= firstCode + entryCount) {
                     if_debug1('J', "[J]%u out of range\n", key);
+                    return_error(gs_error_undefined);
+                }
+
+                if (table + 12 + ((key - firstCode) << 1) > table_lim) {
                     return_error(gs_error_undefined);
                 }
                 *pvalue =
@@ -709,6 +739,7 @@ pl_tt_cmap_encode_char(gs_font_type42 * pfont, ulong cmap_offset,
     const byte *cmap;
     const byte *cmap_sub;
     const byte *table;
+    size_t table_len;
     uint value;
     int code;
 
@@ -733,10 +764,11 @@ pl_tt_cmap_encode_char(gs_font_type42 * pfont, ulong cmap_offset,
     }
     {
         uint offset = cmap_offset + pl_get_uint32(cmap_sub + 4);
+        table_len = cmap_offset + cmap_len - offset;
 
-        access(offset, cmap_offset + cmap_len - offset, table);
+        access(offset, table_len, table);
     }
-    code = pl_cmap_lookup((uint) chr, table, &value);
+    code = pl_cmap_lookup((uint) chr, table, table_len, &value);
     return (code < 0 ? GS_NO_GLYPH : value);
 }
 
