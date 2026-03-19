@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -746,8 +746,10 @@ pxReadChar(px_args_t * par, px_state_t * pxs)
                             gs_resize_object(pxs->memory, data,
                                              bmp_offset + bmp_size,
                                              "pxReadChar");
-                        if (data)
+                        if (data) {
                             memmove(data + bmp_offset, data + 10, bmp_size);
+                            pxs->download_bytes.data = data;
+                        }
                         else
                             code = gs_note_error(errorInsufficientMemory);
                     }
