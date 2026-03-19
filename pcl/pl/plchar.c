@@ -1263,7 +1263,7 @@ pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph, 
             return -1;
 
         for (i = 0; i < num_loops; ++i) {
-            const byte *xyc = cdata + pl_get_uint16(outlines + 4 + i * 8);
+            const byte *xyc;
             uint num_points;
             uint num_aux_points;
             const byte *x_coords, *y_coords, *x_coords_last;
@@ -1279,6 +1279,12 @@ pl_intelli_show_char(gs_gstate * pgs, const pl_font_t * plfont, gs_glyph glyph, 
                 code = gs_note_error(gs_error_invalidfont);
                 break;
             }
+            xyc = cdata + pl_get_uint16(outlines + 4 + i * 8);
+            if (xyc + 4 >= cdata_end) {
+                code = gs_note_error(gs_error_invalidfont);
+                break;
+            }
+
             num_points = pl_get_uint16(xyc);
             num_aux_points = pl_get_uint16(xyc + 2);
 
