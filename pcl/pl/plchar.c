@@ -750,8 +750,12 @@ pl_tt_cmap_encode_char(gs_font_type42 * pfont, ulong cmap_offset,
     cmap_sub = cmap + 4;
     {
         uint i;
+        uint16_t ncmaps = pl_get_uint16(cmap + 2);
 
-        for (i = 0; i < pl_get_uint16(cmap + 2); ++i) {
+        if (ncmaps * 8 + 2 >= cmap_len)
+            return GS_NO_GLYPH;
+
+        for (i = 0; i < ncmaps; ++i) {
             if_debug3m('j', pfont->memory,
                        "[j]cmap %d: platform %u encoding %u\n", i,
                        pl_get_uint16(cmap_sub + i * 8),
