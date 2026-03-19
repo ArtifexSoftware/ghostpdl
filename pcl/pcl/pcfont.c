@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -579,7 +579,7 @@ pcl_set_current_font_environment(pcl_state_t * pcs)
                     (pjl_proc_fontsource_to_path(pcs->pjls, fontsource),
                      pcs->memory, &pcs->simm_fonts, pcs->font_dir,
                      (int)pcds_all_simms)) {
-
+                    pjl_proc_set_next_fontsource(pcs->pjls);
                     continue;   /* try next resource */
                 }
                 pcl_data_storage = pcds_all_simms;
