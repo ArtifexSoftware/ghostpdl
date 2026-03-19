@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -224,9 +224,16 @@ pcl_macro_control(pcl_args_t * pargs, pcl_state_t * pcs)
             {                   /* Delete temporary macros. */
                 pl_dict_enum_stack_begin(&pcs->macros, &denum, false);
                 while (pl_dict_enum_next(&denum, &key, &value))
-                    if (((pcl_macro_t *) value)->storage == pcds_temporary)
+                    if (((pcl_macro_t *) value)->storage == pcds_temporary) {
                         pl_dict_undef_purge_synonyms(&pcs->macros, key.data,
                                                      key.size);
+                        /* The undef may have changed the dictionary under the feet
+                           of the enumerator, so restart.
+                           Called rarely enough, and dictionaries generally small enough
+                           not to worry about the overhead.
+                         */
+                        pl_dict_enum_stack_begin(&pcs->macros, &denum, false);
+                    }
                 return 0;
             }
         case 8:
