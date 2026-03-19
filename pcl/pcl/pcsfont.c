@@ -174,14 +174,6 @@ pcl_font_control(pcl_args_t * pargs, pcl_state_t * pcs)
                     code = pcl_delete_soft_font(pcs, key.data, key.size, value);
                     if (code < 0)
                         return code;
-                    /* Since deleting the softfont also deletes any "synonyms" in
-                       the dictionary, it means the dictionary contents can change
-                       under our feet.
-                       The simplest solution is to start the enumeration with
-                       a clean slate. This isn't used often enough for the
-                       efficiency to be a worry.
-                     */
-                    pl_dict_enum_stack_begin(&pcs->soft_fonts, &denum, false);
                 }
             break;
         case 2:
@@ -967,12 +959,15 @@ pcl_find_resource(pcl_state_t * pcs,
        don't need to add (put) it in the dictionary. */
     if (resource_type == macro_resource) {
         code = pl_dict_put(&pcs->macros, CURRENT_MACRO_ID, CURRENT_MACRO_ID_SIZE, value);
-        if (code == 0)
-            code = pl_dict_put_synonym(&pcs->macros, CURRENT_MACRO_ID,
-                                       CURRENT_MACRO_ID_SIZE, sid, sid_size);
         if (code < 0) {
             gs_free_object(pcs->memory, value, "resource");
-            return_error(code);
+            return code;
+        }
+        code = pl_dict_put_synonym(&pcs->macros, CURRENT_MACRO_ID,
+                                       CURRENT_MACRO_ID_SIZE, sid, sid_size);
+        if (code < 0) {
+            pl_dict_undef_purge_synonyms(&pcs->macros, CURRENT_MACRO_ID, CURRENT_MACRO_ID_SIZE);
+            return code;
         }
     } else {
         code = pl_dict_put_synonym(&pcs->soft_fonts, CURRENT_FONT_ID,
