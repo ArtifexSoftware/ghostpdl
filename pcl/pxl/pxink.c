@@ -530,16 +530,21 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
             switch (pattern->params.color_space) {
                 case eGray:
                     pcs = gs_cspace_new_DeviceGray(pxgs->memory);
-                    if (pcs == NULL)
+                    if (pcs == NULL) {
+                        gs_grestore(pgs);
                         return_error(errorInsufficientMemory);
+                    }
                     break;
                 case eRGB:
                 case eSRGB:
                     pcs = gs_cspace_new_DeviceRGB(pxgs->memory);
-                    if (pcs == NULL)
+                    if (pcs == NULL) {
+                        gs_grestore(pgs);
                         return_error(errorInsufficientMemory);
+                    }
                     break;
                 default:
+                    gs_grestore(pgs);
                     return_error(errorIllegalAttributeValue);
             }
             gs_setcolorspace(pgs, pcs);
@@ -655,12 +660,12 @@ set_source(const px_args_t * par, px_state_t * pxs, px_paint_t * ppt)
          * gs_makepattern creates pattern instances with a reference
          * count already set to 1.
          */
-        rc_increment(pattern);
         if (code < 0)
             return code;
         px_paint_rc_adjust(ppt, -1, pxs->memory);
         ppt->type = pxpPattern;
         ppt->value.pattern.pattern = pattern;
+        rc_increment(pattern);
         ppt->value.pattern.color = ccolor;
         /* not pxaPatternSelectID but we have a pattern origin or
            newdestination size */
