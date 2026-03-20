@@ -379,14 +379,18 @@ download_pcl_pattern(pcl_args_t * pargs, pcl_state_t * pcs)
     }
 #endif
 
-    if (count < 8)
-        return e_Range;
-
     format = puptrn0->format;
-    /* non data size - the size of the parameters that describe the data */
-    ndsize =
-        (format ==
-         20 ? sizeof(pcl_upattern1_t) : sizeof(pcl_upattern0_t)) - 1;
+    if (format == 20) {
+        if (count < 12)
+            return e_Range;
+        /* non data size - the size of the parameters that describe the data */
+        ndsize = sizeof(pcl_upattern1_t) - 1;
+    } else {
+        if (count < 8)
+            return e_Range;
+        /* non data size - the size of the parameters that describe the data */
+        ndsize = sizeof(pcl_upattern0_t) - 1;
+    }
     pixinfo.num_comps = 1;
     pixinfo.size.x = (((uint) puptrn0->width[0]) << 8) + puptrn0->width[1];
     pixinfo.size.y = (((uint) puptrn0->height[0]) << 8) + puptrn0->height[1];
