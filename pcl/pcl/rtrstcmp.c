@@ -340,7 +340,10 @@ uncompress_10(pcl_seed_row_t * pout, const byte * pin, int in_size)
 	    } else
 		break;
 	} else {
-	    pixel = cachedColor;
+        if (pb + 3 < plim)
+	        pixel = cachedColor;
+        else
+            break;
 	}
 	if (comp) {
 	    /* RLE */
@@ -366,6 +369,7 @@ uncompress_10(pcl_seed_row_t * pout, const byte * pin, int in_size)
 	    for (j = 0; j < cnt; j++) {
 		if ((pb + 3) > plim) {
 		    if_debug0('|', "pixel over run 1\n");
+            break;
 		} else {
 		    *pb++ = (pixel >> 16) & 0xff;
 		    *pb++ = (pixel >> 8) & 0xff;
