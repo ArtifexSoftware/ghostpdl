@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -392,18 +392,25 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
     if (table_offset == 0)
         return -1;
     /* this shoudn't happen but... */
-    if (table_length == 0)
+    /* 32 byte offset, plus 2 bytes for number of glyphs
+       less than that is deifnitely an invalid table.
+     */
+    if (table_length < 34)
         return -1;
 
     {
         ulong format;
         int numGlyphs;
+        int code;
         uint glyph_name_index;
         const byte *postp;      /* post table pointer */
 
-        ((gs_font_type42 *) pfont)->data.string_proc((gs_font_type42 *) pfont,
+        code = ((gs_font_type42 *) pfont)->data.string_proc((gs_font_type42 *) pfont,
                                                      table_offset,
                                                      table_length, &postp);
+        if (code < 0)
+            return -1;
+
         format = u32(postp);
         if (format != 0x20000) {
             /* format 1.0 (mac encoding) is a simple table see the TT
@@ -421,6 +428,9 @@ pl_glyph_name(gs_font * pfont, gs_glyph glyph, gs_const_string * pstr)
             return -1;
         }
         /* glyph name index starts at post + 34 each entry is 2 bytes */
+        if (postp + 34 + (glyph * 2) + 2 > postp + table_length)
+            return -1;
+
         glyph_name_index = u16(postp + 34 + (glyph * 2));
         /* this shouldn't happen */
         if (glyph_name_index > 0x7fff)
