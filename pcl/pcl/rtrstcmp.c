@@ -129,8 +129,12 @@ uncompress_3(pcl_seed_row_t * pout, const byte * pin, int in_size)
             while ((add_offset == 0xff) && (i-- > 0));
         }
 
-        if (cnt > i)
-            cnt = i;
+        if (i <= 0)
+            cnt = 0;
+        else {
+            if (cnt > i)
+                cnt = i;
+        }
         i -= cnt;
         ptmp = pin;
         pin += cnt;
