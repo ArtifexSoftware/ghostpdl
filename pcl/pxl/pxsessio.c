@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -756,7 +756,7 @@ pxVendorUnique(px_args_t * par, px_state_t * pxs)
     int code = 0;
 
     if (par->pv[1]) {
-        ulong len = par->pv[1]->value.i;
+        int32 len = par->pv[1]->value.i;
         ulong copy = min(len - par->source.position,
                          par->source.available);
         par->source.data += copy;
