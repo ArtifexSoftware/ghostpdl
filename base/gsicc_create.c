@@ -1443,10 +1443,17 @@ static void
 gsicc_create_initialize_clut(gsicc_clut *clut)
 {
     int k;
+    int64_t entries = 0;
 
-    clut->clut_num_entries = clut->clut_dims[0];
+    clut->clut_num_entries = entries = clut->clut_dims[0];
+
     for (k = 1; k < clut->clut_num_input; k++) {
-        clut->clut_num_entries *= clut->clut_dims[k];
+        entries = clut->clut_num_entries * clut->clut_dims[k];
+        if (entries > INT_MAX || entries / clut->clut_num_entries != clut->clut_dims[k]) {
+            clut->clut_num_entries = 0;
+            break;
+        }
+        clut->clut_num_entries = entries;
     }
     clut->data_byte =  NULL;
     clut->data_short = NULL;
@@ -1630,7 +1637,7 @@ gsicc_create_mashed_clut(gsicc_lutatob *icc_luta2bparts,
     gsicc_create_initialize_clut(clut);
     /* Allocate space for the table data */
     clut->data_short = (unsigned short*) gs_alloc_bytes(memory,
-        clut->clut_num_entries*3*(size_t)sizeof(unsigned short),"gsicc_create_mashed_clut");
+        (size_t)clut->clut_num_entries*3*(size_t)sizeof(unsigned short),"gsicc_create_mashed_clut");
     if (clut->data_short == NULL) {
         gs_free_object(memory, clut, "gsicc_create_mashed_clut");
         return gs_throw(gs_error_VMerror, "Allocation of ICC clut short data failed");
