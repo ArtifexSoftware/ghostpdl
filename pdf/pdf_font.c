@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -773,7 +773,7 @@ enum {
   font_substitute = 2
 };
 
-static int pdfi_load_font_buffer(pdf_context *ctx, byte *fbuf, int fbuflen, int fftype, pdf_name *Subtype, int findex, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, pdf_font **ppdffont, bool cidfont)
+static int pdfi_load_font_buffer(pdf_context *ctx, byte *fbuf, int64_t fbuflen, int fftype, pdf_name *Subtype, int findex, pdf_dict *stream_dict, pdf_dict *page_dict, pdf_dict *font_dict, pdf_font **ppdffont, bool cidfont)
 {
     int code = gs_error_invalidfont;
     if (fbuf != NULL) {
