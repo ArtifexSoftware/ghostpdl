@@ -3141,9 +3141,12 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   } \
   else if (code == 0) \
   { \
+    size_t _copylen = stringval.size; \
+    if (_copylen > sizeof(cups->header.name) - 1) \
+      _copylen = sizeof(cups->header.name) - 1; \
     strncpy(cups->header.name, (const char *)(stringval.data),	\
-            stringval.size); \
-    cups->header.name[stringval.size] = '\0'; \
+            _copylen); \
+    cups->header.name[_copylen] = '\0'; \
   }
 
 #define intoption(name, sname, type) \
@@ -4452,6 +4455,11 @@ cups_set_color_info(gx_device *pdev)	/* I - Device info */
   if (cups->header.cupsBitsPerColor > 8)
     cups->header.cupsBitsPerColor = 8;
 #endif /* !GX_COLOR_INDEX_TYPE */
+
+#ifdef GX_COLOR_INDEX_TYPE
+  if (cups->header.cupsBitsPerColor > 16)
+    cups->header.cupsBitsPerColor = 16;
+#endif /* GX_COLOR_INDEX_TYPE */
 
   switch (cups->header.cupsColorSpace)
   {
