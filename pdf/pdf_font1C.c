@@ -693,6 +693,8 @@ format2_charset_proc(const byte *p, const byte *pe, unsigned int i)
 static int
 format0_fdselect_proc(const byte *p, const byte *pe, unsigned int i)
 {
+    if (p + i + 4 > pe)
+        return_error(gs_error_rangecheck);
     return (int)(*(p + i));
 }
 
