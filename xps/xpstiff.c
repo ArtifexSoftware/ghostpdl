@@ -52,6 +52,7 @@ struct xps_tiff_s
 
     /* where we can find the strips of image data */
     unsigned rowsperstrip;
+    unsigned stripcount;
     unsigned *stripoffsets;
     unsigned *stripbytecounts;
 
@@ -762,10 +763,16 @@ xps_decode_tiff_strips(xps_context_t *ctx, xps_tiff_t *tiff, xps_image_t *image)
     strip = 0;
     for (row = 0; row < tiff->imagelength; row += tiff->rowsperstrip)
     {
-        unsigned offset = tiff->stripoffsets[strip];
-        unsigned rlen = tiff->stripbytecounts[strip];
-        unsigned wlen = image->stride * tiff->rowsperstrip;
-        byte *rp = tiff->bp + offset;
+        unsigned offset, rlen, wlen;
+        byte *rp;
+
+        if (strip >= tiff->stripcount)
+            return gs_throw(-1, "strip index exceeds strip offsets array size");
+
+        offset = tiff->stripoffsets[strip];
+        rlen = tiff->stripbytecounts[strip];
+        wlen = image->stride * tiff->rowsperstrip;
+        rp = tiff->bp + offset;
 
         if (wp + wlen > image->samples + (size_t)image->stride * image->height)
             wlen = image->samples + (size_t)image->stride * image->height - wp;
@@ -1078,6 +1085,7 @@ xps_read_tiff_tag(xps_context_t *ctx, xps_tiff_t *tiff, unsigned offset)
         if (!xps_alloc_table((void **)&tiff->stripoffsets, ctx, (size_t)count * sizeof(unsigned)))
             return gs_throw(gs_error_VMerror, "could not allocate strip offsets");
         code = xps_read_tiff_tag_value(tiff->stripoffsets, tiff, type, value, count);
+        tiff->stripcount = count;
         break;
 
     case StripByteCounts:
