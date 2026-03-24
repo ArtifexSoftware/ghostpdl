@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2748,9 +2748,12 @@ pclxl_put_params(gx_device * dev,       /* I - Device info */
       }                                                          \
     }                                                            \
   else if (code == 0) {                                          \
+    size_t _copylen = stringval.size;                             \
+    if (_copylen > sizeof(xdev->name) - 1)                        \
+      _copylen = sizeof(xdev->name) - 1;                          \
     strncpy(xdev->name, (const char *)(stringval.data),          \
-            stringval.size);                                     \
-    xdev->name[stringval.size] = '\0';                           \
+            _copylen);                                           \
+    xdev->name[_copylen] = '\0';                                 \
     if_debug2('|', "setting %s to %s\n", sname, xdev->name);     \
   }
 
