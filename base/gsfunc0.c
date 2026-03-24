@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1463,7 +1463,7 @@ gs_function_Sd_init(gs_function_t ** ppfn,
                          params->m, params->n);
     if (code < 0)
         return code;
-    if (params->m > max_Sd_m)
+    if (params->m > max_Sd_m || params->n > max_Sd_n)
         return_error(gs_error_limitcheck);
     switch (params->Order) {
         case 0:		/* use default */
