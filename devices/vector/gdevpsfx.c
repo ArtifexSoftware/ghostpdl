@@ -143,13 +143,18 @@ type1_stem1(gs_type1_state *pcis, cv_stem_hint_table *psht, const fixed *pv,
     psht->count++;
     return 0;
 }
-static void
+static int
 type1_stem3(gs_type1_state *pcis, cv_stem_hint_table *psht, const fixed *pv3,
             fixed lsb, byte *active_hints)
 {
-    type1_stem1(pcis, psht, pv3, lsb, active_hints);
-    type1_stem1(pcis, psht, pv3 + 2, lsb, active_hints);
-    type1_stem1(pcis, psht, pv3 + 4, lsb, active_hints);
+    int code = 0;
+    if (type1_stem1(pcis, psht, pv3, lsb, active_hints) < 0)
+        return code;
+    if (type1_stem1(pcis, psht, pv3 + 2, lsb, active_hints) < 0)
+        return code;
+    if (type1_stem1(pcis, psht, pv3 + 4, lsb, active_hints) < 0)
+        return code;
+    return 0;
 }
 
 /*
@@ -474,6 +479,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
      */
     int depth;			/* of operands on stack */
     int prev_op;		/* operator to write, -1 if none */
+    int code = 0;
 #define CLEAR_OP()\
   (depth = 0, prev_op = -1)
 #define CHECK_OP()\
@@ -522,12 +528,16 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
         case cx_hstem:
             if (cis.os_count < 2)
                 return_error(gs_error_invalidfont);
-            type1_stem1(&cis, &hstem_hints, csp - 1, cis.lsb.y, NULL);
+            code = type1_stem1(&cis, &hstem_hints, csp - 1, cis.lsb.y, NULL);
+            if (code < 0)
+                return code;
             goto clear;
         case cx_vstem:
             if (cis.os_count < 2)
                 return_error(gs_error_invalidfont);
-            type1_stem1(&cis, &vstem_hints, csp - 1, cis.lsb.x, NULL);
+            code = type1_stem1(&cis, &vstem_hints, csp - 1, cis.lsb.x, NULL);
+            if (code < 0)
+                return code;
             goto clear;
         case CE_OFFSET + ce1_sbw:
             if (cis.os_count < 4)
@@ -538,12 +548,16 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
         case CE_OFFSET + ce1_vstem3:
             if (cis.os_count < 6)
                 return_error(gs_error_invalidfont);
-            type1_stem3(&cis, &vstem_hints, csp - 5, cis.lsb.x, NULL);
+            code = type1_stem3(&cis, &vstem_hints, csp - 5, cis.lsb.x, NULL);
+            if (code < 0)
+                return code;
             goto clear;
         case CE_OFFSET + ce1_hstem3:
             if (cis.os_count < 6)
                 return_error(gs_error_invalidfont);
-            type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, NULL);
+            code = type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, NULL);
+            if (code < 0)
+                return code;
         clear:
             type1_clear(&cis);
             continue;
@@ -587,6 +601,8 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
     if (replace_hints) {
         hintmask_size =
             (hstem_hints.count + vstem_hints.count + 7) / 8;
+        if (hintmask_size > (max_total_stem_hints + 7) / 8)
+            return_error(gs_error_invalidfont);
         memset(active_hints, 0, hintmask_size);
     } else
         hintmask_size = 0;
@@ -667,7 +683,9 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
         case cx_hstem:
             if (cis.os_count < 2)
                 return_error(gs_error_invalidfont);
-            type1_stem1(&cis, &hstem_hints, csp - 1, cis.lsb.y, active_hints);
+            code = type1_stem1(&cis, &hstem_hints, csp - 1, cis.lsb.y, active_hints);
+            if (code < 0)
+                return code;
         hint:
             HINTS_CHANGED();
             type1_clear(&cis);
@@ -675,17 +693,23 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
         case cx_vstem:
             if (cis.os_count < 2)
                 return_error(gs_error_invalidfont);
-            type1_stem1(&cis, &vstem_hints, csp - 1, cis.lsb.x, active_hints);
+            code = type1_stem1(&cis, &vstem_hints, csp - 1, cis.lsb.x, active_hints);
+            if (code < 0)
+                return code;
             goto hint;
         case CE_OFFSET + ce1_vstem3:
             if (cis.os_count < 6)
                 return_error(gs_error_invalidfont);
-            type1_stem3(&cis, &vstem_hints, csp - 5, cis.lsb.x, active_hints);
+            code = type1_stem3(&cis, &vstem_hints, csp - 5, cis.lsb.x, active_hints);
+            if (code < 0)
+                return code;
             goto hint;
         case CE_OFFSET + ce1_hstem3:
             if (cis.os_count < 6)
                 return_error(gs_error_invalidfont);
-            type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, active_hints);
+            code = type1_stem3(&cis, &hstem_hints, csp - 5, cis.lsb.y, active_hints);
+            if (code < 0)
+                return code;
             goto hint;
         case CE_OFFSET + ce1_dotsection:
             if (dotsection_flag == dotsection_out) {
