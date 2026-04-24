@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -56,10 +56,10 @@ typedef enum {
 
 /*
  * Define the maximum number of components/planes in image data.
- * The +1 is for either color + alpha or mask + color.
+ * We need +1 for either color + alpha or mask + color, and +1 for both (image type 3x with separate sources for both shape and opacity masks).
  */
 #define GS_IMAGE_MAX_COLOR_COMPONENTS GS_CLIENT_COLOR_MAX_COMPONENTS
-#define GS_IMAGE_MAX_COMPONENTS (GS_IMAGE_MAX_COLOR_COMPONENTS + 1)
+#define GS_IMAGE_MAX_COMPONENTS (GS_IMAGE_MAX_COLOR_COMPONENTS + 2)
 
 /*
  * Define the structure for defining data common to ImageType 1 images,
