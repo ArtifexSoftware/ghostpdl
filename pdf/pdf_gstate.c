@@ -1199,6 +1199,10 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
             code = pdfi_build_function(ctx, &pfn, (const float *)domain, 2, obj, page_dict);
             if (code < 0)
                 goto error;
+            if (pfn->params.m != 2 || pfn->params.n != 1) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto error;
+            }
             break;
         case PDF_ARRAY:
             for (j = 0; j < pdfi_array_size((pdf_array *)obj); j++) {

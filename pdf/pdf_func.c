@@ -714,6 +714,10 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
         else
             params.n = 0;
     }
+    if (params.n > GS_CLIENT_COLOR_MAX_COMPONENTS) {
+        code = gs_note_error(gs_error_limitcheck);
+        goto sub_function_error;
+    }
     switch(Type) {
         case 0:
             code = pdfi_build_function_0(ctx, &params, (pdf_stream *)stream_obj, 0, ppfn);
