@@ -606,7 +606,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
     uint32_t size = 256;
     pdf_string *string = NULL;
     int c, code, nesting = 0;
-    bool escape = false, skip_eol = false, exit_loop = false;
+    bool escape = false, skip_lf = false, exit_loop = false;
 
     Buffer = (char *)gs_alloc_bytes(ctx->memory, size, "pdfi_read_string");
     if (Buffer == NULL)
@@ -636,19 +636,19 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
             break;
         }
 
-        if (skip_eol) {
-            if (c == 0x0a || c == 0x0d)
+        if (skip_lf) {
+            skip_lf = false;
+            if (c == 0x0a)
                 continue;
-            skip_eol = false;
         }
         Buffer[index] = (char)c;
 
         if (escape) {
             escape = false;
             switch (Buffer[index]) {
-                case 0x0a:
                 case 0x0d:
-                    skip_eol = true;
+                    skip_lf = true;
+                case 0x0a:
                     continue;
                 case 'n':
                     Buffer[index] = 0x0a;
@@ -712,9 +712,7 @@ static int pdfi_read_string(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect
             switch(Buffer[index]) {
                 case 0x0d:
                     Buffer[index] = 0x0a;
-                    /*fallthrough*/
-                case 0x0a:
-                    skip_eol = true;
+                    skip_lf = true;
                     break;
                 case ')':
                     if (nesting == 0) {
