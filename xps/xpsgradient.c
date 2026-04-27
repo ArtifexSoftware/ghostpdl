@@ -795,6 +795,8 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
     float dx, dy;
     int code;
     int i;
+    float len;
+    gs_point pt;
 
     char *start_point_att = xps_att(root, "StartPoint");
     char *end_point_att = xps_att(root, "EndPoint");
@@ -814,6 +816,15 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
 
     xps_bounds_in_user_space(ctx, &bbox);
 
+    len = sqrt(dx * dx + dy * dy);
+    /* transfrom the 'len' into device spaces */
+    gs_distance_transform(0, len, &ctm_only(ctx->pgs), &pt);
+    /* If *both* the x and y distances are under half a pixel, ignore the gradient
+     * (it is apparently possible for either to be zero...)
+     */
+    if (fabs(pt.x) < 0.5 && fabs(pt.y) < 0.5)
+        spread = SPREAD_PAD;
+
     if (spread == SPREAD_PAD)
     {
         code = xps_draw_one_linear_gradient(ctx, func, 1, x0, y0, x1, y1);
@@ -822,21 +833,11 @@ xps_draw_linear_gradient(xps_context_t *ctx, xps_item_t *root, int spread, gs_fu
     }
     else
     {
-        float len;
         float a, b;
         float dist[4];
         float d0, d1;
         int i0, i1;
-        gs_point pt;
 
-        len = sqrt(dx * dx + dy * dy);
-        /* transfrom the 'len' into device spaces */
-        gs_distance_transform(0, len, &ctm_only(ctx->pgs), &pt);
-        /* If *both* the x and y distances are under half a pixel, ignore the gradient
-         * (it is apparently possible for either to be zero...)
-         */
-        if (fabs(pt.x) < 0.5 && fabs(pt.y) < 0.5)
-            return 0;
         a = dx / len;
         b = dy / len;
 
