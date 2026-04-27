@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2025 Artifex Software, Inc.
+/* Copyright (C) 2020-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -684,11 +684,16 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
                 pdficmap->csi_reg.size = s->cur[0].size;
                 if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
                     memcpy(pdficmap->csi_reg.data, s->cur[0].val.string, s->cur[0].size);
+                    pdficmap->csi_reg.data[pdficmap->csi_reg.size] = '\0';
                 }
                 else {
-                    memcpy(pdficmap->csi_reg.data, s->cur[0].val.name, s->cur[0].size);
+                    if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_NAME)) {
+                        memcpy(pdficmap->csi_reg.data, s->cur[0].val.name, s->cur[0].size);
+                        pdficmap->csi_reg.data[pdficmap->csi_reg.size] = '\0';
+                    }
+                    else
+                        code = gs_note_error(gs_error_typecheck);
                 }
-                pdficmap->csi_reg.data[pdficmap->csi_reg.size] = '\0';
             }
             else {
                 code = gs_note_error(gs_error_VMerror);
@@ -701,11 +706,18 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
             pdficmap->csi_ord.data = gs_alloc_bytes(mem, (size_t)s->cur[0].size + 1, "cmap_def_func(Ordering)");
             if (pdficmap->csi_ord.data != NULL) {
                 pdficmap->csi_ord.size = s->cur[0].size;
-                if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING))
+                if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
                     memcpy(pdficmap->csi_ord.data, s->cur[0].val.string, s->cur[0].size);
-                else
-                    memcpy(pdficmap->csi_ord.data, s->cur[0].val.name, s->cur[0].size);
-                pdficmap->csi_ord.data[pdficmap->csi_ord.size] = '\0';
+                    pdficmap->csi_ord.data[pdficmap->csi_ord.size] = '\0';
+                }
+                else {
+                    if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_NAME)) {
+                        memcpy(pdficmap->csi_ord.data, s->cur[0].val.name, s->cur[0].size);
+                        pdficmap->csi_ord.data[pdficmap->csi_ord.size] = '\0';
+                    }
+                    else
+                        code = gs_note_error(gs_error_typecheck);
+                }
             }
             else {
                 code = gs_note_error(gs_error_VMerror);
@@ -726,11 +738,18 @@ static int cmap_def_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *buf, byte *buf
             pdficmap->name.data = gs_alloc_bytes(mem, (size_t)s->cur[0].size + 1, "cmap_def_func(CMapName)");
             if (pdficmap->name.data != NULL) {
                 pdficmap->name.size = s->cur[0].size;
-                if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING))
+                if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_STRING)) {
                     memcpy(pdficmap->name.data, s->cur[0].val.string, s->cur[0].size);
-                else
-                    memcpy(pdficmap->name.data, s->cur[0].val.name, s->cur[0].size);
-                pdficmap->name.data[pdficmap->name.size] = '\0';
+                    pdficmap->name.data[pdficmap->name.size] = '\0';
+                }
+                else {
+                    if (pdf_ps_obj_has_type(&s->cur[0], PDF_PS_OBJ_NAME)) {
+                        memcpy(pdficmap->name.data, s->cur[0].val.name, s->cur[0].size);
+                        pdficmap->name.data[pdficmap->name.size] = '\0';
+                    }
+                    else
+                        code = gs_note_error(gs_error_typecheck);
+                }
             }
             else {
                 code = gs_note_error(gs_error_VMerror);
