@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -397,6 +397,9 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                         state = crypt_charstring_seed;
                         if (encrypted) {
                             int skip = pdata->lenIV;
+
+                            if (cip + skip >= cipend)
+                                return_error(gs_error_invalidfont);
 
                             /* Skip initial random bytes */
                             for (; skip > 0; ++cip, --skip)
