@@ -327,7 +327,10 @@ pl_bitmap_build_char(gs_show_enum * penum, gs_gstate * pgs, gs_font * pfont,
         image.Height = pl_get_uint16(params + 6);
         /* Determine the amount of pseudo-bolding. */
         if (plfont->bold_fraction != 0) {
-            bold = (uint) (2 * image.Height * plfont->bold_fraction + 0.5);
+            if (image.Height < image.Width)
+                bold = (uint) (2 * image.Height * plfont->bold_fraction + 0.5);
+            else
+                bold = (uint) (2 * image.Width * plfont->bold_fraction + 0.5);
             bold_lines = alloc_bold_lines(pgs->memory, image.Width, bold,
                                           "pl_bitmap_build_char(bold_line)");
             if (bold_lines == 0) {
