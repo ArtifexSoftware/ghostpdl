@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -215,12 +215,20 @@ gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results)
     fixed *base;
     fixed *deltas;
 
+    /* "- 1" because the loop exit condition is "<= k1" */
+    if (k1 > pcis->pfont->data.WeightVector.count - 1)
+        k1 = pcis->pfont->data.WeightVector.count - 1;
+
     if (num_values < num_results ||
         num_values % num_results != 0
         )
         return_error(gs_error_invalidfont);
     base = csp - 1 - num_values;
     deltas = base + num_results - 1;
+
+    if(deltas + k1 >= csp - 1)
+         return_error(gs_error_invalidfont);
+
     for (j = 0; j < num_results;
          j++, base++, deltas += k1
          )

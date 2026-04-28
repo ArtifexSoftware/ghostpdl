@@ -295,7 +295,7 @@ type1_next(gs_type1_state *pcis)
                     num_results = 6;
                 blend:
                     CS_CHECK_POP(csp, pcis->ostack);
-                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[-fixed2int_var(csp[-1])], pcis->ostack))
+                    if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1 - fixed2int_var(csp[-1])], pcis->ostack))
                         return_error(gs_error_invalidfont);
 
                     code = gs_type1_blend(pcis, csp, num_results);
