@@ -3005,6 +3005,9 @@ ps_get_glyphname_or_cid(gs_text_enum_t *penum,
                         c_code = 0;
                     }
                     Map = &CIDMap->value.bytes[c_code * gdb];
+                    /* If we don't have enough bytes in CIDMap, ensure we can't enter the loop below setting cr->char_codes[0] */
+                    if (Map + gdb > CIDMap->value.bytes + CIDMap->tas.rsize)
+                        code = -1;
                 }
                 cr->char_codes[0] = 0;
                 is_glyph_index = true;
