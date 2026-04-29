@@ -490,6 +490,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     gs_param_string_array sona;         /* SeparationOrder names array */
     gs_param_int_array equiv_cmyk;      /* equivalent_cmyk_color_params */
     int num_res_comps = pdevn_params->num_reserved_components;
+    int num_std_names = npcmcolors;
 
     /* Get the SeparationOrder names */
     BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationOrder",
@@ -524,25 +525,25 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
     }
 
     if (gs_device_supports_spots(pdev)) {
+        fixed_colorant_names_list pcomp_names = pdevn_params->std_colorant_names;
+        /* You would expect that pdevn_params->num_std_colorant_names would have this value but it does not.
+         * That appears to be copied from the 'ncomps' of the device and that has to be the number of components
+         * in the 'base' colour model, 1, 3 or 4 for Gray, RGB or CMYK. Other kinds of DeviceN devices can have
+         * additional standard names, eg Tags, or Artifex Orange and Artifex Green, but these are not counted in
+         * the num_std_colorant_names. They are, however, listed in pdevn_params->std_colorant_names (when is a
+         * std_colorant_name not a std_colorant_name ?), which is checked to see if a SeparationOrder name is one
+         * of the inks we are already dealing with. If it is, then we *don't* add it to num_spots.
+         * So we need to actually count the number of colorants in std_colorant_names to make sure that we
+         * don't exceed the maximum number of components.
+         */
+        num_std_names = count_process_color_names(pcomp_names);
         /*
          * Process the SeparationColorNames.  Remove any names that already
          * match the process color model colorant names for the device.
          */
         if (scna.data != 0) {
             int num_names = scna.size, num_std_names = 0;
-            fixed_colorant_names_list pcomp_names = pdevn_params->std_colorant_names;
 
-            /* You would expect that pdevn_params->num_std_colorant_names would have this value but it does not.
-             * That appears to be copied from the 'ncomps' of the device and that has to be the number of components
-             * in the 'base' colour model, 1, 3 or 4 for Gray, RGB or CMYK. Other kinds of DeviceN devices can have
-             * additional standard names, eg Tags, or Artifex Orange and Artifex Green, but these are not counted in
-             * the num_std_colorant_names. They are, however, listed in pdevn_params->std_colorant_names (when is a
-             * std_colorant_name not a std_colorant_name ?), which is checked to see if a SeparationOrder name is one
-             * of the inks we are already dealing with. If it is, then we *don't* add it to num_spots.
-             * So we need to actually count the number of colorants in std_colorant_names to make sure that we
-             * don't exceed the maximum number of components.
-             */
-            num_std_names = count_process_color_names(pcomp_names);
             num_spot = 0;
             /* And now we check each ink to see if it's already in the separations list. If not then we count
              * up the number of new inks
@@ -726,7 +727,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
             pdev->color_info.num_components = (num_order)
                 ? num_order
                 : (page_spot_colors >= 0)
-                    ? npcmcolors + page_spot_colors
+                    ? num_std_names + page_spot_colors
                     : pdev->color_info.max_components;
             pdev->color_info.num_components += has_tags;
 

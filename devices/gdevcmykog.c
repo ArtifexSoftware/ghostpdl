@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -769,6 +769,8 @@ fixed_colorant_name DevCMYKOGComponents[] = {
 
 /*
  * PSDCMYKOG 8bits
+ *
+ * NOTE: This device does NOT currently support extra spots. Only the 2 that it starts out with.
  */
 const gx_device_cmykog gs_psdcmykog_device =
 {
@@ -776,7 +778,7 @@ const gx_device_cmykog gs_psdcmykog_device =
   /* device specific parameters */
   { 8,                        /* Bits per color - must match ncomp, depth, etc. above */
     DevCMYKOGComponents,      /* Names of color model colorants */
-    4,                        /* This is the underlygin ProcessColorModel, 4 for CMYK */
+    4,                        /* This is the underlying ProcessColorModel, 4 for CMYK */
     6,                        /* MaxSeparations */
     -1,                       /* PageSpotColors has not been specified */
     {0},                      /* SeparationNames */
