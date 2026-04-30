@@ -45,7 +45,7 @@
 
 /* def GS_PROD */
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
+        GS_PRODUCTFAMILY " RELEASE CANDIDATE 1"
 #endif
 /*  END -- CHANGES RESTRICTED UNDER 7(b) */
 
@@ -59,7 +59,7 @@
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-        "Copyright (C) 2025 Artifex Software, Inc.  All rights reserved."
+        "Copyright (C) 2026 Artifex Software, Inc.  All rights reserved."
 #endif
 
 /* Prototypes for configuration definitions in gconfig.c. */
