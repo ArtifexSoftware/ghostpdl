@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2024 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -621,6 +621,9 @@ early_flush:
         advanced |= (ostate != jp2k->state);
         advanced |= (bytes_in != pr->limit - pr->ptr);
     } while (advanced);
+
+    if (code == 0)
+        code = gs_note_error(gs_error_NeedInput);
 
     return code;
 }
