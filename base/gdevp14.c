@@ -9280,8 +9280,11 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     /* The number of color planes should not exceed that of the target.
        Unless we are using a blend CS */
     if (!(p14dev->blend_cs_state != PDF14_BLEND_CS_UNSPECIFIED || p14dev->overprint_sim)) {
-        if (p14dev->color_info.num_components > target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)p14dev))
+        if (p14dev->color_info.num_components > target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)p14dev)) {
             p14dev->color_info.num_components = target->color_info.num_components - device_encodes_tags(target) + device_encodes_tags((gx_device *)p14dev);
+            if (p14dev->num_planar_planes != 0)
+                p14dev->num_planar_planes = p14dev->color_info.num_components;
+        }
         if (p14dev->color_info.max_components > target->color_info.max_components)
             p14dev->color_info.max_components = target->color_info.max_components;
     }
