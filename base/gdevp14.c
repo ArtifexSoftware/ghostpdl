@@ -7008,7 +7008,7 @@ pdf14_copy_planes(gx_device * dev, const byte * data, int data_x, int raster,
     fake_tos.dirty.q.y = y + h;
     fake_tos.has_alpha_g = 0;
     fake_tos.has_shape = 0;
-    fake_tos.has_tags = 0;
+    fake_tos.has_tags = device_encodes_tags(dev);
     fake_tos.idle = false;
     fake_tos.isolated = false;
     fake_tos.knockout = false;
