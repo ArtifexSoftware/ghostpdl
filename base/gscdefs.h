@@ -46,6 +46,8 @@
 /* def GS_PROD */
 #  define GS_PRODUCT\
         GS_PRODUCTFAMILY " GIT PRERELEASE"
+/* end def GS_PROD */
+
 #endif
 /*  END -- CHANGES RESTRICTED UNDER 7(b) */
 
