@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -373,7 +373,7 @@ OPTIMIZE_SETJMP
 static int
 do_impl_process(png_interp_instance_t *png, stream_cursor_read * pr, bool eof)
 {
-    int code = 0;
+    int code = 0, bytes;
     ii_state ostate;
     size_t bytes_in;
     int advanced;
@@ -411,7 +411,7 @@ do_impl_process(png_interp_instance_t *png, stream_cursor_read * pr, bool eof)
         case ii_state_png:
         {
             /* Gather data into a buffer */
-            int bytes = bytes_until_uel(pr);
+            bytes = bytes_until_uel(pr);
 
             if (bytes == 0 && pr->limit - pr->ptr > 9) {
                 /* No bytes until UEL, and there is space for a UEL in the buffer */
@@ -711,6 +711,9 @@ do_impl_process(png_interp_instance_t *png, stream_cursor_read * pr, bool eof)
         advanced |= (ostate != png->state);
         advanced |= (bytes_in != pr->limit - pr->ptr);
     } while (advanced);
+
+    if (!advanced && bytes == 0)
+        code = gs_note_error(gs_error_NeedInput);
 
     return code;
 }
