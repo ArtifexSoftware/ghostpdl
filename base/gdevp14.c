@@ -6218,14 +6218,6 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 
-    /* The prototype has the color setup without tags. If we are
-     * using tags, then we need to extend num_components and depth.
-     */
-    if (has_tags) {
-        pdev->color_info.num_components++;
-        pdev->color_info.depth = pdev->color_info.num_components * (deep ? 16 : 8);
-    }
-
     if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
         pdev->num_planar_planes = dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
     else
