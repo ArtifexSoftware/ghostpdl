@@ -1,0 +1,344 @@
+The Ghostscript family of products
+==================================
+
+GhostPDL contains the complete Artifex document processing suite:
+a unified package of interpreters and a shared graphics library for rendering,
+converting, and manipulating documents across every major page description
+language and many image formats.
+
+It includes Ghostscript (PostScript/PDF), GhostPDF, GhostPCL (PCL/PXL),
+GhostXPS (XPS) and GhostPDL as a single source tree.
+
+
+CONTENTS
+--------
+  1.  What's in this repository
+  2.  Getting pre-built binaries
+  3.  Requirements
+  4.  Quick start
+  5.  Key capabilities
+  6.  Command-line examples
+  7.  Language bindings
+  8.  Building from source
+  9.  Documentation
+  10. License
+
+
+1. WHAT'S IN THIS REPOSITORY
+-----------------------------
+GhostPDL is the umbrella source distribution for the entire Ghostscript family
+of products. Each interpreter is built on the same shared Ghostscript graphics
+library and can be compiled individually or together.
+
+  Ghostscript   PostScript Level 3 and PDF interpreter and renderer
+  GhostPDF      Standalone C-based PDF interpreter (default since 9.55)
+  GhostPCL      PCL5 and PCL/XL (PXL) interpreter
+  GhostXPS      XPS (XML Paper Specification) interpreter
+  GhostPDL      Multi-language framework; auto-detects PS, PDF, PCL, XPS,
+                and image formats
+
+When running as GhostPDL, the interpreter automatically detects the input
+language using file signatures and heuristics — no flag is required for
+mixed-language job streams. PJL (Printer Job Language) framing is also
+supported for separating jobs.
+
+
+2. GETTING PRE-BUILT BINARIES
+------------------------------
+For most users, pre-built binaries are the fastest way to get started.
+Source compilation is only needed when embedding Ghostscript as a library
+or customising the build.
+
+Linux (Debian/Ubuntu):
+
+    sudo apt-get install ghostscript
+
+macOS (MacPorts):
+
+    sudo port install ghostscript
+
+macOS (Homebrew):
+
+    brew install ghostscript
+
+Windows:
+
+    Download the installer from:
+    https://github.com/ArtifexSoftware/ghostpdl-downloads/releases
+
+    Both 32-bit and 64-bit command-line executables are provided.
+
+Verify the installation:
+
+    gs --version
+
+    or on Windows:
+
+    gswin64c --version
+
+
+3. REQUIREMENTS
+---------------
+Runtime:
+
+  OS            Linux, macOS, Windows, BSD, and other Unix-like platforms
+  Architecture  x86, x86-64, ARM, and others (platform-dependent builds)
+
+Build dependencies (source compilation only):
+
+  C compiler      GCC, Clang, or MSVC (Visual Studio 2015 or later)
+  make / nmake    GNU make on Unix; nmake via Visual Studio on Windows
+  autoconf        Required when building from a git checkout (run autogen.sh)
+  FreeType        Bundled in freetype/; external version also accepted
+  libjpeg, zlib,
+  libpng          Bundled or system-provided
+  libtiff         Optional; required for TIFF output
+  OpenJPEG        Optional; required for JPEG 2000 support
+
+Note: The PCL/XL fonts in pcl/urwfonts/ are required for GhostPCL to
+function and are distributed under the AFPL licence, which prohibits
+commercial use. They are not free software. See pcl/COPYING.AFPL in the
+source distribution for details.
+
+
+4. QUICK START
+--------------
+Convert a PDF to PNG images (one per page):
+
+    gs -dBATCH -dNOPAUSE -sDEVICE=png16m -r300 \
+       -sOutputFile=page_%03d.png input.pdf
+
+    -dBATCH -dNOPAUSE       Run non-interactively and exit when done
+    -sDEVICE=png16m          24-bit color PNG output device
+    -r300                    300 DPI output resolution
+    -sOutputFile=page_%03d.png  Numbered output files
+
+Convert PostScript to PDF:
+
+    gs -dBATCH -dNOPAUSE -sDEVICE=pdfwrite \
+       -sOutputFile=output.pdf input.ps
+
+    Or use the convenience wrapper:
+
+    ps2pdf input.ps output.pdf
+
+Convert a PDF to a single JPEG:
+
+    gs -dBATCH -dNOPAUSE -dFirstPage=1 -dLastPage=1 \
+       -sDEVICE=jpeg -r150 -sOutputFile=page1.jpg input.pdf
+
+
+5. KEY CAPABILITIES
+-------------------
+PostScript           Full PostScript Language Level 3 interpreter
+PDF                  Read and render PDF 1.0-2.0; write PDF via pdfwrite
+                     device (9.55+: new C-based interpreter)
+PCL / PXL            PCL5 and PCL/XL (HP printer language) via GhostPCL
+XPS                  XML Paper Specification via GhostXPS
+Image formats        Input: JPEG (JFIF/EXIF), PNG, TIFF, JBIG2, JPEG 2000,
+                     PWG. Output: PNG, JPEG, TIFF, BMP, PCX, PBM/PGM/PPM,
+                     and more
+Rasterisation        Render to raster at any DPI; anti-aliasing control
+PDF output           Convert PostScript, PCL, XPS, and images to PDF;
+                     compress and optimise existing PDFs
+PostScript output    Convert PDF back to PostScript Level 2
+N-up imposition      Impose multiple pages onto one sheet; works across all
+                     input types
+OCR                  Convert scanned raster images to searchable PDF
+                     (since 9.53)
+PDF compression      Reduce PDF file size without quality loss
+Language detection   GhostPDL automatically identifies input language
+PJL support          Printer Job Language framing for job separation
+Embeddable library   Link libgs as a shared/static library; gsapi C
+                     interface with Python, Java, and C# bindings
+Color management     ICC profile support; CMYK, RGB, Gray, DeviceN
+Font support         Type 1, TrueType, OpenType, CFF; font substitution
+                     and embedding
+
+
+6. COMMAND-LINE EXAMPLES
+------------------------
+Render a specific page range:
+
+    gs -dBATCH -dNOPAUSE -sDEVICE=png16m -r150 \
+       -dFirstPage=2 -dLastPage=5 \
+       -sOutputFile=page_%d.png input.pdf
+
+Render in greyscale:
+
+    gs -dBATCH -dNOPAUSE -sDEVICE=pnggray -r300 \
+       -sOutputFile=page_%03d.png input.pdf
+
+Compress / optimise a PDF:
+
+    gs -dBATCH -dNOPAUSE -sDEVICE=pdfwrite \
+       -dCompatibilityLevel=1.5 -dPDFSETTINGS=/ebook \
+       -sOutputFile=compressed.pdf input.pdf
+
+    -dPDFSETTINGS options:
+      /screen    72 dpi
+      /ebook     150 dpi
+      /printer   300 dpi
+      /prepress  300 dpi, color-preserving
+      /default
+
+Convert a password-protected PDF:
+
+    gs -dBATCH -dNOPAUSE -sDEVICE=pdfwrite \
+       -sPDFPassword=secret -sOutputFile=unlocked.pdf input.pdf
+
+Convert XPS to PDF (GhostXPS):
+
+    gxps -dBATCH -dNOPAUSE -sDEVICE=pdfwrite \
+         -sOutputFile=output.pdf input.xps
+
+Convert PCL to PDF (GhostPCL):
+
+    gpcl6 -dBATCH -dNOPAUSE -sDEVICE=pdfwrite \
+          -sOutputFile=output.pdf input.pcl
+
+Get help and list available devices:
+
+    gs -h
+
+
+7. LANGUAGE BINDINGS
+--------------------
+The gsapi C interface exposes the full Ghostscript engine as an embeddable
+library. Official bindings are included in the repository under demos/.
+
+  C        psi/iapi.h              gsapi_new_instance, gsapi_init_with_args,
+                                   gsapi_exit
+  Python   demos/python/gsapi.py   gsapi_new_instance(), gsapi_run_file()
+  Java     demos/java/             GSAPI, GSInstance
+  C#       demos/csharp/           GhostAPI.ghostapi (static methods)
+
+Python example:
+
+    import gsapi
+
+    instance = gsapi.gsapi_new_instance(0)
+    gsapi.gsapi_set_arg_encoding(instance, gsapi.GS_ARG_ENCODING_UTF8)
+    gsapi.gsapi_init_with_args(instance, [
+        "gs",
+        "-dBATCH", "-dNOPAUSE",
+        "-sDEVICE=pdfwrite",
+        "-sOutputFile=output.pdf",
+        "input.ps"
+    ])
+    gsapi.gsapi_exit(instance)
+    gsapi.gsapi_delete_instance(instance)
+
+C# example:
+
+    using GhostAPI;
+
+    IntPtr instance;
+    ghostapi.gsapi_new_instance(out instance, IntPtr.Zero);
+    ghostapi.gsapi_set_arg_encoding(instance,
+        (int)gsEncoding.GS_ARG_ENCODING_UTF8);
+
+    string[] args = { "gs", "-dBATCH", "-dNOPAUSE",
+                      "-sDEVICE=pdfwrite",
+                      "-sOutputFile=output.pdf", "input.ps" };
+    ghostapi.gsapi_init_with_args(instance, args.Length, args);
+    ghostapi.gsapi_exit(instance);
+    ghostapi.gsapi_delete_instance(instance);
+
+Threading note: Unless compiled with GS_THREADSAFE, only one Ghostscript
+instance may be active at a time.
+
+
+8. BUILDING FROM SOURCE
+-----------------------
+Unix / Linux / macOS:
+
+    # 1. Clone the canonical repository
+    git clone git://git.ghostscript.com/ghostpdl.git
+    cd ghostpdl
+
+    # 2. Generate the configure script
+    #    (git checkout only; not needed for release tarballs)
+    ./autogen.sh
+
+    # 3. Configure
+    ./configure
+
+    # 4. Build
+    make
+
+    # 5. Install (optional)
+    sudo make install
+
+To build as a shared library instead of an executable:
+
+    make so        # builds libgs.so / libgs.dylib
+
+
+9. DOCUMENTATION
+----------------
+Documentation index:
+    https://ghostscript.readthedocs.io
+
+How to use Ghostscript (command-line reference):
+    https://ghostscript.readthedocs.io/en/latest/Use.html
+
+Building from source:
+    https://ghostscript.readthedocs.io/en/latest/Make.html
+
+GhostPDL framework:
+    https://ghostscript.readthedocs.io/en/latest/GPDL.html
+
+Language bindings (C, Python, Java, C#):
+    https://ghostscript.readthedocs.io/en/latest/LanguageBindings.html
+
+Output devices:
+    https://ghostscript.readthedocs.io/en/latest/Devices.html
+
+PDF conversion:
+    https://ghostscript.readthedocs.io/en/latest/VectorDevices.html
+
+Color management:
+    https://ghostscript.readthedocs.io/en/latest/GhostscriptColorManagement.html
+
+Source code architecture:
+    https://ghostscript.readthedocs.io/en/latest/Develop.html
+
+Change log:
+    https://ghostscript.readthedocs.io/en/latest/News.html
+
+Bug tracker:
+    https://bugs.ghostscript.com
+
+Discord (#ghostscript):
+    https://artifex.com/discord/artifex
+
+Canonical git repository:
+    https://cgit.ghostscript.com/ghostpdl.git
+
+Binary downloads:
+    https://ghostscript.com/releases
+
+Third-party library list:
+    https://ghostscript.readthedocs.io/en/latest/thirdparty.html
+
+
+10. LICENSE
+-----------
+GhostPDL is available under two licences:
+
+GNU AGPL v3 (https://www.gnu.org/licenses/agpl-3.0.html)
+  Free for open-source software. Any application that uses, distributes,
+  or provides access to Ghostscript as a network service must release its
+  complete source code under a compatible open-source licence.
+
+Commercial licence
+  Required for proprietary applications where AGPL compliance is not
+  possible. Contact Artifex for licensing:
+  https://artifex.com/contact/ghostscript
+
+Third-party libraries
+  A complete list of bundled third-party libraries (FreeType, libjpeg,
+  zlib, OpenJPEG, and others), their versions, and their licences is
+  maintained at:
+  https://ghostscript.readthedocs.io/en/latest/thirdparty.html
