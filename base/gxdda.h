@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -188,12 +188,12 @@ int dda_will_overflow(gx_dda_fixed dda)
 {
     /* Every step, R decrements by dR. If it becomes negative, we add 1 to Q, and add N to R. */
     /* So on average we add (N-dR)/N to Q each step. So in N steps we add (N-dR) to Q. */
-    uint N = dda.step.N;
-    fixed delta = dda.step.dQ * N + N - dda.step.dR;
+    int64_t N = dda.step.N;
+    int64_t delta = dda.step.dQ * N + N - dda.step.dR;
 
-    if (delta > 0 && delta + dda.state.Q < dda.state.Q)
+    if (delta > max_int || (delta > 0 && delta + dda.state.Q > max_int))
             return 1;
-    if (delta < 0 && delta + dda.state.Q > dda.state.Q)
+    if (delta < min_int || (delta < 0 && delta + dda.state.Q < min_int))
             return 1;
     return 0;
 }
