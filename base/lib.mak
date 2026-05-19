@@ -5711,6 +5711,7 @@ $(GLSRC)gxcpath.h:$(GLSRC)gs_dll_call.h
 $(GLSRC)gxdda.h:$(GLSRC)gxfixed.h
 $(GLSRC)gxdda.h:$(GLSRC)std.h
 $(GLSRC)gxdda.h:$(GLSRC)stdpre.h
+$(GLSRC)gxdda.h:$(GLSRC)stdint_.h
 $(GLSRC)gxdda.h:$(GLGEN)arch.h
 $(GLSRC)gxdevbuf.h:$(GLSRC)gxband.h
 $(GLSRC)gxdevbuf.h:$(GLSRC)gxdevcli.h
