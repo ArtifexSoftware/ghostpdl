@@ -21,6 +21,7 @@
 #  define gxdda_INCLUDED
 
 #include "stdpre.h"
+#include "stdint_.h"
 #include "gxfixed.h"
 
 /* We use the familiar Bresenham DDA algorithm for several purposes:
