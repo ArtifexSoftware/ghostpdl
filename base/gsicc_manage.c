@@ -638,7 +638,7 @@ gsicc_get_device_class(cmm_profile_t *icc_profile)
 
 /* This inititializes the srcgtag structure in the ICC manager */
 static int
-gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
+gsicc_set_srcgtag_struct(gx_device *pdev, gsicc_manager_t *icc_manager, const char* pname,
                         int namelen)
 {
     gs_memory_t *mem;
@@ -658,6 +658,8 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
        then ignore the call.  For now, I am going to allow it to
        be set one time. */
     if (icc_manager == NULL || icc_manager->srcgtag_profile != NULL) {
+        if (icc_manager->srcgtag_profile != NULL)
+            code = dev_proc(pdev, dev_spec_op)(pdev, gxdso_set_srcgtag, icc_manager->srcgtag_profile, sizeof(srcgtag));
         return 0;
     } else {
         mem = icc_manager->memory->non_gc_memory;
@@ -891,6 +893,7 @@ gsicc_set_srcgtag_struct(gsicc_manager_t *icc_manager, const char* pname,
     memcpy(srcgtag->name, pname, namelen);
     srcgtag->name[namelen] = 0x00;
     icc_manager->srcgtag_profile = srcgtag;
+    code = dev_proc(pdev, dev_spec_op)(pdev, gxdso_set_srcgtag, srcgtag, sizeof(srcgtag));
     return 0;
 }
 
@@ -3143,7 +3146,7 @@ gs_setsrcgtagicc(const gs_gstate * pgs, gs_param_string * pval)
         return_error(gs_error_VMerror);
     memcpy(pname,pval->data,namelen-1);
     pname[namelen-1] = 0;
-    code = gsicc_set_srcgtag_struct(pgs->icc_manager, (const char*) pname,
+    code = gsicc_set_srcgtag_struct(pgs->device, pgs->icc_manager, (const char*) pname,
                                    namelen);
     gs_free_object(mem, pname, "set_srcgtag_icc");
     if (code < 0)

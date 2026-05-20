@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -665,6 +665,11 @@ in:                             /* Initialize for a new page. */
         rc_decrement(pcs, "clist_playback_band");
         goto out;
     }
+    if (gs_gstate.icc_manager != NULL) {
+        gs_gstate.icc_manager->srcgtag_profile = cdev->srcgtag;
+        rc_increment(cdev->srcgtag);
+    }
+
     gs_gstate.color[0].color_space = pcs; /* we already have one ref */
     gs_gstate.color[1].color_space = pcs;
     rc_increment_cs(pcs); /* increment for second ref */
@@ -2401,6 +2406,11 @@ idata:                  data_size = 0;
     }
     /* Clean up before we exit. */
   out:
+
+    if(gs_gstate.icc_manager != NULL) {
+        rc_decrement(gs_gstate.icc_manager->srcgtag_profile, "clist_playback_band");
+        gs_gstate.icc_manager->srcgtag_profile = NULL;
+    }
     if (ht_buff.pbuff != 0) {
         gs_free_object(mem, ht_buff.pbuff, "clist_playback_band(ht_buff)");
         ht_buff.pbuff = 0;

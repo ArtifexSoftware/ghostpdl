@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1012,6 +1012,11 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         case gxdso_event_info:
             return 0;
         case gxdso_overprint_active:
+            return 0;
+        case gxdso_set_srcgtag:
+            rc_decrement(pdev->srcgtag,"default dev_spec_op");
+            pdev->srcgtag = data;
+            rc_increment(pdev->srcgtag);
             return 0;
     }
     return_error(gs_error_undefined);

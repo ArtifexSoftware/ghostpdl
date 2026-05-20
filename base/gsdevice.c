@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -58,6 +58,7 @@ gx_device_finalize(const gs_memory_t *cmem, void *vptr)
     if (dev->icc_struct != NULL) {
         rc_decrement(dev->icc_struct, "gx_device_finalize(icc_profile)");
     }
+    rc_decrement(dev->srcgtag, "gx_device_finalize(srcgtag)");
 
     /* Deal with subclassed devices. Ordinarily these should not be a problem, we
      * will never see them, but if ths is a end of job restore we can end up

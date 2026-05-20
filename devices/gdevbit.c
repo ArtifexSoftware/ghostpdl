@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -262,6 +262,7 @@ const gx_device_bit gs_bitrgbtags_device =
         }, /*space_params*/
         0, /*icc_struct*/
         GS_UNKNOWN_TAG,         /* this device supports tags */
+        0,                      /* srcgtag */
         1,			/* default interpolate_control */
         0,                      /* default non_srict_bounds */
         {

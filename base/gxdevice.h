@@ -134,6 +134,7 @@
         }, /*space_params*/\
         0/*Profile Array*/,\
         0/* graphics_type_tag default GS_UNTOUCHED_TAG */,\
+        0/* srcgtag */,\
         1/* interpolate_control default 1, uses image /Interpolate flag, full device resolution */,\
         0/*non_strict_bounds - default is to be strict*/,\
         { ins, bp, ep }

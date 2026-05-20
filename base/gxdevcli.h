@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -788,6 +788,7 @@ typedef struct gdev_pagelist_s {
         gdev_space_params space_params;\
         cmm_dev_profile_t *icc_struct;  /* object dependent profiles */\
         gs_graphics_type_tag_t   graphics_type_tag;   /* e.g. vector, image or text */\
+        cmm_srcgtag_profile_t *srcgtag;\
         int interpolate_control;      /* default 1 (use image /Interpolate value), 0 is NOINTERPOLATE. */\
                                       /* > 1 limits interpolation, < 0 forces interpolation */\
         int non_strict_bounds;        /* If set, callers cannot rely on clipping fills etc to declared device bounds. */\
