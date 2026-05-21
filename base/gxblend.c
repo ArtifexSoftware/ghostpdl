@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -2840,7 +2840,7 @@ template_compose_group(byte *gs_restrict tos_ptr, bool tos_isolated,
             if (has_matte && matte_alpha != 0 && matte_alpha < 0xff) {
                 for (i = 0; i < n_chan; i++) {
                     /* undo */
-                    byte matte = maskbuf->matte[i]>>8;
+                    byte matte = i >= maskbuf->matte_num_comps ? 0 : maskbuf->matte[i]>>8;
                     int val = tos_ptr[i * tos_planestride] - matte;
                     int temp = ((((val * 0xff) << 8) / matte_alpha) >> 8) + matte;
 
@@ -3603,8 +3603,9 @@ template_compose_group16(uint16_t *gs_restrict tos_ptr, bool tos_isolated,
             if (has_matte && matte_alpha != 0 && matte_alpha != 0xffff) {
                 for (i = 0; i < n_chan; i++) {
                     /* undo */
-                    int val = GET16_2NATIVE(tos_is_be, tos_ptr[i * tos_planestride]) - maskbuf->matte[i];
-                    int temp = (((unsigned int)(val * 0xffff)) / matte_alpha) + maskbuf->matte[i];
+                    uint16_t matte = i >= maskbuf->matte_num_comps ? 0 : maskbuf->matte[i];
+                    int val = GET16_2NATIVE(tos_is_be, tos_ptr[i * tos_planestride]) - matte;
+                    int temp = (((unsigned int)(val * 0xffff)) / matte_alpha) + matte;
 
                     /* clip */
                     if (temp > 0xffff)
