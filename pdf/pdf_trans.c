@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -513,7 +513,7 @@ static bool pdfi_outputprofile_matches_oiprofile(pdf_context *ctx)
     if (code < 0)
         return true;  /* Assume they match by default and in error condition */
 
-    if (profile_struct->oi_profile == NULL)
+    if (profile_struct == NULL || profile_struct->oi_profile == NULL)
         return true; /* no OI profile so no special case to worry about */
     else {
         /* Check the device profile(s). If any of them do not match, then
