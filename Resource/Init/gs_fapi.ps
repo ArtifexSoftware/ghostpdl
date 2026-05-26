@@ -56,15 +56,15 @@ languagelevel 2 .setlanguagelevel
 
   % Now setup defaults for any entries not set above - these defaults are correct
   % for FAPI/Freeetype
-  currentdict /FontPath known not { /FontPath (/Fonts)} if			% A default directory for FAPI-handled font files
+  currentdict /FontPath known not { /FontPath (/Fonts) readonly } if			% A default directory for FAPI-handled font files
                                                                         % path in FAPIfontmap.
-  currentdict /CIDFontPath known not { /CIDFontPath (/CIDFonts)} if		% A default directory for FAPI-handled CIDfont 							   % files path in FAPIcidfmap.
-  currentdict /HookDiskFonts known not { /HookDiskFonts [1 2 9 11 42] } if		% FontType values for disk PS fonts to be
+  currentdict /CIDFontPath known not { /CIDFontPath (/CIDFonts) readonly } if		% A default directory for FAPI-handled CIDfont 							   % files path in FAPIcidfmap.
+  currentdict /HookDiskFonts known not { /HookDiskFonts [1 2 9 11 42] readonly } if		% FontType values for disk PS fonts to be
                                                                         % redirected to FAPI.
-  currentdict /HookEmbeddedFonts known not { /HookEmbeddedFonts [1 2 9 11 42] } if	% FontType values for embedded PS fonts to be
+  currentdict /HookEmbeddedFonts known not { /HookEmbeddedFonts [1 2 9 11 42] readonly } if	% FontType values for embedded PS fonts to be
                                                                         % redirected to FAPI.
   /ServerOptions 2 dict
->> def
+>> readonly def
 systemdict /.FAPIconfig //Config put
 
 /UFST .FAPIavailable
