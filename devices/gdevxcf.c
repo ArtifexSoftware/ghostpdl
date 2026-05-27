@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -558,12 +558,13 @@ repack_data(byte * source, byte * dest, int depth, int first_bit,
 #endif /* 0 */
 
 static int
-xcf_open_profile(const char *profile_out_fn, cmm_profile_t *icc_profile, gcmmhlink_t icc_link, gs_memory_t *memory)
+xcf_open_profile(const char *profile_out_fn, cmm_profile_t **icc_profile, gcmmhlink_t *icc_link, gs_memory_t *memory)
 {
 
     gsicc_rendering_param_t rendering_params;
+    cmm_profile_t des_profile;
 
-    icc_profile = gsicc_get_profile_handle_file(profile_out_fn,
+    *icc_profile = gsicc_get_profile_handle_file(profile_out_fn,
                     strlen(profile_out_fn), memory);
 
     if (icc_profile == NULL)
@@ -574,12 +575,16 @@ xcf_open_profile(const char *profile_out_fn, cmm_profile_t *icc_profile, gcmmhli
     rendering_params.black_point_comp = gsBPNOTSPECIFIED;
     rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
     rendering_params.rendering_intent = gsPERCEPTUAL;
+    rendering_params.override_icc = false;
+    rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
+    rendering_params.cmm = gsCMM_DEFAULT;
 
     /* Call with a NULL destination profile since we are using a device link profile here */
-    icc_link = gscms_get_link(icc_profile,
-                              NULL, &rendering_params, 0, memory);
+    *icc_link = gsicc_alloc_link_dev(memory->non_gc_memory,
+        *icc_profile, &des_profile,
+        &rendering_params);
 
-    if (icc_link == NULL)
+    if (*icc_link == NULL)
         return gs_throw(-1, "Could not create link handle for xdev device");
 
     return(0);
@@ -593,22 +598,22 @@ xcf_open_profiles(xcf_device *xdev)
 
     if (xdev->output_icc_link == NULL && xdev->profile_out_fn[0]) {
 
-        code = xcf_open_profile(xdev->profile_out_fn, xdev->output_profile,
-            xdev->output_icc_link, xdev->memory);
+        code = xcf_open_profile(xdev->profile_out_fn, &xdev->output_profile,
+            &xdev->output_icc_link, xdev->memory);
 
     }
 
     if (code >= 0 && xdev->rgb_icc_link == NULL && xdev->profile_rgb_fn[0]) {
 
-        code = xcf_open_profile(xdev->profile_rgb_fn, xdev->rgb_profile,
-            xdev->rgb_icc_link, xdev->memory);
+        code = xcf_open_profile(xdev->profile_rgb_fn, &xdev->rgb_profile,
+            &xdev->rgb_icc_link, xdev->memory);
 
     }
 
     if (code >= 0 && xdev->cmyk_icc_link == NULL && xdev->profile_cmyk_fn[0]) {
 
-        code = xcf_open_profile(xdev->profile_cmyk_fn, xdev->cmyk_profile,
-            xdev->cmyk_icc_link, xdev->memory);
+        code = xcf_open_profile(xdev->profile_cmyk_fn, &xdev->cmyk_profile,
+            &xdev->cmyk_icc_link, xdev->memory);
 
     }
 

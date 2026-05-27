@@ -380,6 +380,7 @@ static int
 rinkj_open_profile(rinkj_device *rdev)
 {
     gsicc_rendering_param_t rendering_params;
+    cmm_profile_t des_profile;
 
     if (rdev->link_profile == NULL && rdev->profile_out_fn[0]) {
 
@@ -391,14 +392,18 @@ rinkj_open_profile(rinkj_device *rdev)
 
         /* Set up the rendering parameters */
 
+        memset(&des_profile, 0x00, sizeof(cmm_profile_t));
         rendering_params.black_point_comp = gsBPNOTSPECIFIED;
         rendering_params.graphics_type_tag = GS_UNKNOWN_TAG;  /* Already rendered */
         rendering_params.rendering_intent = gsPERCEPTUAL;
+        rendering_params.override_icc = false;
+        rendering_params.preserve_black = gsBLACKPRESERVE_OFF;
+        rendering_params.cmm = gsCMM_DEFAULT;
 
         /* Call with a NULL destination profile since we are using a device link profile here */
-        rdev->icc_link = gscms_get_link(rdev->link_profile,
-                                        NULL, &rendering_params, 0, rdev->memory);
-
+        rdev->icc_link = gsicc_alloc_link_dev(rdev->memory->non_gc_memory,
+            rdev->link_profile, &des_profile,
+            &rendering_params);
         if (rdev->icc_link == NULL)
             return gs_throw(-1, "Could not create link handle for rinkj device");
     }

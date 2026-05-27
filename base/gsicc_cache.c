@@ -244,7 +244,8 @@ gsicc_alloc_link_dev(gs_memory_t *memory, cmm_profile_t *src_profile,
     }
 
     /* Check for problems.. */
-    if (src_profile->profile_handle == 0 || des_profile->profile_handle == 0) {
+    /* It is (apparently) permissible for the destination profile_handle to be NULL, for device links */
+    if (src_profile->profile_handle == 0 /* || des_profile->profile_handle == 0 */) {
         gs_free_object(memory, result, "gsicc_alloc_link_dev");
         return NULL;
     }
