@@ -1842,16 +1842,16 @@ even_better_new (const EvenBetterParams *params)
       result->plane_ctx = NULL;
     }
   else
-    {
+  {
       result->plane_ctx = (EBPlaneCtx **)calloc(n_planes, sizeof(EBPlaneCtx *));
       if (result->plane_ctx == NULL)
           goto err;
       for (i = 0; i < n_planes; i++) {
         result->plane_ctx[i] = even_better_plane_new (params, result, i);
         if (result->plane_ctx[i] == NULL)
-          goto err;
+            goto err;
       }
-    }
+  }
   return result;
 
 err:
@@ -1897,10 +1897,16 @@ even_better_free (EvenBetterCtx *ctx)
   else
 #endif
     {
+        for (i = 0; i < n_planes; i++) {
+            even_better_plane_free (ctx->plane_ctx[i]);
+            ctx->plane_ctx[i] = 0;
+        }
       if (ctx->plane_ctx != NULL) {
         for (i = 0; i < n_planes; i++)
-          if (ctx->plane_ctx[i])
-            even_better_plane_free (ctx->plane_ctx[i]);
+            if (ctx->plane_ctx[i]) {
+                even_better_plane_free (ctx->plane_ctx[i]);
+                ctx->plane_ctx[i] = 0;
+            }
         free(ctx->plane_ctx);
       }
     }
