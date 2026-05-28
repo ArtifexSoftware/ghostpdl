@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -241,7 +241,7 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
             *ret = float_to_ushort(pfont->data.BlueShift);
             break;
         case gs_fapi_font_feature_BlueFuzz:
-            *ret = float_to_ushort(pfont->data.BlueShift);
+            *ret = float_to_ushort(pfont->data.BlueFuzz);
             break;
         case gs_fapi_font_feature_StdHW:
             *ret = (pfont->data.StdHW.count == 0 ? 0 : float_to_ushort(pfont->data.StdHW.values[0]));   /* UFST bug ? */

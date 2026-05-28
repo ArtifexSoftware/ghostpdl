@@ -1951,6 +1951,8 @@ pdfi_read_cff(pdf_context *ctx, pdfi_gs_cff_font_priv *ptpriv)
 
                 pdfi_init_cff_font_priv(ctx, &fdptpriv, font->cffdata, (font->cffend - font->cffdata), true);
 
+                pdfi_cff_font_priv_defaults(&fdptpriv);
+
                 offsets.private_off = 0;
 
                 p = pdfi_find_cff_index(font->cffdata + offsets.fdarray_off, e, i, &fddictp, &fddicte);
