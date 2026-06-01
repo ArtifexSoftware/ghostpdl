@@ -41,7 +41,7 @@
 
 static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, const float *shading_domain, int num_inputs, pdf_dict *shading_dict, pdf_dict *page_dict)
 {
-    int code;
+    int code, type;
     pdf_obj *o = NULL;
     pdf_obj * rsubfn = NULL;
     gs_function_AdOt_params_t params;
@@ -51,6 +51,10 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
     code = pdfi_loop_detector_mark(ctx);
     if (code < 0)
         return code;
+
+    code = pdfi_dict_get_int(ctx, shading_dict, "ShadingType", &type);
+    if (code < 0)
+        goto build_shading_function_error;
 
     code = pdfi_dict_get(ctx, shading_dict, "Function", &o);
     if (code < 0)
@@ -95,6 +99,11 @@ static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, c
             code = pdfi_build_function(ctx, &Functions[i], shading_domain, num_inputs, rsubfn, page_dict);
             if (code < 0)
                 goto build_shading_function_error;
+            /* If we have an array of functions then it must be an array of 'n' 2-in, 1-out functions */
+            if ((type == 1 && Functions[i]->params.m != 2) || (type > 1 && Functions[i]->params.m != 1) || Functions[i]->params.n != 1) {
+                code = gs_note_error(gs_error_rangecheck);
+                goto build_shading_function_error;
+            }
             pdfi_countdown(rsubfn);
             rsubfn = NULL;
         }

@@ -1124,6 +1124,10 @@ static int pdfi_evaluate_transfer(pdf_context *ctx, pdf_obj *transfer, pdf_dict 
     (*pmap)->id = gs_next_ids(ctx->memory, 1);
 
     code = pdfi_build_function(ctx, &transfer_fn, (const float *)NULL, 1, transfer, page_dict);
+    if (transfer_fn->params.m != 1 || transfer_fn->params.n != 1) {
+        code = gs_note_error(gs_error_rangecheck);
+        goto error;
+    }
     if (code >= 0) {
         for (t_ix = 0;t_ix < 256;t_ix++) {
             value = (float)t_ix * 1.0f / 255.0f;
@@ -1255,7 +1259,9 @@ static int build_type1_halftone(pdf_context *ctx, pdf_dict *halftone_dict, pdf_d
                  */
                 break;
             case PDF_STREAM:
-                pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
+                code = pdfi_evaluate_transfer(ctx, transfer, page_dict, &pmap);
+                if (code < 0)
+                    goto error;
                 break;
             default:
                 /* should be an error, but we can just ignore it */
