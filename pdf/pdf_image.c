@@ -336,6 +336,10 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
                 int i;
                 int bpc2;
 
+                if (comps > box_len) {
+                    code = gs_note_error(gs_error_syntaxerror);
+                    goto exit;
+                }
                 bpc2 = data[0];
                 for (i=1;i<comps;i++) {
                     if (bpc2 != data[i]) {
@@ -356,9 +360,18 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
                     dbgmprintf(ctx->memory, "JPXFilter: Ignore extra COLR specs\n");
                 break;
             }
+            if (box_len == 0) {
+                code = gs_note_error(gs_error_syntaxerror);
+                goto exit;
+            }
             cs_meth = data[0];
-            if (cs_meth == 1)
+            if (cs_meth == 1) {
+                if (box_len < 7) {
+                    code = gs_note_error(gs_error_syntaxerror);
+                    goto exit;
+                }
                 cs_enum = READ32BE(data+3);
+            }
             else if (cs_meth == 2 || cs_meth == 3) {
                 /* This is an ICCBased color space just sitting there in the buffer.
                  * TODO: I could create the colorspace now while I have the buffer,
@@ -367,6 +380,10 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
                  * NOTE: cs_meth == 3 is apparently treated the same as 2.
                  * No idea why... it's really not documented anywhere.
                  */
+                if (box_len < 3) {
+                    code = gs_note_error(gs_error_syntaxerror);
+                    goto exit;
+                }
                 info->iccbased = true;
                 info->icc_offset = pdfi_tell(source) - (box_len-3);
                 info->icc_length = box_len - 3;
@@ -389,6 +406,10 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
             if (ctx->args.pdfdebug)
                 dbgmprintf7(ctx->memory, "    PCLR Data: %x %x %x %x %x %x %x\n",
                       data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+            if (box_len < 4) {
+                code = gs_note_error(gs_error_syntaxerror);
+                goto exit;
+            }
             bpc = data[3];
             bpc = (bpc & 0x7) + 1;
             if (ctx->args.pdfdebug)
