@@ -659,13 +659,13 @@ static int pdfi_get_child(pdf_context *ctx, pdf_array *Kids, int i, pdf_dict **p
     }
 
     if (pdfi_type_of(node) == PDF_INDIRECT) {
-        code = pdfi_dereference(ctx, node->ref_object_num, node->ref_generation_num,
+        code = pdfi_deref_loop_detect(ctx, node->ref_object_num, node->ref_generation_num,
                                 (pdf_obj **)&child);
         if (code < 0) {
             int code1 = pdfi_repair_file(ctx);
             if (code1 < 0)
                 goto errorExit;
-            code = pdfi_dereference(ctx, node->ref_object_num,
+            code = pdfi_deref_loop_detect(ctx, node->ref_object_num,
                                     node->ref_generation_num, (pdf_obj **)&child);
             if (code < 0)
                 goto errorExit;
