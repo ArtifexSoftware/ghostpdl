@@ -131,6 +131,8 @@ jbig2_ctx_new_imp(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCt
     result->error_callback_data = error_callback_data;
 
     result->state = (options & JBIG2_OPTIONS_EMBEDDED) ? JBIG2_FILE_SEQUENTIAL_HEADER : JBIG2_FILE_HEADER;
+    if ((options & JBIG2_OPTIONS_EMBEDDED_FORGIVING) == JBIG2_OPTIONS_EMBEDDED_FORGIVING)
+        result->state = JBIG2_FILE_HEADER_MAYBE;
 
     result->buf = NULL;
 
@@ -291,6 +293,18 @@ jbig2_data_in(Jbig2Ctx *ctx, const unsigned char *data, size_t size)
         int code;
 
         switch (ctx->state) {
+        case JBIG2_FILE_HEADER_MAYBE:
+            /* Accept either a file header, or an embedded file. */
+            if (ctx->buf_wr_ix - ctx->buf_rd_ix < 9)
+                return 0;
+            if (memcmp(ctx->buf + ctx->buf_rd_ix, jbig2_id_string, 8) == 0)
+            {
+                ctx->state = JBIG2_FILE_HEADER;
+                (void)jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "JBIG2 file header ignored in supposedly embedded stream");
+            }
+            else
+                ctx->state = JBIG2_FILE_SEQUENTIAL_HEADER;
+            break;
         case JBIG2_FILE_HEADER:
             /* D.4.1 */
             if (ctx->buf_wr_ix - ctx->buf_rd_ix < 9)

@@ -37,7 +37,8 @@ typedef enum {
 } Jbig2Severity;
 
 typedef enum {
-    JBIG2_OPTIONS_EMBEDDED = 1
+    JBIG2_OPTIONS_EMBEDDED = 1,
+    JBIG2_OPTIONS_EMBEDDED_FORGIVING = 3
 } Jbig2Options;
 
 /* forward public structure declarations */
