@@ -314,6 +314,10 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
             if (code < 0) {
                 return jbig2_error(hs->ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to get next huffman word");
             }
+            else if (code < 4)
+            {
+                hs->offset_limit = hs->offset + 4 + code;
+            }
             offset_bits -= 32;
             hs->next_word = next_word;
             PREFLEN = offset_bits;
@@ -344,6 +348,10 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
             code = huff_get_next_word(hs, hs->offset + 4, &next_word);
             if (code < 0) {
                 return jbig2_error(hs->ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "failed to get next huffman word");
+            }
+            else if (code < 4)
+            {
+                hs->offset_limit = hs->offset + 4 + code;
             }
             offset_bits -= 32;
             hs->next_word = next_word;
