@@ -205,7 +205,14 @@ jbig2_sd_cat(Jbig2Ctx *ctx, uint32_t n_dicts, Jbig2SymbolDict **dicts)
     /* count the imported symbols and allocate a new array */
     symbols = 0;
     for (i = 0; i < n_dicts; i++)
+    {
+        if (dicts[i]->n_symbols > UINT32_MAX - symbols)
+        {
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "too many symbols in dicts to concat");
+            return NULL;
+        }
         symbols += dicts[i]->n_symbols;
+    }
 
     /* fill a new array with new references to glyph pointers */
     new_dict = jbig2_sd_new(ctx, symbols);
