@@ -204,11 +204,11 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict,
 
             (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
 
-            code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the Shading dictionary loop */
-            if (code < 0)
-                goto error1;
-
             do {
+                code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the Shading dictionary loop */
+                if (code < 0)
+                    goto error1;
+
                 if (i++ >= pdfi_dict_entries(cspace_dict)) {
                     code = 0;
                     goto transparency_exit;
@@ -217,6 +217,7 @@ static int pdfi_check_ColorSpace_dict(pdf_context *ctx, pdf_dict *cspace_dict,
                 code = pdfi_dict_next(ctx, cspace_dict, &Key, &Value, &index);
                 if (code == 0 && pdfi_type_of(Value) == PDF_ARRAY)
                     break;
+                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
                 pdfi_countdown(Key);
                 Key = NULL;
                 pdfi_countdown(Value);
@@ -305,19 +306,20 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
 
             (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
 
-            code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the Shading dictionary loop */
-            if (code < 0)
-                goto error1;
-
             do {
+                code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the Shading dictionary loop */
+                if (code < 0)
+                    goto error1;
+
                 if (i++ >= pdfi_dict_entries(shading_dict)) {
                     code = 0;
                     goto transparency_exit;
                 }
 
                 code = pdfi_dict_next(ctx, shading_dict, &Key, &Value, &index);
-                if (code == 0 && pdfi_type_of(Value) == PDF_DICT)
+                if (code == 0 && pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM)
                     break;
+                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
                 pdfi_countdown(Key);
                 Key = NULL;
                 pdfi_countdown(Value);
@@ -487,17 +489,19 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
 
             (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
 
-            code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the XObject dictionary loop */
-            if (code < 0)
-                goto error_exit;
-
             pdfi_countdown(Key);
             Key = NULL;
             pdfi_countdown(Value);
             Value = NULL;
             Value_dict = NULL;
 
+            (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
+
             do {
+                code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the XObject dictionary loop */
+                if (code < 0)
+                    goto error_exit;
+
                 if (i++ >= pdfi_dict_entries(xobject_dict)) {
                     code = 0;
                     goto transparency_exit;
@@ -506,6 +510,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                 code = pdfi_dict_next(ctx, xobject_dict, &Key, &Value, &index);
                 if (code == 0 && pdfi_type_of(Value) == PDF_STREAM)
                     break;
+                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
                 pdfi_countdown(Key);
                 Key = NULL;
                 pdfi_countdown(Value);
@@ -665,11 +670,11 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
 
             (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the ExtGState dictionary loop */
 
-            code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the ExtGState dictionary loop */
-            if (code < 0)
-                goto error1;
-
             do {
+                code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the ExtGState dictionary loop */
+                if (code < 0)
+                    goto error1;
+
                 if (i++ >= pdfi_dict_entries(extgstate_dict)) {
                     code = 0;
                     goto transparency_exit;
@@ -678,6 +683,7 @@ static int pdfi_check_ExtGState_dict(pdf_context *ctx, pdf_dict *extgstate_dict,
                 code = pdfi_dict_next(ctx, extgstate_dict, &Key, &Value, &index);
                 if (code == 0 && pdfi_type_of(Value) == PDF_DICT)
                     break;
+                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the ExtGState dictionary loop */
                 pdfi_countdown(Key);
                 Key = NULL;
                 pdfi_countdown(Value);
@@ -809,11 +815,11 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
             Value = NULL;
             (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
 
-            code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the Shading dictionary loop */
-            if (code < 0)
-                goto error1;
-
             do {
+                code = pdfi_loop_detector_mark(ctx); /* Mark the new start of the Shading dictionary loop */
+                if (code < 0)
+                    goto error1;
+
                 if (i++ >= pdfi_dict_entries(pattern_dict)) {
                     code = 0;
                     goto transparency_exit;
@@ -822,6 +828,7 @@ static int pdfi_check_Pattern_dict(pdf_context *ctx, pdf_dict *pattern_dict, pdf
                 code = pdfi_dict_next(ctx, pattern_dict, &Key, &Value, &index);
                 if (code == 0 && (pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM))
                     break;
+                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
                 pdfi_countdown(Key);
                 Key = NULL;
                 pdfi_countdown(Value);
