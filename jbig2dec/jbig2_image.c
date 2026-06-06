@@ -468,10 +468,10 @@ jbig2_image_clear(Jbig2Ctx *ctx, Jbig2Image *image, int value)
    the template code
 */
 int
-jbig2_image_get_pixel(Jbig2Image *image, int x, int y)
+jbig2_image_get_pixel(Jbig2Image *image, int64_t x, int64_t y)
 {
-    const int w = image->width;
-    const int h = image->height;
+    const int64_t w = image->width;
+    const int64_t h = image->height;
     const int byte = (x >> 3) + y * image->stride;
     const int bit = 7 - (x & 7);
 
@@ -485,10 +485,10 @@ jbig2_image_get_pixel(Jbig2Image *image, int x, int y)
 
 /* set an individual pixel value in an image */
 void
-jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
+jbig2_image_set_pixel(Jbig2Image *image, int64_t x, int64_t y, bool value)
 {
-    const int w = image->width;
-    const int h = image->height;
+    const int64_t w = image->width;
+    const int64_t h = image->height;
     int scratch, mask;
     int bit, byte;
 

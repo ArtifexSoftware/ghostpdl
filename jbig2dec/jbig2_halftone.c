@@ -275,7 +275,8 @@ jbig2_decode_gray_scale_image(Jbig2Ctx *ctx, Jbig2Segment *segment,
 {
     uint16_t **GSVALS = NULL;
     size_t consumed_bytes = 0;
-    uint32_t i, j, stride, x, y;
+    uint32_t i, j, stride;
+    int64_t x, y;
     int code;
     Jbig2Image **GSPLANES;
     Jbig2GenericRegionParams rparams;
@@ -467,7 +468,7 @@ jbig2_decode_halftone_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     Jbig2Image *HSKIP = NULL;
     Jbig2PatternDict *HPATS;
     uint32_t i;
-    uint32_t mg, ng;
+    int64_t mg, ng;
     uint16_t gray_val;
     int code = 0;
 

@@ -50,13 +50,13 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
                                         Jbig2Segment *segment,
                                         const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
 {
-    const int GRW = image->width;
-    const int GRH = image->height;
+    const int64_t GRW = image->width;
+    const int64_t GRH = image->height;
     Jbig2Image *ref = params->GRREFERENCE;
-    const int dx = params->GRREFERENCEDX;
-    const int dy = params->GRREFERENCEDY;
+    const int32_t dx = params->GRREFERENCEDX;
+    const int32_t dy = params->GRREFERENCEDY;
     uint32_t CONTEXT;
-    int x, y;
+    int64_t x, y;
     int bit;
 
     if (pixel_outside_field(params->grat[0], params->grat[1]) ||
@@ -112,13 +112,13 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
                                         Jbig2Segment *segment,
                                         const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
 {
-    const int GRW = image->width;
-    const int GRH = image->height;
+    const int64_t GRW = image->width;
+    const int64_t GRH = image->height;
     Jbig2Image *ref = params->GRREFERENCE;
-    const int dx = params->GRREFERENCEDX;
-    const int dy = params->GRREFERENCEDY;
+    const int32_t dx = params->GRREFERENCEDX;
+    const int32_t dy = params->GRREFERENCEDY;
     uint32_t CONTEXT;
-    int x, y;
+    int64_t x, y;
     int bit;
 
     for (y = 0; y < GRH; y++) {
@@ -167,14 +167,14 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
                                   Jbig2Segment *segment,
                                   const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
 {
-    const int GRW = image->width;
-    const int GRH = image->height;
+    const int64_t GRW = image->width;
+    const int64_t GRH = image->height;
     const int stride = image->stride;
     const int refstride = params->reference->stride;
     const int dy = params->DY;
     byte *grreg_line = (byte *) image->data;
     byte *grref_line = (byte *) params->reference->data;
-    int x, y;
+    int64_t x, y;
 
     for (y = 0; y < GRH; y++) {
         const int padded_width = (GRW + 7) & -8;
@@ -240,8 +240,8 @@ static int
 implicit_value(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
 {
     Jbig2Image *ref = params->GRREFERENCE;
-    int i = x - params->GRREFERENCEDX;
-    int j = y - params->GRREFERENCEDY;
+    const int32_t i = x - params->GRREFERENCEDX;
+    const int32_t j = y - params->GRREFERENCEDY;
     int m = jbig2_image_get_pixel(ref, i, j);
 
     return ((jbig2_image_get_pixel(ref, i - 1, j - 1) == m) &&
@@ -259,8 +259,8 @@ static uint32_t
 mkctx0(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
 {
     Jbig2Image *ref = params->GRREFERENCE;
-    const int dx = params->GRREFERENCEDX;
-    const int dy = params->GRREFERENCEDY;
+    const int32_t dx = params->GRREFERENCEDX;
+    const int32_t dy = params->GRREFERENCEDY;
     uint32_t CONTEXT;
 
     CONTEXT = jbig2_image_get_pixel(image, x - 1, y + 0);
@@ -283,8 +283,8 @@ static uint32_t
 mkctx1(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
 {
     Jbig2Image *ref = params->GRREFERENCE;
-    const int dx = params->GRREFERENCEDX;
-    const int dy = params->GRREFERENCEDY;
+    const int32_t dx = params->GRREFERENCEDX;
+    const int32_t dy = params->GRREFERENCEDY;
     uint32_t CONTEXT;
 
     CONTEXT = jbig2_image_get_pixel(image, x - 1, y + 0);
@@ -303,9 +303,10 @@ mkctx1(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int 
 static int
 jbig2_decode_refinement_TPGRON(Jbig2Ctx *ctx, const Jbig2RefinementRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GR_stats)
 {
-    const int GRW = image->width;
-    const int GRH = image->height;
-    int x, y, iv, LTP = 0;
+    const int64_t GRW = image->width;
+    const int64_t GRH = image->height;
+    int64_t x, y;
+    int iv, LTP = 0;
     uint32_t start_context = (params->GRTEMPLATE ? 0x40 : 0x100);
     ContextBuilder mkctx = (params->GRTEMPLATE ? mkctx1 : mkctx0);
 

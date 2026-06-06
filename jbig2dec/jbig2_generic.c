@@ -344,7 +344,7 @@ work similarly. */
 
 /* Get a bit. No bounds checking. */
 static inline int
-jbig2_image_get_pixel_fast(Jbig2Image *image, int x, int y)
+jbig2_image_get_pixel_fast(Jbig2Image *image, int64_t x, int64_t y)
 {
     const int byte = (x >> 3) + y * image->stride;
     const int bit = 7 - (x & 7);
@@ -367,10 +367,10 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as,
                                Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     const uint32_t rowstride = image->stride;
-    uint32_t x, y;
+    int64_t x, y;
     byte *line2 = NULL;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
@@ -435,10 +435,10 @@ jbig2_decode_generic_template0_unopt(Jbig2Ctx *ctx,
                                      Jbig2Segment *segment,
                                      const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     uint32_t CONTEXT;
-    uint32_t x, y;
+    int64_t x, y;
     int bit;
 
     if (pixel_outside_field(params->gbat[0], params->gbat[1]) ||
@@ -510,10 +510,10 @@ jbig2_decode_generic_template1_unopt(Jbig2Ctx *ctx,
                                      Jbig2Segment *segment,
                                      const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     uint32_t CONTEXT;
-    uint32_t x, y;
+    int64_t x, y;
     int bit;
 
     if (pixel_outside_field(params->gbat[0], params->gbat[1]))
@@ -578,10 +578,10 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     const uint32_t rowstride = image->stride;
-    uint32_t x, y;
+    int64_t x, y;
     byte *line2 = NULL;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
@@ -643,10 +643,10 @@ jbig2_decode_generic_template2_unopt(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     uint32_t CONTEXT;
-    uint32_t x, y;
+    int64_t x, y;
     int bit;
 
     if (pixel_outside_field(params->gbat[0], params->gbat[1]))
@@ -710,10 +710,10 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
                                 Jbig2Segment *segment,
                                 const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     const uint32_t rowstride = image->stride;
-    uint32_t x, y;
+    int64_t x, y;
     byte *line2 = NULL;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
@@ -775,12 +775,12 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
                                Jbig2Segment *segment,
                                const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     const uint32_t rowstride = image->stride;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
-    uint32_t x, y;
+    int64_t x, y;
 
 #ifdef OUTPUT_PBM
     printf("P4\n%d %d\n", GBW, GBH);
@@ -833,10 +833,10 @@ jbig2_decode_generic_template3_unopt(Jbig2Ctx *ctx,
                                      Jbig2Segment *segment,
                                      const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     uint32_t CONTEXT;
-    uint32_t x, y;
+    int64_t x, y;
     int bit;
 
     if (pixel_outside_field(params->gbat[0], params->gbat[1]))
@@ -901,10 +901,10 @@ jbig2_decode_generic_template0_TPGDON(Jbig2Ctx *ctx,
                                       Jbig2Segment *segment,
                                       const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     uint32_t CONTEXT;
-    uint32_t x, y;
+    int64_t x, y;
     int LTP = 0;
     int gmin, gmax;
     uint32_t left, right, top;
@@ -1101,10 +1101,10 @@ jbig2_decode_generic_template1_TPGDON(Jbig2Ctx *ctx,
                                       Jbig2Segment *segment,
                                       const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     uint32_t CONTEXT;
-    uint32_t x, y;
+    int64_t x, y;
     int LTP = 0;
 
     if (pixel_outside_field(params->gbat[0], params->gbat[1]))
@@ -1176,10 +1176,10 @@ jbig2_decode_generic_template2_TPGDON(Jbig2Ctx *ctx,
                                       Jbig2Segment *segment,
                                       const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     uint32_t CONTEXT;
-    uint32_t x, y;
+    int64_t x, y;
     int LTP = 0;
 
     if (pixel_outside_field(params->gbat[0], params->gbat[1]))
@@ -1251,10 +1251,10 @@ jbig2_decode_generic_template3_TPGDON(Jbig2Ctx *ctx,
                                       Jbig2Segment *segment,
                                       const Jbig2GenericRegionParams *params, Jbig2ArithState *as, Jbig2Image *image, Jbig2ArithCx *GB_stats)
 {
-    const uint32_t GBW = image->width;
-    const uint32_t GBH = image->height;
+    const int64_t GBW = image->width;
+    const int64_t GBH = image->height;
     uint32_t CONTEXT;
-    uint32_t x, y;
+    int64_t x, y;
     int LTP = 0;
 
     if (pixel_outside_field(params->gbat[0], params->gbat[1]))
