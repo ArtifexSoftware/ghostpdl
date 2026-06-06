@@ -321,6 +321,11 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
             params->hash = 1;
             break;
         case 'o':
+            if (params->output_filename)
+            {
+                    free(params->output_filename);
+                    params->output_filename = NULL;
+            }
             params->output_filename = strdup(optarg);
             break;
         case 't':
