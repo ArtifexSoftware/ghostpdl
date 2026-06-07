@@ -544,6 +544,11 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
     segment->result = NULL;
     if (segment->data_length < 10)
         goto too_short;
+    if (segment->data_length > SIZE_MAX / 8)
+    {
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "segment data too large for Huffman Table");
+        goto error_exit;
+    }
 
     {
         /* B.2 1) (B.2.1) Code table flags */
@@ -583,6 +588,10 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
                     code_table_flags, HTOOB, HTPS, HTRS, HTLOW, HTHIGH);
 #endif
 
+        if (segment->data_length > SIZE_MAX / 8) {
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "Huffman Table size too large");
+            goto error_exit;
+        }
         if (HTLOW >= HTHIGH) {
             jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "invalid Huffman Table range");
             goto error_exit;
@@ -604,6 +613,10 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
             /* B.2 5) a) */
             if (boffset + HTPS >= lines_data_bitlen)
                 goto too_short;
+            if (NTEMP >= lines_max) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "huffman table line count exceeded");
+                goto error_exit;
+            }
             line[NTEMP].PREFLEN = jbig2_table_read_bits(lines_data, &boffset, HTPS);
             /* B.2 5) b) */
             if (boffset + HTRS >= lines_data_bitlen)
@@ -617,6 +630,10 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
         /* B.2 6), B.2 7) lower range table line */
         if (boffset + HTPS >= lines_data_bitlen)
             goto too_short;
+        if (NTEMP >= lines_max) {
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "huffman table line count exceeded");
+            goto error_exit;
+        }
         line[NTEMP].PREFLEN = jbig2_table_read_bits(lines_data, &boffset, HTPS);
         line[NTEMP].RANGELEN = 32;
         line[NTEMP].RANGELOW = HTLOW - 1;
@@ -624,6 +641,10 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
         /* B.2 8), B.2 9) upper range table line */
         if (boffset + HTPS >= lines_data_bitlen)
             goto too_short;
+        if (NTEMP >= lines_max) {
+            jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "huffman table line count exceeded");
+            goto error_exit;
+        }
         line[NTEMP].PREFLEN = jbig2_table_read_bits(lines_data, &boffset, HTPS);
         line[NTEMP].RANGELEN = 32;
         line[NTEMP].RANGELOW = HTHIGH;
@@ -633,6 +654,10 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
             /* B.2 10) a), B.2 10) b) out-of-bound table line */
             if (boffset + HTPS >= lines_data_bitlen)
                 goto too_short;
+            if (NTEMP >= lines_max) {
+                jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number, "huffman table line count exceeded");
+                goto error_exit;
+            }
             line[NTEMP].PREFLEN = jbig2_table_read_bits(lines_data, &boffset, HTPS);
             line[NTEMP].RANGELEN = 0;
             line[NTEMP].RANGELOW = 0;
