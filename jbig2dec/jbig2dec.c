@@ -53,10 +53,10 @@ typedef enum {
 typedef enum {
     jbig2dec_format_none,
     jbig2dec_format_jbig2,
-    jbig2dec_format_pbm,
 #ifdef HAVE_LIBPNG
     jbig2dec_format_png,
 #endif
+    jbig2dec_format_pbm
 } jbig2dec_format;
 
 typedef struct {
