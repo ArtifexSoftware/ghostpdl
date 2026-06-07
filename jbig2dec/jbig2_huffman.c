@@ -753,6 +753,8 @@ test_get_word1(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t offset, uint32_t *wo
     uint32_t val = 0;
     int ret = 0;
 
+    (void) ctx;
+
     if (self == NULL || word == NULL)
         return -1;
     if (offset >= sizeof (test_stream))
@@ -2065,6 +2067,8 @@ test_get_word2(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t offset, uint32_t *wo
     uint32_t val = 0;
     int ret = 0;
 
+    (void) ctx;
+
     if (st == NULL || st->h == NULL || word == NULL)
         return -1;
     if (offset >= st->h->input_len)
@@ -2173,6 +2177,8 @@ static int test2()
 int
 main(int argc, char **argv)
 {
+    (void) argc;
+    (void) argv;
     return test1() && test2() ? 0 : 1;
 }
 #endif

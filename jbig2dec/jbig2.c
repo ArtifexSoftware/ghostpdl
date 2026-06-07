@@ -37,18 +37,21 @@
 static void *
 jbig2_default_alloc(Jbig2Allocator *allocator, size_t size)
 {
+    (void) allocator;
     return malloc(size);
 }
 
 static void
 jbig2_default_free(Jbig2Allocator *allocator, void *p)
 {
+    (void) allocator;
     free(p);
 }
 
 static void *
 jbig2_default_realloc(Jbig2Allocator *allocator, void *p, size_t size)
 {
+    (void) allocator;
     return realloc(p, size);
 }
 
@@ -73,6 +76,8 @@ jbig2_alloc(Jbig2Allocator *allocator, size_t size, size_t num)
 static void
 jbig2_default_error(void *data, const char *msg, Jbig2Severity severity, uint32_t seg_idx)
 {
+    (void) data;
+
     /* report only fatal errors by default */
     if (severity == JBIG2_SEVERITY_FATAL) {
         fprintf(stderr, "jbig2 decoder FATAL ERROR: %s", msg);

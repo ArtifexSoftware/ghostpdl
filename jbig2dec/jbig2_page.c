@@ -241,6 +241,8 @@ jbig2_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segment_d
     uint32_t page_number = ctx->pages[ctx->current_page].number;
     int code;
 
+    (void) segment_data;
+
     if (segment->page_association != page_number) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
                     "end of page marker for page %d doesn't match current page number %d", segment->page_association, page_number);

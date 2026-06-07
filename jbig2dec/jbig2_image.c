@@ -75,6 +75,7 @@ jbig2_image_new(Jbig2Ctx *ctx, uint32_t width, uint32_t height)
 Jbig2Image *
 jbig2_image_reference(Jbig2Ctx *ctx, Jbig2Image *image)
 {
+    (void) ctx;
     if (image)
         image->refcount++;
     return image;
@@ -344,6 +345,8 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     uint32_t bytewidth;
     uint32_t syoffset = 0;
 
+    (void) ctx;
+
     if (src == NULL)
         return 0;
 
@@ -459,6 +462,8 @@ void
 jbig2_image_clear(Jbig2Ctx *ctx, Jbig2Image *image, int value)
 {
     const uint8_t fill = value ? 0xFF : 0x00;
+
+    (void) ctx;
 
     memset(image->data, fill, image->stride * image->height);
 }

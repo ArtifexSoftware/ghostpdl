@@ -1284,6 +1284,7 @@ static int Memento_appBlock(Memento_Blocks    *blks,
                             Memento_BlkHeader *b)
 {
     int result;
+    (void) blks;
     VALGRIND_MAKE_MEM_DEFINED(b, sizeof(Memento_BlkHeader));
     VALGRIND_MAKE_MEM_DEFINED(MEMBLK_TOBLK(b),
                               b->rawsize + Memento_PostSize);
@@ -1543,6 +1544,8 @@ void Memento_stats(void)
 static int showInfo(Memento_BlkHeader *b, void *arg)
 {
     Memento_BlkDetails *details;
+
+    (void) arg;
 
     fprintf(stderr, FMTP":(size="FMTZ",num=%d)",
             MEMBLK_TOBLK(b), (FMTZ_CAST)b->rawsize, b->sequence);
@@ -2024,6 +2027,8 @@ static void *do_malloc(size_t s, int eventType)
     Memento_BlkHeader *memblk;
     size_t             smem = MEMBLK_SIZE(s);
 
+    (void) eventType;
+
     if (Memento_failThisEventLocked())
         return NULL;
 
@@ -2472,6 +2477,8 @@ static int checkBlock(Memento_BlkHeader *memblk, const char *action)
 static void do_free(void *blk, int eventType)
 {
     Memento_BlkHeader *memblk;
+
+    (void) eventType;
 
     if (Memento_event()) Memento_breakpointLocked();
 
@@ -2989,6 +2996,7 @@ void (Memento_breakpoint)(void)
 
 int (Memento_checkBlock)(void *b)
 {
+    (void) b;
     return 0;
 }
 
@@ -3004,40 +3012,48 @@ int (Memento_check)(void)
 
 int (Memento_setParanoia)(int i)
 {
+    (void) i;
     return 0;
 }
 
 int (Memento_paranoidAt)(int i)
 {
+    (void) i;
     return 0;
 }
 
 int (Memento_breakAt)(int i)
 {
+    (void) i;
     return 0;
 }
 
 int  (Memento_getBlockNum)(void *i)
 {
+    (void) i;
     return 0;
 }
 
 int (Memento_find)(void *a)
 {
+    (void) a;
     return 0;
 }
 
 int (Memento_failAt)(int i)
 {
+    (void) i;
     return 0;
 }
 
 void (Memento_breakOnFree)(void *a)
 {
+    (void) a;
 }
 
 void (Memento_breakOnRealloc)(void *a)
 {
+    (void) a;
 }
 
 void *(Memento_takeRef)(void *a)
@@ -3052,6 +3068,7 @@ void *(Memento_dropRef)(void *a)
 
 void *(Memento_adjustRef)(void *a, int adjust)
 {
+    (void) adjust;
     return a;
 }
 
@@ -3095,6 +3112,7 @@ void (Memento_listNewBlocks)(void)
 
 size_t (Memento_setMax)(size_t max)
 {
+    (void) max;
     return 0;
 }
 
@@ -3104,11 +3122,13 @@ void (Memento_stats)(void)
 
 void *(Memento_label)(void *ptr, const char *label)
 {
+    (void) label;
     return ptr;
 }
 
 void (Memento_info)(void *addr)
 {
+    (void) addr;
 }
 
 void (Memento_listBlockInfo)(void)

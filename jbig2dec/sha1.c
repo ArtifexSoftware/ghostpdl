@@ -339,6 +339,9 @@ main(int argc, char **argv)
     uint8_t digest[20];
     char output[80];
 
+    (void) argc;
+    (void) argv;
+
     fprintf(stdout, "verifying SHA-1 implementation... ");
 
     for (k = 0; k < 2; k++) {

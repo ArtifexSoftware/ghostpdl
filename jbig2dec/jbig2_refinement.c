@@ -244,6 +244,8 @@ implicit_value(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int
     const int32_t j = y - params->GRREFERENCEDY;
     int m = jbig2_image_get_pixel(ref, i, j);
 
+    (void) image;
+
     return ((jbig2_image_get_pixel(ref, i - 1, j - 1) == m) &&
             (jbig2_image_get_pixel(ref, i, j - 1) == m) &&
             (jbig2_image_get_pixel(ref, i + 1, j - 1) == m) &&

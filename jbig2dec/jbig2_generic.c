@@ -358,6 +358,8 @@ jbig2_generic_stats_size(Jbig2Ctx *ctx, int template)
 {
     int stats_size = template == 0 ? 1 << 16 : template == 1 ? 1 << 13 : 1 << 10;
 
+    (void) ctx;
+
     return stats_size;
 }
 
@@ -374,6 +376,9 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
     byte *line2 = NULL;
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
+
+    (void) ctx;
+    (void) params;
 
 #ifdef OUTPUT_PBM
     printf("P4\n%d %d\n", GBW, GBH);
@@ -586,6 +591,8 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
 
+    (void) params;
+
 #ifdef OUTPUT_PBM
     printf("P4\n%d %d\n", GBW, GBH);
 #endif
@@ -718,6 +725,8 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
 
+    (void) params;
+
 #ifdef OUTPUT_PBM
     printf("P4\n%d %d\n", GBW, GBH);
 #endif
@@ -781,6 +790,8 @@ jbig2_decode_generic_template3(Jbig2Ctx *ctx,
     byte *line1 = NULL;
     byte *gbreg_line = (byte *) image->data;
     int64_t x, y;
+
+    (void) params;
 
 #ifdef OUTPUT_PBM
     printf("P4\n%d %d\n", GBW, GBH);
