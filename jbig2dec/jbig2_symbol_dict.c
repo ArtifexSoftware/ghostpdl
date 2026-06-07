@@ -523,7 +523,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
                         /* multiple symbols are handled as a text region */
                         code = jbig2_decode_text_region(ctx, segment, &tparams, (const Jbig2SymbolDict * const *)refagg_dicts,
-                                                        2, image, data, size, GR_stats, as, ws);
+                                                        2, image, GR_stats, as, ws);
                         if (code < 0) {
                             jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number, "failed to decode text region");
                             goto cleanup;
