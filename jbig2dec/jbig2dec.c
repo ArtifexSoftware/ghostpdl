@@ -380,28 +380,33 @@ print_usage(void)
     fprintf(stderr,
             "Usage: jbig2dec [options] <file.jbig2>\n"
             "   or  jbig2dec [options] <global_stream> <page_stream>\n"
-            "\n"
+            "\n");
+    fprintf(stderr,
             "  When invoked with a single file, it attempts to parse it as\n"
             "  a normal jbig2 file. Invoked with two files, it treats the\n"
             "  first as the global segments, and the second as the segment\n"
             "  stream for a particular page. This is useful for examining\n"
             "  embedded streams.\n"
-            "\n"
+            "\n");
+    fprintf(stderr,
             "  available options:\n"
             "    -h --help       this usage summary\n"
             "    -q --quiet      suppress diagnostic output\n"
             "    -v --verbose    set the verbosity level\n"
             "    -d --dump       print the structure of the jbig2 file\n"
-            "                    rather than explicitly decoding\n"
+            "                    rather than explicitly decoding\n");
+    fprintf(stderr,
             "    -V --version    program name and version information\n"
             "    -m --hash       print a hash of the decoded document\n"
             "    -e --embedded   expect embedded bit stream without file header\n"
-            "    -M <limit>      memory limit expressed in bytes\n"
+            "    -M <limit>      memory limit expressed in bytes\n");
+    fprintf(stderr,
             "    -o <file>\n"
             "    --output <file> send decoded output to <file>\n"
             "                    Defaults to the the input with a different\n"
             "                    extension. Pass '-' for stdout.\n"
-            "    -t <type>\n"
+            "    -t <type>\n");
+    fprintf(stderr,
             "    --format <type> force a particular output file format\n"
 #ifdef HAVE_LIBPNG
             "                    supported options are 'png' and 'pbm'\n"
