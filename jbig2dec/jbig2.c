@@ -94,8 +94,9 @@ jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, uint32_t segment_number, cons
     n = vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
     if (n < 0 || n == sizeof(buf))
-        strncpy(buf, "failed to generate error string", sizeof(buf));
-    ctx->error_callback(ctx->error_callback_data, buf, severity, segment_number);
+        ctx->error_callback(ctx->error_callback_data, "failed to generate error string", severity, segment_number);
+    else
+        ctx->error_callback(ctx->error_callback_data, buf, severity, segment_number);
     return -1;
 }
 
