@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -60,13 +60,12 @@ void ReadAllRAWTags(cmsContext ContextID, cmsHPROFILE h)
 {
     cmsInt32Number i, n;
     cmsTagSignature sig;
-    cmsInt32Number len;
 
     n = cmsGetTagCount(ContextID, h);
     for (i=0; i < n; i++) {
 
         sig = cmsGetTagSignature(ContextID, h, i);
-        len = cmsReadRawTag(ContextID, h, sig, NULL, 0);
+        cmsReadRawTag(ContextID, h, sig, NULL, 0);
     }
 }
 

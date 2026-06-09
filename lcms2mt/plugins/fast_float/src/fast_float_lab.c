@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
@@ -201,12 +201,12 @@ void LabCLUTEval(cmsContext ContextID,
     cmsUInt32Number OutputFormat = cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo);
 
     cmsUInt32Number nchans, nalpha;
-    cmsUInt32Number strideIn, strideOut;
+    size_t strideIn, strideOut;
 
     _cmsComputeComponentIncrements(InputFormat, Stride->BytesPerPlaneIn, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(OutputFormat, Stride->BytesPerPlaneOut, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
-    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+    if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
         nalpha = 0;
 
     strideIn = strideOut = 0;
@@ -318,7 +318,8 @@ void LabCLUTEval(cmsContext ContextID,
 
             if (xin)
             {
-                *(cmsFloat32Number*) (out[TotalOut]) = *xin;
+                *(cmsFloat32Number*) (out[TotalOut]) = *(cmsFloat32Number*)xin;
+                xin += SourceIncrements[3];
                 out[TotalOut] += DestIncrements[TotalOut];
             }
         }
@@ -407,7 +408,7 @@ cmsBool OptimizeCLUTLabTransform(cmsContext ContextID,
 
     // Allocate data
     pfloat = LabCLUTAlloc(ContextID, data ->Params);
-    if (pfloat == NULL) return FALSE;
+    if (pfloat == NULL) goto Error;
 
     container.data = pfloat;
     container.original = OriginalLut;
@@ -427,6 +428,8 @@ cmsBool OptimizeCLUTLabTransform(cmsContext ContextID,
 
 Error:
 
+    // We return leaving *Lut pointing to OriginalLut. Caller is
+    // responsible for freeing it. Is this intended?
     if (OptimizedLUT != NULL) cmsPipelineFree(ContextID, OptimizedLUT);
 
     return FALSE;

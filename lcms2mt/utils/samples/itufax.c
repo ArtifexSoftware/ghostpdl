@@ -2,22 +2,22 @@
 //  Little cms
 //  Copyright (C) 1998-2003 Marti Maria
 //
-// Permission is hereby granted, free of charge, to any person obtaining 
-// a copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the Software 
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the Software
 // is furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in 
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
-// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
@@ -66,11 +66,11 @@ void Lab2ITU(LPcmsCIELab Lab, WORD Out[3])
 
 static
 int InputDirection(register WORD In[], register WORD Out[], register LPVOID Cargo)
-{	   
+{
     cmsCIELab Lab;
 
-    cmsLabEncoded2Float(&Lab, In);    
-    cmsClampLab(&Lab, 85, -85, 125, -75);    // This function does the necessary gamut remapping  
+    cmsLabEncoded2Float(&Lab, In);
+    cmsClampLab(&Lab, 85, -85, 125, -75);    // This function does the necessary gamut remapping
     Lab2ITU(&Lab, Out);
 
 	return TRUE;
@@ -79,12 +79,12 @@ int InputDirection(register WORD In[], register WORD Out[], register LPVOID Carg
 
 static
 int OutputDirection(register WORD In[], register WORD Out[], register LPVOID Cargo)
-{	
+{
 
 	cmsCIELab Lab;
 
     ITU2Lab(In, &Lab);
-    cmsFloat2LabEncoded(Out, &Lab);    
+    cmsFloat2LabEncoded(Out, &Lab);
 
 	return TRUE;
 }
@@ -94,7 +94,7 @@ int OutputDirection(register WORD In[], register WORD Out[], register LPVOID Car
 // note that cmsOpenProfileFromFile("itufax.icm", "w") will NOT delete the file
 // if already exists. This is for obvious safety reasons.
 
-	
+
 int main(int argc, char *argv[])
 {
 	LPLUT AToB0, BToA0;
@@ -104,31 +104,31 @@ int main(int argc, char *argv[])
 
 	unlink("itufax.icm");
 	hProfile = cmsOpenProfileFromFile("itufax.icm", "w");
-	
+
     AToB0 = cmsAllocLUT();
-	BToA0 = cmsAllocLUT(); 
+	BToA0 = cmsAllocLUT();
 
 	cmsAlloc3DGrid(AToB0, GRID_POINTS, 3, 3);
 	cmsAlloc3DGrid(BToA0, GRID_POINTS, 3, 3);
-    
+
 	cmsSample3DGrid(AToB0, InputDirection, NULL, 0);
 	cmsSample3DGrid(BToA0, OutputDirection, NULL, 0);
-		
+
     cmsAddTag(hProfile, icSigAToB0Tag, AToB0);
 	cmsAddTag(hProfile, icSigBToA0Tag, BToA0);
 
-                                
+
 	cmsSetColorSpace(hProfile, icSigLabData);
     cmsSetPCS(hProfile, icSigLabData);
     cmsSetDeviceClass(hProfile, icSigColorSpaceClass);
 
 	cmsAddTag(hProfile, icSigProfileDescriptionTag, "ITU T.42/Fax JPEG CIEL*a*b*");
     cmsAddTag(hProfile, icSigCopyrightTag,          "No Copyright, use freely.");
-    cmsAddTag(hProfile, icSigDeviceMfgDescTag,      "Little cms");    
+    cmsAddTag(hProfile, icSigDeviceMfgDescTag,      "Little cms");
     cmsAddTag(hProfile, icSigDeviceModelDescTag,    "ITU T.42/Fax JPEG CIEL*a*b*");
-	
+
 	cmsCloseProfile(hProfile);
-    
+
 	cmsFreeLUT(AToB0);
 	cmsFreeLUT(BToA0);
 

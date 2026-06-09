@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
@@ -30,13 +30,13 @@ extern "C" {
 #   endif
 #endif
 
-#define LCMS2_FAST_FLOAT_VERSION   1400
+#define LCMS2_FAST_FLOAT_VERSION   LCMS_VERSION
 
 // Configuration toggles
 
 // Uncomment this if you want to avoid SSE2 entirely.
 // Default is commented out. There are two kernels, one is vectorized and the other is not.
-// On inizialization, there is a SSE2 detection. If the SSE2 detection succeeds, then the vectorized code is selected.
+// On initialization, there is a SSE2 detection. If the SSE2 detection succeeds, then the vectorized code is selected.
 // If the CPU is old and does not support SSE2, then the non-vectorized  code is used.
 // If you define the toggle, there is no detection and the non-vectorized kernel is always used.
 
@@ -116,7 +116,6 @@ CMSAPI void* CMSEXPORT cmsFastFloatExtensions(void);
 #define TYPE_AGRAY_8           (COLORSPACE_SH(PT_GRAY)|EXTRA_SH(1)|CHANNELS_SH(1)|DOSWAP_SH(1)|BYTES_SH(1))
 #define TYPE_AGRAY_16          (COLORSPACE_SH(PT_GRAY)|EXTRA_SH(1)|CHANNELS_SH(1)|DOSWAP_SH(1)|BYTES_SH(2))
 #define TYPE_AGRAY_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_GRAY)|EXTRA_SH(1)|CHANNELS_SH(1)|DOSWAP_SH(1)|BYTES_SH(4))
-#define TYPE_GRAYA_FLT         (FLOAT_SH(1)|COLORSPACE_SH(PT_GRAY)|EXTRA_SH(1)|CHANNELS_SH(1)|BYTES_SH(4))
 #define TYPE_AGRAY_DBL         (FLOAT_SH(1)|COLORSPACE_SH(PT_GRAY)|EXTRA_SH(1)|CHANNELS_SH(1)|DOSWAP_SH(1)|BYTES_SH(0))
 
 #define TYPE_ACMYK_8           (COLORSPACE_SH(PT_CMYK)|EXTRA_SH(1)|CHANNELS_SH(4)|BYTES_SH(1)|SWAPFIRST_SH(1))

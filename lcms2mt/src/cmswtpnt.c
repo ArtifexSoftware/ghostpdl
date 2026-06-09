@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -218,11 +218,14 @@ cmsBool ComputeChromaticAdaptation(cmsContext ContextID, cmsMAT3* Conversion,
     _cmsMAT3eval(ContextID, &ConeSourceRGB, Chad, &ConeSourceXYZ);
     _cmsMAT3eval(ContextID, &ConeDestRGB,   Chad, &ConeDestXYZ);
 
+    if ((fabs(ConeSourceRGB.n[0]) < MATRIX_DET_TOLERANCE) ||
+        (fabs(ConeSourceRGB.n[1]) < MATRIX_DET_TOLERANCE) ||
+        (fabs(ConeSourceRGB.n[2]) < MATRIX_DET_TOLERANCE)) return FALSE;
+
     // Build matrix
     _cmsVEC3init(ContextID, &Cone.v[0], ConeDestRGB.n[0]/ConeSourceRGB.n[0],    0.0,  0.0);
     _cmsVEC3init(ContextID, &Cone.v[1], 0.0,   ConeDestRGB.n[1]/ConeSourceRGB.n[1],   0.0);
     _cmsVEC3init(ContextID, &Cone.v[2], 0.0,   0.0,   ConeDestRGB.n[2]/ConeSourceRGB.n[2]);
-
 
     // Normalize
     _cmsMAT3per(ContextID, &Tmp, &Cone, Chad);
@@ -267,16 +270,16 @@ cmsBool _cmsAdaptMatrixToD50(cmsContext ContextID, cmsMAT3* r, const cmsCIExyY* 
 
 // Build a White point, primary chromas transfer matrix from RGB to CIE XYZ
 // This is just an approximation, I am not handling all the non-linear
-// aspects of the RGB to XYZ process, and assumming that the gamma correction
+// aspects of the RGB to XYZ process, and assuming that the gamma correction
 // has transitive property in the transformation chain.
 //
-// the alghoritm:
+// the algorithm:
 //
 //            - First I build the absolute conversion matrix using
 //              primaries in XYZ. This matrix is next inverted
 //            - Then I eval the source white point across this matrix
-//              obtaining the coeficients of the transformation
-//            - Then, I apply these coeficients to the original matrix
+//              obtaining the coefficients of the transformation
+//            - Then, I apply these coefficients to the original matrix
 //
 cmsBool _cmsBuildRGB2XYZtransferMatrix(cmsContext ContextID, cmsMAT3* r, const cmsCIExyY* WhitePt, const cmsCIExyYTRIPLE* Primrs)
 {
@@ -349,5 +352,3 @@ cmsBool CMSEXPORT cmsAdaptToIlluminant(cmsContext ContextID, cmsCIEXYZ* Result,
 
     return TRUE;
 }
-
-

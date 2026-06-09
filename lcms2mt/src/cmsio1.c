@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -258,7 +258,7 @@ Error:
 
 
 
-// Read the DToAX tag, adjusting the encoding of Lab or XYZ if neded
+// Read the DToAX tag, adjusting the encoding of Lab or XYZ if needed
 static
 cmsPipeline* _cmsReadFloatInputTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTagSignature tagFloat)
 {
@@ -319,7 +319,7 @@ cmsPipeline* CMSEXPORT _cmsReadInputLUT(cmsContext ContextID, cmsHPROFILE hProfi
 
         Lut = cmsPipelineAlloc(ContextID, 0, 0);
         if (Lut == NULL) {
-            cmsFreeNamedColorList(ContextID, nc);
+            //cmsFreeNamedColorList(ContextID, nc);
             return NULL;
         }
 
@@ -531,7 +531,7 @@ void ChangeInterpolationToTrilinear(cmsContext ContextID, cmsPipeline* Lut)
 }
 
 
-// Read the DToAX tag, adjusting the encoding of Lab or XYZ if neded
+// Read the DToAX tag, adjusting the encoding of Lab or XYZ if needed
 static
 cmsPipeline* _cmsReadFloatOutputTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTagSignature tagFloat)
 {
@@ -574,7 +574,7 @@ Error:
     return NULL;
 }
 
-// Create an output MPE LUT from agiven profile. Version mismatches are handled here
+// Create an output MPE LUT from a given profile. Version mismatches are handled here
 cmsPipeline* CMSEXPORT _cmsReadOutputLUT(cmsContext ContextID, cmsHPROFILE hProfile, cmsUInt32Number Intent)
 {
     cmsTagTypeSignature OriginalType;
@@ -653,7 +653,7 @@ Error:
 
 // ---------------------------------------------------------------------------------------------------------------
 
-// Read the AToD0 tag, adjusting the encoding of Lab or XYZ if neded
+// Read the AToD0 tag, adjusting the encoding of Lab or XYZ if needed
 static
 cmsPipeline* _cmsReadFloatDevicelinkTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTagSignature tagFloat)
 {
@@ -729,7 +729,7 @@ cmsPipeline* CMSEXPORT _cmsReadDevicelinkLUT(cmsContext ContextID, cmsHPROFILE h
         return Lut;
     Error:
         cmsPipelineFree(ContextID, Lut);
-        cmsFreeNamedColorList(ContextID, nc);
+        //cmsFreeNamedColorList(ContextID, nc);
         return NULL;
     }
 
@@ -842,6 +842,10 @@ cmsBool  CMSEXPORT cmsIsCLUT(cmsContext ContextID, cmsHPROFILE hProfile, cmsUInt
            cmsSignalError(ContextID, cmsERROR_RANGE, "Unexpected direction (%d)", UsedDirection);
            return FALSE;
     }
+
+    // Extended intents are not strictly CLUT-based
+    if (Intent > INTENT_ABSOLUTE_COLORIMETRIC)
+        return FALSE;
 
     return cmsIsTag(ContextID, hProfile, TagTable[Intent]);
 
@@ -971,7 +975,13 @@ const cmsMLU* GetInfo(cmsContext ContextID, cmsHPROFILE hProfile, cmsInfoType In
     switch (Info) {
 
     case cmsInfoDescription:
-        sig = cmsSigProfileDescriptionTag;
+        /**
+        * Add for MacOS, which uses propiertary tags for description
+        */
+        if (cmsIsTag(ContextID, hProfile, cmsSigProfileDescriptionMLTag))
+            sig = cmsSigProfileDescriptionMLTag;
+        else
+            sig = cmsSigProfileDescriptionTag;
         break;
 
     case cmsInfoManufacturer:
@@ -1014,4 +1024,14 @@ cmsUInt32Number  CMSEXPORT cmsGetProfileInfoASCII(cmsContext ContextID, cmsHPROF
     if (mlu == NULL) return 0;
 
     return cmsMLUgetASCII(ContextID, mlu, LanguageCode, CountryCode, Buffer, BufferSize);
+}
+
+cmsUInt32Number  CMSEXPORT cmsGetProfileInfoUTF8(cmsContext ContextID, cmsHPROFILE hProfile, cmsInfoType Info,
+                                                          const char LanguageCode[3], const char CountryCode[3],
+                                                          char* Buffer, cmsUInt32Number BufferSize)
+{
+    const cmsMLU* mlu = GetInfo(ContextID, hProfile, Info);
+    if (mlu == NULL) return 0;
+
+    return cmsMLUgetUTF8(ContextID, mlu, LanguageCode, CountryCode, Buffer, BufferSize);
 }

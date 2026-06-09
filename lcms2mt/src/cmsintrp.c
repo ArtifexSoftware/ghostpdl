@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -201,8 +201,8 @@ void LinLerp1D(cmsContext ContextID,
     const cmsUInt16Number* LutTable = (cmsUInt16Number*) p ->Table;
     cmsUNUSED_PARAMETER(ContextID);
 
-    // if last value...
-    if (Value[0] == 0xffff) {
+    // if last value or just one point
+    if (Value[0] == 0xffff || p->Domain[0] == 0) {
 
         Output[0] = LutTable[p -> Domain[0]];
     }
@@ -242,7 +242,7 @@ void LinLerp1Dfloat(cmsContext ContextID, const cmsFloat32Number Value[],
        val2 = fclamp(Value[0]);
 
        // if last value...
-       if (val2 == 1.0) {
+       if (val2 == 1.0 || p->Domain[0] == 0) {
            Output[0] = LutTable[p -> Domain[0]];
        }
        else
@@ -278,20 +278,34 @@ void Eval1Input(cmsContext ContextID,
        const cmsUInt16Number* LutTable = (cmsUInt16Number*) p16 -> Table;
        cmsUNUSED_PARAMETER(ContextID);
 
-       v = Input[0] * p16 -> Domain[0];
-       fk = _cmsToFixedDomain(v);
 
-       k0 = FIXED_TO_INT(fk);
-       rk = (cmsUInt16Number) FIXED_REST_TO_INT(fk);
+       // if last value...
+       if (Input[0] == 0xffff || p16->Domain[0] == 0) {
 
-       k1 = k0 + (Input[0] != 0xFFFFU ? 1 : 0);
+           cmsUInt32Number y0 = p16->Domain[0] * p16->opta[0];
 
-       K0 = p16 -> opta[0] * k0;
-       K1 = p16 -> opta[0] * k1;
+           for (OutChan = 0; OutChan < p16->nOutputs; OutChan++) {
+               Output[OutChan] = LutTable[y0 + OutChan];
+           }
+       }
+       else
+       {
 
-       for (OutChan=0; OutChan < p16->nOutputs; OutChan++) {
+           v = Input[0] * p16->Domain[0];
+           fk = _cmsToFixedDomain(v);
 
-           Output[OutChan] = LinearInterp(rk, LutTable[K0+OutChan], LutTable[K1+OutChan]);
+           k0 = FIXED_TO_INT(fk);
+           rk = (cmsUInt16Number)FIXED_REST_TO_INT(fk);
+
+           k1 = k0 + (Input[0] != 0xFFFFU ? 1 : 0);
+
+           K0 = p16->opta[0] * k0;
+           K1 = p16->opta[0] * k1;
+
+           for (OutChan = 0; OutChan < p16->nOutputs; OutChan++) {
+
+               Output[OutChan] = LinearInterp(rk, LutTable[K0 + OutChan], LutTable[K1 + OutChan]);
+           }
        }
 }
 
@@ -313,12 +327,12 @@ void Eval1InputFloat(cmsContext ContextID, const cmsFloat32Number Value[],
     val2 = fclamp(Value[0]);
 
     // if last value...
-    if (val2 == 1.0) {
+    if (val2 == 1.0 || p->Domain[0] == 0) {
 
-        y0 = LutTable[p->Domain[0]];
+        cmsUInt32Number start = p->Domain[0] * p->opta[0];
 
         for (OutChan = 0; OutChan < p->nOutputs; OutChan++) {
-            Output[OutChan] = y0;
+            Output[OutChan] = LutTable[start + OutChan];
         }
     }
     else
@@ -490,7 +504,7 @@ void TrilinearInterpFloat(cmsContext ContextID, const cmsFloat32Number Input[],
     py = fclamp(Input[1]) * p->Domain[1];
     pz = fclamp(Input[2]) * p->Domain[2];
 
-    x0 = (int) floor(px); fx = px - (cmsFloat32Number) x0;  // We need full floor funcionality here
+    x0 = (int) floor(px); fx = px - (cmsFloat32Number) x0;  // We need full floor functionality here
     y0 = (int) floor(py); fy = py - (cmsFloat32Number) y0;
     z0 = (int) floor(pz); fz = pz - (cmsFloat32Number) z0;
 
@@ -957,9 +971,9 @@ void Eval4Inputs(cmsContext ContextID,
                                 c1 = c2 = c3 = 0;
                             }
 
-        Rest = c1 * rx + c2 * ry + c3 * rz;
+        Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
 
-        Tmp1[OutChan] = (cmsUInt16Number)(c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest)));
+        Tmp1[OutChan] = (cmsUInt16Number)c0 + ((Rest + (Rest >> 16)) >> 16);
     }
 
 
@@ -1021,9 +1035,9 @@ void Eval4Inputs(cmsContext ContextID,
                                 c1 = c2 = c3 = 0;
                             }
 
-        Rest = c1 * rx + c2 * ry + c3 * rz;
+        Rest = c1 * rx + c2 * ry + c3 * rz + 0x8001;
 
-        Tmp2[OutChan] = (cmsUInt16Number) (c0 + ROUND_FIXED_TO_INT(_cmsToFixedDomain(Rest)));
+        Tmp2[OutChan] = (cmsUInt16Number) c0 + ((Rest + (Rest >> 16)) >> 16);
     }
 
 
@@ -1175,6 +1189,7 @@ EVAL_FNS(12, 11)
 EVAL_FNS(13, 12)
 EVAL_FNS(14, 13)
 EVAL_FNS(15, 14)
+
 
 // The default factory
 static

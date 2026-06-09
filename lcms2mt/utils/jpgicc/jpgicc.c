@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -70,7 +70,7 @@ static struct my_error_mgr {
 } ErrorHandler;
 
 
-cmsUInt16Number Alarm[4] = {128,128,128,0};
+cmsUInt16Number Alarm[cmsMAXCHANNELS] = {128,128,128,0};
 
 
 static
@@ -1052,8 +1052,10 @@ int TransformImage(cmsContext ContextID, char *cDefInpProf, char *cOutputProf)
 static
 void Help(cmsContext ContextID, int level)
 {
-
     UTILS_UNUSED_PARAMETER(level);
+
+    fprintf(stderr, "Little CMS ICC profile applier for JPEG - v3.5 [LittleCMS %2.2f]\n\n", cmsGetEncodedCMMversion() / 1000.0);
+    fprintf(stderr, "Copyright (c) 1998-2026 Marti Maria Saguer. See COPYING file for details.\n");
 
     fprintf(stderr, "usage: jpgicc [flags] input.jpg output.jpg\n");
 
@@ -1253,10 +1255,6 @@ int main(int argc, char* argv[])
 {
     cmsContext ContextID = cmsCreateContext(NULL, NULL);
 
-    fprintf(stderr, "Little CMS ICC profile applier for JPEG - v3.3 [LittleCMS %2.2f]\n\n", LCMS_VERSION / 1000.0);
-    fprintf(stderr, "Copyright (c) 1998-2020 Marti Maria Saguer. See COPYING file for details.\n");
-    fflush(stderr);
-
     InitUtils(ContextID, "jpgicc");
 
     HandleSwitches(ContextID, argc, argv);
@@ -1269,7 +1267,6 @@ int main(int argc, char* argv[])
     OpenOutput(argv[xoptind+1]);
 
     TransformImage(ContextID, cInpProf, cOutProf);
-
 
     if (Verbose) { fprintf(stdout, "\n"); fflush(stdout); }
 

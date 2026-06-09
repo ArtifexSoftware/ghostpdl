@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
@@ -56,14 +56,15 @@ static void FastEvaluateRGBCurves8(cmsContext ContextID,
        cmsUInt8Number* bout;
        cmsUInt8Number* aout = NULL;
 
-       cmsUInt32Number nalpha, strideIn, strideOut;
+       cmsUInt32Number nalpha;
+       size_t strideIn, strideOut;
 
        Curves8Data* Data = (Curves8Data*)_cmsGetTransformUserData(CMMcargo);
 
        _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
        _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
-       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+       if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
            nalpha = 0;
 
        strideIn = strideOut = 0;
@@ -136,12 +137,13 @@ static void FastRGBIdentity8(cmsContext ContextID,
        cmsUInt8Number* bout;
        cmsUInt8Number* aout = NULL;
 
-       cmsUInt32Number nalpha, strideIn, strideOut;
+       cmsUInt32Number nalpha;
+       size_t strideIn, strideOut;
 
        _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
        _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
-       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+       if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
            nalpha = 0;
 
        strideIn = strideOut = 0;
@@ -211,14 +213,15 @@ static void FastEvaluateGrayCurves8(cmsContext ContextID,
        cmsUInt8Number* gout;
        cmsUInt8Number* aout = NULL;
 
-       cmsUInt32Number nalpha, strideIn, strideOut;
+       cmsUInt32Number nalpha;
+       size_t strideIn, strideOut;
 
        Curves8Data* Data = (Curves8Data*)_cmsGetTransformUserData(CMMcargo);
 
        _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
        _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
-       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+       if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
            nalpha = 0;
 
        strideIn = strideOut = 0;
@@ -277,12 +280,13 @@ static void FastGrayIdentity8(cmsContext ContextID,
        cmsUInt8Number* gout;
        cmsUInt8Number* aout = NULL;
 
-       cmsUInt32Number nalpha, strideIn, strideOut;
+       cmsUInt32Number nalpha;
+       size_t strideIn, strideOut;
 
        _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
        _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
-       if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+       if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
            nalpha = 0;
 
        strideIn = strideOut = 0;
@@ -382,7 +386,7 @@ cmsBool Optimize8ByJoiningCurves(cmsContext ContextID,
     Curves8Data* Data;
     cmsUInt32Number nChans;
 
-    // This is a loosy optimization! does not apply in floating-point cases
+    // This is a lossy optimization! does not apply in floating-point cases
     if (T_FLOAT(*InputFormat) || T_FLOAT(*OutputFormat)) return FALSE;
 
     // Only on 8-bit
@@ -408,7 +412,7 @@ cmsBool Optimize8ByJoiningCurves(cmsContext ContextID,
     *dwFlags |= cmsFLAGS_NOCACHE;
     *dwFlags &= ~cmsFLAGS_CAN_CHANGE_FORMATTER;
     *UserData = Data;
-    *FreeUserData = _cmsFree;
+    *FreeUserData = _fast_float_free_user_data;
 
     // Maybe the curves are linear at the end
     if (nChans == 1)

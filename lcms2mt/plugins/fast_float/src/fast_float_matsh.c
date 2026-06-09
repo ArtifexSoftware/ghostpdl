@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
@@ -163,12 +163,12 @@ void MatShaperFloat(cmsContext ContextID, struct _cmstransform_struct *CMMcargo,
     cmsUInt8Number* aout = NULL;
 
     cmsUInt32Number nchans, nalpha;
-    cmsUInt32Number strideIn, strideOut;
+    size_t strideIn, strideOut;
 
     _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
-    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+    if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
         nalpha = 0;
 
     strideIn = strideOut = 0;
@@ -242,7 +242,7 @@ cmsBool OptimizeFloatMatrixShaper(cmsContext ContextID,
                                   cmsUInt32Number* dwFlags)
 {
     cmsStage* Curve1, *Curve2;
-    cmsStage* Matrix1, *Matrix2;
+    cmsStage* Matrix1, *Matrix2, * XYZmatrix = NULL;
     _cmsStageMatrixData* Data1;
     _cmsStageMatrixData* Data2;
     cmsMAT3 res;
@@ -266,9 +266,41 @@ cmsBool OptimizeFloatMatrixShaper(cmsContext ContextID,
     Src = *Lut;
 
     // Check for shaper-matrix-matrix-shaper structure, that is what this optimizer stands for
-    if (!cmsPipelineCheckAndRetreiveStages(ContextID, Src, 4,
-        cmsSigCurveSetElemType, cmsSigMatrixElemType, cmsSigMatrixElemType, cmsSigCurveSetElemType,
-        &Curve1, &Matrix1, &Matrix2, &Curve2)) return FALSE;
+
+    if (cmsPipelineCheckAndRetreiveStages(ContextID, Src, 3,
+        cmsSigCurveSetElemType, cmsSigMatrixElemType, cmsSigCurveSetElemType,
+        &Curve1, &Matrix1, &Curve2))
+    {
+        if (T_COLORSPACE(*OutputFormat) == PT_XYZ) {
+
+            /**
+            * XYZ is encoded in 1.15 fixed point, but in
+            * out table it is on 0..1.0 range, so we need to  adjust it.
+            */
+#define MAX_ENCODEABLE_XYZ  (1.0 + 32767.0/32768.0)
+
+            static const cmsFloat64Number mat[] = { MAX_ENCODEABLE_XYZ,      0,   0,
+                                                        0,  MAX_ENCODEABLE_XYZ,   0,
+                                                        0,      0,   MAX_ENCODEABLE_XYZ };
+
+            XYZmatrix = Matrix2 = cmsStageAllocMatrix(ContextID, 3, 3, mat, NULL);
+        }
+        else
+            if (T_COLORSPACE(*InputFormat) == PT_XYZ) {
+                static const cmsFloat64Number mat[] = { 1.0/MAX_ENCODEABLE_XYZ,  0,   0,
+                                                        0,  1.0/MAX_ENCODEABLE_XYZ,   0,
+                                                        0,      0,   1.0/MAX_ENCODEABLE_XYZ };
+
+                Matrix2 = Matrix1;
+                XYZmatrix = Matrix1 = cmsStageAllocMatrix(cmsGetPipelineContextID(Src), 3, 3, mat, NULL);
+            }
+            else
+                return FALSE;
+    }
+    else
+        if (!cmsPipelineCheckAndRetreiveStages(ContextID, Src, 4,
+            cmsSigCurveSetElemType, cmsSigMatrixElemType, cmsSigMatrixElemType, cmsSigCurveSetElemType,
+            &Curve1, &Matrix1, &Matrix2, &Curve2)) return FALSE;
 
     nChans    = T_CHANNELS(*InputFormat);
 
@@ -302,11 +334,11 @@ cmsBool OptimizeFloatMatrixShaper(cmsContext ContextID,
         }
     }
 
-      // Allocate an empty LUT
+    // Allocate an empty LUT
     Dest =  cmsPipelineAlloc(ContextID, nChans, nChans);
     if (!Dest) return FALSE;
 
-    // Assamble the new LUT
+    // Assemble the new LUT
     cmsPipelineInsertStage(ContextID, Dest, cmsAT_BEGIN, cmsStageDup(ContextID, Curve1));
 
     if (!IdentityMat) {
@@ -331,11 +363,11 @@ cmsBool OptimizeFloatMatrixShaper(cmsContext ContextID,
         _cmsStageToneCurvesData* mpeC1 = (_cmsStageToneCurvesData*) cmsStageData(ContextID, Curve1);
         _cmsStageToneCurvesData* mpeC2 = (_cmsStageToneCurvesData*) cmsStageData(ContextID, Curve2);
 
-        // In this particular optimization, caché does not help as it takes more time to deal with
-        // the cachthat with the pixel handling
+        // In this particular optimization, cache does not help as it takes more time to deal with
+        // the cache than with the pixel handling
         *dwFlags |= cmsFLAGS_NOCACHE;
 
-        // Setup the optimizarion routines
+        // Setup the optimization routines
         *UserData = SetMatShaper(ContextID, mpeC1 ->TheCurves, &res, (cmsVEC3*) Data2 ->Offset, mpeC2->TheCurves);
         *FreeUserData = FreeMatShaper;
 
@@ -344,6 +376,8 @@ cmsBool OptimizeFloatMatrixShaper(cmsContext ContextID,
 
     *dwFlags &= ~cmsFLAGS_CAN_CHANGE_FORMATTER;
     cmsPipelineFree(ContextID, Src);
+    if (XYZmatrix != NULL)
+        cmsStageFree(ContextID, XYZmatrix);
     *Lut = Dest;
     return TRUE;
 }

@@ -36,6 +36,8 @@ static cmsBool lShowXYZ = TRUE;
 static cmsBool lShowLab = FALSE;
 static cmsBool lShowLCh = FALSE;
 
+#define SW '-'
+
 static
 void HandleSwitches(int argc, char *argv[])
 {
@@ -73,7 +75,7 @@ void Help(void)
        fprintf(stderr, "usage: wtpt [flags] [<ICC profile>]\n\n");
 
        fprintf(stderr, "flags:\n\n");
-       
+
        fprintf(stderr, "%cl - CIE Lab\n", SW);
        fprintf(stderr, "%cc - CIE LCh\n", SW);
        fprintf(stderr, "%cx - Don't show XYZ\n", SW);
@@ -121,7 +123,7 @@ int main(int argc, char *argv[])
        int nargs;
 
        InitUtils("wtpt");
-       
+
        HandleSwitches(argc, argv);
 
        nargs = (argc - xoptind);
@@ -131,14 +133,13 @@ int main(int argc, char *argv[])
 
        else {
               cmsCIEXYZ* WtPt;
-              cmsHPROFILE hProfile = cmsOpenProfileFromFile(argv[xoptind], "r");  
+              cmsHPROFILE hProfile = cmsOpenProfileFromFile(argv[xoptind], "r");
               if (hProfile == NULL) return 1;
 
               WtPt = cmsReadTag(hProfile, cmsSigMediaWhitePointTag);
               ShowWhitePoint(WtPt);
               cmsCloseProfile(hProfile);
        }
-       
+
        return 0;
 }
-

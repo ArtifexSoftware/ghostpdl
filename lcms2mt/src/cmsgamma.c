@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -207,7 +207,7 @@ _cmsParametricCurvesCollection *GetParametricCurveByType(cmsContext ContextID, i
 }
 
 // Low level allocate, which takes care of memory details. nEntries may be zero, and in this case
-// no optimation curve is computed. nSegments may also be zero in the inverse case, where only the
+// no optimization curve is computed. nSegments may also be zero in the inverse case, where only the
 // optimization curve is given. Both features simultaneously is an error
 static
 cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsUInt32Number nEntries,
@@ -300,6 +300,10 @@ cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsUInt32Number nEnt
         return p;
 
 Error:
+    for (i=0; i < nSegments; i++) {
+        if (p ->Segments && p ->Segments[i].SampledPoints) _cmsFree(ContextID, p ->Segments[i].SampledPoints);
+        if (p ->SegInterp && p ->SegInterp[i]) _cmsFree(ContextID, p ->SegInterp[i]);
+    }
     if (p -> SegInterp) _cmsFree(ContextID, p -> SegInterp);
     if (p -> Segments) _cmsFree(ContextID, p -> Segments);
     if (p -> Evals) _cmsFree(ContextID, p -> Evals);
@@ -428,8 +432,8 @@ cmsFloat64Number DefaultEvalParametricFn(cmsContext ContextID, cmsInt32Number Ty
 
 
     // IEC 61966-3
-    // Y = (aX + b)^Gamma | X <= -b/a
-    // Y = c              | else
+    // Y = (aX + b)^Gamma + c | X <= -b/a
+    // Y = c                  | else
     case 3:
     {
         if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
@@ -463,7 +467,8 @@ cmsFloat64Number DefaultEvalParametricFn(cmsContext ContextID, cmsInt32Number Ty
     // X=-b/a                   | (Y<c)
     case -3:
     {
-        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+        if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[1]) < MATRIX_DET_TOLERANCE)
         {
             Val = 0;
         }
@@ -508,28 +513,31 @@ cmsFloat64Number DefaultEvalParametricFn(cmsContext ContextID, cmsInt32Number Ty
     // X=Y/c              | Y< (ad+b)^g
     case -4:
     {
-        if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
-            fabs(Params[1]) < MATRIX_DET_TOLERANCE ||
-            fabs(Params[3]) < MATRIX_DET_TOLERANCE)
-        {
-            Val = 0;
-        }
+
+        e = Params[1] * Params[4] + Params[2];
+        if (e < 0)
+            disc = 0;
         else
-        {
-            e = Params[1] * Params[4] + Params[2];
-            if (e < 0)
-                disc = 0;
+            disc = pow(e, Params[0]);
+
+        if (R >= disc) {
+
+            if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+                fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+
+                Val = 0;
+
             else
-                disc = pow(e, Params[0]);
-
-            if (R >= disc) {
-
                 Val = (pow(R, 1.0 / Params[0]) - Params[2]) / Params[1];
-            }
-            else {
-                Val = R / Params[3];
-            }
         }
+        else {
+
+            if (fabs(Params[3]) < MATRIX_DET_TOLERANCE)
+                Val = 0;
+            else
+                Val = R / Params[3];
+        }
+
     }
     break;
 
@@ -556,26 +564,29 @@ cmsFloat64Number DefaultEvalParametricFn(cmsContext ContextID, cmsInt32Number Ty
     // X=(Y-f)/c          | else
     case -5:
     {
-        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE ||
-            fabs(Params[3]) < MATRIX_DET_TOLERANCE)
-        {
-            Val = 0;
-        }
-        else
-        {
-            disc = Params[3] * Params[4] + Params[6];
-            if (R >= disc) {
+        disc = Params[3] * Params[4] + Params[6];
+        if (R >= disc) {
 
-                e = R - Params[5];
-                if (e < 0)
+            e = R - Params[5];
+            if (e < 0)
+                Val = 0;
+            else
+            {
+                if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+                    fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+
                     Val = 0;
                 else
                     Val = (pow(e, 1.0 / Params[0]) - Params[2]) / Params[1];
             }
-            else {
-                Val = (R - Params[6]) / Params[3];
-            }
         }
+        else {
+            if (fabs(Params[3]) < MATRIX_DET_TOLERANCE)
+                Val = 0;
+            else
+                Val = (R - Params[6]) / Params[3];
+        }
+
     }
     break;
 
@@ -587,16 +598,23 @@ cmsFloat64Number DefaultEvalParametricFn(cmsContext ContextID, cmsInt32Number Ty
     case 6:
         e = Params[1]*R + Params[2];
 
-        if (e < 0)
-            Val = Params[3];
-        else
-            Val = pow(e, Params[0]) + Params[3];
+        // On gamma 1.0, don't clamp
+        if (Params[0] == 1.0) {
+            Val = e + Params[3];
+        }
+        else {
+            if (e < 0)
+                Val = Params[3];
+            else
+                Val = pow(e, Params[0]) + Params[3];
+        }
         break;
 
     // ((Y - c) ^1/Gamma - b) / a
     case -6:
     {
-        if (fabs(Params[1]) < MATRIX_DET_TOLERANCE)
+        if (fabs(Params[0]) < MATRIX_DET_TOLERANCE ||
+            fabs(Params[1]) < MATRIX_DET_TOLERANCE)
         {
             Val = 0;
         }
@@ -817,6 +835,10 @@ cmsToneCurve* CMSEXPORT cmsBuildSegmentedToneCurve(cmsContext ContextID,
 cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurveFloat(cmsContext ContextID, cmsUInt32Number nEntries, const cmsFloat32Number values[])
 {
     cmsCurveSegment Seg[3];
+
+    // Do some housekeeping
+    if (nEntries == 0 || values == NULL)
+        return NULL;
 
     // A segmented tone curve should have function segments in the first and last positions
     // Initialize segmented curve part up to 0 to constant value = samples[0]
@@ -1135,6 +1157,7 @@ cmsBool smooth2(cmsContext ContextID, cmsFloat32Number w[], cmsFloat32Number y[]
     cmsFloat32Number *c, *d, *e;
     cmsBool st;
 
+    if (m < 4 || lambda < MATRIX_DET_TOLERANCE) return FALSE;
 
     c = (cmsFloat32Number*) _cmsCalloc(ContextID, MAX_NODES_IN_CURVE, sizeof(cmsFloat32Number));
     d = (cmsFloat32Number*) _cmsCalloc(ContextID, MAX_NODES_IN_CURVE, sizeof(cmsFloat32Number));
@@ -1468,6 +1491,9 @@ cmsFloat64Number CMSEXPORT cmsEstimateGamma(cmsContext ContextID, const cmsToneC
         }
     }
 
+    // We need enough valid samples
+    if (n <= 1) return -1.0;
+
     // Take a look on SD to see if gamma isn't exponential at all
     Std = sqrt((n * sum2 - sum * sum) / (n*(n-1)));
 
@@ -1477,13 +1503,12 @@ cmsFloat64Number CMSEXPORT cmsEstimateGamma(cmsContext ContextID, const cmsToneC
     return (sum / n);   // The mean
 }
 
+// Retrieve segments on tone curves
 
-// Retrieve parameters on one-segment tone curves
-
-cmsFloat64Number* CMSEXPORT cmsGetToneCurveParams(cmsContext contextID, const cmsToneCurve* t)
+const cmsCurveSegment* CMSEXPORT cmsGetToneCurveSegment(cmsContext contextID, cmsInt32Number n, const cmsToneCurve* t)
 {
     _cmsAssert(t != NULL);
 
-    if (t->nSegments != 1) return NULL;
-    return t->Segments[0].Params;
+    if (n < 0 || n >= (cmsInt32Number) t->nSegments) return NULL;
+    return t->Segments + n;
 }

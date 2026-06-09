@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
@@ -110,7 +110,8 @@ void PerformanceEval16(cmsContext ContextID,
 
        int    in16, out16;  // Used by macros!
 
-       cmsUInt32Number nalpha, strideIn, strideOut;
+       cmsUInt32Number nalpha;
+       size_t strideIn, strideOut;
 
        cmsUInt32Number dwInFormat = cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo);
        cmsUInt32Number dwOutFormat = cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo);
@@ -290,7 +291,8 @@ void PerformanceEval16(cmsContext ContextID,
                   if (ain)
                   {
                       res16 = *(const cmsUInt16Number*)ain;
-                      TO_OUTPUT(out[OutChan], res16);
+                      TO_OUTPUT(out[TotalOut], res16);
+                      ain += SourceIncrements[3];
                       out[TotalOut] += DestIncrements[TotalOut];
                   }
 
@@ -325,7 +327,7 @@ cmsBool Optimize16BitRGBTransform(cmsContext ContextID,
     // For empty transforms, do nothing
     if (*Lut == NULL) return FALSE;
 
-    // This is a loosy optimization! does not apply in floating-point cases
+    // This is a lossy optimization! does not apply in floating-point cases
     if (T_FLOAT(*InputFormat) || T_FLOAT(*OutputFormat)) return FALSE;
 
     // Only on 16-bit

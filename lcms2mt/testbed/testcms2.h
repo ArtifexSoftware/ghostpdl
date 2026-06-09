@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2022 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -29,10 +29,6 @@
 
 #include "lcms2_internal.h"
 
-#ifdef LCMS_FAST_EXTENSIONS
-#   include "fast_float_internal.h"
-#endif
-
 // On Visual Studio, use debug CRT
 #ifdef _MSC_VER
 #    include "crtdbg.h"
@@ -40,6 +36,11 @@
 
 #ifdef CMS_IS_WINDOWS_
 #    include <io.h>
+#    include <direct.h>
+#    define CHDIR(a) (void)_chdir(a)
+#else
+#    include <unistd.h>
+#    define CHDIR(a) (void)chdir(a)
 #endif
 
 #define cmsmin(a, b) (((a) < (b)) ? (a) : (b))

@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -122,9 +122,15 @@ cmsBool  BlackPointAsDarkerColorant(cmsContext ContextID,
     // Convert black to Lab
     cmsDoTransform(ContextID, xform, Black, &Lab, 1);
 
-    // Force it to be neutral, clip to max. L* of 50
+    // Force it to be neutral, check for inconsistencies
     Lab.a = Lab.b = 0;
-    if (Lab.L > 50) Lab.L = 50;
+
+    if (Lab.L > 95)
+        Lab.L = 0;  // for synthetical negative profiles
+    else if (Lab.L < 0)
+        Lab.L = 0;
+    else if (Lab.L > 50)
+        Lab.L = 50;
 
     // Free the resources
     cmsDeleteTransform(ContextID, xform);
@@ -179,6 +185,50 @@ cmsBool BlackPointUsingPerceptualBlack(cmsContext ContextID, cmsCIEXYZ* BlackPoi
         *BlackPoint = BlackXYZ;
 
     return TRUE;
+}
+
+
+static
+cmsBool isInkColorspace(cmsColorSpaceSignature c)
+{
+    switch(c)
+    {
+    case cmsSigCmykData:
+    case cmsSigCmyData:
+    case cmsSigMCH1Data:
+    case cmsSigMCH2Data:
+    case cmsSigMCH3Data:
+    case cmsSigMCH4Data:
+    case cmsSigMCH5Data:
+    case cmsSigMCH6Data:
+    case cmsSigMCH7Data:
+    case cmsSigMCH8Data:
+    case cmsSigMCH9Data:
+    case cmsSigMCHAData:
+    case cmsSigMCHBData:
+    case cmsSigMCHCData:
+    case cmsSigMCHDData:
+    case cmsSigMCHEData:
+    case cmsSigMCHFData:
+    case cmsSig1colorData:
+    case cmsSig2colorData:
+    case cmsSig3colorData:
+    case cmsSig4colorData:
+    case cmsSig5colorData:
+    case cmsSig6colorData:
+    case cmsSig7colorData:
+    case cmsSig8colorData:
+    case cmsSig9colorData:
+    case cmsSig10colorData:
+    case cmsSig11colorData:
+    case cmsSig12colorData:
+    case cmsSig13colorData:
+    case cmsSig14colorData:
+    case cmsSig15colorData:
+            return TRUE;
+    default:
+        return FALSE;
+    }
 }
 
 // This function shouldn't exist at all -- there is such quantity of broken
@@ -265,7 +315,7 @@ cmsBool CMSEXPORT cmsDetectBlackPoint(cmsContext ContextID, cmsCIEXYZ* BlackPoin
     // If output profile, discount ink-limiting and that's all
     if (Intent == INTENT_RELATIVE_COLORIMETRIC &&
         (cmsGetDeviceClass(ContextID, hProfile) == cmsSigOutputClass) &&
-        (cmsGetColorSpace(ContextID, hProfile)  == cmsSigCmykData))
+        (isInkColorspace(cmsGetColorSpace(ContextID, hProfile))))
         return BlackPointUsingPerceptualBlack(ContextID, BlackPoint, hProfile);
 
     // Nope, compute BP using current intent.
@@ -321,7 +371,8 @@ cmsFloat64Number RootOfLeastSquaresFitQuadraticCurve(cmsContext ContextID, int n
 
     if (fabs(a) < 1.0E-10) {
 
-        return cmsmin(0, cmsmax(50, -c/b ));
+        if (fabs(b) < 1.0E-10) return 0;
+        return cmsmax(0, cmsmin(50, -c/b ));
     }
     else {
 
@@ -331,7 +382,11 @@ cmsFloat64Number RootOfLeastSquaresFitQuadraticCurve(cmsContext ContextID, int n
          }
          else {
 
-             double rt = (-b + sqrt(d)) / (2.0 * a);
+             double rt;
+
+             if (fabs(a) < 1.0E-10) return 0;
+
+             rt = (-b + sqrt(d)) / (2.0 * a);
 
              return cmsmax(0, cmsmin(50, rt));
          }
@@ -397,7 +452,7 @@ cmsBool CMSEXPORT cmsDetectDestinationBlackPoint(cmsContext ContextID, cmsCIEXYZ
     if (!cmsIsCLUT(ContextID, hProfile, Intent, LCMS_USED_AS_OUTPUT ) ||
         (ColorSpace != cmsSigGrayData &&
          ColorSpace != cmsSigRgbData  &&
-         ColorSpace != cmsSigCmykData)) {
+         !isInkColorspace(ColorSpace))) {
 
         // In this case, handle as input case
         return cmsDetectBlackPoint(ContextID, BlackPoint, hProfile, Intent, dwFlags);

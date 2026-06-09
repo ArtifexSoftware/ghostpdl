@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
@@ -87,12 +87,12 @@ static void FastEvaluateFloatRGBCurves(cmsContext ContextID,
     CurvesFloatData* Data = (CurvesFloatData*)  _cmsGetTransformUserData(CMMcargo);
 
     cmsUInt32Number nchans, nalpha;
-    cmsUInt32Number strideIn, strideOut;
+    size_t strideIn, strideOut;
 
     _cmsComputeComponentIncrements(InputFormat,  Stride->BytesPerPlaneIn, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(OutputFormat, Stride->BytesPerPlaneOut, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
-    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+    if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
         nalpha = 0;
 
 
@@ -168,12 +168,12 @@ static void FastFloatRGBIdentity(cmsContext ContextID,
     cmsUInt32Number OutputFormat = cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM) CMMcargo);
 
     cmsUInt32Number nchans, nalpha;
-    cmsUInt32Number strideIn, strideOut;
+    size_t strideIn, strideOut;
 
     _cmsComputeComponentIncrements(InputFormat,  Stride->BytesPerPlaneIn,  &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(OutputFormat, Stride->BytesPerPlaneOut, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
-    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+    if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
         nalpha = 0;
 
     strideIn = strideOut = 0;
@@ -247,12 +247,12 @@ static void FastEvaluateFloatGrayCurves(cmsContext ContextID,
     CurvesFloatData* Data = (CurvesFloatData*)_cmsGetTransformUserData(CMMcargo);
 
     cmsUInt32Number nchans, nalpha;
-    cmsUInt32Number strideIn, strideOut;
+    size_t strideIn, strideOut;
 
     _cmsComputeComponentIncrements(InputFormat, Stride->BytesPerPlaneIn, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(OutputFormat, Stride->BytesPerPlaneIn, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
-    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+    if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
         nalpha = 0;
 
     strideIn = strideOut = 0;
@@ -263,8 +263,8 @@ static void FastEvaluateFloatGrayCurves(cmsContext ContextID,
 
         if (nalpha)
         {
-            ain = (const cmsUInt8Number*)Input + SourceStartingOrder[1];
-            aout = (cmsUInt8Number*)Output + DestStartingOrder[1];
+            ain = (const cmsUInt8Number*)Input + SourceStartingOrder[1] + strideIn;
+            aout = (cmsUInt8Number*)Output + DestStartingOrder[1] + strideOut;
         }
 
         for (ii = 0; ii < PixelsPerLine; ii++) {
@@ -311,12 +311,12 @@ static void FastFloatGrayIdentity(cmsContext ContextID,
     cmsUInt32Number OutputFormat = cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM) CMMcargo);
 
     cmsUInt32Number nchans, nalpha;
-    cmsUInt32Number strideIn, strideOut;
+    size_t strideIn, strideOut;
 
     _cmsComputeComponentIncrements(InputFormat, Stride->BytesPerPlaneIn, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(OutputFormat, Stride->BytesPerPlaneOut, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
-    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+    if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
         nalpha = 0;
 
     strideIn = strideOut = 0;
@@ -328,8 +328,8 @@ static void FastFloatGrayIdentity(cmsContext ContextID,
 
         if (nalpha)
         {
-            ain = (const cmsUInt8Number*)Input + SourceStartingOrder[1];
-            aout = (cmsUInt8Number*)Output + DestStartingOrder[1];
+            ain = (const cmsUInt8Number*)Input + SourceStartingOrder[1] + strideIn;
+            aout = (cmsUInt8Number*)Output + DestStartingOrder[1] + strideOut;
         }
 
 
@@ -393,7 +393,7 @@ cmsBool KCurveIsLinear(CurvesFloatData* data)
 }
 
 
-// Create linearization tables with a reasonable number of entries. Precission is about 32 bits.
+// Create linearization tables with a reasonable number of entries. Precision is about 32 bits.
 static
 CurvesFloatData* ComputeCompositeCurves(cmsContext ContextID, cmsUInt32Number nChan,  cmsPipeline* Src)
 {

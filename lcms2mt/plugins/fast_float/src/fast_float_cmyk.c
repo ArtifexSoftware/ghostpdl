@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
@@ -112,12 +112,12 @@ void FloatCMYKCLUTEval(cmsContext ContextID,
     cmsUInt32Number OutputFormat = cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM) CMMcargo);
 
     cmsUInt32Number nchans, nalpha;
-    cmsUInt32Number strideIn, strideOut;
+    size_t strideIn, strideOut;
 
     _cmsComputeComponentIncrements(InputFormat, Stride->BytesPerPlaneIn, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(OutputFormat, Stride->BytesPerPlaneOut, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
-    if (!(_cmsGetTransformFlags((cmsHTRANSFORM)CMMcargo) & cmsFLAGS_COPY_ALPHA))
+    if (!(_cmsGetTransformFlags(CMMcargo) & cmsFLAGS_COPY_ALPHA))
         nalpha = 0;
 
     strideIn = strideOut = 0;
@@ -302,9 +302,11 @@ void FloatCMYKCLUTEval(cmsContext ContextID,
                 out[OutChan] += DestIncrements[OutChan];
             }
 
-            if (ain)
-                *out[TotalOut] = *ain;
-
+            if (ain) {
+                *(cmsFloat32Number*)(out[TotalOut]) = *(cmsFloat32Number*)ain;
+                ain += SourceIncrements[4];
+                out[TotalOut] += DestIncrements[TotalOut];
+            }
         }
 
         strideIn += Stride->BytesPerLineIn;
@@ -337,7 +339,7 @@ cmsBool OptimizeCLUTCMYKTransform(cmsContext ContextID,
     // For empty transforms, do nothing
     if (*Lut == NULL) return FALSE;
 
-    // This is a loosy optimization! does not apply in floating-point cases
+    // This is a lossy optimization! does not apply in floating-point cases
     if (!T_FLOAT(*InputFormat) || !T_FLOAT(*OutputFormat)) return FALSE;
 
     // Only on 8-bit
@@ -368,7 +370,7 @@ cmsBool OptimizeCLUTCMYKTransform(cmsContext ContextID,
     data = (_cmsStageCLutData*) cmsStageData(ContextID, OptimizedCLUTmpe);
 
     pcmyk = FloatCMYKAlloc(ContextID, data ->Params);
-    if (pcmyk == NULL) return FALSE;
+    if (pcmyk == NULL) goto Error;
 
     // And return the obtained LUT
     cmsPipelineFree(ContextID, OriginalLut);
@@ -376,12 +378,14 @@ cmsBool OptimizeCLUTCMYKTransform(cmsContext ContextID,
     *Lut = OptimizedLUT;
     *TransformFn = (_cmsTransformFn)FloatCMYKCLUTEval;
     *UserData   = pcmyk;
-    *FreeDataFn = _cmsFree;
+    *FreeDataFn = _fast_float_free_user_data;
     *dwFlags &= ~cmsFLAGS_CAN_CHANGE_FORMATTER;
     return TRUE;
 
 Error:
 
+    // We return leaving *Lut pointing to OriginalLut. Caller is
+    // responsible for freeing it. Is this intended?
     if (OptimizedLUT != NULL) cmsPipelineFree(ContextID, OptimizedLUT);
 
     return FALSE;

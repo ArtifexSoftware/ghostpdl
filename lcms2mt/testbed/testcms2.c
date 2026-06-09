@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2021 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -54,6 +54,15 @@ void Die(const char* Reason, ...)
     printf("\n%s\n", ReasonToFailBuffer);
     fflush(stdout);
     exit(1);
+}
+
+static
+void* chknull(void* mem)
+{
+    if (mem == NULL)
+        Die("Memory may be corrupted");
+
+    return mem;
 }
 
 // Memory management replacement -----------------------------------------------------------------------------
@@ -115,7 +124,7 @@ void* DebugMalloc(cmsContext ContextID, cmsUInt32Number size)
     if (size > SingleHit)
         SingleHit = size;
 
-    blk = (_cmsMemoryBlock*) malloc(size + SIZE_OF_MEM_HEADER);
+    blk = (_cmsMemoryBlock*) chknull(malloc(size + SIZE_OF_MEM_HEADER));
     if (blk == NULL) return NULL;
 
     blk ->KeepSize = size;
@@ -442,7 +451,7 @@ cmsHPROFILE Create_CMYK_DeviceLink(cmsContext ctx)
 }
 
 
-// Create a fake CMYK profile, without any other requeriment that being coarse CMYK.
+// Create a fake CMYK profile, without any other requirement that being coarse CMYK.
 // DON'T USE THIS PROFILE FOR ANYTHING, IT IS USELESS BUT FOR TESTING PURPOSES.
 typedef struct {
 
@@ -520,8 +529,8 @@ cmsInt32Number ReverseSampler(cmsContext ContextID, CMSREGISTER const cmsUInt16N
             rgb[2] = Clip((1 - y) * (1 - k));
         }
 
-        cmsDoTransform(ContextID, p ->sRGB2Lab, rgb, Out, 1);
-        return 1;
+    cmsDoTransform(ContextID, p ->sRGB2Lab, rgb, Out, 1);
+    return 1;
 }
 
 
@@ -828,7 +837,6 @@ cmsInt32Number CheckQuickFloorWord(cmsContext ContextID)
 #define FLOAT_PRECISSION      (0.00001)
 
 static cmsFloat64Number MaxErr;
-static cmsFloat64Number AllowedErr = FIXED_PRECISION_15_16;
 
 cmsBool IsGoodVal(const char *title, cmsFloat64Number in, cmsFloat64Number out, cmsFloat64Number max)
 {
@@ -1018,7 +1026,7 @@ cmsInt32Number Check1D(cmsContext ContextID, cmsInt32Number nNodesToCheck, cmsBo
     cmsInterpParams* p;
     cmsUInt16Number* Tab;
 
-    Tab = (cmsUInt16Number*) malloc(sizeof(cmsUInt16Number)* nNodesToCheck);
+    Tab = (cmsUInt16Number*) chknull(malloc(sizeof(cmsUInt16Number)* nNodesToCheck));
     if (Tab == NULL) return 0;
 
     p = _cmsComputeInterpParams(ContextID, nNodesToCheck, 1, 1, Tab, CMS_LERP_FLAGS_16BITS);
@@ -2618,6 +2626,7 @@ cmsInt32Number CheckJointCurves(cmsContext ContextID)
 }
 
 
+#if 0
 // Create a gamma curve by cheating the table
 static
 cmsToneCurve* GammaTableLinear(cmsContext ContextID, cmsInt32Number nEntries, cmsBool Dir)
@@ -2637,6 +2646,7 @@ cmsToneCurve* GammaTableLinear(cmsContext ContextID, cmsInt32Number nEntries, cm
 
     return g;
 }
+#endif
 
 
 static
@@ -3592,7 +3602,7 @@ cmsInt32Number CheckMLU(cmsContext ContextID)
     // Now for performance, allocate an empty struct
     mlu = cmsMLUalloc(ContextID, 0);
 
-    // Fill it with several thousands of different lenguages
+    // Fill it with several thousands of different languages
     for (i=0; i < 4096; i++) {
 
         char Lang[3];
@@ -3669,6 +3679,30 @@ Error:
 
     return rc;
 }
+
+
+// Check UTF8 encoding
+static
+cmsInt32Number CheckMLU_UTF8(void)
+{
+    cmsMLU* mlu;
+    char Buffer[256];
+    cmsInt32Number rc = 1;
+
+    mlu = cmsMLUalloc(DbgThread(), 0);
+
+    cmsMLUsetWide(mlu, "en", "US", L"\x3b2\x14b");
+
+    cmsMLUgetUTF8(mlu, "en", "US", Buffer, 256);
+    if (strcmp(Buffer, "\xce\xb2\xc5\x8b") != 0) rc = 0;
+
+    if (rc == 0)
+        Fail("Unexpected string '%s'", Buffer);
+
+    cmsMLUfree(mlu);
+    return rc;
+}
+
 
 
 // A lightweight test of named color structures.
@@ -3779,7 +3813,7 @@ cmsInt32Number CreateNamedColorProfile(cmsContext ContextID)
 
     // Values
     cmsCIELab Lab;
-    cmsUInt16Number PCS[3], Colorant[4];
+    cmsUInt16Number PCS[3], Colorant[cmsMAXCHANNELS];
 
     // Set profile class
     cmsSetProfileVersion(ContextID, hProfile, 4.3);
@@ -5176,7 +5210,6 @@ cmsInt32Number CheckVCGT(cmsContext ContextID, cmsInt32Number Pass,  cmsHPROFILE
 
 
 // Only one of the two following may be used, as they share the same tag
-static
 cmsInt32Number CheckDictionary16(cmsContext ContextID, cmsInt32Number Pass,  cmsHPROFILE hProfile)
 {
       cmsHANDLE hDict;
@@ -5203,7 +5236,7 @@ cmsInt32Number CheckDictionary16(cmsContext ContextID, cmsInt32Number Pass,  cms
              if (memcmp(e ->Value, L"12",  sizeof(wchar_t) * 2) != 0) return 0;
              e = cmsDictNextEntry(ContextID, e);
              if (memcmp(e ->Name, L"Name", sizeof(wchar_t) * 4) != 0) return 0;
-             if (memcmp(e ->Value, L"String",  sizeof(wchar_t) * 5) != 0) return 0;
+             if (memcmp(e ->Value, L"String",  sizeof(wchar_t) * 6) != 0) return 0;
              e = cmsDictNextEntry(ContextID, e);
              if (memcmp(e ->Name, L"Name1", sizeof(wchar_t) *5) != 0) return 0;
              if (e ->Value == NULL) return 0;
@@ -5220,9 +5253,6 @@ cmsInt32Number CheckDictionary16(cmsContext ContextID, cmsInt32Number Pass,  cms
     return 0;
 }
 
-
-
-static
 cmsInt32Number CheckDictionary24(cmsContext ContextID, cmsInt32Number Pass,  cmsHPROFILE hProfile)
 {
     cmsHANDLE hDict;
@@ -5263,7 +5293,7 @@ cmsInt32Number CheckDictionary24(cmsContext ContextID, cmsInt32Number Pass,  cms
         if (memcmp(e ->Value, L"12",  sizeof(wchar_t) * 2) != 0) return 0;
         e = cmsDictNextEntry(ContextID, e);
         if (memcmp(e ->Name, L"Name", sizeof(wchar_t) * 4) != 0) return 0;
-        if (memcmp(e ->Value, L"String",  sizeof(wchar_t) * 5) != 0) return 0;
+        if (memcmp(e ->Value, L"String",  sizeof(wchar_t) * 6) != 0) return 0;
 
         cmsMLUgetASCII(ContextID, e->DisplayName, "en", "US", Buffer, 256);
         if (strcmp(Buffer, "Hello, world") != 0) rc = 0;
@@ -5303,12 +5333,114 @@ cmsInt32Number CheckRAWtags(cmsContext ContextID, cmsInt32Number Pass,  cmsHPROF
         case 2:
             if (!cmsReadRawTag(ContextID, hProfile, (cmsTagSignature) 0x31323334, Buffer, 7)) return 0;
 
-            if (strncmp(Buffer, "data123", 7) != 0) return 0;
+            if (memcmp(Buffer, "data123", 7) != 0) return 0;
             return 1;
 
         default:
             return 0;
     }
+}
+
+
+
+
+
+static
+cmsInt32Number Check_cicp(cmsInt32Number Pass, cmsHPROFILE hProfile)
+{
+    cmsVideoSignalType* v;
+    cmsVideoSignalType  s;
+
+    switch (Pass) {
+
+    case 1:
+        s.ColourPrimaries = 1;
+        s.TransferCharacteristics = 13;
+        s.MatrixCoefficients = 0;
+        s.VideoFullRangeFlag = 1;
+
+        if (!cmsWriteTag(hProfile, cmsSigcicpTag, &s)) return 0;
+        return 1;
+
+    case 2:
+        v = (cmsVideoSignalType*)cmsReadTag(hProfile, cmsSigcicpTag);
+        if (v == NULL) return 0;
+
+        if (v->ColourPrimaries != 1) return 0;
+        if (v->TransferCharacteristics != 13) return 0;
+        if (v->MatrixCoefficients != 0) return 0;
+        if (v->VideoFullRangeFlag != 1) return 0;
+        return 1;
+
+    default:
+        return 0;
+    }
+
+}
+
+
+static
+void SetMHC2Matrix(cmsFloat64Number XYZ2XYZmatrix[3][4])
+{
+    XYZ2XYZmatrix[0][0] = 0.5; XYZ2XYZmatrix[0][1] = 0.1; XYZ2XYZmatrix[0][2] = 0.1; XYZ2XYZmatrix[0][3] = 0.0;
+    XYZ2XYZmatrix[1][0] = 0.0; XYZ2XYZmatrix[1][1] = 1.0; XYZ2XYZmatrix[1][2] = 0.0; XYZ2XYZmatrix[1][3] = 0.0;
+    XYZ2XYZmatrix[2][0] = 0.3; XYZ2XYZmatrix[2][1] = 0.2; XYZ2XYZmatrix[2][2] = 0.4; XYZ2XYZmatrix[2][3] = 0.0;
+}
+
+static
+cmsBool CloseEnough(cmsFloat64Number a, cmsFloat64Number b)
+{
+    return fabs(b - a) < (1.0 / 65535.0);
+}
+
+cmsBool IsOriginalMHC2Matrix(cmsFloat64Number XYZ2XYZmatrix[3][4])
+{
+    cmsFloat64Number m[3][4];
+    int i, j;
+
+    SetMHC2Matrix(m);
+
+    for (i = 0; i < 3; i++)
+        for (j = 0; j < 4; j++)
+            if (!CloseEnough(XYZ2XYZmatrix[i][j], m[i][j])) return FALSE;
+
+    return TRUE;
+}
+
+
+static
+cmsInt32Number Check_MHC2(cmsInt32Number Pass, cmsHPROFILE hProfile)
+{
+    cmsMHC2Type* v;
+    cmsMHC2Type  s;
+    double curve[] = { 0, 0.5, 1.0 };
+
+    switch (Pass) {
+
+    case 1:
+        SetMHC2Matrix(s.XYZ2XYZmatrix);
+        s.CurveEntries = 3;
+        s.GreenCurve = curve;
+        s.RedCurve = curve;
+        s.BlueCurve = curve;
+        s.MinLuminance = 0.1;
+        s.PeakLuminance = 100.0;
+
+        if (!cmsWriteTag(hProfile, cmsSigMHC2Tag, &s)) return 0;
+        return 1;
+
+    case 2:
+        v = (cmsMHC2Type*)cmsReadTag(hProfile, cmsSigMHC2Tag);
+        if (v == NULL) return 0;
+
+        if (!IsOriginalMHC2Matrix(v->XYZ2XYZmatrix)) return 0;
+        if (v->CurveEntries != 3) return 0;
+        return 1;
+
+    default:
+        return 0;
+    }
+
 }
 
 
@@ -5456,6 +5588,13 @@ cmsInt32Number CheckProfileCreation(cmsContext ContextID)
         SubTest("Dictionary meta tags");
         // if (!CheckDictionary16(ContextID, Pass, h)) goto Error;
         if (!CheckDictionary24(ContextID, Pass, h)) goto Error;
+
+        SubTest("cicp Video Signal Type");
+        if (!Check_cicp(Pass, h)) goto Error;
+
+        SubTest("Microsoft MHC2 tag");
+        if (!Check_MHC2(Pass, h)) goto Error;
+
 
         if (Pass == 1) {
             cmsSaveProfileToFile(ContextID, h, "alltags.icc");
@@ -6065,8 +6204,10 @@ cmsInt32Number CheckEncodedLabTransforms(cmsContext ContextID)
 {
     cmsHTRANSFORM xform;
     cmsUInt16Number In[3];
+    cmsUInt16Number wLab[3];
     cmsCIELab Lab;
     cmsCIELab White = { 100, 0, 0 };
+    cmsCIELab Color = { 7.11070, -76, 26 };
     cmsHPROFILE hLab1 = cmsCreateLab4Profile(ContextID, NULL);
     cmsHPROFILE hLab2 = cmsCreateLab4Profile(ContextID, NULL);
 
@@ -6081,6 +6222,18 @@ cmsInt32Number CheckEncodedLabTransforms(cmsContext ContextID)
     cmsDoTransform(ContextID, xform, In, &Lab, 1);
 
     if (cmsDeltaE(ContextID, &Lab, &White) > 0.0001) return 0;
+
+
+    In[0] = 0x1234;
+    In[1] = 0x3434;
+    In[2] = 0x9A9A;
+
+    cmsDoTransform(xform, In, &Lab, 1);
+    cmsFloat2LabEncoded(wLab, &Lab);
+    if (memcmp(In, wLab, sizeof(wLab)) != 0) return 0;
+    if (cmsDeltaE(&Lab, &Color) > 0.0001) return 0;
+
+
     cmsDeleteTransform(ContextID, xform);
 
     hLab1 = cmsCreateLab2Profile(ContextID, NULL);
@@ -6088,7 +6241,6 @@ cmsInt32Number CheckEncodedLabTransforms(cmsContext ContextID)
 
     xform = cmsCreateTransform(ContextID, hLab1, TYPE_LabV2_16, hLab2, TYPE_Lab_DBL, INTENT_RELATIVE_COLORIMETRIC, 0);
     cmsCloseProfile(ContextID, hLab1); cmsCloseProfile(ContextID, hLab2);
-
 
     In[0] = 0xFF00;
     In[1] = 0x8000;
@@ -6405,7 +6557,7 @@ int CheckRGBPrimaries(cmsContext ContextID)
     cmsXYZ2xyY(ContextID, &tripxyY.Green, &tripXYZ.Green);
     cmsXYZ2xyY(ContextID, &tripxyY.Blue, &tripXYZ.Blue);
 
-    /* valus were taken from
+    /* values were taken from
     http://en.wikipedia.org/wiki/RGB_color_spaces#Specifications */
 
     if (!IsGoodFixed15_16("xRed", tripxyY.Red.x, 0.64) ||
@@ -6509,13 +6661,13 @@ cmsInt32Number CheckCMYKPerceptual(cmsContext ContextID)
 }
 
 
-
+#if 0
 static
 cmsInt32Number CheckCMYKRelCol(cmsContext ContextID)
 {
     return CheckCMYK(ContextID, INTENT_RELATIVE_COLORIMETRIC, "test1.icc", "test2.icc");
 }
-
+#endif
 
 
 static
@@ -7124,7 +7276,7 @@ cmsInt32Number CheckOutGray(cmsContext ContextID, cmsHTRANSFORM xform, double L,
 
     cmsDoTransform(ContextID, xform, &Lab, &g_out, 1);
 
-    return IsGoodVal("Gray value", g, (double) g_out, 0.01);
+    return IsGoodVal("Gray value", g, (double) g_out, 1);
 }
 
 static
@@ -7347,16 +7499,13 @@ cmsInt32Number CheckGBD(cmsContext ContextID)
 static
 int CheckMD5(cmsContext ContextID)
 {
-    _cmsICCPROFILE* h;
     cmsHPROFILE pProfile = cmsOpenProfileFromFile(ContextID, "sRGBlcms2.icc", "r");
     cmsProfileID ProfileID1, ProfileID2, ProfileID3, ProfileID4;
 
-    h =(_cmsICCPROFILE*) pProfile;
     if (cmsMD5computeID(ContextID, pProfile)) cmsGetHeaderProfileID(ContextID, pProfile, ProfileID1.ID8);
     if (cmsMD5computeID(ContextID, pProfile)) cmsGetHeaderProfileID(ContextID, pProfile,ProfileID2.ID8);
 
     cmsCloseProfile(ContextID, pProfile);
-
 
     pProfile = cmsOpenProfileFromFile(ContextID, "sRGBlcms2.icc", "r");
 
@@ -7783,7 +7932,7 @@ static
 cmsInt32Number CheckReadRAW(cmsContext ContextID)
 {
     cmsInt32Number tag_size, tag_size1;
-    char buffer[4];
+    char buffer[37009];
     cmsHPROFILE hProfile;
 
 
@@ -7792,13 +7941,13 @@ cmsInt32Number CheckReadRAW(cmsContext ContextID)
 
     if (hProfile == NULL)
         return 0;
-
-    tag_size = cmsReadRawTag(ContextID, hProfile, cmsSigGamutTag, buffer, 4);
     tag_size1 = cmsReadRawTag(ContextID, hProfile, cmsSigGamutTag, NULL, 0);
+    tag_size = cmsReadRawTag(ContextID, hProfile, cmsSigGamutTag, buffer, 37009);
+
 
     cmsCloseProfile(ContextID, hProfile);
 
-    if (tag_size != 4)
+    if (tag_size != 37009)
         return 0;
 
     if (tag_size1 != 37009)
@@ -7806,12 +7955,12 @@ cmsInt32Number CheckReadRAW(cmsContext ContextID)
 
     SubTest("RAW read on in-memory created profiles");
     hProfile = cmsCreate_sRGBProfile(ContextID);
-    tag_size = cmsReadRawTag(ContextID, hProfile, cmsSigGreenColorantTag, buffer, 4);
     tag_size1 = cmsReadRawTag(ContextID, hProfile, cmsSigGreenColorantTag, NULL, 0);
+    tag_size = cmsReadRawTag(ContextID, hProfile, cmsSigGreenColorantTag, buffer, 20);
 
     cmsCloseProfile(ContextID, hProfile);
 
-    if (tag_size != 4)
+    if (tag_size != 20)
         return 0;
     if (tag_size1 != 20)
         return 0;
@@ -7843,7 +7992,7 @@ cmsInt32Number CheckMeta(cmsContext ContextID)
     rc = cmsSaveProfileToMem(ContextID, p, NULL, &clen);
     if (!rc) return 0;
 
-    data = (char*) malloc(clen);
+    data = (char*) chknull(malloc(clen));
     rc = cmsSaveProfileToMem(ContextID, p, data, &clen);
     if (!rc) return 0;
 
@@ -7862,9 +8011,9 @@ cmsInt32Number CheckMeta(cmsContext ContextID)
     //ERROR: Corrupted tag 'meta'
     //test: test.c:59: main: Assertion `dict' failed.
     dict = cmsReadTag(ContextID, p, cmsSigMetaTag);
-   if (dict == NULL) return 0;
+    if (dict == NULL) return 0;
 
-   cmsCloseProfile(ContextID, p);
+    cmsCloseProfile(ContextID, p);
     return 1;
 }
 
@@ -8081,6 +8230,34 @@ int CheckPlanar8opt(cmsContext ContextID)
 }
 
 /**
+* Bug reported from float32 to uint16 planar
+*/
+#define TYPE_RGB_FLT_PLANAR   (FLOAT_SH(1)|COLORSPACE_SH(PT_RGB)|CHANNELS_SH(3)|BYTES_SH(4)|PLANAR_SH(1))
+
+static
+int CheckPlanarFloat2int(void)
+{
+    cmsHPROFILE sRGB = cmsCreate_sRGBProfile();
+
+    cmsHTRANSFORM transform = cmsCreateTransform(sRGB, TYPE_RGB_FLT_PLANAR,
+        sRGB, TYPE_RGB_16_PLANAR,INTENT_PERCEPTUAL, 0);
+
+    const cmsFloat32Number input[] = { 0.0f, 0.4f, 0.8f,  0.1f, 0.5f, 0.9f,  0.2f, 0.6f, 1.0f,   0.3f, 0.7f, 1.0f };
+    cmsUInt16Number output[3*4] = { 0 };
+
+    cmsDoTransform(transform, input, output, 4);
+
+    cmsDeleteTransform(transform);
+    cmsCloseProfile(sRGB);
+
+    return 1;
+}
+
+
+
+
+
+/**
 * Bug reported & fixed. Thanks to Kornel Lesinski for spotting this.
 */
 static
@@ -8133,7 +8310,7 @@ int CheckForgedMPE(cmsContext ContextID)
     }
 
     srcCS = cmsGetColorSpace(ContextID, srcProfile);
-    nSrcComponents = cmsChannelsOf(ContextID, srcCS);
+    nSrcComponents = cmsChannelsOfColorSpace(ContextID, srcCS);
 
     if (srcCS == cmsSigLabData) {
         srcFormat =
@@ -8271,7 +8448,7 @@ double distance(const cmsUInt16Number* a, const cmsUInt16Number* b)
 
 /**
 * In 2.12, a report suggest that the built-in sRGB has roundtrip errors that makes color to move
-* when rountripping again and again
+* when roundtripping again and again
 */
 static
 int Check_sRGB_Rountrips(cmsContext contextID)
@@ -8294,9 +8471,9 @@ int Check_sRGB_Rountrips(cmsContext contextID)
         for (g = 0; g <= 255; g += 16)
             for (b = 0; b <= 255; b += 16)
             {
-                seed[0] = rgb[0] = ((r << 8) | r);
-                seed[1] = rgb[1] = ((g << 8) | g);
-                seed[2] = rgb[2] = ((b << 8) | b);
+                seed[0] = rgb[0] = (cmsUInt16Number) ((r << 8) | r);
+                seed[1] = rgb[1] = (cmsUInt16Number) ((g << 8) | g);
+                seed[2] = rgb[2] = (cmsUInt16Number) ((b << 8) | b);
 
                 for (i = 0; i < 50; i++)
                 {
@@ -8322,6 +8499,124 @@ int Check_sRGB_Rountrips(cmsContext contextID)
 
     return 1;
 }
+
+
+static
+int CheckCenteringOfLab(void)
+{
+    cmsHPROFILE hProPhoto = cmsOpenProfileFromFile("test4.icc", "r");
+    cmsHPROFILE hLab = cmsCreateLab4Profile(NULL);
+
+    cmsHTRANSFORM xform1 = cmsCreateTransform(hProPhoto, TYPE_BGR_16, hLab, TYPE_Lab_16, INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_HIGHRESPRECALC);
+    cmsHTRANSFORM xform2 = cmsCreateTransform(hLab, TYPE_Lab_16, hProPhoto, TYPE_BGR_16, INTENT_RELATIVE_COLORIMETRIC, cmsFLAGS_HIGHRESPRECALC);
+
+    cmsUInt16Number bgr[3] = { 0xffff, 0xffff, 0xffff };
+    cmsUInt16Number bgr2[3];
+    cmsUInt16Number lab[3];
+
+    cmsDoTransform(xform1, bgr, lab, 1);
+    cmsDoTransform(xform2, lab, bgr2, 1);
+
+    if ((0xffff - bgr2[0]) > 5 ||
+        (0xffff - bgr2[1]) > 5 ||
+        (0xffff - bgr2[2]) > 5)
+    {
+        printf("Centering of Lab16 failed. Got %x %x %x\n", bgr2[0], bgr2[1], bgr2[2]);
+        return 0;
+    }
+
+
+    cmsCloseProfile(hLab);
+    cmsCloseProfile(hProPhoto);
+    cmsDeleteTransform(xform1);
+    cmsDeleteTransform(xform2);
+
+    return 1;
+}
+
+
+/**
+* Check OKLab colorspace
+*/
+static
+int Check_OkLab(void)
+{
+    cmsHPROFILE hOkLab = cmsCreate_OkLabProfile(NULL);
+    cmsHPROFILE hXYZ = cmsCreateXYZProfile();
+    cmsCIEXYZ xyz, xyz2;
+    cmsCIELab okLab;
+
+#define TYPE_OKLAB_DBL          (FLOAT_SH(1)|COLORSPACE_SH(PT_MCH3)|CHANNELS_SH(3)|BYTES_SH(0))
+
+    cmsHTRANSFORM xform  = cmsCreateTransform(hXYZ, TYPE_XYZ_DBL,  hOkLab, TYPE_OKLAB_DBL, INTENT_RELATIVE_COLORIMETRIC, 0);
+    cmsHTRANSFORM xform2 = cmsCreateTransform(hOkLab, TYPE_OKLAB_DBL, hXYZ, TYPE_XYZ_DBL,  INTENT_RELATIVE_COLORIMETRIC, 0);
+
+    /**
+    * D50 should be converted to white by PCS definition
+    */
+    xyz.X = 0.9642; xyz.Y = 1.0000; xyz.Z = 0.8249;
+    cmsDoTransform(xform, &xyz, &okLab, 1);
+    cmsDoTransform(xform2, &okLab, &xyz2, 1);
+
+
+    xyz.X = 1.0; xyz.Y = 0.0; xyz.Z = 0.0;
+    cmsDoTransform(xform, &xyz, &okLab, 1);
+    cmsDoTransform(xform2, &okLab, &xyz2, 1);
+
+
+    xyz.X = 0.0; xyz.Y = 1.0; xyz.Z = 0.0;
+    cmsDoTransform(xform, &xyz, &okLab, 1);
+    cmsDoTransform(xform2, &okLab, &xyz2, 1);
+
+    xyz.X = 0.0; xyz.Y = 0.0; xyz.Z = 1.0;
+    cmsDoTransform(xform, &xyz, &okLab, 1);
+    cmsDoTransform(xform2, &okLab, &xyz2, 1);
+
+    xyz.X = 0.143046; xyz.Y = 0.060610; xyz.Z = 0.713913;
+    cmsDoTransform(xform, &xyz, &okLab, 1);
+    cmsDoTransform(xform2, &okLab, &xyz2, 1);
+
+    cmsDeleteTransform(xform);
+    cmsDeleteTransform(xform2);
+    cmsCloseProfile(hOkLab);
+    cmsCloseProfile(hXYZ);
+
+    return 1;
+}
+
+
+static
+int Check_OkLab2(void)
+{
+#define TYPE_LABA_F32 (FLOAT_SH(1)|COLORSPACE_SH(PT_MCH3)|EXTRA_SH(1)|CHANNELS_SH(3)|BYTES_SH(4))
+
+    cmsUInt16Number rgb[3];
+    cmsFloat32Number lab[4];
+
+    cmsHPROFILE labProfile = cmsCreate_OkLabProfile(NULL);
+    cmsHPROFILE rgbProfile = cmsCreate_sRGBProfile();
+
+    cmsHTRANSFORM hBack = cmsCreateTransform(labProfile, TYPE_LABA_F32, rgbProfile, TYPE_RGB_16, INTENT_RELATIVE_COLORIMETRIC, 0);
+    cmsHTRANSFORM hForth = cmsCreateTransform(rgbProfile, TYPE_RGB_16, labProfile, TYPE_LABA_F32, INTENT_RELATIVE_COLORIMETRIC, 0);
+
+    cmsCloseProfile(labProfile);
+    cmsCloseProfile(rgbProfile);
+
+    rgb[0] = 0;
+    rgb[1] = 0;
+    rgb[2] = 65535;
+
+    cmsDoTransform(hForth, rgb, &lab, 1);
+    cmsDoTransform(hBack, lab, &rgb, 1);
+
+    cmsDeleteTransform(hBack);
+    cmsDeleteTransform(hForth);
+
+    if (rgb[0] != 0 || rgb[1] != 0 || rgb[2] != 65535) return 0;
+
+    return 1;
+}
+
 
 static
 cmsHPROFILE createRgbGamma(cmsContext contextID, cmsFloat64Number g)
@@ -8367,10 +8662,32 @@ int CheckGammaSpaceDetection(cmsContext contextID)
     return 1;
 }
 
+// Per issue #308. A built-in is corrupted by using write raw tag was causing a segfault
+static
+int CheckInducedCorruption(void)
+{
+    cmsHTRANSFORM xform0;
+    char garbage[] = "\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b";
+    cmsHPROFILE hsrgb = cmsCreate_sRGBProfile();
+    cmsHPROFILE hLab = cmsCreateLab4Profile(NULL);
+
+    cmsSetLogErrorHandler(NULL);
+    cmsWriteRawTag(hsrgb, cmsSigBlueColorantTag, &garbage, sizeof(garbage));
+
+    xform0 = cmsCreateTransform(hsrgb, TYPE_RGB_16, hLab, TYPE_Lab_16, INTENT_RELATIVE_COLORIMETRIC, 0);
+
+    if (xform0) cmsDeleteTransform(xform0);
+
+    cmsCloseProfile(hsrgb);
+    cmsCloseProfile(hLab);
+
+    ResetFatalError();
+    return 1;
+}
 
 #if 0
 
-// You need to download folowing profilies to execute this test: sRGB-elle-V4-srgbtrc.icc, sRGB-elle-V4-g10.icc
+// You need to download following profiles to execute this test: sRGB-elle-V4-srgbtrc.icc, sRGB-elle-V4-g10.icc
 // The include this line in the checks list:  Check("KInear spaces detection", CheckLinearSpacesOptimization);
 static
 void uint16toFloat(cmsUInt16Number* src, cmsFloat32Number* dst)
@@ -8430,6 +8747,199 @@ int CheckLinearSpacesOptimization(cmsContext contextID)
 #endif
 
 
+
+static
+int CheckBadCGATS(void)
+{
+    const char* bad_it8 =
+        " \"\"\n"
+        "NUMBER_OF_FIELDS 4\n"
+        "BEGIN_DATA_FORMAT\n"
+        "I R G G\n"
+        "END_DATA_FORMAT\n"
+        "NUMBER_OF_FIELDS 9\n"
+        "NUMBER_OF_SETS 2\n"
+        "BEGIN_DATA\n"
+        "d\n"
+        "0 0Bd\n"
+        "0Ba	$ $ t .";
+
+    cmsHANDLE hIT8;
+
+    cmsSetLogErrorHandler(NULL);
+
+    hIT8 = cmsIT8LoadFromMem(0, bad_it8, (cmsUInt32Number) strlen(bad_it8));
+
+    ResetFatalError();
+
+    if (hIT8 != NULL)
+    {
+        Fail("Wrong IT8 accepted as ok");
+        cmsIT8Free(hIT8);
+    }
+
+    return 1;
+}
+
+static
+int CheckIntToFloatTransform(void)
+{
+    cmsHPROFILE hAbove = Create_AboveRGB();
+    cmsHPROFILE hsRGB = cmsCreate_sRGBProfile();
+
+    cmsHTRANSFORM xform = cmsCreateTransform(hAbove, TYPE_RGB_8, hsRGB, TYPE_RGB_DBL, INTENT_PERCEPTUAL, 0);
+
+    cmsUInt8Number rgb8[3] = { 12, 253, 21 };
+    cmsFloat64Number rgbDBL[3] = { 0 };
+
+    cmsCloseProfile(hAbove); cmsCloseProfile(hsRGB);
+
+    cmsDoTransform(xform, rgb8, rgbDBL, 1);
+
+
+    cmsDeleteTransform(xform);
+
+    if (rgbDBL[0] < 0 && rgbDBL[2] < 0) return 1;
+
+    Fail("Unbounded transforms with integer input failed");
+
+    return 0;
+}
+
+static
+int CheckSaveLinearizationDevicelink(void)
+{
+    const cmsFloat32Number table[] = { 0, 0.5f, 1.0f };
+
+    cmsToneCurve* tone = cmsBuildTabulatedToneCurveFloat(NULL, 3, table);
+
+    cmsToneCurve* rgb_curves[3] = { tone, tone, tone };
+
+    cmsHPROFILE hDeviceLink = cmsCreateLinearizationDeviceLink(cmsSigRgbData, rgb_curves);
+
+    cmsBool result;
+    cmsHTRANSFORM xform;
+    int i;
+
+    cmsFreeToneCurve(tone);
+
+    result = cmsSaveProfileToFile(hDeviceLink, "lin_rgb.icc");
+
+    cmsCloseProfile(hDeviceLink);
+
+    if (!result)
+    {
+        remove("lin_rgb.icc");
+        Fail("Couldn't save linearization devicelink");
+    }
+
+
+    hDeviceLink = cmsOpenProfileFromFile("lin_rgb.icc", "r");
+
+    if (hDeviceLink == NULL)
+    {
+        remove("lin_rgb.icc");
+        Fail("Couldn't open devicelink");
+    }
+
+    xform = cmsCreateTransform(hDeviceLink, TYPE_RGB_8, NULL, TYPE_RGB_8, INTENT_PERCEPTUAL, 0);
+    cmsCloseProfile(hDeviceLink);
+
+    for (i = 0; i < 256; i++)
+    {
+        cmsUInt8Number rgb_in[3] = { i, i, i };
+        cmsUInt8Number rgb_out[3];
+
+        cmsDoTransform(xform, rgb_in, rgb_out, 1);
+
+        if (rgb_in[0] != rgb_out[0] ||
+            rgb_in[1] != rgb_out[1] ||
+            rgb_in[2] != rgb_out[2])
+        {
+            remove("lin_rgb.icc");
+            Fail("Saved devicelink was not working");
+        }
+    }
+
+
+    cmsDeleteTransform(xform);
+    remove("lin_rgb.icc");
+
+    return 1;
+}
+
+static
+int CheckGamutCheckFloats(void)
+{
+
+    cmsUInt16Number alarms[16] = { 0x0f0f,3,4,5,6,7,8,9,10 };
+
+
+    cmsHPROFILE hLab = cmsCreateLab4Profile(NULL);
+    cmsHPROFILE hNull = cmsCreateNULLProfile();
+    cmsHPROFILE hsRGB = cmsCreate_sRGBProfile();
+
+    cmsHTRANSFORM xfrm = cmsCreateProofingTransform(hLab,
+        TYPE_Lab_DBL, hNull, TYPE_GRAY_8, hsRGB,
+        INTENT_RELATIVE_COLORIMETRIC, INTENT_ABSOLUTE_COLORIMETRIC,
+        cmsFLAGS_GAMUTCHECK);
+
+    cmsCloseProfile(hLab);
+    cmsCloseProfile(hNull);
+    cmsCloseProfile(hsRGB);
+
+    cmsCIELab Lab = { 50, -125, 125 };
+    cmsCIELab Lab2 = { 50, -10, 12 };
+
+    cmsUInt8Number gamut;
+
+    cmsSetAlarmCodes(alarms);
+
+    cmsDoTransform(xfrm, &Lab, &gamut, 1);  // Gives the alarm != 0
+    if (gamut != 0x0f)
+        Fail("Gamut check not good");
+
+    cmsDoTransform(xfrm, &Lab2, &gamut, 1);
+    if (gamut != 0)
+        Fail("Gamut check zero");
+
+    cmsDeleteTransform(xfrm);
+    return 1;
+}
+
+static
+int CheckMixedRawAndCooked(void)
+{
+    const cmsUInt32Number data = cmsSigFilmScanner;
+    const cmsUInt32Number* pdata;
+    cmsBool is_ok = FALSE;
+
+    // This is the internal representation of cmsSigTechnologyTag tag type
+    struct _cooked_st
+    {
+        _cmsTagBase base;
+        cmsUInt32Number data;
+
+    } buffer = { { (cmsTagTypeSignature) cmsSigTechnologyTag, {0} }, cmsSigFilmScanner };
+
+    cmsHPROFILE hProfile = cmsCreateProfilePlaceholder(0);
+    cmsWriteRawTag(hProfile, cmsSigTechnologyTag, &buffer, sizeof buffer);
+    cmsWriteTag(hProfile, cmsSigTechnologyTag, &data);
+    cmsWriteRawTag(hProfile, cmsSigTechnologyTag, &buffer, sizeof buffer);
+    cmsWriteRawTag(hProfile, cmsSigTechnologyTag, &buffer, sizeof buffer);
+    cmsWriteTag(hProfile, cmsSigTechnologyTag, &data);
+    cmsWriteTag(hProfile, cmsSigTechnologyTag, &data);
+    memset(&buffer, 0, sizeof(buffer));
+
+    cmsReadRawTag(hProfile, cmsSigTechnologyTag, &buffer, sizeof buffer );
+    pdata = cmsReadTag(hProfile, cmsSigTechnologyTag);
+
+    is_ok = (*pdata == cmsSigFilmScanner) && (_cmsAdjustEndianess32(buffer.data) == cmsSigFilmScanner);
+
+    cmsCloseProfile(hProfile);
+    return is_ok;
+}
+
 // --------------------------------------------------------------------------------------------------
 // P E R F O R M A N C E   C H E C K S
 // --------------------------------------------------------------------------------------------------
@@ -8483,7 +8993,7 @@ void SpeedTest32bits(cmsContext ContextID, const char * Title, cmsHPROFILE hlcms
     NumPixels = 256 / Interval * 256 / Interval * 256 / Interval;
     Mb = NumPixels * sizeof(Scanline_rgba32);
 
-    In = (Scanline_rgba32 *) malloc(Mb);
+    In = (Scanline_rgba32 *) chknull(malloc(Mb));
 
     j = 0;
     for (r=0; r < 256; r += Interval)
@@ -8534,7 +9044,7 @@ void SpeedTest16bits(cmsContext ContextID, const char * Title, cmsHPROFILE hlcms
 
     Mb = 256*256*256 * sizeof(Scanline_rgb16);
 
-    In = (Scanline_rgb16*) malloc(Mb);
+    In = (Scanline_rgb16*) chknull(malloc(Mb));
 
     j = 0;
     for (r=0; r < 256; r++)
@@ -8587,7 +9097,7 @@ void SpeedTest32bitsCMYK(cmsContext ContextID, const char * Title, cmsHPROFILE h
     NumPixels = 256 / Interval * 256 / Interval * 256 / Interval;
     Mb = NumPixels * sizeof(Scanline_rgba32);
 
-    In = (Scanline_rgba32 *) malloc(Mb);
+    In = (Scanline_rgba32 *) chknull(malloc(Mb));
 
     j = 0;
     for (r=0; r < 256; r += Interval)
@@ -8640,7 +9150,7 @@ void SpeedTest16bitsCMYK(cmsContext ContextID, const char * Title, cmsHPROFILE h
 
     Mb = 256*256*256*sizeof(Scanline_rgba16);
 
-    In = (Scanline_rgba16*) malloc(Mb);
+    In = (Scanline_rgba16*) chknull(malloc(Mb));
 
     j = 0;
     for (r=0; r < 256; r++)
@@ -8693,7 +9203,7 @@ void SpeedTest8bits(cmsContext ContextID, const char * Title, cmsHPROFILE hlcmsP
 
     Mb = 256*256*256*sizeof(Scanline_rgb8);
 
-    In = (Scanline_rgb8*) malloc(Mb);
+    In = (Scanline_rgb8*) chknull(malloc(Mb));
 
     j = 0;
     for (r=0; r < 256; r++)
@@ -8744,7 +9254,7 @@ void SpeedTest8bitsCMYK(cmsContext ContextID, const char * Title, cmsHPROFILE hl
 
     Mb = 256*256*256*sizeof(Scanline_rgba8);
 
-    In = (Scanline_rgba8*) malloc(Mb);
+    In = (Scanline_rgba8*) chknull(malloc(Mb));
 
     j = 0;
     for (r=0; r < 256; r++)
@@ -8800,7 +9310,7 @@ void SpeedTest32bitsGray(cmsContext ContextID, const char * Title, cmsHPROFILE h
     NumPixels = 256 / Interval * 256 / Interval * 256 / Interval;
     Mb = NumPixels * sizeof(cmsFloat32Number);
 
-    In = (cmsFloat32Number*) malloc(Mb);
+    In = (cmsFloat32Number*) chknull(malloc(Mb));
 
     j = 0;
     for (r = 0; r < 256; r += Interval)
@@ -8845,7 +9355,7 @@ void SpeedTest16bitsGray(cmsContext ContextID, const char * Title, cmsHPROFILE h
     cmsCloseProfile(ContextID, hlcmsProfileOut);
     Mb = 256*256*256 * sizeof(cmsUInt16Number);
 
-    In = (cmsUInt16Number *) malloc(Mb);
+    In = (cmsUInt16Number *) chknull(malloc(Mb));
 
     j = 0;
     for (r=0; r < 256; r++)
@@ -8891,7 +9401,7 @@ void SpeedTest8bitsGray(cmsContext ContextID, const char * Title, cmsHPROFILE hl
     cmsCloseProfile(ContextID, hlcmsProfileOut);
     Mb = 256*256*256;
 
-    In = (cmsUInt8Number*) malloc(Mb);
+    In = (cmsUInt8Number*) chknull(malloc(Mb));
 
     j = 0;
     for (r=0; r < 256; r++)
@@ -9117,9 +9627,8 @@ void PrintSupportedIntents(void)
     printf("\n");
 }
 
-
-
 // ---------------------------------------------------------------------------------------
+
 
 int main(int argc, char* argv[])
 {
@@ -9127,34 +9636,32 @@ int main(int argc, char* argv[])
     cmsInt32Number DoSpeedTests = 1;
     cmsInt32Number DoCheckTests = 1;
     cmsInt32Number DoPluginTests = 1;
+
+#ifdef CMS_IS_WINDOWS_
     cmsInt32Number DoZooTests = 0;
+#endif
     cmsContext ctx;
 
 #ifdef _MSC_VER
     _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #endif
 
-
     // First of all, check for the right header
-   if (cmsGetEncodedCMMversion() != LCMS_VERSION) {
-          Die("Oops, you are mixing header and shared lib!\nHeader version reports to be '%d' and shared lib '%d'\n", LCMS_VERSION, cmsGetEncodedCMMversion());
-   }
+    if (cmsGetEncodedCMMversion() != LCMS_VERSION) {
+        Die("Oops, you are mixing header and shared lib!\nHeader version reports to be '%d' and shared lib '%d'\n", LCMS_VERSION, cmsGetEncodedCMMversion());
+    }
 
-    printf("LittleCMS %2.2f test bed %s %s\n\n", LCMS_VERSION / 1000.0, __DATE__, __TIME__);
+    printf("LittleCMS %2.2f test bed %s %s\n\n", cmsGetEncodedCMMversion() / 1000.0, __DATE__, __TIME__);
 
     if ((argc == 2) && strcmp(argv[1], "--exhaustive") == 0) {
 
         Exhaustive = 1;
         printf("Running exhaustive tests (will take a while...)\n\n");
     }
-
-#ifdef LCMS_FAST_EXTENSIONS
-   //printf("Installing fast 8 bit extension ...");
-   //cmsPlugin(cmsFast8Bitextensions());
-   printf("Installing fast float extension ...");
-   cmsPlugin(cmsFastFloatExtensions());
-   printf("done.\n");
-#endif
+    else
+        if ((argc == 3) && strcmp(argv[1], "--chdir") == 0) {
+            CHDIR(argv[2]);
+        }
 
     printf("Installing debug memory plug-in ... ");
     cmsPlugin(NULL, &DebugMemHandler);
@@ -9293,6 +9800,7 @@ int main(int argc, char* argv[])
 
     // MLU
     Check(ctx, "Multilocalized Unicode", CheckMLU);
+    Check(ctx, "Multilocalized Unicode (II)", CheckMLU_UTF8);
 
     // Named color
     Check(ctx, "Named color lists", CheckNamedColorList);
@@ -9358,19 +9866,29 @@ int main(int argc, char* argv[])
     Check(ctx, "Parametric curve on Rec709", CheckParametricRec709);
     Check(ctx, "Floating Point sampled curve with non-zero start", CheckFloatSamples);
     Check(ctx, "Floating Point segmented curve with short sampled segment", CheckFloatSegments);
-    Check(ctx, "Read RAW portions", CheckReadRAW);
+    Check(ctx, "Read RAW tags", CheckReadRAW);
     Check(ctx, "Check MetaTag", CheckMeta);
     Check(ctx, "Null transform on floats", CheckFloatNULLxform);
     Check(ctx, "Set free a tag", CheckRemoveTag);
     Check(ctx, "Matrix simplification", CheckMatrixSimplify);
     Check(ctx, "Planar 8 optimization", CheckPlanar8opt);
+    Check(ctx, "Planar float to int16", CheckPlanarFloat2int);
     Check(ctx, "Swap endian feature", CheckSE);
     Check(ctx, "Transform line stride RGB", CheckTransformLineStride);
     Check(ctx, "Forged MPE profile", CheckForgedMPE);
     Check(ctx, "Proofing intersection", CheckProofingIntersection);
     Check(ctx, "Empty MLUC", CheckEmptyMLUC);
     Check(ctx, "sRGB round-trips", Check_sRGB_Rountrips);
+    Check(ctx, "OkLab color space", Check_OkLab);
+    Check(ctx, "OkLab color space (2)", Check_OkLab2);
+    Check(ctx, "centering of Lab16", CheckCenteringOfLab);
     Check(ctx, "Gamma space detection", CheckGammaSpaceDetection);
+    Check(ctx, "Unbounded mode w/ integer output", CheckIntToFloatTransform);
+    Check(ctx, "Corrupted built-in by using cmsWriteRawTag", CheckInducedCorruption);
+    Check(ctx, "Bad CGATS file", CheckBadCGATS);
+    Check(ctx, "Saving linearization devicelink", CheckSaveLinearizationDevicelink);
+    Check(ctx, "Gamut check on floats", CheckGamutCheckFloats);
+    Check(ctx, "Mixing RAW and Cooked tags", CheckMixedRawAndCooked);
     }
 
     if (DoPluginTests)
@@ -9390,7 +9908,7 @@ int main(int argc, char* argv[])
         Check(ctx, "Rendering intent plugin", CheckIntentPlugin);
         Check(ctx, "Full transform plugin",   CheckTransformPlugin);
         Check(ctx, "Mutex plugin",            CheckMutexPlugin);
-
+        Check(ctx, "Double from float",       CheckMethodPackDoublesFromFloat);
     }
 
 

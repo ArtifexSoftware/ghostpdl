@@ -1,19 +1,19 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-// 
+//
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
-// 
+//
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
@@ -21,16 +21,16 @@
 
 #include "fast_float_internal.h"
 
-// Separable input. It just computes the distance from 
+// Separable input. It just computes the distance from
 // each component to the next one in bytes. It gives components RGB in this order
-// 
-// Encoding  Starting      Increment   DoSwap   Swapfirst Extra 
-// RGB,       012            333          0         0       0   
-// RGBA,      012            444          0         0       1   
-// ARGB,      123            444          0         1       1   
-// BGR,       210            333          1         0       0   
-// BGRA,      210            444          1         1       1   
-// ABGR       321            444          1         0       1   
+//
+// Encoding  Starting      Increment   DoSwap   Swapfirst Extra
+// RGB,       012            333          0         0       0
+// RGBA,      012            444          0         0       1
+// ARGB,      123            444          0         1       1
+// BGR,       210            333          1         0       0
+// BGRA,      210            444          1         1       1
+// ABGR       321            444          1         0       1
 //
 //
 //  On planar configurations, the distance is the stride added to any non-negative
@@ -64,22 +64,22 @@ int trueBytesSize(cmsUInt32Number Format)
 // ABGR -> doSwap
 // BGRA -> doSwap swapFirst
 
-// This function computes the distance from each component to the next one in bytes. 
+// This function computes the distance from each component to the next one in bytes.
 static
-void ComputeIncrementsForChunky(cmsUInt32Number Format, 
+void ComputeIncrementsForChunky(cmsUInt32Number Format,
                                 cmsUInt32Number BytesPerPlane,
                                 cmsUInt32Number* nChannels,
                                 cmsUInt32Number* nAlpha,
-                                cmsUInt32Number ComponentStartingOrder[], 
+                                cmsUInt32Number ComponentStartingOrder[],
                                 cmsUInt32Number ComponentPointerIncrements[])
 {
        int extra = T_EXTRA(Format);
        int channels = T_CHANNELS(Format);
        int total_chans = channels + extra;
-       int i;       
+       int i;
        int channelSize = trueBytesSize(Format);
        int pixelSize = channelSize * total_chans;
-       
+
        UNUSED_PARAMETER(BytesPerPlane);
 
        // Setup the counts
@@ -106,7 +106,7 @@ void ComputeIncrementsForChunky(cmsUInt32Number Format,
 
        // Handle swap first (ROL of positions), example CMYK -> KCMY | 0123 -> 3012
        if (T_SWAPFIRST(Format)) {
-              
+
               cmsUInt32Number tmp = ComponentStartingOrder[0];
               for (i = 0; i < total_chans-1; i++)
                      ComponentStartingOrder[i] = ComponentStartingOrder[i + 1];
@@ -125,11 +125,11 @@ void ComputeIncrementsForChunky(cmsUInt32Number Format,
 
 //  On planar configurations, the distance is the stride added to any non-negative
 static
-void ComputeIncrementsForPlanar(cmsUInt32Number Format, 
+void ComputeIncrementsForPlanar(cmsUInt32Number Format,
                                 cmsUInt32Number BytesPerPlane,
                                 cmsUInt32Number* nChannels,
                                 cmsUInt32Number* nAlpha,
-                                cmsUInt32Number ComponentStartingOrder[], 
+                                cmsUInt32Number ComponentStartingOrder[],
                                 cmsUInt32Number ComponentPointerIncrements[])
 {
        int extra = T_EXTRA(Format);
@@ -137,12 +137,12 @@ void ComputeIncrementsForPlanar(cmsUInt32Number Format,
        int total_chans = channels + extra;
        int i;
        int channelSize = trueBytesSize(Format);
-       
+
        // Setup the counts
-       if (nChannels != NULL) 
+       if (nChannels != NULL)
               *nChannels = channels;
 
-       if (nAlpha != NULL) 
+       if (nAlpha != NULL)
               *nAlpha = extra;
 
        // Separation is independent of starting point and only depends on channel size
@@ -183,7 +183,7 @@ CMSCHECKPOINT void  CMSEXPORT _cmsComputeComponentIncrements(cmsUInt32Number For
                                      cmsUInt32Number BytesPerPlane,
                                      cmsUInt32Number* nChannels,
                                      cmsUInt32Number* nAlpha,
-                                     cmsUInt32Number ComponentStartingOrder[], 
+                                     cmsUInt32Number ComponentStartingOrder[],
                                      cmsUInt32Number ComponentPointerIncrements[])
 {
        if (T_PLANAR(Format)) {
@@ -195,5 +195,3 @@ CMSCHECKPOINT void  CMSEXPORT _cmsComputeComponentIncrements(cmsUInt32Number For
        }
 
 }
-
-

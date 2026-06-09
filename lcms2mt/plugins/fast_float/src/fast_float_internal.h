@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System, fast floating point extensions
-//  Copyright (c) 1998-2020 Marti Maria Saguer, all rights reserved
+//  Copyright (c) 1998-2026 Marti Maria Saguer, all rights reserved
 //
 //
 // This program is free software: you can redistribute it and/or modify
@@ -25,9 +25,9 @@
 #include "lcms2mt_fast_float.h"
 #include <stdint.h>
 
-#define REQUIRED_LCMS_VERSION (2120-2000)
+#define REQUIRED_LCMS_VERSION (2140-2000)
 
-// Unused parameter warning supression
+// Unused parameter warning suppression
 #define UNUSED_PARAMETER(x) ((void)x)
 
 // For testbed
@@ -134,12 +134,15 @@ cmsINLINE cmsFloat32Number flerp(const cmsFloat32Number LutTable[], cmsFloat32Nu
        cmsFloat32Number rest;
        int cell0, cell1;
 
-       if ((v < 1.0e-9f) || isnan(v)) {
-              return LutTable[0];
+       if (isnan(v))
+           return LutTable[0];
+
+       if (v < 1.0e-9f) {
+              return v;
        }
        else
               if (v >= 1.0) {
-              return LutTable[MAX_NODES_IN_CURVE - 1];
+                    return v;
               }
 
        v *= (MAX_NODES_IN_CURVE - 1);
@@ -282,5 +285,10 @@ cmsBool OptimizeCLUTLabTransform(cmsContext ContextID,
                                  cmsUInt32Number* OutputFormat,
                                  cmsUInt32Number* dwFlags);
 
+// Wrapper for _cmsFree that matches the _cmsFreeUserDataFn calling convention.
+// On Win32, _cmsFree uses __stdcall (CMSEXPORT) but _cmsFreeUserDataFn is __cdecl.
+// Using _cmsFree directly as a _cmsFreeUserDataFn would cause a calling convention
+// mismatch on 32-bit Windows builds. This wrapper uses the default (cdecl) convention.
+cmsINLINE void _fast_float_free_user_data(cmsContext ContextID, void* Data) { _cmsFree(ContextID, Data); }
 
 #endif

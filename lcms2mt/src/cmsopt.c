@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -180,6 +180,7 @@ cmsBool  isFloatMatrixIdentity(cmsContext ContextID, const cmsMAT3* a)
 
        return TRUE;
 }
+
 // if two adjacent matrices are found, multiply them.
 static
 cmsBool _MultiplyMatrix(cmsContext ContextID, cmsPipeline* Lut)
@@ -668,12 +669,16 @@ cmsBool OptimizeByResampling(cmsContext ContextID, cmsPipeline** Lut, cmsUInt32N
     // Color space must be specified
     if (ColorSpace == (cmsColorSpaceSignature)0 ||
         OutputColorSpace == (cmsColorSpaceSignature)0) return FALSE;
-
-    nGridPoints = _cmsReasonableGridpointsByColorspace(ContextID, ColorSpace, *dwFlags);
-
     // For empty LUTs, 2 points are enough
     if (cmsPipelineStageCount(ContextID, *Lut) == 0)
         nGridPoints = 2;
+    else
+    {
+        nGridPoints = _cmsReasonableGridpointsByColorspace(ContextID, ColorSpace, *dwFlags);
+
+        // Lab16 as input cannot be optimized by a CLUT due to centering issues, thanks to Mike Chaney for discovering this.
+        if (!(*dwFlags & cmsFLAGS_FORCE_CLUT) && (ColorSpace == cmsSigLabData) && (T_BYTES(*InputFormat) == 2)) return FALSE;
+    }
 
     Src = *Lut;
 
@@ -783,6 +788,11 @@ Error:
             DataSetIn,
             Dest ->OutputChannels,
             DataSetOut);
+
+        if (p16 == NULL) {
+            cmsPipelineFree(ContextID, Dest);
+            return FALSE;
+        }
 
         _cmsPipelineSetOptimizationParameters(ContextID, Dest, PrelinEval16, (void*) p16, PrelinOpt16free, Prelin16dup);
     }
@@ -1114,14 +1124,17 @@ cmsBool OptimizeByComputingLinearization(cmsContext ContextID, cmsPipeline** Lut
 
         // Store result in curve
         for (t=0; t < OriginalLut ->InputChannels; t++)
-            Trans[t] ->Table16[i] = _cmsQuickSaturateWord(Out[t] * 65535.0);
+        {
+            if (Trans[t]->Table16 != NULL)
+                Trans[t] ->Table16[i] = _cmsQuickSaturateWord(Out[t] * 65535.0);
+        }
     }
 
     // Slope-limit the obtained curves
     for (t = 0; t < OriginalLut ->InputChannels; t++)
         SlopeLimiting(ContextID, Trans[t]);
 
-    // Check for validity
+    // Check for validity. lIsLinear is here for debug purposes
     lIsSuitable = TRUE;
     lIsLinear   = TRUE;
     for (t=0; (lIsSuitable && (t < OriginalLut ->InputChannels)); t++) {
@@ -1179,10 +1192,13 @@ cmsBool OptimizeByComputingLinearization(cmsContext ContextID, cmsPipeline** Lut
 
         if (Trans[t]) cmsFreeToneCurve(ContextID, Trans[t]);
         if (TransReverse[t]) cmsFreeToneCurve(ContextID, TransReverse[t]);
+
+        Trans[t] = NULL;
+        TransReverse[t] = NULL;
     }
 
     cmsPipelineFree(ContextID, LutPlusCurves);
-
+    LutPlusCurves = NULL;
 
     OptimizedPrelinCurves = _cmsStageGetPtrToCurveSet(OptimizedPrelinMpe);
     OptimizedPrelinCLUT   = (_cmsStageCLutData*) OptimizedCLUTmpe ->Data;
@@ -1193,7 +1209,7 @@ cmsBool OptimizeByComputingLinearization(cmsContext ContextID, cmsPipeline** Lut
         Prelin8Data* p8 = PrelinOpt8alloc(ContextID,
                                                 OptimizedPrelinCLUT ->Params,
                                                 OptimizedPrelinCurves);
-        if (p8 == NULL) return FALSE;
+        if (p8 == NULL) goto Error;
 
         _cmsPipelineSetOptimizationParameters(ContextID, OptimizedLUT, PrelinEval8, (void*) p8, Prelin8free, Prelin8dup);
 
@@ -1203,7 +1219,8 @@ cmsBool OptimizeByComputingLinearization(cmsContext ContextID, cmsPipeline** Lut
         Prelin16Data* p16 = PrelinOpt16alloc(ContextID,
             OptimizedPrelinCLUT ->Params,
             3, OptimizedPrelinCurves, 3, NULL);
-        if (p16 == NULL) return FALSE;
+
+        if (p16 == NULL) goto Error;
 
         _cmsPipelineSetOptimizationParameters(ContextID, OptimizedLUT, PrelinEval16, (void*) p16, PrelinOpt16free, Prelin16dup);
 
@@ -1217,7 +1234,7 @@ cmsBool OptimizeByComputingLinearization(cmsContext ContextID, cmsPipeline** Lut
 
         if (!FixWhiteMisalignment(ContextID, OptimizedLUT, ColorSpace, OutputColorSpace)) {
 
-            return FALSE;
+           goto Error;
         }
     }
 
@@ -1524,10 +1541,10 @@ void* DupMatShaper(cmsContext ContextID, const void* Data)
 }
 
 
-// A fast matrix-shaper evaluator for 8 bits. This is a bit ticky since I'm using 1.14 signed fixed point
+// A fast matrix-shaper evaluator for 8 bits. This is a bit tricky since I'm using 1.14 signed fixed point
 // to accomplish some performance. Actually it takes 256x3 16 bits tables and 16385 x 3 tables of 8 bits,
 // in total about 50K, and the performance boost is huge!
-static
+static CMS_NO_SANITIZE
 void MatShaperEval16(cmsContext ContextID,
                      CMSREGISTER const cmsUInt16Number In[],
                      CMSREGISTER cmsUInt16Number Out[],
@@ -1706,6 +1723,10 @@ cmsBool OptimizeMatrixShaper(cmsContext ContextID, cmsPipeline** Lut, cmsUInt32N
               _cmsStageMatrixData* Data1 = (_cmsStageMatrixData*)cmsStageData(ContextID, Matrix1);
               _cmsStageMatrixData* Data2 = (_cmsStageMatrixData*)cmsStageData(ContextID, Matrix2);
 
+              // Only RGB to RGB
+              if (Matrix1->InputChannels != 3 || Matrix1->OutputChannels != 3 ||
+                  Matrix2->InputChannels != 3 || Matrix2->OutputChannels != 3) return FALSE;
+
               // Input offset should be zero
               if (Data1->Offset != NULL) return FALSE;
 
@@ -1730,6 +1751,8 @@ cmsBool OptimizeMatrixShaper(cmsContext ContextID, cmsPipeline** Lut, cmsUInt32N
                      &Curve1, &Matrix1, &Curve2)) {
 
                      _cmsStageMatrixData* Data = (_cmsStageMatrixData*)cmsStageData(ContextID, Matrix1);
+
+                     if (Matrix1->InputChannels != 3 || Matrix1->OutputChannels != 3) return FALSE;
 
                      // Copy the matrix to our result
                      memcpy(&res, Data->Double, sizeof(res));
@@ -1775,7 +1798,7 @@ cmsBool OptimizeMatrixShaper(cmsContext ContextID, cmsPipeline** Lut, cmsUInt32N
         _cmsStageToneCurvesData* mpeC2 = (_cmsStageToneCurvesData*) cmsStageData(ContextID, Curve2);
 
         // In this particular optimization, cache does not help as it takes more time to deal with
-        // the cache that with the pixel handling
+        // the cache than with the pixel handling
         *dwFlags |= cmsFLAGS_NOCACHE;
 
         // Setup the optimizarion routines
@@ -1932,7 +1955,7 @@ cmsBool CMSEXPORT _cmsOptimizePipeline(cmsContext ContextID,
     for (mpe = cmsPipelineGetPtrToFirstStage(ContextID, *PtrLut);
         mpe != NULL;
         mpe = cmsStageNext(ContextID, mpe)) {
-        if (cmsStageType(ContextID, mpe) == cmsSigNamedColorElemType) return FALSE;
+           if (cmsStageType(ContextID, mpe) == cmsSigNamedColorElemType) return FALSE;
     }
 
     // Try to get rid of identities and trivial conversions.

@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2020 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -69,9 +69,9 @@ cmsInt32Number CheckAllocContext(cmsContext ContextID)
      c3 = DupContext(c1, NULL);
      c4 = DupContext(c2, NULL);
 
-     cmsDeleteContext(c1);  // Should be deleted by using nomal malloc
+     cmsDeleteContext(c1);  // Should be deleted by using normal malloc
      cmsDeleteContext(c2);  // Should be deleted by using debug malloc
-     cmsDeleteContext(c3);  // Should be deleted by using nomal malloc
+     cmsDeleteContext(c3);  // Should be deleted by using normal malloc
      cmsDeleteContext(c4);  // Should be deleted by using debug malloc
 
      return 1;
@@ -745,6 +745,8 @@ cmsInt32Number CheckFormattersPlugin(cmsContext ContextID)
 #define SigIntType      ((cmsTagTypeSignature)  0x74747448)   //   'tttH'
 #define SigInt          ((cmsTagSignature)  0x74747448)       //   'tttH'
 
+#define SigInt32        ((cmsTagSignature)  0x74747449)       //   'tttI'
+
 static
 void *Type_int_Read(cmsContext ContextID, struct _cms_typehandler_struct* self,
  			    cmsIOHANDLER* io,
@@ -786,10 +788,17 @@ static cmsPluginTag HiddenTagPluginSample = {
     SigInt,  {  1, 1, { SigIntType }, NULL }
 };
 
+static cmsPluginTag HiddenTagPluginSample2 = {
+
+    { cmsPluginMagicNumber, 2060, cmsPluginTagSig, (cmsPluginBase*) &HiddenTagPluginSample},
+    SigInt32,  {  1, 1, { cmsSigUInt32ArrayType }, NULL }
+};
+
+
 static cmsPluginTagType TagTypePluginSample = {
 
-     { cmsPluginMagicNumber, 2060-2000, cmsPluginTagTypeSig,  (cmsPluginBase*) &HiddenTagPluginSample},
-     { SigIntType, Type_int_Read, Type_int_Write, Type_int_Dup, Type_int_Free, 0 }
+     { cmsPluginMagicNumber, 2060-2000, cmsPluginTagTypeSig,  (cmsPluginBase*) &HiddenTagPluginSample2},
+     { SigIntType, Type_int_Read, Type_int_Write, Type_int_Dup, Type_int_Free, NULL }
 };
 
 
@@ -800,6 +809,7 @@ cmsInt32Number CheckTagTypePlugin(cmsContext ContextID)
     cmsContext cpy2 = NULL;
     cmsHPROFILE h = NULL;
     cmsUInt32Number myTag = 1234;
+    cmsUInt32Number myTag32 = 5678;
     cmsUInt32Number rc = 0;
     char* data = NULL;
     cmsUInt32Number *ptr = NULL;
@@ -825,6 +835,12 @@ cmsInt32Number CheckTagTypePlugin(cmsContext ContextID)
         Fail("Plug-in failed");
         goto Error;
     }
+
+    if (!cmsWriteTag(cpy2, h, SigInt32, &myTag32)) {
+        Fail("Plug-in failed");
+        goto Error;
+    }
+
 
     rc = cmsSaveProfileToMem(cpy2, h, NULL, &clen);
     if (!rc) {
@@ -862,6 +878,14 @@ cmsInt32Number CheckTagTypePlugin(cmsContext ContextID)
         goto Error;
     }
 
+    ptr = (cmsUInt32Number*)cmsReadTag(ContextID, h, SigInt32);
+    if (ptr != NULL) {
+
+        Fail("read tag/context switching failed");
+        goto Error;
+    }
+
+
     cmsCloseProfile(ContextID, h);
     ResetFatalError(ContextID);
 
@@ -876,13 +900,23 @@ cmsInt32Number CheckTagTypePlugin(cmsContext ContextID)
 
     ptr = (cmsUInt32Number*) cmsReadTag(cpy2, h, SigInt);
     if (ptr == NULL) {
-        Fail("Read tag/conext switching failed (2)");
+        Fail("Read tag/context switching failed (2)");
         return 0;
     }
 
     rc = (*ptr == 1234);
 
+    ptr = (cmsUInt32Number*)cmsReadTag(cpy2, h, SigInt32);
+    if (ptr == NULL) {
+
+        Fail("read tag/context switching failed (2)");
+        goto Error;
+    }
+
+    rc &= (*ptr == 5678);
+
     cmsCloseProfile(cpy2, h);
+
     cmsDeleteContext(cpy2);
 
     return rc;
@@ -959,7 +993,6 @@ cmsInt32Number CheckMPEPlugin(cmsContext ContextID)
     cmsContext cpy = NULL;
     cmsContext cpy2 = NULL;
     cmsHPROFILE h = NULL;
-    cmsUInt32Number myTag = 1234;
     cmsUInt32Number rc = 0;
     char* data = NULL;
     cmsUInt32Number clen = 0;
@@ -1057,7 +1090,7 @@ cmsInt32Number CheckMPEPlugin(cmsContext ContextID)
 
     pipe = (cmsPipeline*) cmsReadTag(cpy2, h, cmsSigDToB3Tag);
     if (pipe == NULL) {
-        Fail("Read tag/conext switching failed (2)");
+        Fail("Read tag/context switching failed (2)");
         return 0;
     }
 
@@ -1308,7 +1341,7 @@ static cmsPluginTransform FullTransformPluginSample = {
 
      { cmsPluginMagicNumber, 2060-2000, cmsPluginTransformSig, NULL},
 
-     TransformFactory
+     { TransformFactory }
 };
 
 cmsInt32Number CheckTransformPlugin(cmsContext ContextID)
@@ -1466,7 +1499,7 @@ cmsInt32Number CheckMethodPackDoublesFromFloat(cmsContext ContextID)
     if (l_pFakeProfileLAB == NULL)
         return 0;
 
-    OutputCMYKProfile = cmsOpenProfileFromFile(ctx, "TestCLT.icc", "r");
+    OutputCMYKProfile = cmsOpenProfileFromFile(ctx, "test2.icc", "r");
 
     if (OutputCMYKProfile == NULL)
         return 0;
@@ -1497,12 +1530,15 @@ cmsInt32Number CheckMethodPackDoublesFromFloat(cmsContext ContextID)
     memset(l_D_OutputColorArrayBlack, 0, sizeof(l_D_OutputColorArrayBlack));
     memset(l_D_OutputColorArrayBlue, 0, sizeof(l_D_OutputColorArrayBlue));
 
-    cmsDoTransform(ctx, xform, &LabInBlack, l_D_OutputColorArrayBlack, 1);
-    cmsDoTransform(ctx, xform, &LabInBlue, l_D_OutputColorArrayBlue, 1);
-
+    cmsDoTransform(xform, &LabInBlack, l_D_OutputColorArrayBlack, 1);
+    cmsDoTransform(xform, &LabInBlue, l_D_OutputColorArrayBlue, 1);
 
     cmsDeleteTransform(ctx, xform);
     cmsDeleteContext(ctx);
+
+    if (l_D_OutputColorArrayBlack[0] < 85 ||
+        l_D_OutputColorArrayBlue[0] < 90)
+        Fail("Ink amount is not right");
 
     return 1;
 }

@@ -2,22 +2,22 @@
 //  Little cms
 //  Copyright (C) 1998-2010 Marti Maria, Ignacio Ruiz de Conejo
 //
-// Permission is hereby granted, free of charge, to any person obtaining 
-// a copy of this software and associated documentation files (the "Software"), 
-// to deal in the Software without restriction, including without limitation 
-// the rights to use, copy, modify, merge, publish, distribute, sublicense, 
-// and/or sell copies of the Software, and to permit persons to whom the Software 
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the "Software"),
+// to deal in the Software without restriction, including without limitation
+// the rights to use, copy, modify, merge, publish, distribute, sublicense,
+// and/or sell copies of the Software, and to permit persons to whom the Software
 // is furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in 
+// The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
-// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND 
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO
+// THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
@@ -29,9 +29,9 @@
 
 // xgetopt() interface -----------------------------------------------------
 
-static int   xoptind;    
-static char *xoptarg; 
-static int   xopterr;  
+static int   xoptind;
+static char *xoptarg;
+static int   xopterr;
 static char  *letP;
 static char   SW = '-';
 
@@ -72,19 +72,19 @@ cmsBool FatalError(const char *frm, ...)
 
 	va_start(args, frm);
 	vsprintf(Buffer, frm, args);
-	mexErrMsgTxt(Buffer);   
+	mexErrMsgTxt(Buffer);
 	va_end(args);
 
-	return FALSE;               
+	return FALSE;
 }
 
 // This is the handler passed to lcms
 
 static
-void MatLabErrorHandler(cmsContext ContextID, cmsUInt32Number ErrorCode, 
+void MatLabErrorHandler(cmsContext ContextID, cmsUInt32Number ErrorCode,
 						const char *Text)
-{      
-	mexErrMsgTxt(Text);    
+{
+	mexErrMsgTxt(Text);
 }
 //
 //  Parse the command line options, System V style.
@@ -92,7 +92,7 @@ void MatLabErrorHandler(cmsContext ContextID, cmsUInt32Number ErrorCode,
 
 static
 void xoptinit()
-{   
+{
 	xoptind = 1;
 	xopterr = 0;
 	letP = NULL;
@@ -144,7 +144,7 @@ gopEOF:
 	return EOF;
 
 gopError:
-	xoptarg = NULL;    
+	xoptarg = NULL;
 	if (xopterr)
 		FatalError ("get command line option");
 	return ('?');
@@ -162,7 +162,7 @@ size_t SizeOfArrayType(const mxArray *Array)
 	 case mxINT8_CLASS:   return 1;
 	 case mxUINT8_CLASS:  return 1;
 	 case mxINT16_CLASS:  return 2;
-	 case mxUINT16_CLASS: return 2;  
+	 case mxUINT16_CLASS: return 2;
 	 case mxSINGLE_CLASS: return 4;
 	 case mxDOUBLE_CLASS: return 0; // Special case -- lcms handles double as size=0
 
@@ -174,14 +174,14 @@ size_t SizeOfArrayType(const mxArray *Array)
 }
 
 
-// Get number of pixels of input array. Supported arrays are 
+// Get number of pixels of input array. Supported arrays are
 // organized as NxMxD, being N and M the size of image and D the
 // number of components.
 
 static
 size_t GetNumberOfPixels(const mxArray* In)
 {
-	int nDimensions  = mxGetNumberOfDimensions(In); 
+	int nDimensions  = mxGetNumberOfDimensions(In);
 	const int  *Dimensions   = mxGetDimensions(In);
 
 	switch (nDimensions) {
@@ -194,7 +194,7 @@ size_t GetNumberOfPixels(const mxArray* In)
 			FatalError("Unsupported array of %d dimensions", nDimensions);
 			return 0;
 	}
-}   
+}
 
 
 // Allocates the output array. Copies the input array modifying the pixel
@@ -202,10 +202,10 @@ size_t GetNumberOfPixels(const mxArray* In)
 
 static
 mxArray* AllocateOutputArray(const mxArray* In, int OutputChannels)
-{       
+{
 
-	mxArray*	Out			  = mxDuplicateArray(In);   // Make a "deep copy" of Input array 
-	int         nDimensions   = mxGetNumberOfDimensions(In);    
+	mxArray*	Out			  = mxDuplicateArray(In);   // Make a "deep copy" of Input array
+	int         nDimensions   = mxGetNumberOfDimensions(In);
 	const int*	Dimensions    = mxGetDimensions(In);
 	int         InputChannels = Dimensions[nDimensions-1];
 
@@ -242,7 +242,7 @@ mxArray* AllocateOutputArray(const mxArray* In, int OutputChannels)
 		mxSetDimensions(Out, ModifiedDimensions, nDimensions);
 		mxFree(ModifiedDimensions);
 
-		mxSetPr(Out, mxRealloc(mxGetPr(Out), NewSize));             
+		mxSetPr(Out, mxRealloc(mxGetPr(Out), NewSize));
 
 	}
 
@@ -253,12 +253,12 @@ mxArray* AllocateOutputArray(const mxArray* In, int OutputChannels)
 
 
 // Does create a format descriptor. "Bytes" is the sizeof type in bytes
-//  
+//
 //  Bytes  Meaning
 //  ------ --------
 //   0      Floating point (double)
 //   1      8-bit samples
-//   2      16-bit samples   
+//   2      16-bit samples
 
 static
 cmsUInt32Number MakeFormatDescriptor(cmsColorSpaceSignature ColorSpace, int Bytes)
@@ -273,12 +273,12 @@ cmsUInt32Number MakeFormatDescriptor(cmsColorSpaceSignature ColorSpace, int Byte
 
 static
 cmsHPROFILE OpenProfile(const char* File)
-{   
+{
 
 	cmsContext ContextID = 0;
 
-	   if (!File) 
-            return cmsCreate_sRGBProfileTHR(ContextID);    
+	   if (!File)
+            return cmsCreate_sRGBProfileTHR(ContextID);
 
        if (cmsstrcasecmp(File, "*Lab2") == 0)
                 return cmsCreateLab2ProfileTHR(ContextID, NULL);
@@ -288,12 +288,12 @@ cmsHPROFILE OpenProfile(const char* File)
 
        if (cmsstrcasecmp(File, "*Lab") == 0)
                 return cmsCreateLab4ProfileTHR(ContextID, NULL);
-       
+
        if (cmsstrcasecmp(File, "*LabD65") == 0) {
 
            cmsCIExyY D65xyY;
-           
-           cmsWhitePointFromTemp( &D65xyY, 6504);           
+
+           cmsWhitePointFromTemp( &D65xyY, 6504);
            return cmsCreateLab4ProfileTHR(ContextID, &D65xyY);
        }
 
@@ -322,12 +322,12 @@ cmsHPROFILE OpenProfile(const char* File)
        if (cmsstrcasecmp(File, "*null") == 0)
                 return cmsCreateNULLProfileTHR(ContextID);
 
-       
+
        if (cmsstrcasecmp(File, "*Lin2222") == 0) {
 
             cmsToneCurve*  Gamma = cmsBuildGamma(0, 2.2);
             cmsToneCurve*  Gamma4[4];
-            cmsHPROFILE hProfile; 
+            cmsHPROFILE hProfile;
 
             Gamma4[0] = Gamma4[1] = Gamma4[2] = Gamma4[3] = Gamma;
             hProfile = cmsCreateLinearizationDeviceLink(cmsSigCmykData, Gamma4);
@@ -335,7 +335,7 @@ cmsHPROFILE OpenProfile(const char* File)
             return hProfile;
        }
 
-           
+
         return cmsOpenProfileFromFileTHR(ContextID, File, "r");
 }
 
@@ -343,7 +343,7 @@ cmsHPROFILE OpenProfile(const char* File)
 static
 cmsUInt32Number GetFlags()
 {
-	cmsUInt32Number dwFlags = 0; 
+	cmsUInt32Number dwFlags = 0;
 
 	switch (PrecalcMode) {
 
@@ -355,7 +355,7 @@ cmsUInt32Number GetFlags()
 	default: FatalError("Unknown precalculation mode '%d'", PrecalcMode);
 	}
 
-	if (BlackPointCompensation) 
+	if (BlackPointCompensation)
 		dwFlags |= cmsFLAGS_BLACKPOINTCOMPENSATION;
 
 	return dwFlags;
@@ -383,9 +383,9 @@ void OpenTransforms(int argc, char *argv[])
 		}
 
 
-		// Create a temporary devicelink 
+		// Create a temporary devicelink
 
-		hTmp = cmsCreateMultiprofileTransform(hProfiles, nProfiles, 
+		hTmp = cmsCreateMultiprofileTransform(hProfiles, nProfiles,
 			0, 0, Intent, GetFlags());
 
 		hInput = cmsTransform2DeviceLink(hTmp, 4.2, 0);
@@ -393,7 +393,7 @@ void OpenTransforms(int argc, char *argv[])
 		cmsDeleteTransform(hTmp);
 
 		InputColorSpace  = cmsGetColorSpace(hInput);
-		OutputColorSpace = cmsGetPCS(hInput);        
+		OutputColorSpace = cmsGetPCS(hInput);
 		lIsDeviceLink = TRUE;
 
 	}
@@ -410,13 +410,13 @@ void OpenTransforms(int argc, char *argv[])
 		else {
 
 			hInput  = OpenProfile(cInProf);
-			hOutput = OpenProfile(cOutProf);    
+			hOutput = OpenProfile(cOutProf);
 
 			InputColorSpace   = cmsGetColorSpace(hInput);
 			OutputColorSpace  = cmsGetColorSpace(hOutput);
 
 			if (cmsGetDeviceClass(hInput) == cmsSigLinkClass ||
-				cmsGetDeviceClass(hOutput) == cmsSigLinkClass)   
+				cmsGetDeviceClass(hOutput) == cmsSigLinkClass)
 				FatalError("Use %cl flag for devicelink profiles!\n", SW);
 
 		}
@@ -452,10 +452,10 @@ void OpenTransforms(int argc, char *argv[])
 
 
 
-		hColorTransform = cmsCreateProofingTransform(hInput, dwIn, 
-			hOutput, dwOut, 
-			hProof, Intent, 
-			ProofingIntent, 
+		hColorTransform = cmsCreateProofingTransform(hInput, dwIn,
+			hOutput, dwOut,
+			hProof, Intent,
+			ProofingIntent,
 			dwFlags);
 
 }
@@ -464,9 +464,9 @@ void OpenTransforms(int argc, char *argv[])
 
 static
 void ApplyTransforms(const mxArray *In, mxArray *Out)
-{   
-	double *Input  = mxGetPr(In); 
-	double *Output = mxGetPr(Out);    
+{
+	double *Input  = mxGetPr(In);
+	double *Output = mxGetPr(Out);
 	size_t nPixels = GetNumberOfPixels(In);;
 
 	cmsDoTransform(hColorTransform, Input, Output, nPixels );
@@ -481,7 +481,7 @@ void CloseTransforms(void)
 
 	if (hColorTransform) cmsDeleteTransform(hColorTransform);
 	if (hInput) cmsCloseProfile(hInput);
-	if (hOutput) cmsCloseProfile(hOutput);             
+	if (hOutput) cmsCloseProfile(hOutput);
 	if (hProof) cmsCloseProfile(hProof);
 
 	for (i=0; i < nProfiles; i++)
@@ -504,7 +504,7 @@ void HandleSwitches(int argc, char *argv[])
 		switch (s){
 
 		case 'b':
-		case 'B': 
+		case 'B':
 			BlackPointCompensation = TRUE;
 			break;
 
@@ -530,7 +530,7 @@ void HandleSwitches(int argc, char *argv[])
 		case 'o':
 		case 'O':
 			if (lIsDeviceLink)
-				FatalError("Device-link already specified"); 
+				FatalError("Device-link already specified");
 			cOutProf = xoptarg;
 			break;
 
@@ -543,7 +543,7 @@ void HandleSwitches(int argc, char *argv[])
 
 
 		case 'l':
-		case 'L': 
+		case 'L':
 			cInProf = xoptarg;
 			lIsDeviceLink = TRUE;
 			break;
@@ -597,14 +597,14 @@ void PrintHelp(void)
 	mexPrintf("flags: a string containing one or more of following options.\n\n");
 	mexPrintf("\t%cv - Verbose\n", SW);
 	mexPrintf("\t%ci<profile> - Input profile (defaults to sRGB)\n", SW);
-	mexPrintf("\t%co<profile> - Output profile (defaults to sRGB)\n", SW);   
-	mexPrintf("\t%cl<profile> - Transform by device-link profile\n", SW);      
-	mexPrintf("\t%cm<profiles> - Apply multiprofile chain\n", SW);      
+	mexPrintf("\t%co<profile> - Output profile (defaults to sRGB)\n", SW);
+	mexPrintf("\t%cl<profile> - Transform by device-link profile\n", SW);
+	mexPrintf("\t%cm<profiles> - Apply multiprofile chain\n", SW);
 
-	mexPrintf("\t%ct<n> - Rendering intent\n", SW);    
+	mexPrintf("\t%ct<n> - Rendering intent\n", SW);
 
 	mexPrintf("\t%cb - Black point compensation\n", SW);
-	mexPrintf("\t%cc<0,1,2,3> - Optimize transform (0=Off, 1=Normal, 2=Hi-res, 3=Lo-Res) [defaults to 1]\n", SW);     
+	mexPrintf("\t%cc<0,1,2,3> - Optimize transform (0=Off, 1=Normal, 2=Hi-res, 3=Lo-Res) [defaults to 1]\n", SW);
 
 	mexPrintf("\t%cp<profile> - Soft proof profile\n", SW);
 	mexPrintf("\t%cr<0,1,2,3> - Soft proof intent\n", SW);
@@ -615,7 +615,7 @@ void PrintHelp(void)
 	"\t*Lab4  -- D50-based v4 CIEL*a*b\n"
 	"\t*Lab   -- D50-based v4 CIEL*a*b\n"
 	"\t*XYZ   -- CIE XYZ (PCS)\n"
-	"\t*sRGB  -- IEC6 1996-2.1 sRGB color space\n" 
+	"\t*sRGB  -- IEC6 1996-2.1 sRGB color space\n"
 	"\t*Gray22 - Monochrome of Gamma 2.2\n"
 	"\t*Gray30 - Monochrome of Gamma 3.0\n"
 	"\t*null   - Monochrome black for all input\n"
@@ -642,14 +642,14 @@ void mexFunction(
 	int argc = 1;
 
 
-	if (nrhs != 2) {    
+	if (nrhs != 2) {
 
-		PrintHelp();              
+		PrintHelp();
 		return;
 	}
 
 
-	if(nlhs > 1) {        
+	if(nlhs > 1) {
 		FatalError("Too many output arguments.");
 	}
 
@@ -720,5 +720,3 @@ void mexFunction(
 
 	// Done!
 }
-
-
