@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -318,7 +318,7 @@ s_jbig2decode_init(stream_state * ss)
                 allocator->mem = ss->memory->non_gc_memory;
 
                 /* initialize the decoder with the parsed global context if any */
-                state->decode_ctx = jbig2_ctx_new((Jbig2Allocator *) allocator, JBIG2_OPTIONS_EMBEDDED,
+                state->decode_ctx = jbig2_ctx_new((Jbig2Allocator *) allocator, JBIG2_OPTIONS_EMBEDDED_FORGIVING,
                              global_ctx, s_jbig2decode_error, state->callback_data);
 
                 if (state->decode_ctx == NULL) {
