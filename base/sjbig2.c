@@ -312,13 +312,20 @@ s_jbig2decode_init(stream_state * ss)
                 s_jbig2decode_error(state->callback_data, "failed to allocate custom jbig2dec allocator", JBIG2_SEVERITY_FATAL, -1);
         }
         else {
+                Jbig2Options options;
+
                 allocator->allocator.alloc = s_jbig2decode_alloc;
                 allocator->allocator.free = s_jbig2decode_free;
                 allocator->allocator.realloc = s_jbig2decode_realloc;
                 allocator->mem = ss->memory->non_gc_memory;
 
                 /* initialize the decoder with the parsed global context if any */
-                state->decode_ctx = jbig2_ctx_new((Jbig2Allocator *) allocator, JBIG2_OPTIONS_EMBEDDED_FORGIVING,
+#ifdef JBIG2_SUPPORTS_FORGIVING
+                options = JBIG2_OPTIONS_EMBEDDED_FORGIVING;
+#else
+                options = JBIG2_OPTIONS_EMBEDDED; /* Old version of JBIG2. Do the best we can. */
+#endif
+                state->decode_ctx = jbig2_ctx_new((Jbig2Allocator *) allocator, options,
                              global_ctx, s_jbig2decode_error, state->callback_data);
 
                 if (state->decode_ctx == NULL) {
