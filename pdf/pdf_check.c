@@ -487,8 +487,6 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                     goto error_exit;
             }
 
-            (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
-
             pdfi_countdown(Key);
             Key = NULL;
             pdfi_countdown(Value);
@@ -510,7 +508,7 @@ static int pdfi_check_XObject_dict(pdf_context *ctx, pdf_dict *xobject_dict, pdf
                 code = pdfi_dict_next(ctx, xobject_dict, &Key, &Value, &index);
                 if (code == 0 && pdfi_type_of(Value) == PDF_STREAM)
                     break;
-                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
+                (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the XObject dictionary loop */
                 pdfi_countdown(Key);
                 Key = NULL;
                 pdfi_countdown(Value);
