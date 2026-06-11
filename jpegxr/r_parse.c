@@ -454,6 +454,8 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
     if (SHORT_HEADER_FLAG(image)) {
         for (idx = 0 ; idx < image->tile_columns-1 ; idx += 1) {
             image->tile_column_width[idx] = _jxr_rbitstream_uint8(str);
+            if (image->tile_column_width[idx] == 0)
+                return -1;
             image->tile_column_position[idx] = wid_sum;
             wid_sum += image->tile_column_width[idx];
         }
@@ -461,6 +463,8 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
     } else {
         for (idx = 0 ; idx < image->tile_columns-1 ; idx += 1) {
             image->tile_column_width[idx] = _jxr_rbitstream_uint16(str);
+            if (image->tile_column_width[idx] == 0)
+                return -1;
             image->tile_column_position[idx] = wid_sum;
             wid_sum += image->tile_column_width[idx];
         }
@@ -471,6 +475,8 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
     if (SHORT_HEADER_FLAG(image)) {
         for (idx = 0 ; idx < image->tile_rows-1 ; idx += 1) {
             image->tile_row_height[idx] = _jxr_rbitstream_uint8(str);
+            if (image->tile_row_height[idx] == 0)
+                return -1;
             image->tile_row_position[idx] = hei_sum;
             hei_sum += image->tile_row_height[idx];
         }
@@ -478,6 +484,8 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
     } else {
         for (idx = 0 ; idx < image->tile_rows-1 ; idx += 1) {
             image->tile_row_height[idx] = _jxr_rbitstream_uint16(str);
+            if (image->tile_row_height[idx] == 0)
+                return -1;
             image->tile_row_position[idx] = hei_sum;
             hei_sum += image->tile_row_height[idx];
         }
@@ -507,12 +515,24 @@ static int r_image_header(jxr_image_t image, struct rbitstream*str)
 
     image->lwf_test = 0;
 
-    image->tile_column_width[image->tile_columns-1] = (image->extended_width >> 4)-wid_sum;
-    image->tile_column_position[image->tile_columns-1] = wid_sum;
+    if ((image->extended_width & 15) != 0 || (image->extended_height & 15) != 0) {
+        return -1;
+    }
+    else {
+        unsigned width_blocks = image->extended_width >> 4;
+        unsigned height_blocks = image->extended_height >> 4;
 
-    image->tile_row_height[image->tile_rows-1] = (image->extended_height >> 4)-hei_sum;
-    image->tile_row_position[image->tile_rows-1] = hei_sum;
+        if (width_blocks == 0 || height_blocks == 0)
+            return -1;
+        if (wid_sum >= width_blocks || hei_sum >= height_blocks)
+            return -1;
 
+        image->tile_column_width[image->tile_columns-1] = width_blocks - wid_sum;
+        image->tile_column_position[image->tile_columns-1] = wid_sum;
+
+        image->tile_row_height[image->tile_rows-1] = height_blocks - hei_sum;
+        image->tile_row_position[image->tile_rows-1] = hei_sum;
+    }
 #if defined(DETAILED_DEBUG)
     DEBUG(" Tile widths:");
     for (idx = 0 ; idx < image->tile_columns ; idx += 1)

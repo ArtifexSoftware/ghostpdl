@@ -205,6 +205,9 @@ int _jxr_make_mbstore(jxr_image_t image, int up4_flag)
 
     assert(image->num_channels > 0);
 
+    if (EXTENDED_WIDTH_BLOCKS(image) == 0 || EXTENDED_HEIGHT_BLOCKS(image) == 0)
+        return -1;
+
     for (ch = 0 ; ch < image->num_channels ; ch += 1) {
         size_t idx;
         if (up4_flag)
