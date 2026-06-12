@@ -537,7 +537,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                         Jbig2RefinementRegionParams rparams;
                         uint32_t ID;
                         int32_t RDX, RDY;
-                        int BMSIZE = 0;
+                        size_t BMSIZE = 0;
                         uint32_t ninsyms = params->SDNUMINSYMS;
                         int code1 = 0;
                         int code2 = 0;
