@@ -99,12 +99,20 @@ static void *jbig2dec_reached_limit(jbig2dec_allocator_t *allocator, size_t olds
     size_t size_mb = size / MBYTE;
 
     if (oldsize == 0)
-        jbig2_error(allocator->ctx, JBIG2_SEVERITY_FATAL, -1, "memory: limit reached: limit: %zu (%zu Mbyte) used: %zu (%zu Mbyte) allocation: %zu (%zu Mbyte)",
+        jbig2_error(allocator->ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER,
+            "memory: limit reached: "
+            "limit: "FMTZ" ("FMTZ" Mbyte) "
+            "used: "FMTZ" ("FMTZ" Mbyte) "
+            "allocation: "FMTZ" ("FMTZ" Mbyte)",
             allocator->memory_limit, limit_mb,
             allocator->memory_used, used_mb,
             size, size_mb);
     else
-        jbig2_error(allocator->ctx, JBIG2_SEVERITY_FATAL, -1, "memory: limit reached: limit: %zu (%zu Mbyte) used: %zu (%zu Mbyte) reallocation: %zu (%zu Mbyte) -> %zu (%zu Mbyte)",
+        jbig2_error(allocator->ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER,
+            "memory: limit reached: "
+            "limit: "FMTZ" ("FMTZ" Mbyte) "
+            "used: "FMTZ" ("FMTZ" Mbyte) "
+            "reallocation: "FMTZ" ("FMTZ" Mbyte) -> "FMTZ" ("FMTZ" Mbyte)",
             allocator->memory_limit, limit_mb,
             allocator->memory_used, used_mb,
             oldsize, oldsize_mb,
@@ -126,7 +134,11 @@ static void jbig2dec_peak(jbig2dec_allocator_t *allocator)
 
     allocator->memory_peak = allocator->memory_used;
 
-    jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "memory: limit: %lu %sbyte used: %lu %sbyte, peak: %lu %sbyte",
+    jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER,
+        "memory: "
+        "limit: "FMTZ" %sbyte "
+        "used: "FMTZ" %sbyte "
+        "peak: "FMTZ" %sbyte",
         limit_mb > 0 ? limit_mb : allocator->memory_limit, limit_mb > 0 ? "M" : "",
         used_mb > 0 ? used_mb : allocator->memory_used, used_mb > 0 ? "M" : "",
         peak_mb > 0 ? peak_mb : allocator->memory_peak, peak_mb > 0 ? "M" : "");
@@ -785,7 +797,12 @@ main(int argc, char **argv)
     if (allocator != NULL && allocator->ctx != NULL) {
         size_t limit_mb = allocator->memory_limit / MBYTE;
         size_t peak_mb = allocator->memory_peak / MBYTE;
-        jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "memory: limit: %lu Mbyte peak usage: %lu Mbyte", limit_mb, peak_mb);
+        jbig2_error(allocator->ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER,
+            "memory: "
+            "limit: "FMTZ" %sbyte "
+            "peak: "FMTZ" %sbyte",
+            limit_mb > 0 ? limit_mb : allocator->memory_limit, limit_mb > 0 ? "M" : "",
+            peak_mb > 0 ? peak_mb : allocator->memory_peak, peak_mb > 0 ? "M" : "");
     }
 
     /* fin */

@@ -114,7 +114,9 @@ jbig2_huffman_free(Jbig2Ctx *ctx, Jbig2HuffmanState *hs)
 void
 jbig2_dump_huffman_state(Jbig2HuffmanState *hs)
 {
-    fprintf(stderr, "huffman state %08x %08x offset %d.%d\n", hs->this_word, hs->next_word, hs->offset, hs->offset_bits);
+    fprintf(stderr, "huffman state %08x %08x offset "FMTZ"."FMTZ"\n",
+            hs->this_word, hs->next_word,
+            (FMTZ_CAST) hs->offset, (FMTZ_CAST) hs->offset_bits);
 }
 
 /** print the binary string we're reading from */
@@ -248,7 +250,7 @@ jbig2_huffman_get_bits(Jbig2HuffmanState *hs, const int bits, int *err)
 
     if (hs->offset_limit && hs->offset >= hs->offset_limit) {
         *err = -1;
-        return jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "end of jbig2 buffer reached at offset %d", hs->offset);
+        return jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "end of jbig2 buffer reached at offset "FMTZ, (FMTZ_CAST) hs->offset);
     }
 
     result = this_word >> (32 - bits);
@@ -287,7 +289,7 @@ jbig2_huffman_get(Jbig2HuffmanState *hs, const Jbig2HuffmanTable *table, bool *o
     if (hs->offset_limit && hs->offset >= hs->offset_limit) {
         if (oob)
             *oob = -1;
-        return jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "end of Jbig2WordStream reached at offset %d", hs->offset);
+        return jbig2_error(hs->ctx, JBIG2_SEVERITY_FATAL, JBIG2_UNKNOWN_SEGMENT_NUMBER, "end of Jbig2WordStream reached at offset "FMTZ, (FMTZ_CAST) hs->offset);
     }
 
     for (;;) {

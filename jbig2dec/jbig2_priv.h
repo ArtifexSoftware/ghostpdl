@@ -70,6 +70,17 @@ typedef uint8_t byte;
 #define UINT32_MAX 0xffffffffu
 #endif
 
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define FMTZ "%zu"
+#define FMTZ_CAST size_t
+#elif defined(_MSC_VER)
+#define FMTZ "%llu"
+#define FMTZ_CAST _int64
+#else
+#define FMTZ "%lu"
+#define FMTZ_CAST unsigned long
+#endif
+
 typedef struct _Jbig2Page Jbig2Page;
 typedef struct _Jbig2Segment Jbig2Segment;
 

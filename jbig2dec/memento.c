@@ -60,13 +60,17 @@ int atexit(void (*)(void));
 #endif
 
 /* Hacks to portably print large sizes */
-#ifdef _MSC_VER
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#define FMTZ "%zu"
+#define FMTZ_CAST size_t
+#define FMTP "%p"
+#elif defined(_MSC_VER)
 #define FMTZ "%llu"
 #define FMTZ_CAST _int64
 #define FMTP "0x%p"
 #else
-#define FMTZ "%zu"
-#define FMTZ_CAST size_t
+#define FMTZ "%lu"
+#define FMTZ_CAST unsigned long
 #define FMTP "%p"
 #endif
 
