@@ -539,7 +539,7 @@ jbig2_table_read_bits(const byte *data, size_t *bitoffset, const int bitlen)
             d >>= -nshift;
         result |= d;
     }
-    result &= ~(-1 << bitlen);
+    result &= ~(UINT32_MAX << bitlen);
     *bitoffset += bitlen;
     return result;
 }
