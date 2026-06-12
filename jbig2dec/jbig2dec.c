@@ -671,8 +671,8 @@ main(int argc, char **argv)
 
         /* pull the whole file/global stream into memory */
         for (;;) {
-            int n_bytes = fread(buf, 1, sizeof(buf), f);
-            if (n_bytes < 0) {
+            size_t n_bytes = fread(buf, 1, sizeof(buf), f);
+            if (n_bytes < sizeof(buf) && ferror(f)) {
                 if (f_page != NULL)
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "unable to read jbig2 global stream");
                 else
@@ -681,7 +681,7 @@ main(int argc, char **argv)
             if (n_bytes <= 0)
                 break;
 
-            if (jbig2_data_in(ctx, buf, (size_t) n_bytes) < 0)
+            if (jbig2_data_in(ctx, buf, n_bytes) < 0)
             {
                 if (f_page != NULL)
                     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "unable to process jbig2 global stream");
@@ -702,13 +702,13 @@ main(int argc, char **argv)
                     allocator->ctx = ctx;
 
                 for (;;) {
-                    int n_bytes = fread(buf, 1, sizeof(buf), f_page);
-                    if (n_bytes < 0)
+                    size_t n_bytes = fread(buf, 1, sizeof(buf), f_page);
+                    if (n_bytes < sizeof(buf) && ferror(f_page))
                         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "unable to read jbig2 page stream");
                     if (n_bytes <= 0)
                         break;
 
-                    if (jbig2_data_in(ctx, buf, (size_t) n_bytes) < 0)
+                    if (jbig2_data_in(ctx, buf, n_bytes) < 0)
                     {
                         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, JBIG2_UNKNOWN_SEGMENT_NUMBER, "unable to process jbig2 page stream");
                         break;
