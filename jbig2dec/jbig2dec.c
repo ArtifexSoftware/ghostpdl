@@ -748,7 +748,7 @@ main(int argc, char **argv)
                     goto cleanup;
                 }
             } else {
-                int len = strlen(params.output_filename);
+                size_t len = strlen(params.output_filename);
 
                 if ((len >= 3) && (params.output_format == jbig2dec_format_none))
                     /* try to set the output type by the given extension */
