@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
+#include <limits.h>
 
 #ifdef HAVE_GETOPT_H
 # include <getopt.h>
@@ -297,7 +298,6 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
     };
     int option_idx = 1;
     int option;
-    int ret;
 
     while (1) {
         option = getopt_long(argc, argv, "Vh?qv:do:t:eM:", long_options, &option_idx);
@@ -349,9 +349,14 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
             params->embedded = 1;
             break;
         case 'M':
-            ret = sscanf(optarg, "%zu", &params->memory_limit);
-            if (ret != 1)
-                fprintf(stderr, "could not parse memory limit argument\n");
+            {
+                char *end = NULL;
+                unsigned long parsed_limit = strtoul(optarg, &end, 10);
+                if (parsed_limit == ULONG_MAX || *end != '\0')
+                    fprintf(stderr, "could not parse memory limit\n");
+                else
+                    params->memory_limit = parsed_limit;
+            }
             break;
         default:
             if (!params->verbose)
