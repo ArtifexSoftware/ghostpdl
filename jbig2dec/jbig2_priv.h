@@ -127,9 +127,9 @@ void jbig2_free(Jbig2Allocator *allocator, void *p);
 
 void *jbig2_realloc(Jbig2Allocator *allocator, void *p, size_t size, size_t num);
 
-#define jbig2_new(ctx, t, size) ((t *)jbig2_alloc(ctx->allocator, size, sizeof(t)))
+#define jbig2_new(ctx, t, num) ((t *)jbig2_alloc(ctx->allocator, sizeof(t), num))
 
-#define jbig2_renew(ctx, p, t, size) ((t *)jbig2_realloc(ctx->allocator, (p), size, sizeof(t)))
+#define jbig2_renew(ctx, p, t, num) ((t *)jbig2_realloc(ctx->allocator, (p), sizeof(t), num))
 
 int jbig2_error(Jbig2Ctx *ctx, Jbig2Severity severity, uint32_t seg_idx, const char *fmt, ...)
 #ifdef __GNUC__
