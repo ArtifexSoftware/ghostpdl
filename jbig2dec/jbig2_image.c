@@ -332,7 +332,7 @@ jbig2_image_compose_opt_REPLACE(const uint8_t *s, uint8_t *d, int early, int lat
 
 /* composite one jbig2_image onto another */
 int
-jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y, Jbig2ComposeOp op)
+jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int64_t x, int64_t y, Jbig2ComposeOp op)
 {
     uint32_t w, h;
     uint32_t shift;
@@ -350,12 +350,18 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
     if (src == NULL)
         return 0;
 
-    if ((UINT32_MAX - src->width  < (uint32_t) (x > 0 ? x : -x)) ||
-        (UINT32_MAX - src->height < (uint32_t) (y > 0 ? y : -y)))
+    /* Detect if src image has no overlap with the dst image.
+     * Because the widths/heights are of type uint32_t their theoretical
+     * maximum size is UINT32_MAX. Therefore this check also rejects any
+     * x/y values outside the range [-UINT32_MAX + 1, UINT32_MAX - 1].
+     * And after this if-statement x/y must necessarily fall within this
+     * closed range.
+     */
+    if (
+            (x <= -((int64_t) src->width)) || (x >= (int64_t) dst->width) ||
+            (y <= -((int64_t) src->height)) || (y >= (int64_t) dst->height))
     {
-#ifdef JBIG2_DEBUG
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "overflow in compose_image");
-#endif
+        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "src image entirely outside dst image in compose_image");
         return 0;
     }
 
@@ -377,44 +383,39 @@ jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int 
      * careful not to read off the right hand edge; this is what the late flag is for.
      */
 
-    /* clip */
     w = src->width;
     h = src->height;
-    shift = (x & 7);
+    shift = (uint32_t) (x & 7);
     ss = src->data - early;
 
+    /* Since we know that x/y are now limited to [-UINT32_MAX + 1, UINT32_MAX - 1],
+     * we know that we can't accidentally negate an INT64_MIN. Moreover, we know
+     * that their negated values fit within an uint32_t, so casting to uint32_t is
+     * safe.
+     */
+
+    /* clip left/top */
     if (x < 0) {
-        if (w < (uint32_t) -x)
-            w = 0;
-        else
-            w += x;
-        ss += (-x-1)>>3;
+        uint32_t negx = (uint32_t) (-x);
+        w -= negx;
+        ss += (negx-1)>>3;
         x = 0;
     }
     if (y < 0) {
-        if (h < (uint32_t) -y)
-            h = 0;
-        else
-            h += y;
-        syoffset = -y * src->stride;
+        uint32_t negy = (uint32_t) (-y);
+        h -= negy;
+        syoffset = negy * src->stride;
         y = 0;
     }
+
+    /* clip right/bottom */
     if ((uint32_t)x + w > dst->width)
-    {
-        if (dst->width < (uint32_t)x)
-            w = 0;
-        else
-            w = dst->width - x;
-    }
+        w = dst->width - ((uint32_t) x);
     if ((uint32_t)y + h > dst->height)
-    {
-        if (dst->height < (uint32_t)y)
-            h = 0;
-        else
-            h = dst->height - y;
-    }
+        h = dst->height - ((uint32_t) y);
 #ifdef JBIG2_DEBUG
-    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "compositing %dx%d at (%d, %d) after clipping", w, h, x, y);
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, JBIG2_UNKNOWN_SEGMENT_NUMBER, "compositing %ux%u at (%u, %u) after clipping",
+        w, h, (uint32_t) x, (uint32_t) y);
 #endif
 
     /* check for zero clipping region */
