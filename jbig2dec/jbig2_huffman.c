@@ -50,8 +50,8 @@ struct _Jbig2HuffmanState {
     uint32_t this_word;
     uint32_t next_word;
     uint32_t offset_bits;
-    uint32_t offset;
-    uint32_t offset_limit;
+    size_t offset;
+    size_t offset_limit;
 
     Jbig2WordStream *ws;
     Jbig2Ctx *ctx;
@@ -211,7 +211,7 @@ jbig2_huffman_advance(Jbig2HuffmanState *hs, size_t advance)
 {
     int code;
     hs->offset += advance & ~3;
-    hs->offset_bits += (advance & 3) << 3;
+    hs->offset_bits += ((uint32_t) (advance & 3)) << 3;
     if (hs->offset_bits >= 32) {
         hs->offset += 4;
         hs->offset_bits -= 32;
@@ -232,7 +232,7 @@ jbig2_huffman_advance(Jbig2HuffmanState *hs, size_t advance)
 /* return the offset of the huffman decode pointer (in bytes)
  * from the beginning of the WordStream
  */
-uint32_t
+size_t
 jbig2_huffman_offset(Jbig2HuffmanState *hs)
 {
     return hs->offset + (hs->offset_bits >> 3);
@@ -524,7 +524,7 @@ jbig2_table_read_bits(const byte *data, size_t *bitoffset, const int bitlen)
 {
     uint32_t result = 0;
     size_t byte_offset = *bitoffset / 8;
-    const int endbit = (*bitoffset & 7) + bitlen;
+    const int endbit = ((int) (*bitoffset & 7)) + bitlen;
     const int n_proc_bytes = (endbit + 7) / 8;
     const int rshift = n_proc_bytes * 8 - endbit;
     int i;
