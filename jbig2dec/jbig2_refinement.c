@@ -234,14 +234,14 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
 }
 #endif
 
-typedef uint32_t(*ContextBuilder)(const Jbig2RefinementRegionParams *, Jbig2Image *, int, int);
+typedef uint32_t(*ContextBuilder)(const Jbig2RefinementRegionParams *, Jbig2Image *, int64_t, int64_t);
 
 static int
-implicit_value(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
+implicit_value(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int64_t x, int64_t y)
 {
     Jbig2Image *ref = params->GRREFERENCE;
-    const int32_t i = x - params->GRREFERENCEDX;
-    const int32_t j = y - params->GRREFERENCEDY;
+    const int64_t i = x - params->GRREFERENCEDX;
+    const int64_t j = y - params->GRREFERENCEDY;
     int m = jbig2_image_get_pixel(ref, i, j);
 
     (void) image;
@@ -258,7 +258,7 @@ implicit_value(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int
 }
 
 static uint32_t
-mkctx0(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
+mkctx0(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int64_t x, int64_t y)
 {
     Jbig2Image *ref = params->GRREFERENCE;
     const int32_t dx = params->GRREFERENCEDX;
@@ -282,7 +282,7 @@ mkctx0(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int 
 }
 
 static uint32_t
-mkctx1(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int x, int y)
+mkctx1(const Jbig2RefinementRegionParams *params, Jbig2Image *image, int64_t x, int64_t y)
 {
     Jbig2Image *ref = params->GRREFERENCE;
     const int32_t dx = params->GRREFERENCEDX;
