@@ -346,8 +346,10 @@ work similarly. */
 static inline int
 jbig2_image_get_pixel_fast(Jbig2Image *image, int64_t x, int64_t y)
 {
-    const int byte = (x >> 3) + y * image->stride;
-    const int bit = 7 - (x & 7);
+    size_t sx = (size_t) x;
+    size_t sy = (size_t) y;
+    size_t byte = (sx >> 3) + sy * image->stride;
+    int bit = 7 - ((int) (sx & 7));
 
     return ((image->data[byte] >> bit) & 1);
 }

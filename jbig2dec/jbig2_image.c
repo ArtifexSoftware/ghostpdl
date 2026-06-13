@@ -477,13 +477,20 @@ jbig2_image_get_pixel(Jbig2Image *image, int64_t x, int64_t y)
 {
     const int64_t w = image->width;
     const int64_t h = image->height;
-    const int byte = (x >> 3) + y * image->stride;
-    const int bit = 7 - (x & 7);
+    size_t sx, sy;
+    size_t byte;
+    int bit;
 
     if ((x < 0) || (x >= w))
         return 0;
     if ((y < 0) || (y >= h))
         return 0;
+
+    sx = (size_t) x;
+    sy = (size_t) y;
+
+    byte = (sx >> 3) + sy * image->stride;
+    bit = 7 - ((int) (sx & 7));
 
     return ((image->data[byte] >> bit) & 1);
 }
@@ -494,17 +501,22 @@ jbig2_image_set_pixel(Jbig2Image *image, int64_t x, int64_t y, bool value)
 {
     const int64_t w = image->width;
     const int64_t h = image->height;
-    int scratch, mask;
-    int bit, byte;
+    uint8_t scratch, mask;
+    size_t sx, sy;
+    size_t byte;
+    int bit;
 
     if ((x < 0) || (x >= w))
         return;
     if ((y < 0) || (y >= h))
         return;
 
-    byte = (x >> 3) + y * image->stride;
-    bit = 7 - (x & 7);
-    mask = (1 << bit) ^ 0xff;
+    sx = (size_t) x;
+    sy = (size_t) y;
+
+    byte = (sx >> 3) + sy * image->stride;
+    bit = 7 - ((int) (sx & 7));
+    mask = (uint8_t) ((1 << bit) ^ 0xff);
 
     scratch = image->data[byte] & mask;
     image->data[byte] = scratch | (value << bit);
