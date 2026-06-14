@@ -695,12 +695,12 @@ jbig2_table(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
 
 #ifdef JBIG2_DEBUG
         {
-            int i;
+            size_t i;
 
             for (i = 0; i < NTEMP; i++) {
                 jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-                            "Line: %d, PREFLEN: %d, RANGELEN: %d, RANGELOW: %d",
-                            i, params->lines[i].PREFLEN, params->lines[i].RANGELEN, params->lines[i].RANGELOW);
+                            "Line: "FMTZ", PREFLEN: %d, RANGELEN: %d, RANGELOW: %d",
+                            (FMTZ_CAST) i, params->lines[i].PREFLEN, params->lines[i].RANGELEN, params->lines[i].RANGELOW);
             }
         }
 #endif
