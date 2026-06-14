@@ -790,7 +790,7 @@ test_get_word1(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t offset, uint32_t *wo
     return ret;
 }
 
-static int test1()
+static int test1(void)
 {
     Jbig2Ctx *ctx;
     Jbig2HuffmanTable *tables[5];
@@ -2104,7 +2104,7 @@ test_get_word2(Jbig2Ctx *ctx, Jbig2WordStream *self, size_t offset, uint32_t *wo
     return ret;
 }
 
-static int test2()
+static int test2(void)
 {
     Jbig2Ctx *ctx;
     int success = 0;
