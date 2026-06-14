@@ -2689,7 +2689,7 @@ static int Memento_Internal_checkAllFreed(Memento_BlkHeader *memblk, void *arg)
         showBlock(memblk, ' ');
         if (data->freeCorrupt) {
             fprintf(stderr, " index %d (address "FMTP") onwards", (int)data->index,
-                    &((char *)MEMBLK_TOBLK(memblk))[data->index]);
+                    (void *) &((char *)MEMBLK_TOBLK(memblk))[data->index]);
             if (data->preCorrupt) {
                 fprintf(stderr, "+ preguard");
             }

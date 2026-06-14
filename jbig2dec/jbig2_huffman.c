@@ -139,11 +139,11 @@ jbig2_dump_huffman_table(const Jbig2HuffmanTable *table)
     int i;
     int table_size = (1 << table->log_table_size);
 
-    fprintf(stderr, "huffman table %p (log_table_size=%d, %d entries, entries=%p):\n", table, table->log_table_size, table_size, table->entries);
+    fprintf(stderr, "huffman table %p (log_table_size=%d, %d entries, entries=%p):\n", (void *) table, table->log_table_size, table_size, (void *) table->entries);
     for (i = 0; i < table_size; i++) {
         fprintf(stderr, "%6d: PREFLEN=%d, RANGELEN=%d, ", i, table->entries[i].PREFLEN, table->entries[i].RANGELEN);
         if (table->entries[i].flags & JBIG2_HUFFMAN_FLAGS_ISEXT) {
-            fprintf(stderr, "ext=%p", table->entries[i].u.ext_table);
+            fprintf(stderr, "ext=%p", (void *) table->entries[i].u.ext_table);
         } else {
             fprintf(stderr, "RANGELOW=%d", table->entries[i].u.RANGELOW);
         }
