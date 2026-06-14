@@ -88,7 +88,7 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
     }
 #ifdef JBIG2_DEBUG_DUMP
     {
-        static count = 0;
+        static unsigned int count = 0;
         char name[32];
         int code;
 
@@ -143,8 +143,9 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
 
 #ifdef JBIG2_DEBUG_DUMP
     {
-        static count = 0;
+        static unsigned int count = 0;
         char name[32];
+        int code;
 
         snprintf(name, 32, "refin-%d.pbm", count);
         code = jbig2_image_write_pbm_file(ref, name);
