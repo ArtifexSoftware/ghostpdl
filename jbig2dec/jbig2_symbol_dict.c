@@ -44,6 +44,9 @@
 #include "jbig2_segment.h"
 #include "jbig2_symbol_dict.h"
 #include "jbig2_text.h"
+#ifdef OUTPUT_PBM
+#include "jbig2_image_rw.h"
+#endif
 
 /* Table 13 */
 typedef struct {

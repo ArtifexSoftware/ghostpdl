@@ -39,6 +39,9 @@
 #include "jbig2_page.h"
 #include "jbig2_refinement.h"
 #include "jbig2_segment.h"
+#ifdef JBIG2_DEBUG_DUMP
+#include "jbig2_image_rw.h"
+#endif
 
 #define pixel_outside_field(x, y) \
     ((y) < -128 || (y) > 0 || (x) < -128 || ((y) < 0 && (x) > 127) || ((y) == 0 && (x) >= 0))

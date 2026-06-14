@@ -34,6 +34,10 @@
 #include "jbig2_page.h"
 #include "jbig2_segment.h"
 
+#ifdef OUTPUT_PBM
+#include "jbig2_image_rw.h"
+#endif
+
 /* dump the page struct info */
 static void
 dump_page_info(Jbig2Ctx *ctx, Jbig2Segment *segment, Jbig2Page *page)
