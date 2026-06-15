@@ -259,6 +259,8 @@ set_output_format(jbig2dec_params_t *params, const char *format)
         params->output_format = jbig2dec_format_png;
         return 0;
     }
+#else
+    (void) format;
 #endif
     /* default to pbm */
     params->output_format = jbig2dec_format_pbm;
