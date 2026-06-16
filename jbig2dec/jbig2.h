@@ -37,11 +37,8 @@ typedef enum {
 } Jbig2Severity;
 
 typedef enum {
-    JBIG2_OPTIONS_EMBEDDED = 1,
-    JBIG2_OPTIONS_EMBEDDED_FORGIVING = 3
+    JBIG2_OPTIONS_EMBEDDED = 1
 } Jbig2Options;
-
-#define JBIG2_SUPPORTS_FORGIVING
 
 /* forward public structure declarations */
 typedef struct _Jbig2Allocator Jbig2Allocator;

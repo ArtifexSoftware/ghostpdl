@@ -136,9 +136,7 @@ jbig2_ctx_new_imp(Jbig2Allocator *allocator, Jbig2Options options, Jbig2GlobalCt
     result->error_callback = error_callback;
     result->error_callback_data = error_callback_data;
 
-    result->state = (options & JBIG2_OPTIONS_EMBEDDED) ? JBIG2_FILE_SEQUENTIAL_HEADER : JBIG2_FILE_HEADER;
-    if ((options & JBIG2_OPTIONS_EMBEDDED_FORGIVING) == JBIG2_OPTIONS_EMBEDDED_FORGIVING)
-        result->state = JBIG2_FILE_HEADER_MAYBE;
+    result->state = (options & JBIG2_OPTIONS_EMBEDDED) ? JBIG2_FILE_HEADER_MAYBE : JBIG2_FILE_HEADER;
 
     result->buf = NULL;
 
