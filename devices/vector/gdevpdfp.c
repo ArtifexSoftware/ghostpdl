@@ -532,26 +532,6 @@ gdev_pdf_put_params_impl(gx_device * dev, const gx_device_pdf * save_dev, gs_par
         }
     }
 
-    {
-        gs_param_string ocrstr;
-
-        code = param_read_string(plist, (param_name = "UseOCR"), &ocrstr);
-        switch(code) {
-            case 0:
-                if (ocrstr.size == 5 && memcmp(ocrstr.data, "Never", 5) == 0)
-                    pdev->UseOCR = UseOCRNever;
-                if (ocrstr.size == 8 && memcmp(ocrstr.data, "AsNeeded", 8) == 0)
-                    pdev->UseOCR = UseOCRAsNeeded;
-                if (ocrstr.size == 6 && memcmp(ocrstr.data, "Always", 6) == 0)
-                    pdev->UseOCR = UseOCRAlways;
-                break;
-            case 1:
-                break;
-            default:
-                param_signal_error(plist, param_name, code);
-                break;
-        }
-    }
 #endif
 
     /*
