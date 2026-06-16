@@ -685,7 +685,7 @@ xps_decode_font_char_imp(xps_font_t *font, int code)
                     if (startCharCode < 0 || endCharCode < 0 || startGlyphCode < 0)
                         return gs_error_invalidfont;
                     if (code >= startGlyphCode && code <= (startGlyphCode + (endCharCode - startCharCode))) {
-                        return startGlyphCode + (code - startCharCode);
+                        return startCharCode + (code - startGlyphCode);
                     }
                 }
             }
