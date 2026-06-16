@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -998,7 +998,7 @@ docxwrite_process_plain_text(gx_device_docxwrite_t *tdev, gs_text_enum_t *pte)
             ch = pte->text.data.chars[pte->index];
         } else if (operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH)) {
             if (operation & TEXT_FROM_GLYPHS) {
-                gdata = pte->text.data.glyphs + pte->index++;
+                gdata = pte->text.data.glyphs + pte->index;
             } else {
                 gdata = &pte->text.data.d_glyph;
             }
