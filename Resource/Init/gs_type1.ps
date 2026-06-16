@@ -245,10 +245,12 @@ currentdict /.loadfont1 .undef
 %	<font> <code|name> <name> <charstring> .type1execchar -
 
 (%Type1BuildChar)  cvn {	% <font> <code> %Type1BuildChar -
-  1 index /Encoding get 1 index get //.type1build exec .type1execchar
+  pop pop
+  (%stderr) (w) file dup (%% Warning: %Type1BuildChar operator no longer supported\n) writestring flushfile
 } .internalbind def
 (%Type1BuildGlyph) cvn {	% <font> <name> %Type1BuildGlyph -
-  dup //.type1build exec .type1execchar
+  pop pop
+  (%stderr) (w) file dup (%% Warning: %Type1BuildGlyph operator no longer supported\n) writestring flushfile
 } .internalbind def
 
 1183615869 internaldict begin
@@ -257,30 +259,16 @@ currentdict /.loadfont1 .undef
 % Handling the one with the extra Private dictionary requires fabricating
 % a Type 1 font on the fly, since we aren't currently prepared to parse the
 % dictionary any other way.
+
+% Procedure implementation removed from the 10.08.0 release
 /CCRun {	% <font> <code|name> <charstring> CCRun -
                 % <font> <code|name> <charstring> <Private> CCRun -
   dup type /dicttype eq {
-    dup 4 index /Private .knownget { ne } { pop //true } ifelse {
-                % The Private dictionary was supplied, and is different
-                % from the Private dictionary of the font.  Fabricate a
-                % Type 1 font with this Private dictionary.  Most of the
-                % font entries are arbitrary or not needed.
-      .currentglobal //false .setglobal 10 dict exch .setglobal begin
-        /Private exch def
-        /FontType 1 def
-        /FontMatrix 3 index /FontMatrix get def
-        /Encoding 3 index /Encoding .knownget not { StandardEncoding } if def
-        /FontBBox 3 index /FontBBox .knownget not { {0 0 0 0} } if def
-        /PaintType 0 def
-        /CharStrings 1 dict dup /.notdef () put def
-      3 -1 roll pop () currentdict end .buildfont1 exch pop 3 1 roll
-    } {
-      pop
-    } ifelse
+    pop
   } if
-  1 index dup type /integertype eq {
-    3 index /Encoding get exch get
-  } if exch .type1execchar
+  pop pop pop
+  (%stderr) (w) file dup (%% Warning: CCRun procedure no longer supported\n) writestring flushfile
+
 } .internalbind def
 
 % setweightvector is an undocumented procedure that force writes
@@ -300,10 +288,12 @@ buildfontdict 4 /.buildfont4 cvx put
 /.buildfont2 where not { (%END2) .skipeof } if
 pop
 (%Type2BuildChar)  cvn {	% <font> <code> %Type2BuildChar -
-  1 index /Encoding get 1 index get //.type1build exec .type2execchar
+  pop pop
+  (%stderr) (w) file dup (%% Warning: %Type2BuildChar operator no longer supported\n) writestring flushfile
 } .internalbind def
 (%Type2BuildGlyph) cvn {	% <font> <name> %Type2BuildGlyph -
-  dup //.type1build exec .type2execchar
+  pop pop
+  (%stderr) (w) file dup (%% Warning: %Type2BuildGlyph operator no longer supported\n) writestring flushfile
 } .internalbind def
 buildfontdict 2 /.buildfont2 cvx put
 %END2
