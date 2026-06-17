@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -105,8 +105,10 @@ rc_free_proc(rc_free_struct_only);
 
 #define rc_free_struct(vp, cname)\
   BEGIN\
+  if (vp) {\
     IF_RC_DEBUG(rc_trace_free_struct(vp, &(vp)->rc, cname));\
     (vp)->rc.free((vp)->rc.memory, (void *)(vp), cname);\
+  }\
   END
 
 /* ------ Reference counting ------ */
