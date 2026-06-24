@@ -657,10 +657,10 @@ gsicc_set_srcgtag_struct(gx_device *pdev, gsicc_manager_t *icc_manager, const ch
     /* If we don't have an icc manager or if this thing is already set
        then ignore the call.  For now, I am going to allow it to
        be set one time. */
-    if (icc_manager == NULL || icc_manager->srcgtag_profile != NULL) {
-        if (icc_manager->srcgtag_profile != NULL)
-            code = dev_proc(pdev, dev_spec_op)(pdev, gxdso_set_srcgtag, icc_manager->srcgtag_profile, sizeof(srcgtag));
+    if (icc_manager == NULL)
         return 0;
+    if (icc_manager->srcgtag_profile != NULL) {
+        return dev_proc(pdev, dev_spec_op)(pdev, gxdso_set_srcgtag, icc_manager->srcgtag_profile, sizeof(srcgtag));
     } else {
         mem = icc_manager->memory->non_gc_memory;
         code = gsicc_open_search(pname, namelen, mem, mem->gs_lib_ctx->profiledir,
