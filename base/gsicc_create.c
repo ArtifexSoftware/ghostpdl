@@ -1448,7 +1448,7 @@ gsicc_create_initialize_clut(gsicc_clut *clut)
     clut->clut_num_entries = entries = clut->clut_dims[0];
 
     for (k = 1; k < clut->clut_num_input; k++) {
-        entries = clut->clut_num_entries * clut->clut_dims[k];
+        entries = (int64_t)clut->clut_num_entries * clut->clut_dims[k];
         if (entries > INT_MAX || entries / clut->clut_num_entries != clut->clut_dims[k]) {
             clut->clut_num_entries = 0;
             break;
