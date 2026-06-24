@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -124,6 +124,30 @@ s_proc_set_defaults(stream_state * st)
     make_null(&ss->data);
 }
 
+static int s_proc_copy_string(i_ctx_t * i_ctx_p, ref *dest, ref *src, uint mem)
+{
+    int code = 0;
+    uint saved_space = avm_local;
+
+    saved_space = imemory_space(iimemory);
+
+    if (imemory_space(iimemory) != mem)
+        ialloc_set_space(idmemory, mem);
+
+    code = gs_alloc_string_ref(iimemory, dest, 0, r_size(src), "copy_cspace_string");
+
+    if (imemory_space(iimemory) != saved_space)
+        ialloc_set_space(idmemory, saved_space);
+
+    if (code < 0)
+        return code;
+
+    r_copy_attrs(dest, a_all, src);
+
+    memcpy(dest->value.bytes, src->value.bytes, r_size(src));
+    return 0;
+}
+
 /* ---------------- Read streams ---------------- */
 
 /* Forward references */
@@ -220,11 +244,23 @@ s_proc_read_continue(i_ctx_t *i_ctx_p)
     os_ptr opbuf = op - 1;
     stream *ps;
     stream_proc_state *ss;
+    uint s1, s2;
 
     check_file(ps, op);
     check_read_type(*opbuf, t_string);
     while ((ps->end_status = 0, ps->strm) != 0)
         ps = ps->strm;
+    s1 = r_space(op);
+    s2 = r_space(opbuf);
+    if (!r_is_local(op) && r_is_local(opbuf)) {
+        ref copy;
+        int code = 0;
+
+        code = s_proc_copy_string(i_ctx_p, &copy, opbuf, r_space(op));
+        if (code < 0)
+            return code;
+        *opbuf = copy;
+    }
     ss = (stream_proc_state *) ps->state;
     ss->data = *opbuf;
     ss->index = 0;
@@ -359,6 +395,15 @@ s_proc_write_continue(i_ctx_t *i_ctx_p)
         ps = ps->strm;
     }
     ps->end_status = 0;
+    if (!r_is_local(op) && r_is_local(opbuf)) {
+        ref copy;
+        int code = 0;
+
+        code = s_proc_copy_string(i_ctx_p, &copy, opbuf, r_space(op));
+        if (code < 0)
+            return code;
+        *opbuf = copy;
+    }
     ss = (stream_proc_state *) ps->state;
     ss->data = *opbuf;
     ss->index = 0;
