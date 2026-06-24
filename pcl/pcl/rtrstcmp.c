@@ -142,8 +142,10 @@ uncompress_3(pcl_seed_row_t * pout, const byte * pin, int in_size)
             break;
         if (cnt > plim - pb)
             cnt = plim - pb;
-        while (cnt-- > 0)
+        while (cnt > 0) {
+            cnt--;
             *pb++ = *ptmp++;
+        }
     }
     pout->is_blank = (pout->is_blank && (in_size == 0));
 }
