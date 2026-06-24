@@ -864,7 +864,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
          * or some other questionable situation in which the FID
          * was preserved.  Pretend the FID wasn't there.
          */
-        if (obj_eq(pfont->memory, pfont_dict(pfont), op)) {
+        if (obj_eq(pfont->memory, pfont_dict(pfont), op) && pfont->FontType == ftype) {
             if (pfont->base == pfont) {	/* original font */
                 if (!level2_enabled)
                     return_error(gs_error_invalidfont);
