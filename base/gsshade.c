@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -31,6 +31,7 @@
 #include "gxshade4.h"
 #include "gzpath.h"
 #include "gzcpath.h"
+#include "gsfunc3.h"
 
 /* ================ Initialize shadings ================ */
 
@@ -78,6 +79,19 @@ check_CBFD(const gs_shading_params_t * params,
     if (function != 0) {
         if (function->params.m != m || function->params.n != ncomp)
             return_error(gs_error_rangecheck);
+        if (function->head.type == function_type_ArrayedOutput) {
+            /* If the Function member is an array it must contain either n 1-in, 1-out function dictionaries
+             * or (type 1, function-based shadings) n 2-in, 1-out function dictionaries. Either way all the
+             * functions have to have a single output, so we need to check that.
+             */
+            int i = 0;
+            gs_function_AdOt_params_t *a_params = (gs_function_AdOt_params_t *)&function->params;
+
+            for (i = 0; i < a_params->n;i++) {
+                if (a_params->Functions[i]->params.m != m || a_params->Functions[i]->params.n != 1)
+                    return_error(gs_error_rangecheck);
+            }
+        }
         /*
          * The Adobe documentation says that the function's domain must
          * be a superset of the domain defined in the shading dictionary.
