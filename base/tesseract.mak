@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -1044,9 +1044,6 @@ TESSERACT_OBJS_4=\
 	$(TESSOBJ)wordrec_tface.$(OBJ)\
 	$(TESSOBJ)wordrec_wordrec.$(OBJ)\
 	$(TESSOBJ)ccutil_ccutil.$(OBJ)\
-	$(TESSOBJ)ccutil_clst.$(OBJ)\
-	$(TESSOBJ)ccutil_elst.$(OBJ)\
-	$(TESSOBJ)ccutil_elst2.$(OBJ)\
 	$(TESSOBJ)ccutil_errcode.$(OBJ)\
 	$(TESSOBJ)ccutil_params.$(OBJ)\
 	$(TESSOBJ)ccutil_scanutils.$(OBJ)\
@@ -1082,6 +1079,13 @@ TESSERACT_OBJS_4=\
 	$(TESSOBJ)arch_dotproductneon.$(OBJ)\
 	$(TESSOBJ)arch_intsimdmatrixsse.$(OBJ)\
 	$(TESSOBJ)arch_intsimdmatrixneon.$(OBJ)
+
+# These ones were required for an older version of tesseract.
+# Now disabled.
+TESSERACT_OBJS_5=\
+	$(TESSOBJ)ccutil_clst.$(OBJ)\
+	$(TESSOBJ)ccutil_elst.$(OBJ)\
+	$(TESSOBJ)ccutil_elst2.$(OBJ)\
 
 # Targets needed for TESSERACT_LEGACY
 TESSERACT_LEGACY_OBJS=\
