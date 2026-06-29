@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -310,6 +310,12 @@ zkshow(i_ctx_t *i_ctx_p)
 static int
 finish_show(i_ctx_t *i_ctx_p)
 {
+    register es_ptr ep = esp;
+    gs_text_enum_t *penum = esenum(ep);
+
+    if (r_is_struct(ep))
+        rc_decrement(penum, "op_show_free");
+
     return 0;
 }
 
@@ -318,8 +324,14 @@ finish_show(i_ctx_t *i_ctx_p)
 static int
 finish_stringwidth(i_ctx_t *i_ctx_p)
 {
+    register es_ptr ep = esp;
     os_ptr op = osp;
     gs_point width;
+
+    gs_text_enum_t *penum = esenum(ep);
+
+    if (r_is_struct(ep))
+        rc_decrement(penum, "op_show_free");
 
     gs_text_total_width(senum, &width);
     push(2);
@@ -673,6 +685,7 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
     make_op_estack(&eseproc(ep), endproc);
     /* The text enumerators are always allocated in local VM */
     make_struct(ep, iimemory_local->space, penum);
+    rc_increment(penum);
     esp = ep;
     return 0;
 }
