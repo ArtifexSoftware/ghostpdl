@@ -36,6 +36,7 @@
 #include "gsicc_create.h"
 #include "gsicc_manage.h"
 #include "gsicc_profilecache.h"
+#include "gxgstate.h"
 
 /* Prototype */
 int cieicc_prepare_caches(i_ctx_t *i_ctx_p, const gs_range * domains,
@@ -477,31 +478,47 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
         code = cie_cache_push_finish(i_ctx_p, cie_defg_finish, imem, pcie);
         if (code < 0)
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        rc_increment(pcie);
         code = cie_defg_param(i_ctx_p, imemory, CIEDict, pcie, &procs,
             &has_abc_procs, &has_lmn_procs, &has_defg_procs,ptref);
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(pcie, "ciedefgspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
         /* Add the color space to the profile cache */
         code = gsicc_add_cs(igs, pcs,dictkey);
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(pcie, "ciedefgspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
     } else {
         rc_increment(pcs);
     }
-    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    code = cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    if (code < 0)
+        rc_decrement(pcie, "ciedefgspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
+    return code;
 }
 
 static int
 cie_defg_finish(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_cie_defg *pcie = r_ptr(op, gs_cie_defg);
+    gs_cie_defg *pcie;
 
+    gs_color_space *pcs = gs_currentcolorspace_inline(igs);
+
+    if (!r_is_struct(op))
+        return_error(gs_error_typecheck);
+    pcie = r_ptr(op, gs_cie_defg);
+    rc_decrement(pcie, "cie_defg_finish");
+    pop(1);
+    if (gs_color_space_get_index(pcs) != gs_color_space_index_CIEDEFG)
+        return_error(gs_error_typecheck);
     pcie->DecodeDEFG = DecodeDEFG_from_cache;
     pcie->DecodeABC = DecodeABC_from_cache;
     pcie->common.DecodeLMN = DecodeLMN_from_cache;
     gs_cie_defg_complete(pcie);
-    pop(1);
     return 0;
 }
 
@@ -592,31 +609,46 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
         code = cie_cache_push_finish(i_ctx_p, cie_def_finish, imem, pcie);
         if (code < 0)
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        rc_increment(pcie);
         code = cie_def_param(i_ctx_p, imemory, CIEDict, pcie, &procs,
             &has_abc_procs, &has_lmn_procs, &has_def_procs, ptref);
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(pcie, "ciedefspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
         /* Add the color space to the profile cache */
         code = gsicc_add_cs(igs, pcs,dictkey);
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(pcie, "ciedefspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
     } else {
         rc_increment(pcs);
     }
-    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    code =  cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    if (code < 0)
+        rc_decrement(pcie, "ciedefspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
+    return code;
 }
 
 static int
 cie_def_finish(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_cie_def *pcie = r_ptr(op, gs_cie_def);
+    gs_cie_def *pcie;
+    gs_color_space *pcs = gs_currentcolorspace_inline(igs);
 
+    if (!r_is_struct(op))
+        return_error(gs_error_typecheck);
+    pcie = r_ptr(op, gs_cie_def);
+    rc_decrement(pcie, "cie_def_finish");
+    pop(1);
+    if (gs_color_space_get_index(pcs) != gs_color_space_index_CIEDEF)
+        return_error(gs_error_typecheck);
     pcie->DecodeDEF = DecodeDEF_from_cache;
     pcie->DecodeABC = DecodeABC_from_cache;
     pcie->common.DecodeLMN = DecodeLMN_from_cache;
     gs_cie_def_complete(pcie);
-    pop(1);
     return 0;
 }
 
@@ -649,16 +681,19 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
     if (pcs == NULL ) {
         /* Stable memory due to current caching of color space */
         code = gs_cspace_build_CIEABC(&pcs, NULL, mem->stable_memory);
-    if (code < 0)
-        return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
-    pcie = pcs->params.abc;
+        if (code < 0)
+            return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        pcie = pcs->params.abc;
         code = cie_cache_push_finish(i_ctx_p, cie_abc_finish, imem, pcie);
         if (code < 0)
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        rc_increment(pcie); /* cie_cache_push_finish stored a ref on the exec stack, see bug #709468 */
         code = cie_abc_param(i_ctx_p, imemory, CIEDict, pcie, &procs,
             &has_abc_procs, &has_lmn_procs);
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(pcie, "cieabcspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
         /* Set the color space in the graphic state.  The ICC profile
             will be set later if we actually use the space.  Procs will be
             sampled now though. Also, the finish procedure is on the stack
@@ -667,24 +702,36 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
             ahead and create an MLUT for this thing */
         /* Add the color space to the profile cache */
         code = gsicc_add_cs(igs, pcs,dictkey);
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(pcie, "cieabcspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
     } else {
         rc_increment(pcs);
     }
-    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    code = cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    if (code < 0)
+        rc_decrement(pcie, "cieabcspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
+    return code;
 }
 
 static int
 cie_abc_finish(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_cie_abc *pcie = r_ptr(op, gs_cie_abc);
+    gs_cie_abc *pcie;
+    gs_color_space *pcs = gs_currentcolorspace_inline(igs);
 
+    if (!r_is_struct(op))
+        return_error(gs_error_typecheck);
+    pcie = r_ptr(op, gs_cie_abc);
+    rc_decrement(pcie, "cie_abc_finish");
+    pop(1);
+    if (gs_color_space_get_index(pcs) != gs_color_space_index_CIEABC)
+        return_error(gs_error_typecheck);
     pcie->DecodeABC = DecodeABC_from_cache;
     pcie->common.DecodeLMN = DecodeLMN_from_cache;
     gs_cie_abc_complete(pcie);
-    pop(1);
     return 0;
 }
 
@@ -728,6 +775,7 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, uint64_t dictkey)
         code = cie_cache_push_finish(i_ctx_p, cie_a_finish, (gs_ref_memory_t *)imem, pcie);
         if (code < 0)
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        rc_increment(pcie);
         if (!has_a_procs && !has_lmn_procs) {
             pcie->common.caches.DecodeLMN->floats
                 .params.is_identity = true;
@@ -738,8 +786,10 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, uint64_t dictkey)
             if (has_a_procs) {
                 code = cie_prepare_iccproc(i_ctx_p, &pcie->RangeA,
                     &procs.Decode.A, &pcie->caches.DecodeA.floats, pcie, imem, "Decode.A");
-                if (code < 0)
+                if (code < 0) {
+                    rc_decrement(pcie, "cieaspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
                     return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+                }
             } else {
                 pcie->caches.DecodeA.floats.params.is_identity = true;
             }
@@ -758,26 +808,38 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, uint64_t dictkey)
         }
         /* Add the color space to the profile cache */
         code = gsicc_add_cs(igs, pcs,dictkey);
-        if (code < 0)
+        if (code < 0) {
+            rc_decrement(pcie, "cieaspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
             return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+        }
     } else {
         rc_increment(pcs);
     }
     /* Set the color space in the graphic state.  The ICC profile may be set after this
            due to the needed sampled procs */
-    return cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    code = cie_set_finish(i_ctx_p, pcs, &procs, edepth, code);
+    if (code < 0)
+        rc_decrement(pcie, "cieaspace");  /* cie_set_finish clears the exec stack on error, so we need to decrement the reference to the CIE struct stored there */
+    return code;
 }
 
 static int
 cie_a_finish(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    gs_cie_a *pcie = r_ptr(op, gs_cie_a);
+    gs_cie_a *pcie;
+    gs_color_space *pcs = gs_currentcolorspace_inline(igs);
 
+    if (!r_is_struct(op))
+        return_error(gs_error_typecheck);
+    pcie = r_ptr(op, gs_cie_a);
+    rc_decrement(pcie, "cie_a_finish");
+    pop(1);
+    if (gs_color_space_get_index(pcs) != gs_color_space_index_CIEA)
+        return_error(gs_error_typecheck);
     pcie->DecodeA = DecodeA_from_cache;
     pcie->common.DecodeLMN = DecodeLMN_from_cache;
     gs_cie_a_complete(pcie);
-    pop(1);
     return 0;
 }
 
