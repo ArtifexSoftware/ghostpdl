@@ -516,6 +516,9 @@ static int copy_cspace_dict(i_ctx_t * i_ctx_p, ref *dest, ref *src)
         if (index == -1)
             break;
 
+        if (r_type(&eltp[0]) != t_name)
+            return_error(gs_error_typecheck);
+
         name_string_ref(imemory, &eltp[0], &cref);
         if (!r_is_proc(&eltp[1])) {
             if (r_has_type(&eltp[1], t_array)) {
