@@ -30,6 +30,7 @@
 #include "gscdevn.h"
 #include "zfunc.h"
 #include "zcolor.h"
+#include "gxdevice.h"
 
 /*
  * We store the data in a string.  Since the max size for a string is 64k,
@@ -728,8 +729,12 @@ int make_sampled_function(i_ctx_t * i_ctx_p, ref *arr, ref *pproc, gs_function_t
      * Determine space required for the sample data storage.
      */
     total_size = params.n * bits2bytes(params.BitsPerSample);
-    for (i = 0; i < params.m; i++)
-        total_size *= params.Size[i];
+    for (i = 0; i < params.m; i++) {
+        if (check_int_multiply(params.Size[i], total_size, &total_size) < 0) {
+            code = gs_note_error(gs_error_limitcheck);
+            goto fail;
+        }
+    }
     /*
      * Allocate space for the data cube itself.
      */
