@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -87,8 +87,8 @@ rinkj_screen_eb_init (RinkjDevice *self, const RinkjDeviceParams *params)
 
   RinkjDeviceParams out_params;
 
-  out_params.width = floor (z->xscale * params->width + 0.5);
-  out_params.height = floor (z->yscale * params->height + 0.5);
+  out_params.width = (int)floor (z->xscale * params->width + 0.5);
+  out_params.height = (int)floor (z->yscale * params->height + 0.5);
   out_params.n_planes = n_planes;
   out_params.plane_names = params->plane_names;
 
@@ -141,7 +141,7 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
   int xs = z->width_out;
   size_t xsb;
   int status = 0;
-  const uchar ** data_permuted = NULL;
+  uchar ** data_permuted = NULL;
   int cmyk_permutation[] = { 3, 0, 1, 2 };
   int ccmmyk_permutation[] = { 3, 0, 1, 4, 5, 2 };
   int ccmmykk_permutation[] = { 3, 6, 0, 1, 4, 5, 2 };
@@ -177,7 +177,7 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
   out_buf = (uchar **)calloc (n_planes, sizeof(char *));
   if (out_buf == NULL)
       goto out;
-  data_permuted = (const uchar **)malloc ((size_t)n_planes * sizeof(char *));
+  data_permuted = (uchar **)malloc ((size_t)n_planes * sizeof(char *));
   if (data_permuted == NULL)
       goto out;
 
@@ -189,7 +189,7 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
           status = -1;
           goto out;
       }
-      data_permuted[i] = (const uchar *)data[permutation[i]];
+      data_permuted[i] = (uchar *)data[permutation[i]];
     }
 
   status = 0;
@@ -327,7 +327,7 @@ rinkj_screen_eb_set_gamma (RinkjDevice *self, int plane, double gamma, double ma
       double v;
       v = pow (i * (1.0 / 255.0), gamma);
       v += (1 - v) * (1 - max);
-      z->lut[plane][i] = floor (0.5 + 0x1000000 * v);
+      z->lut[plane][i] = (int)floor (0.5 + 0x1000000 * v);
     }
 }
 
@@ -353,6 +353,6 @@ rinkj_screen_eb_set_lut (RinkjDevice *self, int plane, const double *lut)
     {
       double v;
       v = 1.0 - lut[i];
-      z->lut[plane][i] = floor (0.5 + 0x1000000 * v);
+      z->lut[plane][i] = (int)floor (0.5 + 0x1000000 * v);
     }
 }

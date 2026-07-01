@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1661,13 +1661,13 @@ even_better_plane_new (const EvenBetterParams *params, EvenBetterCtx *ebc,
           else
             {
               int rb_sh;
-              rb_sh = (rbscale * (1 << (2 * EVEN_SHIFT - even_c1))) / nl;
+              rb_sh = (int)((rbscale * (1 << (2 * EVEN_SHIFT - even_c1))) / nl);
               if (rb_sh > even_rlimit << (EVEN_SHIFT - even_c1))
                 rb_sh = even_rlimit << (EVEN_SHIFT - even_c1);
               rb -= rb_sh;
             }
         }
-      result->rb_lut[i] = rb;
+      result->rb_lut[i] = (int)rb;
 
     }
 
@@ -1771,7 +1771,7 @@ even_better_new (const EvenBetterParams *params)
 
   result->aspect = params->aspect;
 
-  result->even_ehi = 0.6 * (1 << EVEN_SHIFT) / (params->levels - 1);
+  result->even_ehi = (int)(0.6 * (1 << EVEN_SHIFT) / (params->levels - 1));
   result->even_elo = -result->even_ehi;
 
   result->strengths = (int *)malloc (sizeof(int) * (size_t)n_planes);
@@ -1846,10 +1846,11 @@ even_better_new (const EvenBetterParams *params)
       result->plane_ctx = (EBPlaneCtx **)calloc(n_planes, sizeof(EBPlaneCtx *));
       if (result->plane_ctx == NULL)
           goto err;
-      for (i = 0; i < n_planes; i++)
+      for (i = 0; i < n_planes; i++) {
         result->plane_ctx[i] = even_better_plane_new (params, result, i);
-      if (result->plane_ctx[i] == NULL)
+        if (result->plane_ctx[i] == NULL)
           goto err;
+      }
     }
   return result;
 
@@ -1877,8 +1878,6 @@ even_better_free (EvenBetterCtx *ctx)
   if (ctx->using_vectors)
     {
 #ifdef USE_SSE2
-      for (i = 0; i < n_planes; i += 4)
-        eb_ctx_sse2_free(ctx->sse2_ctx[i >> 2]);
       if (ctx->sse2_ctx != NULL) {
         for (i = 0; i < n_planes; i += 4)
           if (ctx->sse2_ctx[i >> 2])
@@ -1887,8 +1886,6 @@ even_better_free (EvenBetterCtx *ctx)
       }
 #endif
 #ifdef USE_AVEC
-      for (i = 0; i < n_planes; i += 4)
-        eb_ctx_avec_free(ctx->avec_ctx[i >> 2]);
       if (ctx->avec_ctx != NULL) {
         for (i = 0; i < n_planes; i += 4)
           if (ctx->avec_ctx[i >> 2])
@@ -1900,8 +1897,6 @@ even_better_free (EvenBetterCtx *ctx)
   else
 #endif
     {
-      for (i = 0; i < n_planes; i++)
-        even_better_plane_free (ctx->plane_ctx[i]);
       if (ctx->plane_ctx != NULL) {
         for (i = 0; i < n_planes; i++)
           if (ctx->plane_ctx[i])

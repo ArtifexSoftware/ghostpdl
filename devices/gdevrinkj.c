@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -884,7 +884,7 @@ rinkj_set_luts(rinkj_device *rdev,
     char key[256];
     char *val;
     rinkj_lutset lutset;
-    int i;
+    int i, code = 0;
 
     if (f == NULL)
         return_error(gs_error_ioerror);
@@ -910,18 +910,23 @@ rinkj_set_luts(rinkj_device *rdev,
             if_debug1m('r', rdev->memory, "[r]%s", linebuf);
             rinkj_add_lut(rdev, &lutset, val[0], f);
         } else if (!strcmp(key, "Dither") || !strcmp(key, "Aspect")) {
-            rinkj_device_set_param_string(cmyk_dev, key, val);
+            code = rinkj_device_set_param_string(cmyk_dev, key, val);
+            if (code < 0)
+                break;
         } else {
-            rinkj_device_set_param_string(printer_dev, key, val);
+            code = rinkj_device_set_param_string(printer_dev, key, val);
+            if (code < 0)
+                break;
         }
     }
 
     gp_fclose(f);
 
-    rinkj_apply_luts(rdev, cmyk_dev, &lutset);
+    if (code >= 0)
+        rinkj_apply_luts(rdev, cmyk_dev, &lutset);
     /* todo: free lutset contents */
 
-    return 0;
+    return code;
 }
 
 static RinkjDevice *

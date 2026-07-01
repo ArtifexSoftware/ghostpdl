@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -19,6 +19,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "gserrors.h"
 
 #include "rinkj-byte-stream.h"
 #include "rinkj-device.h"
@@ -114,6 +116,10 @@ rinkj_escp_set (RinkjDevice *self, const char *config)
       else if (!strcmp (key, "BitsPerSample"))
         {
           z->bps = atoi (val);
+          if (z->bps < 1) {
+              z->bps = 1;
+              return_error(gs_error_configurationerror);
+          }
 #ifdef VERBOSE
           fprintf (stderr, "BitsPerSample = %d\n", z->bps);
 #endif
@@ -478,7 +484,7 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
            z->model);
 #endif
 
-  if (z->model && !strcmp (z->model, "Stylus Photo 870"))
+  if (z->model && strlen(z->model) >= 16 && !strncmp (z->model, "Stylus Photo 870", 16))
     {
       z->head_xres = 360;
       z->head_yres = 120;
@@ -486,7 +492,7 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
       z->n_pins = 48;
       z->printer_weave = 0;
     }
-  else if (z->model && !strcmp (z->model, "Stylus Photo 2200"))
+  else if (z->model &&  strlen(z->model) >= 17 && !strncmp (z->model, "Stylus Photo 2200", 17))
     {
       z->head_xres = 360;
       z->head_yres = 180;
@@ -502,14 +508,14 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
       z->plane_offsets[4] = z->yres / 360;
       z->plane_offsets[5] = z->yres / 360;
     }
-  else if (z->model && !strcmp (z->model, "Stylus Photo 7600"))
+  else if (z->model &&  strlen(z->model) >= 17 && !strncmp (z->model, "Stylus Photo 7600", 17))
     {
       z->head_xres = z->xres;
       z->head_yres = z->yres;
       z->head_bps = z->bps;
       z->n_pins = 1;
     }
-  else if (z->model && !strcmp (z->model, "Stylus C80"))
+  else if (z->model &&  strlen(z->model) >= 10 && !strncmp (z->model, "Stylus C80", 10))
     {
       z->head_xres = 360;
       z->head_yres = 180;
@@ -522,7 +528,7 @@ rinkj_escp_init (RinkjDevice *self, const RinkjDeviceParams *params)
     }
   else
     {
-      z->spacing = 1;
+      z->head_yres = z->yres;
       z->n_pins = 1;
     }
 
