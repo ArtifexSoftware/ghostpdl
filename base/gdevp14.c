@@ -3760,7 +3760,6 @@ pdf14_discard_trans_layer(gx_device *dev, gs_gstate * pgs)
     /* The things that need to be cleaned up */
     pdf14_ctx *ctx = pdev->ctx;
     pdf14_smaskcolor_t *smaskcolor = pdev->smaskcolor;
-    pdf14_group_color_t *group_color = pdev->color_model_stack;
 
     /* Free up the smask color */
     if (smaskcolor != NULL) {
@@ -3770,12 +3769,8 @@ pdf14_discard_trans_layer(gx_device *dev, gs_gstate * pgs)
     }
 
     /* Free up the nested color procs and decrement the profiles */
-    if (group_color != NULL) {
-        while (group_color->previous != NULL)
-            pdf14_pop_group_color(dev, pgs);
-        gs_free_object(dev->memory->stable_memory, group_color, "pdf14_discard_trans_layer");
-        pdev->color_model_stack = NULL;
-    }
+    while (pdev->color_model_stack)
+        pdf14_pop_group_color(dev, NULL);
 
     /* Start the context clean up */
     if (ctx != NULL) {
