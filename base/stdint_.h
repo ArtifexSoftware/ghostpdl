@@ -337,7 +337,7 @@ static inline int check_64bit_multiply(int64_t x, int64_t y, int64_t *result)
     if (v > max_int64_t || (x != 0 && v / x != y))
         return -1;
     /* Otherwise apply any sign bit to the result */
-    *result = v | sign;
+    *result = sign == 0 ? (int64_t)v : (int64_t)(~v + 1);
     return 0;
 }
 
@@ -366,7 +366,7 @@ static inline int check_int_multiply(int x, int y, int *result)
 
     if (v > max_int || (x != 0 && v / x != y))
         return -1;
-    *result = v | sign;
+    *result = sign == 0 ? (int)v : (int)(~v + 1);
     return 0;
 }
 
