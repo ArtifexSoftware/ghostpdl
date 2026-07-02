@@ -189,12 +189,21 @@ int dda_will_overflow(gx_dda_fixed dda)
 {
     /* Every step, R decrements by dR. If it becomes negative, we add 1 to Q, and add N to R. */
     /* So on average we add (N-dR)/N to Q each step. So in N steps we add (N-dR) to Q. */
-    int64_t N = dda.step.N;
-    int64_t delta = dda.step.dQ * N + N - dda.step.dR;
+    int64_t delta;
+    int res;
 
-    if (delta > max_int || (delta > 0 && delta + dda.state.Q > max_int))
+    /* The values we're checking should fit in 32 bit values, hence using
+       check_int_multiply() - the int64_t variables allow us leeway for the
+       additions/subtractions.
+     */
+    if (check_int_multiply(dda.step.dQ, dda.step.N, &res) < 0)
+        return 1;
+
+    delta = (int64_t)res + dda.step.N - dda.step.dR;
+
+    if (delta > 0 && delta + dda.state.Q > max_int)
             return 1;
-    if (delta < min_int || (delta < 0 && delta + dda.state.Q < min_int))
+    if (delta < 0 && delta + dda.state.Q < min_int)
             return 1;
     return 0;
 }
