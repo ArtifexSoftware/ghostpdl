@@ -118,8 +118,7 @@ rinkj_escp_set (RinkjDevice *self, const char *config)
           z->bps = atoi (val);
           if (z->bps < 1 || z->bps > 16) {
               free (key);
-              if (val)
-                free (val);
+              free (val);
               z->bps = 1;
               return_error(gs_error_configurationerror);
           }
