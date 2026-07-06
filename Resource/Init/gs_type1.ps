@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2026 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -279,21 +279,12 @@ currentdict /.loadfont1 .undef
 } .internalbind def
 
 % setweightvector is an undocumented procedure that force writes
-% weight vector to the font. Do extra checks for safety.
-/setweightvector { % <font> <vector> setweightvector -
-  dup type dup /arraytype ne exch /packedarraytype ne and
-  2 index type /dicttype ne or {
-    /setweightvector cvx /typecheck signalerror
-  } if
-  1 index /FontType known not {
-    /setweightvector cvx /invalidfont signalerror
-  } if
-  dup gcheck 2 index gcheck not and {
-    /setweightvector cvx /invalidaccess signalerror
-  } if
-  2 copy /WeightVector exch .forceput
-  .setweightvector
-} .forcebind odef
+% weight vector to the font.
+% We keep the definition here, because this operator exists in internaldict
+% rather than systemdict. So we do this here, and remove .setweightvector
+% from systemdict in gs_init.ps
+/setweightvector systemdict /.setweightvector get def
+
 end
 
 % Register the font types for definefont.
