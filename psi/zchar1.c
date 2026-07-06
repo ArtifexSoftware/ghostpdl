@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -40,6 +40,7 @@
 #include "ichar1.h"
 #include "icharout.h"
 #include "idict.h"
+#include "iddict.h"
 #include "ifont.h"
 #include "igstate.h"
 #include "iname.h"
@@ -941,7 +942,10 @@ nobbox_stroke(i_ctx_t *i_ctx_p)
     return code;
 }
 
-/* <font> <array> .setweightvector - */
+/* <font> <array> setweightvector -
+ * setweightvector is an undocumented procedure that force writes
+ * weight vector to the font.
+ */
 static int
 zsetweightvector(i_ctx_t *i_ctx_p)
 {
@@ -957,12 +961,20 @@ zsetweightvector(i_ctx_t *i_ctx_p)
         pop(2);
         return 0;
     }
+    if (!r_is_array(op)) {
+        return_error(gs_error_typecheck);
+    }
     if (pfont->FontType != ft_encrypted && pfont->FontType != ft_encrypted2)
         return_error(gs_error_invalidfont);
     pfont1 = (gs_font_type1 *)pfont;
     size = r_size(op);
     if (size != pfont1->data.WeightVector.count)
         return_error(gs_error_invalidfont);
+
+    /* We know op - 1 is a dictionary because of font_param() above */
+    if ((code = idict_put_string_copy(op - 1, "WeightVector", op)) < 0)
+        return code;
+
     code = process_float_array(imemory, op, size, wv);
     if (code < 0)
         return code;
