@@ -251,26 +251,6 @@ context_state_load(gs_context_state_t * i_ctx_p)
     alloc_set_not_in_save(idmemory);
     r_set_space(system_dict, avm_max);
     /*
-     * Switch references from systemdict to local objects.
-     * userdict.localdicts holds these objects.  We could optimize this by
-     * only doing it if we're changing to a different local VM relative to
-     * the same global VM, but the cost is low enough relative to other
-     * things that we don't bother.
-     */
-    {
-        ref_stack_t *rdstack = &dstack->stack;
-        const ref *puserdict =
-            ref_stack_index(rdstack, ref_stack_count(rdstack) - 1 -
-                            dstack->userdict_index);
-        ref *plocaldicts;
-
-        if (dict_find_string(puserdict, "localdicts", &plocaldicts) > 0 &&
-            r_has_type(plocaldicts, t_dictionary)
-            ) {
-            dict_copy(plocaldicts, system_dict, dstack);
-        }
-    }
-    /*
      * Set systemdict.userparams to the saved copy, and then
      * set the actual user parameters.  Note that we must disable both
      * space checking and save checking while doing this.  Also,
