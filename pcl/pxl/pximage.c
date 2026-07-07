@@ -1112,6 +1112,8 @@ pxReadRastPattern(px_args_t * par, px_state_t * pxs)
 
     if (par->pv[1]->value.i == 0)
         return 0;               /* no data */
+    if (par->pv[3] != NULL && (par->pv[3]->value.i < 1 || par->pv[3]->value.i > 4))
+        return_error(gs_error_rangecheck);
 
     /* first call */
     if (par->source.available == 0)
