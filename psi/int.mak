@@ -811,7 +811,7 @@ $(PSOBJ)zchar32.$(OBJ) : $(PSSRC)zchar32.c $(OP)\
 
 $(PSOBJ)zfont32.$(OBJ) : $(PSSRC)zfont32.c $(OP)\
  $(gsccode_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxtext_h)\
- $(bfont_h) $(store_h) $(ichar_h) $(INT_MAK) $(MAKEDIRS)
+ $(bfont_h) $(store_h) $(ichar_h) $(iddict_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfont32.$(OBJ) $(C_) $(PSSRC)zfont32.c
 
 type32_=$(PSOBJ)zchar32.$(OBJ) $(PSOBJ)zfont32.$(OBJ)

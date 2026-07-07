@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,6 +25,7 @@
 #include "bfont.h"
 #include "store.h"
 #include "ichar.h"
+#include "iddict.h"
 
 /* The encode_char procedure of a Type 32 font should never be called. */
 static gs_glyph
@@ -64,6 +65,26 @@ zbuildfont32(i_ctx_t *i_ctx_p)
     return define_gs_font(i_ctx_p, (gs_font *) pfont);
 }
 
+static int
+zbuildcidfont4(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code = 0;
+    ref csd, ftype;
+
+    check_op(2);
+    check_type(*op, t_dictionary);
+    if ((code = dict_create((uint) 20, &csd)) < 0)
+        return code;
+    make_int(&ftype, 32);
+    if ((code = idict_put_string_copy(op, "CharStrings", &csd)) < 0)
+        return code;
+    if ((code = idict_put_string_copy(op, "FontType", &ftype)) < 0)
+        return code;
+
+    return zbuildfont32(i_ctx_p);
+}
+
 /* - .getshowoperator <oper|null> */
 /* Get the calling operator for error reporting in %Type32BuildGlyph */
 static int
@@ -88,6 +109,7 @@ zgetshowoperator(i_ctx_t *i_ctx_p)
 const op_def zfont32_op_defs[] =
 {
     {"2.buildfont32", zbuildfont32},
+    {"2.buildcidfont4", zbuildcidfont4},
     {"0.getshowoperator", zgetshowoperator},
     op_def_end(0)
 };
