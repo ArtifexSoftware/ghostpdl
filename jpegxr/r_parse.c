@@ -613,12 +613,15 @@ static int r_image_plane_header(jxr_image_t image, struct rbitstream*str, int al
         case 6: /* NCOMPONENT */
             num_components = _jxr_rbitstream_uint4(str);
             if (num_components == 0xf) {
-                image->num_channels = 16 + _jxr_rbitstream_uint12(str);
+                num_components = 16 + _jxr_rbitstream_uint12(str);
             }
             else {
-                image->num_channels = 1 + num_components;
+                num_components = 1 + num_components;
                 _jxr_rbitstream_uint4(str); /* RESERVED_H */
             }
+            if (num_components > MAX_CHANNELS)
+                return -1;
+            image->num_channels = num_components;
             break;
         case 5: /* RESERVED */
         case 7: /* RESERVED */
