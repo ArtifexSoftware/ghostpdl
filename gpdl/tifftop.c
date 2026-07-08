@@ -699,6 +699,9 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
         /* RGBA, so alpha data */
         alpha = 1;
     }
+
+    tiff->bpp = tiff->bpc * tiff->num_comps;
+
     if (alpha && tiff->bpp < 8)
     {
         /* We need to expand the data to 8bpp to blend for alpha. */
@@ -743,7 +746,6 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
     }
     tiff->proc_samples = tiff->samples;
 
-    tiff->bpp = tiff->bpc * tiff->num_comps;
     switch(tiff->photometric) {
     case PHOTOMETRIC_MINISWHITE:
         invert = 1;
