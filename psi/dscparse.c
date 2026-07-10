@@ -1124,8 +1124,8 @@ dsc_read_line(CDSC *dsc)
             }
             else {
                 cnt = atoi(numberof);
-                if (cnt) {
-                    if (bytesorlines && (dsc_stricmp(bytesorlines, "Lines")==0)) {
+                if (cnt > 0) {
+                    if (bytesorlines && (dsc_stricmp(bytesorlines, "Lines")==0) && cnt < max_int - 1) {
                         /* skip cnt lines */
                         if (dsc->skip_lines == 0) {
                             /* we are not already skipping lines */
@@ -1149,7 +1149,7 @@ dsc_read_line(CDSC *dsc)
             /* byte count doesn't includes \n or \r\n or \r of %%BeginBinary:*/
             int cnt = dsc_get_int(dsc->line + 14,
                 dsc->line_length - 14, NULL);
-            if (dsc->skip_bytes == 0) {
+            if (dsc->skip_bytes == 0 && cnt > 0) {
                 /* we are not already skipping lines */
                 dsc->skip_bytes = cnt;
             }
