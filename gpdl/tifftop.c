@@ -651,6 +651,10 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
     TIFFGetField(tiff->handle, TIFFTAG_TILELENGTH, &tiff->tile_height);
     TIFFGetField(tiff->handle, TIFFTAG_BITSPERSAMPLE, &tiff->bpc);
     TIFFGetField(tiff->handle, TIFFTAG_SAMPLESPERPIXEL, &tiff->num_comps);
+    if (tiff->num_comps > GS_IMAGE_MAX_COMPONENTS) {
+        emprintf(tiff->memory, "Unsupported TIFF format: too many components\n");
+        goto fail_decode;
+    }
     tiff->raw_num_comps = tiff->num_comps;
     TIFFGetField(tiff->handle, TIFFTAG_PLANARCONFIG, &planar);
     f = 0;
