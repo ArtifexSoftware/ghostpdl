@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -18,7 +18,7 @@
 /* Language wrapper implementation (see pltop.h) */
 
 #include "ghostpdf.h"
-
+#include "gscdefs.h"
 #include "pltop.h"
 #include "plmain.h"
 
@@ -53,7 +53,7 @@ typedef struct pdf_interp_instance_s
 
 extern const char gp_file_name_list_separator;
 
-#define GS_LIB_DEFAULT_STRING GS_STRINGIZE(GS_LIB_DEFAULT)
+#define GS_LIB_DEFAULT_STRING GS_STRINGIZE(gs_lib_default_path)
 
 static int
 pdf_detect_language(const char *s, int len)

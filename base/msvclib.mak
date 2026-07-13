@@ -84,7 +84,7 @@ GS_DOCDIR=$(GSROOTDIR)/doc
 # illegal escape.
 
 !ifndef GS_LIB_DEFAULT
-GS_LIB_DEFAULT=$(GSROOTDIR)/Resource/Init;$(GSROOTDIR)/lib;$(GSROOTDIR)/Resource;$(AROOTDIR)/fonts
+GS_LIB_DEFAULT=""
 !endif
 
 # Define whether or not searching for initialization files should always
