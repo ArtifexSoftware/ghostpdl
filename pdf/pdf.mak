@@ -289,9 +289,9 @@ $(PLOBJ)pdfimpl.$(OBJ): $(PDFGEN)pdfimpl.c          \
 
 $(PDF_TOP_OBJ): $(PDFSRC)pdftop.c $(plmain_h) $(pltop_h) $(PDFINCLUDES) \
     $(GLGEN)gconfig.$(OBJ) $(pltop_h) $(plmain_h) $(plparse_h) $(gxdevice_h) \
-    $(gxht_h) $(gsht1_h) $(pconfig_h) \
+    $(gxht_h) $(gsht1_h) $(gscdefs_h) $(pconfig_h) \
      $(PDF_MAK) $(MAKEDIRS)
-	$(PDFCCC) $(D_)GS_LIB_DEFAULT=$(GS_LIB_DEFAULT)$(_D) $(D_)COMPILE_INITS=$(COMPILE_INITS)$(_D) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
+	$(PDFCCC) $(D_)COMPILE_INITS=$(COMPILE_INITS)$(_D) $(PDFSRC)pdftop.c $(PDFO_)pdftop.$(OBJ)
 
 PDF_OBJS=\
     $(PDFOBJ)pdf_loop_detect.$(OBJ)\
