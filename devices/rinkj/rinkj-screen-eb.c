@@ -197,7 +197,7 @@ rinkj_screen_eb_write (RinkjDevice *self, const char **data)
     {
       even_better_line (z->dither,
                         out_buf,
-                        data_permuted);
+                        (const ET_SrcPixel *const *)data_permuted);
 
       for (i = 0; i < n_planes; i++)
         {
