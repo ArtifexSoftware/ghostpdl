@@ -180,6 +180,7 @@ gdev_x_open(gx_device_X * xdev)
                             &(xdev->y_pixels_per_inch),
                             &left_margin, &bottom_margin,
                             &right_margin, &top_margin);
+            XFree(buf);
             if (!(nitems == 8 || nitems == 12)) {
                 emprintf(xdev->memory, "Cannot get ghostview property.\n");
                 return_error(gs_error_ioerror);
