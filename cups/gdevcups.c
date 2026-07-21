@@ -3262,6 +3262,18 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   intoption(cupsMediaType, "cupsMediaType", unsigned)
   intoption(cupsBitsPerColor, "cupsBitsPerColor", unsigned)
   intoption(cupsColorOrder, "cupsColorOrder", cups_order_t)
+  switch (cups->header.cupsColorOrder)
+  {
+    case CUPS_ORDER_CHUNKED :
+    case CUPS_ORDER_BANDED :
+    case CUPS_ORDER_PLANAR :
+      break;
+    default:
+      dmprintf(pdev->memory, "ERROR: Error setting cupsColorOrder...\n");
+      param_signal_error(plist, "cupsColorOrder", gs_error_rangecheck);
+      goto done;
+      break;
+  }
   intoption(cupsColorSpace, "cupsColorSpace", cups_cspace_t)
   intoption(cupsCompression, "cupsCompression", unsigned)
   intoption(cupsRowCount, "cupsRowCount", unsigned)
