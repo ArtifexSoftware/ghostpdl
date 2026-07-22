@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -33,7 +33,7 @@ public_st_stream();
 public_st_stream_state();	/* default */
 /* GC procedures */
 static
-ENUM_PTRS_WITH(stream_enum_ptrs, stream *st) return 0;
+ENUM_PTRS_WITH(stream_enum_ptrs, stream *st) return ENUM_USING(st_gs_notify_list, &st->notify_list, sizeof(gs_notify_list_t), index - 6);
 case 0:
 if (st->foreign)
     ENUM_RETURN(NULL);
@@ -68,6 +68,7 @@ static RELOC_PTRS_WITH(stream_reloc_ptrs, stream *st)
     RELOC_VAR(st->next);
     RELOC_VAR(st->state);
     RELOC_CONST_STRING_VAR(st->file_name);
+    RELOC_USING(st_gs_notify_list, &st->notify_list, sizeof(gs_notify_list_t));
 }
 RELOC_PTRS_END
 /* Finalize a stream by closing it. */
@@ -79,6 +80,7 @@ stream_finalize(const gs_memory_t *cmem, void *vptr)
     stream *const st = vptr;
     (void)cmem; /* unused */
 
+    gs_notify_all(&st->notify_list, NULL);
     if_debug2m('u', st->memory, "[u]%s "PRI_INTPTR"\n",
                (!s_is_valid(st) ? "already closed:" :
                 st->is_temp ? "is_temp set:" :
@@ -90,6 +92,7 @@ stream_finalize(const gs_memory_t *cmem, void *vptr)
         st->cbuf_string.data = 0;
         sclose(st);		/* ignore errors */
     }
+    gs_notify_release(&st->notify_list);
 }
 
 /* Dummy template for streams that don't have a separate state. */
@@ -115,6 +118,9 @@ s_init(stream *s, gs_memory_t * mem)
     s->close_strm = false;	/* default */
     s->close_at_eod = true;	/* default */
     s->cbuf_string_memory = NULL;
+    memset(&s->notify_list, 0x00, sizeof(gs_notify_list_t));
+    if (mem)
+        gs_notify_init(&s->notify_list, gs_memory_stable(mem));
 }
 stream *
 s_alloc(gs_memory_t * mem, client_name_t cname)
