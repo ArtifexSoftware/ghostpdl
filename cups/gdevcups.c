@@ -3255,12 +3255,45 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
   booloption(MirrorPrint, "MirrorPrint")
   booloption(NegativePrint, "NegativePrint")
   intoption(Orientation, "Orientation", cups_orient_t)
+  switch (cups->header.Orientation)
+  {
+    case CUPS_ORIENT_0:
+    case CUPS_ORIENT_90:
+    case CUPS_ORIENT_180:
+    case CUPS_ORIENT_270:
+      break;
+    default:
+      dmprintf(pdev->memory, "ERROR: Error setting Orientation...\n");
+      param_signal_error(plist, "Orientation", gs_error_rangecheck);
+      goto done;
+      break;
+  }
+
   booloption(OutputFaceUp, "OutputFaceUp")
   booloption(Separations, "Separations")
   booloption(TraySwitch, "TraySwitch")
   booloption(Tumble, "Tumble")
   intoption(cupsMediaType, "cupsMediaType", unsigned)
+
   intoption(cupsBitsPerColor, "cupsBitsPerColor", unsigned)
+  switch (cups->header.cupsBitsPerColor)
+  {
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+#ifdef GX_COLOR_INDEX_TYPE
+    case 16:
+#endif /* GX_COLOR_INDEX_TYPE */
+      break;
+
+    default:
+      dmprintf(pdev->memory, "ERROR: Error setting cupsBitsPerColor...\n");
+      param_signal_error(plist, "cupsBitsPerColor", gs_error_rangecheck);
+      goto done;
+      break;
+  }
+
   intoption(cupsColorOrder, "cupsColorOrder", cups_order_t)
   switch (cups->header.cupsColorOrder)
   {
@@ -3274,7 +3307,56 @@ cups_put_params(gx_device     *pdev,	/* I - Device info */
       goto done;
       break;
   }
+
   intoption(cupsColorSpace, "cupsColorSpace", cups_cspace_t)
+  switch (cups->header.cupsColorSpace)
+  {
+    case CUPS_CSPACE_K:
+    case CUPS_CSPACE_WHITE:
+    case CUPS_CSPACE_GOLD:
+    case CUPS_CSPACE_SILVER:
+    case CUPS_CSPACE_W:
+    case CUPS_CSPACE_SW:
+    case CUPS_CSPACE_RGB:
+    case CUPS_CSPACE_SRGB:
+    case CUPS_CSPACE_ADOBERGB:
+    case CUPS_CSPACE_RGBA:
+    case CUPS_CSPACE_CMY:
+    case CUPS_CSPACE_YMC:
+    case CUPS_CSPACE_KCMY:
+    case CUPS_CSPACE_KCMYcm:
+    case CUPS_CSPACE_RGBW:
+    case CUPS_CSPACE_CMYK:
+    case CUPS_CSPACE_YMCK:
+    case CUPS_CSPACE_GMCK:
+    case CUPS_CSPACE_GMCS:
+#  ifdef CUPS_RASTER_HAVE_COLORIMETRIC
+    case CUPS_CSPACE_CIEXYZ:
+    case CUPS_CSPACE_CIELab:
+    case CUPS_CSPACE_ICC1:
+    case CUPS_CSPACE_ICC2:
+    case CUPS_CSPACE_ICC3:
+    case CUPS_CSPACE_ICC4:
+    case CUPS_CSPACE_ICC5:
+    case CUPS_CSPACE_ICC6:
+    case CUPS_CSPACE_ICC7:
+    case CUPS_CSPACE_ICC8:
+    case CUPS_CSPACE_ICC9:
+    case CUPS_CSPACE_ICCA:
+    case CUPS_CSPACE_ICCB:
+    case CUPS_CSPACE_ICCC:
+    case CUPS_CSPACE_ICCD:
+    case CUPS_CSPACE_ICCE:
+    case CUPS_CSPACE_ICCF:
+        break;
+#  endif /* CUPS_RASTER_HAVE_COLORIMETRIC */
+    default:
+      dmprintf(pdev->memory, "ERROR: Error setting cupsColorSpace...\n");
+      param_signal_error(plist, "cupsColorSpace", gs_error_rangecheck);
+      goto done;
+      break;
+  }
+
   intoption(cupsCompression, "cupsCompression", unsigned)
   intoption(cupsRowCount, "cupsRowCount", unsigned)
   intoption(cupsRowFeed, "cupsRowFeed", unsigned)
