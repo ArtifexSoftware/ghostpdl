@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -23,6 +23,7 @@
 #include "scommon.h"
 #include "gxiodev.h"
 #include "srdline.h"
+#include "gsnotify.h"
 
 /* See scommon.h for documentation on the design of streams. */
 
@@ -182,6 +183,7 @@ struct stream_s {
     /* Clients must only set the following through sread_subfile. */
     gs_offset_t file_offset;		/* starting point in file (reading) */
     gs_offset_t file_limit;		/* ending point in file (reading) */
+    gs_notify_list_t notify_list;
 };
 
 /* The descriptor is only public for subclassing. */
@@ -189,7 +191,7 @@ extern_st(st_stream);
 #define public_st_stream()	/* in stream.c */\
   gs_public_st_composite_final(st_stream, stream, "stream",\
     stream_enum_ptrs, stream_reloc_ptrs, stream_finalize)
-#define STREAM_NUM_PTRS 6
+#define STREAM_NUM_PTRS 7
 
 #define S_FILE_LIMIT_MAX (sizeof(gs_offset_t) > 4 ? max_int64_t : max_long)
 

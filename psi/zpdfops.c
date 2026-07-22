@@ -177,16 +177,20 @@ done:
     return code;
 }
 
+typedef struct stream_record_t {
+    gs_memory_t *pdf_stream_memory; /* The memory allocator used to copy the PostScript stream to pdf_stream. Not exposed to garbager */
+    stream *ps_stream;
+} stream_record;
+
 /*
  * Declare the structure we use to represent an instance of the PDF parser
  * as a t_struct.
  */
 typedef struct pdfctx_s {
     pdf_context *ctx;               /* Not exposed to garbager */
-    stream *ps_stream;
     gs_memory_t *pdf_memory;        /* The 'wrapped' memory allocator used by the PDF interpreter. Not exposed to garbager */
     gs_memory_t *pdf_stream_memory; /* The memory allocator used to copy the PostScript stream to pdf_stream. Not exposed to garbager */
-    stream *pdf_stream;
+    stream_record *record;
     bool UsingPDFFile;
     gsicc_profile_cache_t *profile_cache;
     ref names_dict;
@@ -230,21 +234,51 @@ typedef struct pdfctx_s {
 /* Structure descriptors */
 static void pdfctx_finalize(const gs_memory_t *cmem, void *vptr);
 
-gs_private_st_composite_final(st_pdfctx_t, pdfctx_t, "pdfctx_struct",\
-    pdfctx_enum_ptrs, pdfctx_reloc_ptrs, pdfctx_finalize);
+static
+CLEAR_MARKS_PROC(pdfctx_clear_marks)
+{
+  pdfctx_t *pdfctx = (pdfctx_t *)vptr;
+  r_clear_attrs(&pdfctx->names_dict, l_mark);
+}
 
 static
-ENUM_PTRS_BEGIN(pdfctx_enum_ptrs) return 0;
-  ENUM_PTR3(0, pdfctx_t, ps_stream, pdf_stream, profile_cache);
+ENUM_PTRS_WITH(pdfctx_enum_ptrs, pdfctx_t *pdfctx) return 0;
+case 0:
+        ENUM_RETURN(pdfctx->record);
+case 1:
+    if (pdfctx->record != NULL)
+        ENUM_RETURN(pdfctx->record->ps_stream);
+    else
+        ENUM_RETURN(NULL);
+ENUM_PTR(2, pdfctx_t, profile_cache);
   case 3:
     ENUM_RETURN_REF(&((pdfctx_t *)vptr)->names_dict);
 ENUM_PTRS_END
 
-static RELOC_PTRS_BEGIN(pdfctx_reloc_ptrs);
-RELOC_REF_VAR(((pdfctx_t *)vptr)->names_dict);
-ref_struct_clear_marks(gcst->cur_mem, &(((pdfctx_t *)vptr)->names_dict), 1, pstype);
-RELOC_PTR3(pdfctx_t, ps_stream, pdf_stream, profile_cache);
+static RELOC_PTRS_WITH(pdfctx_reloc_ptrs, pdfctx_t *pdfctx)
+{
+RELOC_REF_VAR(pdfctx->names_dict);
+RELOC_VAR(pdfctx->profile_cache);
+RELOC_VAR(pdfctx->record);
+if (pdfctx->record)
+    RELOC_VAR(pdfctx->record->ps_stream);
+if (pdfctx->record && pdfctx->record->ps_stream) {
+    pdfctx->ctx->main_stream->s = pdfctx->record->ps_stream;
+}
+}
 RELOC_PTRS_END
+
+gs_private_st_complex_only(st_pdfctx_t, pdfctx_t, "pdfctx_struct",\
+    pdfctx_clear_marks, pdfctx_enum_ptrs, pdfctx_reloc_ptrs, pdfctx_finalize);
+
+static int
+notify_remove_stream(void *proc_data, void *event_data)
+{
+    stream_record *record = (stream_record *)proc_data;
+
+    record->ps_stream = NULL;
+    return 0;
+}
 
 static void
 pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
@@ -261,17 +295,14 @@ pdfctx_finalize(const gs_memory_t *cmem, void *vptr)
     }
     if (cmem != NULL) {
         if (pdfctx->ctx != NULL) {
-            if (pdfctx->pdf_stream) {
-                 memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
-                 gs_free_object(pdfctx->pdf_stream_memory, pdfctx->pdf_stream, "free PDF copy of stream");
-                 pdfctx->pdf_stream = NULL;
-            }
-
-            if (pdfctx->ps_stream) {
+            if (pdfctx->record && pdfctx->record->ps_stream) {
                 /* Detach the PostScript stream from the PDF context, otherwise the
                  * free_context code will close the main stream.
                  */
+                gs_notify_unregister(&pdfctx->record->ps_stream->notify_list, notify_remove_stream, pdfctx->record);
                 pdfctx->ctx->main_stream->s = NULL;
+                gs_free_object(pdfctx->record->pdf_stream_memory, pdfctx->record, "free stream record");
+                pdfctx->record = NULL;
             }
             (void)pdfi_free_context(pdfctx->ctx);
             pdfctx->ctx = NULL;
@@ -300,32 +331,31 @@ static int zPDFstream(i_ctx_t *i_ctx_p)
     pdfctx = r_ptr(op, pdfctx_t);
 
     /* If the supplied context already has a file open, signal an error */
-    if (pdfctx->ps_stream != NULL || pdfctx->UsingPDFFile)
+    if (pdfctx->record != NULL || pdfctx->UsingPDFFile)
         return_error(gs_error_ioerror);
 
     s->close_at_eod = false;
-    pdfctx->ps_stream = s;
-    pdfctx->pdf_stream = s_alloc_immovable(imemory->stable_memory, "PDFstream copy of PS stream");
-    pdfctx->pdf_stream_memory = imemory->stable_memory;
-    if (pdfctx->pdf_stream == NULL)
+    pdfctx->record = (stream_record *)gs_alloc_bytes_immovable(imemory->stable_memory, sizeof(stream_record), "");
+    if (pdfctx->record == NULL)
         return_error(gs_error_VMerror);
 
-    *(pdfctx->pdf_stream) = *(pdfctx->ps_stream);
+    pdfctx->record->pdf_stream_memory = imemory->stable_memory;
+    pdfctx->record->ps_stream = s;
+    gs_notify_register(&s->notify_list, notify_remove_stream, pdfctx->record);
 
     code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
     if (code >= 0) {
-        code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->pdf_stream);
+        code = pdfi_set_input_stream(pdfctx->ctx, pdfctx->record->ps_stream);
 
         pdfi_gstate_to_PS(pdfctx->ctx, igs, &i_switch);
     }
 
     if (code < 0) {
-        memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
-        gs_free_object(imemory, pdfctx->pdf_stream, "PDFstream copy of PS stream");
+        gs_notify_unregister(&pdfctx->record->ps_stream->notify_list, notify_remove_stream, pdfctx->record);
+        gs_free_object(pdfctx->record->pdf_stream_memory, pdfctx->record, "PDFstream record");
         pdfctx->ctx->main_stream->s = NULL;
-        pdfctx->pdf_stream = NULL;
-        pdfctx->ps_stream = NULL;
+        pdfctx->record = NULL;
         return code;
     }
 
@@ -354,10 +384,8 @@ static int zPDFfile(i_ctx_t *i_ctx_p)
         return_error(gs_error_limitcheck);
 
     /* If the supplied context already has a file open, signal an error */
-    if (pdfctx->ps_stream != NULL)
+    if (pdfctx->record != NULL)
         return_error(gs_error_ioerror);
-
-    pdfctx->ps_stream = NULL;
 
     memcpy(pdffilename, (op - 1)->value.bytes, r_size(op - 1));
     pdffilename[r_size(op - 1)] = 0;
@@ -395,7 +423,7 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
     }
 
     if (pdfctx->ctx != NULL) {
-        if (pdfctx->pdf_stream != NULL || pdfctx->ps_stream != NULL) {
+        if (pdfctx->record != NULL) {
             pdfi_switch_t i_switch;
 
             code = gs_gsave(igs);
@@ -413,8 +441,6 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
             code = gs_grestore(igs);
             if (code < 0)
                 return code;
-        }
-        if (pdfctx->ps_stream) {
             /* Detach the PostScript stream from the PDF context, otherwise the
              * close code will close the main stream
              */
@@ -424,13 +450,11 @@ static int zPDFclose(i_ctx_t *i_ctx_p)
         code = pdfi_free_context(pdfctx->ctx);
         pdfctx->ctx = NULL;
     }
-    if (pdfctx->pdf_stream) {
-        memset(pdfctx->pdf_stream, 0x00, sizeof(stream));
-        gs_free_object(imemory, pdfctx->pdf_stream, "free copy of PostScript stream");
-        pdfctx->pdf_stream = NULL;
+    if (pdfctx->record) {
+        gs_notify_unregister(&pdfctx->record->ps_stream->notify_list, notify_remove_stream, pdfctx->record);
+        gs_free_object(pdfctx->record->pdf_stream_memory, pdfctx->record, "PDFstream record");
+        pdfctx->record = NULL;
     }
-    if (pdfctx->ps_stream)
-        pdfctx->ps_stream = NULL;
     pop(1);
     return code;
 }
@@ -724,7 +748,7 @@ static int zPDFinfo(i_ctx_t *i_ctx_p)
     check_type(*(op), t_pdfctx);
     pdfctx = r_ptr(op, pdfctx_t);
 
-    if (pdfctx->pdf_stream != NULL || pdfctx->UsingPDFFile) {
+    if ((pdfctx->record != NULL && pdfctx->record->ps_stream != NULL) || pdfctx->UsingPDFFile) {
         code = dict_create(4, op);
         if (code < 0)
             return code;
@@ -860,7 +884,7 @@ static int zPDFpageinfo(i_ctx_t *i_ctx_p)
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    if (pdfctx->pdf_stream != NULL || pdfctx->UsingPDFFile) {
+    if ((pdfctx->record != NULL && pdfctx->record->ps_stream != NULL) || pdfctx->UsingPDFFile) {
         code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
         if (code >= 0) {
@@ -902,7 +926,7 @@ static int zPDFpageinfoExt(i_ctx_t *i_ctx_p)
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    if (pdfctx->pdf_stream != NULL || pdfctx->UsingPDFFile) {
+    if ((pdfctx->record != NULL && pdfctx->record->ps_stream != NULL) || pdfctx->UsingPDFFile) {
         code = pdfi_gstate_from_PS(pdfctx->ctx, igs, &i_switch, pdfctx->profile_cache);
 
         if (code >= 0) {
@@ -957,7 +981,7 @@ static int zPDFdrawpage(i_ctx_t *i_ctx_p)
     check_type(*(op - 1), t_pdfctx);
     pdfctx = r_ptr(op - 1, pdfctx_t);
 
-    if (pdfctx->pdf_stream != NULL || pdfctx->UsingPDFFile) {
+    if ((pdfctx->record != NULL && pdfctx->record->ps_stream != NULL) || pdfctx->UsingPDFFile) {
         code = gs_gsave(igs);
         if (code < 0)
             return code;
@@ -1404,8 +1428,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     }
     pdfctx->pdf_memory = cmem;
     pdfctx->ctx = NULL;
-    pdfctx->ps_stream = NULL;
-    pdfctx->pdf_stream = NULL;
+    pdfctx->record = NULL;
     pdfctx->UsingPDFFile = false;
     pdfctx->pdf_stream_memory = NULL;
     pdfctx->profile_cache = gsicc_profilecache_new(imemory);
@@ -1415,7 +1438,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     }
     pdfctx->cache_memory = imemory;
     /* The size is arbitrary */
-    code = dict_alloc(iimemory, 1, &pdfctx->names_dict);
+    code = dict_alloc(imemory->stable_memory, 1, &pdfctx->names_dict);
     if (code < 0)
         goto error;
 
