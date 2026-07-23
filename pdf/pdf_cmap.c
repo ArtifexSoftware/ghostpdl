@@ -153,7 +153,7 @@ static int cmap_endcodespacerange_func(gs_memory_t *mem, pdf_ps_ctx_t *s, byte *
                 s2 = s->cur[-(si * 2)].size < MAX_CMAP_CODE_SIZE ? s->cur[-(si * 2)].size : MAX_CMAP_CODE_SIZE;
                 memcpy(code_space->ranges[i].first, s->cur[-((si * 2) + 1)].val.string, s1);
                 memcpy(code_space->ranges[i].last, s->cur[-(si * 2)].val.string, s2);
-                code_space->ranges[i].size = s->cur[-(si * 2)].size;
+                code_space->ranges[i].size = s2;
             }
         }
         else {
