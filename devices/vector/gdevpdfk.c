@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1140,8 +1140,13 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t
                     if (major > 4 || minor > 1)
                         downgrade_icc = true;
                 } else {
-                    if (major > 4 || minor > 2)
-                        downgrade_icc = true;
+                    if (pdev->CompatibilityLevel == 1.7) {
+                        if (major > 4 || minor > 2)
+                            downgrade_icc = true;
+                    } else {
+                        if (major > 4 || minor > 3)
+                            downgrade_icc = true;
+                    }
                 }
             }
         }
@@ -1156,6 +1161,8 @@ pdf_iccbased_color_space(gx_device_pdf *pdev, const gs_gstate * pgs, cos_value_t
         if (pcs->cmm_icc_profile_data->profile_handle == NULL)
             gsicc_initialize_default_profile(pcs->cmm_icc_profile_data);
         v2_buffer = gsicc_create_getv2buffer(pgs, pcs->cmm_icc_profile_data, &size);
+        if (v2_buffer == NULL)
+            return_error(gs_error_unknownerror);
         code = cos_stream_add_bytes(pdev, pcstrm, v2_buffer, size);
     }else{
         code = cos_stream_add_bytes(pdev, pcstrm, pcs->cmm_icc_profile_data->buffer,
