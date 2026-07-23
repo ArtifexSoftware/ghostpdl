@@ -44,18 +44,7 @@ dup revision ne
  }
 if pop
 
-% Acquire userdict, and set its length if necessary.
-/userdict where
- { pop userdict maxlength 0 eq }
- { //true }
-ifelse
-systemdict exch
- {		% userdict wasn't already set up by iinit.c.
-   dup /userdict
-   currentdict dup 200 .setmaxlength		% userdict
-   .forceput			% userdict is local, systemdict is global
- } executeonly
-if begin
+systemdict begin
 
 % Init to global memory (possibly not needed, but left in for legacy purposes)
 //true .setglobal
@@ -336,8 +325,8 @@ DELAYBIND
        (               limited security offered by the SAFER option.\n) print flush
    } if
    .currentglobal //false .setglobal
-   systemdict /.delaybind 2000 array .forceput
-   systemdict /.delayinternalbind 2000 array .forceput
+   systemdict /.delaybind 2000 array put
+   systemdict /.delayinternalbind 2000 array put
    .setglobal
    userdict /.delaycount 0 put
    userdict /.delayinternalcount 0 put

@@ -9,14 +9,14 @@ systemdict /product get (PhotoPRINT SE 5.0v2) readonly eq
 % Note: this must be run at save level 0 and when systemdict is writeable
 currentglobal //true setglobal
 systemdict dup dup dup
-/version (3017.102) readonly .forceput		% match CPSI 3017.102
-/product (PhotoPRINT SE 5.0v2) readonly .forceput	% match CPSI 3017.102
+/version (3017.102) readonly put		% match CPSI 3017.102
+/product (PhotoPRINT SE 5.0v2) readonly put	% match CPSI 3017.102
 /revision 0 put			% match CPSI 3017.103 Tek shows revision 5
-/serialnumber dup {233640} readonly .makeoperator .forceput % match CPSI 3017.102 Tek shows serialnumber 1401788461
+/serialnumber dup {233640} readonly .makeoperator put % match CPSI 3017.102 Tek shows serialnumber 1401788461
 
 systemdict /.odef {           % <name> <proc> odef -
   1 index exch //.makeoperator def
-} .bind .forceput          % this will be undefined at the end
+} .bind put          % this will be undefined at the end
 
 300 .sethiresscreen	% needed for language switch build since it
                         % processes gs_init.ps BEFORE setting the resolution

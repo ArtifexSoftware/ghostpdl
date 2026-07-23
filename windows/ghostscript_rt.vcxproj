@@ -2598,7 +2598,6 @@
     <None Include="..\Resource\Init\gs_css_e.ps" />
     <None Include="..\Resource\Init\gs_dbt_e.ps" />
     <None Include="..\Resource\Init\gs_diskf.ps" />
-    <None Include="..\Resource\Init\gs_diskn.ps" />
     <None Include="..\Resource\Init\gs_dps1.ps" />
     <None Include="..\Resource\Init\gs_dps2.ps" />
     <None Include="..\Resource\Init\gs_dscp.ps" />

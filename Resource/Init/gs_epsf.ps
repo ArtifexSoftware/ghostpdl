@@ -24,15 +24,27 @@
 % To display a file without EPS encapsulation:
 %  gs -dNOEPS file.ps
 
+% We now use a dictionary stored in systemdict to hold 'transient' data used by Ghostscript
+% features, instead of poking calues into systemdict with .forceput. No PostScript
+% program should be expecting such a dictionary to exist so htye shouldn't be using it.
+% Start by making the dictionary if it doesn't yet exist. Note; systemdict must still
+% be writeable when this is run.
+
+//systemdict /GSInternalDict known not {
+  //systemdict /GSInternalDict 5 dict put
+} if
+
+
 % When starting to process an EPS file, state is 0.
 % After %%BoundingBox processed, state is 1 if OK or 2 if cropped.
 % After %%HiResBoundingBox processed, state is 3 if OK or 4 if cropped.
 % After %%EndComments processed, state is 5.
-/EPSBoundingBoxState 5 def
-/EPSBoundingBoxString () def	% set if either BoundingBox is seen (even if invalid)
+//systemdict /GSInternalDict get dup /EPSBoundingBoxState 5 put
+/EPSBoundingBoxString () put	% set if either BoundingBox is seen (even if invalid)
+
 /EPSBoundingBoxSetState {
-  //systemdict /EPSBoundingBoxState 3 -1 roll .forceput
-} .forcebind odef % .forceput must be bound and hidden
+  //systemdict /GSInternalDict get /EPSBoundingBoxState 3 -1 roll put
+} .forcebind odef
 
 % Parse 4 numbers for a bounding box
 /EPSBoundingBoxParse { % (llx lly urx ury) -- llx lly urx ury true OR false
@@ -118,10 +130,11 @@
 /EPSBoundingBoxProcess { % (llx lly urx ury) state --
   % The following 'lt' check prioritzies HiResBoundingBox over BoundingBox
   % even if HiResBoundingBox occurs first in the EPS file.
-  //systemdict /EPSBoundingBoxState get 1 index lt {
+  //systemdict /GSInternalDict get /EPSBoundingBoxState get 1 index lt {
     % save the BBoxString for possible FitPage when EndComments is seen
     exch dup currentglobal //true setglobal exch
-    dup length string copy //systemdict /EPSBoundingBoxString 3 -1 roll .forceput
+    dup length string copy
+    //systemdict /GSInternalDict get /EPSBoundingBoxString 3 -1 roll put
     setglobal
     EPSBoundingBoxParse
     {
@@ -138,7 +151,9 @@
             exch gt { //true exit } if
             //false exit
           } loop
-          QUIET not and /EPSBoundingBoxState .systemvar 1 and 1 eq and {
+          QUIET not and
+          //systemdict /GSInternalDict get /EPSBoundingBoxState get
+          1 and 1 eq and {
             (\n   **** Warning: Some of the BoundingBox for the EPS file will be clipped.) =
             (                 Use -dEPSCrop or -dEPSFitPage to avoid clipping.\n) =
             flush
@@ -153,7 +168,7 @@
       % improperly formed BoundingBox string.
       QUIET not {
         (\n   **** Warning: BoundingBox values are invalid and will be ignored: ') print
-        //systemdict /EPSBoundingBoxString get
+        //systemdict /GSInternalDict get /EPSBoundingBoxString get
         print (') = flush
       } if
       pop % state
@@ -184,7 +199,7 @@
 } .internalbind def
 
 /ProcessEPSComment { % file comment --  file comment
-  /EPSBoundingBoxState .systemvar 3 lt {
+  //systemdict /GSInternalDict get /EPSBoundingBoxState get 3 lt {
     dup
     (%%BoundingBox:) anchorsearch {
       pop
@@ -200,7 +215,7 @@
       } ifelse
     } ifelse
   } if
-  /EPSBoundingBoxState .systemvar 5 lt {
+  //systemdict /GSInternalDict get /EPSBoundingBoxState get 5 lt {
     dup (%%DocumentCustomColors:) anchorsearch {
       pop
       [ exch
@@ -242,9 +257,9 @@
         % is set, then we do the transformation here to scale and center the page,
         % rotating if needed (and AllowFitPageRotation is true -- the default.)
         //systemdict /EPSFitPage known
-        //systemdict /EPSBoundingBoxState get 0 gt
+        //systemdict /GSInternalDict get /EPSBoundingBoxState get 0 gt
         and {
-          EPSBoundingBoxString EPSBoundingBoxParse {
+          //systemdict /GSInternalDict get /EPSBoundingBoxString get EPSBoundingBoxParse {
             EPSBoundingBoxFitPage
           } if
         } if

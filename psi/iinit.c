@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -63,6 +63,10 @@
 /* Ditto the size of ll3dict. */
 #ifndef LL3DICT_SIZE
 #  define LL3DICT_SIZE 43
+#endif
+/* Ditto the size of userdict. */
+#ifndef USERDICT_SIZE
+#  define USERDICT_SIZE 211
 #endif
 /* Ditto the size of filterdict. */
 #ifndef FILTERDICT_SIZE
@@ -154,7 +158,7 @@ const struct {
         "globaldict", 0, false
     },
     {
-        "userdict", 0, true
+        "userdict", USERDICT_SIZE, true
     },
     {
         "filterdict", FILTERDICT_SIZE, false

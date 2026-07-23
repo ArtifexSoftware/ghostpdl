@@ -1,4 +1,4 @@
-#  Copyright (C) 2001-2023 Artifex Software, Inc.
+#  Copyright (C) 2001-2026 Artifex Software, Inc.
 #  All Rights Reserved.
 #
 #  This software is provided AS-IS with no warranty, either express or
@@ -27,7 +27,7 @@ PDF_RESOURCE_LIST=CMap$(D)*
 
 MISC_INIT_FILES=FCOfontmap-PCLPS2 -C cidfmap \
  FAPIcidfmap FAPIconfig FAPIfontmap Fontmap Fontmap.GS xlatmap \
- gs_diskn.ps gs_dscp.ps gs_trap.ps \
+ gs_dscp.ps gs_trap.ps \
  -B gs_cet.ps
 
 # In the below list, the Font contents are _not_ compressed since it doesn't help.
@@ -379,7 +379,6 @@ PS_INIT_DEPS=\
 	$(PSRESDIR)$(D)Init$(D)gs_cmap.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_cspace.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dbt_e.ps \
-	$(PSRESDIR)$(D)Init$(D)gs_diskn.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dps1.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dps2.ps \
 	$(PSRESDIR)$(D)Init$(D)gs_dscp.ps \

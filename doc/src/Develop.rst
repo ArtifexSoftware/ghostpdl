@@ -874,9 +874,6 @@ Miscellaneous:
    Image support:
       Resource/Init/gs_img.ps,
 
-   Emulation of %disk IODevice:
-      Resource/Init/gs_diskn.ps,
-
    Other support:
       Resource/Init/gs_agl.ps, Resource/Init/gs_dscp.ps, Resource/Init/gs_epsf.ps, Resource/Init/gs_pdfwr.ps, lib/gs_rdlin.ps.
 

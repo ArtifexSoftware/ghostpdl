@@ -1089,9 +1089,6 @@
     <None Include="..\Resource\Init\gs_diskf.ps">
       <Filter>Resource\Init</Filter>
     </None>
-    <None Include="..\Resource\Init\gs_diskn.ps">
-      <Filter>Resource\Init</Filter>
-    </None>
     <None Include="..\Resource\Init\gs_dps1.ps">
       <Filter>Resource\Init</Filter>
     </None>
