@@ -753,19 +753,6 @@ currentdict /.pdf_hook_DSC_Creator undef
   /AlwaysOutline { }
   /NeverOutline { }
 .dicttomark readonly def
-/.distillerdevice
- {
-    % Check to see if the current device is a Distiller
-    % and return it if so.
-    /IsDistiller /GetDeviceParam .special_op {
-      exch pop
-    }{
-      //false
-    }ifelse
-    { currentdevice }
-    { /pdfwrite finddevice }
-   ifelse
- } .internalbind def
 
 % Some badly designed PostScript files only expect the current/set
 % distillerparams operators to exist in a distiller. Since we have
@@ -774,7 +761,7 @@ currentdict /.pdf_hook_DSC_Creator undef
 % systemdict so that 'where' and 'known' don't show them unless
 % the currentdevice is pdfwrite.
 /.setdistillerparams {		% <dict> setdistillerparams -
-  .distillerdevice //null //false mark 4 index {
+  currentdevice //null //false mark 4 index {
     //.distillerparamkeys 2 index .knownget { exec } { pop pop } ifelse
   } forall .putdeviceparamsonly
   dup type /booleantype ne {
@@ -784,7 +771,7 @@ currentdict /.pdf_hook_DSC_Creator undef
   } ifelse
 } odef
 /.currentdistillerparams {	% - currentdistillerparams <dict>
-  .distillerdevice //.distillerparamkeys .getdeviceparams .dicttomark
+  currentdevice //.distillerparamkeys .getdeviceparams .dicttomark
                 % Patch StartPage and EndPage
                 % ****** NOTE: StartPage and EndPage are disabled because
                 % ****** EndPage clashes with a page device parameter.
@@ -986,7 +973,7 @@ currentdict /.pdf_hook_DSC_Creator undef
       } if
     } if
     currentdict end .setdistillerparams
-    .distillerdevice //null //false mark .putdeviceparams
+    currentdevice //null //false mark .putdeviceparams
     dup type /booleantype eq not { cleartomark pop } if pop pop
 } .internalbind .schedule_init
 
