@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1090,7 +1090,9 @@ upd_print_page(gx_device_printer *pdev, gp_file *out)
    if(upd->start_writer) (*upd->start_writer)(upd,out);
 
 /* How many scanlines do we need ? */
-   need = ints[I_NYPASS] * ints[I_PINS2WRITE];
+   if (check_int_multiply(ints[I_NYPASS], ints[I_PINS2WRITE], &need) < 0)
+       return_error(gs_error_rangecheck);
+
    if(0 >= need) need = 1;
 
 /* The Weave-counters */
@@ -3411,7 +3413,9 @@ If anything was ok. up to now, memory get's allocated.
    if(icomp) {
       uint need;
 
-      need  = (2 + upd->rwidth) * upd->ncomp;
+      if (check_int_multiply((2 + upd->rwidth), upd->ncomp, &need) < 0)
+          return_error(gs_error_rangecheck);
+
       upd->valbuf = gs_malloc(udev->memory, need,sizeof(upd->valbuf[0]),"upd/valbuf");
 
       if(upd->valbuf) {
@@ -3865,12 +3869,14 @@ upd_fscmyk(upd_p upd)
          }
       }
 
-      data        = upd->gsscan + 4 * (upd->rwidth-1);
+      if (check_int_multiply((upd->gsscan + 4), (upd->rwidth-1), &data) < 0)
+          return_error(gs_error_rangecheck);
 
    } else {                          /* This one forward */
 
       if(!(upd->flags & B_FSWHITE)) {
-         data = upd->gsscan + 4 * (upd->rwidth-1);
+          if (check_int_multiply((upd->gsscan + 4), (upd->rwidth-1), &data) < 0)
+              return_error(gs_error_rangecheck);
          while(0 < pwidth && !*(uint32_t *)data) pwidth--, data -= 4;
          if(0 >= pwidth) {
             if(0 < upd->nlimits) upd_limits(upd,false);
@@ -4200,14 +4206,18 @@ upd_open_writer(upd_device *udev)
 
 /** Massage some Parameters */
    if(success) {
+        int check;
 
 /*    Make sure, that Pass & Pin-Numbers are at least 1 */
       if(1 >  upd->ints[I_NYPASS]) upd->ints[I_NYPASS] = 1;
       if(1 >  upd->ints[I_NXPASS]) upd->ints[I_NXPASS] = 1;
       if(1 >  upd->ints[I_PINS2WRITE]) upd->ints[I_PINS2WRITE] = 1;
 
-      if((upd->ints[I_NXPASS] * upd->ints[I_NYPASS]) > upd->ints[I_NPASS])
-         upd->ints[I_NPASS] = upd->ints[I_NXPASS] * upd->ints[I_NYPASS];
+      if (check_int_multiply(upd->ints[I_NXPASS], upd->ints[I_NYPASS], &check) < 0)
+          return_error(gs_error_rangecheck);
+
+      if(check > upd->ints[I_NPASS])
+            upd->ints[I_NPASS] = check;
 
 /*    Create Default noWeave-Feeds */
 
