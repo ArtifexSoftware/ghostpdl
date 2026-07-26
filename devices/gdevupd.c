@@ -3413,8 +3413,12 @@ If anything was ok. up to now, memory get's allocated.
    if(icomp) {
       uint need;
 
-      if (check_int_multiply((2 + upd->rwidth), upd->ncomp, &need) < 0)
-          return_error(gs_error_rangecheck);
+      if (check_int_multiply(2 + upd->rwidth, upd->ncomp, (int *)&need) < 0)
+      {
+          /* This is a bad way to handle problems */
+          icomp = 0;
+          need = 0;
+      }
 
       upd->valbuf = gs_malloc(udev->memory, need,sizeof(upd->valbuf[0]),"upd/valbuf");
 
@@ -3847,6 +3851,7 @@ upd_fscmyk(upd_p upd)
    int              dir,ibyte;
    byte             bit,*data;
    bool             first = false;
+   int res;
 /*
  * Erase the component-Data
  */
@@ -3869,14 +3874,16 @@ upd_fscmyk(upd_p upd)
          }
       }
 
-      if (check_int_multiply((upd->gsscan + 4), (upd->rwidth-1), &data) < 0)
+      if (check_int_multiply(4, (upd->rwidth-1), &res) < 0)
           return_error(gs_error_rangecheck);
+      data = upd->gsscan + res;
 
    } else {                          /* This one forward */
 
       if(!(upd->flags & B_FSWHITE)) {
-          if (check_int_multiply((upd->gsscan + 4), (upd->rwidth-1), &data) < 0)
-              return_error(gs_error_rangecheck);
+         if (check_int_multiply(4, (upd->rwidth-1), &res) < 0)
+             return_error(gs_error_rangecheck);
+         data = upd->gsscan + res;
          while(0 < pwidth && !*(uint32_t *)data) pwidth--, data -= 4;
          if(0 >= pwidth) {
             if(0 < upd->nlimits) upd_limits(upd,false);
