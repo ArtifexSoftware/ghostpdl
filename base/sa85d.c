@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -111,6 +111,12 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
         else if (ch == '~') {
             int i = 1;
 
+            if ((int)(wlimit - q) < ccount - 1) {
+                status = 1;
+                p--;
+                break;
+            }
+
             rlimit = pr->limit;		/* Here we use the real "limit" */
             /* Handle odd bytes. */
             if (p == rlimit) {
@@ -120,11 +126,6 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
             	    goto finish;
                 else
                     status = ERRC;
-                break;
-            }
-            if ((int)(wlimit - q) < ccount - 1) {
-                status = 1;
-                p--;
                 break;
             }
 
