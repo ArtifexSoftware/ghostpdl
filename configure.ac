@@ -2861,20 +2861,39 @@ JBIG2_DEVS=""
 IJS_DEVS0=""
 PNG_DEVS0=""
 X11_DEVS0=""
-
+CONTRIB_WARNING_LIST=""
 
 dnl Known printers
-HP_DEVS='cdj500 djet500 djet500c dnj650c cljet5pr deskjet laserjet ljetplus ljet2p ljet3 ljet3d ljet4 ljet4d lj4dith lj5mono lj5gray cdeskjet cdjcolor cdjmono cdj550 pj pjxl pjxl300 lp2563 paintjet pjetxl cljet5 cljet5c pxlmono pxlcolor cdj670 cdj850 cdj880 cdj890 cdj970 cdj1600 cdnj500 chp2200 pcl3 hpdjplus hpdjportable hpdj310 hpdj320 hpdj340 hpdj400 hpdj500 hpdj500c hpdj510 hpdj520 hpdj540 hpdj550c hpdj560c hpdj600 hpdj660c hpdj670c hpdj680c hpdj690c hpdj850c hpdj855c hpdj870c hpdj890c hpdj1120c lj3100sw'
+HP_DEVS='cdj500 djet500 djet500c dnj650c cljet5pr deskjet laserjet ljetplus ljet2p ljet3 ljet3d ljet4 ljet4d lj4dith lj5mono lj5gray cdeskjet cdjcolor cdjmono cdj550 pj pjxl pjxl300 lp2563 paintjet pjetxl cljet5 cljet5c pxlmono pxlcolor lj3100sw'
+HP_CONTRIB_DEVS='cdj670 cdj850 cdj880 cdj890 cdj970 cdj1600 cdnj500 chp2200 pcl3 hpdjplus hpdjportable hpdj310 hpdj320 hpdj340 hpdj400 hpdj500 hpdj500c hpdj510 hpdj520 hpdj540 hpdj550c hpdj560c hpdj600 hpdj660c hpdj670c hpdj680c hpdj690c hpdj850c hpdj855c hpdj870c hpdj890c hpdj1120c'
+
+
 PCLXL_DEVS='pxlmono pxlcolor'
-EPSON_DEVS='eps9high eps9mid epson epsonc escp lp8000 lq850 photoex st800 stcolor alc1900 alc2000 alc4000 alc4100 alc8500 alc8600 alc9100 lp3000c lp8000c lp8200c lp8300c lp8500c lp8800c lp9000c lp9200c lp9500c lp9800c lps6500 epl2050 epl2050p epl2120 epl2500 epl2750 epl5800 epl5900 epl6100 epl6200 lp1800 lp1900 lp2200 lp2400 lp2500 lp7500 lp7700 lp7900 lp8100 lp8300f lp8400f lp8600 lp8600f lp8700 lp8900 lp9000b lp9100 lp9200b lp9300 lp9400 lp9600 lp9600s lps4500 eplcolor eplmono'
-CANON_DEVS='bj10e bj200 bjc600 bjc800 lbp8 lips3 bjcmono bjcgray bjccmyk bjccolor'
-LEXMARK_DEVS='lxm5700m lxm3200 lex2050 lex3200 lex5700 lex7000'
-BROTHER_DEVS='hl7x0 hl1240 hl1250'
+
+EPSON_DEVS='eps9high eps9mid epson epsonc escp lp8000 lq850 photoex st800 stcolor'
+EPSON_CONTRIB_DEVS='alc1900 alc2000 alc4000 alc4100 alc8500 alc8600 alc9100 lp3000c lp8000c lp8200c lp8300c lp8500c lp8800c lp9000c lp9200c lp9500c lp9800c lps6500 epl2050 epl2050p epl2120 epl2500 epl2750 epl5800 epl5900 epl6100 epl6200 lp1800 lp1900 lp2200 lp2400 lp2500 lp7500 lp7700 lp7900 lp8100 lp8300f lp8400f lp8600 lp8600f lp8700 lp8900 lp9000b lp9100 lp9200b lp9300 lp9400 lp9600 lp9600s lps4500 eplcolor eplmono'
+
+CANON_DEVS='bjcmono bjcgray'
+CANNON_CONTRIB_DEVS='bj10e bj200 bjccmyk bjccolor bjc600 bjc800 lbp8 lips3'
+
+LEXMARK_CONTIB_DEVS='lxm5700m lxm3200 lex2050 lex3200 lex5700 lex7000'
+
+BROTHER_DEVS='hl7x0'
+BROTHER_CONTRIB_DEVS='hl1240 hl1250'
+
 APPLE_DEVS='appledmp iwhi iwhic iwlo iwlow iwlq iwlqc'
 IBM_DEVS='ibmpro jetp3852'
-OKI_DEVS='oki182 okiibm oki4w'
-JAPAN_DEVS='lips4 lips4v ljet4pjl lj4dithp dj505j picty180 lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl'
-MISC_PDEVS='uniprint ap3250 atx23 atx24 atx38 itk24i itk38 coslw2p coslwxl declj250 fs600 imagen lj250 m8510 necp6 oce9050 r4081 sj48 tek4696 t4693d2 t4693d4 t4693d8 dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k gdi samsunggdi'
+
+OKI_DEVS='oki182 okiibm'
+OKI_CONTRIB_DEVS='oki4w'
+
+JAPAN_DEVS='ljet4pjl lj4dithp dj505j picty180'
+JAPAN_CONTRIB_DEVS='lips4 lips4v lips2p bjc880j pr201 pr150 pr1000 pr1000_4 jj100 bj10v bj10vh mj700v2c mj500c mj6000c mj8000c fmpr fmlbp ml600 lbp310 lbp320 md50Mono md50Eco md1xMono escpage lp2000 npdl rpdl'
+
+
+MISC_PDEVS='uniprint ap3250 atx23 atx24 atx38 itk24i itk38 coslw2p coslwxl declj250 fs600 imagen lj250 m8510 necp6 oce9050 r4081 sj48 tek4696 t4693d2 t4693d4 t4693d8'
+MISC_CONTRIB_PDEVS='dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k gdi samsunggdi'
+
 OPVP_DEVS='opvp oprp'
 
 ETS_HALFTONING_DEVS='rinkj'
@@ -3005,10 +3024,6 @@ while test -n "$drivers"; do
                 # All HP printers
                 P_DEVS0="$P_DEVS0 $HP_DEVS"
                 ;;
-        LEXMARK)
-                # All Lexmark printers
-                P_DEVS0="$P_DEVS0 $LEXMARK_DEVS"
-                ;;
         BROTHER)
                 # All Brother printers
                 P_DEVS0="$P_DEVS0 $BROTHER_DEVS"
@@ -3062,6 +3077,38 @@ while test -n "$drivers"; do
                         AC_MSG_WARN(Unable to include opvp/oprp driver due to missing or disabled prerequisites...)
                 fi
                 ;;
+        ###################################################
+        # This block of devices are considered deprecated #
+        # They WILL be removed unless testers/maintainers #
+        # step forward.                                   #
+        ###################################################
+        HP_CONTRIB)
+                P_DEVS0="$P_DEVS0 $HP_CONTRIB_DEVS"
+                ;;
+        EPSON_CONTRIB)
+                P_DEVS0="$P_DEVS0 $EPSON_CONTRIB_DEVS"
+                ;;
+        CANON_CONTRIB)
+                P_DEVS0="$P_DEVS0 $CANON_CONTRIB_DEVS"
+                ;;
+        LEXMARK_CONTRIB)
+                # All Lexmark printers
+                P_DEVS0="$P_DEVS0 $LEXMARK_CONTIB_DEVS"
+                ;;
+        BROTHER_CONTRIB)
+                P_DEVS0="$P_DEVS0 $BROTHER_CONTRIB_DEVS"
+                ;;
+        OKI_CONTRIB)
+                P_DEVS0="$P_DEVS0 $OKI_CONTRIB_DEVS"
+                ;;
+        JAPAN_CONTRIB)
+                P_DEVS0="$P_DEVS0 $JAPAN_CONTRIB_DEVS"
+                ;;
+        MISC_CONTRIB)
+                P_DEVS0="$P_DEVS0 $MISC_CONTRIB_PDEVS"
+                ;;
+        ###################################################
+        ###################################################
         *)
                 # It's a driver name (or a user messup)
                 P_DEVS0="$P_DEVS0 `echo $THIS |sed -e 's,\.dev$,,'`"
@@ -3106,6 +3153,15 @@ fi
 if test -n "$X11_DEVS0"; then
     X11_DEVS=`(for i in $X11_DEVS0; do d='$(DD)'${i}.dev; if ( grep '^'$d $noncontribmakefiles  2>&1 >/dev/null) || ( ! test -z "$CONTRIBINCLUDE" ); then echo $d; fi; done) | sort | uniq | tr '\012\015' '  '`
 fi
+
+
+for i in $HP_CONTRIB_DEVS $EPSON_CONTRIB_DEVS $CANNON_CONTRIB_DEVS $LEXMARK_CONTIB_DEVS $BROTHER_CONTRIB_DEVS $OKI_CONTRIB_DEVS $JAPAN_CONTRIB_DEVS $MISC_CONTRIB_PDEVS;
+  do
+    echo $P_DEVS | grep $i 2>&1 >/dev/null
+    if test "$?" = "0"; then
+      CONTRIB_WARNING_LIST="$i $CONTRIB_WARNING_LIST"
+    fi
+  done
 
 # if the user explicitly requested the Apple devices, then hard fail if they aren't available
 if test x"$APPLE_DEVICES_REQUESTED" = x"yes" ; then
@@ -4016,6 +4072,17 @@ if test x"$OCR_DEVS_WARNING_LINE1" != x"" ; then
     fi
     echo ""
 fi
+
+if test x"$CONTRIB_WARNING_LIST" != x"" ; then
+    echo ""
+    AC_MSG_WARN([
+    The following devices are deprecated: $CONTRIB_WARNING_LIST
+    If you rely on any of these devices and are willing to volunteer to maintain or test them,
+    please contact the Ghostscript/GhostPDL development team: https://bugs.ghostscript.com/
+    In the absence of maintainers/testers, these devices will be removed in the next release.
+    ])
+fi
+
 
 AC_CONFIG_FILES($CONFIG_FILES_LIST)
 
