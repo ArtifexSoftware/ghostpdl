@@ -1930,8 +1930,10 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
         } else {
             /* Assign as mask buffer */
             ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
-            if (ctx->mask_stack == NULL)
+            if (ctx->mask_stack == NULL) {
+                pdf14_buf_free(tos);
                 return gs_note_error(gs_error_VMerror);
+            }
             ctx->mask_stack->mask_buf = tos;
         }
         ctx->smask_blend = false;  /* just in case */
@@ -1944,8 +1946,10 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
         /* the data after a resize */
         new_data_buf = gs_alloc_bytes(ctx->memory, tos->planestride + CAL_SLOP,
                                         "pdf14_pop_transparency_mask");
-        if (new_data_buf == NULL)
+        if (new_data_buf == NULL) {
+            pdf14_buf_free(tos);
             return_error(gs_error_VMerror);
+        }
         /* Initialize with 0.  Need to do this since in Smask_Luminosity_Mapping
            we won't be filling everything during the remap if it had not been
            written into by the PDF14 fill rect */
@@ -2053,8 +2057,10 @@ pdf14_pop_transparency_mask(pdf14_ctx *ctx, gs_gstate *pgs, gx_device *dev)
             rc_decrement(ctx->mask_stack, "pdf14_pop_transparency_mask(ctx->mask_stack)");
         }
         ctx->mask_stack = pdf14_mask_element_new(ctx->memory);
-        if (ctx->mask_stack == NULL)
+        if (ctx->mask_stack == NULL) {
+            pdf14_buf_free(tos);
             return gs_note_error(gs_error_VMerror);
+        }
         ctx->mask_stack->mask_buf = tos;
     }
     return code;
