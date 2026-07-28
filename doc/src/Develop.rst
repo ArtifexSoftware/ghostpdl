@@ -838,7 +838,7 @@ Color Spaces and support:
 
 Font loading and support:
    Font name mapping:
-      Resource/Init/Fontmap, lib/Fontmap.ATB, lib/Fontmap.ATM, Resource/Init/Fontmap.GS, lib/Fontmap.OS2, lib/Fontmap.OSF, lib/Fontmap.SGI, lib/Fontmap.Sol, lib/Fontmap.Ult, lib/Fontmap.VMS, lib/Fontmap.URW-136.T1, lib/Fontmap.URW-136.TT, Resource/Init/cidfmap, Resource/Init/FAPIcidfmap, Resource/Init/FAPIfontmap, Resource/Init/FCOfontmap-PCLPS2.
+      Resource/Init/Fontmap, Resource/Init/Fontmap.GS, lib/Fontmap.URW-136.TT, Resource/Init/cidfmap, Resource/Init/FAPIcidfmap, Resource/Init/FAPIfontmap, Resource/Init/FCOfontmap-PCLPS2.
 
    Generic:
       Resource/Init/gs_fonts.ps, Resource/Init/gs_fntem.ps.
@@ -853,7 +853,7 @@ Font loading and support:
       Resource/Init/gs_cidcm.ps, Resource/Init/gs_cidfn.ps, Resource/Init/gs_cmap.ps, Resource/Init/gs_ciddc.ps, Resource/Init/gs_cidfm.ps, Resource/Init/gs_cidtt.ps.
 
    Font API:
-      Resource/Init/gs_fapi.ps, Resource/Init/FAPIconfig, lib/FAPIconfig-FCO, Resource/Init/xlatmap. Resource/Init/FCOfontmap-PCLPS2. lib/FCOfontmap-PCLPS3. lib/FCOfontmap-PS3.
+      Resource/Init/gs_fapi.ps, Resource/Init/xlatmap. Resource/Init/FCOfontmap-PCLPS2. lib/FCOfontmap-PCLPS3. lib/FCOfontmap-PS3.
 
    Other:
       lib/gs_kanji.ps, lib/gs_pfile.ps, Resource/Init/gs_typ32.ps.

@@ -165,9 +165,6 @@ These files are found in the ``Resource/Init`` subdirectory of the Ghostscript s
 ``cidfmap``
    CID font mapping table. Allows substitution of a CID font for another CID font or a TrueType font for a CID font.
 
-``FAPIconfig``
-   A configuration file for Font API client.
-
 ``FAPIfontmap``
    Font mapping table for Font-API-handled fonts.
 

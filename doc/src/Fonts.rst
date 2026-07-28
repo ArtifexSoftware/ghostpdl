@@ -220,11 +220,11 @@ With version 9.18 released we have, for some time, regarded FAPI/Freetype as bei
 
 To run Ghostscript with UFST, you first need to :ref:`build Ghostscript with the UFST bridge<Make_USFTBuild>`. Both bridges may run together.
 
-There are 2 ways to handle fonts with a third-party font renderer (FAPI). First, you can substitute any FAPI-handled font to a resident PostScript font, using special map files ``FAPIfontmap`` and ``FAPIcidfmap``. Second, you can redirect PostScript fonts to FAPI, setting entries in ``FAPIconfig`` file.
+There are 2 ways to handle fonts with a third-party font renderer (FAPI). First, you can substitute any FAPI-handled font to a resident PostScript font, using special map files ``FAPIfontmap`` and ``FAPIcidfmap``.
 
-Names ``FAPIfontmap``, ``FAPIcidfmap``, ``FAPIconfig`` in this text actually are placeholders, which may be substituted with command line arguments : ``-sFAPIfontmap=name1 -sFAPIcidfmap=name2 -sFAPIconfig=name3``. Ghostscript searches the specified file names as explained in How Ghostscript finds files. Default values for these arguments are equal to argument names. When building Ghostscript with ``COMPILE_INITS=1``, only default values are used.
+Names ``FAPIfontmap``, ``FAPIcidfmap`` in this text actually are placeholders, which may be substituted with command line arguments : ``-sFAPIfontmap=name1 -sFAPIcidfmap=name2``. Ghostscript searches the specified file names as explained in How Ghostscript finds files. Default values for these arguments are equal to argument names. When building Ghostscript with ``COMPILE_INITS=1``, only default values are used.
 
-Font files, which are being handled with FAPI, may reside in any directory in your hard disk. Paths to them to be specified in ``FAPIfontmap`` and with special command line arguments, explained below. The path may be either absolute or relative. Relative ones are being resolved from the path, which is specified in ``FAPIconfig`` file.
+Font files, which are being handled with FAPI, may reside in any directory in your hard disk. Paths to them to be specified in ``FAPIfontmap`` and with special command line arguments, explained below. The path may be either absolute or relative.
 
 The file ``FAPIfontmap`` is actually special PostScript code. It may include records of 2 types : general records and FCO records (see below).
 
@@ -241,7 +241,6 @@ A general record describes a font, which is being rendered with FAPI. They must 
      - Description
    * - Path
      - string
-     - Absolute path to font file, or relative path to font file from the FontPath value, being specified in FAPIconfig.
    * - FontType
      - integer
      - PostScript type for this font. Only 1 and 42 are currently allowed.
@@ -295,7 +294,6 @@ The file ``FAPIcidfmap`` defines a mapping table for CIDFont resources. It conta
      - Description
    * - Path
      - string
-     - Absolute path to font file, or relative path to font file from the ``CIDFontPath`` value, being specified in FAPIconfig.
    * - CIDFontType
      - integer
      - PostScript type for this CID font.
@@ -334,68 +332,11 @@ Example of FAPI CID font map record:
 
    /HeiseiKakuGo-W5 << /Path (/WIN2000/Fonts/PMINGLIU.TTF) /CIDFontType 0 /FAPI /UFST /CSI [(Japan1) 2] >> ;
 
-The control file FAPIconfig defines 4 entries:
-
-
-
-.. list-table::
-   :widths: 20 20 60
-   :header-rows: 1
-
-   * - Key
-     - Type
-     - Description
-
-   * - FontPath
-     - string
-     - Absolute path to a directory, which contains fonts.
-
-       Used to resolve relative paths in ``FAPIfontmap``.
-
-   * - CIDFontPath
-     - string
-     - Absolute path to a directory, which contains fonts to substitute to CID fonts.
-
-       Used to resolve relative paths in ``FAPIcidfmap``.
-
-       It may be same or different than ``FontPath``.
-
-   * - HookDiskFonts
-     - array of integers
-     - List of PS font types to be handled with FAPI.
-
-       This controls other fonts that ones listed in ``FAPIfontmap`` and ``FAPIcidfmap`` -
-
-       such ones are PS fonts installed to Ghostscript with ``lib/fontmap`` or
-
-       with ``GS_FONTPATH``, or regular CID font resources.
-
-       Unlisted font types will be rendered with the native Ghostscript font renderer.
-
-       Only allowed values now are 1,9,11,42.
-
-       Note that 9 and 11 correspond to ``CIDFontType`` 0 and 2.
-
-   * - HookEmbeddedFonts
-     - array of integers
-     - List of PS font types to be handled with FAPI.
-
-       This controls fonts being embedded into a document - either fonts or CID font resources.
-
-       Unlisted font types will be rendered with the native Ghostscript font renderer.
-
-       Only allowed values now are 1,9,11,42.
-
-       Note that 9 and 11 correspond to ``CIDFontType`` 0 and 2.
-
-
-Ghostscript distribution includes sample config files ``gs/lib/FAPIconfig``, ``gs/lib/FAPIconfig-FCO``. which may be customized by the user. The last ones defines the configuration for handling resident UFST fonts only.
-
 In special cases you may need to customize the file ``lib/xlatmap``. Follow instructions in it.
 
 Some UFST font collections need a path for finding an UFST plugin. If you run UFST with such font collection, you should run Ghostscript with a special command line argument ``-sUFST_PlugIn=path``, where path specifies a disk path to the UFST plugin file, which Monotype Imaging distributes in ``ufst/fontdata/MTFONTS/PCL45/MT3/plug__xi.fco``. If UFST needs it and the command line argument is not specified, Ghostscript prints a warning and searches plugin file in the current directory.
 
-If you want to run UFST with resident UFST fonts only (and allow Ghostscript font renderer to handle fonts, which may be downloaded or embedded into documents), you should run Ghostscript with these command line arguments : ``-sFCOfontfile=path1 -sFCOfontfile2=path2 -sUFST_PlugIn=path3 -sFAPIfontmap=map-name -sFAPIconfig=FAPIconfig-FCO`` where ``path1`` specifies a disk path to the main FCO file, ``path2`` specifies a disk path to the Wingdings FCO file, ``path3`` a disk path the FCO plugin file, ``path1`` is either ``gs/lib/FCOfontmap-PCLPS2``, ``gs/lib/FCOfontmap-PCLPS3``, or ``gs/lib/FCOfontmap-PS3``. ``FAPIcidfmap`` works as usual, but probably you want to leave it empty because FCO doesn't emulate CID fonts.
+If you want to run UFST with resident UFST fonts only (and allow Ghostscript font renderer to handle fonts, which may be downloaded or embedded into documents), you should run Ghostscript with these command line arguments : ``-sFCOfontfile=path1 -sFCOfontfile2=path2 -sUFST_PlugIn=path3 -sFAPIfontmap=map-name`` where ``path1`` specifies a disk path to the main FCO file, ``path2`` specifies a disk path to the Wingdings FCO file, ``path3`` a disk path the FCO plugin file, ``path1`` is either ``gs/lib/FCOfontmap-PCLPS2``, ``gs/lib/FCOfontmap-PCLPS3``, or ``gs/lib/FCOfontmap-PS3``. ``FAPIcidfmap`` works as usual, but probably you want to leave it empty because FCO doesn't emulate CID fonts.
 
 Some configurations of UFST need a path for finding symbol set files. If you compiled UFST with such configuration, you should run Ghostscript with a special command line argument ``-sUFST_SSdir=path``, where path specifies a disk path to the UFST support directory, which Monotype Imaging distributes in ``ufst/fontdata/SUPPORT``. If UFST needs it and the command line argument is not specified, Ghostscript prints a warning and searches symbol set files in the current directory.
 
