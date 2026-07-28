@@ -157,8 +157,12 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 { dup type /dicttype eq { dup /FAPI known } { //false } ifelse
 } .internalbind def
 
+/IsActive       % <record> IsActive <bool>
+{ pop //true
+} .internalbind def
+
 /FontRecordVirtualMethods //RecordVirtualMethodsStub dup length 2 add dict copy begin
-  /IsActive //true def
+  /IsActive //IsActive def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
   { currentglobal 3 1 roll //true setglobal
     //FontOptions //complete_instance exec
@@ -169,7 +173,7 @@ currentdict end def
 
 /CIDFontRecordVirtualMethods //RecordVirtualMethodsStub dup length 3 add dict copy begin
   /GetCSI //TranslateCSI def
-  /IsActive //true def
+  /IsActive //IsActive def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
   { currentglobal 3 1 roll //true setglobal
     //CIDFontOptions //complete_instance exec
