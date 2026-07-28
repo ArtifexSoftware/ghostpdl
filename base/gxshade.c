@@ -267,10 +267,8 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 
         if (code < 0)
             return code;
-        if (cf < 0)
-            return_error(gs_error_rangecheck);
         ci = (int)cf;
-        if (ci >= gs_cspace_indexed_num_entries(pcs))
+        if (ci < 0 || ci >= gs_cspace_indexed_num_entries(pcs))
             return_error(gs_error_rangecheck);
         code = gs_cspace_indexed_lookup(pcs, ci, &cc);
         if (code < 0)
