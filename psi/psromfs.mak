@@ -26,7 +26,7 @@
 PDF_RESOURCE_LIST=CMap$(D)*
 
 MISC_INIT_FILES=FCOfontmap-PCLPS2 -C cidfmap \
- FAPIcidfmap FAPIconfig FAPIfontmap Fontmap Fontmap.GS xlatmap \
+ FAPIcidfmap FAPIfontmap Fontmap Fontmap.GS xlatmap \
  gs_dscp.ps gs_trap.ps \
  -B gs_cet.ps
 

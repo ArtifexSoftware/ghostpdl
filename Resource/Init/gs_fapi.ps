@@ -29,31 +29,10 @@ languagelevel 2 .setlanguagelevel
   /.EmbedFontObjects 0
 .dicttomark def
 
-%----------------------------- Process FAPIconfig -----------------------
-
-% The HookDiskFonts and HookEmbeddedFonts take a simple array setting normally.
-% but if two or more FAPI plugins are built in, they can take a dictionary,
-% whose contents are the FAPI subtype string of a given plugin as the key,
-% and an array containing the (sub)set of font types the plugin should handle.
-% Any repetition of font types is ill advised since the resulting bevhaviour
-% will depend on the order entries are stored in the dictionary, which is
-% indeterminate. An attempt to use request a font scaler/renderer which cannot
-% deal with a given font type will result in the FAPI resorting to it's default
-% search for a viable plugin.
-%
-% As an example, you might want UFST to handle Truetype/Type 42 fonts, and
-% Freetype to handle others, thus:
-% /HookDiskFonts << /UFST [11 42] /FreeType  [1 2 9] >>
-% /HookEmbeddedFonts << /UFST [11 42] /FreeType  [1 2 9] >>
+%----------------------------- Setup .FAPIconfig -----------------------
 
 /Config
 <<
-  % If we've got a FAPIConfig, run it now.
-  systemdict /FAPIconfig known
-  {
-    /FAPIconfig .systemvar .runlibfile
-  } if
-
   % Now setup defaults for any entries not set above - these defaults are correct
   % for FAPI/Freeetype
   currentdict /FontPath known not { /FontPath (/Fonts) readonly } if			% A default directory for FAPI-handled font files
@@ -294,40 +273,6 @@ currentdict end Redefine
 %==================== A hook for buildfont* operators ====================
 
 % The procedure .FAPIhook redirects PS fonts to FAPI on necessity.
-% This depends on the following conditions :
-%
-% 1. If font dictionary has /FAPI entry, it is a font listed in FAPIconfig.FontPath,
-%    and must be build with .FAPIrebuildfont, or a copy of a font, which was
-%    built with .FAPIrebuildfont .
-%
-% 2. If the font dictionary has /PathLoad entry, and has no /FAPI entry,
-%    it is an installed PS font, which is described in lib/fontmap or
-%    in GS_FONTPATH. .loadfont inserts /PathLoad entry for this case
-%    (see gs_fonts.ps).
-%
-%    Installed fonts are being loaded with GS font loader,
-%    the they are passed to FAPI is same way as embedded fonts are.
-%    We do so because UFST cannot read fonts, which don't
-%    follow Type 1/42 file format strongly.
-%
-% 3. Executing .loadfont, we place /FAPI_hook_disable in the 0th
-%    element of some procedure on the execution stack - see gs_fonts.ps .
-%    If FAPI_hook finds /FAPI_hook_disable in there,
-%    it knows that it is called for a disk font during
-%    its internal definefont.
-%
-% 4. If font dictionary has no /FAPI entry, and has no /Path entry,
-%    and if we are not in .loadfont context, it is an embedded font.
-%
-% 5. Two entries to be defined in lib/FAPIconfig to control the hooking of PS fonts :
-%    HookDiskFonts and HookEmbeddedFonts .
-%    They specify arrays of font types (integers) to be redirected with FAPI.
-%    HookDiskFonts controls disk PS fonts (which fall into (2) and (3) ).
-%    HookEmbeddedFonts controls fonts being embedded into documents.
-%
-% 7. We apply the operator .passtoFAPI for checking whether FAPI can handle a font.
-%    If so, we insert /FAPI entry into the font dictionary and convert it
-%    with .FAPIrebuildfont . Otherwise the font is handled with the native GS font renderer.
 
 /FAPI_hook_debug   % <proc> FAPI_hook_debug -
 FAPIDEBUG { {exec} } { {pop} } ifelse

@@ -213,7 +213,7 @@ UFST_LIB_EXT=
 UFST_ROMFS_ARGS?=-b \
  -P $(UFST_ROOT)/fontdata/mtfonts/pcl45/mt3/ -d fontdata/mtfonts/pcl45/mt3/ pcl___xj.fco plug__xi.fco wd____xh.fco \
  -P $(UFST_ROOT)/fontdata/mtfonts/pclps2/mt3/ -d fontdata/mtfonts/pclps2/mt3/ pclp2_xj.fco \
- -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/ FAPIconfig-FCO
+ -c -P $(PSSRCDIR)/../lib/ -d Resource/Init/
 
 UFSTROMFONTDIR=\"%rom%fontdata/\"
 UFSTDISCFONTDIR?=\"$(UFST_ROOT)/fontdata/\"
