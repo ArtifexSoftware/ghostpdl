@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -341,6 +341,9 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         case PtCr_mod:
             if (vsp->value.i == 0)
                 return_error(gs_error_undefinedresult);
+            if (vsp[-1].value.i == min_int &&
+                vsp->value.i == -1)  /* anomalous boundary case, fail */
+                return_error(gs_error_rangecheck);
             vsp[-1].value.i %= vsp->value.i;
             --vsp; continue;
         case PtCr_mul_int: {
