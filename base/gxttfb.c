@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -753,7 +753,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     /* so that TTC never comes here. */
     FloatMatrix m1;
     bool dg;
-    uint gftt = gs_currentgridfittt(pfont->dir);
+    uint gftt = 2;
     bool ttin = (gftt & 1);
     int code;
     /*	gs_currentgridfittt values (binary) :

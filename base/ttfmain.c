@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -500,7 +500,7 @@ static FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *self, int glyphI
     ttfSubGlyphUsage *usage = tti->usage + tti->usage_top;
     const byte *glyph = NULL;
     int glyph_size;
-    bool execute_bytecode = true;
+    bool execute_bytecode = false;
     int nPoints = 0;
 
 retry:
