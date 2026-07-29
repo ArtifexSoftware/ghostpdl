@@ -609,7 +609,7 @@ bjc_print_page_mono(gx_device_printer * pdev, gp_file * file)
     byte *cmp = gs_alloc_bytes(pdev->memory, rsize,
                                "bjc mono comp buffer"); /*worst case */
     byte *outrow; /* misc variable for send a row */
-    int y;
+    int y, code = 0;
     int skip;    /* empty raster lines */
     char color = (ppdev->smooth == true ? 0x12 :       /* smooted black */
                   ((ppdev->ink & INK_K) ? 0x11: 0x10)); /* black or color */
@@ -638,7 +638,9 @@ bjc_print_page_mono(gx_device_printer * pdev, gp_file * file)
     /* Write the contents of the image. */
     skip = 0;
     for (y = 0; y < pdev->height ; y++) {
-      gdev_prn_copy_scan_lines(pdev, y, row, raster);
+      code = gdev_prn_copy_scan_lines(pdev, y, row, raster);
+      if (code < 0)
+          return code;
       if (bjc_invert_bytes(row, raster, ppdev->inverse, lastmask)) /* black -> K and check empty line*/
        {  /* empty line raster */
         if (skip) bjc_put_raster_skip(file, skip);
@@ -683,7 +685,7 @@ bjc_print_page_gray(gx_device_printer * pdev, gp_file * file)
     byte *cmp = gs_alloc_bytes(pdev->memory, rsize,
                                "bjc gray comp buffer"); /*worst case */
     byte *out; /* misc variable for send a row */
-    int y;
+    int y, code = 0;
     int skip;    /* empty raster lines */
     char color = (ppdev->smooth == true ? 0x12 :       /* smooted black */
                   ((ppdev->ink & INK_K) ? 0x11: 0x10)); /* black or color */
@@ -721,7 +723,9 @@ bjc_print_page_gray(gx_device_printer * pdev, gp_file * file)
                 return_error(gs_error_VMerror);   /* initiate the dithering */
 
     for (y = 0; y < pdev->height ; y++) {
-     gdev_prn_copy_scan_lines(pdev, y, row, width);   /* image -> row */
+     code = gdev_prn_copy_scan_lines(pdev, y, row, width);   /* image -> row */
+     if (code < 0)
+         return code;
      FloydSteinbergDitheringG(ppdev, row, dit, width, raster, ppdev->limit); /* gray */
       if (bjc_invert_bytes(dit, raster, ppdev->inverse, lastmask)) /* black -> K and check empty line*/
        {  /* end of empty lines */
@@ -899,7 +903,7 @@ bjc_print_page_color(gx_device_printer * pdev, gp_file * file)
     byte *rowY = dit + 2*raster;      /*Y*/
     byte *rowK = dit + 3*raster;      /*K*/
     byte *outrow; /* misc variable for send a row */
-    int y;
+    int y, code = 0;
     int skip;    /* empty raster lines */
     char color = 0x10; /* color */
     char ink   = 0x01; /* regular ink type */
@@ -942,7 +946,9 @@ bjc_print_page_color(gx_device_printer * pdev, gp_file * file)
                 return_error(gs_error_VMerror);   /* initiate the dithering */
 
     for (y = 0; y < pdev->height ; y++) {
-        gdev_prn_copy_scan_lines(pdev, y, row, gdev_prn_raster(pdev));
+        code = gdev_prn_copy_scan_lines(pdev, y, row, gdev_prn_raster(pdev));
+        if (code < 0)
+            return code;
         /* image -> row */
         FloydSteinbergDitheringC(ppdev, row, dit, width, raster, ppdev->limit,
                                  ppdev->compose);
