@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -45,16 +45,9 @@ static int convert_to_string(const gs_memory_t *mem, os_ptr, os_ptr);
 /*
  * Max and min integer values expressed as reals.
  * Note that these are biased by 1 to allow for truncation.
- * They should be #defines rather than static consts, but
- * several of the SCO Unix compilers apparently can't handle this.
- * On the other hand, the DEC compiler can't handle casts in
- * constant expressions, so we can't use min_long and max_long.
- * What a nuisance!
  */
-#define ALT_MIN_INT (((ps_int)-1) << ((sizeof(ps_int) * 8) - 1))
-#define ALT_MAX_INT (~(ALT_MIN_INT))
-static const double min_int_real = (ALT_MIN_INT * 1.0 - 1);
-static const double max_int_real = (ALT_MAX_INT * 1.0 + 1);
+static const double min_int_real = (((double)MIN_PS_INT) - 1);
+static const double max_int_real = (((double)MAX_PS_INT) + 1);
 
 #define REAL_CAN_BE_INT(v)\
   ((v) > min_int_real && (v) < max_int_real)
