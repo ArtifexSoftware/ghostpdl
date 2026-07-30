@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -230,6 +230,13 @@ zgetenv(i_ctx_t *i_ctx_p)
     str = ref_to_string(op, imemory, "getenv key");
     if (str == 0)
         return_error(gs_error_VMerror);
+
+    if (gs_is_path_control_active(imemory)) {
+        ifree_string((byte *) str, r_size(op) + 1, "getenv key");
+        make_false(op);
+        return 0;
+    }
+
     if (gp_getenv(str, (char *)0, &len) > 0) {	/* key missing */
         ifree_string((byte *) str, r_size(op) + 1, "getenv key");
         make_false(op);

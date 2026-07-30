@@ -940,8 +940,22 @@ static int zaddcontrolpath(i_ctx_t *i_ctx_p)
 
 static int zactivatepathcontrol(i_ctx_t *i_ctx_p)
 {
+    ref *safety, *safe;
+    int code = 0;
+
     gs_activate_path_control(imemory, 1);
-    return 0;
+
+    /* Set the PostScript level 'safe' parameter. This now correctly prevents
+     * /tests_private/ps/ps3cet/27-09.ps from changing FontDir, GenericResourceDir
+     * and GenericResourcePathSep by using setsystemparams (this is implemented
+     * in PostScript in gs_ll2.ps and relies on systemdict->SAFETY->safe being true).
+     */
+    if (dict_find_string(systemdict, "SAFETY", &safety) > 0 &&
+        dict_find_string(safety, "safe", &safe) > 0) {
+        make_bool(safe, true);
+        code = idict_put_string(systemdict, "safe", safe);
+    }
+    return code;
 }
 static int zcurrentpathcontrolstate(i_ctx_t *i_ctx_p)
 {

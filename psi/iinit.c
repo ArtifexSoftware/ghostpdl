@@ -68,6 +68,18 @@
 #ifndef USERDICT_SIZE
 #  define USERDICT_SIZE 211
 #endif
+/* Ditto the size of $error. */
+#ifndef DOLLARERROR_SIZE
+#  define DOLLARERROR_SIZE 43
+#endif
+/* Ditto the size of errordict. */
+#ifndef ERRORDICT_SIZE
+#  define ERRORDICT_SIZE 43
+#endif
+/* Ditto the size of FontDirectory. */
+#ifndef FONTDIRECTORY_SIZE
+#  define FONTDIRECTORY_SIZE 101
+#endif
 /* Ditto the size of filterdict. */
 #ifndef FILTERDICT_SIZE
 #  define FILTERDICT_SIZE 43
@@ -161,8 +173,27 @@ const struct {
         "userdict", USERDICT_SIZE, true
     },
     {
+        "$error", DOLLARERROR_SIZE, true
+    },
+    {
+        "errordict", ERRORDICT_SIZE, true
+    },
+    {
+        "FontDirectory", FONTDIRECTORY_SIZE, true
+    },
+    {
         "filterdict", FILTERDICT_SIZE, false
     },
+#endif
+};
+const char *const initial_referred[] =
+{
+#ifdef INITIAL_REFERRED
+    INITIAL_REFERRED
+#else
+    "$error",
+    "errordict",
+    "FontDirectory"
 #endif
 };
 /* systemdict and globaldict are magically inserted at the bottom */
@@ -302,6 +333,23 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
                     if (make_initial_dict(i_ctx_p, def->oname, idicts) == 0)
                         return_error(gs_error_VMerror);
                 }
+        }
+
+        /* Create dictionaries which are stored inside systemdict, but in local VM
+         * (apart from userdict, which additionally needs to be on the initial
+         * dictionary stack). This used to be done in PostScript in gs_init.ps, but
+         * that required the use of .forceput.
+         * This is all complicated by the intention to potentially build the interpreter
+         * supporting only lower versions of PostScript. This could all be simplified
+         * now, since we don't really support that any more.
+         */
+        for (i = 0; i < countof(initial_referred); i++) {
+            const char *dname = initial_referred[i];
+            ref *r;
+
+            r = make_initial_dict(i_ctx_p, dname, idicts);
+            if (r == NULL)
+                return_error(gs_error_VMerror);
         }
 
         /* Set up the initial dstack. */

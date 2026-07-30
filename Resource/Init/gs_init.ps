@@ -187,8 +187,6 @@ currentdict /DELAYSAFER known { /DELAYSAFER //true def /NOSAFER //true def } if
 }
 ifelse def
 
-/OLDSAFER currentdict /OLDSAFER known def
-
 /SAFERERRORS
 currentdict /NOSAFERERRORS known
 {
@@ -230,8 +228,7 @@ currentdict /DEVICE known not
 (%stdout) (w) file pop
 (%stderr) (w) file pop
 
-/.currentuserparams where {
-  pop mark
+  mark
         % The Adobe implementations appear to have very large maximum
         % stack sizes.  This turns out to actually make a difference,
         % since some badly-behaved files include extremely long procedures,
@@ -243,7 +240,6 @@ currentdict /DEVICE known not
   /MaxExecStack 5000
   /MaxOpStack 300000
   .dicttomark .setuserparams
-} if
 
 % Define a procedure for skipping over an unneeded section of code.
 % This avoids allocating space for the skipped procedures.
@@ -1321,14 +1317,6 @@ currentdict /.unstoppederrorhandler .undef
 currentdict /.acquire_$error .undef
 currentdict /.printerror_long .undef
 
-% Define $error.  This must be in local VM.
-.currentglobal //false .setglobal
-currentdict /$error 40 dict .forceput	% $error is local, systemdict is global
-                % newerror, errorname, command, errorinfo,
-                % ostack, estack, dstack, recordstacks,
-                % binary, globalmode,
-                % .inerror, .nosetlocal, position,
-                % plus extra space for badly designed error handers.
 $error begin
   /newerror //false def
   /recordstacks //true def
@@ -1339,12 +1327,7 @@ $error begin
   /position //null def
   /errorinfo //null def
 end
-% Define errordict similarly.  It has one entry per error name,
-%   plus handleerror.  However, some astonishingly badly written PostScript
-%   files require it to have at least one empty slot.
-currentdict /errordict ErrorNames length 3 add dict
-.forceput		% errordict is local, systemdict is global
-.setglobal		% back to global VM
+
 %  gserrordict contains all the default error handling methods, but unlike
 %  errordict it is noaccess after creation (also it is in global VM).
 %  When running 'SAFER', we'll ignore the contents of errordict, which
@@ -1516,11 +1499,6 @@ begin
 end
 
 (END PROCS) VMDEBUG
-
-% Define the font directory.
-currentdict
-/FontDirectory //false .setglobal 100 dict //true .setglobal
-.forceput		% FontDirectory is local, systemdict is global
 
 % Define the encoding dictionary.
 /EncodingDirectory 16 dict def	% enough for Level 2 + PDF standard encodings
@@ -2413,7 +2391,6 @@ readonly def
 %% --- These are documented extensions ---
 /.locksafe {
   //.locksafe_userparams exec
-  //systemdict /getenv {pop //false} .forceput
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
   % properties and pagedevice .LockSafetyParams in agreement even
@@ -2421,29 +2398,14 @@ readonly def
   currentglobal currentpagedevice gcheck setglobal % use correct VM space
   << /.LockSafetyParams //true >> setpagedevice
   setglobal
-  //SAFETY /safe //true .forceput % overrides readonly
 } .forcebind odef
 
 /.setsafe
 {
-  OLDSAFER {
-    SAFETY /safe get not {
-      <<
-        /PermitFileReading [ ]
-        /PermitFileWriting [ ]
-        /PermitFileControl [ ]
-      >> setuserparams
-    }
-    if
-    .locksafe
-  }
-  {
     //.lockfileaccess exec
     DELAYBIND not {
         //systemdict /SAFERUndefinePostScriptOperators .knownget {exec} if
     } if
-  }
-  ifelse
 } .forcebind odef
 %% --- End documented extensions ---
 
@@ -2465,31 +2427,15 @@ readonly def
     /..StartupGlobal //true
   >> setpagedevice
   setglobal
-  //SAFETY /safe //true .forceput % overrides readonly
 } .forcebind def
 
 % See /.locksafeglobal above.
 %
 /.setsafeglobal {
-  OLDSAFER
-  {
-    SAFETY /safe get not {
-      <<
-        /PermitFileReading [ ]
-        /PermitFileWriting [ ]
-        /PermitFileControl [ ]
-      >> setuserparams
-    }
-    if
-    //.locksafeglobal exec
-  }
-  {
     //.lockfileaccess exec
     DELAYBIND not {
         //systemdict /SAFERUndefinePostScriptOperators .knownget {exec} if
     } if
-  }
-  ifelse
 } .forcebind odef
 
 % If we are running in SAFER mode, lock things down
@@ -2664,8 +2610,6 @@ currentdict /.locksafeglobal .undef
   errordict /typecheck { pop } put	% pop the command
   0 1 .delaycount 1 sub { .delaybind exch get .forcebind pop } for
   0 1 .delayinternalcount 1 sub { .delayinternalbind exch get .forcebind pop } for
-  //systemdict /.delaybind {} .forceput	% reclaim the space
-  //systemdict /.delayinternalbind {} .forceput	% reclaim the space
   //systemdict /.bindnow .forceundef	% ditto
   .applyundefinternalnames
   put
@@ -2695,36 +2639,36 @@ currentdict /.locksafeglobal .undef
 
 (END INIT) VMDEBUG
 
-/.currentuserparams where {
-  pop
-        % Remove real user params from psuserparams.
+  % Remove real user params from psuserparams.
   mark .currentuserparams counttomark 2 idiv {
     pop psuserparams exch undef
   } repeat pop
-        % Update the copy of the user parameters.
+
+  % Update the copy of the user parameters.
   mark .currentuserparams counttomark 2 idiv {
-    userparams 3 1 roll .forceput	% userparams is read-only
+    userparams 3 1 roll put	% userparams is read-only
   } executeonly repeat pop
-        % Turn on idiom recognition, if available.
+
+  % Turn on idiom recognition, if available.
   currentuserparams /IdiomRecognition known {
     /IdiomRecognition //true .definepsuserparam
   } if
+
   psuserparams readonly pop
   systemdict /.definepsuserparam undef
-        % Save a copy of userparams for use with save/restore
-        % (and, if implemented, context switching).
+      % We need the userparams in systemdict to be in local
+      % VM so that it obeys save and restore.
   .currentglobal //false .setglobal
-     mark userparams { } forall .dicttomark readonly
-     currentdict exch /userparams exch .forceput		% systemdict is read-only
-  .setglobal
-} executeonly if
-/.currentsystemparams where {
-  pop
-        % Remove real system params from pssystemparams.
+      % Save a copy of userparams for use with save/restore
+      % (and, if implemented, context switching).
+   mark userparams { } forall .dicttomark readonly
+   currentdict exch /userparams exch .forceput
+   .setglobal
+
+  % Remove real system params from pssystemparams.
   mark .currentsystemparams counttomark 2 idiv {
     pop pssystemparams exch .forceundef
   } executeonly repeat pop
-} if
 
 % Set up AlignToPixels :
 
