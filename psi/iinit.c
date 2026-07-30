@@ -76,6 +76,12 @@
 #ifndef ERRORDICT_SIZE
 #  define ERRORDICT_SIZE 43
 #endif
+#ifndef STATUSDICT_SIZE
+#  define STATUSDICT_SIZE 91
+#endif
+#ifndef SERVERDICT_SIZE
+#  define SERVERDICT_SIZE 11
+#endif
 /* Ditto the size of FontDirectory. */
 #ifndef FONTDIRECTORY_SIZE
 #  define FONTDIRECTORY_SIZE 101
@@ -182,6 +188,12 @@ const struct {
         "FontDirectory", FONTDIRECTORY_SIZE, true
     },
     {
+        "statusdict", STATUSDICT_SIZE, true
+    },
+    {
+        "serverdict", SERVERDICT_SIZE, true
+    },
+    {
         "filterdict", FILTERDICT_SIZE, false
     },
 #endif
@@ -193,7 +205,9 @@ const char *const initial_referred[] =
 #else
     "$error",
     "errordict",
-    "FontDirectory"
+    "FontDirectory",
+    "statusdict",
+    "serverdict"
 #endif
 };
 /* systemdict and globaldict are magically inserted at the bottom */
