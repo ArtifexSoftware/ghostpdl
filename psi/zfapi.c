@@ -2149,8 +2149,18 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                     glyph_length = gs_fapi_glyph_invalid_index;
                 }
                 else if (pfont42->data.len_glyphs) {
-                    if (char_code <= pfont42->data.numGlyphs)
+                    if (char_code <= pfont42->data.numGlyphs) {
                         glyph_length = pfont42->data.len_glyphs[char_code];
+                        if (glyph_length > 0) {
+                            ulong endoffs0;
+
+                            if (glyph_length > 65535
+                                || sfnt_get_sfnt_length(pdr, &endoffs0) < 0
+                                || offset0 > endoffs0
+                                || (ulong)glyph_length > endoffs0 - offset0)
+                                glyph_length = gs_fapi_glyph_invalid_index;
+                        }
+                    }
                     else
                         glyph_length = gs_fapi_glyph_invalid_index;
                 }
@@ -2206,9 +2216,19 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                     if (r.error == 2) {
                         glyph_length = length_read;
                     }
+                    if (glyph_length > 0
+                        && (r.error < 0
+                            || length_read <
+                                   (ulong)min(glyph_length, buf_length)))
+                        glyph_length = (int)length_read;
                 }
             }
         }
+    }
+    /* Avoid passing uninitialised or left over byte values to the fapi server */
+    if (buf != NULL && glyph_length < buf_length) {
+        size_t n = glyph_length < 0 ? 0 : glyph_length;
+        memset(buf + n, 0x00, buf_length - n);
     }
     return glyph_length;
 }
