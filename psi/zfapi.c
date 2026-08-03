@@ -2206,16 +2206,6 @@ FAPI_FF_get_glyph(gs_fapi_font *ff, gs_glyph char_code, byte *buf, int buf_lengt
                         r.rstring(&r, buf,
                                   min(glyph_length,
                                       buf_length) /* safety */ );
-                    if (r.error == 1) {
-                        glyph_length = gs_fapi_glyph_invalid_index;
-                    }
-                    /* r.error == 2 means a rangecheck, and probably means that the
-                     * font is broken, and the final glyph length is longer than the data available for it.
-                     * In which case we need to return the number of bytes read.
-                     */
-                    if (r.error == 2) {
-                        glyph_length = length_read;
-                    }
                     if (glyph_length > 0
                         && (r.error < 0
                             || length_read <
