@@ -984,7 +984,7 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
 
             if (!tiff->is_rgba && tiff->tiled) {
                 if (tiff->palette) {
-                    size_t n = size_mla(tiff->memory, &code, tiff->tile_width, tiff->tile_height, 1, 0);
+                    size_t n = TIFFTileSize(tiff->handle);
                     byte *q = tiff->samples;
                     byte *p = tiff->proc_samples;
                     if (code < 0)
