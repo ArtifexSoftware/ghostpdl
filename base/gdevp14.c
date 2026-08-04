@@ -2291,7 +2291,7 @@ pdf14_get_buffer_information(const gx_device * dev,
                          gs_alloc_bytes(mem,
                                         planestride *
                                                 (buf->n_chan +
-                                                 buf->has_tags ? 1 : 0) + CAL_SLOP,
+                                                 (buf->has_tags ? 1 : 0)) + CAL_SLOP,
                                         "pdf14_get_buffer_information");
             if (transbuff->transbytes == NULL)
                 return gs_error_VMerror;
