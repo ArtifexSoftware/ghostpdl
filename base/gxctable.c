@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -32,10 +32,8 @@ gx_color_interpolate_nearest(const fixed * pi,
 {
     const int *pdim = pclt->dims;
     int m = pclt->m;
-    const gs_const_string *table = pclt->table;
 
     if (pclt->n > 3) {
-        table += fixed2int_var_rounded(pi[0]) * pdim[1];
         ++pi, ++pdim;
     } {
         int ic = fixed2int_var_rounded(pi[2]);
