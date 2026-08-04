@@ -1567,7 +1567,7 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
     cmm_profile_t *named_profile;
     gsicc_namedcolortable_t *namedcolor_table;
     unsigned int num_entries;
-    int k, code, i, num_comp, num_spots=0, num_process=0, num_other=0;
+    int k, code, i, num_comp, num_spots=0;
     gs_color_space_index type = gs_color_space_get_index(pcs);
     char **names = NULL;
     byte *pname = NULL; /* Silence compiler warning */
@@ -1613,13 +1613,13 @@ gsicc_support_named_color(const gs_color_space *pcs, const gs_gstate *pgs)
         /* Classify */
         if (none_colorant ||
             strncmp((char *)pname, "All", name_size) == 0) {
-            num_other++;
+            /* Do nothing */
         } else {
             if (strncmp((char *)pname, "Cyan", name_size) == 0 ||
                 strncmp((char *)pname, "Magenta", name_size) == 0 ||
                 strncmp((char *)pname, "Yellow", name_size) == 0 ||
                 strncmp((char *)pname, "Black", name_size) == 0) {
-                num_process++;
+                /* Do nothing */
             } else {
                 num_spots++;
             }
