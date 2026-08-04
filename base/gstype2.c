@@ -645,13 +645,13 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
                     case ce2_and:
                         if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
                             return_error(gs_error_invalidfont);
-                        csp[-1] = ((csp[-1] != 0) & (*csp != 0) ? fixed_1 : 0);
+                        csp[-1] = (((csp[-1] != 0) && (*csp != 0)) ? fixed_1 : 0);
                         --csp;
                         break;
                     case ce2_or:
                         if (!CS_CHECK_CSTACK_BOUNDS(&csp[-1], cstack))
                             return_error(gs_error_invalidfont);
-                        csp[-1] = (csp[-1] | *csp ? fixed_1 : 0);
+                        csp[-1] = (((csp[-1] != 0) || (*csp != 0)) ? fixed_1 : 0);
                         --csp;
                         break;
                     case ce2_not:
