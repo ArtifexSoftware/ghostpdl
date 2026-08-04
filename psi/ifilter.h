@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -80,6 +80,8 @@ typedef struct stream_proc_state_s {
     uint index;			/* current index within data */
     ref proc;
     ref data;
+    gs_ref_memory_t *data_memory;	/* memory allocator 'data' belongs to, */
+    ulong data_save_id;		/* innermost save id when 'data' was stored */
 } stream_proc_state;
 
 #define private_st_stream_proc_state() /* in zfproc.c */\

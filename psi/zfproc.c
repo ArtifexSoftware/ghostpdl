@@ -29,6 +29,8 @@
 #include "files.h"
 #include "store.h"
 
+#include "isave.h"
+#include "isstate.h"
 /* ---------------- Generic ---------------- */
 
 /* GC procedures */
@@ -81,10 +83,65 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
     state->eof = 0;
     state->proc = *sop;
     make_empty_string(&state->data, a_all);
+    state->data_memory = NULL;
+    state->data_save_id = 0;
     state->index = 0;
     sstrm->state = (stream_state *) state;
     *psstrm = sstrm;
     return 0;
+}
+
+/*
+ * Note where the data string just stored in ss->data was allocated, and
+ * which save was innermost at that time (if the space the string was created
+ * in was local VM). The procedure may hand us a string allocated after an
+ *  enclosing 'save' while the stream state itself predates that save;
+ * if that save is restored, the string is freed but the stream survives,
+ * so we must be able to detect this before using the string again.
+ * The PLRM is explicit that PostScript program should not do this, and the
+ * result is 'unpredictable'.
+ */
+static void
+s_proc_record_data(i_ctx_t *i_ctx_p, stream_proc_state *ss, const ref *pdata)
+{
+    int space_index = r_space_index(pdata);
+    gs_ref_memory_t *mem;
+
+    ss->data_memory = NULL;
+    ss->data_save_id = 0;
+    if (space_index != i_vm_local)
+        return;			/* global, foreign or system VM: not restorable */
+    mem = idmemory->spaces_indexed[space_index];
+    if (mem == NULL || mem->saved == NULL)
+        return;			/* no save active: string cannot be restored away */
+    ss->data_memory = mem;
+    /* Save ids are unique and never reused; 0 means 'invisible' save. */
+    ss->data_save_id = (mem->saved->id != 0 ? mem->saved->id : (ulong)-1);
+}
+
+/*
+ * Check that the string in ss->data has not been freed by a restore,
+ * i.e. that the save that was innermost when it was stored is still
+ * active.  If it is not, the string may no longer exist: replace the
+ * dangling reference with an empty string so it cannot be used.
+ * Returns true if ss->data is safe to use.
+ */
+static bool
+s_proc_data_valid(stream_proc_state *ss)
+{
+    const alloc_save_t *save;
+
+    if (ss->data_memory == NULL)
+        return true;
+    for (save = ss->data_memory->saved; save != NULL;
+        save = save->state.saved)
+        if (save->id == ss->data_save_id)
+            return true;
+    make_empty_string(&ss->data, a_all);
+    ss->index = 0;
+    ss->data_memory = NULL;
+    ss->data_save_id = 0;
+    return false;
 }
 
 /* Handle an interrupt during a stream operation. */
@@ -187,7 +244,11 @@ s_proc_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     /* Move data from the string returned by the procedure */
     /* into the stream buffer, or ask for a callback. */
     stream_proc_state *const ss = (stream_proc_state *) st;
-    uint count = r_size(&ss->data) - ss->index;
+    uint count;
+
+    if (!s_proc_data_valid(ss))
+        return_error(gs_error_ioerror);
+    count = r_size(&ss->data) - ss->index;
 
     if (count > 0) {
         uint wcount = pw->limit - pw->ptr;
@@ -263,6 +324,7 @@ s_proc_read_continue(i_ctx_t *i_ctx_p)
     }
     ss = (stream_proc_state *) ps->state;
     ss->data = *opbuf;
+    s_proc_record_data(i_ctx_p, ss, opbuf);
     ss->index = 0;
     if (r_size(opbuf) == 0)
         ss->eof = true;
@@ -306,6 +368,8 @@ s_proc_write_process(stream_state * st, stream_cursor_read * pr,
     stream_proc_state *const ss = (stream_proc_state *) st;
     uint rcount = pr->limit - pr->ptr;
 
+    if (!s_proc_data_valid(ss))
+        return_error(gs_error_ioerror);
     /* if 'last' return CALLC even when rcount == 0. ss->eof terminates */
     if (rcount > 0 || (last && !ss->eof)) {
         uint wcount = r_size(&ss->data) - ss->index;
@@ -357,6 +421,8 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
     for (ps = fptr(fop); ps->strm != 0;)
         ps = ps->strm;
     psst = (stream_proc_state *) ps->state;
+    if (!s_proc_data_valid(psst))
+        return_error(gs_error_ioerror);
     {
         int npush = nstate + 6;
 
@@ -406,6 +472,7 @@ s_proc_write_continue(i_ctx_t *i_ctx_p)
     }
     ss = (stream_proc_state *) ps->state;
     ss->data = *opbuf;
+    s_proc_record_data(i_ctx_p, ss, opbuf);
     ss->index = 0;
     pop(2);
     return 0;
