@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -306,7 +306,7 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, size_t data_size,
     nbands = (cdev->target->height + band_height - 1) / band_height;
     cdev->nbands = nbands;
 #ifdef DEBUG
-    if (gs_debug_c('l') | gs_debug_c(':'))
+    if (gs_debug_c('l') || gs_debug_c(':'))
         dmlprintf4(dev->memory, "[:]width=%d, band_width=%d, band_height=%d, nbands=%d\n",
                    bdev->width, band_width, band_height, nbands);
 #endif
@@ -868,7 +868,7 @@ clist_end_page(gx_device_clist_writer * cldev)
         cldev->page_info.io_procs->set_memory_warning(cldev->page_info.cfile, 0);
 
 #ifdef DEBUG
-    if (gs_debug_c('l') | gs_debug_c(':')) {
+    if (gs_debug_c('l') || gs_debug_c(':')) {
         if (cb.pos <= 0xFFFFFFFF)
             dmlprintf2(cldev->memory, "[:]clist_end_page at cfile=%lu, bfile=%lu\n",
                   (unsigned long)cb.pos, (unsigned long)cldev->page_info.bfile_end_pos);
