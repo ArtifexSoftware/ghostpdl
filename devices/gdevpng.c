@@ -543,7 +543,9 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
 #endif
     png_color *palettep;
     png_uint_16 num_palette;
+#if PNG_LIBPNG_VER_MINOR < 5
     png_uint_32 valid = 0;
+#endif
     int upfactor, downfactor;
 
     /* Sanity check params */
@@ -589,7 +591,9 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
         (png_uint_32) (pdev->HWResolution[1] * upfactor * (100.0 / 2.54) / downfactor + 0.5);
 
     phys_unit_type = PNG_RESOLUTION_METER;
+#if PNG_LIBPNG_VER_MINOR < 5
     valid |= PNG_INFO_pHYs;
+#endif
 
     switch (depth) {
         case 32:
@@ -661,7 +665,10 @@ do_png_print_page(gx_device_png * pdev, gp_file * file, bool monod)
         }
 #endif
         num_palette = num_colors;
+#if PNG_LIBPNG_VER_MINOR < 5
         valid |= PNG_INFO_PLTE;
+#endif
+
         for (i = 0; i < num_colors; i++) {
             (*dev_proc(pdev, map_color_rgb)) ((gx_device *) pdev,
                                               (gx_color_index) i, rgb);
