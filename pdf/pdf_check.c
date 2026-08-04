@@ -317,7 +317,7 @@ static int pdfi_check_Shading_dict(pdf_context *ctx, pdf_dict *shading_dict,
                 }
 
                 code = pdfi_dict_next(ctx, shading_dict, &Key, &Value, &index);
-                if (code == 0 && pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM)
+                if (code == 0 && (pdfi_type_of(Value) == PDF_DICT || pdfi_type_of(Value) == PDF_STREAM))
                     break;
                 (void)pdfi_loop_detector_cleartomark(ctx); /* Clear to the mark for the Shading dictionary loop */
                 pdfi_countdown(Key);

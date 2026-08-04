@@ -335,10 +335,10 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
             if(gnstr != NULL && gnstr->size == 7) {
                 if(!memcmp(gnstr->data, "uni", 3)) {
                     static const char *hexdigits = "0123456789ABCDEF";
-                    char *d0 = strchr(hexdigits, gnstr->data[3]);
-                    char *d1 = strchr(hexdigits, gnstr->data[4]);
-                    char *d2 = strchr(hexdigits, gnstr->data[5]);
-                    char *d3 = strchr(hexdigits, gnstr->data[6]);
+                    const char *d0 = strchr(hexdigits, gnstr->data[3]);
+                    const char *d1 = strchr(hexdigits, gnstr->data[4]);
+                    const char *d2 = strchr(hexdigits, gnstr->data[5]);
+                    const char *d3 = strchr(hexdigits, gnstr->data[6]);
 
                     unicode = (ushort *)gs_alloc_bytes(pdev->memory, sizeof(ushort), "temporary Unicode array");
                     if (unicode == NULL)

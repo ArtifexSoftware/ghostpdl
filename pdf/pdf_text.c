@@ -1213,7 +1213,7 @@ int pdfi_TJ(pdf_context *ctx)
 
     /* Save the CTM for later restoration */
     saved = ctm_only(ctx->pgs);
-    ctx->text.initial_current_point_valid = initial_point_valid = (gs_currentpoint(ctx->pgs, &initial_point) >= 0);
+    ctx->text.initial_current_point_valid = (initial_point_valid = (gs_currentpoint(ctx->pgs, &initial_point) >= 0));
 
     /* Calculate the text rendering matrix, see section 1.7 PDF Reference
      * page 409, section 5.3.3 Text Space details.

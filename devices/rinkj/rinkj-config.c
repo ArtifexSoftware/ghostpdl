@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -68,7 +68,7 @@ rinkj_config_get (const char *config, const char *key)
       char *p_nl;
       int key_ix;
 
-      p_nl = strchr (config + ix, '\n');
+      p_nl = (char *)strchr (config + ix, '\n');
       if (p_nl == NULL)
         {
           /* last line not \n terminated */
@@ -122,7 +122,7 @@ rinkj_config_keyval (const char *config, char **p_val, const char **p_next)
       char *p_nl;
       int key_ix;
 
-      p_nl = strchr (config + ix, '\n');
+      p_nl = (char *)strchr (config + ix, '\n');
       if (p_nl == NULL)
         {
           /* last line not \n terminated */

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -62,7 +62,7 @@ cif_print_page(gx_device_printer *pdev, gp_file *prn_stream)
 #else
         fname = (const char *)(pdev->fname);
 #endif
-        if ((s = strchr(fname, '.')) == NULL)
+        if ((s = (char *)strchr(fname, '.')) == NULL)
                 length = strlen(fname) + 1;
         else
                 length = s - fname;

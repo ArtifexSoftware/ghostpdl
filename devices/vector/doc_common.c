@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -433,10 +433,10 @@ int txt_get_unicode(gx_device *dev, gs_font *font, gs_glyph glyph, gs_char ch, u
             if (code >= 0 && gnstr.size == 7) {
                 if (!memcmp(gnstr.data, "uni", 3)) {
                     static const char *hexdigits = "0123456789ABCDEF";
-                    char *d0 = strchr(hexdigits, gnstr.data[3]);
-                    char *d1 = strchr(hexdigits, gnstr.data[4]);
-                    char *d2 = strchr(hexdigits, gnstr.data[5]);
-                    char *d3 = strchr(hexdigits, gnstr.data[6]);
+                    const char *d0 = strchr(hexdigits, gnstr.data[3]);
+                    const char *d1 = strchr(hexdigits, gnstr.data[4]);
+                    const char *d2 = strchr(hexdigits, gnstr.data[5]);
+                    const char *d3 = strchr(hexdigits, gnstr.data[6]);
 
                     if (d0 != NULL && d1 != NULL && d2 != NULL && d3 != NULL) {
                         *Buffer++ = ((d0 - hexdigits) << 12) + ((d1 - hexdigits) << 8) + ((d2 - hexdigits) << 4) + (d3 - hexdigits);

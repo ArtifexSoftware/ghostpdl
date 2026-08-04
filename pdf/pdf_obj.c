@@ -567,7 +567,7 @@ static int pdfi_obj_name_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
 {
     int code = 0, i;
     pdf_name *name = (pdf_name *)obj;
-    int esc_size = 1, size = name->length + 1;
+    int esc_size = 1;
     byte *buf;
 
     /* We need to 'escape' any characters that can't be represented in a PDF name. */

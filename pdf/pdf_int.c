@@ -366,10 +366,10 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         num->value.i = 0;
     } else if (has_exponent) {
         float f, exp;
-        char *p = strstr((const char *)Buffer, "e");
+        char *p = (char *)strstr((const char *)Buffer, "e");
 
         if (p == NULL)
-            p = strstr((const char *)Buffer, "E");
+            p = (char *)strstr((const char *)Buffer, "E");
 
         if (p == NULL) {
             if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
@@ -856,7 +856,7 @@ int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s)
     }
 
     Buffer[index] = 0x00;
-    t = bsearch((const void *)Buffer,
+    t = (void *)bsearch((const void *)Buffer,
                 (const void *)pdf_token_strings[TOKEN_INVALID_KEY+1],
                 nelems(pdf_token_strings)-(TOKEN_INVALID_KEY+1),
                 sizeof(pdf_token_strings[0]),
@@ -872,7 +872,7 @@ int pdfi_read_bare_keyword(pdf_context *ctx, pdf_c_stream *s)
 
 static pdf_key lookup_keyword(const byte *Buffer)
 {
-    void *t = bsearch((const void *)Buffer,
+    const void *t = bsearch((const void *)Buffer,
                       (const void *)pdf_token_strings[TOKEN_INVALID_KEY+1],
                       nelems(pdf_token_strings)-(TOKEN_INVALID_KEY+1),
                       sizeof(pdf_token_strings[0]),

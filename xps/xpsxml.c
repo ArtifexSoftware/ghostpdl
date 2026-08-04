@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -66,7 +66,7 @@ on_open_tag(void *zp, const char *ns_name, const char **atts)
     int attslen;
     int textlen;
     const char *name;
-    char *p;
+    const char *p;
     int i;
 
     if (parser->error)
@@ -130,7 +130,7 @@ on_open_tag(void *zp, const char *ns_name, const char **atts)
     strcpy(item->name, name);
     for (i = 0; atts[i]; i++)
     {
-        item->atts[i] = p;
+        item->atts[i] = (char *)p;
         if ((i & 1) == 0)
             strcpy(item->atts[i], skip_namespace(atts[i]));
         else

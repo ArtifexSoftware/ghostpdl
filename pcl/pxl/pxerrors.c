@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -95,7 +95,7 @@ px_record_warning(const char *message, bool save_all, px_state_t * pxs)
 
     char *str = pxs->warnings + end;
 
-    char *word_end = strchr(message, ' ');
+    const char *word_end = strchr(message, ' ');
 
     if (end + strlen(message) + 1 > px_max_warning_message)
         return 1;

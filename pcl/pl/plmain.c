@@ -1857,7 +1857,7 @@ int
 pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
 {
     /* We're setting a device or user parameter to a string. */
-    char *eqp;
+    const char *eqp;
     const char *value;
     gs_param_string str;
     int code = 0;
@@ -1917,7 +1917,7 @@ pl_main_set_string_param(pl_main_instance_t * pmi, const char *arg)
 int
 pl_main_set_parsed_param(pl_main_instance_t * pmi, const char *arg)
 {
-    char *eqp;
+    const char *eqp;
     const char *value;
     char buffer[128];
 
@@ -2306,7 +2306,7 @@ static int
 handle_dash_s(pl_main_instance_t *pmi, const char *arg)
 {
     int code = 0;
-    char *eqp;
+    const char *eqp;
     const char *value;
 
     eqp = strchr(arg, '=');

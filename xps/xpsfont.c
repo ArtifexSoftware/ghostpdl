@@ -733,7 +733,6 @@ xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_
     int hadv, vadv, vorg;
     int vtop, ymax, desc;
     int scale;
-    byte *fontmax = font->data + font->length;
 
     /* some insane defaults */
 
