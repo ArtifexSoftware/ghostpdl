@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -174,7 +174,5 @@ gx_bits_cache_dump(gx_bits_cache * bc)
         }
         bck = bck->next;
     } while (bck != first);
-
-    bck=bck;
 }
 #endif
