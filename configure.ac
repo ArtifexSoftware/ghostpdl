@@ -45,8 +45,8 @@ fi
 THEMAKEFILE="${MAKEFILE:-Makefile}"
 AUXFLAGS_MAK=auxflags.mak
 
-ARCH_AUTOCONF_HEADER=arch-config/arch_autoconf.h
-ARCH_AUTOCONF_HEADER_PROTO=arch/arch_autoconf.h.in
+ARCH_AUTOCONF_HEADER=./arch-config/arch_autoconf.h
+ARCH_AUTOCONF_HEADER_PROTO=$srcdir/arch/arch_autoconf.h.in
 
 dnl --------------------------------------------------
 dnl Local utilities
@@ -400,7 +400,7 @@ if test x"$with_arch_h" = x""; then
           *)
             ARCH_CONF_HEADER=
             if test x"$host" != x"$build"; then
-              ARCH_CONF_HEADER="\$(GLSRCDIR)/../$ARCH_AUTOCONF_HEADER"
+              ARCH_CONF_HEADER="$ARCH_AUTOCONF_HEADER"
             else
               ARCH_CONF_HEADER=
             fi
