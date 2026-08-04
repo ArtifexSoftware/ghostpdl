@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -272,6 +272,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
     const byte *tile_row;
     gs_int_rect prev;
     int code;
+    (void)sdata; /* Declared in DECLARE_MASK_COPY but not used here */
 
     FIT_MASK_COPY(pccd->data, pccd->sourcex, pccd->raster,
                   pccd->x, pccd->y, pccd->w, pccd->h);
