@@ -141,7 +141,7 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
     pdf_font_truetype *ttfont = (pdf_font_truetype *)pfont->client_data;
     uint gind = 0;
     uint cc = 0;
-    int i, code = 0;
+    int code = 0;
 
     if ((ttfont->descflags & 4) != 0 || glyph >= GS_MIN_GLYPH_INDEX) {
         gind = (uint)glyph < GS_MIN_GLYPH_INDEX ? glyph : glyph - GS_MIN_GLYPH_INDEX;
@@ -203,7 +203,7 @@ static uint pdfi_type42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
             }
             else {
                 /* Slow linear search */
-                for (i = 0; sgl->Glyph != 0x00; i++) {
+                for (; sgl->Glyph != 0x00;) {
                     if (sgl->Glyph[0] == gname.data[0]
                         && strlen(sgl->Glyph) == gname.size
                         && !strncmp((char *)sgl->Glyph, (char *)gname.data, gname.size))
