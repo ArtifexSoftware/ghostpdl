@@ -363,7 +363,7 @@ $(PSOBJ)zfilter.$(OBJ) : $(PSSRC)zfilter.c $(OP) $(memory__h)\
 $(PSOBJ)zfproc.$(OBJ) : $(PSSRC)zfproc.c $(GH) $(memory__h) $(stat__h)\
  $(oper_h)\
  $(estack_h) $(files_h) $(gsstruct_h) $(ialloc_h) $(ifilter_h) $(istruct_h)\
- $(store_h) $(stream_h) $(strimpl_h)\
+ $(store_h) $(stream_h) $(strimpl_h) $(isave_h) $(isstate_h)\
  $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zfproc.$(OBJ) $(C_) $(PSSRC)zfproc.c
 
