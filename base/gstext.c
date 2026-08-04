@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -374,10 +374,10 @@ gs_text_begin(gs_gstate * pgs, const gs_text_params_t * text,
          * op_state to anything, causing an assert. Let's just always update_overprint. */
         if (dev_profile->overprint_control != gs_overprint_control_disable) {
             if (pgs->text_rendering_mode == 0) {
-                op_params.op_state = OP_STATE_FILL;
+                op_params.op_state = GS_OP_STATE_FILL;
                 gs_gstate_update_overprint(pgs, &op_params);
             } else if (pgs->text_rendering_mode == 1) {
-                op_params.op_state = OP_STATE_STROKE;
+                op_params.op_state = GS_OP_STATE_STROKE;
                 gs_gstate_update_overprint(pgs, &op_params);
             }
         }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,6 +25,7 @@
 #include "gxblend.h"
 #include "gdevp14.h"
 #include "gsfunc.h"
+#include "gsovrc.h"
 
 /*
  * Define the operations for the PDF 1.4 transparency compositor.
@@ -145,7 +146,7 @@ struct gs_pdf14trans_params_s {
     bool crop_blend_params;  /* This is used when the blend params are updated
                                 during a transparency group push */
     bool is_pattern;      /* Needed to detect device push and pop for clist pattern */
-    PDF14_OP_FS_STATE op_fs_state;
+    GS_OP_FS_STATE op_fs_state;
 };
 
 /*

@@ -4978,6 +4978,7 @@ $(GLSRC)gstrans.h:$(GLSRC)std.h
 $(GLSRC)gstrans.h:$(GLSRC)stdpre.h
 $(GLSRC)gstrans.h:$(GLGEN)arch.h
 $(GLSRC)gstrans.h:$(GLSRC)gs_dll_call.h
+$(GLSRC)gstrans.h:$(GLSRC)gsovrc.h
 $(GLSRC)scommon.h:$(GLSRC)gsstype.h
 $(GLSRC)scommon.h:$(GLSRC)gsmemory.h
 $(GLSRC)scommon.h:$(GLSRC)gslibctx.h
@@ -12589,6 +12590,7 @@ $(GLSRC)gdevp14.h:$(GLSRC)std.h
 $(GLSRC)gdevp14.h:$(GLSRC)stdpre.h
 $(GLSRC)gdevp14.h:$(GLGEN)arch.h
 $(GLSRC)gdevp14.h:$(GLSRC)gs_dll_call.h
+$(GLSRC)gdevp14.h:$(GLSRC)gsovrc.h
 $(GLSRC)gscolor3.h:$(GLSRC)gsshade.h
 $(GLSRC)gscolor3.h:$(GLSRC)gspath.h
 $(GLSRC)gscolor3.h:$(GLSRC)gxmatrix.h

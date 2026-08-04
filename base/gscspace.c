@@ -513,7 +513,7 @@ gx_set_no_overprint(gs_gstate* pgs)
     gs_overprint_params_t   params = { 0 };
 
     params.retain_any_comps = false;
-    params.op_state = OP_STATE_NONE;
+    params.op_state = GS_OP_STATE_NONE;
     params.is_fill_color = pgs->is_fill_color;
     params.effective_opm = pgs->color[0].effective_opm = 0;
 
@@ -532,7 +532,7 @@ gx_set_spot_only_overprint(gs_gstate* pgs)
     gx_color_index drawn_comps = dev == NULL ? 0 : gx_get_process_comps(dev);
 
     params.retain_any_comps = true;
-    params.op_state = OP_STATE_NONE;
+    params.op_state = GS_OP_STATE_NONE;
     params.is_fill_color = pgs->is_fill_color;
     params.effective_opm = pgs->color[0].effective_opm = 0;
     params.drawn_comps = drawn_comps;
@@ -559,7 +559,7 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_gstate * pgs)
         params.retain_any_comps = true;
 
     params.is_fill_color = pgs->is_fill_color;
-    params.op_state = OP_STATE_NONE;
+    params.op_state = GS_OP_STATE_NONE;
 
     /* Only DeviceCMYK case can have overprint mode set to true */
     params.effective_opm = pgs->color[0].effective_opm = 0;
@@ -906,7 +906,7 @@ int gx_set_overprint_cmyk(const gs_color_space * pcs, gs_gstate * pgs)
     params.is_fill_color = pgs->is_fill_color;
     params.retain_any_comps = true;
     params.drawn_comps = drawn_comps;
-    params.op_state = OP_STATE_NONE;
+    params.op_state = GS_OP_STATE_NONE;
 
     if_debug2m(gs_debug_flag_overprint, pgs->memory,
         "[overprint] gx_set_overprint_cmyk. retain_any_comps = %d, drawn_comps = 0x%x\n",
@@ -1024,7 +1024,7 @@ int gx_set_overprint_rgb(const gs_color_space * pcs, gs_gstate * pgs)
     params.is_fill_color = pgs->is_fill_color;
     params.retain_any_comps = true;
     params.drawn_comps = drawn_comps;
-    params.op_state = OP_STATE_NONE;
+    params.op_state = GS_OP_STATE_NONE;
 
     if_debug2m(gs_debug_flag_overprint, pgs->memory,
         "[overprint] gx_set_overprint_rgb. retain_any_comps = %d, drawn_comps = 0x%x\n",

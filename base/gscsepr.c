@@ -193,7 +193,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_gstate * pgs)
                                    (pcs->params.separation.sep_type != SEP_ALL));
         params.is_fill_color = pgs->is_fill_color;
         params.drawn_comps = 0;
-        params.op_state = OP_STATE_NONE;
+        params.op_state = GS_OP_STATE_NONE;
         if (params.retain_any_comps) {
             if (pcs->params.separation.sep_type != SEP_NONE) {
                 if (pcs->params.separation.named_color_supported) {

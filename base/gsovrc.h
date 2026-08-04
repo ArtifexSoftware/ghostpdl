@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -217,10 +217,10 @@
  */
 
 typedef enum {
-    OP_STATE_NONE = 0,
-    OP_STATE_FILL,
-    OP_STATE_STROKE,
-} OP_FS_STATE;
+    GS_OP_STATE_NONE = 0,
+    GS_OP_STATE_FILL,
+    GS_OP_STATE_STROKE,
+} GS_OP_FS_STATE;
 
 typedef struct gs_overprint_params_s    gs_overprint_params_t;
 
@@ -255,7 +255,7 @@ struct gs_overprint_params_s {
      */
     gx_color_index  drawn_comps;
     bool is_fill_color;      /* This tells us what the current color is for our set up */
-    OP_FS_STATE op_state;   /* This sets the state of the device for an upcoming command */
+    GS_OP_FS_STATE op_state;   /* This sets the state of the device for an upcoming command */
     bool effective_opm;     /* PDF14 needs this information for its compatible blend mode */
 };
 

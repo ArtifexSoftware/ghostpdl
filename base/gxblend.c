@@ -1256,9 +1256,9 @@ art_blend_pixel_8_inline(byte *gs_restrict dst, const byte *gs_restrict backdrop
              * PDF specification */
         case BLEND_MODE_CompatibleOverprint:
             {
-                gx_color_index drawn_comps = p14dev->op_state == PDF14_OP_STATE_FILL ?
+                gx_color_index drawn_comps = p14dev->op_state == GS_OP_STATE_FILL ?
                                              p14dev->drawn_comps_fill : p14dev->drawn_comps_stroke;
-                bool opm = p14dev->op_state == PDF14_OP_STATE_FILL ?
+                bool opm = p14dev->op_state == GS_OP_STATE_FILL ?
                     p14dev->effective_overprint_mode : p14dev->stroke_effective_op_mode;
                 gx_color_index comps;
                 /* If overprint mode is true and the current color space and
@@ -1514,9 +1514,9 @@ art_blend_pixel_16_inline(uint16_t *gs_restrict dst, const uint16_t *gs_restrict
              * PDF specification */
         case BLEND_MODE_CompatibleOverprint:
             {
-                gx_color_index drawn_comps = p14dev->op_state == PDF14_OP_STATE_FILL ?
+                gx_color_index drawn_comps = p14dev->op_state == GS_OP_STATE_FILL ?
                                              p14dev->drawn_comps_fill : p14dev->drawn_comps_stroke;
-                bool opm = p14dev->op_state == PDF14_OP_STATE_FILL ?
+                bool opm = p14dev->op_state == GS_OP_STATE_FILL ?
                     p14dev->effective_overprint_mode : p14dev->stroke_effective_op_mode;
                 gx_color_index comps;
                 /* If overprint mode is true and the current color space and
@@ -4294,9 +4294,9 @@ do_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
                            gs_memory_t *memory, gx_device *dev)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    bool overprint = pdev->op_state == GS_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
     bool additive = pdev->ctx->additive;
-    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
+    gx_color_index drawn_comps = pdev->op_state == GS_OP_STATE_FILL ?
                                      pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     int n_chan = nos->n_chan;
     int num_spots = tos->num_spots;
@@ -4429,9 +4429,9 @@ do_compose_alphaless_group16(pdf14_buf *tos, pdf14_buf *nos,
                              gs_memory_t *memory, gx_device *dev)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
-    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    bool overprint = pdev->op_state == GS_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
     bool additive = pdev->ctx->additive;
-    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
+    gx_color_index drawn_comps = pdev->op_state == GS_OP_STATE_FILL ?
                                      pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     int n_chan = nos->n_chan;
     int num_spots = tos->num_spots;
@@ -5023,8 +5023,8 @@ do_mark_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     intptr_t shape_off = num_chan * planestride;
     intptr_t alpha_g_off = shape_off + (has_shape ? planestride : 0);
     intptr_t tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
-    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
-    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
+    bool overprint = pdev->op_state == GS_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == GS_OP_STATE_FILL ?
                                      pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     byte shape = 0; /* Quiet compiler. */
     byte src_alpha;
@@ -5667,8 +5667,8 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
     intptr_t shape_off = num_chan * planestride;
     intptr_t alpha_g_off = shape_off + (has_shape ? planestride : 0);
     intptr_t tag_off = alpha_g_off + (has_alpha_g ? planestride : 0);
-    bool overprint = pdev->op_state == PDF14_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
-    gx_color_index drawn_comps = pdev->op_state == PDF14_OP_STATE_FILL ?
+    bool overprint = pdev->op_state == GS_OP_STATE_FILL ? pdev->overprint : pdev->stroke_overprint;
+    gx_color_index drawn_comps = pdev->op_state == GS_OP_STATE_FILL ?
                                  pdev->drawn_comps_fill : pdev->drawn_comps_stroke;
     uint16_t shape = 0; /* Quiet compiler. */
     uint16_t src_alpha;
