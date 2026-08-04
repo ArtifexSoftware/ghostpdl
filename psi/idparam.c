@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -195,8 +195,8 @@ dict_int_array_check_param(const gs_memory_t *mem, const ref * pdict,
                 ivec[i] = (int)pa.value.intval;
                 break;
             case t_real:
-                if (pa.value.realval < min_int ||
-                    pa.value.realval > max_int ||
+                if ((int)pa.value.realval < min_int ||
+                    (int)pa.value.realval > max_int ||
                     pa.value.realval != (int)pa.value.realval
                     )
                     return_error(gs_error_rangecheck);
