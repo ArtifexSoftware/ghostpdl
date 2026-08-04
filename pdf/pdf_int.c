@@ -360,7 +360,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
         return code;
 
     if ((malformed && !recovered) || (!real && doubleneg)) {
-        if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed number %s as 0", Buffer)) < 0) {
+        if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed number %s as 0", Buffer)) < 0) {
             goto exit;
         }
         num->value.i = 0;
@@ -372,7 +372,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             p = strstr((const char *)Buffer, "E");
 
         if (p == NULL) {
-            if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
+            if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
                 goto exit;
             }
             num->value.d = 0;
@@ -380,7 +380,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
             p++;
 
             if (sscanf((char *)p, "%g", &exp) != 1 || exp > 38) {
-                if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
+                if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
                     goto exit;
                 }
                 num->value.d = 0;
@@ -388,7 +388,7 @@ static int pdfi_read_num(pdf_context *ctx, pdf_c_stream *s, uint32_t indirect_nu
                 if (sscanf((char *)Buffer, "%g", &f) == 1) {
                     num->value.d = f;
                 } else {
-                    if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, E_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
+                    if ((code = pdfi_set_warning_var(ctx, gs_note_error(gs_error_syntaxerror), NULL, W_PDF_MALFORMEDNUMBER, "pdfi_read_num", "Treating malformed float %s as 0", Buffer)) < 0) {
                         goto exit;
                     }
                     num->value.d = 0;

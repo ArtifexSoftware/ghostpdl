@@ -1,4 +1,4 @@
-/* Copyright (C) 2022-2025 Artifex Software, Inc.
+/* Copyright (C) 2022-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -111,4 +111,5 @@ PARAM(W_PDF_BAD_OUTPUTINTENT_INDEX, "UsePDFX3Profile specified invalid index for
 PARAM(W_PDF_VMERROR_BUILTIN_FONT,   "VM Error for built-in font."),
 PARAM(W_PDF_ERROR_IN_MATTE,         "Setting up a Matte for an image returned an error"),
 PARAM(W_PDF_CACHE_FAIL,             "Failed to add a cache entry for an object"),
+PARAM(W_PDF_MALFORMEDNUMBER,        "Read a malformed number, treating as zero."),
 #undef PARAM
