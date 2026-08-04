@@ -3557,7 +3557,7 @@ AC_SUBST(HAVE_FPCLASSIFY)
 
 AC_CHECK_FUNCS([snprintf], [GCFLAGS="$GCFLAGS -DHAVE_SNPRINTF"])
 
-AC_PROG_GCC_TRADITIONAL
+AC_PROG_CC
 
 dnl NB: We don't actually provide autoconf-switched fallbacks for any
 dnl     of these functions, so the checks are purely informational.
