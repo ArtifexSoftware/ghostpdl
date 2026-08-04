@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1312,16 +1312,6 @@ cursor_always_inrange_step_right(cursor * gs_restrict cr, fixed dy, fixed x)
     cr->y += dy;
     cursor_output_inrange(cr, iy);
     cr->left = x;
-}
-
-static inline void cursor_init(cursor * gs_restrict cr, fixed y, fixed x)
-{
-    assert(y >= int2fixed(cr->base) && y <= int2fixed(cr->base + cr->scanlines));
-
-    cr->y = y;
-    cr->left = x;
-    cr->right = x;
-    cr->d = DIRN_UNSET;
 }
 
 static inline void cursor_left_merge(cursor * gs_restrict cr, fixed x)
@@ -3256,18 +3246,6 @@ cursor_always_inrange_step_right_tr(cursor_tr * gs_restrict cr, fixed dy, fixed 
     cursor_output_inrange_tr(cr, iy);
     cr->left = x;
     cr->lid = id;
-}
-
-static inline void cursor_init_tr(cursor_tr * gs_restrict cr, fixed y, fixed x, int id)
-{
-    assert(y >= int2fixed(cr->base) && y <= int2fixed(cr->base + cr->scanlines));
-
-    cr->y = y;
-    cr->left = x;
-    cr->lid = id;
-    cr->right = x;
-    cr->rid = id;
-    cr->d = DIRN_UNSET;
 }
 
 static inline void cursor_left_merge_tr(cursor_tr * gs_restrict cr, fixed x, int id)
