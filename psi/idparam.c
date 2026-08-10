@@ -166,6 +166,7 @@ dict_float_param(const ref * pdict, const char *kstr,
     return_error(gs_error_typecheck);
 }
 
+
 /* Get an integer array from a dictionary. */
 /* See idparam.h for specification. */
 int
@@ -195,8 +196,8 @@ dict_int_array_check_param(const gs_memory_t *mem, const ref * pdict,
                 ivec[i] = (int)pa.value.intval;
                 break;
             case t_real:
-                if ((int)pa.value.realval < min_int ||
-                    (int)pa.value.realval > max_int ||
+                if (pa.value.realval < (float)(min_int + 1) ||
+                    pa.value.realval > (float)(max_int - 1) ||
                     pa.value.realval != (int)pa.value.realval
                     )
                     return_error(gs_error_rangecheck);
