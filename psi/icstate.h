@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -29,6 +29,48 @@
 #include "gsgstate.h"
 #include "files.h"
 #include "interp.h"
+
+typedef struct gs_system_params_s {
+/*    long BuildTime; a compile-time constant GS_BUILDTIME */
+/*    bool ByteOrder a compile-time constant !ARCH_IS_BIG_ENDIAN */
+    int CurDisplayList;
+/*    int CurFontCache; returned by gs_cachestatus() */
+    int CurFormCache;
+    int CurOutlineCache;
+    int CurPatternCache;
+    int CurScreenStorage;
+    int CurSourceList;
+    int CurStoredScreenCache;
+    int CurUPathCache;
+    bool FactoryDefaults;
+    char *FontResourceDir;
+    char *GenericResourceDir;
+    char *GenericResourcePathSep;
+    char *PercentDiskFontResourceDir;
+    char *PercentDiskGenericResourceDir;
+    char *StartJobPassword;
+    char *SystemParamsPassword;
+    int JobTimeout;
+    char LicenseID[8];
+    int MaxDisplayAndSourceList;
+    int MaxDisplayList;
+/*    int MaxFontCache; returned by gs_currentcachesize() */
+    int MaxFormCache;
+    int MaxImageBuffer;
+    int MaxOutlineCache;
+    int MaxPatternCache;
+    int MaxScreenStorage;
+    int MaxSourceList;
+    int MaxStoredScreenCache;
+    int MaxUPathCache;
+/*    int PageCount;    Picked up from the current device */
+    char PrinterName;
+/*    char RealFormat[32]; derived from compile time constant, either 'IEEE' if ARCH_FLOATS_ARE_IEEE or 'not IEEE' */
+/*    int Revision compile-time constant GS_REVISION */
+    int StartupMode;
+    int RamSize;
+    int WaitTimeout;
+} gs_system_params;
 
 struct gs_context_state_s {
     gs_gstate *pgs;
@@ -61,6 +103,7 @@ struct gs_context_state_s {
     exec_stack_t exec_stack;
     op_stack_t op_stack;
     struct i_plugin_holder_s *plugin_list;
+    gs_system_params system_params;
 };
 extern const long rand_state_initial; /* in zmath.c */
 

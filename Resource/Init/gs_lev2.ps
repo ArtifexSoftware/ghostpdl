@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2026 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -179,66 +179,26 @@ end
   //restore /userparams .systemvar .setuserparams
 } .forcebind odef
 
-% The pssystemparams dictionary holds some system parameters that
-% are managed entirely at the PostScript level.
 systemdict begin
-currentdict /pssystemparams known not {
-  /pssystemparams 40 dict readonly def
-} if
 /getsystemparam {		% <name> getsystemparam <value>
-  //pssystemparams 1 .argindex .knownget { exch pop } { .getsystemparam } ifelse
+  .getsystemparam
 } odef
 end
 /currentsystemparams {		% - currentsystemparams <dict>
-  mark .currentsystemparams //pssystemparams { } forall .dicttomark
+  mark .currentsystemparams
+  .dicttomark
 } odef
 /setsystemparams {		% <dict> setsystemparams -
         % Check that we will be able to set the PostScript-level
         % system parameters.
    dup pop		% check # of args
-   /SAFETY .systemvar /safe get {
-     % SAFER mode disallows some changes
-     [ /GenericResourceDir /FontResourceDir /GenericResourcePathSep ] {
-       2 copy .knownget {
-         exch //pssystemparams exch .knownget {
-           ne { /setsystemparams cvx /invalidaccess signalerror } if
-         } {
-           pop
-         } ifelse
-       } {
-         pop
-       } ifelse
-     } forall
-   } if
-   /setsystemparams //pssystemparams mark exch {
-     type cvlit //.checkparamtype /exec load 3 packedarray cvx
-   } forall .dicttomark //.checksetparams exec
         % Set the C-level system params.  If this succeeds, we know that
         % the password check succeeded.
-   dup .setsystemparams
+   .setsystemparams
         % Now set the PostScript-level params.  We must copy local strings
         % into global VM.
-   dup
-    { //pssystemparams 2 index known
-       {		% Stack: key newvalue
-         .copyparam
-         % protect top level parameters that we copied
-         dup type dup /arraytype eq exch /stringtype eq or { readonly } if
-         //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
-       } executeonly
-       { pop pop
-       }
-      ifelse
-    } executeonly
-   forall pop
 } .forcebind odef
 
-% Initialize the passwords.
-% NOTE: the names StartJobPassword and SystemParamsPassword are known to
-% the interpreter, and must be bound to noaccess strings.
-% The length of these strings must be max_password (iutil2.h) + 1.
-/StartJobPassword 65 string noaccess def
-/SystemParamsPassword 65 string noaccess def
 
 % Redefine cache parameter setting to interact properly with userparams.
 /setcachelimit {
@@ -303,31 +263,6 @@ end
   /PermitFileControl dup [ (*) ] .definepsuserparam
     psuserparams exch /.checkFilePermitparams load put
   .setglobal
-
-pssystemparams
-dup /CurDisplayList 0 .forceput
-dup /CurFormCache 0 .forceput
-dup /CurInputDevice () .forceput
-dup /CurOutlineCache 0 .forceput
-dup /CurOutputDevice () .forceput
-dup /CurPatternCache 0 .forceput
-dup /CurUPathCache 0 .forceput
-dup /CurScreenStorage 0 .forceput
-dup /CurSourceList 0 .forceput
-dup /DoPrintErrors //false .forceput
-dup /JobTimeout 0 .forceput
-dup /LicenseID (LN-001) .forceput     % bogus
-dup /MaxDisplayList 140000 .forceput
-dup /MaxFormCache 100000 .forceput
-dup /MaxImageBuffer 524288 .forceput
-dup /MaxOutlineCache 65000 .forceput
-dup /MaxPatternCache 100000 .forceput
-dup /MaxUPathCache 300000 .forceput
-dup /MaxScreenStorage 84000 .forceput
-dup /MaxSourceList 25000 .forceput
-dup /PrinterName product .forceput
-dup /RamSize 4194304 .forceput
-    /WaitTimeout 40 .forceput
 
 % Define the procedures for handling comment scanning.  The names
 % %ProcessComment and %ProcessDSCComment are known to the interpreter.

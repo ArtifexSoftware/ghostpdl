@@ -65,19 +65,16 @@ static int zpdfi_populate_search_paths(i_ctx_t *i_ctx_p, pdf_context *ctx)
         int i;
         const gs_file_path *pfpath = i_ctx_p->lib_path;
         gs_main_instance *minst = get_minst_from_memory(imemory);
-        code = dict_find_string(systemdict, "pssystemparams", &l2dictref);
-        if (code >= 0 && r_has_type(l2dictref, t_dictionary)) {
-            code = dict_find_string(l2dictref, "GenericResourceDir", &grdref);
-            if (code >= 0 && r_has_type(grdref, t_string)) {
-                ctx->search_paths.genericresourcedir.data = gs_alloc_bytes(ctx->memory, r_size(grdref), "zpdfi_populate_search_paths");
-                if (ctx->search_paths.genericresourcedir.data == NULL) {
-                    code = gs_note_error(gs_error_VMerror);
-                    goto done;
-                }
-                memcpy((char *)ctx->search_paths.genericresourcedir.data, grdref->value.const_bytes, r_size(grdref));
-                ctx->search_paths.genericresourcedir.size = r_size(grdref);
-                ctx->search_paths.genericresourcedir.persistent = false;
+
+        if (i_ctx_p->system_params.GenericResourceDir != NULL) {
+            ctx->search_paths.genericresourcedir.data = gs_alloc_bytes(ctx->memory, strlen(i_ctx_p->system_params.GenericResourceDir), "zpdfi_populate_search_paths");
+            if (ctx->search_paths.genericresourcedir.data == NULL) {
+                code = gs_note_error(gs_error_VMerror);
+                goto done;
             }
+            memcpy((char *)ctx->search_paths.genericresourcedir.data, i_ctx_p->system_params.GenericResourceDir, strlen(i_ctx_p->system_params.GenericResourceDir));
+            ctx->search_paths.genericresourcedir.size = strlen(i_ctx_p->system_params.GenericResourceDir);
+            ctx->search_paths.genericresourcedir.persistent = false;
         }
 
         ctx->search_paths.resource_paths = (gs_param_string *)gs_alloc_bytes(ctx->memory, (size_t)sizeof(gs_param_string) * r_size(&pfpath->list), "array of paths");

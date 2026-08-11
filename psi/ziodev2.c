@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -103,10 +103,13 @@ zputdevparams(i_ctx_t *i_ctx_p)
     code = stack_param_list_read(&list, &o_stack, 1, NULL, false, iimemory);
     if (code < 0)
         return code;
-    code = dict_read_password(&system_params_password, systemdict,
-                              "SystemParamsPassword");
-    if (code < 0)
-        return code;
+    if (i_ctx_p->system_params.SystemParamsPassword != NULL && strlen(i_ctx_p->system_params.SystemParamsPassword) < 64) {
+        memcpy(system_params_password.data, i_ctx_p->system_params.SystemParamsPassword, strlen(i_ctx_p->system_params.SystemParamsPassword));;
+        system_params_password.size = strlen(i_ctx_p->system_params.SystemParamsPassword);
+    } else {
+        system_params_password.data[0] = 0x00;
+        system_params_password.size = 0;
+    }
     code = param_check_password(plist, &system_params_password);
     if (code != 0) {
         iparam_list_release(&list);

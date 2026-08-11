@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2026 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -312,21 +312,19 @@ systemdict begin
   } ifelse
 } .internalbind def
 
-currentdict /pssystemparams known not {
-  /pssystemparams 10 dict readonly def
-} if
-pssystemparams begin
+
+  % Define some of the system parameter, these are built in PostScript
+  % possibly we could replace this with C code.
   //.default_resource_dir exec
-  /FontResourceDir (Font) //.resource_dir_name exec
-     readonly currentdict 3 1 roll .forceput	% pssys'params is r-o
-  /GenericResourceDir () //.resource_dir_name exec
-     readonly currentdict 3 1 roll .forceput	% pssys'params is r-o
+  5 dict begin
+  /GenericResourceDir () //.resource_dir_name exec def
+  /FontResourceDir (Font) //.resource_dir_name exec def
   pop % .default_resource_dir
-  /GenericResourcePathSep
-        .file_name_separator readonly currentdict 3 1 roll .forceput		% pssys'params is r-o
-  currentdict (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forceput	% pssys'params is r-o
-  currentdict (%diskGenericResourceDir) cvn (/Resource/) readonly .forceput	% pssys'params is r-o
-end
+  /GenericResourcePathSep .file_name_separator readonly def
+  (%diskFontResourceDir) cvn (/Resource/Font/) readonly def
+  (%diskGenericResourceDir) cvn (/Resource/) readonly def
+  currentdict .setsystemparams end
+
 end
 
 % Check if GenericResourceDir presents in LIBPATH.
@@ -334,9 +332,9 @@ end
 % The value of GenericResourceDir must end with directory separator.
 % We use .file_name_combine to check it.
 % Comments use OpenVMS syntax, because it is the most complicated case.
-(x) pssystemparams /GenericResourcePathSep get
+(x) currentsystemparams /GenericResourcePathSep get
 (y) concatstrings concatstrings dup length              % (x]y) l1
-pssystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
+currentsystemparams /GenericResourceDir get dup length exch  % (x]y) l1 l2 (dir)
 3 index //true .file_name_combine not {
   exch
   (File name ) print print ( cant combine with ) print =
@@ -350,7 +348,7 @@ ne {
 } if
 pop pop
 
-pssystemparams dup /GenericResourceDir get exch /GenericResourcePathSep get
+currentsystemparams dup /GenericResourceDir get exch /GenericResourcePathSep get
 (Init) exch (gs_init.ps) concatstrings concatstrings concatstrings
 status {
   pop pop pop pop
@@ -563,7 +561,8 @@ status {
   Category .namestring                        % (scr) (/) (n) (c)
   3 1 roll                                    % (scr) (c) (/) (n)
   concatstrings concatstrings                 % (scr) (c/n)
-  /GenericResourceDir getsystemparam 1 index  % (scr) (c/n) (p/) (c/n)
+%  /GenericResourceDir getsystemparam 1 index  % (scr) (c/n) (p/) (c/n)
+  currentsystemparams /GenericResourceDir get 1 index  % (scr) (c/n) (p/) (c/n)
   concatstrings                               % (scr) (c/n) (p/c/n)
   dup status {
     pop pop pop pop exch pop                  % (scr) (p/c/n)

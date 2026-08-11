@@ -2665,11 +2665,6 @@ currentdict /.locksafeglobal .undef
    currentdict exch /userparams exch .forceput
    .setglobal
 
-  % Remove real system params from pssystemparams.
-  mark .currentsystemparams counttomark 2 idiv {
-    pop pssystemparams exch .forceundef
-  } executeonly repeat pop
-
 % Set up AlignToPixels :
 
 /AlignToPixels where {

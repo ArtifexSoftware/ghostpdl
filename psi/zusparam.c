@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -141,10 +141,17 @@ zcheckpassword(i_ctx_t *i_ctx_p)
         param_check_password(plist, &pass) == 0
         )
         result = 1;
-    if (dict_read_password(&pass, systemdict, "SystemParamsPassword") >= 0 &&
-        param_check_password(plist, &pass) == 0
-        )
+
+    if (i_ctx_p->system_params.SystemParamsPassword != NULL && strlen(i_ctx_p->system_params.SystemParamsPassword) < 64) {
+        memcpy(pass.data, i_ctx_p->system_params.SystemParamsPassword, strlen(i_ctx_p->system_params.SystemParamsPassword));;
+        pass.size = strlen(i_ctx_p->system_params.SystemParamsPassword);
+    } else {
+        pass.data[0] = 0x00;
+        pass.size = 0;
+    }
+    if (param_check_password(plist, &pass) == 0)
         result = 2;
+
     iparam_list_release(&list);
     make_int(op, result);
     return 0;
@@ -157,6 +164,203 @@ static long
 current_BuildTime(i_ctx_t *i_ctx_p)
 {
     return gs_buildtime;
+}
+
+static long
+current_CurDisplayList(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.CurDisplayList;
+}
+
+static long
+current_CurFormCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.CurFormCache;
+}
+
+static long
+current_CurOutlineCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.CurOutlineCache;
+}
+
+static long
+current_CurPatternCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.CurPatternCache;
+}
+
+static long
+current_CurScreenStorage(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.CurScreenStorage;
+}
+
+static long
+current_CurSourceList(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.CurSourceList;
+}
+
+static long
+current_CurStoredScreenCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.CurStoredScreenCache;
+}
+
+static long
+current_CurUPathCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.CurScreenStorage;
+}
+
+static long
+current_MaxDisplayAndSourceList(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxDisplayAndSourceList;
+}
+
+static int
+set_MaxDisplayAndSourceList(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxDisplayAndSourceList = val;
+    return 0;
+}
+
+static long
+current_MaxDisplayList(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxDisplayList;
+}
+
+static int
+set_MaxDisplayList(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxDisplayList = val;
+    return 0;
+}
+
+static long
+current_MaxFormCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxFormCache;
+}
+
+static int
+set_MaxFormCache(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxFormCache = val;
+    return 0;
+}
+
+static long
+current_MaxImageBuffer(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxImageBuffer;
+}
+
+static int
+set_MaxImageBuffer(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxImageBuffer = val;
+    return 0;
+}
+
+static long
+current_MaxOutlineCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxOutlineCache;
+}
+
+static int
+set_MaxOutlineCache(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxOutlineCache = val;
+    return 0;
+}
+
+static long
+current_MaxPatternCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxPatternCache;
+}
+
+static int
+set_MaxPatternCache(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxPatternCache = val;
+    return 0;
+}
+
+static long
+current_MaxUPathCache(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxUPathCache;
+}
+
+static int
+set_MaxUPathCache(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxUPathCache = val;
+    return 0;
+}
+
+static long
+current_MaxScreenStorage(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxScreenStorage;
+}
+
+static int
+set_MaxScreenStorage(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxScreenStorage = val;
+    return 0;
+}
+
+static long
+current_MaxSourceList(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.MaxSourceList;
+}
+
+static int
+set_MaxSourceList(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.MaxSourceList = val;
+    return 0;
+}
+
+static long
+current_RamSize(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.RamSize;
+}
+
+static long
+current_JobTimeout(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.JobTimeout;
+}
+
+static int
+set_JobTimeout(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.JobTimeout = val;
+    return 0;
+}
+
+static long
+current_WaitTimeout(i_ctx_t *i_ctx_p)
+{
+    return i_ctx_p->system_params.WaitTimeout;
+}
+
+static int
+set_WaitTimeout(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->system_params.WaitTimeout = val;
+    return 0;
 }
 
 /* we duplicate this definition here instead of including bfont.h and
@@ -247,8 +451,28 @@ static const size_t_param_def_t system_size_t_params[] =
 static const long_param_def_t system_long_params[] =
 {
     {"BuildTime", min_long, max_long, current_BuildTime, NULL},
+    {"CurDisplayList", 0, MAX_UINT_PARAM, current_CurDisplayList, NULL},
+    {"CurFormCache", 0, MAX_UINT_PARAM, current_CurFormCache, NULL},
+    {"CurOutlineCache", 0, MAX_UINT_PARAM, current_CurOutlineCache, NULL},
+    {"CurPatternCache", 0, MAX_UINT_PARAM, current_CurPatternCache, NULL},
+    {"CurScreenStorage", 0, MAX_UINT_PARAM, current_CurScreenStorage, NULL},
+    {"CurSourceList", 0, MAX_UINT_PARAM, current_CurSourceList, NULL},
+    {"CurStoredScreenCache", 0, MAX_UINT_PARAM, current_CurStoredScreenCache, NULL},
+    {"CurUPathCache", 0, MAX_UINT_PARAM, current_CurUPathCache, NULL},
+    {"MaxDisplayAndSourceList", 0, MAX_UINT_PARAM, current_MaxDisplayAndSourceList, set_MaxDisplayAndSourceList},
+    {"MaxDisplayList", 0, MAX_UINT_PARAM, current_MaxDisplayList, set_MaxDisplayList},
+    {"MaxImageBuffer", 0, MAX_UINT_PARAM, current_MaxImageBuffer, set_MaxImageBuffer},
+    {"MaxFormCache", 0, MAX_UINT_PARAM, current_MaxFormCache, set_MaxFormCache},
+    {"MaxOutlineCache", 0, MAX_UINT_PARAM, current_MaxOutlineCache, set_MaxOutlineCache},
+    {"MaxPatternCache", 0, MAX_UINT_PARAM, current_MaxPatternCache, set_MaxPatternCache},
+    {"MaxUPathCache", 0, MAX_UINT_PARAM, current_MaxUPathCache, set_MaxUPathCache},
+    {"MaxScreenStorage", 0, MAX_UINT_PARAM, current_MaxScreenStorage, set_MaxScreenStorage},
+    {"MaxSourceList", 0, MAX_UINT_PARAM, current_MaxSourceList, set_MaxSourceList},
+    {"RamSize", 0, MAX_UINT_PARAM, current_RamSize, NULL},
     {"MaxFontCache", 0, MAX_UINT_PARAM, current_MaxFontCache, set_MaxFontCache},
     {"CurFontCache", 0, MAX_UINT_PARAM, current_CurFontCache, NULL},
+    {"JobTimeout", 0, MAX_UINT_PARAM, current_MaxFontCache, set_MaxFontCache},
+    {"WaitTimeout", 0, MAX_UINT_PARAM, current_MaxFontCache, set_MaxFontCache},
     {"Revision", min_long, max_long, current_Revision, NULL},
     {"PageCount", min_long, max_long, current_PageCount, NULL}
 };
@@ -279,9 +503,239 @@ current_RealFormat(i_ctx_t *i_ctx_p, gs_param_string * pval)
     pval->persistent = true;
 }
 
+static void
+current_LicenseID(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    static const char *const rfs = "LN-001";
+
+    pval->data = (const byte *)rfs;
+    pval->size = strlen(rfs);
+    pval->persistent = true;
+}
+
+extern const char *const gs_product;
+
+static void
+current_PrinterName(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    pval->data = (const byte *)gs_product;
+    pval->size = strlen(gs_product);
+    pval->persistent = true;
+}
+
+static void
+current_InputDevice(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    pval->data = (const byte *)NULL;
+    pval->size = 0;
+    pval->persistent = true;
+}
+
+static void
+current_OutputDevice(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    pval->data = (const byte *)NULL;
+    pval->size = 0;
+    pval->persistent = true;
+}
+
+static void
+current_GenericResourceDir(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    ref *GRD_ref;
+    int code = 0;
+
+    pval->data = (const byte *)i_ctx_p->system_params.GenericResourceDir;
+    if (i_ctx_p->system_params.GenericResourceDir != NULL)
+        pval->size = strlen(i_ctx_p->system_params.GenericResourceDir);
+    else
+        pval->size = 0;
+    pval->persistent = false;
+}
+
+static int
+set_GenericResourceDir(i_ctx_t *i_ctx_p, gs_param_string *pval)
+{
+    if (gs_is_path_control_active(imemory))
+        return 0;
+
+    if (i_ctx_p->system_params.GenericResourceDir != NULL){
+        gs_free_object(imemory->non_gc_memory, i_ctx_p->system_params.GenericResourceDir, "set_GenericResourceDir");
+    }
+    i_ctx_p->system_params.GenericResourceDir = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_GenericResourceDir");
+    if (i_ctx_p->system_params.GenericResourceDir == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(i_ctx_p->system_params.GenericResourceDir, pval->data, pval->size);
+    i_ctx_p->system_params.GenericResourceDir[pval->size] = 0x00;
+    return 0;
+};
+
+static void
+current_FontResourceDir(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    ref *GRD_ref;
+    int code = 0;
+
+    pval->data = (const byte *)i_ctx_p->system_params.FontResourceDir;
+    if (i_ctx_p->system_params.FontResourceDir != NULL)
+        pval->size = strlen(i_ctx_p->system_params.FontResourceDir);
+    else
+        pval->size = 0;
+    pval->persistent = false;
+}
+
+static int
+set_FontResourceDir(i_ctx_t *i_ctx_p, gs_param_string *pval)
+{
+    if (gs_is_path_control_active(imemory))
+        return 0;
+
+    if (i_ctx_p->system_params.FontResourceDir != NULL){
+        gs_free_object(imemory->non_gc_memory, i_ctx_p->system_params.FontResourceDir, "set_FontResourceDir");
+    }
+    i_ctx_p->system_params.FontResourceDir = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_FontResourceDir");
+    if (i_ctx_p->system_params.FontResourceDir == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(i_ctx_p->system_params.FontResourceDir, pval->data, pval->size);
+    i_ctx_p->system_params.FontResourceDir[pval->size] = 0x00;
+    return 0;
+};
+
+static void
+current_GenericResourcePathSep(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    ref *GRD_ref;
+    int code = 0;
+
+    pval->data = (const byte *)i_ctx_p->system_params.GenericResourcePathSep;
+    if (i_ctx_p->system_params.GenericResourcePathSep != NULL)
+        pval->size = strlen(i_ctx_p->system_params.GenericResourcePathSep);
+    else
+        pval->size = 0;
+    pval->persistent = false;
+}
+
+static int
+set_GenericResourcePathSep(i_ctx_t *i_ctx_p, gs_param_string *pval)
+{
+    if (gs_is_path_control_active(imemory))
+        return 0;
+
+    if (i_ctx_p->system_params.GenericResourcePathSep != NULL){
+        gs_free_object(imemory->non_gc_memory, i_ctx_p->system_params.GenericResourcePathSep, "set_GenericResourcePathSep");
+    }
+    i_ctx_p->system_params.GenericResourcePathSep = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_GenericResourcePathSep");
+    if (i_ctx_p->system_params.GenericResourcePathSep == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(i_ctx_p->system_params.GenericResourcePathSep, pval->data, pval->size);
+    i_ctx_p->system_params.GenericResourcePathSep[pval->size] = 0x00;
+    return 0;
+};
+
+static void
+current_PercentDiskFontResourceDir(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    ref *GRD_ref;
+    int code = 0;
+
+    pval->data = (const byte *)i_ctx_p->system_params.PercentDiskFontResourceDir;
+    if (i_ctx_p->system_params.PercentDiskFontResourceDir != NULL)
+        pval->size = strlen(i_ctx_p->system_params.PercentDiskFontResourceDir);
+    else
+        pval->size = 0;
+    pval->persistent = false;
+}
+
+static int
+set_PercentDiskFontResourceDir(i_ctx_t *i_ctx_p, gs_param_string *pval)
+{
+    if (gs_is_path_control_active(imemory))
+        return 0;
+
+    if (i_ctx_p->system_params.PercentDiskFontResourceDir != NULL){
+        gs_free_object(imemory->non_gc_memory, i_ctx_p->system_params.PercentDiskFontResourceDir, "set_PercentDiskFontResourceDir");
+    }
+    i_ctx_p->system_params.PercentDiskFontResourceDir = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_PercentDiskFontResourceDir");
+    if (i_ctx_p->system_params.PercentDiskFontResourceDir == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(i_ctx_p->system_params.PercentDiskFontResourceDir, pval->data, pval->size);
+    i_ctx_p->system_params.PercentDiskFontResourceDir[pval->size] = 0x00;
+    return 0;
+};
+
+static void
+current_PercentDiskGenericResourceDir(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    ref *GRD_ref;
+    int code = 0;
+
+    pval->data = (const byte *)i_ctx_p->system_params.PercentDiskGenericResourceDir;
+    if (i_ctx_p->system_params.PercentDiskGenericResourceDir != NULL)
+        pval->size = strlen(i_ctx_p->system_params.PercentDiskGenericResourceDir);
+    else
+        pval->size = 0;
+    pval->persistent = false;
+}
+
+static int
+set_PercentDiskGenericResourceDir(i_ctx_t *i_ctx_p, gs_param_string *pval)
+{
+    if (gs_is_path_control_active(imemory))
+        return 0;
+
+    if (i_ctx_p->system_params.PercentDiskGenericResourceDir != NULL){
+        gs_free_object(imemory->non_gc_memory, i_ctx_p->system_params.PercentDiskGenericResourceDir, "set_PercentDiskGenericResourceDir");
+    }
+    i_ctx_p->system_params.PercentDiskGenericResourceDir = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_PercentDiskGenericResourceDir");
+    if (i_ctx_p->system_params.PercentDiskGenericResourceDir == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(i_ctx_p->system_params.PercentDiskGenericResourceDir, pval->data, pval->size);
+    i_ctx_p->system_params.PercentDiskGenericResourceDir[pval->size] = 0x00;
+    return 0;
+};
+
+static int
+set_StartJobPassword(i_ctx_t *i_ctx_p, gs_param_string *pval)
+{
+    if (i_ctx_p->system_params.StartJobPassword != NULL){
+        gs_free_object(imemory->non_gc_memory, i_ctx_p->system_params.StartJobPassword, "set_StartJobPassword");
+    }
+    i_ctx_p->system_params.StartJobPassword = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_StartJobPassword");
+    if (i_ctx_p->system_params.StartJobPassword == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(i_ctx_p->system_params.StartJobPassword, pval->data, pval->size);
+    i_ctx_p->system_params.StartJobPassword[pval->size] = 0x00;
+    return 0;
+};
+
+static int
+set_SystemParamsPassword(i_ctx_t *i_ctx_p, gs_param_string *pval)
+{
+    if (i_ctx_p->system_params.SystemParamsPassword != NULL){
+        gs_free_object(imemory->non_gc_memory, i_ctx_p->system_params.PercentDiskGenericResourceDir, "set_SystemParamsPassword");
+    }
+    i_ctx_p->system_params.SystemParamsPassword = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_SystemParamsPassword");
+    if (i_ctx_p->system_params.SystemParamsPassword == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(i_ctx_p->system_params.SystemParamsPassword, pval->data, pval->size);
+    i_ctx_p->system_params.SystemParamsPassword[pval->size] = 0x00;
+    return 0;
+};
+
 static const string_param_def_t system_string_params[] =
 {
     {"RealFormat", current_RealFormat, NULL},
+    {"LicenseID", current_LicenseID, NULL},
+    {"PrinterName", current_PrinterName, NULL},
+    {"CurInputDevice", current_InputDevice, NULL},
+    {"CurOutputDevice", current_OutputDevice, NULL},
+    {"GenericResourceDir", current_GenericResourceDir, set_GenericResourceDir},
+    {"FontResourceDir", current_FontResourceDir, set_FontResourceDir},
+    {"GenericResourcePathSep", current_GenericResourcePathSep, set_GenericResourcePathSep},
+    {"%diskFontResourceDir", current_PercentDiskFontResourceDir, set_PercentDiskFontResourceDir},
+    {"%diskGenericResourceDir", current_PercentDiskGenericResourceDir, set_PercentDiskGenericResourceDir},
+    {"StartJobPassword", NULL, set_StartJobPassword},
+    {"SystemParamsPassword", NULL, set_SystemParamsPassword},
 };
 
 /* The system parameter set */
@@ -309,40 +763,18 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
         return code;
-    code = dict_read_password(&pass, systemdict, "SystemParamsPassword");
-    if (code < 0)
-        return code;
+    if (i_ctx_p->system_params.SystemParamsPassword != NULL && strlen(i_ctx_p->system_params.SystemParamsPassword) < 64) {
+        memcpy(pass.data, i_ctx_p->system_params.SystemParamsPassword, strlen(i_ctx_p->system_params.SystemParamsPassword));;
+        pass.size = strlen(i_ctx_p->system_params.SystemParamsPassword);
+    } else {
+        pass.data[0] = 0x00;
+        pass.size = 0;
+    }
     code = param_check_password(plist, &pass);
     if (code != 0) {
         if (code > 0)
             code = gs_note_error(gs_error_invalidaccess);
         goto out;
-    }
-    code = param_read_password(plist, "StartJobPassword", &pass);
-    switch (code) {
-        default:		/* invalid */
-            goto out;
-        case 1:		/* missing */
-            break;
-        case 0:
-            code = dict_write_password(&pass, systemdict,
-                                       "StartJobPassword",
-                                       ! i_ctx_p->LockFilePermissions);
-            if (code < 0)
-                goto out;
-    }
-    code = param_read_password(plist, "SystemParamsPassword", &pass);
-    switch (code) {
-        default:		/* invalid */
-            goto out;
-        case 1:		/* missing */
-            break;
-        case 0:
-            code = dict_write_password(&pass, systemdict,
-                                       "SystemParamsPassword",
-                                       ! i_ctx_p->LockFilePermissions);
-            if (code < 0)
-                goto out;
     }
 
     code = setparams(i_ctx_p, plist, &system_param_set);
@@ -372,12 +804,12 @@ zgetsystemparam(i_ctx_t *i_ctx_p)
 
 /* Integer values */
 static long
-current_JobTimeout(i_ctx_t *i_ctx_p)
+current_user_JobTimeout(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
 static int
-set_JobTimeout(i_ctx_t *i_ctx_p, long val)
+set_user_JobTimeout(i_ctx_t *i_ctx_p, long val)
 {
     return 0;
 }
@@ -477,12 +909,12 @@ current_VMThreshold(i_ctx_t *i_ctx_p)
     return stat.vm_threshold;
 }
 static long
-current_WaitTimeout(i_ctx_t *i_ctx_p)
+current_user_WaitTimeout(i_ctx_t *i_ctx_p)
 {
     return 0;
 }
 static int
-set_WaitTimeout(i_ctx_t *i_ctx_p, long val)
+set_user_WaitTimeout(i_ctx_t *i_ctx_p, long val)
 {
     return 0;
 }
@@ -631,7 +1063,7 @@ static const i64_param_def_t user_i64_params[] =
 static const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
-     current_JobTimeout, set_JobTimeout},
+     current_user_JobTimeout, set_user_JobTimeout},
     {"MaxFontItem", MIN_INT_PARAM, MAX_UINT_PARAM,
      current_MaxFontItem, set_MaxFontItem},
     {"MinFontCompress", MIN_INT_PARAM, MAX_UINT_PARAM,
@@ -645,7 +1077,7 @@ static const long_param_def_t user_long_params[] =
     {"VMReclaim", -2, 0,
      current_VMReclaim, set_vm_reclaim},
     {"WaitTimeout", 0, MAX_UINT_PARAM,
-     current_WaitTimeout, set_WaitTimeout},
+     current_user_WaitTimeout, set_user_WaitTimeout},
     /* Extensions */
     {"MinScreenLevels", 0, MAX_UINT_PARAM,
      current_MinScreenLevels, set_MinScreenLevels},
@@ -942,44 +1374,52 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
         const char *pname = pset->size_t_defs[i].pname;
 
         if (pname_matches(pname, psref)) {
-            size_t val = (*pset->size_t_defs[i].current)(i_ctx_p);
+            if (pset->size_t_defs[i].current != NULL) {
+                size_t val = (*pset->size_t_defs[i].current)(i_ctx_p);
 
-            code = param_write_size_t(plist, pname, &val);
-            if (code < 0)
-                return code;
+                code = param_write_size_t(plist, pname, &val);
+                if (code < 0)
+                    return code;
+            }
         }
     }
     for (i = 0; i < pset->i64_count; i++) {
         const char *pname = pset->i64_defs[i].pname;
 
         if (pname_matches(pname, psref)) {
-            int64_t val = (*pset->i64_defs[i].current)(i_ctx_p);
+            if (pset->i64_defs[i].current != NULL) {
+                int64_t val = (*pset->i64_defs[i].current)(i_ctx_p);
 
-            code = param_write_i64(plist, pname, &val);
-            if (code < 0)
-                return code;
+                code = param_write_i64(plist, pname, &val);
+                if (code < 0)
+                    return code;
+            }
         }
     }
     for (i = 0; i < pset->long_count; i++) {
         const char *pname = pset->long_defs[i].pname;
 
         if (pname_matches(pname, psref)) {
-            long val = (*pset->long_defs[i].current)(i_ctx_p);
+            if (pset->long_defs[i].current != NULL) {
+                long val = (*pset->long_defs[i].current)(i_ctx_p);
 
-            code = param_write_long(plist, pname, &val);
-            if (code < 0)
-                return code;
+                code = param_write_long(plist, pname, &val);
+                if (code < 0)
+                    return code;
+            }
         }
     }
     for (i = 0; i < pset->bool_count; i++) {
         const char *pname = pset->bool_defs[i].pname;
 
         if (pname_matches(pname, psref)) {
-            bool val = (*pset->bool_defs[i].current)(i_ctx_p);
+            if (pset->bool_defs[i].current != NULL) {
+                bool val = (*pset->bool_defs[i].current)(i_ctx_p);
 
-            code = param_write_bool(plist, pname, &val);
-            if (code < 0)
-                return code;
+                code = param_write_bool(plist, pname, &val);
+                if (code < 0)
+                    return code;
+            }
         }
     }
     for (i = 0; i < pset->string_count; i++) {
@@ -988,10 +1428,12 @@ current_param_list(i_ctx_t *i_ctx_p, const param_set * pset,
         if (pname_matches(pname, psref)) {
             gs_param_string val;
 
-            (*pset->string_defs[i].current)(i_ctx_p, &val);
-            code = param_write_string(plist, pname, &val);
-            if (code < 0)
-                return code;
+            if (pset->string_defs[i].current != NULL) {
+                (*pset->string_defs[i].current)(i_ctx_p, &val);
+                code = param_write_string(plist, pname, &val);
+                if (code < 0)
+                    return code;
+            }
         }
     }
     if (psref) {

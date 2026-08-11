@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -196,6 +196,35 @@ context_state_alloc(gs_context_state_t ** ppcst,
      * procedure return. */
     pcst->time_slice_ticks = 0x7fff;
     *ppcst = pcst;
+
+    pcst->system_params.CurDisplayList = 0;
+    pcst->system_params.CurFormCache = 0;
+    pcst->system_params.CurOutlineCache = 0;
+    pcst->system_params.CurPatternCache = 0;
+    pcst->system_params.CurScreenStorage = 0;
+    pcst->system_params.CurSourceList = 0;
+    pcst->system_params.CurStoredScreenCache = 0;
+    pcst->system_params.CurUPathCache = 0;
+    pcst->system_params.MaxDisplayAndSourceList = 140000;
+    pcst->system_params.MaxDisplayList = 140000;
+    pcst->system_params.MaxFormCache = 100000;
+    pcst->system_params.MaxImageBuffer = 524288;
+    pcst->system_params.MaxOutlineCache = 65000;
+    pcst->system_params.MaxPatternCache = 100000;
+    pcst->system_params.MaxUPathCache = 300000;
+    pcst->system_params.MaxScreenStorage = 84000;
+    pcst->system_params.MaxSourceList = 25000;
+    pcst->system_params.RamSize = 4194304;
+    pcst->system_params.JobTimeout = 0;
+    pcst->system_params.WaitTimeout = 40;
+    pcst->system_params.GenericResourceDir = NULL;
+    pcst->system_params.FontResourceDir = NULL;
+    pcst->system_params.GenericResourcePathSep = NULL;
+    pcst->system_params.PercentDiskFontResourceDir = NULL;
+    pcst->system_params.PercentDiskGenericResourceDir = NULL;
+    pcst->system_params.SystemParamsPassword = NULL;
+    pcst->system_params.StartJobPassword = NULL;
+
     return 0;
   x3:/* No need to delete dictionary here, as gc will do it for us. */
   x2:gs_gstate_free(pcst->pgs);
