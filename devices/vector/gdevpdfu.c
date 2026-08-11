@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1143,6 +1143,13 @@ none_to_stream(gx_device_pdf * pdev)
             es->procs.process = templat->process;
             es->strm = s;
             (*templat->set_defaults) ((stream_state *) st);
+            if (pdev->StreamEffort > 0) {
+                stream_zlib_state *const ss = (stream_zlib_state *)st;
+                int effort = pdev->StreamEffort;
+                if (effort > 9)
+                    effort = 9;
+                ss->level = effort;
+            }
             code = (*templat->init) ((stream_state *) st);
             if (code < 0) {
                 gs_free_object(pdev->pdf_memory, st, "none_to_stream");
@@ -1191,6 +1198,13 @@ none_to_stream(gx_device_pdf * pdev)
             es->procs.process = templat->process;
             es->strm = s;
             (*templat->set_defaults) ((stream_state *) st);
+            if (pdev->StreamEffort > 0) {
+                stream_brotlie_state *const ss = (stream_brotlie_state *)st;
+                int effort = pdev->StreamEffort;
+                if (effort > 11)
+                    effort = 11;
+                ss->level = effort;
+            }
             code = (*templat->init) ((stream_state *) st);
             if (code < 0) {
                 gs_free_object(pdev->pdf_memory, st, "none_to_stream");

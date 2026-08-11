@@ -1162,7 +1162,13 @@ The following switches are used for generating metadata according to the Adobe X
 
 ``-dEmbedSubstituteFonts=boolean``
    When the input uses a font, but does not include the font itself, the interpreter selects a substitute font to use in place of the requested one. If ``EmbedSubstituteFonts`` is true (the default), then that substitute font will be embedded in the output file. This can lead to poor quality output, if the workflow includes rendering the output file in a process where the missing font is present then it is preferable not to embed the substitute font and let the later process use the correct font. If ``EmbedSubstituteFonts`` is false then this will be the behaviour. Note that if ``EmbedSubstituteFonts`` is false any explicit substitutions will need to be added to the ``AlwaysEmbed`` array to function.
-   
+
+``-dUseBrotli=boolean``
+   If set to true, the pdfwrite device will use Brotli compression in place of Flate to (hopefully) achieve a better compression ratio. Brotli compression may not be supported by all PDF readers, so use with care.
+
+``-dStreamEffort=integer``
+   This overrides the compression level used for Brotli and Flate compression. Flate compression accepts values from 1 to 9, Brotli from 1 to 11. Default is 5.
+
 ----
 
 

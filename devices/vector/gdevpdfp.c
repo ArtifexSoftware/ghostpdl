@@ -140,6 +140,7 @@ static const gs_param_item_t pdf_param_items[] = {
     pi("ToUnicodeForStdEnc", gs_param_type_bool, ToUnicodeForStdEnc),
     pi("EmbedSubstituteFonts", gs_param_type_bool, EmbedSubstituteFonts),
     pi("UseBrotli", gs_param_type_bool, UseBrotli),
+    pi("StreamEffort", gs_param_type_int, StreamEffort),
 #undef pi
     gs_param_item_end
 };

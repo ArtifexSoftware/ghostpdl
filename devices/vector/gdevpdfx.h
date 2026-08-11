@@ -995,6 +995,7 @@ struct gx_device_pdf_s {
     bool ToUnicodeForStdEnc;        /* Should we emit ToUnicode CMaps when a simple font has only standard glyph names. Defaults to true */
     bool EmbedSubstituteFonts;      /* When we use a substitute font to replace a missing font, should we embed it in the output */
     bool UseBrotli;                 /* Use Brotli compression in place of Flate */
+    int StreamEffort;               /* Compression effort to use for Flate/Brotli. */
 };
 
 #define is_in_page(pdev)\
