@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -458,7 +458,7 @@ int pdfi_gs_rect_to_array(pdf_context *ctx, gs_rect *rect, pdf_array **new_array
     return 0;
 
 error:
-    pdfi_countdown(new_array);
+    pdfi_countdown(*new_array);
     return code;
 }
 
