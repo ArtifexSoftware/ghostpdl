@@ -27,11 +27,15 @@ sys.path.insert(0, os.path.abspath("."))
 # links everywhere
 #
 extensions = [
-    'rst2pdf.pdfbuilder',
     'sphinx.ext.autosectionlabel',
     'sphinx_copybutton',
     'sphinxcontrib.googleanalytics'
 ]
+
+# rst2pdf is not available on OpenBSD.
+if hasattr(os, "uname") and os.uname()[0] != "OpenBSD":
+    extensions.append("rst2pdf.pdfbuilder")
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
