@@ -2896,7 +2896,7 @@ MISC_CONTRIB_PDEVS='dl2100 la50 la70 la75 la75plus ln03 xes md2k md5k gdi samsun
 
 OPVP_DEVS='opvp oprp'
 
-ETS_HALFTONING_DEVS='rinkj'
+ETS_HALFTONING_CONTRIB_DEVS='rinkj'
 
 dnl Known file formats
 BMP_DEVS='bmpmono bmpgray bmpsep1 bmpsep8 bmp16 bmp256 bmp16m bmp32b'
@@ -2954,7 +2954,7 @@ while test -n "$drivers"; do
                 fi
                 ;;
         PRINTERS)
-                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS $ETS_HALFTONING_DEVS"
+                P_DEVS0="$P_DEVS0 $CANON_DEVS $EPSON_DEVS $HP_DEVS $LEXMARK_DEVS $BROTHER_DEVS $APPLE_DEVS $IBM_DEVS $OKI_DEVS $JAPAN_DEVS $MISC_PDEVS"
                 IJS_DEVS0="$IJSDEVS"
                 if test x$ac_cv_lib_dl_dlopen != xno -a x$found_iconv != xno; then
                         P_DEVS0="$P_DEVS0 $OPVP_DEVS"
@@ -3053,9 +3053,9 @@ while test -n "$drivers"; do
                 XPS_DEVS0="$XPSDEV"
                 ;;
 
-        ETS)
+        ETS_CONTRIB)
                 # ETS Halftoning devices
-                F_DEVS0="$F_DEVS0 $ETS_HALFTONING_DEVS"
+                F_DEVS0="$F_DEVS0 $ETS_HALFTONING_CONTRIB_DEVS"
                 ;;
         X11)
                 # X11 display devices
