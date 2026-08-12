@@ -984,7 +984,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
                     code = pdfi_name_alloc(ctx, (byte *)"RunLengthDecode", 15, (pdf_obj **)&new);
                     if (code < 0)
                         goto exit;
-                    code = pdfi_array_put(ctx, filter_array, i, (pdf_obj *)&new);
+                    code = pdfi_array_put(ctx, filter_array, i, (pdf_obj *)new);
                     if (code < 0)
                         goto exit;
                     pdfi_countdown(old);
