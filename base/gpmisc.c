@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1130,70 +1130,85 @@ gp_validate_path_len(const gs_memory_t *mem,
         buffer[rlen] = 0;
     }
     while (1) {
-        switch (mode[0])
-        {
-        case 'r': /* Read */
-            code = validate(mem, buffer, gs_permit_file_reading);
-            break;
-        case 'w': /* Write */
-            code = validate(mem, buffer, gs_permit_file_writing);
-            break;
-        case 'a': /* Append needs reading and writing */
-            code = (validate(mem, buffer, gs_permit_file_reading) |
-                    validate(mem, buffer, gs_permit_file_writing));
-            break;
-        case 'c': /* "Control" */
-            code =  validate(mem, buffer, gs_permit_file_control);
-            break;
-        case 'd': /* "Delete" (special case of control) */
-            code =  validate(mem, buffer, gs_permit_file_control);
-            break;
-        case 'f': /* "Rename from" */
-            code = (validate(mem, buffer, gs_permit_file_writing) |
-                    validate(mem, buffer, gs_permit_file_control));
-            break;
-        case 't': /* "Rename to" */
-            code = (validate(mem, buffer, gs_permit_file_writing) |
-                    validate(mem, buffer, gs_permit_file_control));
-            break;
-        default:
-            errprintf(mem, "gp_validate_path: Unknown mode='%s'\n", mode);
-            code = gs_note_error(gs_error_invalidfileaccess);
-        }
-        if (code < 0 && prefix_len > 0 && buffer > bufferfull) {
-            uint newlen = rlen + cdirstrl + dirsepstrl;
-            char *newbuffer;
-            int code;
+        int modebyte = 0;
 
-            buffer = bufferfull;
-            memcpy(buffer, cdirstr, cdirstrl);
-            memcpy(buffer + cdirstrl, dirsepstr, dirsepstrl);
-
-            /* We've prepended a './' or similar for the current working directory. We need
-             * to execute file_name_reduce on that, to eliminate any '../' or similar from
-             * the (new) full path.
-             */
-            newbuffer = (char *)gs_alloc_bytes(mem->thread_safe_memory, newlen + 1, "gp_validate_path");
-            if (newbuffer == NULL) {
-                code = gs_note_error(gs_error_VMerror);
-                goto exit;
-            }
-
-            memcpy(newbuffer, buffer, rlen + cdirstrl + dirsepstrl);
-            newbuffer[newlen] = 0x00;
-
-            code = gp_file_name_reduce(newbuffer, (uint)newlen, buffer, &newlen);
-            gs_free_object(mem->thread_safe_memory, newbuffer, "gp_validate_path");
-            if (code != gp_combine_success) {
+        for (modebyte = 0; modebyte < strlen(mode); modebyte++) {
+            switch (mode[modebyte])
+            {
+            case 'r': /* Read */
+                code = validate(mem, buffer, gs_permit_file_reading);
+                break;
+            case 'w': /* Write */
+                code = validate(mem, buffer, gs_permit_file_writing);
+                break;
+            case '+': /* read and Write */
+                code = (validate(mem, buffer, gs_permit_file_reading) |
+                        validate(mem, buffer, gs_permit_file_writing));
+                break;
+            case 'a': /* Append needs reading and writing */
+                code = (validate(mem, buffer, gs_permit_file_reading) |
+                        validate(mem, buffer, gs_permit_file_writing));
+                break;
+            case 'c': /* "Control" */
+                code =  validate(mem, buffer, gs_permit_file_control);
+                break;
+            case 'd': /* "Delete" (special case of control) */
+                code =  validate(mem, buffer, gs_permit_file_control);
+                break;
+            case 'f': /* "Rename from" */
+                code = (validate(mem, buffer, gs_permit_file_writing) |
+                        validate(mem, buffer, gs_permit_file_control));
+                break;
+            case 't': /* "Rename to" */
+                code = (validate(mem, buffer, gs_permit_file_writing) |
+                        validate(mem, buffer, gs_permit_file_control));
+                break;
+            case 'b': /* binary */
+                code = 0;
+                break;
+            default:
+                errprintf(mem, "gp_validate_path: Unknown mode='%s'\n", mode);
                 code = gs_note_error(gs_error_invalidfileaccess);
                 goto exit;
             }
+            if (code < 0 && prefix_len > 0 && buffer > bufferfull) {
+                uint newlen = rlen + cdirstrl + dirsepstrl;
+                char *newbuffer;
+                int code;
 
-            continue;
-        }
-        else if (code < 0 && cdirstrl > 0 && prefix_len == 0 && buffer == bufferfull
-            && memcmp(buffer, cdirstr, cdirstrl) && !memcmp(buffer + cdirstrl, dirsepstr, dirsepstrl)) {
-            continue;
+                buffer = bufferfull;
+                memcpy(buffer, cdirstr, cdirstrl);
+                memcpy(buffer + cdirstrl, dirsepstr, dirsepstrl);
+
+                /* We've prepended a './' or similar for the current working directory. We need
+                 * to execute file_name_reduce on that, to eliminate any '../' or similar from
+                 * the (new) full path.
+                 */
+                newbuffer = (char *)gs_alloc_bytes(mem->thread_safe_memory, newlen + 1, "gp_validate_path");
+                if (newbuffer == NULL) {
+                    code = gs_note_error(gs_error_VMerror);
+                    goto exit;
+                }
+
+                memcpy(newbuffer, buffer, rlen + cdirstrl + dirsepstrl);
+                newbuffer[newlen] = 0x00;
+
+                code = gp_file_name_reduce(newbuffer, (uint)newlen, buffer, &newlen);
+                gs_free_object(mem->thread_safe_memory, newbuffer, "gp_validate_path");
+                if (code != gp_combine_success) {
+                    code = gs_note_error(gs_error_invalidfileaccess);
+                    goto exit;
+                }
+
+                continue;
+            }
+            else if (code < 0 && cdirstrl > 0 && prefix_len == 0 && buffer == bufferfull
+                && memcmp(buffer, cdirstr, cdirstrl) && !memcmp(buffer + cdirstrl, dirsepstr, dirsepstrl)) {
+                continue;
+            }
+            /* Early exit if access is not permitted */
+            if (code < 0)
+                break;
         }
         break;
     }

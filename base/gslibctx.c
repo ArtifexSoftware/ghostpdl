@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -666,6 +666,10 @@ gs_add_outputfile_control_path(gs_memory_t *mem, const char *fname)
     rewrite_percent_specifiers(f);
 
     code = gs_add_control_path(mem, gs_permit_file_control, f);
+    if (code < 0)
+        return code;
+    /* Some file formats (eg TIFF) require the device to be able to read and write */
+    code = gs_add_control_path(mem, gs_permit_file_reading, f);
     if (code < 0)
         return code;
     return gs_add_control_path(mem, gs_permit_file_writing, f);

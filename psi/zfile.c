@@ -1092,12 +1092,16 @@ zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
             open_file = iodev_os_open_file;
         /* Check OS files to make sure we allow the type of access */
         if (open_file == iodev_os_open_file) {
-            code = check_file_permissions(i_ctx_p, pfn->fname, pfn->len, pfn->iodev,
-                file_access[0] == 'r' ? "PermitFileReading" : "PermitFileWriting");
-
-            if (code < 0 && !file_is_tempfile(i_ctx_p,
-                                          (const uchar *)pfn->fname, pfn->len))
-                return code;
+            if (file_access[0] == 'r' || file_access[1] == '+') {
+                code = check_file_permissions(i_ctx_p, pfn->fname, pfn->len, pfn->iodev, "PermitFileReading");
+                if (code < 0 && !file_is_tempfile(i_ctx_p, (const uchar *)pfn->fname, pfn->len))
+                    return code;
+            }
+            if (file_access[0] == 'w' || file_access[1] == '+') {
+                code = check_file_permissions(i_ctx_p, pfn->fname, pfn->len, pfn->iodev, "PermitFileWriting");
+                if (code < 0 && !file_is_tempfile(i_ctx_p, (const uchar *)pfn->fname, pfn->len))
+                    return code;
+            }
         }
         return open_file(iodev, pfn->fname, pfn->len, file_access, ps, mem);
     }
