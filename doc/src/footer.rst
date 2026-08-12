@@ -42,3 +42,8 @@
           :width: 0
           :height: 0
 
+.. image:: images/icon-hangul.svg
+          :alt: Hangul logo
+          :width: 0
+          :height: 0
+
