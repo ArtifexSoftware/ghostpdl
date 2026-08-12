@@ -1,17 +1,17 @@
 .. Copyright (C) 2001-2023 Artifex Software, Inc.
 .. All Rights Reserved.
 
-.. title:: Ghostscript Enterprise
+.. title:: Ghostscript Office
 
 .. include:: header.rst
 
-.. _Ghostscript_Enterprise:
+.. _Ghostscript_Office:
 
 
-Ghostscript Enterprise
+Ghostscript Office
 ===================================
 
-:title:`Ghostscript Enterprise` is a commercial version of :title:`GhostPDL` which can also read and process a range of common office documents, including :title:`Word`, :title:`PowerPoint` and :title:`Excel`.
+:title:`Ghostscript Office` is a commercial version of :title:`GhostPDL` which can also read and process a range of common office documents, including :title:`Word`, :title:`Excel`, :title:`PowerPoint` and :title:`Hangul`.
 
 
 File Support
@@ -52,7 +52,8 @@ File Support
                        <div><strong>Word</strong></div>
                    </div>
                </td>
-               <td><div class="flexbox"><code>docx</code>&nbsp;
+               <td><div class="flexbox">
+               <code>docx</code>&nbsp;
                <code>doc</code>&nbsp;
                <code>dotx</code>&nbsp;
                <code>docm</code>&nbsp;
@@ -76,7 +77,8 @@ File Support
                        <div><strong>Excel</strong></div>
                    </div>
                </td>
-               <td><div class="flexbox"><code>xlsx</code>&nbsp;
+               <td><div class="flexbox">
+               <code>xlsx</code>&nbsp;
                <code>xls</code>&nbsp;
                <code>xlt</code>&nbsp;
                <code>xlsm</code>&nbsp;
@@ -90,10 +92,24 @@ File Support
                        <div><strong>PowerPoint</strong></div>
                    </div>
                </td>
-               <td><div class="flexbox"><code>pptx</code>&nbsp;
+               <td><div class="flexbox">
+               <code>pptx</code>&nbsp;
                <code>ppt</code>&nbsp;
                <code>pps</code>&nbsp;
                <code>pptm</code>&nbsp;
+               </div></td>
+           </tr>
+
+           <tr>
+               <td>
+                   <div class="flexbox">
+                       <div><img class="icon borderless" src="_images/icon-hangul.svg" alt="hangul icon" /></div>
+                       <div><strong>Hangul</strong></div>
+                   </div>
+               </td>
+               <td><div class="flexbox">
+               <code>hwpx</code>&nbsp;
+               <code>hwp</code>&nbsp;
                </div></td>
            </tr>
 
@@ -117,11 +133,11 @@ File Support
 Licensing
 ------------------------------------------------------
 
-If you are interested in using :title:`Ghostscript Enterprise`, please contact our sales team to discuss a commercial license. Each :title:`Artifex` commercial license is crafted based on your individual use case.
+If you are interested in using :title:`Ghostscript Office`, please contact our sales team to discuss a commercial license. Each :title:`Artifex` commercial license is crafted based on your individual use case.
 
 .. raw:: html
 
-   <button class="cta orange" onclick="window.location='https://artifex.com/contact/ghostscript-inquiry.php?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=cta-button'">CONTACT US</button>
+   <button class="cta orange" onclick="window.location='https://artifex.com/contact/ghostscript?utm_source=rtd-ghostscript&utm_medium=rtd&utm_content=cta-button'">CONTACT US</button>
    <p></p>
 
 
@@ -131,9 +147,9 @@ If you are interested in using :title:`Ghostscript Enterprise`, please contact o
 Using
 ------------------------------------
 
-Once you have acquired a commercial license agreement you will be supplied with a built binary (``gse``) for your system to run :title:`Ghostscript Enterprise`.
+Once you have acquired a commercial license agreement you will be supplied with a built binary (``gse``) for your system to run :title:`Ghostscript Office`.
 
-- Use :title:`Ghostscript Enterprise` in the regular way in which you would use :title:`Ghostscript` itself.
+- Use :title:`Ghostscript Office` in the regular way in which you would use :title:`Ghostscript` itself.
 - Just declare your :ref:`device<Devices.html>`, your output & input files and then any other optional parameters as required.
 - Ensure to run your commands against your ``gse`` binary as opposed to any other installation of :title:`Ghostscript`.
 
@@ -142,7 +158,7 @@ Interpreter flags
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-:title:`Ghostscript Enterprise` specific interpreter flags are as follows:
+:title:`Ghostscript Office` specific interpreter flags are as follows:
 
 .. list-table::
       :widths: 50 50

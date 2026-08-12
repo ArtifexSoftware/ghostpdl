@@ -95,10 +95,10 @@ Binaries for GhostXPS for various systems can be downloaded from `ghostscript.co
 
 
 
-Ghostscript Enterprise
+Ghostscript Office
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-:title:`Ghostscript Enterprise` is a commercial version of :title:`GhostPDL` which can also read and process a range of common office documents, including :title:`Word`, :title:`PowerPoint` and :title:`Excel`. Find out more in the :ref:`Ghostscript Enterprise section<Ghostscript_Enterprise>`.
+:title:`Ghostscript Office` is a commercial version of :title:`GhostPDL` which can also read and process a range of common office documents, including :title:`Word`, :title:`PowerPoint` and :title:`Excel`. Find out more in the :ref:`Ghostscript Office section<Ghostscript_Office>`.
 
 .. _URWFontInformation:
 

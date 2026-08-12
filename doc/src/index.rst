@@ -70,7 +70,7 @@ Welcome to :title:`Ghostscript`
    :caption: Other
    :maxdepth: 1
 
-   Ghostscript-Enterprise.rst
+   Ghostscript-Office.rst
    GPDL.rst
    Ps2epsi.rst
    Psfiles.rst
