@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -219,7 +219,8 @@ gs_gstate_arc_add(gx_path * ppath, gs_gstate * pgs, bool clockwise,
         ang2 += 180;
         ar = -ar;
     }
-    if (ang1 > (max_int - 360) || ang2 > (max_int - 360))
+    if (ang1 > (max_int - 360) || ang2 > (max_int - 360) ||
+        ang1 < (min_int + 360) || ang2 < (min_int + 360))
         return_error(gs_error_limitcheck);
 
     arc.radius = ar;
