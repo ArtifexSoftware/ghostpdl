@@ -6219,10 +6219,10 @@ pdf14_recreate_device(gs_memory_t *mem,	gs_gstate	* pgs,
     pdev->pad = target->pad;
     pdev->log2_align_mod = target->log2_align_mod;
 
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
-        pdev->num_planar_planes = dev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
+    if (target->num_planar_planes == 0)
+        pdev->num_planar_planes = 0;
     else
-        pdev->num_planar_planes = target->num_planar_planes;
+        pdev->num_planar_planes = dev->color_info.num_components;
     pdev->interpolate_threshold = dev_proc(target, dev_spec_op)(target, gxdso_interpolate_threshold, NULL, 0);
 
     if (dev_proto.initialize_device_procs != NULL)
@@ -10678,8 +10678,6 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
         if (pdev->color_info.max_components > target->color_info.max_components)
             pdev->color_info.max_components = target->color_info.max_components;
     }
-    if (pdf14pct->params.overprint_sim_push && pdf14pct->params.num_spot_colors_int > 0 && target->num_planar_planes == 0)
-        nc = pdev->color_info.num_components + pdf14pct->params.num_spot_colors_int;
 
     pdev->color_info.num_components = nc;
     pdev->color_info.depth = pdev->color_info.num_components * (8<<deep);
