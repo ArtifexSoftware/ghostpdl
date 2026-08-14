@@ -758,7 +758,7 @@ Make sure the :title:`bjc600` or :title:`bjc800` devices are in :ref:`DEVICE_DEV
 
 .. code-block:: bash
 
-   DEVICE_DEVS6=bj10e.dev bj200.dev bjc600.dev bjc800.dev
+   DEVICE_DEVS6=bjc600.dev bjc800.dev
 
 
 Use of the drivers

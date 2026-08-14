@@ -51,7 +51,7 @@ $(GLOBJ)gdevlx32.$(OBJ): $(GLSRC)gdevlx32.c $(PDEVH) $(gsparam_h)
 4) Modify the "unix-gcc.mak" file including the driver name shown above in
    the list of the drivers to compile. To do it, first look for the line 
    which starts "DEVICE_DEVS6=". It should contain a list of driver names, 
-   such as "$(DD)bj10e.dev", "$(DD)bjc600.dev" and so on. 
+   such as "$(DD)bjc600.dev" and so on.
    It is very likely that the list is broken in more than one line. 
    Please note that each line, except the last, ends with a "\" (backslash) 
    character. This is the continuation character, and it means that the list 
