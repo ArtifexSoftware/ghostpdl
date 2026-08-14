@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -25,11 +25,6 @@ DCONTRIB_MAK=$(DEVSRC)dcontrib.mak $(TOP_MAKEFILES)
 # e-mail addresses appear below: do not report them to mailing lists or
 # mailboxes for general Ghostscript problems.
 
-# Displays:
-#   MS-DOS (note: not usable with Desqview/X):
-#	pe	Private Eye display
-#   Unix and VMS:
-#	sonyfb	Sony Microsystems monochrome display   [Sony only]
 # Printers:
 #	ap3250	Epson AP3250 printer
 #	bj10e	Canon BubbleJet BJ10e
@@ -115,33 +110,6 @@ DCONTRIB_MAK=$(DEVSRC)dcontrib.mak $(TOP_MAKEFILES)
 # in alphabetical order.
 
 ###### ----------------------- End of catalog ----------------------- ######
-
-###### ------------------- MS-DOS display devices ------------------- ######
-
-### ---------------------- The Private Eye display ---------------------- ###
-### Note: this driver was contributed by a user:                          ###
-###   please contact narf@media-lab.media.mit.edu if you have questions.  ###
-
-pe_=$(DEVOBJ)gdevpe.$(OBJ)
-$(DD)pe.dev : $(pe_) $(DCONTRIB_MAK) $(MAKEDIRS)
-	$(SETDEV) $(DD)pe $(pe_)
-
-$(DEVOBJ)gdevpe.$(OBJ) : $(DEVSRC)gdevpe.c $(GDEV) $(memory__h) $(DCONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevpe.$(OBJ) $(C_) $(DEVSRC)gdevpe.c
-
-###### ----------------------- Other displays ------------------------ ######
-
-### ------------------- Sony NeWS frame buffer device ------------------ ###
-### Note: this driver was contributed by a user: please contact          ###
-###       Mike Smolenski (mike@intertech.com) if you have questions.     ###
-
-# This is implemented as a 'printer' device.
-sonyfb_=$(DEVOBJ)gdevsnfb.$(OBJ)
-$(DD)sonyfb.dev : $(sonyfb_) $(DD)page.dev $(DCONTRIB_MAK) $(MAKEDIRS)
-	$(SETPDEV) $(DD)sonyfb $(sonyfb_)
-
-$(DEVOBJ)gdevsnfb.$(OBJ) : $(DEVSRC)gdevsnfb.c $(PDEVH) $(DCONTRIB_MAK) $(MAKEDIRS)
-	$(DEVCC) $(DEVO_)gdevsnfb.$(OBJ) $(C_) $(DEVSRC)gdevsnfb.c
 
 ###### --------------- Memory-buffered printer devices --------------- ######
 
