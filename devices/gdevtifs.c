@@ -526,10 +526,11 @@ static int tiff_chunky_post_cm(void  *arg, byte **dst, byte **src, int w, int h,
 /* Special version, called with 8 bit grey input to be downsampled to 1bpp
  * output. */
 int
-tiff_downscale_and_print_page(gx_device_printer *dev, TIFF *tif,
+tiff_downscale_and_print_page(gx_device_printer *dev, TIFF **tifp,
                               gx_downscaler_params *params,
                               int aw, int bpc, int num_comps)
 {
+    TIFF *tif = *tifp;
     gx_device_tiff *const tfdev = (gx_device_tiff *)dev;
     int code = 0;
     byte *data = NULL;
@@ -581,7 +582,10 @@ error:
     if (code >= 0)
         code = TIFFWriteDirectory(tif);
     else
-       TIFFFreeDirectory(tif);
+    {
+       TIFFClose(tif);
+       *tifp = NULL;
+    }
 
     gx_downscaler_fin(&ds);
     gs_free_object(dev->memory, data, "tiff_print_page(data)");

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -363,7 +363,7 @@ tiffscaled_print_page(gx_device_printer * pdev, gp_file * file)
         tfdev->MaxStripSize);
 
 
-    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+    return tiff_downscale_and_print_page(pdev, &tfdev->tif,
                                          &tfdev->downscale,
                                          tfdev->AdjustWidth,
                                          1, 1);
@@ -388,7 +388,7 @@ tiffscaled8_print_page(gx_device_printer * pdev, gp_file * file)
         tiff_set_gray_fields(pdev, tfdev->tif, 8, tfdev->Compression,
             tfdev->MaxStripSize);
     }
-    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+    return tiff_downscale_and_print_page(pdev, &tfdev->tif,
                                          &tfdev->downscale,
                                          tfdev->AdjustWidth,
                                          8, 1);
@@ -442,7 +442,7 @@ tiffscaled24_print_page(gx_device_printer * pdev, gp_file * file)
         tiff_set_rgb_fields(tfdev);
     }
 
-    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+    return tiff_downscale_and_print_page(pdev, &tfdev->tif,
                                          &tfdev->downscale,
                                          tfdev->AdjustWidth,
                                          8, 3);
@@ -482,7 +482,7 @@ tiffscaled32_print_page(gx_device_printer * pdev, gp_file * file)
             tfdev->MaxStripSize);
     }
 
-    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+    return tiff_downscale_and_print_page(pdev, &tfdev->tif,
                                          &tfdev->downscale,
                                          tfdev->AdjustWidth,
                                          8, 4);
@@ -504,7 +504,7 @@ tiffscaled4_print_page(gx_device_printer * pdev, gp_file * file)
                          tfdev->Compression,
                          tfdev->MaxStripSize);
 
-    return tiff_downscale_and_print_page(pdev, tfdev->tif,
+    return tiff_downscale_and_print_page(pdev, &tfdev->tif,
                                          &tfdev->downscale,
                                          tfdev->AdjustWidth,
                                          1, 4);
