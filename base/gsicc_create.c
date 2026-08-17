@@ -118,6 +118,7 @@ Note: All profile data must be encoded as big-endian
 
 #include "icc34.h"   /* Note this header is needed even if lcms is not
                             compiled as default CMS */
+#include "std.h"
 #include "string_.h"
 #include "gsmemory.h"
 #include "gx.h"
