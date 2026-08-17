@@ -122,7 +122,7 @@ Note: All profile data must be encoded as big-endian
 #include "string_.h"
 #include "gsmemory.h"
 #include "gx.h"
-#include <gp.h>
+#include "gp.h"
 
 #include "gxgstate.h"
 #include "gstypes.h"
