@@ -3158,13 +3158,13 @@ $(GLOBJ)gsicc_lcms2.$(OBJ) : $(GLOBJ)gsicc_lcms2_$(SHARE_LCMS).$(OBJ) $(gp_h) \
 $(GLOBJ)gsicc_create_1.$(OBJ) : $(GLSRC)gsicc_create.c $(AK) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxgstate_h) $(gstypes_h) $(gscspace_h)\
  $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
- $(math__h) $(gscolor2_h) $(gxcie_h) $(LIB_MAK) $(MAKEDIRS)
+ $(math__h) $(gscolor2_h) $(gxcie_h) $(std_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLLCMS2MTCC) $(GLO_)gsicc_create_1.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
 
 $(GLOBJ)gsicc_create_0.$(OBJ) : $(GLSRC)gsicc_create.c $(AK) $(string__h)\
  $(gsmemory_h) $(gx_h) $(gxgstate_h) $(gstypes_h) $(gscspace_h)\
  $(gscie_h) $(gsicc_create_h) $(gxarith_h) $(gsicc_manage_h) $(gsicc_cache_h)\
- $(math__h) $(gscolor2_h) $(gxcie_h) $(icc34_h) $(LIB_MAK) $(MAKEDIRS)
+ $(math__h) $(gscolor2_h) $(gxcie_h) $(icc34_h) $(std_h) $(LIB_MAK) $(MAKEDIRS)
 	$(GLLCMS2MTCC) $(GLO_)gsicc_create_0.$(OBJ) $(C_) $(GLSRC)gsicc_create.c
 
 $(GLOBJ)gsicc_create.$(OBJ) : $(GLOBJ)gsicc_create_$(SHARE_LCMS).$(OBJ) $(LIB_MAK) $(MAKEDIRS)
