@@ -2802,6 +2802,10 @@ pdfi_create_colorspace_by_array(pdf_context *ctx, pdf_array *color_array, int in
             code = gs_note_error(gs_error_typecheck);
             goto exit;
         }
+        if (a == color_array) {
+            code = gs_note_error(gs_error_circular_reference);
+            goto exit;
+        }
 
         /* recursion */
         code = pdfi_create_colorspace_by_array(ctx, a, 0, stream_dict, page_dict, ppcs, inline_image);
