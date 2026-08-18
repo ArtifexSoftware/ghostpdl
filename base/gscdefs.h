@@ -45,7 +45,7 @@
 
 /* def GS_PROD */
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " GIT PRERELEASE"
+        GS_PRODUCTFAMILY " RELEASE CANDIDATE 1"
 /* end def GS_PROD */
 
 #endif
