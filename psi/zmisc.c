@@ -419,6 +419,55 @@ zmementolistnewblocks(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* This is used purely to avoid the previous use of .forecput when using DELAYBIND.
+ * We need to create two arrays in systemdict; .delaybind and .delayinternalbind, and
+ * they need to be in local VM (which is not strictly legal because systemdict is
+ * defined in global VM). Previously this was done using .forceput but we want to
+ * get rid of that.
+ * This expedient is slightly less unpleasant because it only permits the creation of
+ * specifically named arrays in systemdict, and they are only used until .bindnow is
+ * executed. Recreating them after startup might slow thinigs down but we don't expect
+ * there to be any unfortunate side effects. Of course it shouldn't be possible to
+ * run this code after startup, but we thought that about forceput as well.
+ */
+static int zdelaybindparam(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref *delaybind, key_name;
+    int64_t size;
+    int code = 0, i = 0;
+    char *names_array[2] = {".delaybind", ".delayinternalbind"};
+    uint space = r_space(&idict_stack.system_dict);
+
+    check_op(1);
+    check_type(*op, t_integer);
+
+    size = op->value.intval;
+    if (size < 0)
+        return_error(gs_error_rangecheck);
+
+    for (i=0;i < 2;i++) {
+        code = gs_alloc_ref_array(imemory_local, (ref *)op, a_all, size, "zdelaybindparam");
+        if (code < 0)
+            return code;
+
+        /* Create an array of the requested size in local VM */
+        code = name_ref(imemory_local, (const byte *)names_array[i], strlen(names_array[i]), &key_name, 0);
+        if (code < 0)
+            return code;	/* error */
+
+        /* Hack; pretend system dict is defined in local VM so that 'put' won't complain (borrowed from .forceput) */
+        r_set_space(&idict_stack.system_dict, avm_local);
+        code = dict_put(&idict_stack.system_dict, (const ref *)&key_name, op, &idict_stack);
+        /* Put systemdict VM back to global */
+        r_set_space(&idict_stack.system_dict, space);
+        if (code < 0)
+            return code;	/* error */
+    }
+    pop(1);
+    return 0;
+}
+
 /* There are a few cases where a customer/user might want CPSI behavior
  * instead of the GS default behavior. cmyk_to_rgb and Type 1 char fill
  * method are two that have come up so far. This operator allows a PS
@@ -499,6 +548,7 @@ const op_def zmisc_a_op_defs[] =
     {"0.mementolistnewblocks", zmementolistnewblocks},
     {"1.setoserrno", zsetoserrno},
     {"0usertime", zusertime},
+    {"1.delaybindparam", zdelaybindparam},
     op_def_end(0)
 };
 

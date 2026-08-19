@@ -320,10 +320,7 @@ DELAYBIND
        (               possible that malicious code may be able to evade the\n) print
        (               limited security offered by the SAFER option.\n) print flush
    } if
-   .currentglobal //false .setglobal
-   systemdict /.delaybind 2000 array put
-   systemdict /.delayinternalbind 2000 array put
-   .setglobal
+   2000 .delaybindparam
    userdict /.delaycount 0 put
    userdict /.delayinternalcount 0 put
         % When we've done the delayed bind, we want to stop saving.
@@ -2543,6 +2540,7 @@ currentdict /.locksafeglobal .undef
   /.confirm /.confirmread
   /.tempfile
   /.buildcidfont4
+  /.delaybindparam
 
   % Used by a free user in the Library of Congress. Apparently this is used to
   % draw a partial page, which is then filled in by the results of a barcode
@@ -2611,6 +2609,8 @@ currentdict /.locksafeglobal .undef
   0 1 .delaycount 1 sub { .delaybind exch get .forcebind pop } for
   0 1 .delayinternalcount 1 sub { .delayinternalbind exch get .forcebind pop } for
   //systemdict /.bindnow .forceundef	% ditto
+  % Reset the arrays to 0, so that bind returns to normal behaviour.
+  0 .delaybindparam
   .applyundefinternalnames
   put
   SAFER {
