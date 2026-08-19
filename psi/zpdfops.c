@@ -1435,7 +1435,7 @@ static int zPDFInit(i_ctx_t *i_ctx_p)
     }
     pdfctx->cache_memory = imemory;
     /* The size is arbitrary */
-    code = dict_alloc(imemory->stable_memory, 1, &pdfctx->names_dict);
+    code = dict_alloc((gs_ref_memory_t *)imemory->stable_memory, 1, &pdfctx->names_dict);
     if (code < 0)
         goto error;
 
