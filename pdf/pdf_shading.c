@@ -41,7 +41,8 @@
 
 static int pdfi_build_shading_function(pdf_context *ctx, gs_function_t **ppfn, const float *shading_domain, int num_inputs, pdf_dict *shading_dict, pdf_dict *page_dict)
 {
-    int code, type;
+    int code;
+    int64_t type;
     pdf_obj *o = NULL;
     pdf_obj * rsubfn = NULL;
     gs_function_AdOt_params_t params;
