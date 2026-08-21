@@ -617,6 +617,16 @@ xps_post_callback_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t spc)
 {
     xps_font_t *xf = pfont->client_data;
     int value;
+
+    /* Check per-text-operation override table first. This lets pdfwrite use
+     * the correct Unicode char code (for encoding/ToUnicode) while still
+     * rendering the explicitly-specified glyph from the XPS Indices attribute. */
+    if (xf->glyph_override_next < xf->glyph_override_count) {
+        int i = xf->glyph_override_next++;
+        if (xf->glyph_override_flags != NULL && xf->glyph_override_flags[i] != 0)
+            return xf->glyph_override_glyphs[i];
+    }
+
     value = xps_encode_font_char(xf, chr);
     if (value == 0)
         return GS_NO_GLYPH;

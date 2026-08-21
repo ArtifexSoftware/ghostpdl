@@ -272,6 +272,15 @@ struct xps_font_s
     char **names;
     int max_name_index;
     int next_name_index;
+
+    /* Per-text-operation override table: maps Unicode char codes to explicit
+     * glyph indices from the XPS Indices attribute. Set before gs_text_process
+     * and cleared after, so pdfwrite's encode_char gets the correct glyph
+     * while preserving the Unicode char code for PDF encoding/ToUnicode. */
+    const gs_glyph *glyph_override_glyphs;
+    const byte *glyph_override_flags;
+    int glyph_override_count;
+    int glyph_override_next;
 };
 
 struct xps_glyph_metrics_s
