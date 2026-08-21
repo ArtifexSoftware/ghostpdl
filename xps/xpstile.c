@@ -376,14 +376,29 @@ xps_parse_tiling_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *dict,
         gs_matrix_translate(&transform, -viewbox.p.x, -viewbox.p.y, &transform);
 
         cs = ctx->srgb;
-        gs_setcolorspace(ctx->pgs, cs);
+        code = gs_setcolorspace(ctx->pgs, cs);
+        if (code < 0) {
+            xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
+            gs_grestore(ctx->pgs);
+            return gs_rethrow(code, "cannot draw tile");
+        }
         gsicc_adjust_profile_rc(cs->cmm_icc_profile_data, 1, "xps_parse_tiling_brush");
 
         sa = gs_currentstrokeadjust(ctx->pgs);
         gs_setstrokeadjust(ctx->pgs, false);
         gs_makepattern(&gscolor, &gspat, &transform, ctx->pgs, NULL);
+        if (gscolor.pattern == NULL) {
+            xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
+            gs_grestore(ctx->pgs);
+            return gs_rethrow(gs_error_unknownerror, "cannot draw tile");
+        }
         gscolor.pattern->client_data = &closure;
-        gs_setpattern(ctx->pgs, &gscolor);
+        code = gs_setpattern(ctx->pgs, &gscolor);
+        if (code < 0) {
+            xps_end_opacity(ctx, base_uri, dict, opacity_att, NULL);
+            gs_grestore(ctx->pgs);
+            return gs_rethrow(code, "cannot draw tile");
+        }
         /* If the tiling brush has an opacity, it was already set in the group
            that we are filling.  Reset to 1.0 here to avoid double application
            when the tiling actually occurs */
