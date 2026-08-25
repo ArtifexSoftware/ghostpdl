@@ -82,6 +82,8 @@ xps_parse_gradient_stops(xps_context_t *ctx, char *base_uri, xps_item_t *node,
                 stops[count].index = count;
 
                 xps_parse_color(ctx, base_uri, color, &colorspace, sample);
+                if (colorspace == NULL)
+                    return 0;
 
                 /* Set the rendering parameters */
                 rendering_params.black_point_comp = gsBLACKPTCOMP_ON;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -113,13 +113,18 @@ xps_parse_color(xps_context_t *ctx, char *base_uri, char *string,
     }
     else if (string[0] == 's' && string[1] == 'c' && string[2] == '#')
     {
-        cs = ctx->scrgb;
-        rc_increment(cs);
-
         if (count_commas(string) == 2)
             sscanf(string, "sc#%g,%g,%g", samples + 1, samples + 2, samples + 3);
-        if (count_commas(string) == 3)
-            sscanf(string, "sc#%g,%g,%g,%g", samples, samples + 1, samples + 2, samples + 3);
+        else {
+            if (count_commas(string) == 3)
+                sscanf(string, "sc#%g,%g,%g,%g", samples, samples + 1, samples + 2, samples + 3);
+            else {
+                gs_warn1("Colour specification '%s' is invalid (wrong number of coponents)", string);
+                return;
+            }
+        }
+        cs = ctx->scrgb;
+        rc_increment(cs);
     }
     else if (strstr(string, "ContextColor ") == string)
     {
@@ -274,8 +279,11 @@ xps_parse_solid_color_brush(xps_context_t *ctx, char *base_uri, xps_resource_t *
     samples[2] = 0.0;
     samples[3] = 0.0;
 
-    if (color_att)
+    if (color_att) {
         xps_parse_color(ctx, base_uri, color_att, &colorspace, samples);
+        if (colorspace == NULL)
+            return_error(gs_error_undefined);
+    }
     else
     {
         colorspace = ctx->srgb;
