@@ -1364,6 +1364,11 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
         /* Color must be set *after* we begin opacity */
         xps_parse_color(ctx, base_uri, fill_att, &colorspace, samples);
+        if (colorspace == NULL) {
+            gs_grestore(ctx->pgs);
+            code = gs_note_error(gs_error_undefined);
+            return gs_rethrow(code, "cannot parse color space");
+        }
         if (fill_opacity_att)
             samples[0] *= atof(fill_opacity_att);
         xps_set_color(ctx, colorspace, samples);
@@ -1420,6 +1425,11 @@ xps_parse_path(xps_context_t *ctx, char *base_uri, xps_resource_t *dict, xps_ite
 
         /* Color must be set *after* the group is pushed */
         xps_parse_color(ctx, base_uri, stroke_att, &colorspace, samples);
+        if (colorspace == NULL) {
+            gs_grestore(ctx->pgs);
+            code = gs_note_error(gs_error_undefined);
+            return gs_rethrow(code, "cannot parse color space");
+        }
         if (stroke_opacity_att)
             samples[0] *= atof(stroke_opacity_att);
         xps_set_color(ctx, colorspace, samples);
