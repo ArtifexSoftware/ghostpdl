@@ -2848,7 +2848,7 @@ if test "x$driversfile" != x; then
         drivers="`tr '\n' ',' <$driversfile`"
 fi
 
-if echo $drivers | grep 'APPLE\|appledmp\|iwhi\|iwhic\|iwlo\|iwlow\|iwlq\|iwlqc' >/dev/null; then
+if echo $drivers | grep 'APPLE\|appledmp\|appledmpl\|iwhi\|iwhic\|iwhil\|iwlo\|iwlol\|iwlow\|iwlq\|iwlqc\|iwlql' >/dev/null; then
    APPLE_DEVICES_REQUESTED="yes"
 fi
 

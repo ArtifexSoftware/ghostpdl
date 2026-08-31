@@ -60,13 +60,17 @@ CONTDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	fmpr	 Fujitsu FMPR (japanese)
 #	fmlbp	 Fujitsu FMLBP2xx Page Printer (japanese)
 #	gdevadmp suite (Apple dot matrix)
-#		appledmp  Apple Dot Matrix Printer
-#		iwlo      Apple ImageWriter
-#		iwlow     Apple ImageWriter 15"
-#		iwhi      Apple ImageWriter II
-#		iwhic     Apple ImageWriter II (color)
-#		iwlq      Apple ImageWriter LQ
-#		iwlqc     Apple ImageWriter LQ (color)
+#		appledmp   Apple Dot Matrix Printer
+#		appledmpl  Apple Dot Matrix Printer (legacy)
+#		iwlo       Apple ImageWriter
+#		iwlol      Apple ImageWriter (legacy)
+#		iwlow      Apple ImageWriter 15"
+#		iwhi       Apple ImageWriter II
+#		iwhic      Apple ImageWriter II (color)
+#		iwhil      Apple ImageWriter II (legacy)
+#		iwlq       Apple ImageWriter LQ
+#		iwlqc      Apple ImageWriter LQ (color)
+#		iwlql      Apple ImageWriter LQ (legacy)
 #	gdi	 Samsung's old driver for their SmartGDI laser printers:
 #		 ML-4500, ML-2xx, ML-1xxx, ML-5080, ML-6040, ... and
 #		 Lexmark E210, same as "samsunggdi"
@@ -158,12 +162,19 @@ CONTDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 ###                                                                       ###
 
 appledmp_=$(DEVOBJ)gdevadmp.$(OBJ)
+appledmpl_=$(DEVOBJ)gdevadmpl.$(OBJ)
 
 $(DEVOBJ)gdevadmp.$(OBJ) : $(CONTRIBSRC)gdevadmp.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(DEVCC) $(DEVO_)gdevadmp.$(OBJ) $(C_) $(CONTRIBSRC)gdevadmp.c
 
+$(DEVOBJ)gdevadmpl.$(OBJ) : $(CONTRIBSRC)gdevadmpl.c $(PDEVH) $(CONTRIB_MAK) $(MAKEDIRS)
+	$(DEVCC) $(DEVO_)gdevadmpl.$(OBJ) $(C_) $(CONTRIBSRC)gdevadmpl.c
+
 $(DD)appledmp.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)appledmp $(appledmp_)
+
+$(DD)appledmpl.dev : $(appledmpl_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
+	$(SETPDEV) $(DD)appledmpl $(appledmpl_)
 
 $(DD)iwhi.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)iwhi $(appledmp_)
@@ -171,8 +182,14 @@ $(DD)iwhi.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 $(DD)iwhic.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)iwhic $(appledmp_)
 
+$(DD)iwhil.dev : $(appledmpl_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
+	$(SETPDEV) $(DD)iwhil $(appledmpl_)
+
 $(DD)iwlo.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)iwlo $(appledmp_)
+
+$(DD)iwlol.dev : $(appledmpl_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
+	$(SETPDEV) $(DD)iwlol $(appledmpl_)
 
 $(DD)iwlow.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)iwlow $(appledmp_)
@@ -182,6 +199,9 @@ $(DD)iwlq.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 
 $(DD)iwlqc.dev : $(appledmp_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
 	$(SETPDEV) $(DD)iwlqc $(appledmp_)
+
+$(DD)iwlql.dev : $(appledmpl_) $(DD)page.dev $(CONTDEV) $(CONTRIB_MAK) $(MAKEDIRS)
+	$(SETPDEV) $(DD)iwlql $(appledmpl_)
 
 
 ### ----------------- The BJC-210/240/250/250ex/265/1000 ---------------- ###

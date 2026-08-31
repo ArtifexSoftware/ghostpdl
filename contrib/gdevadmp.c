@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -13,34 +13,41 @@
    CA 94129, USA, for further information.
 */
 
-/* April 2021 - March 2025, from across The Emerald City
- * ghostscript Apple Dot Matrix Printer / ImageWriter driver, version ][
+/* April 2021 - August 2026, from across The Emerald City
+ * ghost(script|pdl) Apple Dot Matrix Printer / ImageWriter driver, version ][ rev. C
  *
- * By: Josh Moyer, Mike Galatean, Scott Barker, Jonathan Luckey,
- * Mark Wedel and the authors of the epson and other drivers.
+ * By: Josh Moyer (assisted by Claude), Mike Galatean, Scott Barker,
+ * Jonathan Luckey, Mark Wedel and the authors of the Epson and other drivers.
  *
- * This is version ][ (2.0) of the Apple dot-matrix printers driver for
- * ghostscript.  Please see the docs and release notes in the Devices
- * section of the ghostscript documentation.
+ * This is version ][ revision C (2.0.3) of the Apple dot-matrix printers
+ * driver for ghostscript.  Please see the docs and release notes in the
+ * Devices section of the ghostscript documentation.
  *
  * The devices:
  *      appledmp:  120dpi x  72dpi - Dot Matrix Printer / C. Itoh 8510
+ *      appledmpl: 120dpi x  72dpi - Dot Matrix Printer in Legacy Mode / C. Itoh 8510 in Legacy Mode (new in version ][ rev. B)
  *      iwlo:      160dpi x  72dpi - ImageWriter
-.*      iwlow:     160dpi x  72dpi - ImageWriter 15" (new in version ][)
+ *      iwlol:     160dpi x  72dpi - ImageWriter in Legacy Mode (new in version ][ rev. B)
+ *      iwlow:     160dpi x  72dpi - ImageWriter 15" (new in version ][)
  *      iwhi:      160dpi x 144dpi - ImageWriter II
  *      iwhic:     160dpi x 144dpi - ImageWriter II color (new in version ][)
+ *      iwhil:     160dpi x 144dpi - ImageWriter II in Legacy Mode (new in version ][ rev. B)
  *      iwlq:      320dpi x 216dpi - ImageWriter LQ
  *      iwlqc      320dpi x 216dpi - ImageWriter LQ color (new in version ][)
+ *      iwlql:     320dpi x 216dpi - ImageWriter LQ  in Legacy Mode (new in version ][ rev. B)
  *
  * Thanks for support and inspiration to the folks on the ghostscript
  * developers list, including at least (in no particular order):
  * Chris, Ray, Ken, Robin and William!
  * 
  * Thanks to Chris M. for making available certain documentation
- * for the printers.  Thanks also to Petar P.
+ * for the printers.  Thanks to Petar P. for support.  Thanks
+ * to Martin R. for the very important bug report that led to
+ * revisions A, B and C!  Thanks to Brian B. for writing about his
+ * experiences with and thoughts about blank prints and transparency.
  * 
- * And, finally, I d like to thank Microsoft for the decade/quarter
- * century that I ve had the privilege of being able to serve them
+ * And, finally, I'd like to thank Microsoft for the decade/quarter
+ * century that I've had the privilege of being able to serve them
  * over and also for enabling me to do more by indirectly supporting
  * this project with the food that they placed on my table -- in addition
  * to the skills that I developed while working for them.
@@ -65,13 +72,29 @@
  * + Improved comments and printer command macros in source.
  * + Other minor and miscellaneous changes.
  *
- * Known issues include:
- * + Rarely, some input files produce blank output unexpectedly.  I only ever
- *   saw it once in the course of many varied test prints, so probably an
- *   issue with the input file, rather than the driver.  Please e-mail me if
- *   you see this.
- * + Source lines marked with the word "bug" in them below.  Hopefully, these
- *   will be fixed in the planned and upcoming ][+ release.
+ * Fixes in version ][ revision A (2.0.1) -- assisted by Claude:
+ * + Fixed a bug that caused the driver to throw an error when printing
+ *   to A4 and other sheets that have a length not equal to a multiple of 1/9".
+ * + Adopted the more C-like XXX convention for source comments that describe
+ *   bugs or deficiencies.
+ * + Changed devtype to dev_type for better consistency with dev_rez & etc.
+ *
+ * Fixes in version ][ revision B (2.0.2):
+ * + Enable legacy (pre-10.06.0) driver compatibility mode by appending l to
+ *   the monochrome device names.
+ *
+ * Fixes in version ][ revision C (2.0.3) -- assisted by Claude:
+ * + Credit Martin for bug report with sheets that are not a multiple
+ *   of 1/9" in length, e.g. A4.
+ * + Update dates and revisions to level C.
+ * + Make the Beta ImageWriter LQ Cut Sheet Feeder logic inactive by default, to
+ *   improve user friendliness.
+ * + Add -dBIN=n for activating and overriding bin selection logic (LQ only) and
+ *   document it.
+ * + Reorder documentation sections and add sub-headings and blank page section.
+ * + Improve ERRREZSELECT language to suggest -r.
+ * + Provide a referral to bugs.ghostscript.com during fatal errors, in addition to
+ *   recommending an e-mail for help.
  *
  *    _____    Josh Moyer (he/him) <JMoyer@NODOMAIN.NET>
  *   | * * |   http://jmoyer.nodomain.net/
@@ -84,9 +107,12 @@
  *             Thanks.
  */
 
- /* Oct 2019 - April 2021, maintained by Mike Galatean */
+/* Oct 2019 - April 2021, maintained by Mike Galatean
+ * Mike got the driver suite re-included with ghostscript after it
+ * was briefly removed.
+ */
 
- /*
+/*
  * Apple DMP / Imagewriter driver
  *
  * This is a modification of Mark Wedel's Apple DMP and
@@ -244,7 +270,7 @@
 #define ERRALLOC DRIVERNAME ": Memory allocation failed.\n"
 #define ERRBINCMD DRIVERNAME ": Bin command write failed.\n"
 #define ERRBINSELECT DRIVERNAME ": Bin out of range: %d.\n"
-#define ERRCLEANING DRIVERNAME ": Fatal error, cleaning up.\n" DRIVERNAME ": Please write Josh Moyer <JMoyer@NODOMAIN.NET> for help.\n"
+#define ERRCLEANING DRIVERNAME ": Fatal error, cleaning up.\n" DRIVERNAME ": Please write to Josh Moyer <JMoyer@NODOMAIN.NET> for help\n" DRIVERNAME ": or file a bug at https://bugs.ghostscript.com/.\n"
 #define ERRCMD DRIVERNAME ": Command failure.\n"
 #define ERRCMDLQ DRIVERNAME ": Letter quality command failure.\n"
 #define ERRCMDNLQ DRIVERNAME ": Near letter quality command failure.\n"
@@ -257,7 +283,10 @@
 #define ERRDEVTYPE DRIVERNAME ": Driver selection failed.\n"
 #define ERRDIRSELECT DRIVERNAME ": Setting directionality failed.\n"
 #define ERREXITING DRIVERNAME ": Output is likely corrupt -- delete the file or reset your printer.\n" DRIVERNAME ": Exiting.\n"
-#define ERRGPCSL DRIVERNAME ": gdev_prn_copy_scan_lines returned an unexpected values:\n" DRIVERNAME ":(code=%d,line_size=%"PRId64")\n"
+/* XXX: One of the LLMs said that %"PRId64" produced undefined bahavior
+ * (per the C spec) and sugested %zu, instead.  However, it was Ken Sharp
+ * who made the change as a security fix to %"PRId64". */
+#define ERRGPCSL DRIVERNAME ": gdev_prn_copy_scan_lines returned an unexpected value:\n" DRIVERNAME ":(code=%d,line_size=%"PRId64")\n"
 #define ERRGPGL DRIVERNAME ": gdev_prn_get_lines returned an unexpected value: %d\n"
 #define ERRHWMARGINS DRIVERNAME ": HWMargins must not be less than 18pt on any side.\n"
 #define ERRLHNLQ DRIVERNAME ": Near letter quality line height failure.\n"
@@ -266,9 +295,11 @@
 #define ERRPOS DRIVERNAME ": Positioning failure.\n"
 #define ERRPOSLQ DRIVERNAME ": Letter quality positioning failure.\n"
 #define ERRPOSNLQ DRIVERNAME ": Near letter quality positioning failure.\n"
+#define ERRREMAINDER DRIVERNAME ": Remainder line feed failure.\n"
+#define ERRREMAINDERRANGE DRIVERNAME ": Remainder of %d out of range.\n"
 #define ERRRENDERMODE DRIVERNAME ": Invalid RENDERMODE specified: %d\n"
 #define ERRRESET DRIVERNAME ": Reset failure.\n"
-#define ERRREZSELECT DRIVERNAME ": Resolution select failed.\n"
+#define ERRREZSELECT DRIVERNAME ": Resolution select failed, use -r to specify a supported resolution.\n"
 #define ERRUNSAFEMARGINS DRIVERNAME ": -dUNSAFEMARGINS detected -- printer jams or damage may occur.\n"
 #define ERRWIDTH DRIVERNAME ": Image too wide for printer: %d of %.0f maximum.\n"
 
@@ -281,14 +312,13 @@ struct gx_device_admp_s {
         gx_device_common;
         gx_prn_device_common;
         bool unidirectional;
-        char bin;
-        int rendermode;
-        char devtype;
+        int bin, binoverride, rendermode;
+        char dev_type;
         bool unsafemargins;
-        float platen; /* MS compiler warns of truncation with a float,
-                        but a double doesn't make sense here, it seems */
+        double platen; /* MS compiler warns of truncation with a float */
 };
 
+/* XXX: This alias seems unnecessary. */
 typedef struct gx_device_admp_s gx_device_admp;
 
 /* Device procedure initialization */
@@ -323,7 +353,7 @@ prn_device_margins_body(gx_device_admp, admp_initialize_device_procs, "appledmp"
         0.25, 0, 0.25, 0.25, 0.25, 0.25,       /* origin and margins */
         1, 1, 1, 0, 2, 1,                      /* maxcomp, depth, maxgray, maxcolor, numgray, numcolor */
         admp_print_page),
-        0, -1, GPGL, DMP, UM, STANDARD };      /* unidirectional, bin, rendermode, device type, unsafemargins, platen */
+        0, -1, -1, GPGL, DMP, UM, STANDARD };  /* unidirectional, bin, binoverride, rendermode, device type, unsafemargins, platen */
 
 /* ImageWriter device descriptor */
 const gx_device_admp far_data gs_iwlo_device = {
@@ -334,7 +364,7 @@ prn_device_margins_body(gx_device_admp, admp_initialize_device_procs, "iwlo",
         0.25, 0, 0.25, 0.25, 0.25, 0.25,       /* origin and margins */
         1, 1, 1, 0, 2, 1,                      /* maxcomp, depth, maxgray, maxcolor, numgray, numcolor */
         admp_print_page),
-        0, -1, GPGL, IWLO, UM, STANDARD };     /* unidirectional, bin, rendermode, device type, unsafemargins, platen */
+        0, -1, -1, GPGL, IWLO, UM, STANDARD }; /* unidirectional, bin, binoverride, rendermode, device type, unsafemargins, platen */
 
 /* ImageWriter 15" device descriptor */
 const gx_device_admp far_data gs_iwlow_device = {
@@ -345,7 +375,7 @@ prn_device_margins_body(gx_device_admp, admp_initialize_device_procs, "iwlow",
         0.25, 0, 0.25, 0.25, 0.25, 0.25,       /* origin and margins */
         1, 1, 1, 0, 2, 1,                      /* maxcomp, depth, maxgray, maxcolor, numgray, numcolor */
         admp_print_page),
-        0, -1, GPGL, IWLO, UM, WIDE };         /* unidirectional, bin, rendermode, device type, unsafemargins, platen */
+        0, -1, -1, GPGL, IWLO, UM, WIDE };     /* unidirectional, bin, binoverride, rendermode, device type, unsafemargins, platen */
 
 /* ImageWriter II device descriptor */
 const gx_device_admp far_data gs_iwhi_device = {
@@ -356,7 +386,7 @@ prn_device_margins_body(gx_device_admp, admp_initialize_device_procs, "iwhi",
         0.25, 0, 0.25, 0.25, 0.25, 0.25,       /* origin and margins */
         1, 1, 1, 0, 2, 1,                      /* maxcomp, depth, maxgray, maxcolor, numgray, numcolor */
         admp_print_page),
-        0, -1, GPGL, IWHI, UM, STANDARD };     /* unidirectional, bin, rendermode, device type, unsafemargins, platen */
+        0, -1, -1, GPGL, IWHI, UM, STANDARD }; /* unidirectional, bin, binoverride, rendermode, device type, unsafemargins, platen */
 
 /* ImageWriter II color device descriptor */
 const gx_device_admp far_data gs_iwhic_device = {
@@ -367,7 +397,7 @@ prn_device_margins_body(gx_device_admp, admp_initialize_device_procs_color, "iwh
         0.25, 0, 0.25, 0.25, 0.25, 0.25,       /* origin and margins */
         4, 4, 1, 1, 2, 2,                      /* maxcomp, depth, maxgray, maxcolor, numgray, numcolor */
         admp_print_page),
-        0, -1, GPGL, IWHI, UM, STANDARD };     /* unidirectional, bin, rendermode, device type, unsafemargins, platen */
+        0, -1, -1, GPGL, IWHI, UM, STANDARD }; /* unidirectional, bin, binoverride, rendermode, device type, unsafemargins, platen */
 
 /* ImageWriter LQ device descriptor */
 const gx_device_admp far_data gs_iwlq_device = {
@@ -378,7 +408,7 @@ prn_device_margins_body(gx_device_admp, admp_initialize_device_procs, "iwlq",
         0.25, 0, 0.25, 0.25, 0.25, 0.25,       /* origin and margins */
         1, 1, 1, 0, 2, 1,                      /* maxcomp, depth, maxgray, maxcolor, numgray, numcolor */
         admp_print_page),
-        0, 0, GPGL, IWLQ, UM, WIDE };          /* unidirectional, bin, rendermode, device type, unsafemargins, platen */
+        0, 0, -1, GPGL, IWLQ, UM, WIDE };      /* unidirectional, bin, binoverride, rendermode, device type, unsafemargins, platen */
 
 /* ImageWriter LQ color device descriptor */
 const gx_device_admp far_data gs_iwlqc_device = {
@@ -389,7 +419,7 @@ prn_device_margins_body(gx_device_admp, admp_initialize_device_procs_color, "iwl
         0.25, 0, 0.25, 0.25, 0.25, 0.25,       /* origin and margins */
         4, 4, 1, 1, 2, 2,                      /* maxcomp, depth, maxgray, maxcolor, numgray, numcolor */
         admp_print_page),
-        0, 0, GPGL, IWLQ, UM, WIDE };          /* unidirectional, bin, rendermode, device type, unsafemargins, platen */
+        0, 0, -1, GPGL, IWLQ, UM, WIDE };      /* unidirectional, bin, binoverride, rendermode, device type, unsafemargins, platen */
 
 static int
 admp_get_params(gx_device* pdev, gs_param_list* plist)
@@ -399,9 +429,10 @@ admp_get_params(gx_device* pdev, gs_param_list* plist)
 
         /* Write params */
         if (code < 0 ||
+                (code = param_write_int(plist, "BIN", &((gx_device_admp*)pdev)->binoverride)) < 0 ||
+                (code = param_write_int(plist, "RENDERMODE", &((gx_device_admp*)pdev)->rendermode)) < 0 ||
                 (code = param_write_bool(plist, "UNIDIRECTIONAL", &((gx_device_admp*)pdev)->unidirectional)) < 0 ||
-                (code = param_write_bool(plist, "UNSAFEMARGINS", &((gx_device_admp*)pdev)->unsafemargins)) < 0 ||
-                (code = param_write_int(plist, "RENDERMODE", &((gx_device_admp*)pdev)->rendermode)) < 0 )
+                (code = param_write_bool(plist, "UNSAFEMARGINS", &((gx_device_admp*)pdev)->unsafemargins)) < 0 )
                 return code;
 
         return code;
@@ -414,8 +445,9 @@ admp_put_params(gx_device* pdev, gs_param_list* plist)
         int code = 0, ecode = 0;
         bool unidirectional = ((gx_device_admp*)pdev)->unidirectional;
         bool unsafemargins = ((gx_device_admp*)pdev)->unsafemargins;
-        int rendermode = ((gx_device_admp*)pdev)->rendermode;
         int bin = ((gx_device_admp*)pdev)->bin;
+        int binoverride = ((gx_device_admp*)pdev)->binoverride;
+        int rendermode = ((gx_device_admp*)pdev)->rendermode;
         gs_param_name param_name;
 
         /* Read params */
@@ -455,11 +487,21 @@ admp_put_params(gx_device* pdev, gs_param_list* plist)
                 return code;
         ((gx_device_admp*)pdev)->bin = bin;
 
+        /* Allow user to override the %MediaSource */
+        if ((code = param_read_int(plist,
+                (param_name = "BIN"),
+                &binoverride)) < 0) {
+                param_signal_error(plist, param_name, ecode = code);
+        }
+        if (ecode < 0)
+                return code;
+        ((gx_device_admp*)pdev)->binoverride = binoverride;
+
         /* Check and fix-up Margin[s], see */
         /* https://bugs.ghostscript.com/show_bug.cgi?id=707616 */
         pdev->Margins[1] = 0;
 
-        switch (((gx_device_admp*)pdev)->devtype)
+        switch (((gx_device_admp*)pdev)->dev_type)
         {
         case IWLQ:
                 if (pdev->HWResolution[0] == 320)
@@ -497,19 +539,20 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         /* Init */
         int code, dev_rez, lnum;
         unsigned char color = 0;
-        char pcmd[255];
+        char band_height, band_remainder, pcmd[255];
         size_t line_size = gdev_mem_bytes_per_scan_line((gx_device*)pdev);
         size_t in_size = line_size * 8; /* Note that in_size is a multiple of 8 dots in height. */
         unsigned char color_order[4] = { -1, -1, -1, -1 };
-        gx_render_plane_t render_planes[4] = {{ -1, -1, -1}, { -1, -1, -1}, { -1, -1, -1}, { -1, -1, -1}};
+        gx_render_plane_t render_planes[4] = { { -1, -1, -1}, { -1, -1, -1}, { -1, -1, -1}, { -1, -1, -1} };
         byte* buf_in = NULL;
         byte* buf_out = NULL;
         byte* row = NULL;
         byte* prn = NULL;
         byte* in, * out;
 
+        /* Overflow prevention */
         if (line_size > max_int / 24)
-            return_error(gs_error_rangecheck);
+                return_error(gs_error_rangecheck);
 
         /* Allocate memory */
         row = (byte*)gs_alloc_bytes(pdev->memory, line_size, "admp_print_page(row)");
@@ -517,6 +560,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         buf_out = (byte*)gs_alloc_bytes(pdev->memory, in_size, "admp_print_page(buf_out)");
         prn = (byte*)gs_alloc_bytes(pdev->memory, in_size * 3, "admp_print_page(prn)");
 
+        /* Check allocations */
         if (row == NULL ||
                 buf_in == NULL ||
                 buf_out == NULL ||
@@ -575,13 +619,20 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                 goto xit;
         }
 
+        /* XXX: Should we send the perforation skip disable command (with -dUNSAFEMARGINS)? */
+
         /* Notify user if -dUNSAFEMARGINS */
         if (((gx_device_admp*)pdev)->unsafemargins == 1)
                 (void)errprintf(pdev->memory, ERRUNSAFEMARGINS);
 
         /* Select paper bin (ImageWriter LQ only) */
-        if (((gx_device_admp*)pdev)->devtype == IWLQ)
+        if (((gx_device_admp*)pdev)->dev_type == IWLQ &&
+                ((gx_device_admp*)pdev)->binoverride > -1 )
         {
+                /* See if user overrode automatic bin selection */
+                if (((gx_device_admp*)pdev)->binoverride > 0)
+                        ((gx_device_admp*)pdev)->bin = ((gx_device_admp*)pdev)->binoverride - 1;
+
                 switch (((gx_device_admp*)pdev)->bin)
                 {
                 case 0:
@@ -631,32 +682,33 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
         }
 
         /* Configure resolution */
+        /* XXX; The printers variously support more resolutions than this. */
         switch ((int)pdev->y_pixels_per_inch)
         {
         case 216:
                 if (pdev->x_pixels_per_inch == 320 &&
-                        ((gx_device_admp*)pdev)->devtype == IWLQ)
+                        ((gx_device_admp*)pdev)->dev_type == IWLQ)
                 {
                         dev_rez = H320V216;
                         break;
                 }
         case 144:
                 if (pdev->x_pixels_per_inch == 160 &&
-                        ((gx_device_admp*)pdev)->devtype >= IWHI)
+                        ((gx_device_admp*)pdev)->dev_type >= IWHI)
                 {
                         dev_rez = H160V144;
                         break;
                 }
         case 72:
                 if (pdev->x_pixels_per_inch == 160 &&
-                        ((gx_device_admp*)pdev)->devtype >= IWLO)
+                        ((gx_device_admp*)pdev)->dev_type >= IWLO)
                 {
                         dev_rez = H160V72;
                         break;
                 }
 
                 if (pdev->x_pixels_per_inch == 120 &&
-                        ((gx_device_admp*)pdev)->devtype >= DMP)
+                        ((gx_device_admp*)pdev)->dev_type >= DMP)
                 {
                         dev_rez = H120V72;
                         break;
@@ -706,21 +758,38 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                 }
         }
 
-        /* Bug: Zero the scanline buffer because the output file fills
+        /* XXX: Zero the scanline buffer because the output file fills
          * with patterns of 0xFF and 0x00 otherwise.  Additionally,
-         * not zeroing the row causes the 320x216 color IWLQ test
+         * not zeroing the row causes the 320x216 DPI color IWLQ test
          * case to hit ERRCMDLQ.  (When using new GPGL rendermode.)
          */
         (void)memset(row, 0, line_size);
 
-        /* For each scan line in the main buffer... */
-        while (lnum < pdev->height)
+        /* Set band_height */
+        switch (dev_rez)
+        {
+        case H320V216: band_height = 24; break;
+        case H160V144: band_height = 16; break;
+        case H160V72: /* falls through */
+        case H120V72: /* falls through */
+        default: band_height = 8; break;
+        }
+
+        /* For each whole band in the main buffer... */
+        while (lnum + band_height < pdev->height)
         {
                 byte* actual_row, * inp, * in_end, * out_end, * prn_blk, * prn_end, * prn_tmp;
                 int count, lcnt, ltmp, passes;
                 uint actual_line_size;
 
                 /* 8 raster tall bands per pass */
+                /* XXX: Consider moving this to outside of the while
+                 * (lnum + band_height < pdev->height)
+                 * to improve performance, since dev_res doesn't
+                 * change during the print job.  Also, move the
+                 * initializer of passes to match.  And combine
+                 * passes and band_height computations.
+                 */
                 switch (dev_rez)
                 {
                 case H320V216: passes = 3; break;
@@ -731,7 +800,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                 }
 
                 /* For each colorant, copy, transpose, copy and write a band of dots
-                 * Bug: Too many copies in here...
+                 * XXX: Too many copies in here...
                  */
                 for (color = 0; color < pdev->color_info.num_components; ++color)
                 {
@@ -777,7 +846,7 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                 switch (((gx_device_admp*)pdev)->rendermode)
                                                 {
                                                 case GPGL: /* gdev_prn_get_lines */
-                                                        /* Bug: Here, we retrieve the scanlines with y=1 and then a copy.
+                                                        /* XXX: Here, we retrieve the scanlines with y=1 and then a copy.
                                                          * It would be better to avoid the copy and set y=8 (or maybe 24
                                                          * for the LQ.)  However, this code works.
                                                          */
@@ -837,6 +906,9 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                                                                 in + line_size * (7 - lcnt),
                                                                 line_size);
 
+                                                        /* XXX: Does gdev_prn_copy_scan_lines return the
+                                                         * count of lines or bytes copied?
+                                                         */
                                                         if (code != 1)
                                                         {
                                                                 (void)errprintf(pdev->memory, ERRGPCSL, code, line_size);
@@ -1200,15 +1272,48 @@ admp_print_page(gx_device_printer* pdev, gp_file* gprn_stream)
                 } /* for color */
 
                 /* Set lnum to reflect the number of 1-dot tall bands printed */
+                lnum += band_height;
+        } /* while lnum + band_height < pdev->height */
+
+        /* Handle partial band by advancing paper the remaining amount to
+         * ensure proper ejection
+         */
+        band_remainder = pdev->height - lnum;
+
+        /* Ensure band_remainder is in range */
+        if (band_remainder < 0 || band_remainder > band_height)
+        {
+                (void)errprintf(pdev->memory, ERRREMAINDERRANGE, band_remainder);
+                code = gs_note_error(gs_error_rangecheck);
+                goto xit;
+        }
+
+        /* Advance the paper the rest of the way*/
+        if (band_remainder > 0)
+        {
                 switch (dev_rez)
                 {
-                case H320V216: lnum += 24; break;
-                case H160V144: lnum += 16; break;
+                case H320V216:
+                        (void)snprintf(pcmd, sizeof(pcmd), ESC LINEHEIGHT "%02d" CR LF, (band_remainder * 2) / 3);
+                        break;
+                case H160V144:
+                        (void)snprintf(pcmd, sizeof(pcmd), ESC LINEHEIGHT "%02d" CR LF, band_remainder);
+                        break;
                 case H160V72: /* falls through */
                 case H120V72: /* falls through */
-                default: lnum += 8; break;
+                default:
+                        (void)snprintf(pcmd, sizeof(pcmd), ESC LINEHEIGHT "%02d" CR LF, band_remainder * 2);
+                        break;
                 }
-        } /* while lnum < pdev->height */
+
+                code = gp_fputs(pcmd, gprn_stream);
+                if (code != strlen(pcmd))
+                {
+                        (void)errprintf(pdev->memory, ERRREMAINDER);
+                        code = gs_note_error(gs_error_ioerror);
+                        goto xit;
+                }
+        }
 
         /* Page should auto-eject since there were line-feeds for every
          * band -- no need for a form-feed.
