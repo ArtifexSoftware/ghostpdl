@@ -630,7 +630,7 @@ static int pdfi_show_Tr_3(pdf_context *ctx, gs_text_params_t *text)
     gs_text_enum_t *penum=NULL, *saved_penum=NULL;
 
     /* Don't draw the text */
-    text->operation |= TEXT_DO_NONE | TEXT_RENDER_MODE_3;
+    text->operation |= TEXT_DO_NONE | TEXT_RETURN_WIDTH | TEXT_RENDER_MODE_3;
 
     /* Run the text methods to create the path */
     code = gs_text_begin(ctx->pgs, text, ctx->memory, &penum);
@@ -641,6 +641,8 @@ static int pdfi_show_Tr_3(pdf_context *ctx, gs_text_params_t *text)
     saved_penum = ctx->text.current_enum;
     ctx->text.current_enum = penum;
     code = gs_text_process(penum);
+    if (code >= 0)
+        code = gs_rmoveto(ctx->pgs, penum->returned.total_width.x, penum->returned.total_width.y);
     gs_text_release(ctx->pgs, penum, "pdfi_Tj");
     ctx->text.current_enum = saved_penum;
 

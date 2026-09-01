@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1321,10 +1321,7 @@ show_finish(gs_show_enum * penum)
     if (!SHOW_IS_STRINGWIDTH(penum))
        return 0;
 
-    /* Save the accumulated width before returning, if we are not in PDF text rendering mode 3, */
-    /* and undo the extra gsave. */
-    if (!(penum->text.operation & TEXT_RENDER_MODE_3))
-        code = gs_currentpoint(pgs, &penum->returned.total_width);
+    code = gs_currentpoint(pgs, &penum->returned.total_width);
     rcode = gs_grestore(pgs);
 
     return (code < 0 ? code : rcode);

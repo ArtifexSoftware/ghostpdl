@@ -1165,9 +1165,12 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
         gs_distance_transform_inverse(width_pt.x, width_pt.y, &ctm_only(penum->pgs), &p);
         penum->returned.total_width.x += p.x;
         penum->returned.total_width.y += p.y;
-    } else
+        if (pdev->PreserveTrMode == true)
+            code = pdf_shift_text_currentpoint(penum, &width_pt);
+    } else {
         penum->returned.total_width = width_pt;
-    code = pdf_shift_text_currentpoint(penum, &width_pt);
+        code = pdf_shift_text_currentpoint(penum, &width_pt);
+    }
 
 done:
     text->operation = operation;
