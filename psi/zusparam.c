@@ -954,6 +954,78 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
 
 #undef ifont_dir
 
+static long
+current_MaxFormItem(i_ctx_t *i_ctx_p)
+{
+    return(i_ctx_p->user_params.MaxFormItem);
+}
+static int
+set_MaxFormItem(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->user_params.MaxFormItem = val;
+    return 0;
+}
+
+static long
+current_MaxPatternItem(i_ctx_t *i_ctx_p)
+{
+    return(i_ctx_p->user_params.MaxPatternItem);
+}
+static int
+set_MaxPatternItem(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->user_params.MaxPatternItem = val;
+    return 0;
+}
+
+static long
+current_MaxScreenItem(i_ctx_t *i_ctx_p)
+{
+    return(i_ctx_p->user_params.MaxScreenItem);
+}
+static int
+set_MaxScreenItem(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->user_params.MaxScreenItem = val;
+    return 0;
+}
+
+static long
+current_MaxUPathItem(i_ctx_t *i_ctx_p)
+{
+    return(i_ctx_p->user_params.MaxUPathItem);
+}
+static int
+set_MaxUPathItem(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->user_params.MaxUPathItem = val;
+    return 0;
+}
+
+static long
+current_MaxSuperScreen(i_ctx_t *i_ctx_p)
+{
+    return(i_ctx_p->user_params.MaxFormItem);
+}
+static int
+set_MaxSuperScreen(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->user_params.MaxFormItem = val;
+    return 0;
+}
+
+static long
+current_HalftoneMode(i_ctx_t *i_ctx_p)
+{
+    return(i_ctx_p->user_params.HalftoneMode);
+}
+static int
+set_HalftoneMode(i_ctx_t *i_ctx_p, long val)
+{
+    i_ctx_p->user_params.HalftoneMode = val;
+    return 0;
+}
+
 static void
 current_devicen_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
@@ -1050,6 +1122,34 @@ set_lab_icc(i_ctx_t *i_ctx_p, gs_param_string * pval)
     return gs_setlabicc(igs, pval);
 }
 
+static void
+current_JobName(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    if (i_ctx_p->user_params.JobName == NULL) {
+        pval->data = NULL;
+        pval->size = 0;
+        pval->persistent = false;
+    } else {
+        pval->data = (const byte *)i_ctx_p->user_params.JobName;
+        pval->size = strlen(i_ctx_p->user_params.JobName);
+        pval->persistent = false;
+    }
+}
+
+static int
+set_JobName(i_ctx_t *i_ctx_p, gs_param_string * pval)
+{
+    if (i_ctx_p->user_params.JobName != NULL) {
+        gs_free_object(imemory->non_gc_memory, i_ctx_p->user_params.JobName, "set_JobName");
+    }
+    i_ctx_p->user_params.JobName = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_JobName");
+    if (i_ctx_p->user_params.JobName == NULL)
+        return_error(gs_error_VMerror);
+    memcpy(i_ctx_p->user_params.JobName, pval->data, pval->size);
+    i_ctx_p->user_params.JobName[pval->size] = 0x00;
+    return 0;
+}
+
 static const size_t_param_def_t user_size_t_params[] =
 {
     {"MaxLocalVM", MIN_VM_THRESHOLD, MAX_VM_THRESHOLD, current_MaxLocalVM, set_MaxLocalVM}
@@ -1084,7 +1184,19 @@ static const long_param_def_t user_long_params[] =
     {"AlignToPixels", 0, 1,
      current_AlignToPixels, set_AlignToPixels},
     {"GridFitTT", 0, 3,
-     current_GridFitTT, set_GridFitTT}
+     current_GridFitTT, set_GridFitTT},
+    {"MaxFormItem", 0, MAX_UINT_PARAM,
+    current_MaxFormItem, set_MaxFormItem},
+    {"MaxPatternItem", 0, MAX_UINT_PARAM,
+    current_MaxPatternItem, set_MaxPatternItem},
+    {"MaxScreenItem", 0, MAX_UINT_PARAM,
+    current_MaxScreenItem, set_MaxScreenItem},
+    {"MaxUPathItem", 0, MAX_UINT_PARAM,
+    current_MaxUPathItem, set_MaxUPathItem},
+    {"HalftoneMode", 0, 2,
+    current_HalftoneMode, set_HalftoneMode},
+    {"MaxSuperScreen", 0, MAX_UINT_PARAM,
+    current_MaxSuperScreen, set_MaxSuperScreen},
 };
 
 /* Note that string objects that are maintained as user params must be
@@ -1108,7 +1220,8 @@ static const string_param_def_t user_string_params[] =
     {"ICCProfilesDir", current_icc_directory, set_icc_directory},
     {"LabProfile", current_lab_icc, set_lab_icc},
     {"DeviceNProfile", current_devicen_icc, set_devicen_profile_icc},
-    {"SourceObjectICC", current_srcgtag_icc, set_srcgtag_icc}
+    {"SourceObjectICC", current_srcgtag_icc, set_srcgtag_icc},
+    {"JobName", current_JobName, set_JobName},
 };
 
 /* Boolean values */
@@ -1160,12 +1273,13 @@ set_RenderTTNotdef(i_ctx_t *i_ctx_p, bool val)
     i_ctx_p->RenderTTNotdef = val;
     return 0;
 }
+
 static const bool_param_def_t user_bool_params[] =
 {
     {"AccurateScreens", current_AccurateScreens, set_AccurateScreens},
     {"LockFilePermissions", current_LockFilePermissions, set_LockFilePermissions},
     {"RenderTTNotdef", current_RenderTTNotdef, set_RenderTTNotdef},
-    {"OverrideICC", current_OverrideICC, set_OverrideICC}
+    {"OverrideICC", current_OverrideICC, set_OverrideICC},
 };
 
 /* The user parameter set */
@@ -1184,7 +1298,7 @@ int
 set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
 {
     dict_param_list list;
-    int code;
+    int code, i;
 
     check_type(*paramdict, t_dictionary);
     code = dict_param_list_read(&list, paramdict, NULL, false, iimemory);
@@ -1192,6 +1306,104 @@ set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
         return code;
     code = setparams(i_ctx_p, (gs_param_list *)&list, &user_param_set);
     iparam_list_release(&list);
+    if (code < 0)
+        return code;
+
+    {
+        int index, code;
+        ref elt[2], *userparams_dict;
+
+        if (dict_find_string(systemdict, "userparams", &userparams_dict) < 0)
+            return 0;
+
+        index = dict_first(paramdict);
+        while ((index = dict_next(paramdict, index, elt)) >= 0)
+        {
+            if (r_has_type(&elt[0], t_name)) {
+                ref sref;
+
+                name_string_ref(imemory, (const ref *)&elt[0], &sref);
+                if (r_is_number(&elt[1])) {
+                    for (i = 0;i < countof(user_size_t_params);i++) {
+                        if (strlen(user_size_t_params[i].pname) == r_size(&sref) && strncmp((const char *)sref.value.bytes, user_size_t_params[i].pname, r_size(&sref)) == 0) {
+                            code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
+                            if (code < 0)
+                                return code;
+                            break;
+                        }
+                    }
+                    for (i = 0;i < countof(user_i64_params);i++) {
+                        if (strlen(user_i64_params[i].pname) == r_size(&sref) && strncmp((const char *)sref.value.bytes, user_i64_params[i].pname, r_size(&sref)) == 0) {
+                            /* We only have one i64 parameter 'VMThreshold', and it needs special cas treatment. If we ever have more we'll
+                             * need to isolate it. If VMThreshold is '-1' then it takes a default value, which is hadnled by set_vmthreshold.
+                             * What we need to do is set the value of the PostScript object to be the value actually in use.
+                             */
+                            gs_memory_gc_status_t stat;
+
+                            gs_memory_gc_status(iimemory_local, &stat);
+                            if (r_has_type(&elt[1], t_integer))
+                                    elt[1].value.intval = (int)stat.vm_threshold;
+                            if (r_has_type(&elt[1], t_real))
+                                    elt[1].value.realval = (float)stat.vm_threshold;
+                            code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
+                            if (code < 0)
+                                return code;
+                            break;
+                        }
+                    }
+                    for (i = 0;i < countof(user_long_params);i++) {
+                        if (strlen(user_long_params[i].pname) == r_size(&sref) && strncmp((const char *)sref.value.bytes, user_long_params[i].pname, r_size(&sref)) == 0) {
+                            code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
+                            if (code < 0)
+                                return code;
+                            break;
+                        }
+                    }
+                }
+                if (r_has_type(&elt[1], t_boolean)) {
+                    for (i = 0;i < countof(user_bool_params);i++) {
+                        if (strlen(user_bool_params[i].pname) == r_size(&sref) && strncmp((const char *)sref.value.bytes, user_bool_params[i].pname, r_size(&sref)) == 0) {
+                            code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
+                            if (code < 0)
+                                return code;
+                            break;
+                        }
+                    }
+                }
+                if (r_has_type(&elt[1], t_string)) {
+                    for (i = 0;i < countof(user_string_params);i++) {
+                        if (strlen(user_string_params[i].pname) == r_size(&sref) && strncmp((const char *)sref.value.bytes, user_string_params[i].pname, r_size(&sref)) == 0) {
+                            code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
+                            if (code < 0)
+                                return code;
+                            break;
+                        }
+                    }
+                }
+                if (strncmp((const char *)sref.value.bytes, "ProcessDSCComment", r_size(&sref)) == 0) {
+                    if (!r_has_type(&elt[1], t_null) && !r_is_array(&elt[1]))
+                        return_error(gs_error_typecheck);
+                    code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
+                    if (code < 0)
+                        return code;
+                }
+                if (strncmp((const char *)sref.value.bytes, "ProcessComment", r_size(&sref)) == 0) {
+                    if (!r_has_type(&elt[1], t_null) && !r_is_array(&elt[1]))
+                        return_error(gs_error_typecheck);
+                    code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
+                    if (code < 0)
+                        return code;
+                }
+                if (strncmp((const char *)sref.value.bytes, "IdiomRecognition", r_size(&sref)) == 0) {
+                    if (!r_has_type(&elt[1], t_null) && !r_is_array(&elt[1]) && !r_has_type(&elt[1], t_boolean))
+                        return_error(gs_error_typecheck);
+                    code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
+                    if (code < 0)
+                        return code;
+                }
+            }
+        }
+    }
     return code;
 }
 static int

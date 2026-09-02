@@ -64,13 +64,26 @@ typedef struct gs_system_params_s {
     int MaxStoredScreenCache;
     int MaxUPathCache;
 /*    int PageCount;    Picked up from the current device */
-    char PrinterName;
+/*    char PrinterName; compile time constant; gs_product */
 /*    char RealFormat[32]; derived from compile time constant, either 'IEEE' if ARCH_FLOATS_ARE_IEEE or 'not IEEE' */
 /*    int Revision compile-time constant GS_REVISION */
     int StartupMode;
     int RamSize;
     int WaitTimeout;
 } gs_system_params;
+
+typedef struct gs_user_params_s {
+    long MaxFormItem;
+    long MaxPatternItem;
+    long MaxScreenItem;
+    long MaxUPathItem;
+    char *JobName;
+    ref ProcessComment;
+    ref ProcessDSCComment;
+    bool IdiomRecognition;
+    int HalftoneMode;
+    long MaxSuperScreen;
+} gs_user_params;
 
 struct gs_context_state_s {
     gs_gstate *pgs;
@@ -104,6 +117,7 @@ struct gs_context_state_s {
     op_stack_t op_stack;
     struct i_plugin_holder_s *plugin_list;
     gs_system_params system_params;
+    gs_user_params user_params;
 };
 extern const long rand_state_initial; /* in zmath.c */
 

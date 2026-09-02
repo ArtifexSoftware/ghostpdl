@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1397,6 +1397,32 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int env_code)
         print_resource_usage(minst, i_ctx_p ? &gs_imemory : NULL, "Final");
         dmprintf1(minst->heap, "%% Exiting instance "PRI_INTPTR"\n", (intptr_t)minst);
     }
+
+#ifdef MEMENTO
+    /* We only do this for Memento builds, because the strings themselves are allocated by one
+     * of the GS memory allocators, which are cleaned up and closed down by ialloc_finit()
+     * called at the end of this function, so they can't leak.
+     * But Memento can't know that, all it knows is we did an allocation without a corresponding free
+     * so this code just gets rid of the leak warnings to make the output cleaner.
+     */
+    if (i_ctx_p->system_params.FontResourceDir != NULL)
+        gs_free_object(i_ctx_p->memory.current->non_gc_memory, i_ctx_p->system_params.FontResourceDir, "gs_main_finit");
+    if (i_ctx_p->system_params.GenericResourceDir != NULL)
+        gs_free_object(i_ctx_p->memory.current->non_gc_memory, i_ctx_p->system_params.GenericResourceDir, "gs_main_finit");
+    if (i_ctx_p->system_params.GenericResourcePathSep != NULL)
+        gs_free_object(i_ctx_p->memory.current->non_gc_memory, i_ctx_p->system_params.GenericResourcePathSep, "gs_main_finit");
+    if (i_ctx_p->system_params.PercentDiskFontResourceDir != NULL)
+        gs_free_object(i_ctx_p->memory.current->non_gc_memory, i_ctx_p->system_params.PercentDiskFontResourceDir, "gs_main_finit");
+    if (i_ctx_p->system_params.PercentDiskGenericResourceDir != NULL)
+        gs_free_object(i_ctx_p->memory.current->non_gc_memory, i_ctx_p->system_params.PercentDiskGenericResourceDir, "gs_main_finit");
+    if (i_ctx_p->system_params.StartJobPassword != NULL)
+        gs_free_object(i_ctx_p->memory.current->non_gc_memory, i_ctx_p->system_params.StartJobPassword, "gs_main_finit");
+    if (i_ctx_p->system_params.SystemParamsPassword != NULL)
+        gs_free_object(i_ctx_p->memory.current->non_gc_memory, i_ctx_p->system_params.SystemParamsPassword, "gs_main_finit");
+    if (i_ctx_p->user_params.JobName != NULL)
+        gs_free_object(i_ctx_p->memory.current->non_gc_memory, i_ctx_p->user_params.JobName, "gs_main_finit");
+#endif
+
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */
     if (minst->init_done >= 1) {

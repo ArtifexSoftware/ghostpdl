@@ -26,7 +26,7 @@ languagelevel dup 2 .max .setlanguagelevel
 
 % ------ Idiom recognition ------ %
 
-/IdiomRecognition //false .definepsuserparam
+<</IdiomRecognition //false>> setuserparams
 
 % Modify `bind' to apply idiom recognition afterwards.
 /.bindscratch 128 string def
@@ -528,8 +528,10 @@ end
 } odef
 
 % Define additional user and system parameters.
-/HalftoneMode 0 .definepsuserparam
-/MaxSuperScreen 1016 .definepsuserparam
+<<
+/HalftoneMode 0
+/MaxSuperScreen 1016
+>> setuserparams
 
 % Define the IdiomSet resource category.
 { /IdiomSet } {

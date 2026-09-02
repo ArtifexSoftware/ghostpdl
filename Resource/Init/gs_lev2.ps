@@ -21,10 +21,15 @@ level2dict begin
 
 % ------ System and user parameters ------ %
 
-% User parameters must obey save/restore, and must also be maintained
-% per-context.  We implement the former, and some of the latter, here
-% with PostScript code.  NOTE: our implementation assumes that user
-% parameters change only as a result of setuserparams -- that there are
+% User parameters must obey save/restore. We implement this by
+% maintaining a 'userparams' dictionary in systemdict (but allocated
+% in local VM) and we update that dictionary (in C) when we get a
+% 'setuserparams'. The 'restore' 'operator' is patched so that after
+% executing a restore it takes the userparams dictionary from systemdict
+% and passes it to setuserparams, which updates the C values from the
+% restored PostScript values.
+% NOTE: this implementation assumes that user parameters change only as
+% a result of setuserparams or restore -- that there are
 % no user parameters that are ever changed dynamically by the interpreter
 % (although the interpreter may adjust the value presented to setuserparams)
 %
@@ -32,14 +37,15 @@ level2dict begin
 % maintained in the interpreter, and those which exist only at the
 % PostScript level.  We maintain the current state of both types in
 % a read-only local dictionary named userparams, defined in systemdict.
-% In a multi-context system, each context has its own copy of this
-% dictionary.  In addition, there is a constant dictionary named
-% psuserparams where each key is the name of a user parameter that exists
-% only in PostScript and the value is a procedure to check that the value
-% is legal: setuserparams uses this for checking the values.
-% setuserparams updates userparams explicitly, in addition to setting
-% any user parameters in the interpreter; thus we can use userparams
-% to reset those parameters after a restore or a context switch.
+%
+% The 'PostScript' parameters are; ProcessComment, ProcessDSCComment and
+% IdiomRecognition. These may all have values which are PostScript
+% procedures (executable arrays), which we cna't easily handle in C.
+%
+% The setuserparams operator doesn't store these at the C level, but it does
+% update the userparams dictionary with their values. This saves us
+% having to set some parameters in PostScript and some via the operator.
+%
 % NOTE: the name userparams is known to the interpreter, and in fact
 % the interpreter creates the userparams dictionary.
 
@@ -106,77 +112,38 @@ level2dict begin
 % Some user parameters are managed entirely at the PostScript level.
 % We take care of that here.
 systemdict begin
-/psuserparams 48 dict def
 /getuserparam {			% <name> getuserparam <value>
-  /userparams .systemvar 1 .argindex get exch pop
+systemdict /userparams get 1 .argindex get exch pop
 } odef
 % Fill in userparams (created by the interpreter) with current values.
-mark .currentuserparams
-counttomark 2 idiv {
-  userparams 3 1 roll put
-} repeat pop
-/.definepsuserparam {		% <name> <value> .definepsuserparam -
-  psuserparams 3 copy pop
-  type cvlit //.checkparamtype /exec load 3 packedarray cvx put
-  userparams 3 1 roll put
-} .forcebind def
+mark .currentuserparams .dicttomark .setuserparams
+
+mark
+/IdiomRecognition //null
+/ProcessComment //null
+/ProcessDSCComment //null
+.dicttomark .setuserparams
+
 end
 /currentuserparams {		% - currentuserparams <dict>
-  /userparams .systemvar dup length dict .copydict
+  currentglobal false setglobal
+  systemdict /userparams get dup length dict .copydict
+  exch setglobal
 } odef
-% We break out setuserparams into a separate procedure so that setvmxxx
-% can use it without affecting the command in case of an error.
-/.setuserparams2 {
-        % Check that we will be able to set the PostScript-level
-        % user parameters.
-  /setuserparams /psuserparams .systemvar //.checksetparams exec
-        % Set the C-level user params.  If this succeeds, we know that
-        % the password check succeeded.
-  dup .setuserparams
-        % Now set the PostScript-level params.
-        % The interpreter may have adjusted the values of some of the
-        % parameters, so we have to read them back.
-  dup {
-    /userparams .systemvar 2 index known {
-      psuserparams 2 index known not {
-        pop dup .getuserparam
-      } if
-      .copyparam
-      % special protection for the security related parameters
-      [ /PermitFileReading /PermitFileWriting /PermitFileControl ]
-      { 2 index eq { % force all strings to readonly but make sure the
-                     % array is in the correct VM space (local/global).
-        currentglobal exch dup gcheck setglobal
-        dup length array exch { readonly exch } forall astore
-        exch setglobal
-        } if
-      } forall
-      % protect top level of parameters that we copied
-      dup type dup /arraytype eq exch /stringtype eq or { readonly } if
-      /userparams .systemvar 3 1 roll .forceput  % userparams is read-only
-    } executeonly
-    {
-      pop pop
-    } ifelse
-  } executeonly forall
-        % A context switch might have occurred during the above loop,
-        % causing the interpreter-level parameters to be reset.
-        % Set them again to the new values.  From here on, we are safe,
-        % since a context switch will consult userparams.
-  .setuserparams
-} .forcebind odef % must be bound and hidden for .forceput
 
 /setuserparams {		% <dict> setuserparams -
-    {.setuserparams2} stopped
+    {.setuserparams} stopped
     {/setuserparams load $error /errorname get signalerror} if
 } .forcebind odef
 % Initialize user parameters managed here.
-/JobName () .definepsuserparam
+
+mark /JobName () .dicttomark .setuserparams
 
 % Restore must restore the user parameters.
 % (Since userparams is in local VM, save takes care of saving them.)
 /restore {		% <save> restore -
-  //restore /userparams .systemvar .setuserparams
+  //restore
+  systemdict /userparams get .setuserparams
 } .forcebind odef
 
 systemdict begin
@@ -222,48 +189,6 @@ end
   } if
 } .forcebind odef
 
-% Add bogus user and system parameters to satisfy badly written PostScript
-% programs that incorrectly assume the existence of all the parameters
-% listed in Appendix C of the Red Book.  Note that some of these may become
-% real parameters later: code near the end of gs_init.ps takes care of
-% removing any such parameters from ps{user,system}params.
-
-% psuserparams
-  /MaxFormItem 100000 .definepsuserparam
-  /MaxPatternItem 20000 .definepsuserparam
-  /MaxScreenItem 48000 .definepsuserparam
-  /MaxUPathItem 0 .definepsuserparam
-
-% File Access Permission parameters
-  .currentglobal //true .setglobal
-  /.checkFilePermitparams {
-    type /arraytype eq {
-      currentuserparams /LockFilePermissions get {
-        5 { pop } repeat /setuserparams cvx /invalidaccess signalerror
-      }{
-        % in addition to validating the value, ensure the value is read/only
-        dup { readonly exch } forall
-        .currentglobal exch dup gcheck .setglobal length array exch .setglobal
-        astore readonly
-      }
-      ifelse
-    } {
-      5 { pop } repeat /setuserparams cvx /typecheck signalerror
-    }
-    ifelse
-    //true
-  } .forcebind def
-% Initialize the File Permission access control to wide open
-% These will only be accessed via current/set userparams.
-% Values are a string containing multiple nul terminated path strings
-  /PermitFileReading dup [ (*) ] .definepsuserparam
-    psuserparams exch /.checkFilePermitparams load put
-  /PermitFileWriting dup [ (*) ] .definepsuserparam
-    psuserparams exch /.checkFilePermitparams load put
-  /PermitFileControl dup [ (*) ] .definepsuserparam
-    psuserparams exch /.checkFilePermitparams load put
-  .setglobal
-
 % Define the procedures for handling comment scanning.  The names
 % %ProcessComment and %ProcessDSCComment are known to the interpreter.
 % These procedures take the file and comment string and file as operands.
@@ -278,17 +203,14 @@ end
     } ifelse
   } ifelse
 } .forcebind def
-/ProcessComment //null .definepsuserparam
-psuserparams /ProcessComment {//.checkprocesscomment exec} put
+
 (%ProcessComment) cvn {
   /ProcessComment getuserparam
   dup //null eq { pop pop pop } { exec } ifelse
 } .internalbind def
-/ProcessDSCComment //null .definepsuserparam
-psuserparams /ProcessDSCComment {//.checkprocesscomment exec} put
 /.loadingfont //false def
 (%ProcessDSCComment) cvn {
-  /ProcessDSCComment getuserparam
+  systemdict /userparams get /ProcessDSCComment get
   dup //null eq .loadingfont or { pop pop pop } { exec } ifelse
 } .internalbind def
 
@@ -351,7 +273,7 @@ psuserparams /ProcessDSCComment {//.checkprocesscomment exec} put
 
 % VMReclaim and VMThreshold are user parameters.
 /setvmthreshold {		% <int> setvmthreshold -
-  mark /VMThreshold 2 .argindex .dicttomark {.setuserparams2} stopped
+  mark /VMThreshold 2 .argindex .dicttomark {.setuserparams} stopped
   {pop /setvmthreshold load $error /errorname get signalerror}
   {pop} ifelse
 } odef
@@ -365,7 +287,7 @@ psuserparams /ProcessDSCComment {//.checkprocesscomment exec} put
     ifelse
   } {
     % VMReclaim userparam controls enable/disable GC
-    mark /VMReclaim 2 index .dicttomark {.setuserparams2} stopped
+    mark /VMReclaim 2 index .dicttomark {.setuserparams} stopped
     {pop /vmreclaim load $error /errorname get signalerror}
     {pop} ifelse
   } ifelse
@@ -583,10 +505,10 @@ currentuserparams /WaitTimeout known
 
 //systemdict /ICCProfilesDir .knownget {
   % Set the directory sepcified by the command line option
-  mark exch /ICCProfilesDir exch .dicttomark .setuserparams2
+  mark exch /ICCProfilesDir exch .dicttomark .setuserparams
 } {
   % First see if the current value is valid so we don't have to guess
-  mark .currentuserparams .dicttomark /ICCProfilesDir get
+  currentuserparams /ICCProfilesDir get
   (default_gray.icc) concatstrings {status} //.internalstopped exec
   {pop //false} if
   {
@@ -600,7 +522,7 @@ currentuserparams /WaitTimeout known
         .file_name_separator concatstrings
         dup (default_gray.icc) concatstrings status {
           pop pop pop pop
-          mark exch /ICCProfilesDir exch .dicttomark .setuserparams2
+          mark exch /ICCProfilesDir exch .dicttomark .setuserparams
           exit
         } {
           pop
@@ -620,7 +542,7 @@ mark	% collect dict key value pairs for anything set in systemdict (command line
     pop		% discard keys not in systemdict
   } if
 } forall
-.dicttomark .setuserparams2
+.dicttomark .setuserparams
 
 pop		% currentsystemparams
 

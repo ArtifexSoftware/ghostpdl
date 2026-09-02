@@ -812,6 +812,7 @@ currentdict /.typenames .undef
     ] cvx executeonly
   exch .setglobal
 } def
+
 systemdict /internaldict dup .makeinternaldict .makeoperator
 .forceput		% proc is local, systemdict is global
 currentdict /.makeinternaldict .undef
@@ -2354,40 +2355,8 @@ readonly def
   } ifelse
 } .internalbind def
 
-/.locksafe_userparams {
-  SAFETY /safe get not {
-    <<
-      /PermitFileReading [
-        currentuserparams /PermitFileReading get aload pop
-        /FONTPATH .systemvar (*) .generate_dir_list_templates
-          % Library files :
-        /LIBPATH  .systemvar (*) .generate_dir_list_templates
-          % Resource files on OpenVMS requires a separate template (gs:[dir.*]*)
-          % because the (gs:[dir]*) doesn't cover them.
-        /LIBPATH  .systemvar (*) .file_name_separator (*)
-          concatstrings concatstrings .generate_dir_list_templates
-        .languagelevel 2 ge {
-            % Default resources :
-          [ currentsystemparams /GenericResourceDir get] (*) .generate_dir_list_templates
-            % Default resources (OpenVMS, see comment above.) :
-          [ currentsystemparams /GenericResourceDir get] (*) .file_name_separator (*)
-            concatstrings concatstrings .generate_dir_list_templates
-        } if
-        currentuserparams /ICCProfilesDir known {
-          [currentuserparams /ICCProfilesDir get] (*)
-          .generate_dir_list_templates
-        } if
-      ]
-      /LockFilePermissions //true
-    >> setuserparams
-  }
-  if
-} .forcebind def
-
-
 %% --- These are documented extensions ---
 /.locksafe {
-  //.locksafe_userparams exec
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
   % properties and pagedevice .LockSafetyParams in agreement even
@@ -2413,7 +2382,6 @@ readonly def
 % in gs_setpd.ps)
 %
 /.locksafeglobal {
-  //.locksafe_userparams exec
   systemdict /getenv {pop //false} put
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
@@ -2437,7 +2405,6 @@ readonly def
 
 % If we are running in SAFER mode, lock things down
 SAFER { .setsafeglobal } if
-currentdict /.locksafe_userparams .undef
 currentdict /.setsafeglobal .undef
 currentdict /.locksafeglobal .undef
 
@@ -2570,7 +2537,6 @@ currentdict /.locksafeglobal .undef
   [
       /.execform1
       /.getdevparams
-      /.setuserparams2
       /.startjob
       /.checkFilePermitparams
       /.copyparam
@@ -2639,11 +2605,6 @@ currentdict /.locksafeglobal .undef
 
 (END INIT) VMDEBUG
 
-  % Remove real user params from psuserparams.
-  mark .currentuserparams counttomark 2 idiv {
-    pop psuserparams exch undef
-  } repeat pop
-
   % Update the copy of the user parameters.
   mark .currentuserparams counttomark 2 idiv {
     userparams 3 1 roll put	% userparams is read-only
@@ -2651,19 +2612,8 @@ currentdict /.locksafeglobal .undef
 
   % Turn on idiom recognition, if available.
   currentuserparams /IdiomRecognition known {
-    /IdiomRecognition //true .definepsuserparam
+    mark /IdiomRecognition //true .dicttomark setuserparams
   } if
-
-  psuserparams readonly pop
-  systemdict /.definepsuserparam undef
-      % We need the userparams in systemdict to be in local
-      % VM so that it obeys save and restore.
-  .currentglobal //false .setglobal
-      % Save a copy of userparams for use with save/restore
-      % (and, if implemented, context switching).
-   mark userparams { } forall .dicttomark readonly
-   currentdict exch /userparams exch .forceput
-   .setglobal
 
 % Set up AlignToPixels :
 

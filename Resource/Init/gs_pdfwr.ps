@@ -597,8 +597,6 @@ currentdict /.pdf_hook_DSC_Creator undef
     % the scheduled initialisation procedures get run at the start of each
     % job. Because this patches the existing procedure, it could end up
     % patching itself, so the procedure got larger/deeper with each job.
-    % Eventually, copying the user params (see /.setuserparams2 in gs_lev2.ps)
-    % would end up overflowing the exec stack.
     % So, as part of the patching, we push and pop a sacrificial name object
     % at the start of the executable array and before patching, we check that
     % first element, and if it is that name, we skip the patching

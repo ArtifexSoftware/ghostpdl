@@ -207,7 +207,7 @@ const char *const initial_referred[] =
     "errordict",
     "FontDirectory",
     "statusdict",
-    "serverdict"
+    "serverdict",
 #endif
 };
 /* systemdict and globaldict are magically inserted at the bottom */

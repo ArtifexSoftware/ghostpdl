@@ -225,6 +225,15 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->system_params.SystemParamsPassword = NULL;
     pcst->system_params.StartJobPassword = NULL;
 
+    pcst->user_params.MaxFormItem = 100000;
+    pcst->user_params.MaxPatternItem = 20000;
+    pcst->user_params.MaxScreenItem = 48000;
+    pcst->user_params.MaxUPathItem = 0;
+    pcst->user_params.MaxSuperScreen = 1016;
+    pcst->user_params.JobName = NULL;
+    pcst->user_params.IdiomRecognition = false;
+    pcst->user_params.HalftoneMode = 0;
+
     return 0;
   x3:/* No need to delete dictionary here, as gc will do it for us. */
   x2:gs_gstate_free(pcst->pgs);
