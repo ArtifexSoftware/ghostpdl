@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2026 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -1024,14 +1024,21 @@ $error /SubstituteFont { } put
 
 % any user of .putgstringcopy must use bind and executeonly
 /.putgstringcopy  %   <dict> <name> <string> .putgstringcopy -
-{ 2 index gcheck currentglobal
-  2 copy eq {
-    pop pop .forceput
-  } executeonly {
-    5 1 roll setglobal
-    dup length string copy
-    .forceput setglobal
-  } executeonly ifelse
+{
+  % Check operand types
+  dup type /stringtype eq 2 index type /nametype eq and 3 index type /dicttype eq and {
+    2 index gcheck currentglobal
+    2 copy eq {
+      pop pop .forceput
+    } executeonly {
+      5 1 roll setglobal
+      dup length string copy
+      .forceput setglobal
+    } executeonly ifelse
+  }
+  {
+      /.putgstringcopy cvx /typecheck signalerror
+  } ifelse
 } .forcebind odef % must be bound and hidden for .forceput
 
 /.loadfontloop {        % <fontname> <filename> <libflag> .loadfontloop
