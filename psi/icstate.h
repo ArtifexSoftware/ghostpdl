@@ -99,6 +99,7 @@ struct gs_context_state_s {
     /* View clipping is handled in the graphics state. */
     ref error_object;		/* t__invalid or error object from operator */
     ref userparams;		/* t_dictionary */
+    ref internaldict;   /* t_dictionary, only accesible using the internaldict operator */
     int scanner_options;	/* derived from userparams */
     bool LockFilePermissions;	/* accessed from userparams */
     bool starting_arg_file;	/* starting a file specified in command line. */

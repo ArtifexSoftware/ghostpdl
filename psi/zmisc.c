@@ -411,6 +411,23 @@ zsetdebug(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <int> internaldict <dict> */
+static int
+zinternaldict(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code = 0;
+
+    check_op(1);
+    check_type(*op, t_integer);
+    if (op->value.intval == 1183615869) {
+        *op = i_ctx_p->internaldict;
+    } else {
+        code = gs_note_error(gs_error_invalidaccess);
+    }
+    return code;
+}
+
 /* .mementolistnew - */
 static int
 zmementolistnewblocks(i_ctx_t *i_ctx_p)
@@ -545,7 +562,7 @@ const op_def zmisc_a_op_defs[] =
     {"0realtime", zrealtime},
     {"0serialnumber", zserialnumber},
     {"2.setdebug", zsetdebug},
-    {"0.mementolistnewblocks", zmementolistnewblocks},
+    {"1internaldict", zinternaldict},
     {"1.setoserrno", zsetoserrno},
     {"0usertime", zusertime},
     {"1.delaybindparam", zdelaybindparam},
@@ -558,5 +575,6 @@ const op_def zmisc_b_op_defs[] =
     {"0.getCPSImode", zgetCPSImode},
     {"1.setscanconverter", zsetscanconverter},
     {"0.getscanconverter", zgetscanconverter},
+    {"0.mementolistnewblocks", zmementolistnewblocks},
     op_def_end(0)
 };

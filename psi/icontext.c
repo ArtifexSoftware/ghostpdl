@@ -48,12 +48,13 @@ CLEAR_MARKS_PROC(context_state_clear_marks)
     r_clear_attrs(&pcst->stdio[2], l_mark);
     r_clear_attrs(&pcst->error_object, l_mark);
     r_clear_attrs(&pcst->userparams, l_mark);
+    r_clear_attrs(&pcst->internaldict, l_mark);
     r_clear_attrs(&pcst->op_array_table_global.table, l_mark);
     r_clear_attrs(&pcst->op_array_table_local.table, l_mark);
 }
 static
 ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
-    index -= 11;
+    index -= 12;
     if (index < st_gs_dual_memory_num_ptrs)
         return ENUM_USING(st_gs_dual_memory, &pcst->memory,
                           sizeof(pcst->memory), index);
@@ -76,10 +77,11 @@ ENUM_PTRS_WITH(context_state_enum_ptrs, gs_context_state_t *pcst) {
     case 4: ENUM_RETURN_REF(&pcst->error_object);
     ENUM_PTR(5, gs_context_state_t, invalid_file_stream);
     case 6: ENUM_RETURN_REF(&pcst->userparams);
-    ENUM_PTR(7, gs_context_state_t, op_array_table_global.nx_table);
-    ENUM_PTR(8, gs_context_state_t, op_array_table_local.nx_table);
-    case 9:  ENUM_RETURN_REF(&pcst->op_array_table_global.table);
-    case 10: ENUM_RETURN_REF(&pcst->op_array_table_local.table);
+    case 7: ENUM_RETURN_REF(&pcst->internaldict);
+    ENUM_PTR(8, gs_context_state_t, op_array_table_global.nx_table);
+    ENUM_PTR(9, gs_context_state_t, op_array_table_local.nx_table);
+    case 10:  ENUM_RETURN_REF(&pcst->op_array_table_global.table);
+    case 11: ENUM_RETURN_REF(&pcst->op_array_table_local.table);
 ENUM_PTRS_END
 static RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
     RELOC_PTR(gs_context_state_t, pgs);
@@ -93,6 +95,8 @@ static RELOC_PTRS_WITH(context_state_reloc_ptrs, gs_context_state_t *pcst);
     r_clear_attrs(&pcst->error_object, l_mark);
     RELOC_REF_VAR(pcst->userparams);
     r_clear_attrs(&pcst->userparams, l_mark);
+    RELOC_REF_VAR(pcst->internaldict);
+    r_clear_attrs(&pcst->internaldict, l_mark);
     RELOC_PTR(gs_context_state_t, op_array_table_global.nx_table);
     RELOC_PTR(gs_context_state_t, op_array_table_local.nx_table);
     RELOC_REF_VAR(pcst->op_array_table_global.table);
@@ -160,6 +164,16 @@ context_state_alloc(gs_context_state_t ** ppcst,
         else
             size = 300;
         code = dict_alloc(pcst->memory.space_local, size, &pcst->userparams);
+        if (code < 0)
+            goto x2;
+        /* PostScript code initializes the user parameters. */
+    }
+    {	/*
+         * Create an empty internaldict dictionary.
+         */
+        ref *internaldict;
+
+        code = dict_alloc(pcst->memory.space_local, 13, &pcst->internaldict);
         if (code < 0)
             goto x2;
         /* PostScript code initializes the user parameters. */

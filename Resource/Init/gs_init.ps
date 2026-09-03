@@ -797,26 +797,6 @@ currentdict /.typenames .undef
         //.wheredict 1 .argindex .knownget { exec } { .where } ifelse
 } odef
 
-% internaldict is defined in systemdict, but the dictionary is allocated
-% in local VM.  However, the procedure must be global, since it is an
-% "operator" and must be bind-able into global procedures.
-/.makeinternaldict {
-  .currentglobal //true .setglobal
-    [ /dup .systemvar 1183615869 /eq .systemvar
-        [ /pop .systemvar //null ] cvx
-        //false .setglobal
-        dup 1 10 dict .forceput	% proc is global, dict is local
-        //true .setglobal
-        [ /internaldict /cvx .systemvar /invalidaccess /signalerror cvx ] cvx
-      /ifelse .systemvar
-    ] cvx executeonly
-  exch .setglobal
-} def
-
-systemdict /internaldict dup .makeinternaldict .makeoperator
-.forceput		% proc is local, systemdict is global
-currentdict /.makeinternaldict .undef
-
 % Define some additional built-in procedures (beyond the ones defined by
 % the PostScript Language Reference Manual).
 % Warning: these are not guaranteed to stay the same from one release
