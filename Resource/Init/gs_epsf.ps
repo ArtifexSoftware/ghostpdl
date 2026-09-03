@@ -25,8 +25,8 @@
 %  gs -dNOEPS file.ps
 
 % We now use a dictionary stored in systemdict to hold 'transient' data used by Ghostscript
-% features, instead of poking calues into systemdict with .forceput. No PostScript
-% program should be expecting such a dictionary to exist so htye shouldn't be using it.
+% features, instead of poking values into systemdict with .forceput. No PostScript
+% program should be expecting such a dictionary to exist and so shouldn't be using it.
 % Start by making the dictionary if it doesn't yet exist. Note; systemdict must still
 % be writeable when this is run.
 
