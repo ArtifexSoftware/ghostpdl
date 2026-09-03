@@ -793,7 +793,7 @@ mark
   exch 3 index sub exch 2 index sub rectclip
   dup /PaintProc get
   1 index /Implementation known not {
-    1 index dup /Implementation //null .forceput readonly pop
+    1 index dup //null .setFormImplementation readonly pop
   } executeonly if
   /UNROLLFORMS where {/UNROLLFORMS get}{//false}ifelse not
   %% [CTM] <<Form>> PaintProc .beginform -
@@ -838,9 +838,9 @@ mark
       {pop pop}
       {
         %% The form is cached with a specific ID. Make a dictionary (which we'll store in the
-        %% Form dictioanry using the /Implementation key).
+        %% Form dictionary using the /Implementation key).
         1 dict dup /FormID 4 -1 roll put
-        1 index exch /Implementation exch .forceput readonly pop
+        1 index exch .setFormImplementation readonly pop
       } executeonly
       ifelse
     }

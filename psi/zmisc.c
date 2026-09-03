@@ -549,6 +549,39 @@ zgetscanconverter(i_ctx_t *i_ctx_p)
     make_int(op, gs_getscanconverter(imemory));
     return 0;
 }
+
+static int
+zsetFormImplementation(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp, op1 = osp - 1;
+    ref *FormDict, *PaintProc;
+    int code = 0;
+
+    check_op(2);
+    check_type(*(op - 1), t_dictionary);
+
+    if (!r_has_type(op, t_null)) {
+        if (!r_has_type(op, t_dictionary))
+            return_error(gs_error_typecheck);
+        else {
+            if (dict_find_string(op, "FormID", &PaintProc) <= 0 || dict_maxlength(op) != 1)
+                return_error(gs_error_typecheck);
+        }
+    }
+
+    FormDict = op - 1;
+    if (dict_find_string(FormDict, "PaintProc", &PaintProc) <= 0) {
+        return_error(gs_error_typecheck);
+    }
+
+    code = dict_put_string(FormDict, "Implementation", op, &idict_stack);
+    if (code < 0)
+        return code;
+
+    pop(2);
+    return code;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zmisc_a_op_defs[] =
@@ -576,5 +609,6 @@ const op_def zmisc_b_op_defs[] =
     {"1.setscanconverter", zsetscanconverter},
     {"0.getscanconverter", zgetscanconverter},
     {"0.mementolistnewblocks", zmementolistnewblocks},
+    {"1.setFormImplementation", zsetFormImplementation},
     op_def_end(0)
 };
