@@ -407,7 +407,7 @@ end		% serverdict
 % convenience function to make a dictionary from an object and a key
 /.pair2dict { exch mark 3 1 roll .dicttomark } .internalbind def
 
-currentglobal //false setglobal 25 dict exch setglobal begin
+systemdict /statusdict get begin
 currentsystemparams
 
 % The following do not depend on the presence of setpagedevice.
@@ -550,8 +550,7 @@ pop		% currentsystemparams
 % change language levels.  (See zmisc2.c for more information.)
 /statusdict currentdict def
 
-currentdict end
-currentdict exch /statusdict exch .forceput	% statusdict is local, systemdict is global
+end
 
 % The following compatibility operators are in systemdict.  They are
 % defined here, rather than in gs_init.ps, because they require the
