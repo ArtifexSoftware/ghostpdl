@@ -514,6 +514,30 @@ userdict /.pdfcvstring () put
 userdict /pdfmark .undef
 currentdict /.pdfmarkparams .undef
 
+//systemdict /GSInternalDict known not {
+  //systemdict /GSInternalDict 5 dict put
+} if
+
+//systemdict /resourcestatus dup
+{
+  //false
+  //systemdict /GSInternalDict get /.pdf_hooked_DSC_Creator known
+  {
+    //systemdict /GSInternalDict get /.pdf_hooked_DSC_Creator get
+    {
+      1 index /FontType eq 3 index 32 eq and {
+        pop //true
+      } if
+    } if
+  } if
+  {
+    pop pop //false
+  } {
+    resourcestatus
+  } ifelse
+} .internalbind .makeoperator
+put
+
 %	<dict> .hook_DSC_Creator -
 /.pdf_hook_DSC_Creator
 {
@@ -538,14 +562,7 @@ currentdict /.pdfmarkparams .undef
       /Creator .knownget {
         (PScript5.dll) search {
           pop pop
-          systemdict /resourcestatus dup
-          { dup /FontType eq 2 index 32 eq and {
-              pop pop //false
-            } {
-              resourcestatus
-            } ifelse
-          } .internalbind .makeoperator .forceput
-          systemdict /.pdf_hooked_DSC_Creator //true .forceput
+          //systemdict /GSInternalDict get /.pdf_hooked_DSC_Creator //true put
         } executeonly if
         pop
       } executeonly if
