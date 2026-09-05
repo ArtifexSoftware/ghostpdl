@@ -41,10 +41,7 @@ level2dict begin
 % However, Ed Taft of Adobe says their interpreters don't implement this
 % either, so we aren't going to worry about it for a while.
 
-currentglobal //false setglobal
-  systemdict /localinstancedict 5 dict
-  .forceput	% localinstancedict is local, systemdict is global
-//true setglobal
+currentglobal //true setglobal
 /.emptydict 0 dict readonly def
 setglobal
 
@@ -149,7 +146,7 @@ setglobal
           dup [ exch 0 -1 ] exch
           .Instances 4 2 roll put
                 % Make the Category dictionary read-only.  We will have to
-                % use .forceput / .forceput later to replace the dummy,
+                % use .setInstances later to replace the dummy,
                 % empty .Instances dictionary with the real one later.
           readonly
         }{
@@ -422,7 +419,7 @@ status {
                   pop 3 dict
                         % As noted above, Category dictionaries are read-only,
                         % so we have to use .forceput here.
-                  currentdict /.Instances 2 index .forceput	% Category dict is read-only
+                  currentdict 1 index .setInstances % Category dict is read-only, .setInstances overrides that.
                 } executeonly if
               } executeonly
               { .LocalInstances dup //.emptydict eq

@@ -90,6 +90,10 @@
 #ifndef FILTERDICT_SIZE
 #  define FILTERDICT_SIZE 43
 #endif
+/* Ditto the size of filterdict. */
+#ifndef LOCALINSTANCEDICT_SIZE
+#  define LOCALINSTANCEDICT_SIZE 5
+#endif
 /* Define an arbitrary size for the operator procedure tables. */
 #ifndef OP_ARRAY_TABLE_SIZE
 #  define OP_ARRAY_TABLE_SIZE 300
@@ -196,6 +200,9 @@ const struct {
     {
         "filterdict", FILTERDICT_SIZE, false
     },
+    {
+        "localinstancedict", LOCALINSTANCEDICT_SIZE, true
+    },
 #endif
 };
 const char *const initial_referred[] =
@@ -208,6 +215,7 @@ const char *const initial_referred[] =
     "FontDirectory",
     "statusdict",
     "serverdict",
+    "localinstancedict",
 #endif
 };
 /* systemdict and globaldict are magically inserted at the bottom */

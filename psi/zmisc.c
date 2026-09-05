@@ -582,6 +582,34 @@ zsetFormImplementation(i_ctx_t *i_ctx_p)
     return code;
 }
 
+static int
+zsetInstances(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp, op1 = osp - 1;
+    ref *CategoryDict, *InstancesDict;
+    int code = 0;
+
+    check_op(2);
+    check_type(*op, t_dictionary);
+    check_type(*(op - 1), t_dictionary);
+
+    CategoryDict = op - 1;
+    if (!r_is_local(CategoryDict)) {
+        if (r_is_local(op))
+            return_error(gs_error_invalidaccess);
+    }
+
+    if (dict_find_string(CategoryDict, ".Instances", &InstancesDict) <= 0)
+        return_error(gs_error_typecheck);
+
+    code = dict_put_string(CategoryDict, ".Instances", op, &idict_stack);
+    if (code < 0)
+        return code;
+
+    pop(2);
+    return code;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zmisc_a_op_defs[] =
@@ -609,6 +637,7 @@ const op_def zmisc_b_op_defs[] =
     {"1.setscanconverter", zsetscanconverter},
     {"0.getscanconverter", zgetscanconverter},
     {"0.mementolistnewblocks", zmementolistnewblocks},
-    {"1.setFormImplementation", zsetFormImplementation},
+    {"2.setFormImplementation", zsetFormImplementation},
+    {"2.setInstances", zsetInstances},
     op_def_end(0)
 };
