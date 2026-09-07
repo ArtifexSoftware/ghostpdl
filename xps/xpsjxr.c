@@ -99,10 +99,14 @@ xps_decode_jpegxr_block(jxr_image_t image, int mx, int my, int *data)
         output->comps = jxr_get_IMAGE_CHANNELS(image);
         output->hasalpha = jxr_get_ALPHACHANNEL_FLAG(image);
         output->bits = 8;
-        if (check_int_multiply(output->width, output->comps, &output->stride))
+        if (check_int_multiply(output->width, output->comps, &output->stride)) {
             gs_throw(gs_error_VMerror, "image too large\n");
-        if (check_size_multiply(output->stride, output->height, &z))
+            return;
+        }
+        if (check_size_multiply(output->stride, output->height, &z)) {
             gs_throw(gs_error_VMerror, "image too large\n");
+            return;
+        }
         output->samples = xps_alloc(ctx, z);
         if (!output->samples) {
             gs_throw(gs_error_VMerror, "out of memory: output->samples.\n");
