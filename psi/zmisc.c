@@ -433,10 +433,10 @@ zmementolistnewblocks(i_ctx_t *i_ctx_p)
 static int zdelaybindparam(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    ref *delaybind, key_name;
+    ref key_name;
     int64_t size;
     int code = 0, i = 0;
-    char *names_array[2] = {".delaybind", ".delayinternalbind"};
+    const char *names_array[2] = {".delaybind", ".delayinternalbind"};
     uint space = r_space(&idict_stack.system_dict);
 
     check_op(1);
@@ -447,7 +447,7 @@ static int zdelaybindparam(i_ctx_t *i_ctx_p)
         return_error(gs_error_rangecheck);
 
     for (i=0;i < 2;i++) {
-        code = gs_alloc_ref_array(imemory_local, (ref *)op, a_all, size, "zdelaybindparam");
+        code = gs_alloc_ref_array((gs_ref_memory_t *)imemory_local, (ref *)op, a_all, size, "zdelaybindparam");
         if (code < 0)
             return code;
 
