@@ -529,7 +529,7 @@ AUXEXTRALIBS=@AUXEXTRALIBS@ @AUX_SHARED_ZLIB@
 # All reasonable platforms require -lm, but Rhapsody and perhaps one or
 # two others fold libm into libc and don't require any additional library.
 
-STDLIBS=@PTHREAD_LIBS@ -lm @TESSERACT_LIBS@
+STDLIBS=@PTHREAD_LIBS@ -lm @TESSERACT_LIBS@ @SO_CXX_LIBS@
 
 # Define the include switch(es) for the X11 header files.
 # This can be null if handled in some other way (e.g., the files are

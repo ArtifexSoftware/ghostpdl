@@ -2421,6 +2421,7 @@ if test x$with_so != xno; then
     AC_MSG_RESULT([yes])
     ENABLESO="\$(D_)SO_INCLUDED\$(_D)"
     GPDL_SO_TOP_OBJ="\$(GPDLOBJ)/\$(GPDL_SO_TOP_OBJ_FILE)"
+    SO_CXX_LIBS="-lstdc++"
     # This will do for now, though clearly it's not ideal.
     case $host in
         i*86*-linux*|i*86*-gnu)
@@ -2447,6 +2448,7 @@ fi
 AC_SUBST(ENABLESO)
 AC_SUBST(GPDL_SO_TOP_OBJ)
 AC_SUBST(SO_PDFEXPORT_LIB)
+AC_SUBST(SO_CXX_LIBS)
 
 AC_ARG_WITH([cal], AS_HELP_STRING([--without-cal],
     [do not try to use the CAL library for acceleration]))
