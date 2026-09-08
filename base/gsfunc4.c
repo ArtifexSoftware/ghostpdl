@@ -388,6 +388,8 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             vsp->value.f = gs_sin_degrees(vsp->value.f);
             continue;
         case PtCr_sqrt:
+            if (vsp->value.f < 0.0)
+                return_error(gs_error_rangecheck);
             vsp->value.f = sqrt(vsp->value.f);
             continue;
         case PtCr_sub_int: {
