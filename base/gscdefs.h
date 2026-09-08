@@ -45,7 +45,7 @@
 
 /* def GS_PROD */
 #  define GS_PRODUCT\
-        GS_PRODUCTFAMILY " RELEASE CANDIDATE 1"
+        GS_PRODUCTFAMILY ""
 /* end def GS_PROD */
 
 #endif
