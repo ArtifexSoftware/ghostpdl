@@ -622,6 +622,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
 
     TT_Error  error;
     PFace     face = ins->face;
+    bool ttin = false; /* bytecode interpreter disabled pending removal */
 
     exec = ins->face->font->exec;
     /* debugging instances have their own context */
@@ -667,7 +668,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
     Clear_CodeRange( exec, TT_CodeRange_Cvt );
     Clear_CodeRange( exec, TT_CodeRange_Glyph );
 
-    if ( face->fontPgmSize > 0 )
+    if ( ttin && face->fontPgmSize > 0 )
     {
       error = Goto_CodeRange( exec, TT_CodeRange_Font, 0 );
       if ( error )
@@ -729,6 +730,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
     Int       i;
     PFace     face;
     PExecution_Context exec;
+    bool ttin = false; /* bytecode interpreter disabled pending removal */
 
     if ( !ins )
       return TT_Err_Invalid_Instance_Handle;
@@ -804,7 +806,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
       exec->twilight.cur_y[i] = 0;
     }
 
-    if ( face->cvtPgmSize > 0 )
+    if ( ttin && face->cvtPgmSize > 0 )
     {
       error = Goto_CodeRange( exec, TT_CodeRange_Cvt, 0 );
       if (error)
