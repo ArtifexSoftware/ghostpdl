@@ -553,7 +553,7 @@ zgetscanconverter(i_ctx_t *i_ctx_p)
 static int
 zsetFormImplementation(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp, op1 = osp - 1;
+    os_ptr op = osp;
     ref *FormDict, *PaintProc;
     int code = 0;
 
@@ -585,7 +585,7 @@ zsetFormImplementation(i_ctx_t *i_ctx_p)
 static int
 zsetInstances(i_ctx_t *i_ctx_p)
 {
-    os_ptr op = osp, op1 = osp - 1;
+    os_ptr op = osp;
     ref *CategoryDict, *InstancesDict;
     int code = 0;
 

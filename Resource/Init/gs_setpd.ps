@@ -633,14 +633,16 @@ SETPDDEBUG { (Result of putting.) = pstack flush } if
 } .internalbind odef
 
 % Making this an operator means we can properly hide
-% the contents - specifically .forceput
+% the contents - originally for .forceput
+% Stack: <orig> <merged> <failed> <Policies> <key>
+%   <policy>
 /1Policy
 {
   % Roll back the failed request to its previous status.
   SETPDDEBUG { (Rolling back.) = pstack flush } if
-  3 index 2 index 3 -1 roll .forceput
+  3 index 2 index 3 -1 roll put
   4 index 1 index .knownget
-  { 4 index 3 1 roll .forceput } executeonly
+  { 4 index 3 1 roll put } executeonly
   { 3 index exch .undef }
   ifelse
 } .internalbind odef
@@ -700,6 +702,10 @@ currentdict /7Policy undef
 
 
 /.postinstall {		% mark ... <failed> <merged> .postinstall -
+   % Make 'merged' readonly. We used to do this in .setpagedevice but if we do that then we
+   % need to use .forceput in .applypolicies if the /Install fails (end of /setpagedevice).
+   % Deferring the access restriction to this point avoids that.
+   readonly
    matrix currentmatrix .setdefaultmatrix
                 % Erase and initialize the page.
    initgraphics

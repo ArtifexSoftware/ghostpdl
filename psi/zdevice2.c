@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -114,11 +114,15 @@ zsetpagedevice(i_ctx_t *i_ctx_p)
          */
         if (!(r_is_local(op)))
             return_error(gs_error_invalidaccess);
-#endif	/****************/
         /* Make the dictionary read-only. */
+        /* This is now done in PostScript in the .postinstall procedure (gs_setpd.ps)
+         * in order to avoid having to use .forceput to override the access
+         * if a new /Install procedure fails.
+         */
         code = zreadonly(i_ctx_p);
         if (code < 0)
             return code;
+#endif	/****************/
     } else {
         check_type(*op, t_null);
     }
