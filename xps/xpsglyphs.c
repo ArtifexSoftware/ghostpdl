@@ -26,9 +26,12 @@ typedef struct xps_text_buffer_s xps_text_buffer_t;
 struct xps_text_buffer_s
 {
     int count;
+    byte use_overrides;
     float x[XPS_TEXT_BUFFER_SIZE + 1];
     float y[XPS_TEXT_BUFFER_SIZE + 1];
     gs_glyph g[XPS_TEXT_BUFFER_SIZE];
+    gs_char c[XPS_TEXT_BUFFER_SIZE]; /* Unicode char codes, parallel to g[] */
+    byte o[XPS_TEXT_BUFFER_SIZE];    /* 1 when glyph comes from explicit Indices */
 };
 
 static inline int unhex(int c)
@@ -233,18 +236,36 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
     int code;
     int i;
     gs_gstate_color saved;
+    xps_font_t *xpsfont = (xps_font_t *)ctx->pgs->font->client_data;
+    int use_overrides = buf->use_overrides != 0;
 
     /* dmprintf1(ctx->memory, "flushing text buffer (%d glyphs)\n", buf->count); */
 
     initial_x = x;
     initial_y = y;
 
-    params.operation = TEXT_FROM_GLYPHS | TEXT_REPLACE_WIDTHS;
+    if (use_overrides) {
+        /* Install per-text-operation override data only for runs that
+         * contain explicit glyph indices from the XPS Indices attribute. */
+        xpsfont->glyph_override_glyphs = buf->g;
+        xpsfont->glyph_override_flags = buf->o;
+        xpsfont->glyph_override_count = buf->count;
+        xpsfont->glyph_override_next = 0;
+    } else {
+        xpsfont->glyph_override_flags = NULL;
+        xpsfont->glyph_override_count = 0;
+        xpsfont->glyph_override_next = 0;
+    }
+
+    params.operation = (use_overrides ? TEXT_FROM_CHARS : TEXT_FROM_GLYPHS) | TEXT_REPLACE_WIDTHS;
     if (is_charpath)
         params.operation |= TEXT_DO_FALSE_CHARPATH;
     else
         params.operation |= TEXT_DO_DRAW;
-    params.data.glyphs = buf->g;
+    if (use_overrides)
+        params.data.chars = buf->c;
+    else
+        params.data.glyphs = buf->g;
     params.size = buf->count;
     params.x_widths = buf->x + 1;
     params.y_widths = buf->y + 1;
@@ -278,21 +299,34 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
              * So start by doing a 'charpath stroke' to embolden the text
              */
             gs_moveto(ctx->pgs, initial_x, initial_y);
-            Tr_params.operation = TEXT_FROM_GLYPHS | TEXT_REPLACE_WIDTHS | TEXT_DO_TRUE_CHARPATH;
-            Tr_params.data.glyphs = params.data.glyphs;
+            Tr_params.operation = (use_overrides ? TEXT_FROM_CHARS : TEXT_FROM_GLYPHS)
+                                  | TEXT_REPLACE_WIDTHS | TEXT_DO_TRUE_CHARPATH;
+            if (use_overrides)
+                Tr_params.data.chars = params.data.chars;
+            else
+                Tr_params.data.glyphs = params.data.glyphs;
             Tr_params.size = params.size;
             Tr_params.x_widths = params.x_widths;
             Tr_params.y_widths = params.y_widths;
             Tr_params.widths_size = params.widths_size;
+            xpsfont->glyph_override_next = 0;
 
             code = gs_text_begin(ctx->pgs, &Tr_params, ctx->memory, &Tr_textenum);
-            if (code != 0)
+            if (code != 0) {
+                xpsfont->glyph_override_count = 0;
+                xpsfont->glyph_override_flags = NULL;
+                xpsfont->glyph_override_next = 0;
                 return gs_throw1(-1, "cannot gs_text_begin() (%d)", code);
+            }
 
             code = gs_text_process(Tr_textenum);
 
-            if (code != 0)
+            if (code != 0) {
+                xpsfont->glyph_override_count = 0;
+                xpsfont->glyph_override_flags = NULL;
+                xpsfont->glyph_override_next = 0;
                 return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
+            }
 
             gs_text_release(ctx->pgs, Tr_textenum, "gslt font render");
 
@@ -301,17 +335,29 @@ xps_flush_text_buffer(xps_context_t *ctx, xps_font_t *font,
     }
 
     gs_moveto(ctx->pgs, initial_x, initial_y);
+    xpsfont->glyph_override_next = 0;
     code = gs_text_begin(ctx->pgs, &params, ctx->memory, &textenum);
-    if (code != 0)
+    if (code != 0) {
+        xpsfont->glyph_override_count = 0;
+        xpsfont->glyph_override_flags = NULL;
+        xpsfont->glyph_override_next = 0;
         return gs_throw1(-1, "cannot gs_text_begin() (%d)", code);
+    }
 
     code = gs_text_process(textenum);
 
-    if (code != 0)
+    if (code != 0) {
+        xpsfont->glyph_override_count = 0;
+        xpsfont->glyph_override_flags = NULL;
+        xpsfont->glyph_override_next = 0;
         return gs_throw1(-1, "cannot gs_text_process() (%d)", code);
+    }
 
     gs_text_release(ctx->pgs, textenum, "gslt font render");
 
+    xpsfont->glyph_override_count = 0;
+    xpsfont->glyph_override_flags = NULL;
+    xpsfont->glyph_override_next = 0;
     buf->count = 0;
 
     if (ctx->pgs->text_rendering_mode == 2 ) {
@@ -444,6 +490,7 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
     int code;
 
     buf.count = 0;
+    buf.use_overrides = 0;
 
     if (!unicode && !indices)
         return gs_throw(-1, "no text in glyphs element");
@@ -493,12 +540,15 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
         while (glyph_count--)
         {
             int glyph_index = -1;
+            int has_explicit_index = 0;
             float u_offset = 0.0;
             float v_offset = 0.0;
             float advance;
 
-            if (is && *is)
+            if (is && *is >= '0' && *is <= '9') {
                 is = xps_parse_glyph_index(is, &glyph_index);
+                has_explicit_index = 1;
+            }
 
             if (glyph_index == -1)
                 glyph_index = xps_encode_font_char(font, char_code);
@@ -532,11 +582,21 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
                 v_offset += 0.01 * size;
             }
 
+            if (buf.count > 0 && buf.use_overrides != (byte)has_explicit_index)
+            {
+                code = xps_flush_text_buffer(ctx, font, &buf, is_charpath);
+                if (code)
+                    return gs_rethrow(code, "cannot flush buffered text");
+            }
+            if (buf.count == 0)
+                buf.use_overrides = (byte)has_explicit_index;
+
             if (buf.count == XPS_TEXT_BUFFER_SIZE)
             {
                 code = xps_flush_text_buffer(ctx, font, &buf, is_charpath);
                 if (code)
                     return gs_rethrow(code, "cannot flush buffered text");
+                buf.use_overrides = (byte)has_explicit_index;
             }
 
             if (is_sideways)
@@ -550,6 +610,8 @@ xps_parse_glyphs_imp(xps_context_t *ctx, xps_font_t *font, float size,
                 buf.y[buf.count] = y - v_offset;
             }
             buf.g[buf.count] = glyph_index;
+            buf.c[buf.count] = char_code;
+            buf.o[buf.count] = has_explicit_index;
             buf.count ++;
 
             x += advance * 0.01 * size;
