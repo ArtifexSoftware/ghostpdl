@@ -414,6 +414,53 @@ zputinterval(i_ctx_t *i_ctx_p)
     return code;
 }
 
+/*  <dict> <name> <string> .putgstringcopy - */
+static int
+zputgstringcopy(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    byte *sbody;
+    uint size;
+    int code;
+    avm_space cs = ialloc_space(idmemory);
+    avm_space ds = r_space((op - 2));
+    avm_space ss = r_space(op);
+
+    /* first, check our operands */
+    check_op(3);
+    check_read_type(*op, t_string);
+    check_type(*(op - 1), t_name);
+    check_type(*(op - 2), t_dictionary);
+
+    /* If the string and the dictionary differ in globalness... */
+    if (ss != ds) {
+        size = r_size(op);
+        ialloc_set_space(idmemory, ds);
+
+        sbody = ialloc_string(size, "string");
+        if (sbody == 0) {
+            ialloc_set_space(idmemory, cs);
+            return_error(gs_error_VMerror);
+        }
+        memcpy(sbody, op->value.bytes, size);
+        make_string(op, a_all | icurrent_space, size, sbody);
+    }
+    /* use dict_put() directly here, because we want to return
+       the VM space back before we return in the event of an error
+     */
+    code = dict_put(op - 2, op - 1, op, &(i_ctx_p->dict_stack));
+
+    /* put the space back how it was */
+    if (ss != ds)
+        ialloc_set_space(idmemory, cs);
+
+    if (code < 0)
+        return code;
+
+    pop(3);
+    return 0;
+}
+
 /* <array|packedarray|string> <<element> proc> forall - */
 /* <dict> <<key> <value> proc> forall - */
 static int
@@ -579,6 +626,7 @@ const op_def zgeneric_op_defs[] =
     {"1length", zlength},
     {"3put", zput},
     {"3putinterval", zputinterval},
+    {"3.putgstringcopy", zputgstringcopy},
                 /* Internal operators */
     {"0%array_continue", array_continue},
     {"0%dict_continue", dict_continue},
