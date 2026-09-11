@@ -2146,7 +2146,16 @@ pdf14_pop_transparency_state(gx_device *dev, gs_gstate *pgs)
            soft masks.  There may be a copy in the stack that we may need to
            adjust. */
         if (ctx->smask_depth > 0) {
-            if (ctx->stack != NULL && ctx->stack->mask_stack != NULL) {
+            /* RJW: This logic was introduced by mvrhel as:
+             *    if (ctx->stack != NULL && ctx->stack->mask_stack != NULL)
+             * back in commit f0208a3d621. Unfortunately no record exists of the bug
+             * that this was supposed to solve. Bug 709701 shows this up as being wrong
+             * in at least some cases. In that bug it overwrites a valid smask entry
+             * with a NULL one. So the fix, implemented here is never to overwrite
+             * with a NULL entry. This shows no diffs in the cluster. More information
+             * on the bug.
+             */
+            if (ctx->stack != NULL && ctx->mask_stack != NULL) {
                 ctx->stack->mask_stack = ctx->mask_stack;
             }
         }
