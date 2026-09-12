@@ -360,10 +360,6 @@ pdfi_scan_jpxfilter(pdf_context *ctx, pdf_c_stream *source, int length, pdfi_jpx
                     dbgmprintf(ctx->memory, "JPXFilter: Ignore extra COLR specs\n");
                 break;
             }
-            if (box_len == 0) {
-                code = gs_note_error(gs_error_syntaxerror);
-                goto exit;
-            }
             cs_meth = data[0];
             if (cs_meth == 1) {
                 if (box_len < 7) {
