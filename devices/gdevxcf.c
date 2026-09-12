@@ -564,11 +564,11 @@ xcf_open_profile(const char *profile_out_fn, cmm_profile_t **icc_profile, gcmmhl
     gsicc_rendering_param_t rendering_params;
     cmm_profile_t des_profile;
 
+    if (icc_profile == NULL || profile_out_fn == NULL)
+        return gs_throw(-1, "Could not create profile for xcf device");
+
     *icc_profile = gsicc_get_profile_handle_file(profile_out_fn,
                     strlen(profile_out_fn), memory);
-
-    if (icc_profile == NULL)
-        return gs_throw(-1, "Could not create profile for xcf device");
 
     /* Set up the rendering parameters */
 
@@ -580,6 +580,7 @@ xcf_open_profile(const char *profile_out_fn, cmm_profile_t **icc_profile, gcmmhl
     rendering_params.cmm = gsCMM_DEFAULT;
 
     /* Call with a NULL destination profile since we are using a device link profile here */
+    memset(&des_profile, 0x00, sizeof(cmm_profile_t));
     *icc_link = gsicc_alloc_link_dev(memory->non_gc_memory,
         *icc_profile, &des_profile,
         &rendering_params);
