@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -274,19 +274,21 @@ swap_entry(i_ctx_t *i_ctx_p, ref elt[2], ref * pdict, ref * pdict2)
         int code;
 
         r_set_space(pdict2, avm_local);
-        idict_put(pdict2, &elt[0], &old_value);
-        if (r_has_type(&elt[1], t_null)) {
-            code = idict_undef(pdict, &elt[0]);
-            if (code == gs_error_undefined &&
-                r_has_type(&old_value, t_null)
-                )
-                code = 0;
-        } else {
-            uint space = r_space(pdict);
+        code = idict_put(pdict2, &elt[0], &old_value);
+        if (code >= 0) {
+            if (r_has_type(&elt[1], t_null)) {
+                code = idict_undef(pdict, &elt[0]);
+                if (code == gs_error_undefined &&
+                    r_has_type(&old_value, t_null)
+                    )
+                    code = 0;
+            } else {
+                uint space = r_space(pdict);
 
-            r_set_space(pdict, avm_local);
-            code = idict_put(pdict, &elt[0], &elt[1]);
-            r_set_space(pdict, space);
+                r_set_space(pdict, avm_local);
+                code = idict_put(pdict, &elt[0], &elt[1]);
+                r_set_space(pdict, space);
+            }
         }
         r_set_space(pdict2, space2);
         return code;
