@@ -443,7 +443,7 @@ ciedefgspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
     gs_memory_t *mem = gs_gstate_memory(igs);
     gs_color_space *pcs;
     ref_cie_procs procs;
-    gs_cie_defg *pcie;
+    gs_cie_defg *pcie = NULL;
     int code = 0;
     ref *ptref;
     bool has_defg_procs, has_abc_procs, has_lmn_procs;
@@ -574,7 +574,7 @@ ciedefspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
     gs_memory_t *mem = gs_gstate_memory(igs);
     gs_color_space *pcs;
     ref_cie_procs procs;
-    gs_cie_def *pcie;
+    gs_cie_def *pcie = NULL;
     int code = 0;
     ref *ptref;
     bool has_def_procs, has_lmn_procs, has_abc_procs;
@@ -662,7 +662,7 @@ cieabcspace(i_ctx_t *i_ctx_p, ref *CIEDict, uint64_t dictkey)
     gs_memory_t *mem = gs_gstate_memory(igs);
     gs_color_space *pcs;
     ref_cie_procs procs;
-    gs_cie_abc *pcie;
+    gs_cie_abc *pcie = NULL;
     int code = 0;
     bool has_lmn_procs, has_abc_procs;
     gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
@@ -746,7 +746,7 @@ cieaspace(i_ctx_t *i_ctx_p, ref *CIEdict, uint64_t dictkey)
     const gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
     gs_color_space *pcs;
     ref_cie_procs procs;
-    gs_cie_a *pcie;
+    gs_cie_a *pcie = NULL;
     int code = 0;
     bool has_a_procs = false;
     bool has_lmn_procs;
