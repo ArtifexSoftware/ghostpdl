@@ -2867,11 +2867,24 @@ cups_open(gx_device *pdev)		/* I - Device info */
 private int				/* O - 0 if everything is OK */
 cups_output_page(gx_device *pdev, int num_copies, int flush)
 {
-  int		code = 0;		/* Error code */
+  int                code = 0; /* Error code */
+  gx_device_printer *ppdev = (gx_device_printer *)pdev;
 
   /* FIXME: We would like to support BGPrint=true and call gdev_prn_bg_output_page */
   /* but there must still be other things that prevent this. */
-  if ((code = gdev_prn_output_page(pdev, num_copies, flush)) < 0)
+  code = gdev_prn_output_page(pdev, num_copies, flush);
+
+  /* If we are outputting to a "foo%d.whatever" file then
+   * gdev_prn_output_page might have closed the output file.
+   * cups needs to be told about this, or it will try to reuse
+   * the same fileno it has stashed on subsequent pages. Bug 709334.  */
+  if (ppdev->file == NULL)
+  {
+    cupsRasterClose(cups->stream);
+    cups->stream = NULL;
+  }
+
+  if (code < 0)
       return code;
 
   cups->page ++;
