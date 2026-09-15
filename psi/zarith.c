@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -359,17 +359,34 @@ zop_sub(i_ctx_t *i_ctx_p)
             break;
         case t_integer: {
             if (sizeof(ps_int) != 4 && gs_currentcpsimode(imemory)) {
-                ps_int32 int1 = (ps_int)op[-1].value.intval;
-                ps_int32 int2 = (ps_int)op->value.intval;
-                ps_int32 int3;
+                ps_int32 int1 = (ps_int32)op[-1].value.intval;
+                ps_int32 int2 = (ps_int32)op->value.intval;
 
-                if ((int1 ^ (int3 = int1 - int2)) < 0 &&
-                    (int1 ^ int2) < 0
-                    ) {                     /* Overflow, convert to real */
-                    make_real(op - 1, (float)int1 - op->value.intval);
-                }
-                else {
-                    op[-1].value.intval = (ps_int)int3;
+                /* Test the signs first, if they are the same then integer subtraction can't overflow */
+                if ((int1 ^ int2) >= 0) {
+                    op[-1].value.intval = int1 - int2;
+                } else {
+                    ps_uint32 u1, u2;
+
+                    if (int1 < 0) {
+                        /* -ve minus +ve, convert -ve to +ve and add as unsigned, defined behaviour if overflow (wraps round) */
+                        u1 = ~int1 + 1;
+                        u2 = u1 + int2;
+                        /* If adding 2 positive values produced a smaller value, then the addition overflowed.
+                         * If the result is larger than the max signed int (+1 for -ve) then subtraction will overflow
+                         */
+                        if (u2 < u1 || u2 > (MAX_PS_INT32 + 1))
+                            make_real(op - 1, (float)int1 - op->value.intval);
+                        else
+                            op[-1].value.intval = int1 - int2;
+                    } else {
+                        /* +ve minus -ve = +ve plus +ve, can overflow a *signed* int, but not an unsigned int */
+                        u1 = int1 + (~int2 + 1);
+                        if (u1 > MAX_PS_INT32)
+                            make_real(op - 1, (float)int1 - op->value.intval);
+                        else
+                            op[-1].value.intval = int1 - int2;
+                    }
                 }
             }
             else {
