@@ -261,11 +261,31 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
         case PtCr_add_int: {
             int int1 = vsp[-1].value.i, int2 = vsp->value.i;
 
-            if ((int1 ^ int2) >= 0 && ((int1 + int2) ^ int1) < 0)
-                store_float(vsp - 1, (double)int1 + int2);
-            else
-                vsp[-1].value.i = int1 + int2;
-            --vsp; continue;
+            /* Test the signs first, if they are different then integer addition can't overflow */
+            if (int1 ^ int2 < 0) {
+                vsp[-1].value.i = int1 - int2;
+            } else {
+                unsigned int u1, u2;
+
+                if (int1 < 0) {
+                    /* minimum signed int converted to unsigned, doubled, can overflow */
+                    u1 = (unsigned int)(~int1) + 1;
+                    u2 = u1 + (unsigned int)(~int2) + 1;
+
+                    if (u2 < u1 || u2 > (unsigned int)max_int + 1)
+                        store_float(vsp - 1, (double)int1 - int2);
+                    else
+                        vsp[-1].value.i = int1 - int2;
+                } else {
+                    /* maximum signed int + maximum signed int fits into an unsigned int, so no overflow */
+                    u1 = int1 + int2;
+
+                    if (u1 > (unsigned int)max_int)
+                        store_float(vsp - 1, (double)int1 - int2);
+                    else
+                        vsp[-1].value.i = int1 - int2;
+                }
+            }
         }
         case PtCr_add:
             vsp[-1].value.f += vsp->value.f;
@@ -399,23 +419,23 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             if (int1 ^ int2 >= 0) {
                 vsp[-1].value.i = int1 - int2;
             } else {
-                unsigned u1, u2;
+                unsigned int u1, u2;
 
                 if (int1 < 0) {
                     /* -ve minus +ve, convert -ve to +ve and add as unsigned, defined behaviour if overflow (wraps round) */
-                    u1 = ~int1 + 1;
+                    u1 = (unsigned int)(~int1) + 1;
                     u2 = u1 + int2;
                     /* If adding 2 positive values produced a smaller value, then the addition overflowed.
                      * If the result is larger than the max signed int (+1 for -ve) then subtraction will overflow
                      */
-                    if (u2 < u1 || u2 > (max_int + 1))
+                    if (u2 < u1 || u2 > ((unsigned int)max_int + 1))
                         store_float(vsp - 1, (double)int1 - int2);
                     else
                         vsp[-1].value.i = int1 - int2;
                 } else {
                     /* +ve minus -ve = +ve plus +ve, can overflow a *signed* int, but not an unsigned int */
-                    u1 = int1 + (~int2 + 1);
-                    if (u1 > max_int)
+                    u1 = int1 + ((unsigned int)(~int2) + 1);
+                    if (u1 > (unsigned int)max_int)
                         store_float(vsp - 1, (double)int1 - int2);
                     else
                         vsp[-1].value.i = int1 - int2;

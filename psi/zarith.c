@@ -82,22 +82,58 @@ zop_add(i_ctx_t *i_ctx_p)
                 ps_int32 int1 = (ps_int32)op[-1].value.intval;
                 ps_int32 int2 = (ps_int32)op->value.intval;
 
-                if (((int1 += int2) ^ int2) < 0 &&
-                    ((int1 - int2) ^ int2) >= 0
-                    ) {                     /* Overflow, convert to real */
-                    make_real(op - 1, (double)(int1 - int2) + int2);
-                }
-                else {
-                    op[-1].value.intval = (ps_int)int1;
+                /* Test the signs first, if they are different then integer addition can't overflow */
+                if ((int1 ^ int2) < 0) {
+                    op[-1].value.intval = (ps_int32)int1 + int2;
+                } else {
+                    ps_uint32 u1, u2;
+                    if (int1 < 0) {
+                        /* minimum signed int converted to unsigned, doubled, can overflow */
+                        u1 = (ps_uint32)(~int1) + 1;
+                        u2 = u1 + (ps_uint32)(~int2) + 1;
+
+                        if (u2 < u1 || u2 > ((ps_uint32)MAX_PS_INT32 + 1))
+                            make_real(op - 1, (double)int1 + int2);
+                        else
+                            op[-1].value.intval = (ps_int32)int1 + int2;
+                    } else {
+                        /* maximum signed int + maximum signed int fits into an unsigned int, so no overflow */
+                        u1 = int1 + int2;
+
+                        if (u1 > (ps_uint32)MAX_PS_INT32)
+                            make_real(op - 1, (double)int1 + int2);
+                        else
+                            op[-1].value.intval = (ps_int32)int1 + int2;
+                    }
                 }
             }
             else {
+                ps_int int1 = op[-1].value.intval;
                 ps_int int2 = op->value.intval;
 
-                if (((op[-1].value.intval += int2) ^ int2) < 0 &&
-                    ((op[-1].value.intval - int2) ^ int2) >= 0
-                    ) {                     /* Overflow, convert to real */
-                    make_real(op - 1, (double)(op[-1].value.intval - int2) + int2);
+                /* Test the signs first, if they are different then integer addition can't overflow */
+                if ((int1 ^ int2) < 0) {
+                    op[-1].value.intval = int1 + int2;
+                } else {
+                    ps_uint u1, u2;
+                    if (int1 < 0) {
+                        /* minimum signed int converted to unsigned, doubled, can overflow */
+                        u1 = (ps_uint)(~int1) + 1;
+                        u2 = u1 + (ps_uint)(~int2) + 1;
+
+                        if (u2 < u1 || u2 > ((ps_uint)MAX_PS_INT + 1))
+                            make_real(op - 1, (double)int1 + int2);
+                        else
+                            op[-1].value.intval = (ps_int)int1 + int2;
+                    } else {
+                        /* maximum signed int + maximum signed int fits into an unsigned int, so no overflow */
+                        u1 = int1 + int2;
+
+                        if (u1 > (ps_uint)MAX_PS_INT)
+                            make_real(op - 1, (double)int1 + int2);
+                        else
+                            op[-1].value.intval = (ps_int)int1 + int2;
+                    }
                 }
             }
         }
@@ -370,19 +406,19 @@ zop_sub(i_ctx_t *i_ctx_p)
 
                     if (int1 < 0) {
                         /* -ve minus +ve, convert -ve to +ve and add as unsigned, defined behaviour if overflow (wraps round) */
-                        u1 = ~int1 + 1;
+                        u1 = (ps_uint32)(~int1) + 1;
                         u2 = u1 + int2;
                         /* If adding 2 positive values produced a smaller value, then the addition overflowed.
                          * If the result is larger than the max signed int (+1 for -ve) then subtraction will overflow
                          */
-                        if (u2 < u1 || u2 > (MAX_PS_INT32 + 1))
+                        if (u2 < u1 || u2 > ((ps_uint32)MAX_PS_INT32 + 1))
                             make_real(op - 1, (float)int1 - op->value.intval);
                         else
                             op[-1].value.intval = int1 - int2;
                     } else {
                         /* +ve minus -ve = +ve plus +ve, can overflow a *signed* int, but not an unsigned int */
-                        u1 = int1 + (~int2 + 1);
-                        if (u1 > MAX_PS_INT32)
+                        u1 = int1 + ((ps_uint32)(~int2) + 1);
+                        if (u1 > (ps_uint)MAX_PS_INT32)
                             make_real(op - 1, (float)int1 - op->value.intval);
                         else
                             op[-1].value.intval = int1 - int2;
@@ -391,11 +427,33 @@ zop_sub(i_ctx_t *i_ctx_p)
             }
             else {
                 ps_int int1 = op[-1].value.intval;
+                ps_int int2 = op->value.intval;
 
-                if ((int1 ^ (op[-1].value.intval = int1 - op->value.intval)) < 0 &&
-                    (int1 ^ op->value.intval) < 0
-                    ) {                     /* Overflow, convert to real */
-                    make_real(op - 1, (float)int1 - op->value.intval);
+                /* Test the signs first, if they are the same then integer subtraction can't overflow */
+                if ((int1 ^ int2) >= 0) {
+                    op[-1].value.intval = int1 - int2;
+                } else {
+                    ps_uint u1, u2;
+
+                    if (int1 < 0) {
+                        /* -ve minus +ve, convert -ve to +ve and add as unsigned, defined behaviour if overflow (wraps round) */
+                        u1 = (ps_uint)(~int1) + 1;
+                        u2 = u1 + int2;
+                        /* If adding 2 positive values produced a smaller value, then the addition overflowed.
+                         * If the result is larger than the max signed int (+1 for -ve) then subtraction will overflow
+                         */
+                        if (u2 < u1 || u2 > ((ps_uint)MAX_PS_INT + 1))
+                            make_real(op - 1, (float)int1 - op->value.intval);
+                        else
+                            op[-1].value.intval = int1 - int2;
+                    } else {
+                        /* +ve minus -ve = +ve plus +ve, can overflow a *signed* int, but not an unsigned int */
+                        u1 = int1 + ((ps_uint)(~int2) + 1);
+                        if (u1 > (ps_uint)MAX_PS_INT)
+                            make_real(op - 1, (float)int1 - op->value.intval);
+                        else
+                            op[-1].value.intval = int1 - int2;
+                    }
                 }
             }
         }
