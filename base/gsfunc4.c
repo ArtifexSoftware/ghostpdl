@@ -262,7 +262,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             int int1 = vsp[-1].value.i, int2 = vsp->value.i;
 
             /* Test the signs first, if they are different then integer addition can't overflow */
-            if (int1 ^ int2 < 0) {
+            if ((int1 ^ int2) < 0) {
                 vsp[-1].value.i = int1 - int2;
             } else {
                 unsigned int u1, u2;
@@ -286,6 +286,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
                         vsp[-1].value.i = int1 - int2;
                 }
             }
+            --vsp; continue;
         }
         case PtCr_add:
             vsp[-1].value.f += vsp->value.f;
@@ -416,7 +417,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             int int1 = vsp[-1].value.i, int2 = vsp->value.i;
 
             /* Test the signs first, if they are the same then integer subtraction can't overflow */
-            if (int1 ^ int2 >= 0) {
+            if ((int1 ^ int2) >= 0) {
                 vsp[-1].value.i = int1 - int2;
             } else {
                 unsigned int u1, u2;
