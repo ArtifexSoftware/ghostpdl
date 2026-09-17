@@ -116,7 +116,16 @@ systemdict begin
 systemdict /userparams get 1 .argindex get exch pop
 } odef
 % Fill in userparams (created by the interpreter) with current values.
-mark .currentuserparams .dicttomark .setuserparams
+mark .currentuserparams .dicttomark
+% We don't want to have setuserparams try to validate these, because we
+% haven't set up GenericResourceDir yet, so they will fail if we are not
+% using the rom file system.
+dup /DefaultGrayProfile undef
+dup /DefaultRGBProfile undef
+dup /DefaultCMYKProfile undef
+dup /LabProfile undef
+dup /ICCProfilesDir undef
+.setuserparams
 
 mark
 /IdiomRecognition //null
@@ -508,9 +517,12 @@ currentuserparams /WaitTimeout known
   mark exch /ICCProfilesDir exch .dicttomark .setuserparams
 } {
   % First see if the current value is valid so we don't have to guess
-  currentuserparams /ICCProfilesDir get
-  (default_gray.icc) concatstrings {status} //.internalstopped exec
-  {pop //false} if
+  currentuserparams /ICCProfilesDir .knownget {
+    (default_gray.icc) concatstrings {status} //.internalstopped exec
+    {pop //false} if
+  }{
+    //false
+  }ifelse
   {
     pop pop pop pop		% current value was OK. Just clean up stack
   } {
@@ -533,6 +545,18 @@ currentuserparams /WaitTimeout known
     } forall
   } ifelse 	% if currentuserparams ICCProfilesDir
 } ifelse      % ICCProfilesDir set in systemdict (command line option)
+
+% We had removed these earlier, until we had properly set up GenericResoruceDir and
+% (above) ICCProfilesDir. It seems like we don't need to restore them (everything
+% still seems to work) but it seems best to restore them, *before* we check systemdict
+% for any command line overrides.
+
+mark
+/DefaultGrayProfile (default_gray.icc)
+/DefaultRGBProfile (default_rgb.icc)
+/DefaultCMYKProfile (default_cmyk.icc)
+/LabProfile (lab.icc)
+.dicttomark .setuserparams
 
 mark	% collect dict key value pairs for anything set in systemdict (command line options)
 [ /DefaultRGBProfile /DefaultGrayProfile /DefaultCMYKProfile /DeviceNProfile
