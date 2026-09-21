@@ -46,6 +46,14 @@ if pop
 
 systemdict begin
 
+/FontDirectory systemdict
+.currentglobal
+{ /GlobalFontDirectory }
+{ /LocalFontDirectory } ifelse
+get def
+
+/SharedFontDirectory systemdict /GlobalFontDirectory get def
+
 % Init to global memory (possibly not needed, but left in for legacy purposes)
 //true .setglobal
 

@@ -1,4 +1,4 @@
-% Copyright (C) 2001-2023 Artifex Software, Inc.
+% Copyright (C) 2001-2026 Artifex Software, Inc.
 % All Rights Reserved.
 %
 % This software is provided AS-IS with no warranty, either express or
@@ -25,26 +25,8 @@ level2dict begin
 %****** FOLLOWING IS WRONG ******
 /shareddict currentdict /globaldict .knownget not { 20 dict } if def
 
-% Global and LocalFontDirectory must remain in systemdict
-% even if we temporarily exit Level 2 mode.
-
 end				% level2dict
 systemdict begin
-
-/SharedFontDirectory .FontDirectory .gcheck
- { .currentglobal //false .setglobal
-   currentdict
-   /LocalFontDirectory .FontDirectory dup maxlength dict copy
-   .forceput	% LocalFontDirectory is local, systemdict is global
-   .setglobal .FontDirectory
- } executeonly
- {
-   currentdict
-   /LocalFontDirectory .FontDirectory
-   .forceput	% LocalFontDirectory is local, systemdict is global
-   50 dict
- }executeonly
-ifelse def
 
 end				% systemdict
 level2dict begin

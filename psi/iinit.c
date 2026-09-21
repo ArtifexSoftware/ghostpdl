@@ -189,7 +189,10 @@ const struct {
         "errordict", ERRORDICT_SIZE, true
     },
     {
-        "FontDirectory", FONTDIRECTORY_SIZE, true
+        "LocalFontDirectory", FONTDIRECTORY_SIZE, true
+    },
+    {
+        "GlobalFontDirectory", FONTDIRECTORY_SIZE, false
     },
     {
         "statusdict", STATUSDICT_SIZE, true
@@ -212,7 +215,8 @@ const char *const initial_referred[] =
 #else
     "$error",
     "errordict",
-    "FontDirectory",
+    "LocalFontDirectory",
+    "GlobalFontDirectory",
     "statusdict",
     "serverdict",
     "localinstancedict",
