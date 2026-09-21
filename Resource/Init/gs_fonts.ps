@@ -834,51 +834,6 @@ buildfontdict 3 /.buildfont3 cvx put
    } if
 }.internalbind odef
 
-% If requested, make (and recognize) fake entries in FontDirectory for fonts
-% present in Fontmap but not actually loaded.  Thanks to Ray Johnston for
-% the idea behind this code.
-FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
-
-% We use the presence or absence of the FontMatrix key to indicate whether
-% a font is real or fake.  We must pop the arguments at the very end,
-% so that stack protection will be effective.
-
-/definefont {           % <name> <font> definefont <font>
-  dup /FontMatrix known {
-    //definefont
-  } {
-    2 copy /FontName get findfont //definefont exch pop exch pop
-  } ifelse
-}.internalbind odef
-
-/scalefont {            % <font> <scale> scalefont <font>
-  1 index /FontMatrix known {
-    //scalefont
-  } {
-    1 index /FontName get findfont 1 index //scalefont
-    exch pop exch pop
-  } ifelse
-}.internalbind odef
-
-/makefont {             % <font> <matrix> makefont <font>
-  1 index /FontMatrix known {
-    //makefont
-  } {
-    1 index /FontName get findfont 1 index //makefont
-    exch pop exch pop
-  } ifelse
-}.internalbind odef
-
-/setfont {              % <font> setfont -
-  dup /FontMatrix known {
-    //setfont
-  } {
-    dup /FontName get findfont //setfont pop
-  } ifelse
-}.internalbind odef
-
-%END FAKEFONTS
-
 % Define findfont so it tries to load a font if it's not found.
 % The Red Book requires that findfont be a procedure, not an operator,
 % but it still needs to restore the stacks reliably if it fails,
@@ -909,19 +864,7 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
     }
    for
  }.internalbind def
-% Get a (non-fake) font if present in a FontDirectory.
-/.fontknownget          % <fontdir> <fontname> .fontknownget <font> true
-                        % <fontdir> <fontname> .fontknownget false
- { .knownget
-    { FAKEFONTS
-       { dup /FontMatrix known { //true } { pop //false } ifelse }
-       { //true }
-      ifelse
-    }
-    { //false
-    }
-   ifelse
- }.internalbind def
+
 % This is the standard procedure for handling font substitution.
 % Its location is per an Adobe newsgroup posting.
 % It is called with the font name on the stack, standing in for findfont.
@@ -1122,7 +1065,7 @@ $error /SubstituteFont { } put
          } if
 
                 % Check to make sure the font was actually loaded.
-        dup 3 index //.fontknownget exec
+        dup 3 index .knownget
          { dup /PathLoad 4 index //.putgstringcopy
            4 1 roll pop pop pop //true exit
          } executeonly if
@@ -1133,7 +1076,7 @@ $error /SubstituteFont { } put
         exch dup      % Stack: origfontname fontdirectory path path
         (r) file //.findfontname exec
          {            % Stack: origfontname fontdirectory path filefontname
-           2 index 1 index //.fontknownget exec
+           2 index 1 index .knownget
             {   % Yes.  Stack: origfontname fontdirectory path filefontname fontdict
               dup 4 -1 roll /PathLoad exch //.putgstringcopy
                       % Stack: origfontname fontdirectory filefontname fontdict
@@ -1192,7 +1135,7 @@ $error /SubstituteFont { } put
 % Try to find a font using only the present contents of Fontmap.
 /.tryfindfont {         % <fontname> .tryfindfont <font> true
                         % <fontname> .tryfindfont false
-  //.FontDirectory 1 index //.fontknownget exec
+  //.FontDirectory 1 index .knownget
     {                   % Already loaded
       exch pop //true
     }
@@ -1283,35 +1226,6 @@ $error /SubstituteFont { } put
   [Fontmap .nativeFontmap] { { pop findfont pop } forall } forall
 }.internalbind def
 
-% If requested, load all the fonts defined in the Fontmap into FontDirectory
-% as "fake" fonts i.e., font dicts with only FontName and FontType defined.
-% (We define FontType only for the sake of some questionable code in the
-% Apple Printer Utility 2.0 font inquiry code.)
-%
-% Note that this procedure only creates fake fonts in the FontDirectory
-% associated with the current VM.  This is because in multi-context systems,
-% creating the fake fonts in local VM leads to undesirable complications.
-/.definefakefonts
-    {
-    }
-    {
-      (gs_fonts FAKEFONTS) VMDEBUG
-      [Fontmap .nativeFontmap ]
-      {
-        {
-          pop dup type /stringtype eq { cvn } if
-          //.FontDirectory 1 index known not {
-            2 dict dup /FontName 3 index put
-            dup /FontType 1 put
-            //.FontDirectory 3 1 roll //.forceput exec % readonly
-          } {
-            pop
-          } ifelse
-        } forall
-      } forall
-    } executeonly	% hide .forceput
-FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
-
 % Install initial fonts from Fontmap.
 /.loadinitialfonts
  { NOFONTMAP not
@@ -1343,7 +1257,6 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
     }
    if
    userdict /defaultfontmap_content .undef
-   //.definefakefonts exec     % current VM is global
  } def                  % don't bind, .current/setglobal get redefined
 
 % Undef these, not needed outside this file
@@ -1356,7 +1269,7 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
  /.scan1fontfirst /.scanfontdir
  /.setnativefontmapbuilt /.aliasfont
  /.setloadingfont /.substitutefaces /.substituteproperties /.substitutefamilies
- /.nametostring /.fontnamestring /.checkalias /.fontknownget /.stdsubstfont
+ /.nametostring /.fontnamestring /.checkalias /.stdsubstfont
  /.putgstringcopy
  /.definenativefontmap
  /.findfontname /.addfontmappermitpaths /.splitdirname

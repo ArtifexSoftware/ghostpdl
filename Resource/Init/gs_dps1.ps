@@ -89,32 +89,6 @@ level2dict begin
 /restore		% <save> restore -
  { dup //restore
    /LocalFontDirectory .systemvar
-   FAKEFONTS
-    { mark
-                % We want to delete a fake font from the local directory
-                % iff the global directory now has no definition for it,
-                % or a non-fake definition.
-      1 index dup
-       {		% Stack: lfd mark lfd key ... lfd key value
-         length 1 gt
-          {		% This is a real local definition; don't do anything.
-            pop
-          }
-          {		% This is a fake local definition, check for global.
-            //SharedFontDirectory 1 index .knownget
-             {		% A global definition exists, check for fake.
-               length 1 eq { pop } { 1 index } ifelse
-             }
-             {		% No global definition, delete the local one.
-               1 index
-             }
-            ifelse
-          }
-         ifelse
-       } forall
-      pop counttomark 2 idiv { .forceundef } executeonly repeat pop		% readonly
-    }
-   if
    //SharedFontDirectory exch .forcecopynew pop
    .currentglobal .setglobal	% Rebind FontDirectory according to current VM.
    pop

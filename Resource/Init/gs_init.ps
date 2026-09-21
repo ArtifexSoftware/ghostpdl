@@ -156,7 +156,6 @@ currentdict /DELAYBIND known   /DELAYBIND exch def
 currentdict /DOINTERPOLATE .knownget { { -1 } { 1 } ifelse /InterpolateControl exch def } if
 currentdict /NOINTERPOLATE .knownget { { 0 } { 1 } ifelse /InterpolateControl exch def } if
 currentdict /ESTACKPRINT known   /ESTACKPRINT exch def
-currentdict /FAKEFONTS known   /FAKEFONTS exch def
 currentdict /FIXEDMEDIA known   /FIXEDMEDIA exch def
 currentdict /FIXEDRESOLUTION known   /FIXEDRESOLUTION exch def
 currentdict /LOCALFONTS known   /LOCALFONTS exch def
@@ -2461,7 +2460,6 @@ currentdict /.locksafeglobal .undef
   /.type1build
   /.buildnativefontmap
   /.completefont
-  /.definefakefonts
   /.fontnameproperties
   /.growfontdict
   /.substitutefont /.substitutefontname
@@ -2622,9 +2620,6 @@ currentdict /.locksafeglobal .undef
 $error /.nosetlocal //false put
 
 (END GLOBAL) VMDEBUG
-
-% Add the fake fonts to LocalFontDirectory.
-//.definefakefonts exec	% current VM is local
 
 % Execute scheduled inits :
 1183615869 internaldict /.execute_scheduled_inits get exec
