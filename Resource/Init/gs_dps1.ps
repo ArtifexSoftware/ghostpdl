@@ -46,26 +46,11 @@ level2dict begin
      setfont pop pop
    } stopped { /selectfont .systemvar $error /errorname get signalerror } if
  } odef
-% undefinefont has to take local/global VM into account.
+
 /undefinefont		% <fontname> undefinefont -
- { //.FontDirectory 1 .argindex .forceundef	% FontDirectory is readonly
-   .currentglobal
-    {		% Current mode is global; delete from local directory too.
-      //systemdict /LocalFontDirectory .knownget
-       { 1 index .forceundef } executeonly		% LocalFontDirectory is readonly
-      if
-    }
-    {		% Current mode is local; if there was a shadowed global
-                % definition, copy it into the local directory.
-      //systemdict /SharedFontDirectory .knownget
-       { 1 index .knownget
-          { //.FontDirectory 2 index 3 -1 roll .forceput } % readonly
-         if
-       }
-      if
-    }
-   ifelse pop
- } .forcebind odef
+{
+  //null .updatefontdirectory
+} .forcebind odef
 
 % If we load a font into global VM within an inner save, the restore
 % will delete it from FontDirectory but not from SharedFontDirectory.

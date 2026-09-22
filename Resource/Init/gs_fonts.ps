@@ -580,15 +580,8 @@ buildfontdict 3 /.buildfont3 cvx put
       /definefont cvx /invalidaccess signalerror
    } if
    /definefont cvx {.completefont} .errorexec
-                % If the current allocation mode is global, also enter
-                % the font in LocalFontDirectory.
-   .currentglobal
-    { //systemdict /LocalFontDirectory .knownget
-       { 2 index 2 index .forceput }	% readonly
-      if
-    }
-   if
-   dup //.FontDirectory 4 -2 roll .forceput % readonly
+
+   dup 3 1 roll .updatefontdirectory
                 % If the font originated as a resource, register it.
    currentfile .currentresourcefile eq { dup .registerfont } if
    readonly
@@ -1044,7 +1037,7 @@ $error /SubstituteFont { } put
                 % because it's different depending on language level.
            .currentglobal exch /.setglobal .systemvar exec
                 % Remove the fake definition, if any.
-           //.FontDirectory 3 index .forceundef		% readonly
+           3 index //null .updatefontdirectory
            1 index (r) file .loadfont //.FontDirectory exch
            /.setglobal .systemvar exec
          } executeonly
@@ -1082,8 +1075,7 @@ $error /SubstituteFont { } put
                       % Stack: origfontname fontdirectory filefontname fontdict
               3 -1 roll pop
                       % Stack: origfontname filefontname fontdict
-              dup /FontName get dup //.FontDirectory exch .forceundef
-              /GlobalFontDirectory .systemvar exch .forceundef
+              dup /FontName get //null .updatefontdirectory
               dup length dict .copydict dup 3 index /FontName exch put
               2 index exch definefont
               exch

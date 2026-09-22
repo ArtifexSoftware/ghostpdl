@@ -27,6 +27,8 @@
 #include "bfont.h"
 #include "ialloc.h"
 #include "idict.h"
+#include "dstack.h"
+#include "iddict.h"
 #include "idparam.h"
 #include "ilevel.h"
 #include "iname.h"
@@ -293,10 +295,76 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u, u
     return 0; /* No map. */
 }
 
+/* <any> <dict|null> .updatefontdirectory -
+ * If the second parameter is a dictionary, add the font dict to the FontDirectory.
+ * If the second parameter is NULL, undefine the font.
+ */
+static int
+zupdatefontdirectory(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int code = 0;
+    ref *lfd, *gfd = NULL;
+
+    check_op(2);
+
+    if ((code = dict_find_string(systemdict, "LocalFontDirectory", &lfd)) < 0)
+        return code;
+
+    if ((code = dict_find_string(systemdict, "GlobalFontDirectory", &gfd)) < 0)
+        return code;
+
+    if (r_has_type(op, t_null)) {
+        /* undefinefont */
+
+        if (ialloc_space(idmemory) != avm_local) {
+            /* global - undefine in the GlobalFontDirectory, too */
+            (void)idict_undef(lfd, op - 1);  /* ignore undefined error */
+            (void)idict_undef(gfd, op - 1);  /* ignore undefined error */
+        }
+        else {
+            /* local - if a font of the same name exists in the GlobalFontDirectory
+               copy it into the local one
+             */
+            ref *gfi;
+            code = dict_find(gfd, op - 1, &gfi);
+            if (code > 0)
+                /* undefinefont cannot fail at this point, so ignore error */
+                (void)idict_put(lfd, op - 1, gfi);
+            else
+                (void)idict_undef(lfd, op - 1);  /* ignore undefined error */
+
+            code = 0;
+        }
+    }
+    else if (r_has_type(op, t_dictionary)) {
+        /* definefont */
+        gs_font *pfont;
+
+        /* This should always be a properly instantiated font - confirm that */
+        code = font_param(op, &pfont);
+        if (code < 0)
+            return code;
+
+        code = idict_put(lfd, op - 1, op);
+        if (code >= 0 && ialloc_space(idmemory) != avm_local)
+            code = idict_put(gfd, op - 1, op);
+    }
+    else {
+        code = gs_note_error(gs_error_typecheck);
+    }
+
+    if (code >= 0)
+        pop(2);
+
+    return code;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zbfont_op_defs[] =
 {
+    {"2.updatefontdirectory", zupdatefontdirectory},
     {"2.buildfont3", zbuildfont3},
     op_def_end(0)
 };
