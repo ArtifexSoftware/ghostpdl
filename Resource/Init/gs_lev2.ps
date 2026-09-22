@@ -275,7 +275,7 @@ end
 /gcheck				% <obj> gcheck <bool>
   /scheck load def
 /setglobal			% <bool> setglobal -
-  /setshared load def
+  /.setglobal load def
 % We can make the global dictionaries very small, because they auto-expand.
 /globaldict currentdict /shareddict .knownget not { 4 dict } if def
 /GlobalFontDirectory SharedFontDirectory def

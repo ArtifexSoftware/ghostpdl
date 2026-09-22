@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -18,6 +18,8 @@
 #include "ghost.h"
 #include "oper.h"
 #include "estack.h"
+#include "dstack.h"
+#include "iddict.h"
 #include "ialloc.h"		/* for ivmspace.h */
 #include "ivmspace.h"
 #include "ivmem2.h"
@@ -34,10 +36,32 @@ static int
 zsetglobal(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
+    int code;
+    ref *r;
+    uint space = r_space(systemdict);
+
     check_op(1);
     check_type(*op, t_boolean);
-    ialloc_set_space(idmemory,
-                     (op->value.boolval ? avm_global : avm_local));
+    ialloc_set_space(idmemory, (op->value.boolval ? avm_global : avm_local));
+
+    /* We have to rebind the name /FontDirectory to suit the mode */
+    if (op->value.boolval)
+        code = dict_find_string(systemdict, "GlobalFontDirectory", &r);
+    else
+        code = dict_find_string(systemdict, "LocalFontDirectory", &r);
+
+    if (code < 0)
+        return code;
+    /* Hack the VM mode so we can write the local LocalFontDirectory
+       to the global systemdict
+     */
+    r_set_space(systemdict, avm_local);
+    code = idict_put_string(systemdict, "FontDirectory", r);
+    r_set_space(systemdict, space);
+
+    if (code < 0)
+        return code;
+
     pop(1);
     return 0;
 }

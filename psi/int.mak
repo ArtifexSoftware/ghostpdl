@@ -1248,8 +1248,8 @@ $(PSOBJ)zdps1.$(OBJ) : $(PSSRC)zdps1.c $(OP)\
 	$(PSCC) $(PSO_)zdps1.$(OBJ) $(C_) $(PSSRC)zdps1.c
 
 $(PSOBJ)zvmem2.$(OBJ) : $(PSSRC)zvmem2.c $(OP)\
- $(estack_h) $(ialloc_h) $(ivmspace_h) $(store_h) $(ivmem2_h)\
- $(INT_MAK) $(MAKEDIRS)
+ $(estack_h) $(dstack_h) $(iddict_h) $(ialloc_h) $(ivmspace_h) $(store_h) \
+ $(ivmem2_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zvmem2.$(OBJ) $(C_) $(PSSRC)zvmem2.c
 
 # -------- Composite (PostScript Type 0) font support -------- #

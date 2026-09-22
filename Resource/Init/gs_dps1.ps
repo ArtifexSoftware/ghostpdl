@@ -31,19 +31,7 @@ systemdict begin
 end				% systemdict
 level2dict begin
 
-% setshared must rebind FontDirectory to the appropriate one of
-% Local or SharedFontDirectory.
-
-/.setglobal		% <bool> .setglobal -
- { dup .setglobal
-   //systemdict /FontDirectory .currentglobal
-    { //SharedFontDirectory }
-    { /LocalFontDirectory .systemvar }	% can't embed ref to local VM
-   ifelse .forceput pop	% LocalFontDirectory is local, systemdict is global
- } .forcebind odef
-% Don't just copy (load) the definition of .setglobal:
-% it gets redefined for LL3.
-/setshared { /.setglobal .systemvar exec } odef
+/setshared { .setglobal } odef
 .currentglobal setshared
 
 % See below for changes in save and restore.
