@@ -22,6 +22,7 @@
 #include "estack.h"		/* for checking in restore */
 #include "ialloc.h"
 #include "idict.h"		/* ditto */
+#include "iddict.h"
 #include "igstate.h"
 #include "isave.h"
 #include "dstack.h"
@@ -162,6 +163,7 @@ dorestore(i_ctx_t *i_ctx_p, alloc_save_t *asave)
     bool last;
     vm_save_t *vmsave;
     int code;
+    ref *lfd, *gfd;
 
     check_op(1);
     osp--;
@@ -216,6 +218,36 @@ dorestore(i_ctx_t *i_ctx_p, alloc_save_t *asave)
     /* successfully completed - this should never come before any     */
     /* operation that can trigger an error                            */
     i_ctx_p->LockFilePermissions = false;
+
+    /* If there are fonts in the GlobalFontDirectory that the references in
+       in the LocalFontDirectory for have been restored away, we need to
+       copy them back across.
+       _ONLY_ names that don't already exist in LocalFontDirectory.
+     */
+    if ((code = dict_find_string(systemdict, "LocalFontDirectory", &lfd)) < 0)
+        return code;
+
+    if ((code = dict_find_string(systemdict, "GlobalFontDirectory", &gfd)) < 0)
+        return code;
+
+    if ((code = idict_copy_new(gfd, lfd)) < 0)
+        return code;
+
+    /* For safety, we also need to "rebind" the name FontDirectory
+       to either the global or local one, depending on the current mode
+     */
+    if (ialloc_space(idmemory) != avm_local) {
+        code = idict_put_string(systemdict, "FontDirectory", gfd);
+    }
+    else {
+        /* Hack the VM flag of systemdict so we write the local VM object
+           to the global systemdict.
+         */
+        r_set_space(systemdict, avm_local);
+        code = idict_put_string(systemdict, "FontDirectory", lfd);
+        r_set_space(systemdict, avm_global);
+    }
+
     return 0;
 }
 

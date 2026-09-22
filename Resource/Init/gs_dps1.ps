@@ -52,19 +52,4 @@ level2dict begin
   //null .updatefontdirectory
 } .forcebind odef
 
-% If we load a font into global VM within an inner save, the restore
-% will delete it from FontDirectory but not from SharedFontDirectory.
-% We have to handle this by making restore copy missing entries from
-% SharedFontDirectory to FontDirectory.  Since this could slow down restore
-% considerably, we define a new operator .forcecopynew for this purpose.
-% Furthermore, if FAKEFONTS is in effect, we want global real fonts to
-% override fake local ones.  We handle this by brute force.
-/restore		% <save> restore -
- { dup //restore
-   /LocalFontDirectory .systemvar
-   //SharedFontDirectory exch .forcecopynew pop
-   .currentglobal .setglobal	% Rebind FontDirectory according to current VM.
-   pop
- } .forcebind odef
-
 end				% level2dict

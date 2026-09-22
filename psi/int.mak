@@ -442,7 +442,7 @@ $(PSOBJ)ztype.$(OBJ) : $(PSSRC)ztype.c $(OP)\
 
 $(PSOBJ)zvmem.$(OBJ) : $(PSSRC)zvmem.c $(OP) $(stat__h)\
  $(dstack_h) $(estack_h) $(files_h)\
- $(ialloc_h) $(idict_h) $(igstate_h) $(isave_h) $(store_h) $(stream_h)\
+ $(ialloc_h) $(idict_h) $(iddict_h) $(igstate_h) $(isave_h) $(store_h) $(stream_h)\
  $(gsmalloc_h) $(gsmatrix_h) $(gsstate_h) $(gsstruct_h) $(INT_MAK) $(MAKEDIRS)
 	$(PSCC) $(PSO_)zvmem.$(OBJ) $(C_) $(PSSRC)zvmem.c
 
