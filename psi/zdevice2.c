@@ -98,7 +98,6 @@ static int
 zsetpagedevice(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    int code;
 
     check_op(1);
 /******

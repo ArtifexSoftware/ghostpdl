@@ -171,8 +171,6 @@ context_state_alloc(gs_context_state_t ** ppcst,
     {	/*
          * Create an empty internaldict dictionary.
          */
-        ref *internaldict;
-
         code = dict_alloc(pcst->memory.space_local, 13, &pcst->internaldict);
         if (code < 0)
             goto x2;

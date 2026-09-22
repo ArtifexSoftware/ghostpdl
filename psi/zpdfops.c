@@ -61,7 +61,7 @@ static int zpdfi_populate_search_paths(i_ctx_t *i_ctx_p, pdf_context *ctx)
        if the paths are already populated, just skip it.
      */
     if (ctx->search_paths.resource_paths == NULL) {
-        ref *l2dictref, *grdref, *fpathref;
+        ref *fpathref;
         int i;
         const gs_file_path *pfpath = i_ctx_p->lib_path;
         gs_main_instance *minst = get_minst_from_memory(imemory);

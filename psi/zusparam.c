@@ -337,6 +337,7 @@ current_RamSize(i_ctx_t *i_ctx_p)
     return i_ctx_p->system_params.RamSize;
 }
 
+#if 0 /* compiled out (to quell warnings), pending complete removal */
 static long
 current_JobTimeout(i_ctx_t *i_ctx_p)
 {
@@ -362,6 +363,7 @@ set_WaitTimeout(i_ctx_t *i_ctx_p, long val)
     i_ctx_p->system_params.WaitTimeout = val;
     return 0;
 }
+#endif
 
 /* we duplicate this definition here instead of including bfont.h and
    all its dependencies */
@@ -542,9 +544,6 @@ current_OutputDevice(i_ctx_t *i_ctx_p, gs_param_string * pval)
 static void
 current_GenericResourceDir(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    ref *GRD_ref;
-    int code = 0;
-
     pval->data = (const byte *)i_ctx_p->system_params.GenericResourceDir;
     if (i_ctx_p->system_params.GenericResourceDir != NULL)
         pval->size = strlen(i_ctx_p->system_params.GenericResourceDir);
@@ -573,9 +572,6 @@ set_GenericResourceDir(i_ctx_t *i_ctx_p, gs_param_string *pval)
 static void
 current_FontResourceDir(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    ref *GRD_ref;
-    int code = 0;
-
     pval->data = (const byte *)i_ctx_p->system_params.FontResourceDir;
     if (i_ctx_p->system_params.FontResourceDir != NULL)
         pval->size = strlen(i_ctx_p->system_params.FontResourceDir);
@@ -604,9 +600,6 @@ set_FontResourceDir(i_ctx_t *i_ctx_p, gs_param_string *pval)
 static void
 current_GenericResourcePathSep(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    ref *GRD_ref;
-    int code = 0;
-
     pval->data = (const byte *)i_ctx_p->system_params.GenericResourcePathSep;
     if (i_ctx_p->system_params.GenericResourcePathSep != NULL)
         pval->size = strlen(i_ctx_p->system_params.GenericResourcePathSep);
@@ -635,9 +628,6 @@ set_GenericResourcePathSep(i_ctx_t *i_ctx_p, gs_param_string *pval)
 static void
 current_PercentDiskFontResourceDir(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    ref *GRD_ref;
-    int code = 0;
-
     pval->data = (const byte *)i_ctx_p->system_params.PercentDiskFontResourceDir;
     if (i_ctx_p->system_params.PercentDiskFontResourceDir != NULL)
         pval->size = strlen(i_ctx_p->system_params.PercentDiskFontResourceDir);
@@ -666,9 +656,6 @@ set_PercentDiskFontResourceDir(i_ctx_t *i_ctx_p, gs_param_string *pval)
 static void
 current_PercentDiskGenericResourceDir(i_ctx_t *i_ctx_p, gs_param_string * pval)
 {
-    ref *GRD_ref;
-    int code = 0;
-
     pval->data = (const byte *)i_ctx_p->system_params.PercentDiskGenericResourceDir;
     if (i_ctx_p->system_params.PercentDiskGenericResourceDir != NULL)
         pval->size = strlen(i_ctx_p->system_params.PercentDiskGenericResourceDir);

@@ -305,14 +305,11 @@ s_proc_read_continue(i_ctx_t *i_ctx_p)
     os_ptr opbuf = op - 1;
     stream *ps;
     stream_proc_state *ss;
-    uint s1, s2;
 
     check_file(ps, op);
     check_read_type(*opbuf, t_string);
     while ((ps->end_status = 0, ps->strm) != 0)
         ps = ps->strm;
-    s1 = r_space(op);
-    s2 = r_space(opbuf);
     if (!r_is_local(op) && r_is_local(opbuf)) {
         ref copy;
         int code = 0;
