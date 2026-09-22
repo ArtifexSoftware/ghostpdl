@@ -444,13 +444,6 @@ FONTPATH
 % returns an array of arrays, each containing a pair
 % of strings: what the system thinks is the ps name,
 % and the access path.
-/.setnativefontmapbuilt { % set whether we've been run
-  dup type /booleantype eq {
-      systemdict exch /.nativefontmapbuilt exch .forceput
-  } executeonly
-  {pop}
-  ifelse
-} .forcebind odef
 systemdict /NONATIVEFONTMAP known .setnativefontmapbuilt
 /.buildnativefontmap {   % - .buildnativefontmap <bool>
   systemdict /.nativefontmapbuilt .knownget not
@@ -648,9 +641,6 @@ buildfontdict 3 /.buildfont3 cvx put
     cvx exec
   end
 }.internalbind def
-/.setloadingfont {
-   //systemdict /.loadingfont 3 -1 roll .forceput
-} .forcebind odef % .forceput must be bound and hidden
 /.loadfont
  {              % Some buggy fonts leave extra junk on the stack,
                 % so we have to make a closure that records the stack depth

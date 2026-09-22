@@ -295,6 +295,34 @@ gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph, int ch, ushort *u, u
     return 0; /* No map. */
 }
 
+/* <bool> .setnativefontmapbuilt - */
+static int
+zsetnativefontmapbuilt(i_ctx_t *i_ctx_p)
+{
+    int code;
+    os_ptr op = osp;
+    check_op(1);
+    check_type(*op, t_boolean);
+
+    code = idict_put_string(systemdict, ".nativefontmapbuilt", op);
+    pop(1);
+    return code;
+}
+
+/* <bool> .setloadingfont - */
+static int
+zsetloadingfont(i_ctx_t *i_ctx_p)
+{
+    int code;
+    os_ptr op = osp;
+    check_op(1);
+    check_type(*op, t_boolean);
+
+    code = idict_put_string(systemdict, ".loadingfont", op);
+    pop(1);
+    return code;
+}
+
 /* <any> <dict|null> .updatefontdirectory -
  * If the second parameter is a dictionary, add the font dict to the FontDirectory.
  * If the second parameter is NULL, undefine the font.
@@ -365,6 +393,8 @@ zupdatefontdirectory(i_ctx_t *i_ctx_p)
 const op_def zbfont_op_defs[] =
 {
     {"2.updatefontdirectory", zupdatefontdirectory},
+    {"2.setnativefontmapbuilt", zsetnativefontmapbuilt},
+    {"2.setloadingfont", zsetloadingfont},
     {"2.buildfont3", zbuildfont3},
     op_def_end(0)
 };
