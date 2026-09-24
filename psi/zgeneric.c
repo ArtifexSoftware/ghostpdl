@@ -257,60 +257,6 @@ str:	    check_write(*op2);
     return 0;
 }
 
-/* <array> <index> <obj> .forceput - */
-/* <dict> <key> <value> .forceput - */
-/*
- * This forces a "put" even if the object is not writable, and (if the
- * object is systemdict or the save level is 0) even if the value is in
- * local VM.  It is meant to be used only for replacing the value of
- * FontDirectory in systemdict when switching between local and global VM,
- * and a few similar applications.  After initialization, this operator
- * should no longer be accessible by name.
- */
-static int
-zforceput(i_ctx_t *i_ctx_p)
-{
-    os_ptr op = osp;
-    os_ptr op1 = op - 1;
-    os_ptr op2 = op - 2;
-    int code;
-
-    check_op(3);
-
-    switch (r_type(op2)) {
-    case t_array:
-        check_int_ltu(*op1, r_size(op2));
-        if (r_space(op2) > r_space(op)) {
-            if (imemory_save_level(iimemory))
-                return_error(gs_error_invalidaccess);
-        }
-        {
-            ref *eltp = op2->value.refs + (uint) op1->value.intval;
-
-            ref_assign_old(op2, eltp, op, "put");
-        }
-        break;
-    case t_dictionary:
-        if (op2->value.pdict == systemdict->value.pdict ||
-            !imemory_save_level(iimemory)
-            ) {
-            uint space = r_space(op2);
-
-            r_set_space(op2, avm_local);
-            code = idict_put(op2, op1, op);
-            r_set_space(op2, space);
-        } else
-            code = idict_put(op2, op1, op);
-        if (code < 0)
-            return code;
-        break;
-    default:
-        return_error(gs_error_typecheck);
-    }
-    pop(3);
-    return 0;
-}
-
 /* <seq:array|packedarray|string> <index> <count> getinterval <subseq> */
 static int
 zgetinterval(i_ctx_t *i_ctx_p)
@@ -620,7 +566,6 @@ const op_def zgeneric_op_defs[] =
 {
     {"1copy", zcopy},
     {"2forall", zforall},
-    {"3.forceput", zforceput},
     {"2get", zget},
     {"3getinterval", zgetinterval},
     {"1length", zlength},

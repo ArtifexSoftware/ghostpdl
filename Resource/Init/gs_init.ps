@@ -2570,8 +2570,6 @@ currentdict /.locksafeglobal .undef
   } if
   //systemdict /UndefinePostScriptFilters get exec
   //systemdict /UndefinePostScriptOperators get exec
-  //systemdict /.forcecopynew .forceundef	% remove temptation
-  //systemdict /.forceput .forceundef		% ditto
   //systemdict /.undef .forceundef		    % ditto
   //systemdict /.bindoperators .forceundef
   //systemdict /.forceundef .forceundef		% ditto
@@ -2659,8 +2657,6 @@ DELAYBIND not {
   systemdict /.bindnow .undef       % We only need this for DELAYBIND
   systemdict /.internalbind .undef
   systemdict /.forcebind .undef
-  systemdict /.forcecopynew .undef	% remove temptation
-  systemdict /.forceput .undef		% ditto
   systemdict /.forceundef .undef	% ditto
   systemdict /.undefinternalnames .undef
   systemdict /.applyundefinternalnames .undef
