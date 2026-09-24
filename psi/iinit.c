@@ -452,8 +452,20 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
           if ((code = name_enter_string(imemory, (const char *)gs_error_names[i],
                                           era.value.refs + i)) < 0)
                 return code;
-        return i_initial_enter_name(i_ctx_p, "ErrorNames", &era);
+        if ((code = i_initial_enter_name(i_ctx_p, "ErrorNames", &era)) < 0)
+            return code;
     }
+
+    {
+        ref *r;
+        if ((code = dict_find_string(systemdict, "LocalFontDirectory", &r)) < 0)
+            return code;
+        ref_assign(&i_ctx_p->LocalFontDirectory, r);
+        if ((code = dict_find_string(systemdict, "GlobalFontDirectory", &r)) < 0)
+            return code;
+        ref_assign(&i_ctx_p->GlobalFontDirectory, r);
+    }
+    return 0;
 }
 
 /* Run the initialization procedures of the individual operator files. */

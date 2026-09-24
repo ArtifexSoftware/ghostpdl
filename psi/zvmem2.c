@@ -37,7 +37,6 @@ zsetglobal(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code;
-    ref *r;
     uint space = r_space(systemdict);
 
     check_op(1);
@@ -45,18 +44,14 @@ zsetglobal(i_ctx_t *i_ctx_p)
     ialloc_set_space(idmemory, (op->value.boolval ? avm_global : avm_local));
 
     /* We have to rebind the name /FontDirectory to suit the mode */
-    if (op->value.boolval)
-        code = dict_find_string(systemdict, "GlobalFontDirectory", &r);
-    else
-        code = dict_find_string(systemdict, "LocalFontDirectory", &r);
-
-    if (code < 0)
-        return code;
     /* Hack the VM mode so we can write the local LocalFontDirectory
        to the global systemdict
      */
     r_set_space(systemdict, avm_local);
-    code = idict_put_string(systemdict, "FontDirectory", r);
+    if (op->value.boolval)
+        code = idict_put_string(systemdict, "FontDirectory", &i_ctx_p->GlobalFontDirectory);
+    else
+        code = idict_put_string(systemdict, "FontDirectory", &i_ctx_p->LocalFontDirectory);
     r_set_space(systemdict, space);
 
     if (code < 0)

@@ -163,7 +163,6 @@ dorestore(i_ctx_t *i_ctx_p, alloc_save_t *asave)
     bool last;
     vm_save_t *vmsave;
     int code;
-    ref *lfd, *gfd;
 
     check_op(1);
     osp--;
@@ -224,27 +223,21 @@ dorestore(i_ctx_t *i_ctx_p, alloc_save_t *asave)
        copy them back across.
        _ONLY_ names that don't already exist in LocalFontDirectory.
      */
-    if ((code = dict_find_string(systemdict, "LocalFontDirectory", &lfd)) < 0)
-        return code;
-
-    if ((code = dict_find_string(systemdict, "GlobalFontDirectory", &gfd)) < 0)
-        return code;
-
-    if ((code = idict_copy_new(gfd, lfd)) < 0)
+    if ((code = idict_copy_new(&i_ctx_p->GlobalFontDirectory, &i_ctx_p->LocalFontDirectory)) < 0)
         return code;
 
     /* For safety, we also need to "rebind" the name FontDirectory
        to either the global or local one, depending on the current mode
      */
     if (ialloc_space(idmemory) != avm_local) {
-        code = idict_put_string(systemdict, "FontDirectory", gfd);
+        code = idict_put_string(systemdict, "FontDirectory", &i_ctx_p->GlobalFontDirectory);
     }
     else {
         /* Hack the VM flag of systemdict so we write the local VM object
            to the global systemdict.
          */
         r_set_space(systemdict, avm_local);
-        code = idict_put_string(systemdict, "FontDirectory", lfd);
+        code = idict_put_string(systemdict, "FontDirectory", &i_ctx_p->LocalFontDirectory);
         r_set_space(systemdict, avm_global);
     }
 

@@ -332,35 +332,28 @@ zupdatefontdirectory(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code = 0;
-    ref *lfd, *gfd = NULL;
 
     check_op(2);
-
-    if ((code = dict_find_string(systemdict, "LocalFontDirectory", &lfd)) < 0)
-        return code;
-
-    if ((code = dict_find_string(systemdict, "GlobalFontDirectory", &gfd)) < 0)
-        return code;
 
     if (r_has_type(op, t_null)) {
         /* undefinefont */
 
         if (ialloc_space(idmemory) != avm_local) {
             /* global - undefine in the GlobalFontDirectory, too */
-            (void)idict_undef(lfd, op - 1);  /* ignore undefined error */
-            (void)idict_undef(gfd, op - 1);  /* ignore undefined error */
+            (void)idict_undef(&i_ctx_p->LocalFontDirectory, op - 1);  /* ignore undefined error */
+            (void)idict_undef(&i_ctx_p->GlobalFontDirectory, op - 1);  /* ignore undefined error */
         }
         else {
             /* local - if a font of the same name exists in the GlobalFontDirectory
                copy it into the local one
              */
             ref *gfi;
-            code = dict_find(gfd, op - 1, &gfi);
+            code = dict_find(&i_ctx_p->GlobalFontDirectory, op - 1, &gfi);
             if (code > 0)
                 /* undefinefont cannot fail at this point, so ignore error */
-                (void)idict_put(lfd, op - 1, gfi);
+                (void)idict_put(&i_ctx_p->LocalFontDirectory, op - 1, gfi);
             else
-                (void)idict_undef(lfd, op - 1);  /* ignore undefined error */
+                (void)idict_undef(&i_ctx_p->LocalFontDirectory, op - 1);  /* ignore undefined error */
 
             code = 0;
         }
@@ -374,9 +367,9 @@ zupdatefontdirectory(i_ctx_t *i_ctx_p)
         if (code < 0)
             return code;
 
-        code = idict_put(lfd, op - 1, op);
+        code = idict_put(&i_ctx_p->LocalFontDirectory, op - 1, op);
         if (code >= 0 && ialloc_space(idmemory) != avm_local)
-            code = idict_put(gfd, op - 1, op);
+            code = idict_put(&i_ctx_p->GlobalFontDirectory, op - 1, op);
     }
     else {
         code = gs_note_error(gs_error_typecheck);
