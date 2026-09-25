@@ -187,6 +187,8 @@ struct pl_main_instance_s
     gs_param_enumerator_t enum_iter;
     char *enum_keybuf;
     int enum_keybuf_max;
+
+    gp_alarm *timeout;
 };
 
 
@@ -2359,6 +2361,14 @@ do_arg_match(const char **arg, const char *match, size_t match_len)
     return 1;
 }
 
+#ifdef GS_HAS_THREADS
+static void
+trigger_timeout(void *data)
+{
+    *(int *)data = 1;
+}
+#endif
+
 #define arg_match(A, B) do_arg_match(A, B, sizeof(B)-1)
 
 static int
@@ -2483,6 +2493,28 @@ pl_main_process_options(pl_main_instance_t * pmi, arg_list * pal,
                     code = gs_add_explicit_control_path(pmi->memory, arg, gs_permit_file_control);
                     if (code < 0) return code;
                     break;
+                } else if (arg_match(&arg, "permit-devices")) {
+                    code = gs_add_explicit_permitted_device(pmi->memory, arg);
+                    if (code < 0) return code;
+                    break;
+                } else if (strncmp(arg, "timeout=", 8) == 0) {
+#ifdef GS_HAS_THREADS
+                    int secs = atoi(arg+8);
+                    if (secs == 0)
+                    {
+                        dmprintf1(pmi->memory,
+                                  "   Illegal timeout value '%s' - should be in seconds.\n",
+                                  arg+8);
+                        arg_finit(pal);
+                        return gs_error_Fatal;
+                    }
+                    code = gp_alarm_start(&pmi->timeout, pmi->memory, secs, trigger_timeout, &pmi->memory->gs_lib_ctx->core->timedout);
+                    if (code < 0) return code;
+                    break;
+#else
+                    dmprintf(pmi->memory, "Timeouts not supported on builds without threading\n");
+                    return gs_error_Fatal;
+#endif
                 }
                 if (*arg != 0) {
                     dmprintf1(pmi->memory, "Unrecognized switch: %s\n", arg-2);

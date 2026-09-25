@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -155,6 +155,8 @@ psapi_delete_instance(gs_lib_ctx_t *ctx)
 
     gs_c_param_list_release(&minst->enum_params);
     gs_free_object(minst->heap, minst->enum_keybuf, "psapi_delete_instance");
+
+    gp_alarm_destroy(minst->timeout);
 
     gs_free_object(mem, minst, "init_main_instance");
 

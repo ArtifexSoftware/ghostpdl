@@ -3890,6 +3890,15 @@ $(GLOBJ)gp_psync.$(OBJ) : $(GLSRC)gp_psync.c $(AK) $(malloc__h) $(string__h) \
 
 # Other stuff.
 
+# Polling and timeouts.
+poll_=$(GLOBJ)gp_poll.$(OBJ)
+$(GLD)poll.dev: $(ECHOGS_XE) $(poll_) $(LIB_MAK) $(MAKEDIRS)
+	$(SETMOD) $(GLD)poll $(poll_)
+
+$(GLOBJ)gp_poll.$(OBJ): $(GLSRC)gp_poll.c $(AK)\
+ $(gx_h) $(gp_h) $(gpcheck_h) $(LIB_MAK) $(MAKEDIRS)
+	$(GLCC) $(GLO_)gp_poll.$(OBJ) $(C_) $(GLSRC)gp_poll.c
+
 # Other MS-DOS facilities.
 $(GLOBJ)gp_msdos.$(OBJ) : $(GLSRC)gp_msdos.c $(AK)\
  $(dos__h) $(stdio__h) $(string__h)\

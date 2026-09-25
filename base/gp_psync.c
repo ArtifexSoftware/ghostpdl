@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -497,4 +497,84 @@ void (gp_thread_label)(gp_thread_id thread, const char *name)
     (void)thread;
     (void)name;
     Bobbin_label_thread((pthread_t)thread, name);
+}
+
+struct gp_alarm
+{
+    gs_memory_t *mem;
+    int seconds;
+    void (*ring)(void *);
+    void *arg;
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
+    gp_thread_id thread;
+    int ready_to_wake;
+};
+
+static void
+run_alarm(void *data_)
+{
+     gp_alarm *data = (gp_alarm *)data_;
+     struct timespec ts;
+     int result = 0;
+
+     pthread_mutex_lock(&data->mutex);
+
+     clock_gettime(CLOCK_REALTIME, &ts);
+     ts.tv_sec += data->seconds;
+
+     while (!data->ready_to_wake && result == 0)
+     {
+         result = pthread_cond_timedwait(&data->cond, &data->mutex, &ts);
+     }
+     if (!data->ready_to_wake)
+     {
+         data->ring(data->arg);
+     }
+
+     pthread_mutex_unlock(&data->mutex);
+}
+
+int gp_alarm_start(gp_alarm **alarm, gs_memory_t *mem, int seconds, void (*ring)(void *arg), void *arg)
+{
+    int ret;
+    gp_alarm *data;
+    static pthread_cond_t cond_init = PTHREAD_COND_INITIALIZER;
+    static pthread_mutex_t mutex_init = PTHREAD_MUTEX_INITIALIZER;
+
+    *alarm = NULL;
+    mem = mem->non_gc_memory;
+    data = (gp_alarm *)gs_alloc_bytes(mem, sizeof(*data), "gp_alarm_start");
+    if (data == NULL)
+        return gs_error_VMerror;
+
+    memset(data, 0, sizeof(*data));
+    data->mem = mem;
+    data->ring = ring;
+    data->arg = arg;
+    data->seconds = seconds;
+    data->cond = cond_init;
+    data->mutex = mutex_init;
+
+    ret = gp_thread_start(run_alarm, data, &data->thread);
+    if (ret)
+    {
+        gs_free_object(mem, data, "gp_alarm_start");
+        return ret;
+    }
+    *alarm = data;
+    return 0;
+}
+
+void gp_alarm_destroy(gp_alarm *data)
+{
+    if (!data)
+        return;
+
+    pthread_mutex_lock(&data->mutex);
+    data->ready_to_wake = 1;
+    pthread_cond_signal(&data->cond);
+    pthread_mutex_unlock(&data->mutex);
+    gp_thread_finish(data->thread);
+    gs_free_object(data->mem, data, "gp_alarm_start");
 }

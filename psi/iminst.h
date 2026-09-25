@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -94,6 +94,8 @@ struct gs_main_instance_s {
     gs_param_enumerator_t enum_iter;
     char *enum_keybuf;
     int enum_keybuf_max;
+
+    gp_alarm *timeout;
 };
 
 /*

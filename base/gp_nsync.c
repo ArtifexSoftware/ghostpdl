@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -142,4 +142,13 @@ void gp_set_debug_mem_ptr(gs_memory_t *mem)
 gs_memory_t *gp_get_debug_mem_ptr(void)
 {
     return NULL;
+}
+
+int gp_alarm_start(gp_alarm **alarm, gs_memory_t *mem, int seconds, void (*ring)(void *arg), void *arg)
+{
+    return gs_error_unknownerror;
+}
+
+void gp_alarm_destroy(gp_alarm *data)
+{
 }

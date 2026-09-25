@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -15,7 +15,7 @@
 
 
 /*
- * Microsoft Windows platform polling support for Ghostscript.
+ * Platform polling support for Ghostscript.
  *
  */
 
@@ -37,8 +37,15 @@ gp_check_interrupts(const gs_memory_t *mem)
         mem = gp_get_debug_mem_ptr();
     }
 #endif
-    if (mem && mem->gs_lib_ctx && mem->gs_lib_ctx->core->poll_fn)
-        return (*mem->gs_lib_ctx->core->poll_fn)(mem->gs_lib_ctx->core->poll_caller_handle);
+    if (mem && mem->gs_lib_ctx && mem->gs_lib_ctx->core)
+    {
+#ifdef GS_HAS_THREADS
+        if (mem->gs_lib_ctx->core->timedout)
+            return 1;
+#endif
+        if (mem->gs_lib_ctx->core->poll_fn)
+            return (*mem->gs_lib_ctx->core->poll_fn)(mem->gs_lib_ctx->core->poll_caller_handle);
+    }
     return 0;
 }
 #endif

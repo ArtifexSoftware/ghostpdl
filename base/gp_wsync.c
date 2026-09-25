@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -437,4 +437,77 @@ void gp_thread_finish(gp_thread_id thread)
 #endif
     CloseHandle((HANDLE)thread);
 #endif
+}
+
+struct gp_alarm
+{
+    gs_memory_t *mem;
+    int seconds;
+    void (*ring)(void *);
+    void *arg;
+    gp_thread_id thread;
+    HANDLE evnt;
+};
+
+static void
+run_alarm(void *data_)
+{
+     DWORD ms, res;
+     gp_alarm *data = (gp_alarm *)data_;
+
+     if (data->seconds > MAXDWORD / 1000 || data->seconds < 0)
+         ms = MAXDWORD;
+     else
+         ms = data->seconds * 1000;
+
+     res = WaitForSingleObject(data->evnt, ms);
+     if (res == WAIT_TIMEOUT)
+     {
+         data->ring(data->arg);
+     }
+}
+
+int gp_alarm_start(gp_alarm **alarm, gs_memory_t *mem, int seconds, void (*ring)(void *arg), void *arg)
+{
+    int ret;
+    gp_alarm *data;
+
+    *alarm = NULL;
+
+    mem = mem->non_gc_memory;
+    data = (gp_alarm *)gs_alloc_bytes(mem, sizeof(gp_alarm), "gp_alarm_start");
+    if (data == NULL)
+        return gs_error_VMerror;
+
+    data->mem = mem;
+    data->ring = ring;
+    data->arg = arg;
+    data->seconds = seconds;
+    data->evnt = CreateEvent(NULL, FALSE, FALSE, NULL);
+    if (data->evnt == NULL)
+    {
+        gs_free_object(mem->non_gc_memory, data, "gp_alarm_start");
+        return gs_error_unknownerror;
+    }
+    ret = gp_thread_start(run_alarm, data, &data->thread);
+    if (ret)
+    {
+        CloseHandle(data->evnt);
+        gs_free_object(mem->non_gc_memory, data, "gp_alarm_start");
+        return ret;
+    }
+
+    *alarm = data;
+
+    return 0;
+}
+
+void gp_alarm_destroy(gp_alarm *data)
+{
+    if (!data)
+        return;
+
+    SetEvent(data->evnt);
+    gp_thread_finish(data->thread);
+    gs_free_object(data->mem, data, "gp_alarm_start");
 }

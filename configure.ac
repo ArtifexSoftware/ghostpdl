@@ -822,9 +822,14 @@ AC_SUBST(HAVE_PREAD_PWRITE)
 AC_CHECK_DECL([popen], [HAVE_POPEN_PROTO="-DHAVE_POPEN_PROTO=1"], [AVE_POPEN_PROTO=])
 AC_SUBST(HAVE_POPEN_PROTO)
 
+# All builds use CHECK_INTERRUPTS for now.
+CHECK_INTERRUPTS="-DCHECK_INTERRUPTS"
+AC_SUBST(CHECK_INTERRUPTS)
+
 SYNC="nosync"
 PTHREAD_LIBS=""
 RECURSIVE_MUTEXATTR=""
+THREADING=""
 
 AC_ARG_ENABLE([threading], AS_HELP_STRING([--disable-threading],
     [disable support for multithreaded rendering]))
@@ -835,7 +840,8 @@ if test "x$HAVE_PREAD_PWRITE" != "x"; then
     mutex_result="no"
     AC_CHECK_LIB(pthread, pthread_create, [
       SYNC=posync;
-      PTHREAD_LIBS="-lpthread"
+      PTHREAD_LIBS="-lpthread";
+      THREADING="-DGS_HAS_THREADS"
     ])
     AC_MSG_CHECKING([for recursive mutexes])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <pthread.h>]], [[
@@ -870,6 +876,7 @@ fi
 AC_SUBST(SYNC)
 AC_SUBST(PTHREAD_LIBS)
 AC_SUBST(RECURSIVE_MUTEXATTR)
+AC_SUBST(THREADING)
 
 dnl Tesseract/Leptonica detection
 TESSERACTDIR=$srcdir/tesseract

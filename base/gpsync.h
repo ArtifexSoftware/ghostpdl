@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -131,5 +131,21 @@ void gp_thread_label(gp_thread_id thread, const char *name);
 #ifndef BOBBIN
 #define gp_thread_label(A,B) do {} while(0)
 #endif
+
+/*
+ * A simple mechanism for implementing timeouts. We can start an alarm
+ * by passing a number of seconds, and a function to call when the alarm
+ * 'rings'. We receive a 'gp_alarm *' in return.
+ *
+ * We must then destroy that gp_alarm, regardless of whether it has gone
+ * off or not. If destroyed in time, the alarm will be cancelled and
+ * will not ring.
+ */
+
+typedef struct gp_alarm gp_alarm;
+
+int gp_alarm_start(gp_alarm **alarm, gs_memory_t *mem, int seconds, void (*ring)(void *arg), void *arg);
+
+void gp_alarm_destroy(gp_alarm *alarm);
 
 #endif /* !defined(gpsync_INCLUDED) */

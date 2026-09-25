@@ -1640,6 +1640,12 @@ Also, internally, after setting an parameter with ``-p`` we perform an ``initgra
    Equivalent to ``-dDEVICEXRESOLUTION=number1``, ``-dDEVICEYRESOLUTION=number2`` and ``-dFIXEDRESOLUTION``, specifying the device horizontal and vertical resolution in pixels per inch for the benefit of devices such as printers that support multiple X and Y resolutions. Also preventing the resolution changing due to, for example, a PostScript ``setpagedevice`` operation.
 
 
+**--timeout** *seconds*
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   Set a timeout after which time an internal flag is set. The next time the interpreter checks this flag, it will exit. The delay between setting the flag and the interpreter spotting it (and shutting down) may be large!
+
+   This should be considered an emergency measure.
+   
 
 Suppress messages
 """"""""""""""""""""""""""""""""""""""

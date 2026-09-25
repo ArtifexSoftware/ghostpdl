@@ -354,6 +354,14 @@ do_arg_match(const char **arg, const char *match, size_t match_len)
     return 1;
 }
 
+#ifdef GS_HAS_THREADS
+static void
+trigger_timeout(void *data)
+{
+    *(int *)data = 1;
+}
+#endif
+
 #define arg_match(A, B) do_arg_match(A, B, sizeof(B)-1)
 
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
@@ -500,6 +508,24 @@ run_stdin:
                 code = gs_add_explicit_permitted_device(minst->heap, arg);
                 if (code < 0) return code;
                 break;
+            } else if (strncmp(arg, "timeout=", 8) == 0) {
+#ifdef GS_HAS_THREADS
+                int secs = atoi(arg+8);
+                if (secs == 0)
+                {
+                    outprintf(minst->heap,
+                          "   Illegal timeout value '%s' - should be in seconds.\n",
+                          arg+8);
+                    arg_finit(pal);
+                    return gs_error_Fatal;
+                }
+                code = gp_alarm_start(&minst->timeout, minst->heap, secs, trigger_timeout, &minst->heap->gs_lib_ctx->core->timedout);
+                if (code < 0) return code;
+                break;
+#else
+                outprintf(minst->heap, "Timeouts not supported on builds without threading\n");
+                return gs_error_Fatal;
+#endif
             }
             if (*arg != 0) {
                 /* Unmatched switch. */

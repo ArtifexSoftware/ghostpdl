@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -30,9 +30,9 @@
  * gs_error_interrupt exceptional condition.
  * The return_if_interrupt macro provides a convenient way to do this.
  *
- * On platforms that require an interrupt check, the makefile defines
- * a symbol CHECK_INTERRUPTS.  Currently this is only the Microsoft
- * Windows platform.
+ * On platforms that require an interrupt check (all, by default), the
+ * makefile defines a symbol CHECK_INTERRUPTS. This is required for the
+ * --timeout option.
  */
 int gs_return_check_interrupt(const gs_memory_t *mem, int code);
 

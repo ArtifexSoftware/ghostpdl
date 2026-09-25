@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -121,6 +121,7 @@ typedef struct {
     int (GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len);
     int (GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len);
     int (GSDLLCALL *poll_fn)(void *caller_handle);
+    int timedout;
     ulong gs_next_id; /* gs_id initialized here, private variable of gs_next_ids() */
     /* True if we are emulating CPSI. Ideally this would be in the imager
      * state, but this can't be done due to problems detecting changes in it

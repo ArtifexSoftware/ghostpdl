@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -33,6 +33,16 @@
 int
 gp_check_interrupts(const gs_memory_t *mem)
 {
+#ifdef DEBUG
+    if(mem == NULL) {
+        mem = gp_get_debug_mem_ptr();
+    }
+#endif
+    if (mem && mem->gs_lib_ctx && mem->gs_lib_ctx->core)
+    {
+        if (mem->gs_lib_ctx->core->timedout)
+            return 1;
+    }
     return 0;
 }
 #endif

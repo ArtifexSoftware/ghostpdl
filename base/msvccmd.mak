@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2025 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -244,7 +244,9 @@ COMPILE_FOR_CONSOLE_EXE=
 
 GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) $(VC8WARN) /nologo $(CMT)
 
-CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS) $(MSINCFLAGS) $(SBRFLAGS)
+THREADING_FLAGS=-DGS_HAS_THREADS
+
+CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS) $(MSINCFLAGS) $(SBRFLAGS) $(THREADING_FLAGS)
 CCXXFLAGS=$(CCFLAGS)
 
 CC=$(COMP) /c $(CCFLAGS) $(COMPILE_FULL_OPTIMIZED) $(SANITIZECFLAGS) @$(GLGENDIR)\ccf32.tr

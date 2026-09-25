@@ -278,14 +278,4 @@ $(GLOBJ)gp_msprn.$(OBJ): $(GLSRC)gp_msprn.c $(AK)\
  $(gsmemory_h) $(gstypes_h) $(gxiodev_h) $(WINLIB_MAK)
 	$(GLCCWIN) $(GLO_)gp_msprn.$(OBJ) $(C_) $(GLSRC)gp_msprn.c
 
-# Define MS-Windows polling as a separable feature
-# because it is not needed by the gslib.
-mspoll_=$(GLOBJ)gp_mspol.$(OBJ)
-$(GLD)mspoll.dev: $(ECHOGS_XE) $(mspoll_) $(WINLIB_MAK)
-	$(SETMOD) $(GLD)mspoll $(mspoll_)
-
-$(GLOBJ)gp_mspol.$(OBJ): $(GLSRC)gp_mspol.c $(AK)\
- $(gx_h) $(gp_h) $(gpcheck_h) $(WINLIB_MAK)
-	$(GLCCWIN) $(GLO_)gp_mspol.$(OBJ) $(C_) $(GLSRC)gp_mspol.c
-
 # end of winlib.mak
