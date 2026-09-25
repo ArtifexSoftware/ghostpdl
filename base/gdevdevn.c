@@ -736,7 +736,7 @@ devn_put_params(gx_device * pdev, gs_param_list * plist,
                 pdev->color_info.num_components =
                         pdev->color_info.max_components;
 
-            if (pdev->color_info.num_components > pdev->num_planar_planes)
+            if (pdev->num_planar_planes != 0)
                 pdev->num_planar_planes = pdev->color_info.num_components;
 
             /*
