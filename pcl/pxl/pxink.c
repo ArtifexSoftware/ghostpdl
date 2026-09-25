@@ -550,7 +550,8 @@ render_pattern(gs_client_color * pcc, const px_pattern_t * pattern,
             gs_setcolorspace(pgs, pcs);
         }
         code = gs_makepattern(pcc, &templat, &mat, pgs, NULL);
-        pcc->pattern->client_data = (void *)pattern;
+        if (code >= 0)
+            pcc->pattern->client_data = (void *)pattern;
         gs_grestore(pgs);
         return code;
     }

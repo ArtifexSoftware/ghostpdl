@@ -220,6 +220,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                                       pmat, pgs, mem,
                                       &st_pattern1_instance);
     float bbw, bbh;
+    float XStep = pcp->XStep, YStep = pcp->YStep;
 
     if (code < 0)
         return code;
@@ -260,9 +261,44 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     /* Even if the pattern wants to use transparency, don't permit it if there is no device which will support it */
     inst.templat.uses_transparency &= (dev_proc( gs_currentdevice_inline(pgs), dev_spec_op)( gs_currentdevice_inline(pgs), gxdso_supports_pattern_transparency, NULL, 0) > 0);
 
-    code = compute_inst_matrix(&inst, &bbox, dev_width, dev_height, &bbw, &bbh);
-    if (code < 0)
+    /* We check the step matrix (several ways) for zero, or close to zero, further on,
+     * but we need an early test here so that we can ensure that doubling it will result in
+     * a different value being used to calculate the step matrix.
+     */
+    if (fabs(inst.templat.XStep) == 0 || fabs(inst.templat.YStep) == 0) {
+        code = gs_note_error(gs_error_rangecheck);
         goto fsaved;
+    }
+
+    /* Calculate the 'step matrix', which is related to the CTM. The loop attempts
+     * to make sure that the X and Y steps are not ridiculously small, leading to
+     * multiple tilings being rendered at the same co-ordinate. We check the matrix to
+     * see if the steppings are at least half a pixel, and if not then we increase them
+     * until they both move the pattern cell by at least half a pixel.
+     */
+    do {
+        gs_point pt;
+        float Step;
+
+        code = compute_inst_matrix(&inst, &bbox, dev_width, dev_height, &bbw, &bbh);
+        if (code < 0)
+            goto fsaved;
+
+        if (inst.templat.XStep < inst.templat.BBox.q.x - inst.templat.BBox.p.x ||
+            inst.templat.YStep < inst.templat.BBox.q.y - inst.templat.BBox.p.y) {
+            code = gs_distance_transform(1, 1, &inst.step_matrix, &pt);
+            if (code < 0)
+                goto fsaved;
+            if (fabs(pt.x) < 0.5)
+                inst.templat.XStep += inst.templat.XStep;
+            if (fabs(pt.y) < 0.5)
+                inst.templat.YStep += inst.templat.YStep;
+            if (fabs(pt.x) >= 0.5 && fabs(pt.y) >= 0.5)
+                break;
+        } else
+            break;
+    }
+    while (1);
 
     /* Check if we will have any overlapping tiles.  If we do and there is
        transparency present, then we will need to blend when we tile.  We want
