@@ -34,6 +34,7 @@
 #include "gsicc_cache.h"
 #include "gxdevsop.h"
 #include <limits.h>             /* For INT_MAX etc */
+#include "gpcheck.h"
 
 #include "gdevp14.h"
 
@@ -197,6 +198,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
     int i0, i1, j0, j1, i, j;
     gs_matrix step_matrix;      /* translated by phase */
     int code;
+    int check_timeout;
 #ifdef DEBUG
     const gs_memory_t *mem = ptfs->pcdev->memory;
 #endif
@@ -253,6 +255,8 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
         j1 = threshold_ceil(v1, error);
     }
     if_debug4m('T', mem, "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
+#define CHECK_INTERRUPT_THRESHOLD 1024
+    check_timeout = CHECK_INTERRUPT_THRESHOLD;
     for (i = i0; i < i1; i++)
         for (j = j0; j < j1; j++) {
             int x = (int)fastfloor(step_matrix.xx * i +
@@ -262,6 +266,12 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
             int w = tbits_or_tmask->size.x;
             int h = tbits_or_tmask->size.y;
             int xoff, yoff;
+
+            check_timeout--;
+            if (check_timeout == 0) {
+                return_if_interrupt(ptfs->pcdev->memory);
+                check_timeout = CHECK_INTERRUPT_THRESHOLD;
+            }
 
             if_debug4m('T', mem, "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
             if (x == INT_MIN || y == INT_MIN) {
