@@ -7556,6 +7556,7 @@ const op_def    zcolor_ext_op_defs[] =
     { "0%setcolorspace_cont", setcolorspace_cont },
     { "0%setcolor_cont", setcolor_cont },
     { "0%devicencolorants_cont", devicencolorants_cont },
+    { "0%devicenprocess_cont", devicenprocess_cont },
     { "0%indexed_cont", indexed_cont },
     { "0%setdevicecolor_cont", setdevicecolor_cont },
 op_def_end(0)

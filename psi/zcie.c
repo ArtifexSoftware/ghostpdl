@@ -1090,3 +1090,11 @@ cie_create_icc(i_ctx_t *i_ctx_p)
     esp -= 2;			/* pop pointer to cache */
     return o_pop_estack;
 }
+
+const op_def zcie_op_defs[] =
+{
+    op_def_begin_level2(),
+                /* Internal operators */
+    {"0%cie_cache_finish", cie_cache_finish},
+    op_def_end(0)
+};

@@ -773,5 +773,7 @@ const op_def zfsample_op_defs[] =
 {
     op_def_begin_level2(),
     {"1.buildsampledfunction", zbuildsampledfunction},
+                /* Internal operators */
+    {"0%sampled_data_continue", sampled_data_continue},
     op_def_end(0)
 };
