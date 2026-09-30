@@ -241,7 +241,7 @@ pdfi_fapi_get_word(gs_fapi_font *ff, gs_fapi_font_feature var_id, int index, uns
             *ret = float_to_ushort(pfont->data.BlueShift);
             break;
         case gs_fapi_font_feature_BlueFuzz:
-            *ret = float_to_ushort(pfont->data.BlueFuzz);
+            *ret = (unsigned short)pfont->data.BlueFuzz;
             break;
         case gs_fapi_font_feature_StdHW:
             *ret = (pfont->data.StdHW.count == 0 ? 0 : float_to_ushort(pfont->data.StdHW.values[0]));   /* UFST bug ? */
