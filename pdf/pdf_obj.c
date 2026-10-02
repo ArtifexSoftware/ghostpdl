@@ -621,9 +621,21 @@ static int pdfi_obj_name_str(pdf_context *ctx, pdf_obj *obj, byte **data, int *l
             case 0x7b:
             case 0x7d:
             case 0x2f:
-                buf[esc_size++] = '#';
-                buf[esc_size++] = (name->data[i] >> 4) + 0x30;
-                buf[esc_size++] = (name->data[i] & 0x0f) + 0x30;
+                {
+                    char byte;
+
+                    buf[esc_size++] = '#';
+                    byte = name->data[i] >> 4;
+                    if (byte > 9)
+                        buf[esc_size++] = byte + 0x37;
+                    else
+                        buf[esc_size++] = byte + 0x30;
+                    byte = name->data[i] & 0x0f;
+                    if (byte > 9)
+                        buf[esc_size++] = byte + 0x37;
+                    else
+                        buf[esc_size++] = byte + 0x30;
+                }
                 break;
             default:
                 buf[esc_size++] = name->data[i];

@@ -2911,15 +2911,37 @@ pdfmark_BDC(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
             case 0x5d:
             case 0x7b:
             case 0x7d:
-                cstring[esc_size++] = '#';
-                cstring[esc_size++] = (pairs[0].data[i] >> 4) + 0x30;
-                cstring[esc_size++] = (pairs[0].data[i] & 0x0f) + 0x30;
+                {
+                    char byte;
+
+                    cstring[esc_size++] = '#';
+                    byte = pairs[0].data[i] >> 4;
+                    if (byte > 9)
+                        cstring[esc_size++] = byte + 0x37;
+                    else
+                        cstring[esc_size++] = byte + 0x30;
+                    byte = pairs[0].data[i] & 0x0f;
+                    if (byte > 9)
+                        cstring[esc_size++] = byte + 0x37;
+                    else
+                        cstring[esc_size++]= byte + 0x30;
+                }
                 break;
             case 0x2f:
                 if (i > 0) {
+                    char byte;
+
                     cstring[esc_size++] = '#';
-                    cstring[esc_size++] = (pairs[0].data[i] >> 4) + 0x30;
-                    cstring[esc_size++] = (pairs[0].data[i] & 0x0f) + 0x30;
+                    byte = pairs[0].data[i] >> 4;
+                    if (byte > 9)
+                        cstring[esc_size++] = byte + 0x37;
+                    else
+                        cstring[esc_size++] = byte + 0x30;
+                    byte = pairs[0].data[i] & 0x0f;
+                    if (byte > 9)
+                        cstring[esc_size++] = byte + 0x37;
+                    else
+                        cstring[esc_size++]= byte + 0x30;
                 }
                 else
                     cstring[esc_size++] = pairs[0].data[i];

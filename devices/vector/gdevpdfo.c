@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -156,6 +156,8 @@ RELOC_PTRS_WITH(cos_dict_element_reloc_ptrs, cos_dict_element_t *pcde)
     RELOC_USING(st_cos_value, &pcde->value, sizeof(cos_value_t));
 }
 RELOC_PTRS_END
+
+static int unescape_name(char *data, uint *size);
 
 /* ---------------- Generic support ---------------- */
 
@@ -701,7 +703,11 @@ int
 cos_array_add_c_string(cos_array_t *pca, const char *str)
 {
     cos_value_t value;
+    uint size = strlen(str) + 1;
 
+    if (size > 1 && str[0] == '/') {
+        unescape_name((char *)str, &size);
+    }
     return cos_array_add(pca, cos_c_string_value(&value, str));
 }
 int
@@ -1445,18 +1451,83 @@ cos_dict_put_c_key_object(cos_dict_t *pcd, const char *key, cos_object_t *pco)
 
     return cos_dict_put_c_key(pcd, key, cos_object_value(&value, pco));
 }
+
+static int unescape_name(char *data, uint *size)
+{
+    int i, j, replace = 0;
+    unsigned int byte = 0, shift = 4;
+    unsigned char escapes[] = {0x00, 0x09, 0x0a, 0x0c, 0x0d, 0x20, 0x25, 0x29, 0x2f, 0x3c, 0x3e, 0x5b, 0x5d, 0x7b, 0x7d};
+
+    /* We need only check up to the byte at size - 3, because we must have # and 2 following bytes */
+    if (*size < 3)
+        return 0;
+
+    for (i=0;i< (*size) - 2;i++) {
+        /* Look for a potential escape */
+        if (data[i] == '#') {
+            replace = 0;
+            byte = 0;
+            shift = 4;
+
+            /* Check the two following bytes are valid Hex bytes */
+            for (j = i + 1;j < i + 3;j++) {
+                if ((data[j] >= '0' && data[j] <= '9') ||
+                    (data[j] >= 'a' && data[j] <= 'f') ||
+                    (data[j] >= 'A' && data[j] <= 'F') ){
+                    /* Convert the two following bytes to a hex byte, as we go */
+                    if (data[j] <= '9')
+                        byte += (data[j] - 0x30) << shift;
+                    else
+                        if (data[j] <= 'F')
+                            byte += (data[j] - 0x37) << shift;
+                        else
+                            byte += (data[j] - 0x57) << shift;
+                    shift -= 4;
+                } else
+                    break;
+            }
+            if (j < i + 2)
+                continue;
+
+            /* Check the byte we got to see if it was a value needing to be escaped */
+            for (j = 0;j < sizeof(escapes);j++) {
+                if (byte == escapes[j]) {
+                    replace = 1;
+                    break;
+                }
+            }
+            /* If it was, then replace it with the assembled byte */
+            if (replace) {
+                data[i] = byte;
+                for (j = i + 1;j < *size - 2;j++) {
+                    data[j] = data[j+2];
+                }
+                *size-= 2;
+            }
+        }
+    }
+    return 0;
+}
+
 int
 cos_dict_put_string(cos_dict_t *pcd, const byte *key_data, uint key_size,
                     const byte *value_data, uint value_size)
 {
     cos_value_t cvalue;
 
+    if (value_size > 0 && value_data[0] == '/') {
+        unescape_name((char *)value_data, &value_size);
+    }
     return cos_dict_put(pcd, key_data, key_size,
                         cos_string_value(&cvalue, value_data, value_size));
 }
 int
 cos_dict_put_string_copy(cos_dict_t *pcd, const char *key, const char *value)
 {
+    uint size = strlen(value) + 1;
+    if (size > 1 && value[0] == '/') {
+        unescape_name((char *)value, &size);
+    }
     return cos_dict_put_c_key_string(pcd, key, (byte *)value, strlen(value));
 }
 int
@@ -1464,6 +1535,10 @@ cos_dict_put_c_strings(cos_dict_t *pcd, const char *key, const char *value)
 {
     cos_value_t cvalue;
 
+    uint size = strlen(value) + 1;
+    if (size > 1 && value[0] == '/') {
+        unescape_name((char *)value, &size);
+    }
     return cos_dict_put_c_key(pcd, key, cos_c_string_value(&cvalue, value));
 }
 
