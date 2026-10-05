@@ -1482,7 +1482,7 @@ static int unescape_name(char *data, uint *size)
                             byte += (data[j] - 0x37) << shift;
                         else
                             byte += (data[j] - 0x57) << shift;
-                    shift -= 4;
+                    shift = 0;
                 } else
                     break;
             }
