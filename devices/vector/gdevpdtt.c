@@ -3413,6 +3413,8 @@ pdf_text_process(gs_text_enum_t *pte)
         /* Don't need to sync before exiting charproc. */
         code = pdf_prepare_text_drawing(pdev, pte);
         if (code == gs_error_rangecheck) {
+            if (penum->pgs->text_rendering_mode != 0)
+                return_error(gs_error_fallback_failed);
             /* Fallback to the default implermentation for handling
                a transparency with CompatibilityLevel<=1.3 . */
             goto default_impl;

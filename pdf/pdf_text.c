@@ -866,7 +866,7 @@ static int pdfi_show(pdf_context *ctx, pdf_string *s)
 
     if (code >= 0) {
         if (ctx->device_state.preserve_tr_mode) {
-        code = pdfi_show_Tr_preserve(ctx, &text);
+            code = pdfi_show_Tr_preserve(ctx, &text);
         } else {
             Trmode = gs_currenttextrenderingmode(ctx->pgs);
 
@@ -1054,7 +1054,8 @@ out:
 
 int pdfi_Tj(pdf_context *ctx)
 {
-    int code = 0;
+    int code = 0, code1 = 0;
+    bool retrying = false, saved_preserve = false;
     pdf_string *s = NULL;
     gs_matrix saved, Trm;
     gs_point initial_point, current_point, pt;
@@ -1080,6 +1081,7 @@ int pdfi_Tj(pdf_context *ctx)
     pdfi_countup(s);
     pdfi_pop(ctx, 1);
 
+retry:
     /* Save the CTM for later restoration */
     saved = ctm_only(ctx->pgs);
     initial_point_valid = (gs_currentpoint(ctx->pgs, &initial_point) >= 0);
@@ -1169,18 +1171,29 @@ Tj_error:
     if (initial_point_valid)
         (void)gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
     else
-        code = gs_newpath(ctx->pgs);
+        code1 = gs_newpath(ctx->pgs);
     /* And the line width */
     ctx->pgs->line_params.half_width = linewidth;
+    if (code == gs_error_fallback_failed && !retrying) {
+        retrying = true;
+        saved_preserve = ctx->device_state.preserve_tr_mode;
+        ctx->device_state.preserve_tr_mode = false;
+        goto retry;
+    }
 
- exit:
+    if (code == 0 && code1 < 0)
+        code = code1;
+exit:
+    if (retrying)
+        ctx->device_state.preserve_tr_mode = saved_preserve;
     pdfi_countdown(s);
     return code;
 }
 
 int pdfi_TJ(pdf_context *ctx)
 {
-    int code = 0, i;
+    int code = 0, code1 = 0, i;
+    bool retrying = false, saved_preserve = false;
     pdf_array *a = NULL;
     pdf_obj *o = NULL;
     double dx = 0;
@@ -1213,6 +1226,7 @@ int pdfi_TJ(pdf_context *ctx)
     pdfi_countup(a);
     pdfi_pop(ctx, 1);
 
+retry:
     /* Save the CTM for later restoration */
     saved = ctm_only(ctx->pgs);
     ctx->text.initial_current_point_valid = (initial_point_valid = (gs_currentpoint(ctx->pgs, &initial_point) >= 0));
@@ -1327,11 +1341,22 @@ TJ_error:
     if (initial_point_valid)
         (void)gs_moveto(ctx->pgs, initial_point.x, initial_point.y);
     else
-        code = gs_newpath(ctx->pgs);
+        code1 = gs_newpath(ctx->pgs);
     /* And the line width */
     ctx->pgs->line_params.half_width = linewidth;
+    if (code == gs_error_fallback_failed && !retrying) {
+        retrying = true;
+        saved_preserve = ctx->device_state.preserve_tr_mode;
+        ctx->device_state.preserve_tr_mode = false;
+        goto retry;
+    }
 
+    if (code == 0 && code1 < 0)
+        code = code1;
  exit:
+    if (retrying)
+        ctx->device_state.preserve_tr_mode = saved_preserve;
+
     pdfi_countdown(a);
     return code;
 }
