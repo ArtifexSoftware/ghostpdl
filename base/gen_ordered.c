@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -368,9 +368,14 @@ htsc_mask_to_tos(htsc_dig_grid_t *final_mask)
     htsc_vector_t center = final_mask->bin_center;
     int *buff_ptr = final_mask->data;
     int x, y, k = 0;
-    int count = height * width;
+    int count;
     htsc_threshpoint_t *values;
     int *tos;
+
+    if (check_int_multiply(height, width, &count) < 0)
+        return -1;
+    if (check_int_multiply(count, sizeof(htsc_threshpoint_t), &x) < 0)
+        return -1;
 
     values = (htsc_threshpoint_t *) ALLOC(final_mask->memory,
                                           sizeof(htsc_threshpoint_t) * width * height);
@@ -378,6 +383,10 @@ htsc_mask_to_tos(htsc_dig_grid_t *final_mask)
         EPRINTF(final_mask->memory, "ERROR! malloc failure in htsc_mask_to_tos!\n");
         return -1;
     }
+    if (check_int_multiply(count, 2, &x) < 0)
+        return -1;
+    if (check_int_multiply(x, sizeof(int), &x) < 0)
+        return -1;
     tos = (int *) ALLOC(final_mask->memory, sizeof(int) * 2 * height * width);
     if (tos == NULL) {
         FREE(final_mask->memory, values);
@@ -832,6 +841,10 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
         val_min=MIN(0,v);
         dot_grid->height = abs(val_min) + y;
         dot_grid->width = x + u;
+        if (check_int_multiply(dot_grid->height, dot_grid->width, &t1) < 0)
+            return -1;
+        if (check_int_multiply(t1, sizeof(int), &t1) < 0)
+            return -1;
         dot_grid->data =
 	  (int *) ALLOC(dot_grid->memory, (size_t)dot_grid->height * dot_grid->width * sizeof(int));
         if (dot_grid->data == NULL)
@@ -864,6 +877,10 @@ htsc_create_dot_mask(htsc_dig_grid_t *dot_grid, int x, int y, int u, int v,
         /* All points are valid */
         dot_grid->height = y;
         dot_grid->width = u;
+        if (check_int_multiply(y, u, &t1) < 0)
+            return -1;
+        if (check_int_multiply(sizeof(int), t1, &t1) < 0)
+            return -1;
         dot_grid->data = (int *) ALLOC(dot_grid->memory, (size_t)y * u * sizeof(int));
         if (dot_grid->data == NULL)
             return -1;
@@ -955,11 +972,14 @@ htsc_gcd(int a, int b)
 static int
 htsc_lcm(int a, int b)
 {
-    int product = a * b;
+    int product;
     int gcd = htsc_gcd(a,b);
     int lcm;
 
     if (gcd == 0)
+        return -1;
+
+    if (check_int_multiply(a, b, &product) < 0)
         return -1;
 
     lcm = product/gcd;
@@ -1082,6 +1102,12 @@ htsc_allocate_supercell(htsc_dig_grid_t *super_cell, int x, int y, int u,
     }
     super_cell->height = super_size_y;
     super_cell->width = super_size_x;
+    if (dot_grid.width > super_cell->width || dot_grid.height > super_cell->height)
+        return -1;
+    if (check_int_multiply(super_size_x, super_size_y, &a) < 0)
+        return -1;
+    if (check_int_multiply(sizeof(int), a, &a) < 0)
+        return -1;
     super_cell->data =
         (int *) ALLOC(dot_grid.memory, (size_t)super_size_x * super_size_y * sizeof(int));
     if (super_cell->data == NULL)
@@ -1295,6 +1321,9 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
     if ( ((double) sizefilty / 2.0) == (sizefilty >> 1)) {
         sizefilty += 1;
     }
+    if (sizeof(double) * sizefilty * sizefiltx > max_int)
+        return -1;
+
     filter = (double*) ALLOC(mem, sizeof(double) * sizefilty * sizefiltx);
     if (filter == NULL)
         return -1;
@@ -1302,6 +1331,10 @@ htsc_add_dots(byte *screen_matrix, int num_cols, int num_rows,
     if (code < 0)
         return code;
 
+    if (check_int_multiply(num_cols, num_rows, &j) < 0)
+        return -1;
+    if (check_int_multiply(sizeof(double), j, &j) < 0)
+        return -1;
     screen_blur = (double*)ALLOC(mem, sizeof(double) * num_cols * num_rows);
     if (screen_blur == NULL) {
         FREE(mem, filter);
@@ -1370,6 +1403,8 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     if ( ((double) sizefilty / 2.0) == (sizefilty >> 1)) {
         sizefilty += 1;
     }
+    if (sizeof(double) * sizefilty * sizefiltx > max_int)
+        return -1;
     filter = (double*) ALLOC(mem, sizeof(double) * sizefilty * sizefiltx);
     if (filter == NULL)
         return -1;
@@ -1377,6 +1412,10 @@ htsc_init_dot_position(byte *screen_matrix, int num_cols, int num_rows,
     if (code < 0)
         return code;
 
+    if (check_int_multiply(num_cols, num_rows, &k) < 0)
+        return -1;
+    if (check_int_multiply(sizeof(double), k, &k) < 0)
+        return -1;
     screen_blur = (double*) ALLOC(mem, sizeof(double) * num_cols * num_rows);
     if (screen_blur == NULL) {
         FREE(mem, filter);
@@ -1496,9 +1535,21 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
     lpi_act = 1.0/((double) sqrt( vert_scale * vert_scale +
                                   horiz_scale * horiz_scale));
     if (num_levels > 1) {
-        curr_size = 2 * MAX(height_supercell, width_supercell);
+        curr_size = MAX(height_supercell, width_supercell);
+        if (check_int_multiply(curr_size, 2, &curr_size) < 0) {
+            code = -1;
+            goto out;
+        }
+        if (check_int_multiply(curr_size, sizeof(int), &count) < 0) {
+            code = -1;
+            goto out;
+        }
         locate = (int*) ALLOC(dot_grid.memory, sizeof(int) * curr_size);
         if (locate == NULL) {
+            code = -1;
+            goto out;
+        }
+        if (check_int_multiply(number_points, sizeof(byte), &count) < 0) {
             code = -1;
             goto out;
         }
@@ -1517,7 +1568,14 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
                 if (num_dots == (curr_size - 1)) {
                     int *tmp = locate;
 
-                    curr_size = curr_size * 2;
+                    if (check_int_multiply(curr_size, 2, &curr_size) < 0) {
+                        code = -1;
+                        goto out;
+                    }
+                    if (check_int_multiply(curr_size, sizeof(int), &count) < 0) {
+                        code = -1;
+                        goto out;
+                    }
                     locate = (int*) ALLOC(dot_grid.memory, sizeof(int) * curr_size);
                     if (locate == NULL) {
                         code = -1;
@@ -1532,6 +1590,10 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
        /* Convert the 1-D locate positions to 2-D positions so that we can
           use a distance metric to the dot center locations. Also allocate
           the structure for our dot positioning information */
+        if (check_int_multiply(sizeof(unsigned short), num_dots, &count) < 0) {
+            code = -1;
+            goto out;
+        }
         pos_x = (unsigned short*) ALLOC(dot_grid.memory, sizeof(unsigned short) * num_dots);
         if (pos_x == NULL) {
             code = -1;
@@ -1549,9 +1611,17 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
 
         /* Note that number of quantization levels is not tied to number of dots
            in the macro screen.  */
+        if (check_int_multiply(sizeof(htsc_dither_pos_t), num_levels, &count) < 0) {
+            code = -1;
+            goto out;
+        }
         dot_level_pos =
             (htsc_dither_pos_t*) ALLOC(dot_grid.memory, sizeof(htsc_dither_pos_t) * num_levels);
         if (dot_level_pos == NULL) {
+            code = -1;
+            goto out;
+        }
+        if (check_int_multiply(sizeof(int), num_levels, &count) < 0) {
             code = -1;
             goto out;
         }
@@ -1567,8 +1637,16 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
             dot_levels[k] = ROUND(num_dots * perc_val);
             curr_num_dots = dot_levels[k] -prev_dot_level;
             prev_dot_level = dot_levels[k];
+            if (check_int_multiply(sizeof(int), curr_num_dots, &count) < 0) {
+                code = -1;
+                goto out;
+            }
             dot_level_pos[k].locations = (int*) ALLOC(dot_grid.memory, sizeof(int) * curr_num_dots);
             if (dot_level_pos[k].locations == NULL) {
+                code = -1;
+                goto out;
+            }
+            if (check_int_multiply(sizeof(htsc_point_t), curr_num_dots, &count) < 0) {
                 code = -1;
                 goto out;
             }
@@ -1656,6 +1734,10 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
 
         /* Create the threshold mask. */
         step_size = (MAXVAL + 1.0) / (double) N;
+        if (check_int_multiply(sizeof(int), N, &count) < 0) {
+            code = -1;
+            goto out;
+        }
         thresholds = (int*) ALLOC(dot_grid.memory, sizeof(int) * N);
         if (thresholds == NULL) {
             code = -1;
@@ -1681,6 +1763,10 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
         /* allocate the mask */
         final_mask->height = height_supercell;
         final_mask->width = width_supercell;
+        if (check_int_multiply(height_supercell, width_supercell, &count) < 0) {
+            code = -1;
+            goto out;
+        }
         final_mask->data =
             (int*) ALLOC(dot_grid.memory, sizeof(int) * height_supercell * width_supercell);
         if (final_mask->data == NULL) {
@@ -1692,6 +1778,10 @@ htsc_create_dither_mask(htsc_dig_grid_t super_cell, htsc_dig_grid_t *final_mask,
            for the when the dot begins to turn on.  Go through the dot_level_pos
            array to get the values.  Probably should create this earlier and avoid
            this */
+        if (check_int_multiply(sizeof(int), num_dots, &count) < 0) {
+            code = -1;
+            goto out;
+        }
         dot_level_sort = (int*) ALLOC(dot_grid.memory, sizeof(int) * num_dots);
         if (dot_level_sort == NULL) {
             code = -1;
@@ -1779,12 +1869,28 @@ htsc_create_holladay_mask(htsc_dig_grid_t super_cell, int H, int L,
 
     final_mask->height = H;
     final_mask->width = L;
+    if (check_int_multiply(H, L, &value) < 0) {
+        code = -1;
+        goto out;
+    }
+    if (check_int_multiply(sizeof(int), value, &value) < 0) {
+        code = -1;
+        goto out;
+    }
     final_mask->data = (int *) ALLOC(final_mask->memory, (size_t)H * L * sizeof(int));
     if (final_mask->data == NULL) {
         code = -1;
         goto out;
     }
 
+    if (check_int_multiply(H, L, &value) < 0) {
+        code = -1;
+        goto out;
+    }
+    if (check_int_multiply(sizeof(double), value, &value) < 0) {
+        code = -1;
+        goto out;
+    }
     thresholds = (double *) ALLOC(final_mask->memory, (size_t)H * L * sizeof(double));
     if (thresholds == NULL) {
         code = -1;
@@ -1829,10 +1935,26 @@ htsc_create_nondithered_mask(htsc_dig_grid_t super_cell, int H, int L,
 
     final_mask->height = super_cell.height;
     final_mask->width = super_cell.width;
+    if (check_int_multiply(super_cell.height, super_cell.width, &value) < 0) {
+        code = -1;
+        goto out;
+    }
+    if (check_int_multiply(sizeof(int), value, &value) < 0) {
+        code = -1;
+        goto out;
+    }
     final_mask->data = (int *) ALLOC(final_mask->memory,
 				     (size_t)super_cell.height * super_cell.width *
                                       sizeof(int));
     if (final_mask->data == NULL) {
+        code = -1;
+        goto out;
+    }
+    if (check_int_multiply(H, L, &value) < 0) {
+        code = -1;
+        goto out;
+    }
+    if (check_int_multiply(sizeof(double), value, &value) < 0) {
         code = -1;
         goto out;
     }
