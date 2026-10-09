@@ -1445,8 +1445,20 @@ gs_fapi_ft_get_scaled_font(gs_fapi_server * a_server, gs_fapi_font * a_font,
         transform_decompose(&face->ft_transform, &face->horz_res,
                             &face->vert_res, &face->width, &face->height, face->ft_face->units_per_EM);
 
-        ft_error = FT_Set_Char_Size(face->ft_face, face->width, face->height,
-                                    face->horz_res, face->vert_res);
+        /* At small scales, we can end up with x_ppem or y_ppem in the FT metrics rounding down to zero,
+           which causes an FT_Err_Invalid_PPem error.
+           If such happens, gradually up the respective resolutions until the rounding no longer drops to zero.
+         */
+        while ((ft_error = FT_Set_Char_Size(face->ft_face, face->width, face->height,
+                                    face->horz_res, face->vert_res)) == FT_Err_Invalid_PPem) {
+
+            if (face->ft_face->size->metrics.x_ppem == 0)
+                face->horz_res++;
+            else if (face->ft_face->size->metrics.y_ppem == 0)
+                face->vert_res++;
+            else
+                break;
+        }
 
         if (ft_error) {
             /* The code originally cleaned up the face data here, but the "top level"
