@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -46,10 +46,10 @@ extern const gx_device_color_type_t gx_dc_pattern2;
 #define PDFA_MAX_MESH_COORDINATE ( 0x3fffff / 128.0)
 #define PDFA_ENCODE_MESH_COORDINATE(v)\
   ENCODE_VALUE(v, 0xffffff, PDFA_MIN_MESH_COORDINATE, PDFA_MAX_MESH_COORDINATE)
-#define MIN_MESH_COORDINATE (-0x800000 )
-#define MAX_MESH_COORDINATE ( 0x7fffff )
+#define PDF_MIN_MESH_COORDINATE (-0x800000 / 256.0)
+#define PDF_MAX_MESH_COORDINATE ( 0x7fffff / 256.0)
 #define ENCODE_MESH_COORDINATE(v)\
-  ENCODE_VALUE(v, 0xffffff, MIN_MESH_COORDINATE, MAX_MESH_COORDINATE)
+  ENCODE_VALUE(v, 0xffffff, PDF_MIN_MESH_COORDINATE, PDF_MAX_MESH_COORDINATE)
 
 #define MIN_MESH_COLOR_INDEX 0
 #define MAX_MESH_COLOR_INDEX 0xffff
@@ -830,8 +830,8 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
                     return code;
             }
             else {
-                if ((code = pdf_array_add_real2(pca, MIN_MESH_COORDINATE,
-                                            MAX_MESH_COORDINATE)) < 0)
+                if ((code = pdf_array_add_real2(pca, PDF_MIN_MESH_COORDINATE,
+                                            PDF_MAX_MESH_COORDINATE)) < 0)
                     return code;
             }
         }
@@ -891,7 +891,7 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
         )
         return code;
 
-    if (from_array && pdev->CompatibilityLevel < 1.5 ) {
+    if (from_array) {
         float min_x, max_x, min_y, max_y, z;
         int i = 0, j, num_points = 1, num_components = 1;
         float c = 0;
@@ -902,8 +902,13 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
          * we must limit coordinate values to 16 bits. We no longer
          * attempt to support Acrobat 1.3 and below (which only permit 14 bits).
          */
-        min_x = min_y = PDFA_MIN_MESH_COORDINATE;
-        max_x = max_y = PDFA_MAX_MESH_COORDINATE;
+        if (pdev->CompatibilityLevel < 1.5) {
+            min_x = min_y = PDFA_MIN_MESH_COORDINATE;
+            max_x = max_y = PDFA_MAX_MESH_COORDINATE;
+        } else {
+            min_x = min_y = PDF_MIN_MESH_COORDINATE;
+            max_x = max_y = PDF_MAX_MESH_COORDINATE;
+        }
 
         switch(ShadingType(psh)){
             case shading_type_Tensor_product_patch:
@@ -1020,14 +1025,25 @@ pdf_put_mesh_shading(gx_device_pdf *pdev, cos_stream_t *pscs, const gs_shading_t
                      pmp->DataSource.data.str.size);
         cs.s = &cs.ds;
 
-        *rescale = (int)ceil(min_x / PDFA_MIN_MESH_COORDINATE);
-        z = ceil(min_y / PDFA_MIN_MESH_COORDINATE);
-        if (z > *rescale)
-            *rescale = (int)z;
-        z = ceil(max_x / PDFA_MAX_MESH_COORDINATE);
-        if (z > *rescale)
-            *rescale = (int)z;
-        z = ceil(max_y / PDFA_MAX_MESH_COORDINATE);
+        if (pdev->CompatibilityLevel < 1.5) {
+            *rescale = (int)ceil(min_x / PDFA_MIN_MESH_COORDINATE);
+            z = ceil(min_y / PDFA_MIN_MESH_COORDINATE);
+            if (z > *rescale)
+                *rescale = (int)z;
+            z = ceil(max_x / PDFA_MAX_MESH_COORDINATE);
+            if (z > *rescale)
+                *rescale = (int)z;
+            z = ceil(max_y / PDFA_MAX_MESH_COORDINATE);
+        } else {
+            *rescale = (int)ceil(min_x / PDF_MIN_MESH_COORDINATE);
+            z = ceil(min_y / PDF_MIN_MESH_COORDINATE);
+            if (z > *rescale)
+                *rescale = (int)z;
+            z = ceil(max_x / PDF_MAX_MESH_COORDINATE);
+            if (z > *rescale)
+                *rescale = (int)z;
+            z = ceil(max_y / PDF_MAX_MESH_COORDINATE);
+        }
         if (z > *rescale)
             *rescale = (int)z;
         data_params.rescale = *rescale;
