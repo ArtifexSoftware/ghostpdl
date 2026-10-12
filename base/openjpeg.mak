@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2024 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -87,9 +87,7 @@ open_jpeg_HDRS = \
 	$(OPEN_JPEG_SRC)opj_config_private.h			\
 	$(OPEN_JPEG_SRC)opj_includes.h		\
 	$(OPEN_JPEG_SRC)opj_intmath.h			\
-	$(OPEN_JPEG_SRC)opj_inttypes.h			\
 	$(OPEN_JPEG_SRC)opj_malloc.h			\
-	$(OPEN_JPEG_SRC)opj_stdint.h			\
 	$(OPEN_JPEG_SRC)pi.h		\
 	$(OPEN_JPEG_SRC)t1.h		\
 	$(OPEN_JPEG_SRC)t1_luts.h	\

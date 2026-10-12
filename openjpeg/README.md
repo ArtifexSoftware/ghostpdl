@@ -1,5 +1,10 @@
-
 # OPENJPEG Library and Applications
+
+## Unmaintained repository
+
+This repository should be considered unmaintained. Commits may appear from time
+to time depending on committer interest and mood, but no committer currently feel
+responsible to regularly review tickets or pull requests.
 
 ## What is OpenJPEG ? 
 

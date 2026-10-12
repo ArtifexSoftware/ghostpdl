@@ -5082,12 +5082,14 @@ static OPJ_BOOL opj_j2k_read_sod(opj_j2k_t *p_j2k,
 
         OPJ_UINT32 l_current_tile_part =
             l_cstr_index->tile_index[p_j2k->m_current_tile_number].current_tpsno;
-        l_cstr_index->tile_index[p_j2k->m_current_tile_number].tp_index[l_current_tile_part].end_header
-            =
-                l_current_pos;
-        l_cstr_index->tile_index[p_j2k->m_current_tile_number].tp_index[l_current_tile_part].end_pos
-            =
-                l_current_pos + p_j2k->m_specific_param.m_decoder.m_sot_length + 2;
+        if (l_cstr_index->tile_index[p_j2k->m_current_tile_number].tp_index &&
+                l_current_tile_part <
+                l_cstr_index->tile_index[p_j2k->m_current_tile_number].nb_tps) {
+            l_cstr_index->tile_index[p_j2k->m_current_tile_number].tp_index[l_current_tile_part].end_header
+                = l_current_pos;
+            l_cstr_index->tile_index[p_j2k->m_current_tile_number].tp_index[l_current_tile_part].end_pos
+                = l_current_pos + p_j2k->m_specific_param.m_decoder.m_sot_length + 2;
+        }
 
         if (OPJ_FALSE == opj_j2k_add_tlmarker(p_j2k->m_current_tile_number,
                                               l_cstr_index,
@@ -6457,9 +6459,11 @@ static OPJ_BOOL opj_j2k_read_mco(opj_j2k_t *p_j2k,
 
     l_tccp = l_tcp->tccps;
 
-    for (i = 0; i < l_image->numcomps; ++i) {
-        l_tccp->m_dc_level_shift = 0;
-        ++l_tccp;
+    if (l_nb_stages > 0) {
+        for (i = 0; i < l_image->numcomps; ++i) {
+            l_tccp->m_dc_level_shift = 0;
+            ++l_tccp;
+        }
     }
 
     if (l_tcp->m_mct_decoding_matrix) {
@@ -12183,10 +12187,17 @@ static OPJ_BOOL opj_j2k_decode_one_tile(opj_j2k_t *p_j2k,
     if (p_j2k->cstr_index->tile_index)
         if (p_j2k->cstr_index->tile_index->tp_index) {
             if (! p_j2k->cstr_index->tile_index[l_tile_no_to_dec].nb_tps) {
-                /* the index for this tile has not been built,
-                 *  so move to the last SOT read */
+                /* The index for this tile has not been built. This happens */
+                /* when the tile's tile-parts are interleaved with other */
+                /* tiles' tile-parts and the number of tile-parts (TNsot) was */
+                /* only declared in a tile-part not reached while decoding a */
+                /* previous tile. In that case we cannot rely on the recorded */
+                /* SOT positions, nor on m_last_sot_read_pos (which may point */
+                /* past the first tile-part of the requested tile), so seek */
+                /* back to the start of the codestream and read the tile-part */
+                /* headers in order. See issue #1558. */
                 if (!(opj_stream_read_seek(p_stream,
-                                           p_j2k->m_specific_param.m_decoder.m_last_sot_read_pos + 2, p_manager))) {
+                                           p_j2k->cstr_index->main_head_end + 2, p_manager))) {
                     opj_event_msg(p_manager, EVT_ERROR, "Problem with seek function\n");
                     return OPJ_FALSE;
                 }
