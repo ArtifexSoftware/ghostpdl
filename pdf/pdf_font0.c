@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2025 Artifex Software, Inc.
+/* Copyright (C) 2019-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -271,6 +271,8 @@ int pdfi_read_type0_font(pdf_context *ctx, pdf_dict *font_dict, pdf_dict *stream
         if (code < 0)
             goto error;
         descpfont = (pdf_font *)pf->client_data;
+        descpfont->ToUnicode = tounicode;
+        pdfi_countup(tounicode);
     }
 
     if (descpfont->pdfi_font_type < e_pdf_cidfont_type0 || descpfont->pdfi_font_type > e_pdf_cidfont_type4) {

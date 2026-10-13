@@ -1,4 +1,4 @@
-/* Copyright (C) 2020-2025 Artifex Software, Inc.
+/* Copyright (C) 2020-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -595,6 +595,7 @@ int pdfi_free_font_cidtype2(pdf_obj *font)
     pdfi_countdown(pdfcidf->notice);
     pdfi_countdown(pdfcidf->fullname);
     pdfi_countdown(pdfcidf->familyname);
+    pdfi_countdown(pdfcidf->ToUnicode);
 
     gs_free_object(OBJ_MEMORY(pdfcidf), pdfcidf, "pdfi_free_font_cidtype2(pdfcidf)");
 return 0;

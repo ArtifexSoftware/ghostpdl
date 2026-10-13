@@ -3320,6 +3320,7 @@ pdfi_free_font_cidtype0(pdf_obj *font)
     pdfi_countdown(pdfont0->notice);
     pdfi_countdown(pdfont0->fullname);
     pdfi_countdown(pdfont0->familyname);
+    pdfi_countdown(pdfont0->ToUnicode);
 
     gs_free_object(OBJ_MEMORY(font), pdfont0, "pdfi_free_font_cff(pbfont)");
 
