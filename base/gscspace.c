@@ -560,6 +560,11 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_gstate * pgs)
 
     params.is_fill_color = pgs->is_fill_color;
     params.op_state = GS_OP_STATE_NONE;
+    if (params.retain_any_comps)
+    {
+        int nc = gs_color_space_num_components(pcs);
+        params.drawn_comps = (1<<nc)-1;
+    }
 
     /* Only DeviceCMYK case can have overprint mode set to true */
     params.effective_opm = pgs->color[0].effective_opm = 0;
