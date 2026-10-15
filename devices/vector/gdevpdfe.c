@@ -639,7 +639,7 @@ pdf_make_uuid(const byte node[6], uint64_t uuid_time, ulong time_seq, char *buf,
 static int
 pdf_make_instance_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
-    char URI_prefix[5] = "uuid:";
+    char URI_prefix[] = "uuid:";
 
     memcpy(buf, URI_prefix, 5);
     if (pdev->InstanceUUID.size) {
@@ -655,7 +655,7 @@ pdf_make_instance_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int
 static int
 pdf_make_document_uuid(gx_device_pdf *pdev, const byte digest[6], char *buf, int buf_length)
 {
-    char URI_prefix[5] = "uuid:";
+    char URI_prefix[] = "uuid:";
 
     memcpy(buf, URI_prefix, 5);
     if (pdev->DocumentUUID.size) {

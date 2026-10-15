@@ -220,7 +220,6 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
                                       pmat, pgs, mem,
                                       &st_pattern1_instance);
     float bbw, bbh;
-    float XStep = pcp->XStep, YStep = pcp->YStep;
 
     if (code < 0)
         return code;
@@ -278,7 +277,6 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
      */
     do {
         gs_point pt;
-        float Step;
 
         code = compute_inst_matrix(&inst, &bbox, dev_width, dev_height, &bbw, &bbh);
         if (code < 0)

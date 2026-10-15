@@ -2767,8 +2767,9 @@ int pdf_record_usage(gx_device_pdf *const pdev, int64_t resource_id, int page_nu
         }
     } else {
         if (pdev->ResourceUsage[resource_id].PageUsage != 0)
+        {
            /* Should not happen, raise an error */
-            ;
+        }
         pdev->ResourceUsage[resource_id].PageUsage = page_num;
     }
 

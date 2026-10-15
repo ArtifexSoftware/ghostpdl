@@ -897,8 +897,9 @@ int pdfi_finish_pdf_file(pdf_context *ctx)
                 code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "OCProperties");
                 pdfi_countdown(o);
                 if (code < 0)
+                {
                     /* Error message ? */
-                ;
+                }
             }
         }
     }
@@ -918,8 +919,9 @@ int pdfi_close_pdf_file(pdf_context *ctx)
                 code = pdfi_pdfmark_from_objarray(ctx, &o, 1, NULL, "OCProperties");
                 pdfi_countdown(o);
                 if (code < 0)
+                {
                     /* Error message ? */
-                    ;
+                }
             }
         }
     }

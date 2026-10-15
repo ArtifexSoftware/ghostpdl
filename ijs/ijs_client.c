@@ -44,9 +44,9 @@ ijs_invoke_server (const char *server_cmd)
   IjsClientCtx *ctx;
   int fds_to[2], fds_from[2];
   int child_pid;
-  char helo_buf[8] = IJS_HELO_STR;
+  char helo_buf[] = IJS_HELO_STR;
   char resp_buf[8];
-  const char exp_resp_buf[8] = IJS_RESP_STR;
+  const char exp_resp_buf[] = IJS_RESP_STR;
   ijs_bool ok = TRUE;
   int nbytes;
   int version;
@@ -60,8 +60,8 @@ ijs_invoke_server (const char *server_cmd)
   ijs_send_init (&ctx->send_chan, fds_to[1]);
   ijs_recv_init (&ctx->recv_chan, fds_from[0]);
 
-  nbytes = write (ctx->send_chan.fd, helo_buf, sizeof(helo_buf));
-  if (nbytes != sizeof(helo_buf))
+  nbytes = write (ctx->send_chan.fd, helo_buf, sizeof(helo_buf)-1);
+  if (nbytes != sizeof(helo_buf)-1)
     ok = FALSE;
 
   if (ok)

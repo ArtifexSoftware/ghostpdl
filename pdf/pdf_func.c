@@ -39,7 +39,7 @@ static int pdfi_build_sub_function(pdf_context *ctx, gs_function_t ** ppfn, cons
 typedef struct op_struct {
     unsigned char length;
     gs_PtCr_opcode_t code;
-    unsigned char op[8];
+    unsigned char op[9];
 }op_struct_t;
 
 static const op_struct_t ops_table[] = {

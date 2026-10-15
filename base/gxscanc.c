@@ -1632,7 +1632,7 @@ no_merge:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps > 0) {
                 cursor_always_step(cr, fixed_1, sx, 0);
                 y_steps--;
@@ -1676,7 +1676,7 @@ no_merge:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
                  * So each step, we add x_steps/y_steps to sx. That's x_inc + n_inc/y_steps. */
@@ -1742,7 +1742,7 @@ no_merge:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
                  * So each step, we sub x_steps/y_steps from sx. That's x_inc + n_inc/ey. */
@@ -1814,7 +1814,7 @@ no_merge:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 cursor_always_step(cr, -fixed_1, sx, skip);
                 skip = 0;
@@ -1860,7 +1860,7 @@ endFallingLeftOnEdgeOfPixel:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
                  * So each step, we add x_steps/y_steps to sx. That's x_inc + n_inc/ey. */
@@ -1925,7 +1925,7 @@ endFallingRightOnEdgeOfPixel:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
                  * So each step, we sub x_steps/y_steps from sx. That's x_inc + n_inc/ey. */
@@ -3588,7 +3588,7 @@ no_merge:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps > 0) {
                 cursor_always_step_tr(cr, fixed_1, sx, id, 0);
                 y_steps--;
@@ -3634,7 +3634,7 @@ no_merge:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
                  * So each step, we add x_steps/y_steps to sx. That's x_inc + n_inc/y_steps. */
@@ -3702,7 +3702,7 @@ no_merge:
 
             /* Phase 2: */
             y_steps = fixed2int((unsigned int)y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
                  * So each step, we sub x_steps/y_steps from sx. That's x_inc + n_inc/ey. */
@@ -3774,7 +3774,7 @@ no_merge:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 cursor_always_step_tr(cr, -fixed_1, sx, id, skip);
                 skip = 0;
@@ -3822,7 +3822,7 @@ endFallingLeftOnEdgeOfPixel:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
                  * So each step, we add x_steps/y_steps to sx. That's x_inc + n_inc/ey. */
@@ -3889,7 +3889,7 @@ endFallingRightOnEdgeOfPixel:
 
             /* Phase 2: */
             y_steps = fixed2int(y_steps);
-            assert(y_steps >= 0);
+            assert((int)y_steps >= 0);
             if (y_steps) {
                 /* We want to change sx by x_steps in y_steps steps.
                  * So each step, we sub x_steps/y_steps from sx. That's x_inc + n_inc/ey. */

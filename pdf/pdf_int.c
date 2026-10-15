@@ -1188,16 +1188,16 @@ int pdfi_name_alloc(pdf_context *ctx, byte *n, uint32_t size, pdf_obj **o)
     return 0;
 }
 
-static char op_table_3[5][3] = {
+static char op_table_3[5][4] = {
     "BDC", "BMC", "EMC", "SCN", "scn"
 };
 
-static char op_table_2[39][2] = {
+static char op_table_2[39][3] = {
     "b*", "BI", "BT", "BX", "cm", "CS", "cs", "EI", "d0", "d1", "Do", "DP", "ET", "EX", "f*", "gs", "ID", "MP", "re", "RG",
     "rg", "ri", "SC", "sc", "sh", "T*", "Tc", "Td", "TD", "Tf", "Tj", "TJ", "TL", "Tm", "Tr", "Ts", "Tw", "Tz", "W*",
 };
 
-static char op_table_1[27][1] = {
+static char op_table_1[27][2] = {
     "b", "B", "c", "d", "f", "F", "G", "g", "h", "i", "j", "J", "K", "k", "l", "m", "n", "q", "Q", "s", "S", "v", "w", "W",
     "y", "'", "\""
 };

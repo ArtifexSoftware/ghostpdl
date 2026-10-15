@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -278,7 +278,7 @@ romfs_open_file(gx_io_device *iodev, const char *fname, uint namelen,
     uint32_t filelen, blocks;
     int i;
     char *filename;
-    char fmode[4] = "\000\000\000\000";
+    char fmode[4] = { 0 };
 
     /* return an empty stream on error */
     *ps = NULL;

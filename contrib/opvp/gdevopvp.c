@@ -2153,7 +2153,7 @@ prepare_open(gx_device *dev)
     /* prepare array of function pointer for PDAPI */
     if (!ecode) {
         if (!(opdev->globals.apiEntry)) {
-            if (!(opdev->globals.apiEntry = calloc(sizeof(opvp_api_procs_t), 1))) {
+            if (!(opdev->globals.apiEntry = calloc(1, sizeof(opvp_api_procs_t)))) {
                 ecode = -1;
             }
         } else {
@@ -2390,7 +2390,7 @@ opvp_open(gx_device *dev)
       apiVersion,&api_entry);
 
     if (!(pdev->globals.apiEntry)) {
-        pdev->globals.apiEntry = calloc(sizeof(opvp_api_procs_t), 1);
+        pdev->globals.apiEntry = calloc(1, sizeof(opvp_api_procs_t));
     } else {
         memset(pdev->globals.apiEntry, 0, sizeof(opvp_api_procs_t));
     }
@@ -5028,7 +5028,7 @@ opvp_setdash(
 
     /* pattern */
     if (count) {
-        p = calloc(sizeof(opvp_fix_t), count);
+        p = calloc(count, sizeof(opvp_fix_t));
         if (p) {
             for (i = 0; i < count; i++) {
                 OPVP_F2FIX(pattern[i], p[i]);

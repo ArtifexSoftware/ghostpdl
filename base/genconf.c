@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1156,6 +1156,11 @@ write_list_pattern(FILE * out, const string_list_t * list,
         char *xstr = mmalloc(xlen + 1, "write_list_pattern(xstr)");
         char *alist;
 
+	if (str == NULL || xstr == NULL)
+	{
+	  fprintf(stderr, "Fatal malloc failure\n");
+	  exit(1);
+	}
         strcpy(str, lstr);
         if (pat->drop_extn) {
             char *dot = str + len;
