@@ -50,10 +50,10 @@ static
 int Help(cmsContext ContextID, int level)
 {
     UTILS_UNUSED_PARAMETER(level);
-
+    
     fprintf(stderr, "Little CMS ICC device link generator - v3.3 [LittleCMS %2.2f]\n", cmsGetEncodedCMMversion() / 1000.0);
     fprintf(stderr, "Copyright (c) 1998-2026 Marti Maria Saguer. See COPYING file for details.\n\n");
-
+    
     fprintf(stderr, "\nlinkicc: Links profiles into a single devicelink.\n");
 
     fprintf(stderr, "\n");

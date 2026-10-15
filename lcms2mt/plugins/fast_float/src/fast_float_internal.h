@@ -133,7 +133,7 @@ cmsINLINE cmsFloat32Number flerp(const cmsFloat32Number LutTable[], cmsFloat32Nu
        cmsFloat32Number y1, y0;
        cmsFloat32Number rest;
        int cell0, cell1;
-
+      
        if (isnan(v))
            return LutTable[0];
 

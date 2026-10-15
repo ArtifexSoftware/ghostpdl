@@ -403,7 +403,7 @@ static const cmsFormatterAlphaFn FormattersAlpha[6][6] = {
 // This function computes the distance from each component to the next one in bytes.
 static
 cmsBool ComputeIncrementsForChunky(cmsUInt32Number Format,
-                                cmsUInt32Number ComponentStartingOrder[],
+                                cmsUInt32Number ComponentStartingOrder[], 
                                 cmsUInt32Number ComponentPointerIncrements[])
 {
        cmsUInt32Number channels[cmsMAXEXTRACHANNELS];

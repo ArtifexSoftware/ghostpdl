@@ -551,7 +551,7 @@ static
 void EmitNGamma(cmsContext ContextID, cmsIOHANDLER* m, cmsUInt32Number n, cmsToneCurve* g[])
 {
     cmsUInt32Number i;
-
+   
 
     for( i=0; i < n; i++ )
     {
@@ -782,7 +782,7 @@ int EmitCIEBasedDEF(cmsContext ContextID, cmsIOHANDLER* m, cmsPipeline* Pipeline
     const char* PostMaj;
     const char* PreMin, *PostMin;
     cmsStage* mpe;
-
+        
     mpe = Pipeline->Elements;
 
     switch (cmsStageInputChannels(ContextID, mpe)) {
@@ -1332,7 +1332,7 @@ cmsBool WriteOutputLUT(cmsContext ContextID, cmsIOHANDLER* m, cmsHPROFILE hProfi
                                               OutputFormat, RelativeEncodingIntent, 0);
     cmsCloseProfile(ContextID, hLab);
 
-    if (xform == NULL) {
+    if (xform == NULL) {        
         cmsSignalError(ContextID, cmsERROR_COLORSPACE_CHECK, "Cannot create transform Lab -> Profile in CRD creation");
         return FALSE;
     }

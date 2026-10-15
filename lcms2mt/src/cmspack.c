@@ -685,7 +685,7 @@ cmsUInt8Number* UnrollPlanarWordsPremul(cmsContext ContextID,
     cmsUInt32Number i;
     cmsUInt32Number ExtraFirst = DoSwap ^ SwapFirst;
     cmsUInt8Number* Init = accum;
-
+    
     cmsUInt16Number alpha = (ExtraFirst ? ((cmsUInt16Number*)accum)[0] : ((cmsUInt16Number*)accum)[nChan * Stride / 2]);
     cmsUInt32Number alpha_factor = _cmsToFixedDomain(alpha);
 
@@ -3066,12 +3066,12 @@ cmsUInt8Number* PackBytesFromFloat(cmsContext ContextID,
     cmsUInt32Number Extra = T_EXTRA(info->OutputFormat);
     cmsUInt32Number SwapFirst = T_SWAPFIRST(info->OutputFormat);
     cmsUInt32Number Planar = T_PLANAR(info->OutputFormat);
-    cmsUInt32Number ExtraFirst = DoSwap ^ SwapFirst;
+    cmsUInt32Number ExtraFirst = DoSwap ^ SwapFirst;    
     cmsUInt8Number* swap1 = (cmsUInt8Number*)output;
     cmsFloat64Number v = 0;
     cmsUInt8Number vv = 0;
     cmsUInt32Number i, start = 0;
-
+    
     if (ExtraFirst)
         start = Extra;
 
@@ -3083,7 +3083,7 @@ cmsUInt8Number* PackBytesFromFloat(cmsContext ContextID,
 
         if (Reverse)
             v = 65535.0 - v;
-
+        
         vv =  FROM_16_TO_8(_cmsQuickSaturateWord(v));
 
         if (Planar)
@@ -3118,12 +3118,12 @@ cmsUInt8Number* PackWordsFromFloat(cmsContext ContextID,
     cmsUInt32Number Extra = T_EXTRA(info->OutputFormat);
     cmsUInt32Number SwapFirst = T_SWAPFIRST(info->OutputFormat);
     cmsUInt32Number Planar = T_PLANAR(info->OutputFormat);
-    cmsUInt32Number ExtraFirst = DoSwap ^ SwapFirst;
+    cmsUInt32Number ExtraFirst = DoSwap ^ SwapFirst;    
     cmsUInt16Number* swap1 = (cmsUInt16Number*)output;
     cmsFloat64Number v = 0;
     cmsUInt16Number vv = 0;
     cmsUInt32Number i, start = 0;
-
+    
     if (ExtraFirst)
         start = Extra;
 
@@ -3327,7 +3327,7 @@ cmsUInt8Number* PackEncodedBytesLabV2FromFloat(cmsContext ContextID, _cmsTRANSFO
                                            cmsFloat32Number wOut[],
                                            cmsUInt8Number* output,
                                            cmsUInt32Number Stride)
-{
+{    
     cmsCIELab Lab;
     cmsUInt16Number wlab[3];
 
@@ -3336,11 +3336,11 @@ cmsUInt8Number* PackEncodedBytesLabV2FromFloat(cmsContext ContextID, _cmsTRANSFO
     Lab.b = (cmsFloat64Number)(wOut[2] * 255.0 - 128.0);
 
     cmsFloat2LabEncoded(ContextID, wlab, &Lab);
-
+    
     if (T_PLANAR(Info -> OutputFormat)) {
 
-        Stride /= PixelSize(Info->OutputFormat);
-
+        Stride /= PixelSize(Info->OutputFormat);       
+    
         output[0]        = wlab[0] >> 8;
         output[Stride]   = wlab[1] >> 8;
         output[Stride*2] = wlab[2] >> 8;
@@ -3362,7 +3362,7 @@ cmsUInt8Number* PackEncodedWordsLabV2FromFloat(cmsContext ContextID, _cmsTRANSFO
                                            cmsFloat32Number wOut[],
                                            cmsUInt8Number* output,
                                            cmsUInt32Number Stride)
-{
+{    
     cmsCIELab Lab;
     cmsUInt16Number wlab[3];
 
@@ -3371,11 +3371,11 @@ cmsUInt8Number* PackEncodedWordsLabV2FromFloat(cmsContext ContextID, _cmsTRANSFO
     Lab.b = (cmsFloat64Number)(wOut[2] * 255.0 - 128.0);
 
     cmsFloat2LabEncodedV2(ContextID, wlab, &Lab);
-
+    
     if (T_PLANAR(Info -> OutputFormat)) {
 
-        Stride /= PixelSize(Info->OutputFormat);
-
+        Stride /= PixelSize(Info->OutputFormat);       
+    
         ((cmsUInt16Number*) output)[0]        = wlab[0];
         ((cmsUInt16Number*) output)[Stride]   = wlab[1];
         ((cmsUInt16Number*) output)[Stride*2] = wlab[2];
@@ -4155,7 +4155,7 @@ cmsUInt32Number CMSEXPORT cmsFormatterForPCSOfProfile(cmsContext ContextID, cmsH
     cmsColorSpaceSignature ColorSpace = cmsGetPCS(ContextID, hProfile);
 
     cmsUInt32Number ColorSpaceBits = (cmsUInt32Number) _cmsLCMScolorSpace(ContextID, ColorSpace);
-    cmsUInt32Number nOutputChans = cmsChannelsOfColorSpace(ContextID, ColorSpace);
+    cmsInt32Number nOutputChans = cmsChannelsOfColorSpace(ContextID, ColorSpace);
     cmsUInt32Number Float = lIsFloat ? 1U : 0;
 
     // Unsupported color space?

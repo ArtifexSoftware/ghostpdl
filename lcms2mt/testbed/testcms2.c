@@ -3688,9 +3688,9 @@ cmsInt32Number CheckMLU_UTF8(void)
     cmsMLU* mlu;
     char Buffer[256];
     cmsInt32Number rc = 1;
-
+        
     mlu = cmsMLUalloc(DbgThread(), 0);
-
+    
     cmsMLUsetWide(mlu, "en", "US", L"\x3b2\x14b");
 
     cmsMLUgetUTF8(mlu, "en", "US", Buffer, 256);
@@ -5425,7 +5425,7 @@ cmsInt32Number Check_MHC2(cmsInt32Number Pass, cmsHPROFILE hProfile)
         s.BlueCurve = curve;
         s.MinLuminance = 0.1;
         s.PeakLuminance = 100.0;
-
+        
         if (!cmsWriteTag(hProfile, cmsSigMHC2Tag, &s)) return 0;
         return 1;
 
@@ -8236,7 +8236,7 @@ int CheckPlanar8opt(cmsContext ContextID)
 
 static
 int CheckPlanarFloat2int(void)
-{
+{    
     cmsHPROFILE sRGB = cmsCreate_sRGBProfile();
 
     cmsHTRANSFORM transform = cmsCreateTransform(sRGB, TYPE_RGB_FLT_PLANAR,
@@ -8247,7 +8247,7 @@ int CheckPlanarFloat2int(void)
 
     cmsDoTransform(transform, input, output, 4);
 
-    cmsDeleteTransform(transform);
+    cmsDeleteTransform(transform);    
     cmsCloseProfile(sRGB);
 
     return 1;
@@ -8575,7 +8575,7 @@ int Check_OkLab(void)
     xyz.X = 0.143046; xyz.Y = 0.060610; xyz.Z = 0.713913;
     cmsDoTransform(xform, &xyz, &okLab, 1);
     cmsDoTransform(xform2, &okLab, &xyz2, 1);
-
+    
     cmsDeleteTransform(xform);
     cmsDeleteTransform(xform2);
     cmsCloseProfile(hOkLab);
@@ -8765,11 +8765,11 @@ int CheckBadCGATS(void)
         "0Ba	$ $ t .";
 
     cmsHANDLE hIT8;
-
+    
     cmsSetLogErrorHandler(NULL);
 
     hIT8 = cmsIT8LoadFromMem(0, bad_it8, (cmsUInt32Number) strlen(bad_it8));
-
+    
     ResetFatalError();
 
     if (hIT8 != NULL)
@@ -8820,7 +8820,7 @@ int CheckSaveLinearizationDevicelink(void)
     cmsBool result;
     cmsHTRANSFORM xform;
     int i;
-
+    
     cmsFreeToneCurve(tone);
 
     result = cmsSaveProfileToFile(hDeviceLink, "lin_rgb.icc");
@@ -8830,7 +8830,7 @@ int CheckSaveLinearizationDevicelink(void)
     if (!result)
     {
         remove("lin_rgb.icc");
-        Fail("Couldn't save linearization devicelink");
+        Fail("Couldn't save linearization devicelink");        
     }
 
 
@@ -8873,7 +8873,7 @@ int CheckGamutCheckFloats(void)
 {
 
     cmsUInt16Number alarms[16] = { 0x0f0f,3,4,5,6,7,8,9,10 };
-
+    
 
     cmsHPROFILE hLab = cmsCreateLab4Profile(NULL);
     cmsHPROFILE hNull = cmsCreateNULLProfile();
@@ -8922,7 +8922,7 @@ int CheckMixedRawAndCooked(void)
 
     } buffer = { { (cmsTagTypeSignature) cmsSigTechnologyTag, {0} }, cmsSigFilmScanner };
 
-    cmsHPROFILE hProfile = cmsCreateProfilePlaceholder(0);
+    cmsHPROFILE hProfile = cmsCreateProfilePlaceholder(0);   
     cmsWriteRawTag(hProfile, cmsSigTechnologyTag, &buffer, sizeof buffer);
     cmsWriteTag(hProfile, cmsSigTechnologyTag, &data);
     cmsWriteRawTag(hProfile, cmsSigTechnologyTag, &buffer, sizeof buffer);

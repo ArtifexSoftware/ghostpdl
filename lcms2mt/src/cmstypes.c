@@ -1169,8 +1169,8 @@ void *Type_Text_Description_Read(cmsContext ContextID, struct _cms_typehandler_s
     if (!_cmsReadUInt32Number(ContextID, io, &UnicodeCode)) goto Done;
     if (!_cmsReadUInt32Number(ContextID, io, &UnicodeCount)) goto Done;
     SizeOfTag -= 2* sizeof(cmsUInt32Number);
-
-    if (UnicodeCount == 0 || UnicodeCount > 0x7ffff ||
+    
+    if (UnicodeCount == 0 || UnicodeCount > 0x7ffff || 
         SizeOfTag < UnicodeCount*sizeof(cmsUInt16Number)) goto Done;
 
     UnicodeString = (wchar_t*)_cmsMallocZero(ContextID, (UnicodeCount + 1) * sizeof(wchar_t));
@@ -1751,9 +1751,9 @@ void *Type_MLU_Read(cmsContext ContextID, struct _cms_typehandler_struct* self, 
         if (!_cmsReadUInt32Number(ContextID, io, &Len)) goto Error;
         if (!_cmsReadUInt32Number(ContextID, io, &Offset)) goto Error;
 
-        // Offset MUST be even because it indexes a block of utf16 chars.
+        // Offset MUST be even because it indexes a block of utf16 chars. 
         // Tricky profiles that uses odd positions will not work anyway
-        // because the whole utf16 block is previously converted to wchar_t
+        // because the whole utf16 block is previously converted to wchar_t 
         // and sizeof this type may be of 4 bytes. On Linux systems, for example.
         if (Offset & 1) goto Error;
 
@@ -1787,7 +1787,7 @@ void *Type_MLU_Read(cmsContext ContextID, struct _cms_typehandler_struct* self, 
 
         Block = (wchar_t*) _cmsCalloc(ContextID, 1, SizeOfTag);
         if (Block == NULL) goto Error;
-
+       
         NumOfWchar = SizeOfTag / sizeof(wchar_t);
         if (!_cmsReadWCharArray(ContextID, io, NumOfWchar, Block)) {
             _cmsFree(ContextID, Block);
@@ -4818,7 +4818,7 @@ cmsBool ReadMPEElem(cmsContext ContextID, struct _cms_typehandler_struct* self,
     }
 
     return TRUE;
-
+    
     cmsUNUSED_PARAMETER(n);
 }
 
@@ -4930,7 +4930,7 @@ cmsBool Type_MPE_Write(cmsContext ContextID, struct _cms_typehandler_struct* sel
 
         if (!_cmsWriteUInt32Number(ContextID, io, ElementSig)) goto Error;
         if (!_cmsWriteUInt32Number(ContextID, io, 0)) goto Error;
-
+ 
         if (!TypeHandler ->WritePtr(ContextID, self, io, Elem, 1)) goto Error;
         if (!_cmsWriteAlignment(ContextID, io)) goto Error;
 
@@ -5698,8 +5698,8 @@ void* Type_VideoSignal_Read(cmsContext ContextID, struct _cms_typehandler_struct
 {
     cmsVideoSignalType* cicp = NULL;
 
-    if (SizeOfTag != 4) return NULL;
-
+    if (SizeOfTag != 4) return NULL; 
+    
     cicp = (cmsVideoSignalType*)_cmsCalloc(ContextID, 1, sizeof(cmsVideoSignalType));
     if (cicp == NULL) return NULL;
 
@@ -5721,7 +5721,7 @@ static
 cmsBool Type_VideoSignal_Write(cmsContext ContextID, struct _cms_typehandler_struct* self, cmsIOHANDLER* io, void* Ptr, cmsUInt32Number nItems)
 {
     cmsVideoSignalType* cicp = (cmsVideoSignalType*)Ptr;
-
+    
     if (!_cmsWriteUInt8Number(ContextID, io, cicp->ColourPrimaries)) return FALSE;
     if (!_cmsWriteUInt8Number(ContextID, io, cicp->TransferCharacteristics)) return FALSE;
     if (!_cmsWriteUInt8Number(ContextID, io, cicp->MatrixCoefficients)) return FALSE;
@@ -5733,6 +5733,7 @@ cmsBool Type_VideoSignal_Write(cmsContext ContextID, struct _cms_typehandler_str
     cmsUNUSED_PARAMETER(nItems);
 }
 
+static
 void* Type_VideoSignal_Dup(cmsContext ContextID, struct _cms_typehandler_struct* self, const void* Ptr, cmsUInt32Number n)
 {
     return _cmsDupMem(ContextID, Ptr, sizeof(cmsVideoSignalType));
@@ -5749,7 +5750,7 @@ void Type_VideoSignal_Free(cmsContext ContextID, struct _cms_typehandler_struct*
 
 
 // ********************************************************************************
-// Microsoft's MHC2 Type support
+// Microsoft's MHC2 Type support 
 // ********************************************************************************
 
 static
@@ -5766,6 +5767,7 @@ cmsBool CloseEnough(cmsFloat64Number a, cmsFloat64Number b)
     return fabs(b - a) < (1.0 / 65535.0);
 }
 
+static
 cmsBool IsIdentity(cmsFloat64Number XYZ2XYZmatrix[3][4])
 {
     cmsFloat64Number Identity[3][4];
@@ -5792,6 +5794,7 @@ void Type_MHC2_Free(cmsContext ContextID, struct _cms_typehandler_struct* self, 
     _cmsFree(ContextID, Ptr);
 }
 
+static
 void* Type_MHC2_Dup(cmsContext ContextID, struct _cms_typehandler_struct* self, const void* Ptr, cmsUInt32Number n)
 {
     cmsMHC2Type* mhc2 = (cmsMHC2Type*)_cmsDupMem(ContextID, Ptr, sizeof(cmsMHC2Type));
@@ -5818,7 +5821,7 @@ static
 cmsBool WriteDoubles(cmsContext ContextID, cmsIOHANDLER* io, cmsUInt32Number n, cmsFloat64Number* Values)
 {
     cmsUInt32Number i;
-
+    
     for (i = 0; i < n; i++) {
 
         if (!_cmsWrite15Fixed16Number(ContextID, io, *Values++)) return FALSE;
@@ -5835,7 +5838,7 @@ cmsBool Type_MHC2_Write(cmsContext ContextID, struct _cms_typehandler_struct* se
     cmsUInt32Number TablesOffsetPos;
     cmsUInt32Number MatrixOffset;
     cmsUInt32Number OffsetRedTable, OffsetGreenTable, OffsetBlueTable;
-
+    
     if (!_cmsWriteUInt32Number(ContextID, io, mhc2->CurveEntries)) return FALSE;
 
     if (!_cmsWrite15Fixed16Number(ContextID, io, mhc2->MinLuminance)) return FALSE;
@@ -5862,7 +5865,7 @@ cmsBool Type_MHC2_Write(cmsContext ContextID, struct _cms_typehandler_struct* se
     OffsetRedTable = io->Tell(ContextID, io) - BaseOffset;
 
     if(!_cmsWriteUInt32Number(ContextID, io, cmsSigS15Fixed16ArrayType)) return FALSE;
-    if(!_cmsWriteUInt32Number(ContextID, io, 0)) return FALSE;
+    if(!_cmsWriteUInt32Number(ContextID, io, 0)) return FALSE;   
 
     if (!WriteDoubles(ContextID, io, mhc2->CurveEntries, mhc2->RedCurve)) return FALSE;
 
@@ -5878,10 +5881,10 @@ cmsBool Type_MHC2_Write(cmsContext ContextID, struct _cms_typehandler_struct* se
 
     if (!io->Seek(ContextID, io, TablesOffsetPos)) return FALSE;
 
-    if (!_cmsWriteUInt32Number(ContextID, io, MatrixOffset)) return FALSE;
-    if (!_cmsWriteUInt32Number(ContextID, io, OffsetRedTable)) return FALSE;
-    if (!_cmsWriteUInt32Number(ContextID, io, OffsetGreenTable)) return FALSE;
-    if (!_cmsWriteUInt32Number(ContextID, io, OffsetBlueTable)) return FALSE;
+    if (!_cmsWriteUInt32Number(ContextID, io, MatrixOffset)) return FALSE;      
+    if (!_cmsWriteUInt32Number(ContextID, io, OffsetRedTable)) return FALSE;    
+    if (!_cmsWriteUInt32Number(ContextID, io, OffsetGreenTable)) return FALSE;  
+    if (!_cmsWriteUInt32Number(ContextID, io, OffsetBlueTable)) return FALSE;   
 
     return TRUE;
 
@@ -5916,7 +5919,7 @@ void* Type_MHC2_Read(cmsContext ContextID, struct _cms_typehandler_struct* self,
     cmsUInt32Number BaseOffset = io->Tell(ContextID, io) - sizeof(_cmsTagBase);
     cmsUInt32Number MatrixOffset;
     cmsUInt32Number OffsetRedTable, OffsetGreenTable, OffsetBlueTable;
-
+        
     mhc2 = (cmsMHC2Type*)_cmsCalloc(ContextID, 1, sizeof(cmsMHC2Type));
     if (mhc2 == NULL) return NULL;
 
@@ -5940,8 +5943,8 @@ void* Type_MHC2_Read(cmsContext ContextID, struct _cms_typehandler_struct* self,
     if (!_cmsReadUInt32Number(ContextID, io, &OffsetGreenTable)) goto Error;
     if (!_cmsReadUInt32Number(ContextID, io, &OffsetBlueTable)) goto Error;
 
-    if (MatrixOffset == 0)
-        SetIdentity(mhc2->XYZ2XYZmatrix);
+    if (MatrixOffset == 0) 
+        SetIdentity(mhc2->XYZ2XYZmatrix);            
     else
     {
         if (!ReadDoublesAt(ContextID, io, BaseOffset + MatrixOffset, 3*4, &mhc2->XYZ2XYZmatrix[0][0])) goto Error;
@@ -5951,7 +5954,7 @@ void* Type_MHC2_Read(cmsContext ContextID, struct _cms_typehandler_struct* self,
     if (!ReadDoublesAt(ContextID, io, BaseOffset + OffsetRedTable + 8, mhc2->CurveEntries, mhc2->RedCurve)) goto Error;
     if (!ReadDoublesAt(ContextID, io, BaseOffset + OffsetGreenTable + 8, mhc2->CurveEntries, mhc2->GreenCurve)) goto Error;
     if (!ReadDoublesAt(ContextID, io, BaseOffset + OffsetBlueTable + 8, mhc2->CurveEntries, mhc2->BlueCurve)) goto Error;
-
+    
     // Success
     *nItems = 1;
     return mhc2;

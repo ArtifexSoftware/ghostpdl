@@ -193,7 +193,7 @@ void MatShaperXform8(cmsContext ContextID,
 
     cmsUInt32Number nalpha;
     size_t strideIn, strideOut;
-
+ 
     _cmsComputeComponentIncrements(cmsGetTransformInputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneIn, NULL, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(cmsGetTransformOutputFormat(ContextID, (cmsHTRANSFORM)CMMcargo), Stride->BytesPerPlaneOut, NULL, &nalpha, DestStartingOrder, DestIncrements);
 
@@ -309,7 +309,7 @@ cmsBool Optimize8MatrixShaper(    cmsContext ContextID,
 
     if (cmsStageInputChannels(ContextID, Matrix1) == 1 && cmsStageOutputChannels(ContextID, Matrix2) == 1)
     {
-        // This is a gray to gray. Just multiply
+        // This is a gray to gray. Just multiply    
          factor = Data1->Double[0]*Data2->Double[0] +
                   Data1->Double[1]*Data2->Double[1] +
                   Data1->Double[2]*Data2->Double[2];

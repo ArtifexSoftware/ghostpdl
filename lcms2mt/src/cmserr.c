@@ -111,7 +111,7 @@ long int CMSEXPORT cmsfilelength(FILE* f)
 //
 // This is the interface to low-level memory management routines. By default a simple
 // wrapping to malloc/free/realloc is provided, although there is a limit on the max
-// amount of memory that can be reclaimed. This is mostly as a safety feature to prevent
+// amount of memory that can be reclaimed. This is mostly as a safety feature to prevent 
 // bogus or evil code to allocate huge blocks that otherwise lcms would never need.
 
 #ifdef CMS_LARGE_FILE_SUPPORT
@@ -706,15 +706,15 @@ void CMSEXPORT _cmsUnlockMutex(cmsContext ContextID, void* mtx)
 // Allocate parallelization container.
 void _cmsAllocParallelizationPluginChunk(struct _cmsContext_struct* ctx,
                                          const struct _cmsContext_struct* src)
-{
+{    
     if (src != NULL) {
         void* from = src->chunks[ParallelizationPlugin];
         ctx->chunks[ParallelizationPlugin] = _cmsSubAllocDup(ctx->MemPool, from, sizeof(_cmsParallelizationPluginChunkType));
     }
-    else {
+    else {        
         _cmsParallelizationPluginChunkType ParallelizationPluginChunk = { 0 };
         ctx->chunks[ParallelizationPlugin] = _cmsSubAllocDup(ctx->MemPool, &ParallelizationPluginChunk, sizeof(_cmsParallelizationPluginChunkType));
-    }
+    }         
 }
 
 // Register parallel processing
@@ -728,7 +728,7 @@ cmsBool _cmsRegisterParallelizationPlugin(cmsContext ContextID, cmsPluginBase* D
         // No parallelization routines
         ctx->MaxWorkers = 0;
         ctx->WorkerFlags = 0;
-        ctx->SchedulerFn = NULL;
+        ctx->SchedulerFn = NULL;        
         return TRUE;
     }
 
@@ -738,7 +738,8 @@ cmsBool _cmsRegisterParallelizationPlugin(cmsContext ContextID, cmsPluginBase* D
     ctx->MaxWorkers = Plugin->MaxWorkers;
     ctx->WorkerFlags = Plugin->WorkerFlags;
     ctx->SchedulerFn = Plugin->SchedulerFn;
-
+    
     // All is ok
     return TRUE;
 }
+

@@ -352,3 +352,5 @@ cmsBool CMSEXPORT cmsAdaptToIlluminant(cmsContext ContextID, cmsCIEXYZ* Result,
 
     return TRUE;
 }
+
+

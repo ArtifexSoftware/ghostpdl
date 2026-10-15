@@ -1077,7 +1077,7 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
 
     // Insert possible devicelinks at the end
     for (i = lastProfilePos + 1; i < nProfiles; i++)
-    {
+    {        
         cmsPipeline* devlink = _cmsReadDevicelinkLUT(ContextID, hProfiles[i], ICCIntents[i]);
         if (devlink == NULL) {
             cmsPipelineFree(ContextID, Result);
@@ -1087,7 +1087,7 @@ cmsPipeline* BlackPreservingKPlaneIntents(cmsContext     ContextID,
 
         if (!cmsPipelineCat(ContextID, Result, devlink)) {
             cmsPipelineFree(ContextID, Result);
-            Result = NULL;
+            Result = NULL;            
         }
     }
 

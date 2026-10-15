@@ -798,7 +798,7 @@ static cmsPluginTag HiddenTagPluginSample2 = {
 static cmsPluginTagType TagTypePluginSample = {
 
      { cmsPluginMagicNumber, 2060-2000, cmsPluginTagTypeSig,  (cmsPluginBase*) &HiddenTagPluginSample2},
-     { SigIntType, Type_int_Read, Type_int_Write, Type_int_Dup, Type_int_Free, NULL }
+     { SigIntType, Type_int_Read, Type_int_Write, Type_int_Dup, Type_int_Free, NULL }        
 };
 
 
@@ -1535,7 +1535,7 @@ cmsInt32Number CheckMethodPackDoublesFromFloat(cmsContext ContextID)
 
     cmsDeleteTransform(ctx, xform);
     cmsDeleteContext(ctx);
-
+    
     if (l_D_OutputColorArrayBlack[0] < 85 ||
         l_D_OutputColorArrayBlue[0] < 90)
         Fail("Ink amount is not right");

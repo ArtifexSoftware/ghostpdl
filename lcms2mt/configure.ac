@@ -184,7 +184,7 @@ if test "$with_threads" != 'no'
 then
 
   AX_PTHREAD()
-
+ 
   if test "$ax_pthread_ok" = yes
   then
     have_threads=yes

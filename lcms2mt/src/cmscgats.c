@@ -239,17 +239,17 @@ static const KEYWORD TabKeysIT8[] = {
 #define NUMKEYS_IT8 (sizeof(TabKeysIT8)/sizeof(KEYWORD))
 
 static const KEYWORD TabKeysCUBE[] = {
-
+        
         {"DOMAIN_MAX",             SDOMAIN_MAX },
-        {"DOMAIN_MIN",             SDOMAIN_MIN },
+        {"DOMAIN_MIN",             SDOMAIN_MIN },        
         {"LUT_1D_SIZE",            S_LUT1D_SIZE },
         {"LUT_1D_INPUT_RANGE",     S_LUT1D_INPUT_RANGE },
         {"LUT_3D_SIZE",            S_LUT3D_SIZE },
-        {"LUT_3D_INPUT_RANGE",     S_LUT3D_INPUT_RANGE },
+        {"LUT_3D_INPUT_RANGE",     S_LUT3D_INPUT_RANGE },        
         {"LUT_IN_VIDEO_RANGE",     S_LUT_IN_VIDEO_RANGE },
         {"LUT_OUT_VIDEO_RANGE",    S_LUT_OUT_VIDEO_RANGE },
         {"TITLE",                  STITLE }
-
+        
 };
 
 #define NUMKEYS_CUBE (sizeof(TabKeysCUBE)/sizeof(KEYWORD))
@@ -412,7 +412,7 @@ string* StringAlloc(cmsContext ContextID, cmsIT8* it8, int max)
 static
 void StringClear(string* s)
 {
-    s->len = 0;
+    s->len = 0;    
     s->begin[0] = 0;
 }
 
@@ -2255,7 +2255,7 @@ cmsBool HeaderSection(cmsContext ContextID, cmsIT8* it8)
             if (!GetVal(ContextID, it8, Buffer, MAXSTR - 1, "Property data expected")) return FALSE;
 
             if (Key->WriteAs != WRITE_PAIR) {
-                if (ContextID, AddToList(ContextID, it8, &GetTable(ContextID, it8)->HeaderList, VarName, NULL, Buffer,
+                if (AddToList(ContextID, it8, &GetTable(ContextID, it8)->HeaderList, VarName, NULL, Buffer,
                     (it8->sy == SSTRING) ? WRITE_STRINGIFY : WRITE_UNCOOKED) == NULL) return FALSE;
             }
             else {

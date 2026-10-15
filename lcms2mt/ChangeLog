@@ -59,7 +59,7 @@ Fixed documentation pointers on visual studio project.
 -----------------------
 2.19 Featured release
 -----------------------
-CMake build system. Thanks to Vlad Erium for the initial implementation and kmilos for improvements.
+CMake build system. Thanks to Vlad Erium for the initial implementation and kmilos for improvements. 
 Large files support to use profiles up to 4Gb
 Black point compensation works on multi-channel profiles
 Added more test platforms/architectures in GitHub tests, Cygwin and MSYS are now fully checked.
@@ -111,7 +111,7 @@ Fix for #469 heap buffer overflow on convert_utf16_to_utf32()
 -----------------------
 2.17 Maintenance release
 -----------------------
-Add fuzzers foundation. Many thanks to Amir Montazery and Open Source Technology Improvement Fund (ostif.org), Google, for funding that.
+Add fuzzers foundation. Many thanks to Amir Montazery and Open Source Technology Improvement Fund (ostif.org), Google, for funding that. 
 Add ability to disable building tests in meson
 Fixed gamut warning not working on certain conditions
 Mac sequoia added to test beds
@@ -140,12 +140,12 @@ Fixed Reverted postcript creation that corrupted some interpreters.
 -----------------------
 2.15 Maintenance release
 -----------------------
-New MESON build system, many thanks to amispark and Lovell Fuller for bringing this.
+New MESON build system, many thanks to amispark and Lovell Fuller for bringing this.       
 Fixed a bug that caused memory corruption on colord
 cmsReadRawTag can read portions  of tags again. Removing this caused colord to segfault when dumping profiles
 Added more checks based of fuzzer discoveries.
 MSYS2 can now compile lcms2
-Checked on Apple Silicon M1 and M2
+Checked on Apple Silicon M1 and M2 
 Fixed a bug of fastfloat plug-in that affected Krita CMYK color selector
 
 -----------------------

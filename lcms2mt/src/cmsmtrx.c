@@ -182,3 +182,5 @@ void CMSEXPORT _cmsMAT3eval(cmsContext ContextID, cmsVEC3* r, const cmsMAT3* a, 
     r->n[VY] = a->v[1].n[VX]*v->n[VX] + a->v[1].n[VY]*v->n[VY] + a->v[1].n[VZ]*v->n[VZ];
     r->n[VZ] = a->v[2].n[VX]*v->n[VX] + a->v[2].n[VY]*v->n[VY] + a->v[2].n[VZ]*v->n[VZ];
 }
+
+

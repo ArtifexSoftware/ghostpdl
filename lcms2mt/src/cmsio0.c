@@ -81,9 +81,9 @@ cmsBool  NULLWrite(cmsContext ContextID, cmsIOHANDLER* iohandler, cmsUInt32Numbe
     FILENULL* ResData = (FILENULL*) iohandler ->stream;
     cmsUNUSED_PARAMETER(ContextID);
 
-    if (size > (cmsUInt32Number)(0xFFFFFFFFU - ResData->Pointer))
+    if (size > (cmsUInt32Number)(0xFFFFFFFFU - ResData->Pointer))         
         return FALSE;
-
+    
     ResData ->Pointer += size;
     if (ResData ->Pointer > iohandler->UsedSpace)
         iohandler->UsedSpace = ResData ->Pointer;
@@ -160,16 +160,16 @@ cmsUInt32Number MemoryRead(cmsContext ContextID, struct _cms_io_handler* iohandl
 
     if ((len / count) != size)
         goto ReadError;
-
-    if (Buffer == NULL)
+    
+    if (Buffer == NULL)                  
         goto ReadError;
 
     if (len > ResData->Size)
         goto ReadError;
 
-    if (ResData -> Pointer > ResData -> Size - len)
+    if (ResData -> Pointer > ResData -> Size - len)         
         goto ReadError;
-
+    
     Ptr  = ResData -> Block;
     Ptr += ResData -> Pointer;
     memmove(Buffer, Ptr, len);
@@ -189,9 +189,9 @@ cmsBool MemorySeek(cmsContext ContextID, struct _cms_io_handler* iohandler, cmsU
 {
     FILEMEM* ResData = (FILEMEM*) iohandler ->stream;
 
-    if (offset > ResData ->Size)
+    if (offset > ResData ->Size)         
         return FALSE;
-
+    
     ResData ->Pointer = offset;
     return TRUE;
 }
@@ -215,7 +215,7 @@ cmsBool MemoryWrite(cmsContext ContextID, struct _cms_io_handler* iohandler, cms
     FILEMEM* ResData = (FILEMEM*) iohandler ->stream;
     cmsUNUSED_PARAMETER(ContextID);
 
-    if (ResData == NULL || Ptr == NULL) goto WriteError;
+    if (ResData == NULL || Ptr == NULL) goto WriteError; 
 
     if (size == 0) return TRUE;     // Write zero bytes is ok, but does nothing
 
@@ -225,7 +225,7 @@ cmsBool MemoryWrite(cmsContext ContextID, struct _cms_io_handler* iohandler, cms
 
     if (size > ResData->Size - ResData->Pointer)
         size = ResData->Size - ResData->Pointer;
-
+             
     memmove(ResData ->Block + ResData ->Pointer, Ptr, size);
     ResData ->Pointer += size;
 
@@ -478,7 +478,7 @@ cmsIOHANDLER* CMSEXPORT cmsOpenIOhandlerFromFile(cmsContext ContextID, const cha
             _cmsFree(ContextID, iohandler);
              cmsSignalError(ContextID, cmsERROR_FILE, "File '%s' not found", FileName);
             return NULL;
-        }
+        }                                     
         fileLen = cmsfilelength(fm);
         if (fileLen < 0)
         {
@@ -729,7 +729,7 @@ void _cmsDeleteTagByPos(cmsContext ContextID, _cmsICCPROFILE* Icc, int i)
         // Free previous version
         if (Icc ->TagSaveAsRaw[i]) {
             _cmsFree(ContextID, Icc ->TagPtrs[i]);
-            Icc->TagPtrs[i] = NULL;
+            Icc->TagPtrs[i] = NULL;            
             Icc->TagSaveAsRaw[i] = FALSE;
         }
         else {
@@ -835,7 +835,7 @@ cmsUInt32Number _validatedVersion(cmsUInt32Number DWord)
 static
 cmsBool validDeviceClass(cmsProfileClassSignature cl)
 {
-    if (cl == (cmsProfileClassSignature)0)
+    if (cl == (cmsProfileClassSignature)0) 
         return TRUE; // We allow zero because older lcms versions defaulted to that.
 
     switch (cl)
@@ -1931,7 +1931,7 @@ cmsBool CMSEXPORT cmsWriteTag(cmsContext ContextID, cmsHPROFILE hProfile, cmsTag
         cmsSignalError(ContextID, cmsERROR_ALREADY_DEFINED, "Tag  '%x' was already saved as RAW", sig);
         goto Error;
     }
-
+    
     // This is not a link
     Icc ->TagLinked[i] = (cmsTagSignature) 0;
 

@@ -1056,7 +1056,7 @@ void Help(cmsContext ContextID, int level)
 
     fprintf(stderr, "Little CMS ICC profile applier for JPEG - v3.5 [LittleCMS %2.2f]\n\n", cmsGetEncodedCMMversion() / 1000.0);
     fprintf(stderr, "Copyright (c) 1998-2026 Marti Maria Saguer. See COPYING file for details.\n");
-
+    
     fprintf(stderr, "usage: jpgicc [flags] input.jpg output.jpg\n");
 
     fprintf(stderr, "\nflags:\n\n");

@@ -1231,7 +1231,7 @@ void CheckAlphaDetect(void)
     cmsSetLogErrorHandler(NULL);
 
     hsRGB = cmsCreate_sRGBProfile();
-
+    
     xform = cmsCreateTransform(hsRGB, TYPE_RGB_FLT, hsRGB, TYPE_RGBA_FLT, INTENT_PERCEPTUAL, cmsFLAGS_COPY_ALPHA);
     cmsCloseProfile(hsRGB);
 
@@ -1274,7 +1274,7 @@ void CheckConversionFloat(cmsContext Raw, cmsContext Plugin)
     CheckFloatToFloatLab();
     trace("Ok\n");
 
-    trace("Checking conversion to XYZ...");
+    trace("Checking conversion to XYZ...");    
     CheckToFloatXYZ();
     CheckFloatToFloatXYZ();
     trace("Ok\n");
@@ -1451,7 +1451,7 @@ void CheckSoftProofing(void)
 static
 void CheckPremultiplied(void)
 {
-    uint8_t BGRA8[4] = { 255, 192, 160, 128 };
+    uint8_t BGRA8[4] = { 255, 192, 160, 128 };    
     uint8_t bgrA8_1[4], bgrA8_2[4];
 
     cmsHPROFILE srgb1 = cmsCreate_sRGBProfile();
@@ -1486,7 +1486,7 @@ void CheckPremultiplied(void)
             Fail("Premultiplied failed at (%d %d %d) != (%d %d %d)",
                 bgrA8_1[0], bgrA8_1[1], bgrA8_1[2],
                 bgrA8_2[0], bgrA8_2[1], bgrA8_2[2]);
-    }
+    }    
 }
 
 
@@ -2676,15 +2676,15 @@ int main()
 
        // Soft proofing
        CheckSoftProofing();
-
+    
        // Floating point functionality
-       CheckConversionFloat();
+       CheckConversionFloat();  
 
        // Do a roundrtrip
        sRGB_XYZ_roundtrip();
 
        trace("All floating point tests passed OK\n");
-
+                       
        SpeedTest8();
        SpeedTest16();
        SpeedTest15();

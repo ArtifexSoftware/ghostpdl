@@ -39,7 +39,7 @@
 
 // Uncomment this one to enable large file support on file/stream I/O.
 // LittleCMS is still limited by ICC 32-bit offsets and sizes, so the
-// practical maximum remains 4 GiB minus profile overhead. Be careful
+// practical maximum remains 4 GiB minus profile overhead. Be careful 
 // because such huge profiles have to be loaded into memory and that's
 // usually a very bad idea.
 // #define CMS_LARGE_FILE_SUPPORT    1
@@ -87,7 +87,7 @@
 #ifndef CMS_USE_CPP_API
 #   ifdef __cplusplus
 #       if __cplusplus >= 201703L
-#            define CMS_NO_REGISTER_KEYWORD 1
+#            define CMS_NO_REGISTER_KEYWORD 1  
 #       endif
 extern "C" {
 #   endif
@@ -103,7 +103,7 @@ extern "C" {
 
 // We expect any LCMS2MT release to fall within the
 // following range.
-#define LCMS2MT_VERSION_MIN (0)
+#define LCMS2MT_VERSION_MIN (90)
 #define LCMS2MT_VERSION_MAX (999)
 
 // I will give the chance of redefining basic types for compilers that are not fully C99 compliant
@@ -185,7 +185,7 @@ typedef double               cmsFloat64Number;
 #ifdef CMS_DONT_USE_INT64
     typedef cmsUInt32Number      cmsUInt64Number[2];
     typedef cmsInt32Number       cmsInt64Number[2];
-#   if defined(CMS_LARGE_FILE_SUPPORT)
+#   if defined(CMS_LARGE_FILE_SUPPORT) 
 #      error "You need int64 for large file support"
 #   endif
 #endif
@@ -711,9 +711,6 @@ typedef int                  cmsBool;
 #define _cmsGetContext                           LCMS2MT_PREF(_cmsGetContext)
 #define _cmsGetTime                              LCMS2MT_PREF(_cmsGetTime)
 #define _cmsPluginMalloc                         LCMS2MT_PREF(_cmsPluginMalloc)
-#define IsIdentity                               LCMS2MT_PREF(IsIdentity)
-#define Type_MHC2_Dup                            LCMS2MT_PREF(Type_MHC2_Dup)
-#define Type_VideoSignal_Dup                     LCMS2MT_PREF(Type_VideoSignal_Dup)
 #define _cmsAllocMPETypePluginChunk              LCMS2MT_PREF(_cmsAllocMPETypePluginChunk)
 #define _cmsAllocTagPluginChunk                  LCMS2MT_PREF(_cmsAllocTagPluginChunk)
 #define _cmsAllocTagTypePluginChunk              LCMS2MT_PREF(_cmsAllocTagTypePluginChunk)
@@ -989,10 +986,10 @@ typedef enum {
     cmsSigNamedColorClass                   = 0x6e6d636c,  // 'nmcl'
 
                                                             // iccMAX only
-    cmsSigColorEncodingSpaceClass           = 0x63656E63,  // 'cenc'
+    cmsSigColorEncodingSpaceClass           = 0x63656E63,  // 'cenc' 
     cmsSigMultiplexIdentificationClass      = 0x6D696420,  // 'mid '
     cmsSigMultiplexLinkClass                = 0x6d6c6e6b,  // 'mlnk'
-    cmsSigMultiplexVisualizationClass       = 0x6d766973   // 'mvis'
+    cmsSigMultiplexVisualizationClass       = 0x6d766973   // 'mvis'    
 
 } cmsProfileClassSignature;
 
@@ -2017,6 +2014,7 @@ CMSAPI void              CMSEXPORT cmsGetHeaderProfileID(cmsContext ContextID, c
 CMSAPI cmsBool           CMSEXPORT cmsGetHeaderCreationDateTime(cmsContext ContextID, cmsHPROFILE hProfile, struct tm *Dest);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderRenderingIntent(cmsContext ContextID, cmsHPROFILE hProfile);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderCMM(cmsContext ContextID, cmsHPROFILE hProfile);
+void CMSEXPORT _cmsSetHeaderCMM(cmsContext ContextID, cmsHPROFILE hProfile, cmsUInt32Number CMM);
 
 CMSAPI void              CMSEXPORT cmsSetHeaderFlags(cmsContext ContextID, cmsHPROFILE hProfile, cmsUInt32Number Flags);
 CMSAPI cmsUInt32Number   CMSEXPORT cmsGetHeaderManufacturer(cmsContext ContextID, cmsHPROFILE hProfile);

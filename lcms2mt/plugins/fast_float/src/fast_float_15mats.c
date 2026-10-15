@@ -332,7 +332,7 @@ cmsBool OptimizeMatrixShaper15(cmsContext ContextID,
               _cmsStageToneCurvesData* mpeC1 = (_cmsStageToneCurvesData*)cmsStageData(ContextID, Curve1);
               _cmsStageToneCurvesData* mpeC2 = (_cmsStageToneCurvesData*)cmsStageData(ContextID, Curve2);
 
-              // In this particular optimization, cache does not help as it takes more time to deal with
+              // In this particular optimization, cache does not help as it takes more time to deal with 
               // the cache than with the pixel handling
               *dwFlags |= cmsFLAGS_NOCACHE;
 

@@ -209,7 +209,7 @@ cmsBool isInkColorspace(cmsColorSpaceSignature c)
     case cmsSigMCHCData:
     case cmsSigMCHDData:
     case cmsSigMCHEData:
-    case cmsSigMCHFData:
+    case cmsSigMCHFData:    
     case cmsSig1colorData:
     case cmsSig2colorData:
     case cmsSig3colorData:

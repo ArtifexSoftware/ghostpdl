@@ -45,7 +45,7 @@ static STAT ColorantStat[4];
 static STAT EuclideanStat;
 static STAT ColorimetricStat;
 
-static uint16_t Channels;
+static uint16_t Channels; 
 
 static cmsHPROFILE hLab;
 
@@ -304,10 +304,10 @@ cmsUInt32Number OpenEmbedded(TIFF* tiff, cmsHPROFILE* PtrProfile, cmsHTRANSFORM*
               *PtrProfile = cmsOpenProfileFromMem(EmbedBuffer, EmbedLen);
 
               if (Verbose) {
-
-                  fprintf(stdout, "Embedded profile found:\n");
+                  
+                  fprintf(stdout, "Embedded profile found:\n");                          
                   PrintProfileInformation(NULL, *PtrProfile);
-
+                  
               }
 
               dwFormat  = GetInputPixelType(tiff);
@@ -333,7 +333,7 @@ int CmpImages(TIFF* tiff1, TIFF* tiff2, TIFF* diff)
     cmsUInt8Number* buf1, *buf2, *buf3=NULL;
     int row, cols, imagewidth = 0, imagelength = 0;
     uint16_t   Photometric;
-    double dE = 0;
+    double dE = 0;    
     double dR, dG, dB, dC, dM, dY, dK;
     int rc = 0;
     cmsHPROFILE hProfile1 = 0, hProfile2 = 0;

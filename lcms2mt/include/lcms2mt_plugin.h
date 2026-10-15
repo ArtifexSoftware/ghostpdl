@@ -674,7 +674,7 @@ CMSAPI cmsBool CMSEXPORT _cmsLockMutex(cmsContext ContextID, void* mtx);
 CMSAPI void    CMSEXPORT _cmsUnlockMutex(cmsContext ContextID, void* mtx);
 
 //----------------------------------------------------------------------------------------------------------
-// Parallelization
+// Parallelization 
 
 CMSAPI _cmsTransform2Fn CMSEXPORT _cmsGetTransformWorker(struct _cmstransform_struct* CMMcargo);
 CMSAPI cmsInt32Number   CMSEXPORT _cmsGetTransformMaxWorkers(struct _cmstransform_struct* CMMcargo);
@@ -688,7 +688,7 @@ typedef struct {
 
     cmsInt32Number      MaxWorkers;       // Number of starts to do as maximum
     cmsUInt32Number     WorkerFlags;      // Reserved
-    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions
+    _cmsTransform2Fn    SchedulerFn;      // callback to setup functions     
 
 }  cmsPluginParalellization;
 

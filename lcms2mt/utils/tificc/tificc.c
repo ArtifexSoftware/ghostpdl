@@ -149,8 +149,8 @@ int FromLabV4ToLabV2(int x)
 // Formatter for 8bit Lab TIFF (photometric 8)
 static
 unsigned char* UnrollTIFFLab8(cmsContext ContextID, struct _cmstransform_struct* CMMcargo,
-                              CMSREGISTER cmsUInt16Number wIn[],
-                              CMSREGISTER cmsUInt8Number* accum,
+                              CMSREGISTER cmsUInt16Number wIn[], 
+                              CMSREGISTER cmsUInt8Number* accum, 
                               CMSREGISTER cmsUInt32Number Stride)
 {
     wIn[0] = (cmsUInt16Number) FromLabV2ToLabV4((accum[0]) << 8);
@@ -184,9 +184,9 @@ unsigned char* UnrollTIFFLab16(cmsContext ContextID, struct _cmstransform_struct
 
 
 static
-unsigned char* PackTIFFLab8(cmsContext ContextID, struct _cmstransform_struct* CMMcargo,
-                            CMSREGISTER cmsUInt16Number wOut[],
-                            CMSREGISTER cmsUInt8Number* output,
+unsigned char* PackTIFFLab8(cmsContext ContextID, struct _cmstransform_struct* CMMcargo, 
+                            CMSREGISTER cmsUInt16Number wOut[], 
+                            CMSREGISTER cmsUInt8Number* output, 
                             CMSREGISTER cmsUInt32Number Stride)
 {
     int a, b;
@@ -198,7 +198,7 @@ unsigned char* PackTIFFLab8(cmsContext ContextID, struct _cmstransform_struct* C
 
     *output++ = (cmsUInt8Number) ((a < 128) ? (a + 128) : (a - 128));
     *output++ = (cmsUInt8Number) ((b < 128) ? (b + 128) : (b - 128));
-
+    
     return output;
 
     UTILS_UNUSED_PARAMETER(Stride);
@@ -207,9 +207,9 @@ unsigned char* PackTIFFLab8(cmsContext ContextID, struct _cmstransform_struct* C
 
 
 static
-unsigned char* PackTIFFLabA8(cmsContext ContextID, struct _cmstransform_struct* CMMcargo,
-                            CMSREGISTER cmsUInt16Number wOut[],
-                            CMSREGISTER cmsUInt8Number* output,
+unsigned char* PackTIFFLabA8(cmsContext ContextID, struct _cmstransform_struct* CMMcargo, 
+                            CMSREGISTER cmsUInt16Number wOut[], 
+                            CMSREGISTER cmsUInt8Number* output, 
                             CMSREGISTER cmsUInt32Number Stride)
 {
     int a, b;
@@ -232,9 +232,9 @@ unsigned char* PackTIFFLabA8(cmsContext ContextID, struct _cmstransform_struct* 
 
 
 static
-unsigned char* PackTIFFLab16(cmsContext ContextID, struct _cmstransform_struct* CMMcargo,
-                            CMSREGISTER cmsUInt16Number wOut[],
-                            CMSREGISTER cmsUInt8Number* output,
+unsigned char* PackTIFFLab16(cmsContext ContextID, struct _cmstransform_struct* CMMcargo, 
+                            CMSREGISTER cmsUInt16Number wOut[], 
+                            CMSREGISTER cmsUInt8Number* output, 
                             CMSREGISTER cmsUInt32Number Stride)
 {
     int a, b;
@@ -247,7 +247,7 @@ unsigned char* PackTIFFLab16(cmsContext ContextID, struct _cmstransform_struct* 
 
     *output16++ = (cmsUInt16Number) ((a < 0x7f00) ? (a + 0x8000) : (a - 0x8000));
     *output16++ = (cmsUInt16Number) ((b < 0x7f00) ? (b + 0x8000) : (b - 0x8000));
-
+    
     return (cmsUInt8Number*) output16;
 
     UTILS_UNUSED_PARAMETER(Stride);
@@ -255,9 +255,9 @@ unsigned char* PackTIFFLab16(cmsContext ContextID, struct _cmstransform_struct* 
 }
 
 static
-unsigned char* PackTIFFLabA16(struct _cmstransform_struct* CMMcargo,
-                            CMSREGISTER cmsUInt16Number wOut[],
-                            CMSREGISTER cmsUInt8Number* output,
+unsigned char* PackTIFFLabA16(struct _cmstransform_struct* CMMcargo, 
+                            CMSREGISTER cmsUInt16Number wOut[], 
+                            CMSREGISTER cmsUInt8Number* output, 
                             CMSREGISTER cmsUInt32Number Stride)
 {
     int a, b;
@@ -408,7 +408,7 @@ cmsUInt32Number GetInputPixelType(TIFF *Bank)
      // Two Lab flavours
      case PHOTOMETRIC_ITULAB:
      case PHOTOMETRIC_ICCLAB:
-         pt = PT_Lab;
+         pt = PT_Lab;         
          break;
 
      case PHOTOMETRIC_CIELAB:

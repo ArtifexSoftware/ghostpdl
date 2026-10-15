@@ -1839,7 +1839,7 @@ void _cmsTransform2toTransformAdaptor(cmsContext ContextID, struct _cmstransform
                                       cmsUInt32Number LineCount,
                                       const cmsStride* Stride)
 {
-
+     
        size_t i, strideIn, strideOut;
 
        _cmsHandleExtraChannels(ContextID, CMMcargo, InputBuffer, OutputBuffer, PixelsPerLine, LineCount, Stride);

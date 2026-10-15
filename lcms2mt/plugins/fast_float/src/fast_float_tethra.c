@@ -97,7 +97,7 @@ void FloatCLUTEval(cmsContext ContextID,
 
     cmsUInt32Number nchans, nalpha;
     size_t strideIn, strideOut;
-
+                                                        
     _cmsComputeComponentIncrements(InputFormat, Stride->BytesPerPlaneIn, &nchans, &nalpha, SourceStartingOrder, SourceIncrements);
     _cmsComputeComponentIncrements(OutputFormat, Stride->BytesPerPlaneOut, &nchans, &nalpha, DestStartingOrder, DestIncrements);
 
@@ -299,12 +299,12 @@ cmsBool OptimizeCLUTRGBTransform(cmsContext ContextID,
             cmsPipelineInsertStage(OriginalLut, cmsAT_END, lab_fix);
         }
         else
-            // If output is XYZ
+            // If output is XYZ 
             if (T_COLORSPACE(*OutputFormat) == PT_XYZ) {
 
                 /**
-                * XYZ is encoded in 1.15 fixed point, but in
-                * out table it is on 0..1.0 range, so we need to  adjust it.
+                * XYZ is encoded in 1.15 fixed point, but in 
+                * out table it is on 0..1.0 range, so we need to  adjust it. 
                 */
 
 #define MAX_ENCODEABLE_XYZ  (1.0 + 32767.0/32768.0)
@@ -313,7 +313,7 @@ cmsBool OptimizeCLUTRGBTransform(cmsContext ContextID,
                                                             0,  MAX_ENCODEABLE_XYZ,   0,
                                                             0,      0,   MAX_ENCODEABLE_XYZ };
 
-
+                
                 cmsStage* XYZ_fix = cmsStageAllocMatrix(ContextID, 3, 3, mat, NULL);
                 if (XYZ_fix == NULL) goto Error;
 
