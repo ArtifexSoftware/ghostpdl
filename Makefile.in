@@ -408,6 +408,7 @@ LCUPSISRCDIR=@CUPS_DIR@
 CUPS_CC=$(CC)
 
 CUPSCFLAGS=@CUPSCFLAGS@ -DSHARE_LCUPS=$(SHARE_LCUPS) -DSHARE_LCUPSI=$(SHARE_LCUPSI)
+LCUPSI_CFLAGS=@LCUPSI_CFLAGS@
 
 # Define how to build the library archives.  (These are not used in any
 # standard configuration.)

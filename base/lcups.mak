@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2023 Artifex Software, Inc.
+# Copyright (C) 2001-2026 Artifex Software, Inc.
 # All Rights Reserved.
 #
 # This software is provided AS-IS with no warranty, either express or
@@ -30,7 +30,7 @@ LCUPSO_=$(O_)$(LIBCUPSOBJ)
 
 # NB: we can't use the normal $(CC_) here because msvccmd.mak
 # adds /Za which conflicts with the cups source.
-LCUPS_CC=$(CUPS_CC) $(CUPSCFLAGS) $(I_)$(LIBCUPSSRC)$(_I) $(I_)$(LIBCUPSGEN)$(D)cups$(_I) $(I_)$(LIBCUPSSRCDIR)$(D)libs$(_I)
+LCUPS_CC=$(CUPS_CC) $(LCUPSI_CFLAGS) $(I_)$(LIBCUPSSRC)$(_I) $(I_)$(LIBCUPSGEN)$(D)cups$(_I) $(I_)$(LIBCUPSSRCDIR)$(D)libs$(_I)
 
 # Define the name of this makefile.
 LCUPS_MAK=$(GLSRC)lcups.mak $(TOP_MAKEFILES)
