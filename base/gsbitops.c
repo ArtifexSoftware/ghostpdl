@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -391,7 +391,7 @@ bits_bounding_box(const byte * data, uint height, uint raster,
 #  define shift_out_last(x,n) ((x) >>= (n))
 #  define right_justify_last(x,n) DO_NOTHING
 #else
-#  define last_bits(n) (-1L << ((ARCH_SIZEOF_LONG * 8) - (n)))
+#  define last_bits(n) (((unsigned long)-1L) << ((ARCH_SIZEOF_LONG * 8) - (n)))
 #  define shift_out_last(x,n) ((x) <<= (n))
 #  define right_justify_last(x,n) (x) >>= ((ARCH_SIZEOF_LONG * 8) - (n))
 #endif

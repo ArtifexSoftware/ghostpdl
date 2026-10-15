@@ -2009,7 +2009,7 @@ idata:                  data_size = 0;
                             case 6:
                                 v = (b ^ 0xd0) - 0x10;
                                 vs[i] =
-                                    ((v << 8) + cbp[1]) << (_fixed_shift - 2);
+				  (((ufixed)v << 8) + cbp[1]) << (_fixed_shift - 2);
                                 if_debug1m('L', mem, " %g", fixed2float(vs[i]));
                                 cbp += 2;
                                 continue;
@@ -2023,7 +2023,7 @@ idata:                  data_size = 0;
                         /* Absent the cast in the next statement, */
                         /* the Borland C++ 4.5 compiler incorrectly */
                         /* sign-extends the result of the shift. */
-                        vs[i] = (v << 16) + (uint) (cbp[-2] << 8) + cbp[-1];
+                        vs[i] = ((ufixed)v << 16) + (uint) (cbp[-2] << 8) + cbp[-1];
                         if_debug1m('L', mem, " %g", fixed2float(vs[i]));
                     }
                     if_debug0m('L', mem, "\n");

@@ -365,7 +365,10 @@ set_linear_color_bits_mask_shift(gx_device * dev)
         comp_bits[i] = ( i == gray_index ?
                          ilog2(max_gray + 1) :
                          ilog2(max_color + 1) );
-        comp_mask[i] = (((gx_color_index)1 << comp_bits[i]) - 1)
+        if (comp_shift[i] >= sizeof(gx_color_index)*8)
+	    comp_mask[i] = 0;
+        else
+            comp_mask[i] = (((gx_color_index)1 << comp_bits[i]) - 1)
                                                << comp_shift[i];
     }
 #undef comp_bits

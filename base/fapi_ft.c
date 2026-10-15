@@ -1974,8 +1974,10 @@ gs_fapi_freetype_destroy(gs_fapi_server ** serv)
     ff_server *server = (ff_server *) * serv;
     gs_memory_t *cmem = server->mem;
 
-    FT_Done_Glyph(&server->outline_glyph->root);
-    FT_Done_Glyph(&server->bitmap_glyph->root);
+    if (server->outline_glyph != NULL)
+        FT_Done_Glyph(&server->outline_glyph->root);
+    if (server->bitmap_glyph != NULL)
+        FT_Done_Glyph(&server->bitmap_glyph->root);
 
     /* As with initialization: since we're supplying memory management to
      * FT, we cannot just to use FT_Done_FreeType (), we have to use

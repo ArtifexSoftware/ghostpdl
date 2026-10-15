@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -118,7 +118,7 @@ extern const char *cmd_extend_op_names[256];
  *      110sxxxx xxxxxxff
  *      111----- (a full-size `fixed' value)
  */
-#define is_bits(d, n) !(((d) + ((fixed)1 << ((n) - 1))) & (-(fixed)1 << (n)))
+#define is_bits(d, n) !(((d) + ((fixed)1 << ((n) - 1))) & ((~(ufixed)0) << (n)))
 
 /*
  * Maximum size of a halftone segment. This leaves enough headroom to

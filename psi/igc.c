@@ -210,7 +210,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 #define for_collected_spaces(i)\
   for (i = min_collect; i <= max_trace; ++i)
 #define for_space_mems(i, mem)\
-  for (mem = space_memories[i]; mem != 0; mem = &mem->saved->state)
+  for (mem = space_memories[i]; mem != 0; mem = mem->saved == NULL ? NULL : &mem->saved->state)
 #define for_mem_clumps(mem, cp, sw)\
   for (cp = clump_splay_walk_init(sw, mem); cp != 0; cp = clump_splay_walk_fwd(sw))
 #define for_space_clumps(i, mem, cp, sw)\

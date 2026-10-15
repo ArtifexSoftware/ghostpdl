@@ -1308,7 +1308,7 @@ pdfi_fapi_get_glyph(gs_fapi_font * ff, gs_glyph char_code, byte * buf, int buf_l
         code = pfont42->data.get_outline(pfont42, char_code, &pgd);
         cstrlen = pgd.bits.size;
         if (code >= 0) {
-            if (buf && buf_length >= cstrlen) {
+            if (buf && buf_length >= cstrlen && cstrlen != 0) {
                 memcpy(buf, pgd.bits.data, cstrlen);
             }
         }

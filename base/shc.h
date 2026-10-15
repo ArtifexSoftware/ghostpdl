@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -137,11 +137,11 @@ void hc_put_code_proc(bool, byte *, uint);
 #define hc_put_value(ss, q, code, clen)\
   (hc_print_value_then(code, clen)\
    ((bits_left -= (clen)) >= 0 ?\
-    (bits += (code) << bits_left) :\
+    (bits += ((unsigned int)(code)) << bits_left) :	\
     (hc_put_code_proc((ss)->FirstBitLowOrder,\
                       q += hc_bits_size >> 3,\
                       (bits + ((code) >> -bits_left))),\
-     bits = (code) << (bits_left += hc_bits_size))))
+     bits = ((unsigned int)(code)) << (bits_left += hc_bits_size))))
 #define hc_put_code(ss, q, cp)\
   hc_put_value(ss, q, (cp)->code, (cp)->code_length)
 

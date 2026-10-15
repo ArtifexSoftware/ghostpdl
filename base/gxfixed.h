@@ -75,7 +75,7 @@ typedef ulong ufixed;		/* only used in a very few places */
  * only ratios and not actual values are involved, we don't need to take
  * the scale factor into account: we can simply cast to float directly.
  */
-#define int2fixed(i) ((fixed)(i)<<_fixed_shift)
+#define int2fixed(i) ((fixed)((ufixed)(i)<<_fixed_shift))
 /* Define some useful constants. */
 /* Avoid casts, so strict ANSI compilers will accept them in #ifs. */
 #define fixed_1 (fixed_epsilon << _fixed_shift)

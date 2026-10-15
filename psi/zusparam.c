@@ -1132,7 +1132,8 @@ set_JobName(i_ctx_t *i_ctx_p, gs_param_string * pval)
     i_ctx_p->user_params.JobName = (char *)gs_alloc_bytes(imemory->non_gc_memory, pval->size + 1, "set_JobName");
     if (i_ctx_p->user_params.JobName == NULL)
         return_error(gs_error_VMerror);
-    memcpy(i_ctx_p->user_params.JobName, pval->data, pval->size);
+    if (pval->size)
+        memcpy(i_ctx_p->user_params.JobName, pval->data, pval->size);
     i_ctx_p->user_params.JobName[pval->size] = 0x00;
     return 0;
 }

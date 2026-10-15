@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -243,7 +243,7 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
     int level;
 
     for (smem = mem, level = 0; smem != 0;
-         smem = &smem->saved->state, --level
+         smem = smem->saved == NULL ? NULL : &smem->saved->state, --level
         ) {
         clump_splay_walker sw;
         const clump_t *cp;

@@ -609,7 +609,7 @@ alloc_save__filter_changes(gs_ref_memory_t *memory)
 {
     gs_ref_memory_t *mem = memory;
 
-    for  (; mem; mem = &mem->saved->state)
+    for  (; mem; mem = mem->saved == NULL ? NULL : &mem->saved->state)
         alloc_save__filter_changes_in_space(mem);
 }
 
