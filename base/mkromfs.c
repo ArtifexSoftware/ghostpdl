@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -1747,6 +1747,12 @@ int cmpstringp(const void *p1, const void *p2)
    return strcmp(* (char * const *) p1, * (char * const *) p2);
 }
 
+static void
+wrapped_ungetc(int c, FILE *stream)
+{
+  (void)ungetc(c, stream);
+}
+
 /* This relies on the gp_enumerate_* which should not return directories, nor	*/
 /* should it recurse into directories (unlike Adobe's implementation)		*/
 /* paths are checked to see if they are an ordinary file or a path		*/
@@ -1852,7 +1858,7 @@ void process_path(char *path, const char *os_prefix, const char *rom_prefix,
         block = 0;
         psc_len = 0;
         if (compaction)
-            pscompact_start(&psc, (psc_getc*)&fgetc, (psc_ungetc*)&ungetc, (psc_feof*)&feof, in, 1, 0, 0);
+            pscompact_start(&psc, (psc_getc*)&fgetc, (psc_ungetc*)&wrapped_ungetc, (psc_feof*)&feof, in, 1, 0, 0);
         while (!feof(in)) {
             if (compaction)
                 ulen = pscompact_getcompactedblock(&psc, ubuf, ROMFS_BLOCKSIZE);

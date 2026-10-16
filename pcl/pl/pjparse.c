@@ -41,7 +41,7 @@
 
 /* definitions for fontsource and font number table entries */
 #define pjl_fontsource_body\
-    char designator[2]; \
+    char designator[3]; \
     PJCONST char *pathname; \
     PJCONST char *fontnumber
 
@@ -1681,7 +1681,7 @@ static int set_pjl_fontsource(gs_memory_t * mem, pjl_fontsource_t **fontenv, pjl
         } else {
             pjl_fontenv[i].fontnumber = 0x00;
         }
-        memcpy(pjl_fontenv[i].designator, pjl_fontsource_table[i].designator, 2);
+        memcpy(pjl_fontenv[i].designator, pjl_fontsource_table[i].designator, 3);
 
         i++;
     }
@@ -1734,7 +1734,7 @@ static int set_pjl_default_fontsource(gs_memory_t * mem, pjl_fontsource_t **font
         } else {
             pjl_fontdef[i].fontnumber = 0x00;
         }
-        memcpy(pjl_fontdef[i].designator, pjl_fontsource_table[i].designator, 2);
+        memcpy(pjl_fontdef[i].designator, pjl_fontsource_table[i].designator, 3);
 
         i++;
     }

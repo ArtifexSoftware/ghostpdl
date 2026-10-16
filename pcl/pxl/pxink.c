@@ -884,8 +884,9 @@ pxSetHalftoneMethod(px_args_t * par, px_state_t * pxs)
     pxeDitherMatrix_t method;
 
     if (par->pv[5] || par->pv[6] || par->pv[7] || par->pv[8])
+    {
         /* Placeholder to support halftones per object type. */
-        ;
+    }
 
     if (par->pv[1]) {           /* Internal halftone */
         if (par->pv[2] || par->pv[3] || par->pv[4])

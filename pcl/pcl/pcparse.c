@@ -675,9 +675,9 @@ top:
             if (pcs->defining_macro && !in_macro) {
                 /* We just started a macro definition. */
                 if (pst->scan_type != scanning_none) {
-                    /* macro was defined with an incomple combined command */
+                    /* macro was defined with an incomplete combined command */
                     /* start definition of macro with esc&f preloaded */
-                    static const byte macro_prefix[4] = " \033&f";
+                    static const byte macro_prefix[] = " \033&f";
 
                     code = append_macro(&macro_prefix[0], &macro_prefix[3], pcs);
                     if (code < 0)
