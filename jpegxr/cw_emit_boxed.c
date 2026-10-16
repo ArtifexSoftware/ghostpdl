@@ -1120,7 +1120,7 @@ int jxrc_write_container_post_boxed(jxr_container_t cp)
       assert(mark > cp->image_offset_mark);
       count = mark - cp->image_offset_mark; /* 8 is the box header */
 
-      DEBUG("CONTAINER: measured bitstream count=%u\n", count);
+      DODEBUG("CONTAINER: measured bitstream count=%u\n", count);
 
       fflush(cp->fd);
       fseek(cp->fd, cp->image_offset_mark, SEEK_SET);
@@ -1138,7 +1138,7 @@ int jxrc_write_container_post_alpha_boxed(jxr_container_t cp)
 {
       uint32_t mark  = ftell(cp->fd);
       uint32_t count = mark - cp->alpha_offset_mark;
-      DEBUG("CONTAINER: measured alpha count=%u\n", count);
+      DODEBUG("CONTAINER: measured alpha count=%u\n", count);
 
       if(cp->separate_alpha_image_plane) {
         fflush(cp->fd);

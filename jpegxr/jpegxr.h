@@ -502,6 +502,9 @@ JXR_EXTERN int jxr_get_ALPHACHANNEL_FLAG(jxr_image_t image);
 */
 JXR_EXTERN int jxr_get_ALPHA_PREMULTIPLIED_FLAG(jxr_image_t image);
 
+JXR_EXTERN int jxr_get_ALPHA_PRESENCE_FLAG(jxr_image_t image);
+
+
 /*
 ** Check whether the container format includes an alpha channel
 ** flag. This alpha channel can be either realized as separate or as

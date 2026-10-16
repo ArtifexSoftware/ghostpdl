@@ -646,7 +646,7 @@ int jxrc_write_container_post(jxr_container_t cp)
       assert(mark > cp->image_offset_mark);
       count = mark - cp->image_offset_mark;
 
-      DEBUG("CONTAINER: measured bitstream count=%u\n", count);
+      DODEBUG("CONTAINER: measured bitstream count=%u\n", count);
 
       fseek(cp->fd, cp->image_count_mark, SEEK_SET);
       scr[0] = (count >>  0) & 0xff;
@@ -680,7 +680,7 @@ int jxrc_write_container_post_alpha(jxr_container_t cp)
 {
       uint32_t mark = ftell(cp->fd);
       uint32_t count = mark - cp->alpha_begin_mark;
-      DEBUG("CONTAINER: measured alpha count=%u\n", count);
+      DODEBUG("CONTAINER: measured alpha count=%u\n", count);
 
       if(cp->separate_alpha_image_plane)
       {

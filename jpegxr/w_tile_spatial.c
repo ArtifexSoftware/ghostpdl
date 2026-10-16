@@ -86,10 +86,10 @@ void _jxr_w_TILE_SPATIAL(jxr_image_t image, struct wbitstream*str,
     unsigned plane_idx, num_planes;
     unsigned mb_height;
     unsigned mb_width;
-    DEBUG("START TILE_SPATIAL at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
+    DODEBUG("START TILE_SPATIAL at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
-    DEBUG(" TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
+    DODEBUG(" TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
     _jxr_wbitstream_uint8(str, 0x00);
     _jxr_wbitstream_uint8(str, 0x00);
     _jxr_wbitstream_uint8(str, 0x01);
@@ -135,7 +135,7 @@ void _jxr_w_TILE_SPATIAL(jxr_image_t image, struct wbitstream*str,
         mb_width = image->tile_column_width[tx];
     }
 
-    DEBUG(" TILE_SPATIAL at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
+    DODEBUG(" TILE_SPATIAL at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
     num_planes = ((ALPHACHANNEL_FLAG(image)) ? 2 : 1);
 
     for (my = 0 ; my < mb_height ; my += 1) {
@@ -149,12 +149,12 @@ void _jxr_w_TILE_SPATIAL(jxr_image_t image, struct wbitstream*str,
             if (plane->bands_present!=3) {
                 if (plane->num_lp_qps>1 && !plane->lp_use_dc_qp) {
                     unsigned qp_index = _jxr_select_lp_index(plane, tx,ty,mx,my);
-                    DEBUG(" DECODE_QP_INDEX(%d) --> %u\n", plane->num_lp_qps, qp_index);
+                    DODEBUG(" DECODE_QP_INDEX(%d) --> %u\n", plane->num_lp_qps, qp_index);
                     _jxr_w_ENCODE_QP_INDEX(plane, str, tx, ty, mx, my, plane->num_lp_qps, qp_index);
                 }
                 if (plane->bands_present!=2 && plane->num_hp_qps>1 && !plane->hp_use_lp_qp) {
                     unsigned qp_index = _jxr_select_hp_index(plane, tx,ty,mx,my);
-                    DEBUG(" DECODE_QP_INDEX(%d) --> %u\n", plane->num_hp_qps, qp_index);
+                    DODEBUG(" DECODE_QP_INDEX(%d) --> %u\n", plane->num_hp_qps, qp_index);
                     _jxr_w_ENCODE_QP_INDEX(plane, str, tx, ty, mx, my, plane->num_hp_qps, qp_index);
                 }
             }
@@ -176,7 +176,7 @@ void _jxr_w_TILE_SPATIAL(jxr_image_t image, struct wbitstream*str,
 
     _jxr_wbitstream_syncbyte(str);
     _jxr_wbitstream_flush(str);
-    DEBUG("END TILE_SPATIAL\n");
+    DODEBUG("END TILE_SPATIAL\n");
 }
 
 

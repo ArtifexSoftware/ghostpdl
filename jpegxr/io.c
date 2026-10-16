@@ -100,10 +100,15 @@ void _jxr_rbitstream_mark(struct rbitstream*str)
 
 void _jxr_rbitstream_seek(struct rbitstream*str, uint64_t off)
 {
+#ifndef NDEBUG
     int rc;
+#endif
     assert(str->bits_avail == 0);
     /* NOTE: Should be using fseek64? */
-    rc = fseek(str->fd, str->mark_stream_position + (long)off, SEEK_SET);
+#ifndef NDEBUG
+    rc =
+#endif
+    fseek(str->fd, str->mark_stream_position + (long)off, SEEK_SET);
     str->read_count = (size_t) off;
     assert(rc >= 0);
 }
@@ -134,7 +139,7 @@ static int get_byte(struct rbitstream*str)
     str->bits_avail = 8;
     str->read_count += 1;
 #if 0
-    DEBUG(" in byte: 0x%02x (bitpos=%zd)\n",
+    DODEBUG(" in byte: 0x%02x (bitpos=%zd)\n",
         str->byte, str->read_count*8-8);
 #endif
     return 0;

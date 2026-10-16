@@ -289,12 +289,12 @@ void _jxr_AdaptLP(jxr_image_t image)
     _jxr_AdaptVLCTable(image, AbsLevelIndLP0);
     _jxr_AdaptVLCTable(image, AbsLevelIndLP1);
 
-    DEBUG(" AdaptLP: DecFirstIndLPLum=%d\n", image->vlc_table[DecFirstIndLPLum].table);
-    DEBUG(" : DecIndLPLum0=%d\n", image->vlc_table[DecIndLPLum0].table);
-    DEBUG(" : DecIndLPLum1=%d\n", image->vlc_table[DecIndLPLum1].table);
-    DEBUG(" : DecFirstIndLPChr=%d\n", image->vlc_table[DecFirstIndLPChr].table);
-    DEBUG(" : DecIndLPChr0=%d\n", image->vlc_table[DecIndLPChr0].table);
-    DEBUG(" : DecIndLPChr1=%d\n", image->vlc_table[DecIndLPChr1].table);
+    DODEBUG(" AdaptLP: DecFirstIndLPLum=%d\n", image->vlc_table[DecFirstIndLPLum].table);
+    DODEBUG(" : DecIndLPLum0=%d\n", image->vlc_table[DecIndLPLum0].table);
+    DODEBUG(" : DecIndLPLum1=%d\n", image->vlc_table[DecIndLPLum1].table);
+    DODEBUG(" : DecFirstIndLPChr=%d\n", image->vlc_table[DecFirstIndLPChr].table);
+    DODEBUG(" : DecIndLPChr0=%d\n", image->vlc_table[DecIndLPChr0].table);
+    DODEBUG(" : DecIndLPChr1=%d\n", image->vlc_table[DecIndLPChr1].table);
 }
 
 void _jxr_AdaptHP(jxr_image_t image)
@@ -465,7 +465,7 @@ void _jxr_UpdateCountCBPLP(jxr_image_t image, int cbplp, int max)
 
 void _jxr_InitLPVLC(jxr_image_t image)
 {
-    DEBUG(" ... InitLPVLC\n");
+    DODEBUG(" ... InitLPVLC\n");
     InitVLCTable2(image, DecFirstIndLPLum);
     InitVLCTable2(image, DecIndLPLum0);
     InitVLCTable2(image, DecIndLPLum1);
@@ -595,7 +595,7 @@ int _jxr_PredCBP444(jxr_image_t image, int*diff_cbp,
     if (channel > 0)
         chroma_flag = 1;
 
-    DEBUG(" PredCBP444: Prediction mode = %d\n", image->hp_cbp_model.state[chroma_flag]);
+    DODEBUG(" PredCBP444: Prediction mode = %d\n", image->hp_cbp_model.state[chroma_flag]);
     cbp = diff_cbp[channel];
     if (image->hp_cbp_model.state[chroma_flag] == 0) {
         if (mx == 0) {
@@ -619,11 +619,11 @@ int _jxr_PredCBP444(jxr_image_t image, int*diff_cbp,
     }
 
     norig = num_ones(cbp);
-    DEBUG(" PredCBP444: NOrig=%d, CBPModel.Count0/1[%d]= %d/%d\n", norig, chroma_flag,
+    DODEBUG(" PredCBP444: NOrig=%d, CBPModel.Count0/1[%d]= %d/%d\n", norig, chroma_flag,
         image->hp_cbp_model.count0[chroma_flag],
         image->hp_cbp_model.count1[chroma_flag]);
     update_cbp_model(image, chroma_flag, norig);
-    DEBUG(" PredCBP444: ...becomes CBPModel.Count0/1[%d]= %d/%d, new state=%d\n",
+    DODEBUG(" PredCBP444: ...becomes CBPModel.Count0/1[%d]= %d/%d, new state=%d\n",
         chroma_flag, image->hp_cbp_model.count0[chroma_flag],
         image->hp_cbp_model.count1[chroma_flag], image->hp_cbp_model.state[chroma_flag]);
     return cbp;
@@ -637,11 +637,11 @@ void _jxr_w_PredCBP444(jxr_image_t image, int ch, unsigned tx, unsigned mx, int 
     if (ch > 0)
         chroma_flag = 1;
 
-    DEBUG(" PredCBP444: Prediction mode = %d\n", image->hp_cbp_model.state[chroma_flag]);
+    DODEBUG(" PredCBP444: Prediction mode = %d\n", image->hp_cbp_model.state[chroma_flag]);
     cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
     norig = num_ones(cbp);
 
-    DEBUG(" PredCBP444: ... cbp starts as 0x%x\n", cbp);
+    DODEBUG(" PredCBP444: ... cbp starts as 0x%x\n", cbp);
 
     if (image->hp_cbp_model.state[chroma_flag] == 0) {
 
@@ -666,7 +666,7 @@ void _jxr_w_PredCBP444(jxr_image_t image, int ch, unsigned tx, unsigned mx, int 
         cbp ^= 0xffff;
     }
 
-    DEBUG(" PredCBP444: ... diff_cbp 0x%04x\n", cbp);
+    DODEBUG(" PredCBP444: ... diff_cbp 0x%04x\n", cbp);
     MACROBLK_UP1(image,ch,tx,mx).hp_diff_cbp = cbp;
 
     update_cbp_model(image, chroma_flag, norig);
@@ -680,7 +680,7 @@ int _jxr_PredCBP422(jxr_image_t image, int*diff_cbp,
     int norig;
 
     assert(channel > 0);
-    DEBUG(" PredCBP422: Prediction mode = %d, channel=%d, cbp_mode.State[1]=%d\n",
+    DODEBUG(" PredCBP422: Prediction mode = %d, channel=%d, cbp_mode.State[1]=%d\n",
         image->hp_cbp_model.state[1], channel, image->hp_cbp_model.state[1]);
     cbp = diff_cbp[channel];
 
@@ -714,11 +714,11 @@ void _jxr_w_PredCBP422(jxr_image_t image, int ch, unsigned tx, unsigned mx, int 
     int norig;
 
     assert(ch > 0);
-    DEBUG(" PredCBP422: Prediction mode = %d\n", image->hp_cbp_model.state[1]);
+    DODEBUG(" PredCBP422: Prediction mode = %d\n", image->hp_cbp_model.state[1]);
     cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
     norig = num_ones(cbp) * 2;
 
-    DEBUG(" PredCBP422: ... cbp[%d] starts as 0x%x\n", ch, cbp);
+    DODEBUG(" PredCBP422: ... cbp[%d] starts as 0x%x\n", ch, cbp);
 
     if (image->hp_cbp_model.state[1] == 0) {
 
@@ -740,7 +740,7 @@ void _jxr_w_PredCBP422(jxr_image_t image, int ch, unsigned tx, unsigned mx, int 
         cbp ^= 0xff;
     }
 
-    DEBUG(" PredCBP422: ... diff_cbp 0x%04x\n", cbp);
+    DODEBUG(" PredCBP422: ... diff_cbp 0x%04x\n", cbp);
     MACROBLK_UP1(image,ch,tx,mx).hp_diff_cbp = cbp;
 
     update_cbp_model(image, 1, norig);
@@ -754,7 +754,7 @@ int _jxr_PredCBP420(jxr_image_t image, int*diff_cbp,
     int cbp;
     int norig;
     assert(channel > 0);
-    DEBUG(" PredCBP420: Prediction mode = %d, channel=%d, cbp_mode.State[1]=%d\n",
+    DODEBUG(" PredCBP420: Prediction mode = %d, channel=%d, cbp_mode.State[1]=%d\n",
         image->hp_cbp_model.state[1], channel, image->hp_cbp_model.state[1]);
     cbp = diff_cbp[channel];
 
@@ -785,11 +785,11 @@ void _jxr_w_PredCBP420(jxr_image_t image, int ch, unsigned tx, unsigned mx, int 
     int cbp;
     int norig;
     assert(ch > 0);
-    DEBUG(" PredCBP420: Prediction mode = %d\n", image->hp_cbp_model.state[1]);
+    DODEBUG(" PredCBP420: Prediction mode = %d\n", image->hp_cbp_model.state[1]);
     cbp = MACROBLK_UP1_HPCBP(image,ch,tx,mx);
     norig = num_ones(cbp) * 4;
 
-    DEBUG(" PredCBP420: ... cbp[%d] starts as 0x%x\n", ch, cbp);
+    DODEBUG(" PredCBP420: ... cbp[%d] starts as 0x%x\n", ch, cbp);
 
     if (image->hp_cbp_model.state[1] == 0) {
 
@@ -809,7 +809,7 @@ void _jxr_w_PredCBP420(jxr_image_t image, int ch, unsigned tx, unsigned mx, int 
         cbp ^= 0xf;
     }
 
-    DEBUG(" PredCBP420: ... diff_cbp 0x%04x\n", cbp);
+    DODEBUG(" PredCBP420: ... diff_cbp 0x%04x\n", cbp);
     MACROBLK_UP1(image,ch,tx,mx).hp_diff_cbp = cbp;
 
     update_cbp_model(image, 1, norig);
@@ -903,7 +903,7 @@ void _jxr_complete_cur_dclp(jxr_image_t image, int tx, int mx, int my)
         long left = mx>0? MACROBLK_CUR_DC(image,ch,tx,mx-1) : 0;
         long top = MACROBLK_UP_DC(image,ch,tx,mx);
 
-        DEBUG(" MBDC_MODE=%d for TX=%d, MBx=%d, MBy=%d (cur_my=%d), ch=%d, left=0x%lx, top=0x%lx, cur=0x%x\n",
+        DODEBUG(" MBDC_MODE=%d for TX=%d, MBx=%d, MBy=%d (cur_my=%d), ch=%d, left=0x%lx, top=0x%lx, cur=0x%x\n",
             mbdc_mode, tx, mx, my, image->cur_my, ch, left, top, MACROBLK_CUR_DC(image,ch,tx,mx));
 
         MACROBLK_CUR(image,ch,tx,mx).pred_dclp[0] = MACROBLK_CUR_DC(image,ch,tx,mx);
@@ -943,7 +943,7 @@ void _jxr_complete_cur_dclp(jxr_image_t image, int tx, int mx, int my)
         mblp_mode = 2;
     }
 
-    DEBUG(" MBLP_MODE=%d for MBx=%d, MBy=%d (lp_quant=%d,lp_quant_ctx=%d)\n", mblp_mode, mx, image->cur_my,
+    DODEBUG(" MBLP_MODE=%d for MBx=%d, MBy=%d (lp_quant=%d,lp_quant_ctx=%d)\n", mblp_mode, mx, image->cur_my,
         MACROBLK_CUR_LP_QUANT(image,0,tx,mx),
         mbdc_mode==0? MACROBLK_CUR_LP_QUANT(image,0,tx,mx-1) : mbdc_mode==1 ? MACROBLK_UP1_LP_QUANT(image,0,tx,mx) : -1);
 
@@ -968,14 +968,14 @@ static void predict_lp444(jxr_image_t image, int tx, int mx, int my, int ch, int
 #if defined(DETAILED_DEBUG)
     {
         int jdx;
-        DEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) Difference:", my, mx, ch);
-        DEBUG(" 0x%08x", MACROBLK_CUR(image,ch,tx,mx).pred_dclp[0]);
+        DODEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) Difference:", my, mx, ch);
+        DODEBUG(" 0x%08x", MACROBLK_CUR(image,ch,tx,mx).pred_dclp[0]);
         for (jdx = 0; jdx < 15 ; jdx += 1) {
-            DEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
+            DODEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
             if ((jdx+1)%4 == 3 && jdx != 14)
-                DEBUG("\n%*s:", 46, "");
+                DODEBUG("\n%*s:", 46, "");
         }
-        DEBUG("\n");
+        DODEBUG("\n");
     }
 #endif
 
@@ -999,14 +999,14 @@ static void predict_lp444(jxr_image_t image, int tx, int mx, int my, int ch, int
 #if defined(DETAILED_DEBUG)
     {
         int jdx;
-        DEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) Predicted:", my, mx, ch);
-        DEBUG(" 0x%08x", MACROBLK_CUR_DC(image,ch,tx,mx));
+        DODEBUG(" DC/LP (strip=%3d, mbx=%4d, ch=%d) Predicted:", my, mx, ch);
+        DODEBUG(" 0x%08x", MACROBLK_CUR_DC(image,ch,tx,mx));
         for (jdx = 0; jdx < 15 ; jdx += 1) {
-            DEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
+            DODEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
             if ((jdx+1)%4 == 3 && jdx != 14)
-                DEBUG("\n%*s:", 45, "");
+                DODEBUG("\n%*s:", 45, "");
         }
-        DEBUG("\n");
+        DODEBUG("\n");
     }
 #endif
 
@@ -1023,14 +1023,14 @@ static void predict_lp422(jxr_image_t image, int tx, int mx, int my, int ch, int
 #if defined(DETAILED_DEBUG)
     {
         int jdx;
-        DEBUG(" DC/LP (strip=%3d, tx=%d, mbx=%4d, ch=%d) Difference:", my, tx, mx, ch);
-        DEBUG(" 0x%08x", MACROBLK_CUR(image,ch,tx,mx).pred_dclp[0]);
+        DODEBUG(" DC/LP (strip=%3d, tx=%d, mbx=%4d, ch=%d) Difference:", my, tx, mx, ch);
+        DODEBUG(" 0x%08x", MACROBLK_CUR(image,ch,tx,mx).pred_dclp[0]);
         for (jdx = 0; jdx < 7 ; jdx += 1) {
-            DEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
+            DODEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
             if ((jdx+1)%4 == 3 && jdx != 6)
-                DEBUG("\n%*s:", 52, "");
+                DODEBUG("\n%*s:", 52, "");
         }
-        DEBUG("\n");
+        DODEBUG("\n");
     }
 #endif
 
@@ -1059,14 +1059,14 @@ case 2:
 #if defined(DETAILED_DEBUG)
     {
         int jdx;
-        DEBUG(" DC/LP (strip=%3d, tx=%d, mbx=%4d, ch=%d) Predicted:", my, tx, mx, ch);
-        DEBUG(" 0x%08x", MACROBLK_CUR_DC(image,ch,tx,mx));
+        DODEBUG(" DC/LP (strip=%3d, tx=%d, mbx=%4d, ch=%d) Predicted:", my, tx, mx, ch);
+        DODEBUG(" 0x%08x", MACROBLK_CUR_DC(image,ch,tx,mx));
         for (jdx = 0; jdx < 7 ; jdx += 1) {
-            DEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
+            DODEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
             if ((jdx+1)%4 == 3 && jdx != 6)
-                DEBUG("\n%*s:", 51, "");
+                DODEBUG("\n%*s:", 51, "");
         }
-        DEBUG("\n");
+        DODEBUG("\n");
     }
 #endif
 
@@ -1093,12 +1093,12 @@ static void predict_lp420(jxr_image_t image, int tx, int mx, int my, int ch, int
 #if defined(DETAILED_DEBUG)
     {
         int jdx;
-        DEBUG(" DC/LP (strip=%3d, tx=%d, mbx=%4d, ch=%d) Predicted:", tx, my, mx, ch);
-        DEBUG(" 0x%08x", MACROBLK_CUR_DC(image,ch,tx,mx));
+        DODEBUG(" DC/LP (strip=%3d, tx=%d, mbx=%4d, ch=%d) Predicted:", tx, my, mx, ch);
+        DODEBUG(" 0x%08x", MACROBLK_CUR_DC(image,ch,tx,mx));
         for (jdx = 0; jdx < 3 ; jdx += 1) {
-            DEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
+            DODEBUG(" 0x%08x", MACROBLK_CUR_LP(image,ch,tx,mx,jdx));
         }
-        DEBUG("\n");
+        DODEBUG("\n");
     }
 #endif
 
@@ -1347,13 +1347,13 @@ void _jxr_4x4IPCT(int*coeff)
 #if defined(DETAILED_DEBUG) && 0
     {
         int idx;
-        DEBUG(" InvPermute:\n%*s", 4, "");
+        DODEBUG(" InvPermute:\n%*s", 4, "");
         for (idx = 0 ; idx < 16 ; idx += 1) {
-            DEBUG(" 0x%08x", coeff[idx]);
+            DODEBUG(" 0x%08x", coeff[idx]);
             if (idx%4 == 3 && idx != 15)
-                DEBUG("\n%*s", 4, "");
+                DODEBUG("\n%*s", 4, "");
         }
-        DEBUG("\n");
+        DODEBUG("\n");
     }
 #endif
     _2x2T_h (coeff+0, coeff+ 1, coeff+4, coeff+ 5, 1);
@@ -1363,13 +1363,13 @@ void _jxr_4x4IPCT(int*coeff)
 #if defined(DETAILED_DEBUG) && 0
     {
         int idx;
-        DEBUG(" stage 1:\n%*s", 4, "");
+        DODEBUG(" stage 1:\n%*s", 4, "");
         for (idx = 0 ; idx < 16 ; idx += 1) {
-            DEBUG(" 0x%08x", coeff[idx]);
+            DODEBUG(" 0x%08x", coeff[idx]);
             if (idx%4 == 3 && idx != 15)
-                DEBUG("\n%*s", 4, "");
+                DODEBUG("\n%*s", 4, "");
         }
-        DEBUG("\n");
+        DODEBUG("\n");
     }
 #endif
 

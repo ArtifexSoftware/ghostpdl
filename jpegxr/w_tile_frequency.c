@@ -82,10 +82,10 @@ void _jxr_w_TILE_DC(jxr_image_t image, struct wbitstream*str,
     unsigned mx, my;
     unsigned mb_height;
     unsigned mb_width;
-    DEBUG("START TILE_DC at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
+    DODEBUG("START TILE_DC at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
-    DEBUG(" DC_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
+    DODEBUG(" DC_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
     _jxr_wbitstream_uint8(str, 0x00);
     _jxr_wbitstream_uint8(str, 0x00);
     _jxr_wbitstream_uint8(str, 0x01);
@@ -111,7 +111,7 @@ void _jxr_w_TILE_DC(jxr_image_t image, struct wbitstream*str,
         mb_width = image->tile_column_width[tx];
     }
 
-    DEBUG(" TILE_DC at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
+    DODEBUG(" TILE_DC at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
     for (my = 0 ; my < mb_height ; my += 1) {
 
         _jxr_wflush_mb_strip(image, tx, ty, my, 1);
@@ -127,7 +127,7 @@ void _jxr_w_TILE_DC(jxr_image_t image, struct wbitstream*str,
 
     _jxr_wbitstream_syncbyte(str);
     _jxr_wbitstream_flush(str);
-    DEBUG("END TILE_DC\n");
+    DODEBUG("END TILE_DC\n");
 }
 
 void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
@@ -137,13 +137,13 @@ void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
     unsigned mb_height;
     unsigned mb_width;
     uint8_t bands_present;
-    DEBUG("START TILE_LP at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
+    DODEBUG("START TILE_LP at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
 
     bands_present = image->bands_present_of_primary;
 
     if (bands_present < 3 /* LOWPASS */) {
         /* TILE_STARTCODE == 1 */
-        DEBUG(" LP_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
+        DODEBUG(" LP_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
         _jxr_wbitstream_uint8(str, 0x00);
         _jxr_wbitstream_uint8(str, 0x00);
         _jxr_wbitstream_uint8(str, 0x01);
@@ -167,7 +167,7 @@ void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
         mb_width = image->tile_column_width[tx];
     }
 
-    DEBUG(" TILE_LP at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
+    DODEBUG(" TILE_LP at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
     for (my = 0 ; my < mb_height ; my += 1) {
 
         _jxr_wflush_mb_strip(image, tx, ty, my, 0);
@@ -177,7 +177,7 @@ void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
             if (bands_present<3 /* LOWPASS */) {
                 if (image->num_lp_qps>1 && !image->lp_use_dc_qp) {
                     unsigned qp_index = _jxr_select_lp_index(image, tx,ty,mx,my);
-                    DEBUG(" DECODE_QP_INDEX(%d) --> %u\n", image->num_lp_qps, qp_index);
+                    DODEBUG(" DECODE_QP_INDEX(%d) --> %u\n", image->num_lp_qps, qp_index);
                     _jxr_w_ENCODE_QP_INDEX(image, str, tx, ty, mx, my, image->num_lp_qps, qp_index);
                 }
 
@@ -191,7 +191,7 @@ void _jxr_w_TILE_LP(jxr_image_t image, struct wbitstream*str,
 
     _jxr_wbitstream_syncbyte(str);
     _jxr_wbitstream_flush(str);
-    DEBUG("END TILE_LP\n");
+    DODEBUG("END TILE_LP\n");
 }
 
 void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
@@ -204,7 +204,7 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
     unsigned mx, my;
     unsigned mb_height;
     unsigned mb_width;
-    DEBUG("START TILE_HP_FLEX at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
+    DODEBUG("START TILE_HP_FLEX at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_wbitstream_bitpos(str));
 
     bands_present = image->bands_present_of_primary;
 
@@ -213,7 +213,7 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
 
     if (bands_present < 2 /* HIGHPASS */) {
         /* TILE_STARTCODE == 1 */
-        DEBUG(" HP_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
+        DODEBUG(" HP_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(str));
         _jxr_wbitstream_uint8(str, 0x00);
         _jxr_wbitstream_uint8(str, 0x00);
         _jxr_wbitstream_uint8(str, 0x01);
@@ -227,7 +227,7 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
 
     if (bands_present == 0 /* ALL */) {
         /* TILE_STARTCODE == 1 */
-        DEBUG(" FLEX_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(&strFP));
+        DODEBUG(" FLEX_TILE_STARTCODE at bitpos=%zu\n", _jxr_wbitstream_bitpos(&strFP));
         _jxr_wbitstream_uint8(&strFP, 0x00);
         _jxr_wbitstream_uint8(&strFP, 0x00);
         _jxr_wbitstream_uint8(&strFP, 0x01);
@@ -250,7 +250,7 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
         mb_width = image->tile_column_width[tx];
     }
 
-    DEBUG(" TILE_HP_FLEX at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
+    DODEBUG(" TILE_HP_FLEX at [%d %d] is %u x %u MBs\n", tx, ty, mb_width, mb_height);
     for (my = 0 ; my < mb_height ; my += 1) {
 
         _jxr_wflush_mb_strip(image, tx, ty, my, 0);
@@ -260,7 +260,7 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
             if (bands_present<2 /* HIGHPASS */) {
                 if (image->num_hp_qps>1 && !image->hp_use_lp_qp) {
                     unsigned qp_index = _jxr_select_hp_index(image, tx,ty,mx,my);
-                    DEBUG(" DECODE_QP_INDEX(%d) --> %u\n", image->num_hp_qps, qp_index);
+                    DODEBUG(" DECODE_QP_INDEX(%d) --> %u\n", image->num_hp_qps, qp_index);
                     _jxr_w_ENCODE_QP_INDEX(image, str, tx, ty, mx, my, image->num_hp_qps, qp_index);
                 }
 
@@ -311,7 +311,7 @@ void _jxr_w_TILE_HP_FLEX(jxr_image_t image, struct wbitstream*str,
     remove("fp.tmp");
 
     _jxr_wbitstream_flush(str);
-    DEBUG("END TILE_HP_FLEX\n");
+    DODEBUG("END TILE_HP_FLEX\n");
 }
 
 /*

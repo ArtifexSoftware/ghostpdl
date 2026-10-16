@@ -162,7 +162,6 @@ make_mb_row_buffer_aux(jxr_image_t image, int ch, int format_scale, size_t block
 static int make_mb_row_buffer(jxr_image_t image, unsigned use_height)
 {
     size_t block_count = EXTENDED_WIDTH_BLOCKS(image) * use_height;
-    size_t idx;
     int format_scale;
     int ch;
 

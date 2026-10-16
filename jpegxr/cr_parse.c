@@ -151,6 +151,7 @@ int jxr_read_image_container(jxr_container_t container, FILE*fd)
 {
   unsigned char buf[4];
   size_t rc;
+  int irc;
   uint32_t ifd_off;
 
   rc = fread(buf, 1, 4, fd);
@@ -192,9 +193,10 @@ int jxr_read_image_container(jxr_container_t container, FILE*fd)
                                                     container->image_count * sizeof(struct ifd_table*));
 
     if (ifd_off & 0x1) return JXR_EC_IO;
-    rc = fseek(fd, ifd_off, SEEK_SET);
-    rc = read_ifd(container, fd, container->image_count-1, &ifd_next);
-    if (rc < 0) return (int) rc;
+    irc = fseek(fd, ifd_off, SEEK_SET);
+    if (irc < 0) return (int) irc;
+    irc = read_ifd(container, fd, container->image_count-1, &ifd_next);
+    if (irc < 0) return (int) irc;
 
     ifd_off = ifd_next;
   }
@@ -875,7 +877,7 @@ unsigned long jxrc_spatial_xfrm_primary(jxr_container_t container, int image)
             break;
     }
 
-    if (spatial_xfrm > 7 || spatial_xfrm < 0)
+    if (spatial_xfrm > 7 /*|| spatial_xfrm < 0*/)
         spatial_xfrm = 0;
     return spatial_xfrm;
 }
@@ -1410,7 +1412,6 @@ int jxrc_padding_data(jxr_container_t container, int image)
     unsigned ifd_cnt;
     struct ifd_table*ifd;
     unsigned idx;
-    unsigned char * data;
 
     assert(image < container->image_count);
 
@@ -1436,22 +1437,29 @@ int jxrc_padding_data(jxr_container_t container, int image)
     assert(ifd[idx].type == 7);
     assert(ifd[idx].cnt > 1);
 
-    if (ifd[idx].cnt <= 4)
-        data = (unsigned char *) ifd[idx].value_.v_sbyte;
-    else
-        data = (unsigned char *) ifd[idx].value_.p_sbyte;
+#ifndef NDEBUG
+    {
+        unsigned char * data;
+        if (ifd[idx].cnt <= 4)
+            data = (unsigned char *) ifd[idx].value_.v_sbyte;
+        else
+            data = (unsigned char *) ifd[idx].value_.p_sbyte;
 
-    assert(data[0] == 0x1c);
-    assert(data[1] == 0xea);
+        assert(data[0] == 0x1c);
+        assert(data[1] == 0xea);
+    }
+#endif
 
     return 0;
 }
 
+static
 uint16_t bytes2_to_off(uint8_t*bp)
 {
     return (bp[1]<<8) + (bp[0]);
 }
 
+static
 uint32_t bytes4_to_off(uint8_t*bp)
 {
     return (bp[3]<<24) + (bp[2]<<16) + (bp[1]<<8) + (bp[0]);
@@ -1507,6 +1515,8 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
         ifd_cnt = (buf[7]<<24) + (buf[6]<<16) + (buf[5]<<8) + buf[4];
 
         assert(ifd_tag > ifd_tag_prev);
+        if (ifd_tag <= ifd_tag_prev)
+            return -1;
         ifd_tag_prev = ifd_tag;
 
         cur[idx].tag = ifd_tag;
@@ -1532,7 +1542,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
         case 2: /* UTF8 */
         case 6: /* SBYTE */
         case 7: /* UNDEFINED */
-            DEBUG("Container %d: tag 0x%04x BYTE:", image_number, cur[idx].tag);
+            DODEBUG("Container %d: tag 0x%04x BYTE:", image_number, cur[idx].tag);
             if (cur[idx].cnt > 4) {
                 ifd_off = bytes4_to_off(cur[idx].value_.v_byte);
                 assert((ifd_off & 1) == 0);
@@ -1545,7 +1555,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 {
                 int bb;
                 for (bb = 0 ; bb < cur[idx].cnt ; bb += 1)
-                    DEBUG("%02x", cur[idx].value_.p_byte[bb]);
+                    DODEBUG("%02x", cur[idx].value_.p_byte[bb]);
                 }
 #endif
                 if (cur[idx].type == 2) {
@@ -1562,7 +1572,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 }
             }
             /* No action required to access individual bytes */
-            DEBUG("\n");
+            DODEBUG("\n");
             break;
 
         case 3: /* USHORT */
@@ -1570,7 +1580,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
             if (cur[idx].cnt <= 2) {
                 cur[idx].value_.v_short[0] = bytes2_to_off(cur[idx].value_.v_byte + 0);
                 cur[idx].value_.v_short[1] = bytes2_to_off(cur[idx].value_.v_byte + 2);
-                DEBUG("Container %d: tag 0x%04x SHORT %u SHORT %u\n", image_number,
+                DODEBUG("Container %d: tag 0x%04x SHORT %u SHORT %u\n", image_number,
                     cur[idx].tag, cur[idx].value_.v_short[0], cur[idx].value_.v_short[1]);
             } else {
                 uint16_t cdx;
@@ -1582,15 +1592,15 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 if (cur[idx].value_.p_short == NULL)
                     return -1;
 
-                DEBUG("Container %d: tag 0x%04x SHORT\n", image_number,
+                DODEBUG("Container %d: tag 0x%04x SHORT\n", image_number,
                     cur[idx].tag);
                 for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                     uint8_t buf[2];
                     fread(buf, 1, 2, fd);
                     cur[idx].value_.p_short[cdx] = bytes2_to_off(buf);
-                    DEBUG(" %u", cur[idx].value_.p_short[cdx]);
+                    DODEBUG(" %u", cur[idx].value_.p_short[cdx]);
                 }
-                DEBUG("\n");
+                DODEBUG("\n");
             }
             break;
 
@@ -1599,7 +1609,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
         case 11: /* FLOAT */
             if (cur[idx].cnt == 1) {
                 cur[idx].value_.v_long = bytes4_to_off(cur[idx].value_.v_byte);
-                DEBUG("Container %d: tag 0x%04x LONG %u\n", image_number,
+                DODEBUG("Container %d: tag 0x%04x LONG %u\n", image_number,
                     cur[idx].tag, cur[idx].value_.v_long);
             } else {
                 uint32_t cdx;
@@ -1611,15 +1621,15 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 if (cur[idx].value_.p_long == NULL)
                     return -1;
 
-                DEBUG("Container %d: tag 0x%04x LONG\n", image_number,
+                DODEBUG("Container %d: tag 0x%04x LONG\n", image_number,
                     cur[idx].tag);
                 for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                     uint8_t buf[4];
                     fread(buf, 1, 4, fd);
                     cur[idx].value_.p_long[cdx] = bytes4_to_off(buf);
-                    DEBUG(" %u", cur[idx].value_.p_long[cdx]);
+                    DODEBUG(" %u", cur[idx].value_.p_long[cdx]);
                 }
-                DEBUG("\n");
+                DODEBUG("\n");
             }
             break;
 
@@ -1637,7 +1647,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
             if (cur[idx].value_.p_rational == NULL)
                 return -1;
 
-            DEBUG("Container %d: tag 0x%04x LONG\n", image_number,
+            DODEBUG("Container %d: tag 0x%04x LONG\n", image_number,
                 cur[idx].tag);
             for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                 uint8_t buf[4];
@@ -1645,14 +1655,14 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 cur[idx].value_.p_long[2 * cdx + 0] = bytes4_to_off(buf);
                 fread(buf, 1, 4, fd);
                 cur[idx].value_.p_long[2 * cdx + 1] = bytes4_to_off(buf);
-                DEBUG(" %u", cur[idx].value_.p_rational[cdx]);
+                DODEBUG(" %u", cur[idx].value_.p_rational[cdx]);
             }
-            DEBUG("\n");
+            DODEBUG("\n");
           }
             break;
 
         default:
-            DEBUG("Container %d: tag 0x%04x type=%u\n", image_number, cur[idx].tag, cur[idx].type);
+            DODEBUG("Container %d: tag 0x%04x type=%u\n", image_number, cur[idx].tag, cur[idx].type);
             break;
         }
     }

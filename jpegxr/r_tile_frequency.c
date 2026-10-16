@@ -90,20 +90,21 @@ int _jxr_r_TILE_DC(jxr_image_t image, struct rbitstream*str,
     unsigned mb_height;
     unsigned mb_width;
     unsigned char s0, s1, s2, s3;
-    DEBUG("START TILE_DC at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
+    DODEBUG("START TILE_DC at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
     s3 = _jxr_rbitstream_uint8(str); /* reserved */
-    DEBUG(" TILE_STARTCODE == %02x %02x %02x (reserved: %02x)\n", s0, s1, s2, s3);
+    DODEBUG(" TILE_STARTCODE == %02x %02x %02x (reserved: %02x)\n", s0, s1, s2, s3);
 
     if (s0 != 0x00 || s1 != 0x00 || s2 != 0x01) {
-      DEBUG(" TILE_LOWPASS ERROR: Invalid marker.\n");
+      DODEBUG(" TILE_LOWPASS ERROR: Invalid marker.\n");
       return JXR_EC_ERROR;
       /* FIX THOR: Invalid TILE_STARTCODE detected */
     }
+    (void)s3;
 
     _jxr_r_TILE_HEADER_DC(image, str, 0 /* alpha */, tx, ty);
     if (ALPHACHANNEL_FLAG(image))
@@ -143,7 +144,7 @@ int _jxr_r_TILE_DC(jxr_image_t image, struct rbitstream*str,
     }
 
     _jxr_rbitstream_syncbyte(str);
-    DEBUG("END TILE_DC\n");
+    DODEBUG("END TILE_DC\n");
 
     return 0;
 }
@@ -156,18 +157,19 @@ int _jxr_r_TILE_LP(jxr_image_t image, struct rbitstream*str,
     unsigned mb_height;
     unsigned mb_width;
     unsigned char s0, s1, s2, s3;
-    DEBUG("START TILE_LOWPASS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
+    DODEBUG("START TILE_LOWPASS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
     s3 = _jxr_rbitstream_uint8(str); /* reserved */
-    DEBUG(" TILE_STARTCODE == %02x %02x %02x (reserved: %02x)\n", s0, s1, s2, s3);
+    DODEBUG(" TILE_STARTCODE == %02x %02x %02x (reserved: %02x)\n", s0, s1, s2, s3);
     if (s0 != 0x00 || s1 != 0x00 || s2 != 0x01) {
-        DEBUG(" TILE_LOWPASS ERROR: Invalid marker.\n");
+        DODEBUG(" TILE_LOWPASS ERROR: Invalid marker.\n");
         return JXR_EC_ERROR;
     }
+    (void)s3;
 
     _jxr_r_TILE_HEADER_LOWPASS(image, str, 0 /* alpha */, tx, ty);
     if (ALPHACHANNEL_FLAG(image))
@@ -204,11 +206,11 @@ int _jxr_r_TILE_LP(jxr_image_t image, struct rbitstream*str,
 
             if (!plane->lp_use_dc_qp && plane->num_lp_qps>1) {
                 qp_index_lp = _jxr_DECODE_QP_INDEX(str, plane->num_lp_qps);
-                DEBUG(" DECODE_QP_INDEX(%d) --> %u\n", plane->num_lp_qps, qp_index_lp);
+                DODEBUG(" DECODE_QP_INDEX(%d) --> %u\n", plane->num_lp_qps, qp_index_lp);
             }
             for (ch = 0 ; ch < plane->num_channels ; ch += 1) {
                 MACROBLK_CUR_LP_QUANT(plane,ch,tx,mx) = qp_index_lp;
-                DEBUG(" LP_QUANT for MBx=%d ch=%d is %d\n", mx, ch, MACROBLK_CUR_LP_QUANT(plane,ch,tx,mx));
+                DODEBUG(" LP_QUANT for MBx=%d ch=%d is %d\n", mx, ch, MACROBLK_CUR_LP_QUANT(plane,ch,tx,mx));
             }
             _jxr_r_MB_LP(plane, str, 0, tx, ty, mx, my);
             if (plane->bands_present != 3 /* !DCONLY */)
@@ -221,7 +223,7 @@ int _jxr_r_TILE_LP(jxr_image_t image, struct rbitstream*str,
     }
 
     _jxr_rbitstream_syncbyte(str);
-    DEBUG("END TILE_LOWPASS\n");
+    DODEBUG("END TILE_LOWPASS\n");
     return 0;
 }
 
@@ -233,18 +235,19 @@ int _jxr_r_TILE_HP(jxr_image_t image, struct rbitstream*str,
     unsigned mb_height;
     unsigned mb_width;
     unsigned char s0, s1, s2, s3;
-    DEBUG("START TILE_HIGHPASS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
+    DODEBUG("START TILE_HIGHPASS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
     s3 = _jxr_rbitstream_uint8(str); /* reserved */
-    DEBUG(" TILE_STARTCODE == %02x %02x %02x (reserved: %02x)\n", s0, s1, s2, s3);
+    DODEBUG(" TILE_STARTCODE == %02x %02x %02x (reserved: %02x)\n", s0, s1, s2, s3);
     if (s0 != 0x00 || s1 != 0x00 || s2 != 0x01) {
-        DEBUG(" TILE_HIGHPASS ERROR: Invalid marker.\n");
+        DODEBUG(" TILE_HIGHPASS ERROR: Invalid marker.\n");
         return JXR_EC_ERROR;
     }
+    (void)s3;
 
     _jxr_r_TILE_HEADER_HIGHPASS(image, str, 0 /* alpha */, tx, ty);
     if (ALPHACHANNEL_FLAG(image))
@@ -286,20 +289,20 @@ int _jxr_r_TILE_HP(jxr_image_t image, struct rbitstream*str,
                 else
                     qp_index_hp = MACROBLK_CUR_LP_QUANT(plane,0,tx,mx);
             }
-            DEBUG(" HP_QP_INDEX for MBx=%d is %d\n", mx, qp_index_hp);
+            DODEBUG(" HP_QP_INDEX for MBx=%d is %d\n", mx, qp_index_hp);
             for (ch = 0 ; ch < plane->num_channels ; ch += 1) {
                 MACROBLK_CUR_HP_QUANT(plane,ch,tx,mx) = plane->hp_quant_ch[ch][qp_index_hp];
-                DEBUG(" HP_QUANT for MBx=%d ch=%d is %d\n", mx, ch, MACROBLK_CUR_HP_QUANT(plane,ch,tx,mx));
+                DODEBUG(" HP_QUANT for MBx=%d ch=%d is %d\n", mx, ch, MACROBLK_CUR_HP_QUANT(plane,ch,tx,mx));
             }
 
             rc = _jxr_r_MB_CBP(plane, str, 0, tx, ty, mx, my);
             if (rc < 0) {
-                DEBUG("r_MB_CBP returned ERROR rc=%d\n", rc);
+                DODEBUG("r_MB_CBP returned ERROR rc=%d\n", rc);
                 return rc;
             }
             rc = _jxr_r_MB_HP(plane, str, 0, tx, ty, mx, my);
             if (rc < 0) {
-                DEBUG("r_MB_HP returned ERROR rc=%d\n", rc);
+                DODEBUG("r_MB_HP returned ERROR rc=%d\n", rc);
                 return rc;
             }
         }
@@ -309,7 +312,7 @@ int _jxr_r_TILE_HP(jxr_image_t image, struct rbitstream*str,
     }
 
     _jxr_rbitstream_syncbyte(str);
-    DEBUG("END TILE_HIGHPASS\n");
+    DODEBUG("END TILE_HIGHPASS\n");
     return 0;
 }
 
@@ -323,23 +326,24 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
     int use_num_channels;
     unsigned char s0, s1, s2, s3;
 
-    DEBUG("START TILE_FLEXBITS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
+    DODEBUG("START TILE_FLEXBITS at tile=[%u %u] bitpos=%zu\n", tx, ty, _jxr_rbitstream_bitpos(str));
 
     /* TILE_STARTCODE == 1 */
     s0 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s1 = _jxr_rbitstream_uint8(str); /* 0x00 */
     s2 = _jxr_rbitstream_uint8(str); /* 0x01 */
     s3 = _jxr_rbitstream_uint8(str); /* reserved */
-    DEBUG(" TILE_STARTCODE == %02x %02x %02x (reserved: %02x)\n", s0, s1, s2, s3);
+    DODEBUG(" TILE_STARTCODE == %02x %02x %02x (reserved: %02x)\n", s0, s1, s2, s3);
     if (s0 != 0x00 || s1 != 0x00 || s2 != 0x01) {
-        DEBUG(" TILE_FLEXBITS ERROR: Invalid marker.\n");
+        DODEBUG(" TILE_FLEXBITS ERROR: Invalid marker.\n");
         return JXR_EC_ERROR; /* THOR: The specs say that this should be decoded nevertheless, though. */
     }
+    (void)s3;
 
     image->trim_flexbits = 0;
     if (TRIM_FLEXBITS_FLAG(image)) {
         image->trim_flexbits =_jxr_rbitstream_uint4(str);
-        DEBUG(" TRIM_FLEXBITS = %u\n", image->trim_flexbits);
+        DODEBUG(" TRIM_FLEXBITS = %u\n", image->trim_flexbits);
     }
 
     use_num_channels = image->num_channels;
@@ -376,7 +380,7 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
             int mbhp_pred_mode;
             int idx;
             if (rc < 0) {
-                DEBUG("r_MB_FLEXBITS returned ERROR rc=%d\n", rc);
+                DODEBUG("r_MB_FLEXBITS returned ERROR rc=%d\n", rc);
                 return rc;
             }
 
@@ -385,7 +389,7 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
             by the HP tile. */
             mbhp_pred_mode = MACROBLK_CUR(plane,0,tx,mx).mbhp_pred_mode;
             for (idx = 0 ; idx < channels ; idx += 1) {
-                DEBUG(" MB_FLEXBITS: propagate HP predictions in MB_FLEXBITS\n");
+                DODEBUG(" MB_FLEXBITS: propagate HP predictions in MB_FLEXBITS\n");
                 _jxr_propagate_hp_predictions(plane, idx, tx, mx, mbhp_pred_mode);
             }
         }
@@ -395,7 +399,7 @@ int _jxr_r_TILE_FLEXBITS(jxr_image_t image, struct rbitstream*str,
     }
 
     _jxr_rbitstream_syncbyte(str);
-    DEBUG("END TILE_FLEXBITS bitpos=%zu\n", _jxr_rbitstream_bitpos(str));
+    DODEBUG("END TILE_FLEXBITS bitpos=%zu\n", _jxr_rbitstream_bitpos(str));
     return 0;
 }
 
@@ -410,7 +414,7 @@ int _jxr_r_TILE_FLEXBITS_ESCAPE(jxr_image_t image, unsigned tx, unsigned ty)
     unsigned mb_width = EXTENDED_WIDTH_BLOCKS(image);
     int mx, my;
 
-    DEBUG("START TILE_FLEXBITS_ESCAPE at tile=[%u %u]\n", tx, ty);
+    DODEBUG("START TILE_FLEXBITS_ESCAPE at tile=[%u %u]\n", tx, ty);
 
     use_num_channels = image->num_channels;
     if (image->use_clr_fmt == 1/*YUV420*/ || image->use_clr_fmt == 2/*YUV422*/)
@@ -434,14 +438,14 @@ int _jxr_r_TILE_FLEXBITS_ESCAPE(jxr_image_t image, unsigned tx, unsigned ty)
             int mbhp_pred_mode = MACROBLK_CUR(image,0,tx,mx).mbhp_pred_mode;
             int idx;
             for (idx = 0 ; idx < use_num_channels ; idx += 1) {
-                DEBUG(" MB_FLEXBITS_ESCAPE: propagate HP predictions in MB_FLEXBITS\n");
+                DODEBUG(" MB_FLEXBITS_ESCAPE: propagate HP predictions in MB_FLEXBITS\n");
                 _jxr_propagate_hp_predictions(image, idx, tx, mx, mbhp_pred_mode);
             }
         }
         backup_hp_strip(image, tx, ty, my);
     }
 
-    DEBUG("END TILE_FLEXBIT_ESCAPE\n");
+    DODEBUG("END TILE_FLEXBIT_ESCAPE\n");
     return 0;
 }
 
@@ -458,7 +462,7 @@ static void backup_dc_strip(jxr_image_t image, int tx, int ty, int my)
 
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
             mb[mx].data[0] = MACROBLK_CUR_DC(image,ch,tx,mx);
-            DEBUG(" backup_dc_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8\n",
+            DODEBUG(" backup_dc_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8\n",
                 tx, ty, mx, my, ch, mb[mx].data[0]);
         }
     }
@@ -487,13 +491,13 @@ static void backup_dclp_strip(jxr_image_t image, int tx, int ty, int my)
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
             int idx;
             mb[mx].data[0] = MACROBLK_CUR_DC(image,ch,tx,mx);
-            DEBUG(" backup_dclp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%x, LP=",
+            DODEBUG(" backup_dclp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%x, LP=",
                 tx, ty, mx, my, ch, mb[mx].data[0]);
             for (idx = 0 ; idx < count ; idx += 1) {
                 mb[mx].data[idx+1] = MACROBLK_CUR_LP(image,ch,tx,mx,idx);
-                DEBUG(" 0x%x", mb[mx].data[idx+1]);
+                DODEBUG(" 0x%x", mb[mx].data[idx+1]);
             }
-            DEBUG("\n");
+            DODEBUG("\n");
             mb[mx].lp_quant = MACROBLK_CUR_LP_QUANT(image,ch,tx,mx);
         }
     }
@@ -531,7 +535,7 @@ static void backup_hp_strip(jxr_image_t image, int tx, int ty, int my)
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
             int blk;
             mb[mx].data[0] = MACROBLK_CUR_DC(image,ch,tx,mx);
-            DEBUG(" backup_hp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d\n",
+            DODEBUG(" backup_hp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d\n",
                 tx, ty, mx, my, ch);
             for (blk = 0 ; blk < count ; blk += 1) {
                 int idx;
@@ -556,7 +560,7 @@ static void recover_dc_strip(jxr_image_t image, int tx, int ty, int my)
 
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
             MACROBLK_CUR_DC(image,ch,tx,mx) = mb[mx].data[0];
-            DEBUG(" recover_dc_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8\n",
+            DODEBUG(" recover_dc_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8\n",
                 tx, ty, mx, my, ch, mb[mx].data[0]);
         }
     }
@@ -584,13 +588,13 @@ static void recover_dclp_strip(jxr_image_t image, int tx, int ty, int my)
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
             int idx;
             MACROBLK_CUR_DC(image,ch,tx,mx) = mb[mx].data[0];
-            DEBUG(" recover_dclp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8, LP=\n",
+            DODEBUG(" recover_dclp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8, LP=\n",
                 tx, ty, mx, my, ch, mb[mx].data[0]);
             for (idx = 0 ; idx < count ; idx += 1) {
                 MACROBLK_CUR_LP(image,ch,tx,mx,idx) = mb[mx].data[idx+1];
-                DEBUG(" 0x%x", mb[mx].data[idx+1]);
+                DODEBUG(" 0x%x", mb[mx].data[idx+1]);
             }
-            DEBUG("\n");
+            DODEBUG("\n");
             MACROBLK_CUR_LP_QUANT(image,ch,tx,mx) = mb[mx].lp_quant;
         }
     }
@@ -627,11 +631,11 @@ static void recover_dclphp_strip(jxr_image_t image, int tx, int ty, int my)
         for (mx = 0 ; mx < (int) image->tile_column_width[tx] ; mx += 1) {
             int blk;
             MACROBLK_CUR_DC(image,ch,tx,mx) = mb[mx].data[0];
-            DEBUG(" recover_dclphp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8, LP=\n",
+            DODEBUG(" recover_dclphp_strip: tx=%d, ty=%d, mx=%d, my=%d, ch=%d, DC=0x%0x8, LP=\n",
                 tx, ty, mx, my, ch, mb[mx].data[0]);
             for (blk = 1 ; blk < count ; blk += 1) {
                 MACROBLK_CUR_LP(image,ch,tx,mx,blk-1) = mb[mx].data[blk];
-                DEBUG(" 0x%x", mb[mx].data[blk]);
+                DODEBUG(" 0x%x", mb[mx].data[blk]);
             }
 
             for (blk = 0 ; blk < count ; blk += 1) {
@@ -641,7 +645,7 @@ static void recover_dclphp_strip(jxr_image_t image, int tx, int ty, int my)
                     MACROBLK_CUR_HP(image,ch,tx,mx,blk,idx) = mb[mx].data[data_ptr];
                 }
             }
-            DEBUG("\n");
+            DODEBUG("\n");
             MACROBLK_CUR_LP_QUANT(image,ch,tx,mx) = mb[mx].lp_quant;
             MACROBLK_CUR_HP_QUANT(image,ch,tx,mx) = mb[mx].hp_quant;
         }

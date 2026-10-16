@@ -446,6 +446,8 @@ extern int _jxr_frequency_mode_render_stripe(jxr_image_t image);
 
 /* Application interface functions */
 extern void _jxr_send_mb_to_output(jxr_image_t image, int mx, int my, int*data);
+extern void _jxr_get_mb_from_input(jxr_image_t image, int mx, int my, int*data);
+
 
 /* I/O functions. */
 
@@ -804,9 +806,9 @@ extern int _jxrc_enumerated_colorspace(jxr_container_t cp);
 extern unsigned int isEqualGUID(unsigned char guid1[16], unsigned char guid2[16]);
 
 #if defined(DETAILED_DEBUG)
-# define DEBUG(...) fprintf(stdout, __VA_ARGS__)
+# define DODEBUG(...) fprintf(stdout, __VA_ARGS__)
 #else
-# define DEBUG(...) do { } while(0)
+# define DODEBUG(...) do { } while(0)
 #endif
 
 extern const char*_jxr_vld_index_name(int vlc);
