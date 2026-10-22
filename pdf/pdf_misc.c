@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -109,6 +109,16 @@ pdfi_name_is(const pdf_name *n, const char *s)
     int len = strlen(s);
     if (n->length == len)
         return (memcmp(n->data, s, len) == 0);
+    return false;
+}
+
+bool
+pdfi_name_or_string_is(const pdf_obj *n, char *s)
+{
+    if (pdfi_type_of(n) == PDF_NAME)
+        return(pdfi_name_is((const pdf_name *)n, s));
+    if (pdfi_type_of(n) == PDF_STRING)
+        return(pdfi_string_is((const pdf_string *)n, s));
     return false;
 }
 
