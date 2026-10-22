@@ -2007,9 +2007,9 @@ static int pdfi_create_Separation(pdf_context *ctx, pdf_array *color_array, int 
         goto pdfi_separation_error;
 
     sep_type = SEP_OTHER;
-    if (name->length == 4 && memcmp(name->data, "None", 4) == 0)
+    if (pdfi_name_is(name, "None"))
         sep_type = SEP_NONE;
-    if (name->length == 3 && memcmp(name->data, "All", 3) == 0)
+    if (pdfi_name_is(name, "All"))
         sep_type = SEP_ALL;
 
     code = pdfi_array_get(ctx, color_array, index + 2, &o);
@@ -2131,7 +2131,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
         if (code < 0)
             return code;
 
-        if (ink_name->length == 3 && memcmp(ink_name->data, "All", 3) == 0) {
+        if (pdfi_name_is(ink_name, "All")) {
             if ((code = pdfi_set_warning_stop(ctx, gs_note_error(gs_error_rangecheck), NULL, W_PDF_DEVICEN_USES_ALL, "pdfi_create_DeviceN", (char *)"WARNING: DeviceN space using /All ink name")) < 0)
                 return code;
         }
@@ -2152,7 +2152,7 @@ static int pdfi_create_DeviceN(pdf_context *ctx, pdf_array *color_array, int ind
         if (code < 0)
             goto pdfi_devicen_error;
 
-        if (ink_name->length == 3 && memcmp(ink_name->data, "All", 3) == 0) {
+        if (pdfi_name_is(ink_name, "All")) {
             code = pdfi_array_alloc(ctx, 4, &sep_color_array);
             if (code < 0)
                 goto all_error;
@@ -2873,7 +2873,7 @@ pdfi_create_colorspace_by_name(pdf_context *ctx, pdf_name *name,
                 pdfi_countdown(ref_space);
                 return_error(gs_error_syntaxerror);
             }
-            if (((pdf_name *)ref_space)->length == name->length && memcmp(((pdf_name *)ref_space)->data, name->data, name->length) == 0) {
+            if (pdfi_name_cmp((pdf_name *)ref_space, name) == 0) {
                 pdfi_countdown(ref_space);
                 return_error(gs_error_circular_reference);
             }

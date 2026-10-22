@@ -971,7 +971,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
             continue;
         }
         if (old->length == 2) {
-            if (memcmp(old->data, "Fl", 2) == 0) {
+            if (pdfi_name_is(old, "Fl")) {
                 code = pdfi_name_alloc(ctx, (byte *)"FlateDecode", 11, (pdf_obj **)&new);
                 if (code < 0)
                     goto exit;
@@ -980,7 +980,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
                     goto exit;
                 pdfi_countdown(old);
             } else {
-                if (memcmp(old->data, "RL", 2) == 0) {
+                if (pdfi_name_is(old, "RL")) {
                     code = pdfi_name_alloc(ctx, (byte *)"RunLengthDecode", 15, (pdf_obj **)&new);
                     if (code < 0)
                         goto exit;
@@ -989,7 +989,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
                         goto exit;
                     pdfi_countdown(old);
                 } else {
-                    if (memcmp(old->data, "Br", 2) == 0) {
+                    if (pdfi_name_is(old, "Br")) {
                         code = pdfi_name_alloc(ctx, (byte *)"BrotliDecode", 12, (pdf_obj **)&new);
                         if (code < 0)
                             goto exit;
@@ -1005,7 +1005,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
             }
         } else {
             if (old->length == 3) {
-                if (memcmp(old->data, "CCF", 2) == 0) {
+                if (pdfi_name_is(old, "CCF")) {
                     code = pdfi_name_alloc(ctx, (byte *)"CCITTFaxDecode", 14, (pdf_obj **)&new);
                     if (code < 0)
                         goto exit;
@@ -1014,7 +1014,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
                         goto exit;
                     pdfi_countdown(old);
                 } else {
-                    if (memcmp(old->data, "AHx", 2) == 0) {
+                    if (pdfi_name_is(old, "AHx")) {
                         code = pdfi_name_alloc(ctx, (byte *)"ASCIIHexDecode", 14, (pdf_obj **)&new);
                         if (code < 0)
                             goto exit;
@@ -1023,7 +1023,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
                             goto exit;
                         pdfi_countdown(old);
                     } else {
-                        if (memcmp(old->data, "A85", 2) == 0) {
+                        if (pdfi_name_is(old, "A85")) {
                             code = pdfi_name_alloc(ctx, (byte *)"ASCII85Decode", 13, (pdf_obj **)&new);
                             if (code < 0)
                                 goto exit;
@@ -1032,7 +1032,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
                                 goto exit;
                             pdfi_countdown(old);
                         } else {
-                            if (memcmp(old->data, "LZW", 2) == 0) {
+                            if (pdfi_name_is(old, "LZW")) {
                                 code = pdfi_name_alloc(ctx, (byte *)"LZWDecode", 9, (pdf_obj **)&new);
                                 if (code < 0)
                                     goto exit;
@@ -1041,7 +1041,7 @@ static int pdfi_normalize_filter_array(pdf_context *ctx, pdf_array *filter_array
                                     goto exit;
                                 pdfi_countdown(old);
                             } else {
-                                if (memcmp(old->data, "DCT", 2) == 0) {
+                                if (pdfi_name_is(old, "DCT")) {
                                     code = pdfi_name_alloc(ctx, (byte *)"DCTDecode", 9, (pdf_obj **)&new);
                                     if (code < 0)
                                         goto exit;

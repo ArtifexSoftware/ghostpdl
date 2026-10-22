@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -799,7 +799,7 @@ static int pdfi_get_name_from_node(pdf_context *ctx, pdf_dict *node, char *str, 
             if (code < 0)
                 goto error;
 
-            if (StrKey->length == len && memcmp((const char *)StrKey->data, str, len) == 0) {
+            if (pdfi_string_is(StrKey, str)) {
                 code = pdfi_array_get(ctx, NamesArray, (i * 2) + 1, (pdf_obj **)Name);
                 goto error;
             }
