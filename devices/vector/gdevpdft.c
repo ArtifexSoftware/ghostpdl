@@ -287,6 +287,9 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
                     &pdf_color_space_names, false, NULL, 0, false);
         if (code < 0)
             return code;
+        if (cs_value.value_type == COS_VALUE_CONST && cs_value.contents.chars.size == 11 && strncmp((const char *)cs_value.contents.chars.data, "/DeviceGray", cs_value.contents.chars.size) == 0 && pdev->smask_construction)
+            code = cos_dict_put_c_key(group_dict, "/CS", &cs_value);
+        else {
         switch(pdev->params.BlendConversionStrategy) {
             case bcs_Managed:
                 if (pdev->params.ColorConversionStrategy != ccs_LeaveColorUnchanged) {
@@ -326,6 +329,7 @@ pdf_make_group_dict(gx_device_pdf * pdev, const gs_pdf14trans_params_t * pparams
                         break;
                 }
                 break;
+        }
         }
     }
     if (code < 0)
