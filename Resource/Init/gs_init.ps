@@ -2593,6 +2593,9 @@ currentdict /.locksafeglobal .undef
   mark .currentuserparams counttomark 2 idiv {
     userparams 3 1 roll put	% userparams is read-only
   } executeonly repeat pop
+  % and make userparams readonly from this point. All access must be
+  % via setuserparams now.
+  userparams readonly pop
 
   % Turn on idiom recognition, if available.
   currentuserparams /IdiomRecognition known {
