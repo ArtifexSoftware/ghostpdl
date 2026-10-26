@@ -1368,21 +1368,21 @@ set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
                         }
                     }
                 }
-                if (strncmp((const char *)sref.value.bytes, "ProcessDSCComment", r_size(&sref)) == 0) {
+                if (r_size(&sref) == 17 && strncmp((const char *)sref.value.bytes, "ProcessDSCComment", r_size(&sref)) == 0) {
                     if (!r_has_type(&elt[1], t_null) && !r_is_array(&elt[1]))
                         return_error(gs_error_typecheck);
                     code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
                     if (code < 0)
                         return code;
                 }
-                if (strncmp((const char *)sref.value.bytes, "ProcessComment", r_size(&sref)) == 0) {
+                if (r_size(&sref) == 14 && strncmp((const char *)sref.value.bytes, "ProcessComment", r_size(&sref)) == 0) {
                     if (!r_has_type(&elt[1], t_null) && !r_is_array(&elt[1]))
                         return_error(gs_error_typecheck);
                     code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
                     if (code < 0)
                         return code;
                 }
-                if (strncmp((const char *)sref.value.bytes, "IdiomRecognition", r_size(&sref)) == 0) {
+                if (r_size(&sref) == 16 && strncmp((const char *)sref.value.bytes, "IdiomRecognition", r_size(&sref)) == 0) {
                     if (!r_has_type(&elt[1], t_null) && !r_is_array(&elt[1]) && !r_has_type(&elt[1], t_boolean))
                         return_error(gs_error_typecheck);
                     code = dict_put(userparams_dict, &elt[0], &elt[1], &idict_stack);
