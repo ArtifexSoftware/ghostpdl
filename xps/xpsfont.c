@@ -818,7 +818,8 @@ xps_measure_font_glyph(xps_context_t *ctx, xps_font_t *font, int gid, xps_glyph_
         if (idx * 4 + 2 <= len) {
             vadv = u16(font->data + ofs + idx * 4);
             vtop = u16(font->data + ofs + idx * 4 + 2);
-        }
+        } else
+	  vtop = 0;
 
         glyf = xps_find_sfnt_table(font, "glyf", &glyf_len);
         loca = xps_find_sfnt_table(font, "loca", &loca_len);
