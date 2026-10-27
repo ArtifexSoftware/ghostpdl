@@ -1441,7 +1441,8 @@ color_diff(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_c
 {
     int n = pfs->num_components, i;
 
-    for (i = 0; i < n; i++)
+    d->cc.paint.values[0] = c1->cc.paint.values[0] - c0->cc.paint.values[0];
+    for (i = 1; i < n; i++)
         d->cc.paint.values[i] = c1->cc.paint.values[i] - c0->cc.paint.values[i];
 }
 
