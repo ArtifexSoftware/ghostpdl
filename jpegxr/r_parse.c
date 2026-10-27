@@ -2759,6 +2759,9 @@ static int r_DECODE_RUN(jxr_image_t image, struct rbitstream*str, int max_run)
                 else
                     run = 4;
                 break;
+            default:
+                run = 0; /* silence warning */
+                break;
         }
 
     } else {

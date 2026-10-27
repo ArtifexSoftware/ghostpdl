@@ -874,6 +874,7 @@ unsigned long jxrc_spatial_xfrm_primary(jxr_container_t container, int image)
             break;
         default:
             assert(0);
+            spatial_xfrm = 0; /* silence warning */
             break;
     }
 
@@ -1038,6 +1039,7 @@ unsigned long jxrc_image_width(jxr_container_t container, int image)
             break;
         default:
             assert(0);
+            width = 0; /* silence warning */
             break;
     }
 
@@ -1081,6 +1083,7 @@ unsigned long jxrc_image_height(jxr_container_t container, int image)
             break;
         default:
             assert(0);
+            height = 0; /* silence warning */
             break;
     }
 
@@ -1197,6 +1200,7 @@ unsigned long jxrc_image_offset(jxr_container_t container, int image)
         break;
       default:
         assert(0);
+        pos = 0; /* silence warning */
         break;
       }
 
@@ -1242,6 +1246,7 @@ unsigned long jxrc_image_bytecount(jxr_container_t container, int image)
         break;
       default:
         assert(0);
+        pos = 0; /* silence warning */
         break;
       }
 
@@ -1288,6 +1293,7 @@ unsigned long jxrc_alpha_offset(jxr_container_t container, int image)
             break;
         default:
             assert(0);
+            pos = 0; /* silence warning */
             break;
     }
 
@@ -1334,6 +1340,7 @@ unsigned long jxrc_alpha_bytecount(jxr_container_t container, int image)
             break;
         default:
             assert(0);
+            pos = 0; /* silence warning */
             break;
     }
 
@@ -1465,6 +1472,14 @@ uint32_t bytes4_to_off(uint8_t*bp)
     return (bp[3]<<24) + (bp[2]<<16) + (bp[1]<<8) + (bp[0]);
 }
 
+static void
+fread0(uint8_t *buf, size_t size, FILE *fd)
+{
+  size_t n = fread(buf, 1, size, fd);
+  if (n != size)
+    memset(buf + n, 0, size - n);
+}
+
 static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32_t*ifd_next)
 {
     unsigned char buf[16];
@@ -1550,7 +1565,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 cur[idx].value_.p_byte = (uint8_t*)jxr_malloc(container->alloc, cur[idx].cnt);
                 if (cur[idx].value_.p_byte == NULL)
                     return -1;
-                fread(cur[idx].value_.p_byte, 1, cur[idx].cnt, fd);
+                fread0(cur[idx].value_.p_byte, cur[idx].cnt, fd);
 #if defined(DETAILED_DEBUG)
                 {
                 int bb;
@@ -1596,7 +1611,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                     cur[idx].tag);
                 for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                     uint8_t buf[2];
-                    fread(buf, 1, 2, fd);
+                    fread0(buf, 2, fd);
                     cur[idx].value_.p_short[cdx] = bytes2_to_off(buf);
                     DODEBUG(" %u", cur[idx].value_.p_short[cdx]);
                 }
@@ -1625,7 +1640,7 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                     cur[idx].tag);
                 for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                     uint8_t buf[4];
-                    fread(buf, 1, 4, fd);
+                    fread0(buf, 4, fd);
                     cur[idx].value_.p_long[cdx] = bytes4_to_off(buf);
                     DODEBUG(" %u", cur[idx].value_.p_long[cdx]);
                 }
@@ -1651,9 +1666,9 @@ static int read_ifd(jxr_container_t container, FILE*fd, int image_number, uint32
                 cur[idx].tag);
             for (cdx = 0 ; cdx < cur[idx].cnt ; cdx += 1) {
                 uint8_t buf[4];
-                fread(buf, 1, 4, fd);
+                fread0(buf, 4, fd);
                 cur[idx].value_.p_long[2 * cdx + 0] = bytes4_to_off(buf);
-                fread(buf, 1, 4, fd);
+                fread0(buf, 4, fd);
                 cur[idx].value_.p_long[2 * cdx + 1] = bytes4_to_off(buf);
                 DODEBUG(" %u", cur[idx].value_.p_rational[cdx]);
             }
