@@ -915,18 +915,25 @@ void default_subclass_finalize(const gs_memory_t *cmem, void *vptr)
 
     /* The only way we should get here is when the original device
      * should be freed (because the subclassing device is pretending
-     * to be the original device). That being the case, all the child
-     * devices should have a reference count of 1 (referenced only by
-     * their parent). Anything else is an error.
+     * to be the original device).
+     *
+     * That being the case, all the child devices should have a reference
+     * count of 1 (referenced only by their parent). Unfortunately, in
+     * the garbage-collected world of ghostscript, things are not quite
+     * that simple. It's possible for a postscript operator to have been
+     * run that returns a reference to the child device. This can then
+     * sit around awaiting the next garbage collection. When the garbage
+     * collection happens, we can't predict which will be destroyed
+     * first. If the subclassing device is destroyed first, then there
+     * will still be references to the child device. These should all be
+     * correctly cleaned up by the time the gc pass ends, but we cannot
+     * actually assert (or otherwise check) that they will all be tidied
+     * up at this point.
      */
     if (dev->child != NULL) {
-        if (dev->child->rc.ref_count != 1) {
-            dmprintf(dev->memory, "Error: finalizing subclassing device while child refcount > 1\n");
-            while (dev->child->rc.ref_count != 1)
-                rc_decrement_only(dev->child, "de-reference child device");
-        }
         rc_decrement(dev->child, "de-reference child device");
     }
+
 
     if (psubclass_data) {
         gs_free_object(dev->memory->non_gc_memory, psubclass_data, "gx_epo_finalize(suclass data)");
