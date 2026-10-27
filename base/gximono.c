@@ -1055,6 +1055,10 @@ image_render_mono_ht(gx_image_enum * penum_orig, const byte * buffer, int data_x
     int code = 0;
     byte *dev_value;
 
+    /* Silence warnings */
+    if (spp_out <= 0)
+        return 0;
+
     if (h == 0 || penum->line_size == 0) {      /* line_size == 0, nothing to do */
         if (penum->ht_landscape.count == 0 || posture == image_portrait) {
             return 0;
