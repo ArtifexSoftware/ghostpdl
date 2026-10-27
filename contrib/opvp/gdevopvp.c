@@ -1862,6 +1862,7 @@ opvp_get_mediasize(gx_device *pdev)
     float height;
     const char *unit;
     bool landscape;
+    char *size_string;
 
     i = opvp_get_papertable_index(pdev);
 
@@ -1892,10 +1893,15 @@ opvp_get_mediasize(gx_device *pdev)
         unit   = "in";
     }
     memset((void*)wbuff, 0, OPVP_BUFF_SIZE);
+    /* FIXME: In the event of an allocation failure here, the
+     * output from this function might be wrong. But at least
+     * it won't crash any more. */
+    size_string = opvp_get_sizestring(width, height);
     snprintf(wbuff, OPVP_BUFF_SIZE - 1, "%s_%s_%s%s", region, name,
-                                 opvp_get_sizestring(width, height),
+                                 size_string ? size_string : "",
                                  unit);
     buff = opvp_alloc_string(&buff, wbuff);
+    free(size_string);
 
     return buff;
 }
