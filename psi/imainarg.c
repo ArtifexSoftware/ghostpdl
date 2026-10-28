@@ -1179,9 +1179,7 @@ runarg(gs_main_instance *minst,
     strcpy(line, pre);
     esc_strcat(line, arg);
     strcat(line, post);
-    minst->i_ctx_p->starting_arg_file = true;
     code = run_string(minst, line, options, user_errors, pexit_code, perror_object);
-    minst->i_ctx_p->starting_arg_file = false;
     gs_free_object(minst->heap, line, "runarg");
     return code;
 }

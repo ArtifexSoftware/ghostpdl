@@ -216,7 +216,6 @@ gs_main_init1(gs_main_instance * minst)
                                        "the_gs_name_table");
         if (code < 0)
             goto fail;
-        mem->gs_lib_ctx->client_check_file_permission = z_check_file_permissions;
     }
     code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
     if (code < 0)

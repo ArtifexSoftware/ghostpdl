@@ -1243,6 +1243,7 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
 {
     char *buffer;
     stream* str;
+    char CFileName[gp_file_name_sizeof];
 
     /* Check if we need to prepend the file name  */
     if ( dirname != NULL) {
@@ -1260,33 +1261,24 @@ gsicc_open_search(const char* pname, int namelen, gs_memory_t *mem_gc,
         /* Just to make sure we were null terminated */
         buffer[namelen + dirlen] = '\0';
 
-        if (gs_check_file_permission(mem_gc, buffer, strlen(buffer), "r") >= 0) {
-            str = sfopen(buffer, "r", mem_gc);
-            gs_free_object(mem_gc, buffer, "gsicc_open_search");
-            if (str != NULL) {
-                *strp = str;
-                return 0;
-            }
-        }
-        else {
-            gs_free_object(mem_gc, buffer, "gsicc_open_search");
-        }
-    }
-
-    /* First just try it like it is */
-    if (gs_check_file_permission(mem_gc, pname, namelen, "r") >= 0) {
-        char CFileName[gp_file_name_sizeof];
-
-        if (namelen + 1 > gp_file_name_sizeof)
-            return_error(gs_error_ioerror);
-        memcpy(CFileName, pname, namelen);
-        CFileName[namelen] = 0x00;
-
-        str = sfopen(CFileName, "r", mem_gc);
+        str = sfopen(buffer, "r", mem_gc);
+        gs_free_object(mem_gc, buffer, "gsicc_open_search");
         if (str != NULL) {
             *strp = str;
             return 0;
         }
+    }
+
+    /* First just try it like it is */
+    if (namelen + 1 > gp_file_name_sizeof)
+        return_error(gs_error_ioerror);
+    memcpy(CFileName, pname, namelen);
+    CFileName[namelen] = 0x00;
+
+    str = sfopen(CFileName, "r", mem_gc);
+    if (str != NULL) {
+        *strp = str;
+        return 0;
     }
 
     /* If that fails, try %rom% */ /* FIXME: Not sure this is needed or correct */

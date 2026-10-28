@@ -375,7 +375,6 @@ core_create_failed:
     if (sjpxd_create(mem))
         goto Failure;
 
-    pio->client_check_file_permission = NULL;
     gp_get_realtime(pio->real_time_0);
 
     if (gs_lib_ctx_alloc_root_structure(mem, &pio->name_table_root))
@@ -565,16 +564,6 @@ void errflush(const gs_memory_t *mem)
     if (!mem->gs_lib_ctx->core->stderr_fn)
         fflush(mem->gs_lib_ctx->core->fstderr);
     /* else nothing to flush */
-}
-
-int
-gs_check_file_permission (gs_memory_t *mem, const char *fname, const int len, const char *permission)
-{
-    int code = 0;
-    if (mem->gs_lib_ctx->client_check_file_permission != NULL) {
-        code = mem->gs_lib_ctx->client_check_file_permission(mem, fname, len, permission);
-    }
-    return code;
 }
 
 static void

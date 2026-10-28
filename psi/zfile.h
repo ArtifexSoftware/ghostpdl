@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -25,11 +25,4 @@
 int zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
            const char *file_access, stream **ps, gs_memory_t *mem);
 
-/* z_check_file_permissions: a callback (via mem->gs_lib_ctx->client_check_file_permission)
- * to allow applying the above permissions checks when opening file(s) from
- * the graphics library
- */
-int
-z_check_file_permissions(gs_memory_t *mem, const char *fname,
-                                 const int len, const char *permission);
 #endif

@@ -35,8 +35,6 @@ typedef struct gs_fapi_server_s gs_fapi_server;
 /* rendered character caches. */
 typedef struct gs_font_dir_s gs_font_dir;
 
-typedef int (*client_check_file_permission_t) (gs_memory_t *mem, const char *fname, const int len, const char *permission);
-
 typedef struct {
     char     *path;
     int       flags;
@@ -176,7 +174,6 @@ typedef struct gs_lib_ctx_s
     int io_device_table_count;
     int io_device_table_size;
     gs_gc_root_ptr io_device_table_root;
-    client_check_file_permission_t client_check_file_permission;
     /* Define the default value of AccurateScreens that affects setscreen
        and setcolorscreen. */
     int screen_accurate_screens;

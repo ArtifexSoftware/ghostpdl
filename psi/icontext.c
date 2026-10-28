@@ -196,7 +196,6 @@ context_state_alloc(gs_context_state_t ** ppcst,
     }
     pcst->scanner_options = 0;
     pcst->LockFilePermissions = false;
-    pcst->starting_arg_file = false;
     pcst->RenderTTNotdef = true;
 
     pcst->invalid_file_stream = (stream*)gs_alloc_struct_immovable(mem->stable_memory,
