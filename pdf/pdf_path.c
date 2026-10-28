@@ -40,6 +40,7 @@ typedef enum path_segment_e {
 static int StorePathSegment(pdf_context *ctx, pdfi_path_segment segment, double *pts)
 {
     int size = 0;
+    path_record *PathRecord;
 
     switch (segment)
     {
@@ -61,71 +62,98 @@ static int StorePathSegment(pdf_context *ctx, pdfi_path_segment segment, double 
             return_error(gs_error_undefined);
             break;
     }
-    if (ctx->PathSegments == NULL) {
-        ctx->PathSegments = (char *)gs_alloc_bytes(ctx->memory, 1024, "StorePathSegment");
-        if (ctx->PathSegments == NULL)
+    if (ctx->PathRecord == NULL) {
+        ctx->PathRecord = (path_record *)gs_alloc_bytes(ctx->memory, sizeof(path_record), "StorePathSegment");
+        if (ctx->PathRecord == NULL)
             return_error(gs_error_VMerror);
-        ctx->PathSegmentsCurrent = ctx->PathSegments;
-        ctx->PathSegmentsTop = ctx->PathSegments + 1024;
+        memset(ctx->PathRecord, 0x00, sizeof(path_record));
     }
-    if (ctx->PathSegmentsCurrent == ctx->PathSegmentsTop) {
+    PathRecord = ctx->PathRecord;
+
+    if (PathRecord->PathSegments == NULL) {
+        PathRecord->PathSegments = (char *)gs_alloc_bytes(ctx->memory, 1024, "StorePathSegment");
+        if (PathRecord->PathSegments == NULL)
+            return_error(gs_error_VMerror);
+        PathRecord->PathSegmentsCurrent = PathRecord->PathSegments;
+        PathRecord->PathSegmentsTop = PathRecord->PathSegments + 1024;
+    }
+    if (PathRecord->PathSegmentsCurrent == PathRecord->PathSegmentsTop) {
         char *new_accumulator = NULL;
         uint64_t old_size;
 
-        old_size = ctx->PathSegmentsCurrent - ctx->PathSegments;
+        old_size = PathRecord->PathSegmentsCurrent - PathRecord->PathSegments;
         new_accumulator = (char *)gs_alloc_bytes(ctx->memory, old_size + 1024, "StorePathSegment");
         if (new_accumulator == NULL)
             return_error(gs_error_VMerror);
-        memcpy(new_accumulator, ctx->PathSegments, old_size);
-        ctx->PathSegmentsCurrent = new_accumulator + old_size;
-        gs_free_object(ctx->memory, ctx->PathSegments, "StorePathSegment");
-        ctx->PathSegments = new_accumulator;
-        ctx->PathSegmentsTop = ctx->PathSegments + old_size + 1024;
+        memcpy(new_accumulator, PathRecord->PathSegments, old_size);
+        PathRecord->PathSegmentsCurrent = new_accumulator + old_size;
+        gs_free_object(ctx->memory, PathRecord->PathSegments, "StorePathSegment");
+        PathRecord->PathSegments = new_accumulator;
+        PathRecord->PathSegmentsTop = PathRecord->PathSegments + old_size + 1024;
     }
 
-    if (ctx->PathPts == NULL) {
-        ctx->PathPts = (double *)gs_alloc_bytes(ctx->memory, 4096, "StorePathSegment");
-        if (ctx->PathPts == NULL)
+    if (PathRecord->PathPts == NULL) {
+        PathRecord->PathPts = (double *)gs_alloc_bytes(ctx->memory, 4096, "StorePathSegment");
+        if (PathRecord->PathPts == NULL)
             return_error(gs_error_VMerror);
-        ctx->PathPtsCurrent = ctx->PathPts;
-        ctx->PathPtsTop = ctx->PathPts + (4096 / sizeof(double));
+        PathRecord->PathPtsCurrent = PathRecord->PathPts;
+        PathRecord->PathPtsTop = PathRecord->PathPts + (4096 / sizeof(double));
     }
-    if (ctx->PathPtsCurrent + size > ctx->PathPtsTop) {
+    if (PathRecord->PathPtsCurrent + size > PathRecord->PathPtsTop) {
         double *new_accumulator = NULL;
         uint64_t old_size;
 
-        old_size = (char *)ctx->PathPtsCurrent - (char *)ctx->PathPts;
+        old_size = (char *)PathRecord->PathPtsCurrent - (char *)PathRecord->PathPts;
         new_accumulator = (double *)gs_alloc_bytes(ctx->memory, old_size + 4096, "StorePathSegment");
         if (new_accumulator == NULL)
             return_error(gs_error_VMerror);
-        memcpy(new_accumulator, ctx->PathPts, old_size);
-        ctx->PathPtsCurrent = new_accumulator + (old_size / sizeof(double));
-        gs_free_object(ctx->memory, ctx->PathPts, "StorePathSegment");
-        ctx->PathPts = new_accumulator;
-        ctx->PathPtsTop = ctx->PathPts + ((old_size + 4096) / sizeof(double));
+        memcpy(new_accumulator, PathRecord->PathPts, old_size);
+        PathRecord->PathPtsCurrent = new_accumulator + (old_size / sizeof(double));
+        gs_free_object(ctx->memory, PathRecord->PathPts, "StorePathSegment");
+        PathRecord->PathPts = new_accumulator;
+        PathRecord->PathPtsTop = PathRecord->PathPts + ((old_size + 4096) / sizeof(double));
     }
 
-    *(ctx->PathSegmentsCurrent++) = (char)segment;
+    *(PathRecord->PathSegmentsCurrent++) = (char)segment;
     switch (segment)
     {
         case pdfi_moveto_seg:
         case pdfi_lineto_seg:
-            memcpy(ctx->PathPtsCurrent, pts, 2 * sizeof(double));
-            ctx->PathPtsCurrent += 2;
+            memcpy(PathRecord->PathPtsCurrent, pts, 2 * sizeof(double));
+            PathRecord->PathPtsCurrent += 2;
             break;
         case pdfi_re_seg:
         case pdfi_v_curveto_seg:
         case pdfi_y_curveto_seg:
-            memcpy(ctx->PathPtsCurrent, pts, 4 * sizeof(double));
-            ctx->PathPtsCurrent += 4;
+            memcpy(PathRecord->PathPtsCurrent, pts, 4 * sizeof(double));
+            PathRecord->PathPtsCurrent += 4;
             break;
         case pdfi_curveto_seg:
-            memcpy(ctx->PathPtsCurrent, pts, 6 * sizeof(double));
-            ctx->PathPtsCurrent += 6;
+            memcpy(PathRecord->PathPtsCurrent, pts, 6 * sizeof(double));
+            PathRecord->PathPtsCurrent += 6;
             break;
         case pdfi_closepath_seg:
             break;
     }
+    return 0;
+}
+
+int FreePathRecord (pdf_context *ctx)
+{
+    path_record *PathRecord;
+
+    if (ctx->PathRecord == NULL)
+        return 0;
+
+    PathRecord = ctx->PathRecord;
+
+    gs_free_object(ctx->memory, PathRecord->PathSegments, "FreePathRecord");
+    PathRecord->PathSegmentsTop = PathRecord->PathSegmentsCurrent = PathRecord->PathSegments = NULL;
+    gs_free_object(ctx->memory, PathRecord->PathPts, "FreePathRecord");
+    PathRecord->PathPtsTop = PathRecord->PathPtsCurrent = PathRecord->PathPts = NULL;
+    gs_free_object(ctx->memory, PathRecord, "FreePathRecord");
+    ctx->PathRecord = NULL;
+
     return 0;
 }
 
@@ -135,11 +163,19 @@ static int ApplyStoredPath(pdf_context *ctx)
     char *op = NULL;
     double *dpts = NULL;
     double *current;
+    path_record *PathRecord;
 
-    if (ctx->PathSegments == NULL)
+    if (ctx->PathRecord == NULL)
         return 0;
 
-    if (ctx->PathPts == NULL) {
+    PathRecord = ctx->PathRecord;
+
+    if (PathRecord->PathSegments == NULL) {
+        code = gs_note_error(gs_error_unknownerror);
+        goto error;
+    }
+
+    if (PathRecord->PathPts == NULL) {
         code = gs_note_error(gs_error_unknownerror);
         goto error;
     }
@@ -150,12 +186,12 @@ static int ApplyStoredPath(pdf_context *ctx)
             goto error;
     }
 
-    op = ctx->PathSegments;
-    dpts = ctx->PathPts;
+    op = PathRecord->PathSegments;
+    dpts = PathRecord->PathPts;
     current = dpts; /* Stop stupid compilers complaining. */
 
-    while (op < ctx->PathSegmentsCurrent) {
-        if (dpts > ctx->PathPtsCurrent) {
+    while (op < PathRecord->PathSegmentsCurrent) {
+        if (dpts > PathRecord->PathPtsCurrent) {
             code = gs_note_error(gs_error_unknownerror);
             goto error;
         }
@@ -214,10 +250,7 @@ static int ApplyStoredPath(pdf_context *ctx)
     }
 
 error:
-    gs_free_object(ctx->memory, ctx->PathSegments, "ApplyStoredPath");
-    ctx->PathSegmentsTop = ctx->PathSegmentsCurrent = ctx->PathSegments = NULL;
-    gs_free_object(ctx->memory, ctx->PathPts, "ApplyStoredPath");
-    ctx->PathPtsTop = ctx->PathPtsCurrent = ctx->PathPts = NULL;
+    FreePathRecord(ctx);
     return code;
 }
 
@@ -507,7 +540,7 @@ int pdfi_newpath(pdf_context *ctx)
 
     /* This code is to deal with the wacky W and W* operators */
     if (ctx->clip_active) {
-        if (ctx->PathSegments != NULL) {
+        if (ctx->PathRecord != NULL) {
             code = ApplyStoredPath(ctx);
             if (code < 0)
                 return code;
@@ -521,12 +554,8 @@ int pdfi_newpath(pdf_context *ctx)
     }
     ctx->clip_active = false;
 
-    if (ctx->PathSegments != NULL){
-        gs_free_object(ctx->memory, ctx->PathSegments, "ApplyStoredPath");
-        ctx->PathSegmentsTop = ctx->PathSegmentsCurrent = ctx->PathSegments = NULL;
-        gs_free_object(ctx->memory, ctx->PathPts, "ApplyStoredPath");
-        ctx->PathPtsTop = ctx->PathPtsCurrent = ctx->PathPts = NULL;
-    }
+    if (ctx->PathRecord != NULL)
+        FreePathRecord(ctx);
 
     code1 = gs_newpath(ctx->pgs);
     if (code == 0) code = code1;

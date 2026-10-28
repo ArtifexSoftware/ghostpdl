@@ -31,6 +31,7 @@
 #include "pdf_misc.h"
 #include "pdf_optcontent.h"
 #include "pdf_mark.h"
+#include "pdf_path.h"
 #include "stream.h"     /* for stell() */
 #include "gsicc_cache.h"
 
@@ -2515,6 +2516,7 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
     pdf_dict *form_dict;
     gs_color_space *pcs = NULL;
     gs_client_color cc, *pcc;
+    path_record *SavedPathRecord = ctx->PathRecord;
 
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form BEGIN\n");
@@ -2526,6 +2528,8 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
         form_stream = hacked_stream;
     } else
         form_stream = (pdf_stream *)form_obj;
+
+    ctx->PathRecord = NULL;
 
     code = pdfi_dict_from_obj(ctx, (pdf_obj *)form_stream, &form_dict);
     if (code < 0)
@@ -2636,6 +2640,10 @@ static int pdfi_do_form(pdf_context *ctx, pdf_dict *page_dict, pdf_stream *form_
 #if DEBUG_IMAGES
     dbgmprintf(ctx->memory, "pdfi_do_form END\n");
 #endif
+    if (SavedPathRecord != ctx->PathRecord) {
+        FreePathRecord(ctx);
+        ctx->PathRecord = SavedPathRecord;
+    }
     if (code < 0)
         return code;
     return 0;

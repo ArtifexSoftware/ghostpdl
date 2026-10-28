@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2023 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -17,6 +17,11 @@
 
 #ifndef PDF_PATH_OPERATORS
 #define PDF_PATH_OPERATORS
+
+/* Expoerted for use by pdfi_do_form() where we need to discard any path record after a Form XObject
+ * and restore the previous record (if any.). Also for pdfi_clear_context() on teardown and pdf_newpath().
+ */
+int FreePathRecord (pdf_context *ctx);
 
 int pdfi_moveto (pdf_context *ctx);
 int pdfi_lineto (pdf_context *ctx);

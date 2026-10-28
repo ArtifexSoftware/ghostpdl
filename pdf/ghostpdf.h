@@ -1,4 +1,4 @@
-/* Copyright (C) 2018-2025 Artifex Software, Inc.
+/* Copyright (C) 2018-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -332,6 +332,37 @@ typedef struct search_paths_s
     bool search_here_first;
 } search_paths_t;
 
+/* It seems Acrobat starts a brand new 'path context' when it runs Form XObjects
+ * (Bug #709902), without disturbing the 'current path' in the enclosing state.
+ * So whenever we start a Form XObject we want to keep any existing path record
+ * but create a new one. When we finish the Form XObject we want to destroy
+ * the one for the Form, and switch back to the one for the enclosing state
+ * (if any).
+ * It's easier to do this by putting the whole path state into it's own structure.
+ */
+typedef struct path_record_s
+{
+    /* PDF really doesn't have a path in the graphics state. This is different to
+     * PostScript and has implications; changing the CTM partway through path
+     * construction affects path segments already accumulated. The path is
+     * unaffected by gsave and grestore. Previously we've unwound any pending
+     * path and rerun it, this is causing problems so instead we'll do what
+     * Acrobat obviously does and build the path outside the graphics state
+     */
+    /* We make allocations in chunks for the path to avoid lots of little
+     * allocations, but we need to know where the end of the current allocation
+     * is so that we can tell if we would overflow and increase it.
+     */
+    char *PathSegments;
+    /* The current insertion point. */
+    char *PathSegmentsCurrent;
+    /* The current limit of the block */
+    char *PathSegmentsTop;
+    double *PathPts;
+    double *PathPtsCurrent;
+    double *PathPtsTop;
+} path_record;
+
 typedef struct pdf_context_s
 {
     pdf_obj_common;
@@ -392,18 +423,7 @@ typedef struct pdf_context_s
      * path and rerun it, this is causing problems so instead we'll do what
      * Acrobat obviously does and build the path outside the graphics state
      */
-    /* We make allocations in chunks for the path to avoid lots of little
-     * allocations, but we need to know where the end of the current allocation
-     * is so that we can tell if we would overflow and increase it.
-     */
-    char *PathSegments;
-    /* The current insertion point. */
-    char *PathSegmentsCurrent;
-    /* The current limit of the block */
-    char *PathSegmentsTop;
-    double *PathPts;
-    double *PathPtsCurrent;
-    double *PathPtsTop;
+    path_record *PathRecord;
 
     /* set up by pdf_impl_set_device, this is the 'high water mark' for
      * restoring back to when we close a PDF file. This ensures the device
