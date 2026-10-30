@@ -676,9 +676,25 @@ pdfi_get_image_info(pdf_context *ctx, pdf_stream *image_obj,
 
     /* Check and set JPXDecode flag for later */
     info->is_JPXDecode = false;
-    if (info->Filter && pdfi_type_of(info->Filter) == PDF_NAME) {
-        if (pdfi_name_is((pdf_name *)info->Filter, "JPXDecode"))
-            info->is_JPXDecode = true;
+    if (info->Filter) {
+        if (pdfi_type_of(info->Filter) == PDF_NAME) {
+            if (pdfi_name_is((pdf_name *)info->Filter, "JPXDecode"))
+                info->is_JPXDecode = true;
+        }
+        else if (pdfi_type_of(info->Filter) == PDF_ARRAY) {
+            uint64_t l = pdfi_array_size((pdf_array *)info->Filter);
+            pdf_obj *f;
+
+            while (--l >= 0) {
+                code = pdfi_array_get(ctx, (pdf_array *)info->Filter, l, &f);
+                if (code >= 0) {
+                    if (pdfi_type_of(f) == PDF_NAME && pdfi_name_is((pdf_name *)f, "JPXDecode")) {
+                        info->is_JPXDecode = true;
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     /* Optional */
