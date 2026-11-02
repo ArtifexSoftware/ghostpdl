@@ -4976,7 +4976,7 @@ do_pdf14_copy_alpha_color_16(gx_device * dev, const byte * data, int data_x,
         if (devn)
             curr_tag = pdc->tag;
         else
-            curr_tag = (color >> (num_comp*16)) & 0xff;
+            curr_tag = (color >> (num_comp*16)) & 0xffff;
     }
 
     if (devn) {
@@ -8361,7 +8361,7 @@ do_mark_fill_rectangle_ko_simple16(gx_device *dev, int x, int y, int w, int h,
         }
     } else {
         if (has_tags) {
-            curr_tag = (color >> (num_comp * 16)) & 0xff;
+            curr_tag = (color >> (num_comp * 16)) & 0xffff;
         }
         pdev->pdf14_procs->unpack_color16(num_comp, color, pdev, src);
     }

@@ -5736,7 +5736,7 @@ do_mark_fill_rectangle16(gx_device * dev, int x, int y, int w, int h,
         }
     } else {
         if (has_tags) {
-            curr_tag = (color >> (num_comp * 16)) & 0xff;
+            curr_tag = (color >> (num_comp * 16)) & 0xffff;
         }
         pdev->pdf14_procs->unpack_color16(num_comp, color, pdev, src);
     }
