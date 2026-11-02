@@ -214,7 +214,12 @@ typedef enum {
     GS_IMAGE_TAG = 0x2,
     GS_VECTOR_TAG = 0x4,
     GS_UNKNOWN_TAG = 0x40000000,
-    GS_DEVICE_ENCODES_TAGS = (int)0x80000000
+    GS_DEVICE_ENCODES_TAGS = (int)0x80000000,
+
+    /* A mask to select just the bits used to hold the tags themselves. Any
+     * extra information held by individual devices in the rest of the bits
+     * will be ignored by this mask. */
+    GS_DEVICE_TAG_MASK = 7
 } gs_graphics_type_tag_t;
 
 /* Source profile graphic tag rendering conditions */

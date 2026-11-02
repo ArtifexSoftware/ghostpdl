@@ -3349,7 +3349,7 @@ do_compose_group(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     if (nos->has_tags)
         if_debug7m('v', memory,
                    "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag = %d, bm = %d\n",
-                   y0, y1, x1 - x0, alpha, shape, dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS, blend_mode);
+                   y0, y1, x1 - x0, alpha, shape, dev->graphics_type_tag & GS_DEVICE_TAG_MASK, blend_mode);
     else
         if_debug6m('v', memory,
                    "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, bm = %d\n",
@@ -4123,7 +4123,7 @@ do_compose_group16(pdf14_buf *tos, pdf14_buf *nos, pdf14_buf *maskbuf,
     if (nos->has_tags)
         if_debug7m('v', memory,
                    "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag = %d, bm = %d\n",
-                   y0, y1, x1 - x0, alpha, shape, dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS, blend_mode);
+                   y0, y1, x1 - x0, alpha, shape, dev->graphics_type_tag & GS_DEVICE_TAG_MASK, blend_mode);
     else
         if_debug6m('v', memory,
                    "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, bm = %d\n",
@@ -4337,7 +4337,7 @@ do_compose_alphaless_group(pdf14_buf *tos, pdf14_buf *nos,
     if (nos->has_tags)
         if_debug7m('v', memory,
                    "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag = %d, bm = %d\n",
-                   y0, y1, x1 - x0, alpha, shape, dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS, blend_mode);
+                   y0, y1, x1 - x0, alpha, shape, dev->graphics_type_tag & GS_DEVICE_TAG_MASK, blend_mode);
     else
         if_debug6m('v', memory,
                    "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, bm = %d\n",
@@ -4474,7 +4474,7 @@ do_compose_alphaless_group16(pdf14_buf *tos, pdf14_buf *nos,
     if (nos->has_tags)
         if_debug7m('v', memory,
                    "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, tag = %d, bm = %d\n",
-                   y0, y1, x1 - x0, alpha, shape, dev->graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS, blend_mode);
+                   y0, y1, x1 - x0, alpha, shape, dev->graphics_type_tag & GS_DEVICE_TAG_MASK, blend_mode);
     else
         if_debug6m('v', memory,
                    "pdf14_pop_transparency_group y0 = %d, y1 = %d, w = %d, alpha = %d, shape = %d, bm = %d\n",

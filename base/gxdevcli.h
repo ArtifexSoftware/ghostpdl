@@ -1640,7 +1640,7 @@ static inline bool device_encodes_tags(const gx_device *dev)
 static inline gs_graphics_type_tag_t device_current_tag(const gx_device *dev)
 {
     gs_graphics_type_tag_t tag = dev->graphics_type_tag;
-    return (tag & GS_DEVICE_ENCODES_TAGS) ? (tag & ~GS_DEVICE_ENCODES_TAGS) : 0;
+    return (tag & GS_DEVICE_ENCODES_TAGS) ? (tag & GS_DEVICE_TAG_MASK) : 0;
 }
 
 static inline bool device_is_deep(const gx_device *dev)

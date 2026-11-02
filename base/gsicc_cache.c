@@ -670,7 +670,7 @@ gsicc_get_srcprofile(gsicc_colorbuffer_t data_cs,
     (*profile) = NULL;
     (*render_cond).rendering_intent = gsPERCEPTUAL;
     (*render_cond).cmm = gsCMM_DEFAULT;
-    switch (graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) {
+    switch (graphics_type_tag & GS_DEVICE_TAG_MASK) {
     case GS_UNKNOWN_TAG:
     case GS_UNTOUCHED_TAG:
     default:

@@ -2869,7 +2869,7 @@ gsicc_extract_profile(gs_graphics_type_tag_t graphics_type_tag,
                        cmm_dev_profile_t *profile_struct,
                        cmm_profile_t **profile, gsicc_rendering_param_t *render_cond)
 {
-    switch (graphics_type_tag & ~GS_DEVICE_ENCODES_TAGS) {
+    switch (graphics_type_tag & GS_DEVICE_TAG_MASK) {
         case GS_UNKNOWN_TAG:
         case GS_UNTOUCHED_TAG:
         default:
