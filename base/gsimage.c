@@ -223,8 +223,7 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_gstate * pgs,
             return code;
     }
 
-    if (pgs->overprint || (!pgs->overprint && (dev_proc(pgs->device, dev_spec_op)(pgs->device,
-        gxdso_overprint_active, NULL, 0)) > 0)) {
+    if (pgs->overprint || dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprint_active, NULL, 0) > 0) {
         gs_overprint_params_t op_params = { 0 };
 
         if_debug0m(gs_debug_flag_overprint, pgs->memory,

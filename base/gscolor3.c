@@ -73,7 +73,7 @@ gs_shfill(gs_gstate * pgs, const gs_shading_t * psh)
        because .shfill is always called within gsave-grestore -
        see gs/lib . */
     code = gs_setcolorspace(pgs, psh->params.ColorSpace);
-    if (pgs->overprint || (!pgs->overprint && (dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprint_active, NULL, 0) > 0))) {
+    if (pgs->overprint || dev_proc(pgs->device, dev_spec_op)(pgs->device, gxdso_overprint_active, NULL, 0) > 0) {
         gs_overprint_params_t op_params = { 0 };
 
         if_debug0m(gs_debug_flag_overprint, pgs->memory,
