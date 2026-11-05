@@ -8989,7 +8989,17 @@ pdf14_dev_spec_op(gx_device *pdev, int dev_spec_op,
         if (p14dev->pclist_device != NULL) {
             return dev_proc(p14dev->pclist_device, dev_spec_op)(p14dev->pclist_device, dev_spec_op, data, size);
         } else {
-            return p14dev->overprint || p14dev->stroke_overprint;
+            if (p14dev->overprint || p14dev->stroke_overprint)
+                return 1;
+            return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
+        }
+    }
+    if (dev_spec_op == gxdso_overprint_adjust) {
+        if (p14dev->pclist_device != NULL) {
+            return dev_proc(p14dev->pclist_device, dev_spec_op)(p14dev->pclist_device, dev_spec_op, data, size);
+        } else {
+            ((gx_overprint_adjust_t *)data)->op_was_active |= (p14dev->overprint || p14dev->stroke_overprint);
+            return dev_proc(p14dev->target, dev_spec_op)(p14dev->target, dev_spec_op, data, size);
         }
     }
 

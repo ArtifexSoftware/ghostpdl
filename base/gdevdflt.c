@@ -1016,6 +1016,8 @@ gx_default_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
             return 0;
         case gxdso_overprint_active:
             return 0;
+        case gxdso_overprint_adjust:
+            return 0;
         case gxdso_set_srcgtag:
             rc_decrement(pdev->srcgtag,"default dev_spec_op");
             pdev->srcgtag = data;

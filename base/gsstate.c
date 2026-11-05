@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -581,6 +581,30 @@ gs_gstate_update_overprint(gs_gstate * pgs, const gs_overprint_params_t * pparam
     int                 code;
     gx_device *         dev = pgs->device;
     gx_device *         ovptdev;
+    gs_overprint_params_t params;
+
+    if (pparams->op_state == GS_OP_STATE_NONE) {
+        gx_overprint_adjust_t op_adj;
+
+        params = *pparams;
+        pparams = &params;
+        op_adj.pgs = pgs;
+        op_adj.retain_any_comps = params.retain_any_comps;
+        op_adj.is_fill_color = params.is_fill_color;
+        op_adj.effective_opm = params.effective_opm;
+        op_adj.drawn_comps = params.drawn_comps;
+        op_adj.op_was_active = false;
+        if (dev_proc(dev, dev_spec_op)(dev, gxdso_overprint_adjust,
+                                       &op_adj, sizeof(op_adj)) > 0) {
+            params.retain_any_comps = op_adj.retain_any_comps;
+            params.effective_opm = op_adj.effective_opm;
+            params.drawn_comps = op_adj.drawn_comps;
+            pgs->color[0].effective_opm = params.effective_opm;
+        } else if (!params.retain_any_comps && !op_adj.op_was_active &&
+                   !(params.is_fill_color ? pgs->overprint : pgs->stroke_overprint)) {
+            return 0;
+        }
+    }
 
     code = gs_create_overprint(&pct, pparams, pgs->memory);
     if (code >= 0) {

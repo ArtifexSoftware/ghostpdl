@@ -56,6 +56,7 @@ Welcome to :title:`Ghostscript`
    Drivers.rst
    UnsupportedDevices.rst
    SampleDownscaleDevice.rst
+   Overprint.rst
 
 .. toctree::
    :caption: Coding Guidelines

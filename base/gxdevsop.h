@@ -168,6 +168,20 @@ typedef struct overprint_abuf_state_s {
     unsigned char storage[256];
 } overprint_abuf_state_t;
 
+/*
+ * Structure passed in data for gxdso_overprint_adjust.
+ * Claimants should modify the data as required, and return
+ * 1.
+ */
+typedef struct gx_overprint_adjust_s {
+    gs_gstate *pgs;
+    bool retain_any_comps;
+    bool is_fill_color;
+    int effective_opm;
+    gx_color_index drawn_comps;
+    bool op_was_active;
+} gx_overprint_adjust_t;
+
 enum {
     /* All gxdso_ keys must be defined in this structure.
      * Do NOT rely on your particular gxdso_ having a particular value.
@@ -549,6 +563,13 @@ enum {
 
     gxdso_set_srcgtag,
 
+    /* gxdso_overprint_adjust:
+    *     data = pointer to gx_overprint_adjust_t structure.
+    *     size = sizeof(gx_overprint_adjust_t)
+    * Returns 1 if the overprint params were adjusted,
+    * 0 otherwise.
+    */
+    gxdso_overprint_adjust,
     /* Add new gxdso_ keys above this. */
     gxdso_pattern__LAST
 };

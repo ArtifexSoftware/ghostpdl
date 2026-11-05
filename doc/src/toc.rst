@@ -27,6 +27,7 @@ Table of Contents
    Psfiles.rst
    Fonts.rst
    GhostscriptColorManagement.rst
+   Overprint.rst
    Unix-lpr.rst
    News.rst
    Source.rst

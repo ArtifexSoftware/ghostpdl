@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -624,7 +624,17 @@ clist_dev_spec_op(gx_device *pdev, int dev_spec_op, void *data, int size)
         return 1;
     if (dev_spec_op == gxdso_overprint_active) {
         gx_device_clist_writer* cwdev = &((gx_device_clist*)pdev)->writer;
-        return cwdev->op_fill_active || cwdev->op_stroke_active;
+        if (cwdev->op_fill_active || cwdev->op_stroke_active)
+            return 1;
+        /* Fall through to pass through cases. */
+    }
+
+    if (dev_spec_op == gxdso_overprint_adjust) {
+        gx_device_clist_writer *cwdev = &((gx_device_clist *)pdev)->writer;
+        if (data == NULL || size != sizeof(gx_overprint_adjust_t))
+            return gs_error_unknownerror;
+        ((gx_overprint_adjust_t *)data)->op_was_active |= (cwdev->op_fill_active || cwdev->op_stroke_active);
+        /* Fall through to pass through cases. ick. */
     }
     /* This is a horrible hack. Accumulator devices have their procs
      * overriden by clist ones in gdev_prn_open. */

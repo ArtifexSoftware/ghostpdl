@@ -1328,8 +1328,18 @@ overprint_dev_spec_op(gx_device* pdev, int dev_spec_op,
     if (tdev == 0)
         return 0;
 
-    if (dev_spec_op == gxdso_overprint_active)
-        return !opdev->is_idle;
+    if (dev_spec_op == gxdso_overprint_active) {
+        if (!opdev->is_idle)
+            return 1;
+        return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
+    }
+
+    if (dev_spec_op == gxdso_overprint_adjust) {
+        if (data == NULL || size != sizeof(gx_overprint_adjust_t))
+            return gs_error_unknownerror;
+        ((gx_overprint_adjust_t *)data)->op_was_active |= !opdev->is_idle;
+        return dev_proc(tdev, dev_spec_op)(tdev, dev_spec_op, data, size);
+    }
 
     if (dev_spec_op == gxdso_abuf_optrans)
     {

@@ -632,6 +632,7 @@ Most of the Ghostscript :ref:`output devices<Devices.html>` do not have file for
 
 Overprinting with spot colors is not allowed if the tint transform function is being used to convert spot colors. Thus if spot colors are used with overprinting, then the appearance of the result can differ between output devices. One result would be obtained with a CMYK only device and another would be obtained with a CMYK plus spot color device. In a worst case situation where a file has overprinting with both process (CMYK) and spot colors, it is possible to get three different appearances for the same input file using the :ref:`tiff24nc<Devices_TIFF>` (RGB), :ref:`tiff32nc<Devices_TIFF>` (CMYK), and :ref:`tiffsep<Devices_TIFF>` (CMYK plus spot colors) devices.
 
+More information can be found in the :ref:`Overprint<Overprint.html>` section.
 
 .. note::
    In Adobe Acrobat, viewing of the effects of overprinting is enabled by the 'Overprint Preview' item in the 'Advanced' menu. This feature is not available in the free Acrobat Reader. The free Acrobat Reader also uses the tint transform functions to convert spot colors to the appropriate alternate color space.
