@@ -946,6 +946,9 @@ overprint_copy_planes(gx_device * dev, const byte * data, int data_x, int raster
         int bytespercomp;
         int has_tags = device_encodes_tags(dev);
 
+        if (comps_orig == 0)
+            return 0;
+
         depth = tdev->color_info.depth;
         num_comps = tdev->color_info.num_components;
         if (has_tags)
@@ -1088,6 +1091,10 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     shift = 16 - byte_depth;
     deep = byte_depth == 16;
 
+    comps2 = opdev->op_state == GS_OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
+    if (comps2 == 0)
+        return 0;
+
     /* allocate a buffer for the returned data */
     if (check_64bit_multiply(w, byte_depth, &raster) != 0)
         return gs_note_error(gs_error_undefinedresult);
@@ -1112,7 +1119,6 @@ overprint_fill_rectangle_hl_color(gx_device *dev,
     gb_rect.q.x = x + w;
 
     /* step through the height */
-    comps2 = opdev->op_state == GS_OP_STATE_FILL ? opdev->drawn_comps_fill : opdev->drawn_comps_stroke;
     /* If we are dealing with tags, and we are writing ANY components, then we want to write the
      * tag plane too. */
     if (comps2 != 0 && device_encodes_tags(dev)) {
