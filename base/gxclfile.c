@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -13,6 +13,12 @@
    CA 94129, USA, for further information.
 */
 
+
+//#define CLIST_WRITE_SQUEEZING
+#ifdef CLIST_WRITE_SQUEEZING
+#include <stdlib.h>
+#include <stdio.h>
+#endif
 
 /* File-based command list implementation */
 #include "assert_.h"
@@ -354,11 +360,186 @@ clist_fclose(clist_file_ptr cf, const char *fname, bool delete)
 
 /* ------ Writing ------ */
 
+#ifdef CLIST_WRITE_SQUEEZING
+
+static int cls_inited = 0;
+#define CLS_UNLIMITED ((size_t)-1)
+static size_t cls_squeezeat = CLS_UNLIMITED;
+static size_t cls_total = 0;
+static int cls_dying = 0;
+static size_t cls_squeezestep = 0;
+
+#ifndef _WIN32
+#define CLIST_HAS_FORK
+#endif
+
+#ifdef CLIST_HAS_FORK
+#include <unistd.h>
+#include <sys/wait.h>
+#include <time.h>
+
+/* FIXME: Find some portable way of getting this */
+/* MacOSX has 10240, Ubuntu seems to have 256 */
+#ifndef OPEN_MAX
+#define OPEN_MAX 10240
+#endif
+
+/* stashed_map[j] = i means that file descriptor i-1 was duplicated to j */
+int stashed_map[OPEN_MAX];
+
+#include <signal.h>
+
+static void segv_signal(int sig)
+{
+    (void)sig;
+    fprintf(stderr, "SEGV!\n");
+    exit(1);
+}
+#endif
+
+#endif
+
 static int
 clist_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
 {
     int res = 0;
     IFILE *icf = (IFILE *)cf;
+
+#ifdef CLIST_WRITE_SQUEEZING
+    uint len2;
+    if (!cls_inited)
+    {
+        const char *env = getenv("CLIST_SQUEEZEAT");
+        if (env)
+            cls_squeezeat = (size_t)atoi(env);
+        cls_inited = 1;
+
+        env = getenv("CLIST_SQUEEZESTEP");
+        if (env)
+            cls_squeezestep = (size_t)atoi(env);
+        if (cls_squeezestep < 0)
+            cls_squeezestep = 1;
+    }
+ continue_squeezing:
+
+    if (cls_squeezeat != CLS_UNLIMITED)
+    {
+        if (cls_total > cls_squeezeat)
+            return 0;
+        if (cls_total + len > cls_squeezeat)
+        {
+            len2 = cls_squeezeat - cls_total;
+            if (len2 > 0)
+            {
+                res = clist_fwrite_chars(data, len2, cf);
+                assert(res == len2);
+                data = (char *)data + len2;
+                len -= len2;
+            }
+
+            /* Now we need to the squeezing thing. */
+#ifdef CLIST_HAS_FORK
+            {
+                int i, pid;
+
+                /* If we've forked before and we're now in the process of failing,
+                 * just exit. */
+                if (cls_dying)
+                    return 0;
+
+                /* When we fork below, the child is going to snaffle all our file pointers
+                 * and potentially corrupt them. Let's make copies of all of them before
+                 * we fork, so we can restore them when we restart. */
+                for (i = 0; i < OPEN_MAX; i++) {
+                    if (stashed_map[i] == 0) {
+                        int j = dup(i);
+                        if (j >= 0) {
+                            stashed_map[j] = i+1;
+                        }
+                    }
+                }
+
+                pid = fork();
+                if (pid == 0) {
+                    fprintf(stderr, "Clist write squeezing: forking at %d\n", (int)cls_total);
+                    /* Child */
+                    cls_dying = 1;
+                    /* Catch any segv and exit neatly */
+                    signal(SIGSEGV, segv_signal);
+                    /* Close the dup-licated fds to avoid them getting corrupted by faulty
+                     * code. */
+                    for (i = 0; i < OPEN_MAX; i++) {
+                        if (stashed_map[i] != 0) {
+                            /* We close duplicated fds, just in case child has some bad
+                             * code that modifies/closes random fds. */
+                            close(i);
+                        }
+                    }
+                    /* In the child, we fail. */
+                    cls_total += len2;
+                    return len2;
+                }
+
+                 /* When do we want it to fail again? */
+                 if (cls_squeezestep > 0)
+                     cls_squeezeat += cls_squeezestep;
+                 else if (cls_squeezestep == 0)
+                     cls_squeezeat += len;
+
+                /* Wait for pid to finish, with a timeout. */
+                {
+                    struct timespec tm = { 0, 10 * 1000 * 1000 }; /* 10ms = 100th sec */
+                    int timeout = 30 * 1000 * 1000; /* time out in microseconds! */
+                    int status;
+                    while (waitpid(pid, &status, WNOHANG) == 0) {
+                        nanosleep(&tm, NULL);
+                        timeout -= (int)(tm.tv_nsec/1000);
+                        tm.tv_nsec *= 2;
+                        if (tm.tv_nsec > 999999999)
+                            tm.tv_nsec = 999999999;
+                        if (timeout <= 0) {
+                           char text[32];
+                            fprintf(stderr, "Child is taking a long time to die. Killing it.\n");
+                            snprintf(text, sizeof(text), "kill %d", pid);
+                            system(text);
+                            break;
+                       }
+                    }
+
+                    if (status != 0) {
+                        fprintf(stderr, "Child status=%d\n", status);
+                    }
+                }
+
+                /* Put the files back */
+                for (i = 0; i < OPEN_MAX; i++) {
+                    if (stashed_map[i] != 0) {
+                        dup2(i, stashed_map[i]-1);
+                        close(i);
+                        stashed_map[i] = 0;
+                    }
+                }
+                fprintf(stderr, "============================================\n");
+                goto continue_squeezing;
+            }
+#else
+            fprintf(stderr, "Clist write squeezing at %d\n", (int)cls_total);
+            {
+#ifdef _WIN32
+                fprintf(stderr, "Continue with CLIST_SQUEEZEAT=%d\n", (int)cls_total+1);
+#else
+                char val[32];
+                snprintf(val, sizeof(val), "%d", );
+                setenv("CLIST_SQUEEZEAT", val, 1);
+#endif
+            }
+            cls_total += len2;
+            return len2;
+#endif
+        }
+        cls_total += len;
+    }
+#endif
 
     if (gp_can_share_fdesc()) {
         res = gp_fpwrite((char *)data, len, ((IFILE *)cf)->pos, ((IFILE *)cf)->f);
