@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -533,6 +533,8 @@ clist_find_pseudoband(gx_device_clist_reader *crdev, int band, cmd_block *cb)
         bfile = page_info->bfile;
     }
     /* Go to the start of the last command block */
+    if (page_info->bfile_end_pos < sizeof(cmd_block))
+        return_error(gs_error_ioerror);
     start_pos = page_info->bfile_end_pos - sizeof(cmd_block);
     page_info->io_procs->fseek(bfile, start_pos, SEEK_SET, page_info->bfname);
     while( 1 ) {
