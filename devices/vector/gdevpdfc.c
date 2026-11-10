@@ -1347,6 +1347,93 @@ pdf_color_space_named(gx_device_pdf *pdev, const gs_gstate * pgs,
                     break;
             }
         }
+
+        if (pdev->PDFA > 1) {
+            int j;
+            bool DuplicateSpot = false;
+
+            for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+                pdf_resource_t *pres = pdev->resources[resourceColorSpace].chains[j];
+
+                for (; pres != 0;) {
+                    if (cos_type(pres->object) == cos_type_array) {
+                        if (cos_array_size((const cos_array_t *)pres->object) == 4 || cos_array_size((const cos_array_t *)pres->object) == 5) {
+                            cos_value_t *t = (cos_value_t *)cos_array_get((const cos_array_t *)pres->object, 0);
+
+                            if (t->value_type == COS_VALUE_SCALAR || t->value_type == COS_VALUE_CONST) {
+                                if (t->contents.chars.size == 11 && strncmp((const char *)t->contents.chars.data, "/Separation", 11) == 0) {
+                                    t = (cos_value_t *)cos_array_get((const cos_array_t *)pres->object, 1);
+                                    if (t->contents.chars.size - 1 == strlen((const char *)pcs->params.separation.sep_name) && strncmp((const char *)t->contents.chars.data + 1, pcs->params.separation.sep_name, t->contents.chars.size - 1) == 0) {
+                                        DuplicateSpot = true;
+                                        break;
+                                    }
+                                } else {
+                                    if (t->contents.chars.size == 8 && strncmp((const char *)t->contents.chars.data, "/DeviceN", 8) == 0) {
+                                        if (cos_array_size((const cos_array_t *)pres->object) != 5) {
+                                            continue;
+                                        }
+
+                                        t = (cos_value_t *)cos_array_get((const cos_array_t *)pres->object, 5);
+
+                                        if (t->value_type == COS_VALUE_OBJECT && cos_type(t->contents.object) == cos_type_dict) {
+                                            cos_dict_t *pcd = (cos_dict_t *)t->contents.object;
+
+                                            t = (cos_value_t *)cos_dict_find_c_key(pcd, "/Colorants");
+                                            if (t == NULL) {
+                                                continue;
+                                            } else {
+                                                if (t->value_type == COS_VALUE_OBJECT && cos_type(t->contents.object) == cos_type_dict) {
+                                                    const cos_value_t *t1 = NULL;
+                                                    char *Key = NULL;
+
+                                                    if (strlen(pcs->params.separation.sep_name) > max_uint -2)
+                                                        return_error(gs_error_rangecheck);
+                                                    Key = (char *)gs_alloc_bytes(pdev->pdf_memory, strlen(pcs->params.separation.sep_name) + 2, "Temp name");
+                                                    if (Key == NULL)
+                                                        return_error(gs_error_VMerror);
+                                                    Key[0] = '/';
+                                                    memcpy(&Key[1], pcs->params.separation.sep_name, strlen(pcs->params.separation.sep_name));
+                                                    Key[strlen(pcs->params.separation.sep_name) + 1] = 0x00;
+
+                                                    t1 = cos_dict_find_c_key((const cos_dict_t *)t->contents.object, (const char *)Key);
+                                                    gs_free_object(pdev->pdf_memory, Key, "temp name");
+                                                    if (t1 != NULL) {
+                                                        DuplicateSpot = true;
+                                                        break;
+                                                    }
+                                                } else {
+                                                    continue;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    pres = pres->next;
+                }
+                if (DuplicateSpot) {
+                    switch(pdev->PDFACompatibilityPolicy) {
+                        case 0:
+                        case 1:
+                            emprintf(pdev->memory,
+                                 "Duplicate ink names, with differing definitions, is not valid in PDF/A-2 or above. Reverting to normal PDF output.\n");
+                            pdev->AbortPDFAX = true;
+                            pdev->PDFA = 0;
+                            break;
+                        default:
+                        case 2:
+                            emprintf(pdev->memory,
+                                 "Duplicate ink names, with differing definitions, is not valid in PDF/A-2 or above. Aborting.\n");
+                            return_error(gs_error_limitcheck);
+                            break;
+                    }
+                    break;
+                }
+            }
+        }
+
         pfn = gs_cspace_get_sepr_function(pcs);
         /****** CURRENTLY WE ONLY HANDLE Functions ******/
         if (pfn == 0)

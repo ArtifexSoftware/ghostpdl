@@ -776,6 +776,22 @@ cos_array_element_next(const cos_array_element_t *pca, int64_t *pindex,
     return pca->next;
 }
 
+unsigned int cos_array_size(const cos_array_t *pca)
+{
+    cos_array_element_t *pcae = pca->elements;
+    return(pcae->index + 1);
+}
+
+const cos_value_t *cos_array_get(const cos_array_t *pca, unsigned int index)
+{
+    cos_array_element_t **ppcae = (cos_array_element_t **)&pca->elements;
+    cos_array_element_t *next;
+
+    while ((next = *ppcae) != 0 && next->index > index)
+        ppcae = &next->next;
+    return(&next->value);
+}
+
 /*
  * Reorder the elements of an array for writing or after writing.  Usage:
  *	first_element = cos_array_reorder(pca, NULL);

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2024 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -252,6 +252,8 @@ int cos_array_add_c_string(cos_array_t *, const char *);
 int cos_array_add_int(cos_array_t *, int);
 int cos_array_add_real(cos_array_t *, double);
 int cos_array_add_object(cos_array_t *, cos_object_t *);
+unsigned int cos_array_size(const cos_array_t *pca);
+const cos_value_t *cos_array_get(const cos_array_t *pca, unsigned int index);
 /* add adds at the end, unadd removes the last element */
 int cos_array_unadd(cos_array_t *, cos_value_t *);
     /* dict */

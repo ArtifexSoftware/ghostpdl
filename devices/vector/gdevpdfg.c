@@ -826,6 +826,7 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
     byte *data_buff;
     pdf_resource_t *pres = NULL;
     gs_color_space *pcs_save = NULL;
+    unsigned int NumSpots = 0;
 
     csi = gs_color_space_get_index(pcs);
     if (csi == gs_color_space_index_Indexed) {
@@ -857,6 +858,15 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
                         break;
                 }
                 break;
+            }
+            if (strlen(pcs->params.device_n.names[i]) != 4 || strncmp(pcs->params.device_n.names[i], "Cyan", 4)!= 0) {
+                if (strlen(pcs->params.device_n.names[i]) != 7 || strncmp(pcs->params.device_n.names[i], "Magenta", 7)!= 0) {
+                    if (strlen(pcs->params.device_n.names[i]) != 6 || strncmp(pcs->params.device_n.names[i], "Yellow", 6)!= 0) {
+                        if (strlen(pcs->params.device_n.names[i]) != 5 || strncmp(pcs->params.device_n.names[i], "Black", 5)!= 0) {
+                            NumSpots++;
+                        }
+                    }
+                }
             }
         }
     }
@@ -1093,8 +1103,28 @@ int convert_DeviceN_alternate(gx_device_pdf * pdev, const gs_gstate * pgs, const
                 COS_FREE(pca, "convert DeviceN");
                 return code;
             }
+        } else {
+            /* PDF/A-1 permits duplicate, different spots in DeviceN and does not require a Colorants dictionary
+             * PDF/A-2 and above require all DeviceN spaces to have a Colorants dictionary.
+             */
+            if (pdev->PDFA > 1 && NumSpots > 0 || (NumSpots == 0 && !pdev->params.ColorConversionStrategy == ccs_CMYK)) {
+                switch(pdev->PDFACompatibilityPolicy) {
+                    case 0:
+                    case 1:
+                        emprintf(pdev->memory,
+                             "DeviceN space has no /Colorants dictionary, not valid in PDF/A-2 or later. Reverting to normal PDF output.\n");
+                        pdev->AbortPDFAX = true;
+                        pdev->PDFA = 0;
+                        break;
+                    default:
+                    case 2:
+                        emprintf(pdev->memory,
+                             "DeviceN space has no /Colorants dictionary, not valid in PDF/A-2 or later. RAborting.\n");
+                        return_error(gs_error_limitcheck);
+                        break;
+                }
+            }
         }
-
     }
     pdf_delete_sampled_base_space_function(pdev, new_pfn);
 
