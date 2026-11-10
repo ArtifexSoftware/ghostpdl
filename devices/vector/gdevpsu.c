@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -35,7 +35,7 @@ psw_print_lines(gp_file *f, const char *const lines[])
 {
     int i;
     for (i = 0; lines[i] != 0; ++i) {
-        if (fprintf(f, "%s\n", lines[i]) < 0)
+        if (gp_fprintf(f, "%s\n", lines[i]) < 0)
             return_error(gs_error_ioerror);
     }
     return 0;
@@ -173,12 +173,12 @@ psw_begin_file_header(gp_file *f, const gx_device *dev, const gs_rect *pbbox,
         pdpc->bbox_position = 0;
     } else if (!is_seekable(f)) {	/* File is not seekable. */
         pdpc->bbox_position = -1;
-        fputs("%%BoundingBox: (atend)\n", f);
-        fputs("%%HiResBoundingBox: (atend)\n", f);
+        gp_fputs("%%BoundingBox: (atend)\n", f);
+        gp_fputs("%%HiResBoundingBox: (atend)\n", f);
     } else {		/* File is seekable, leave room to rewrite bbox. */
         pdpc->bbox_position = gp_ftell(f);
-        fputs("%...............................................................\n", f);
-        fputs("%...............................................................\n", f);
+        gp_fputs("%...............................................................\n", f);
+        gp_fputs("%...............................................................\n", f);
     }
 #ifdef CLUSTER
     /* Slightly screwy - separating the G, P and L characters this way to avoid
@@ -186,7 +186,7 @@ psw_begin_file_header(gp_file *f, const gx_device *dev, const gs_rect *pbbox,
      */
     fprintf(f, "%%%%Creator: %s%s%s Ghostscript (%s)\n", "G", "P", "L", dev->dname);
 #else
-    fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
+    gp_fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
             dev->dname);
 #endif
     {
@@ -200,29 +200,29 @@ psw_begin_file_header(gp_file *f, const gx_device *dev, const gs_rect *pbbox,
         time(&t);
         tms = *localtime(&t);
 #endif
-        fprintf(f, "%%%%CreationDate: %d/%02d/%02d %02d:%02d:%02d\n",
+        gp_fprintf(f, "%%%%CreationDate: %d/%02d/%02d %02d:%02d:%02d\n",
                 tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
                 tms.tm_hour, tms.tm_min, tms.tm_sec);
     }
     if (ascii)
-        fputs("%%DocumentData: Clean7Bit\n", f);
+        gp_fputs("%%DocumentData: Clean7Bit\n", f);
     if (pdpc->LanguageLevel >= 2.0)
-        fprintf(f, "%%%%LanguageLevel: %d\n", (int)pdpc->LanguageLevel);
+        gp_fprintf(f, "%%%%LanguageLevel: %d\n", (int)pdpc->LanguageLevel);
     else if (pdpc->LanguageLevel == 1.5)
-        fputs("%%Extensions: CMYK\n", f);
+        gp_fputs("%%Extensions: CMYK\n", f);
     psw_print_lines(f, psw_begin_prolog);
 #ifndef CLUSTER
-    fprintf(f, "%% %s\n", gs_copyright);
+    gp_fprintf(f, "%% %s\n", gs_copyright);
 #endif
-    fputs("%%BeginResource: procset ", f);
-    fflush(f);
+    gp_fputs("%%BeginResource: procset ", f);
+    gp_fflush(f);
     psw_print_procset_name(f, dev, pdpc);
-    fprintf(f, " %5.3lf %d\n/", pdpc->ProcSet_version / 1000.0, 0);
-    fflush(f);
+    gp_fprintf(f, " %5.3lf %d\n/", pdpc->ProcSet_version / 1000.0, 0);
+    gp_fflush(f);
     psw_print_procset_name(f, dev, pdpc);
-    fputs(" 80 dict dup begin\n", f);
+    gp_fputs(" 80 dict dup begin\n", f);
     psw_print_lines(f, psw_ps_procset);
-    fflush(f);
+    gp_fflush(f);
     if (ferror(f))
         return_error(gs_error_ioerror);
     return 0;
@@ -247,7 +247,7 @@ psw_end_file(gp_file *f, const gx_device *dev,
 {
     if (f == NULL)
         return 0;	/* clients should be more careful */
-    fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", (long)page_count);
+    gp_fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", (long)page_count);
     if (ferror(f))
         return_error(gs_error_ioerror);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
@@ -272,7 +272,7 @@ psw_end_file(gp_file *f, const gx_device *dev,
                 psw_print_bbox(f, &bbox);
             } else
                 psw_print_bbox(f, pbbox);
-            fputc('%', f);
+            gp_fputc('%', f);
             if (ferror(f))
                 return_error(gs_error_ioerror);
             gp_fseek(f, save_pos, SEEK_SET);
@@ -280,7 +280,7 @@ psw_end_file(gp_file *f, const gx_device *dev,
             psw_print_bbox(f, pbbox);
     }
     if (!pdpc->ProduceEPS)
-        fputs("%%EOF\n", f);
+        gp_fputs("%%EOF\n", f);
     if (ferror(f))
         return_error(gs_error_ioerror);
     return 0;
@@ -363,11 +363,11 @@ psw_write_page_header(stream *s, const gx_device *dev,
 int
 psw_write_page_trailer(gp_file *f, int num_copies, int flush)
 {
-    fprintf(f, "cleartomark end end pagesave restore\n");
+    gp_fprintf(f, "cleartomark end end pagesave restore\n");
     if (num_copies != 1)
-        fprintf(f, "userdict /#copies %d put\n", num_copies);
-    fprintf(f, " %s\n%%%%PageTrailer\n", (flush ? "showpage" : "copypage"));
-    fflush(f);
+        gp_fprintf(f, "userdict /#copies %d put\n", num_copies);
+    gp_fprintf(f, " %s\n%%%%PageTrailer\n", (flush ? "showpage" : "copypage"));
+    gp_fflush(f);
     if (ferror(f))
         return_error(gs_error_ioerror);
     return 0;

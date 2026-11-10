@@ -95,8 +95,8 @@ static void check_line_length(gp_file *out, int *line_length, int expected)
 {
   if (*line_length + expected <= 78) return;
 
-  fputs(" \\\n", out);
-  fputs("    ", out);
+  gp_fputs(" \\\n", out);
+  gp_fputs("    ", out);
   *line_length = 4;
 
   return;
@@ -362,7 +362,7 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
     ll += fprintf(ip->out, " -dCompressionMethod=%d", ip->fdata.compression);
   }
 
-  fputs("\n\n", ip->out);
+  gp_fputs("\n\n", ip->out);
   if (ip->fdata.palette == pcl_CMYK && !ip->seen_first_colorant) {
     imessage(ip->out, 70,
       "Although the colour model in this file is declared as CMYK, "
@@ -385,23 +385,23 @@ static void print_result(CollectedInfo *ip)		/* NLS: 10, 70 */
        /* I'm using the size specification as an indication of the PCL Page Size
           code used, hence I'm adding the card flag if present. Note that
           adding "Big" is not useful. */
-      if (media_code & PCL_CARD_FLAG) fputs(PCL_CARD_STRING, ip->out);
+      if (media_code & PCL_CARD_FLAG) gp_fputs(PCL_CARD_STRING, ip->out);
       if (size->dimen[0] > 0) {
         const char *unit = catgets(catd, 2, 16, "mm");
 
-        fputs(" (", ip->out);
+        gp_fputs(" (", ip->out);
         if (strcmp(unit, "bp") == 0)
-          fprintf(ip->out, "%.0f x %.0f bp", size->dimen[0],
+          gp_fprintf(ip->out, "%.0f x %.0f bp", size->dimen[0],
             size->dimen[1]);
         else if (strcmp(unit, "in") == 0)
-          fprintf(ip->out, "%.1f x %.1f in", size->dimen[0]/BP_PER_IN,
+          gp_fprintf(ip->out, "%.1f x %.1f in", size->dimen[0]/BP_PER_IN,
             size->dimen[1]/BP_PER_IN);
         else
-          fprintf(ip->out, "%.0f x %.0f mm", size->dimen[0]/BP_PER_MM,
+          gp_fprintf(ip->out, "%.0f x %.0f mm", size->dimen[0]/BP_PER_MM,
             size->dimen[1]/BP_PER_MM);
-        fputc(')', ip->out);
+        gp_fputc(')', ip->out);
       }
-      fputs(".\n", ip->out);
+      gp_fputs(".\n", ip->out);
     }
   }
   if (ip->fdata.media_source != 0 && ip->fdata.media_source != 1)
@@ -1124,9 +1124,9 @@ int main(int argc, char **argv)
   }
 
   /* Open the output file */
-  if (outfile_name == NULL) outfile = stdout;
+  if (outfile_name == NULL) outfile = gp_stdout;
   else {
-    outfile = fopen(outfile_name, "w");
+    outfile = gp_fopen(outfile_name, "w");
     if (outfile == NULL) {
       emessage(2, "The file `%s' could not be opened for writing:\n  %s.\n",
         outfile_name, strerror(errno));
@@ -1149,21 +1149,21 @@ int main(int argc, char **argv)
       exit(EXIT_FAILURE);
     }
 
-    if (number_of_infiles > 1) fprintf(outfile, "*** %s:\n", infile_name);
+    if (number_of_infiles > 1) gp_fprintf(outfile, "*** %s:\n", infile_name);
     errors += work(infile, outfile);
 
     /* Close */
-    if (fclose(infile) != 0) {
+    if (gp_fclose(infile) != 0) {
       emessage(4, "Error closing `%s':\n  %s.\n",
         infile_name, strerror(errno));
       errors++;
     }
     optind++;
-    if (errors == 0 && optind < argc) fputs("\n", outfile);
+    if (errors == 0 && optind < argc) gp_fputs("\n", outfile);
   } while (errors == 0 && optind < argc);
 
   /* Close the output file */
-  if (fclose(outfile) != 0) {
+  if (gp_fclose(outfile) != 0) {
     emessage(4, "Error closing `%s':\n  %s.\n",
       outfile_name == NULL? "[standard output]": outfile_name, strerror(errno));
     errors++;

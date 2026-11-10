@@ -728,8 +728,8 @@ stc_print_page(gx_device_printer * pdev, gp_file *prn_stream)
 #ifdef    STC_SIGNAL
             sigpending(&stc_int_pending);
             if(sigismember(&stc_int_pending,SIGINT)) {
-               fputs("\033@[Aborted]\f", prn_stream);
-               fflush(prn_stream);
+               gp_fputs("\033@[Aborted]\f", prn_stream);
+               gp_fflush(prn_stream);
                sigprocmask(SIG_SETMASK,&stc_int_save,NULL);
                break;
             }

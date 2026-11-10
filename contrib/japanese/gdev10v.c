@@ -161,7 +161,7 @@ prn_flush(gx_device_printer *pdev)
 {
         if(is_printer(pdev))
                 return 0;
-        return fflush(pdev->file);
+        return gp_fflush(pdev->file);
 }
 
 #else /* PC9801 */

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -157,7 +157,7 @@ psmono_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     ps_image_write_headers(prn_stream, pdev, psmono_setup, &pswrite_common);
 
     /* Write the .ImageRead command. */
-    fprintf(prn_stream,
+    gp_fprintf(prn_stream,
             "%d %d %d .ImageRead\n",
             pdev->width, pdev->height, pdev->color_info.depth);
 
@@ -216,11 +216,11 @@ psmono_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     }
 
     /* Clean up and return. */
-    fputs("\n", prn_stream);
+    gp_fputs("\n", prn_stream);
     psw_write_page_trailer(prn_stream, 1, true);
 xit:
     gs_free_object(pdev->memory, line, "psmono_print_page");
-    if (ferror(prn_stream))
+    if (gp_ferror(prn_stream))
         return_error(gs_error_ioerror);
     return code;
 }
@@ -323,7 +323,7 @@ psrgb_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     if (lbuf == 0)
         return_error(gs_error_VMerror);
     ps_image_write_headers(prn_stream, pdev, psrgb_setup, &pswrite_common);
-    fprintf(prn_stream, "%d %d rgbimage\n", width, pdev->height);
+    gp_fprintf(prn_stream, "%d %d rgbimage\n", width, pdev->height);
     s_init(&fs, mem);
     swrite_file(&fs, prn_stream, fsbuf, sizeof(fsbuf));
     fs.memory = 0;
@@ -372,13 +372,13 @@ psrgb_print_page(gx_device_printer * pdev, gp_file * prn_stream)
     sclose(&rls);
     sclose(&a85s);
     sflush(&fs);
-    fputs("\n", prn_stream);
+    gp_fputs("\n", prn_stream);
     psw_write_page_trailer(prn_stream, 1, true);
 xit:
     gs_free_object(mem, lbuf, "psrgb_print_page(lbuf)");
     if (code < 0)
         return_error(code);
-    if (ferror(prn_stream))
+    if (gp_ferror(prn_stream))
         return_error(gs_error_ioerror);
     return 0;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -217,7 +217,7 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, gp_file * prn_stream,
                     num_blank_lines = 0;
 #else
                     for (; num_blank_lines; num_blank_lines--)
-                        fputs("\033*b0W", prn_stream);
+                        gp_fputs("\033*b0W", prn_stream);
 #endif
                 } else {
                     /* Start raster graphics. */

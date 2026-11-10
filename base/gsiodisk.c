@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -534,7 +534,7 @@ MapFileReadVersion(gp_file * mapfile, int * value)
 static void
 MapFileWriteVersion(gp_file * mapfile, int value)
 {
-    fprintf(mapfile,
+    gp_fprintf(mapfile,
         "FileVersion\t%d\tThis file is machine generated.  Do not edit.\n",
         value);
 }
@@ -581,7 +581,7 @@ MapFileRead(gp_file * mapfile, char * namebuf, int * value)
 static void
 MapFileWrite(gp_file * mapfile, const char * namebuf, int value)
 {
-    fprintf(mapfile, " %d\t%s\n", value, namebuf);
+    gp_fprintf(mapfile, " %d\t%s\n", value, namebuf);
 }
 
 /*
