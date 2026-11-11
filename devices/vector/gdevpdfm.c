@@ -455,6 +455,38 @@ pdfmark_bind_named_object(gx_device_pdf *pdev, const gs_const_string *objname,
  * Note that we must transform Rect and Border coordinates.
  */
 
+typedef struct named_obj_params {
+    int object;
+    cos_value_t *v;
+}named_obj_params_t;
+
+static int named_obj_proc(void *client_data, const byte *key_data, uint key_size, const cos_value_t *v)
+{
+    named_obj_params_t *data = (named_obj_params_t *)client_data;
+
+    if (v->value_type == COS_VALUE_OBJECT && v->contents.object->id == data->object)
+        data->v = (cos_value_t *)v;
+    return 0;
+}
+
+static int find_named_object(cos_dict_t *pcd, int obj, cos_value_t **v)
+{
+    named_obj_params_t data;
+    int code;
+
+    data.object = obj;
+    data.v = NULL;
+    code = cos_dict_forall(pcd, &data, named_obj_proc);
+    if (code < 0)
+        return code;
+
+    if (data.v != NULL) {
+        *v = data.v;
+        code = 1;
+    }
+    return code;
+}
+
 typedef struct ao_params_s {
     gx_device_pdf *pdev;	/* for pdfmark_make_dest */
     const char *subtype;	/* default Subtype in top-level dictionary */
@@ -878,8 +910,69 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
                 return_error(gs_error_rangecheck);
             memcpy(buf, Action[1].data, Action[1].size);
             buf[Action[1].size] = 0;
-            if (sscanf(buf, "%d %d R", &d0, &d1) == 2)
+            if (sscanf(buf, "%d %d R", &d0, &d1) == 2) {
+                cos_value_t *v = NULL;
+                cos_object_t *pco = NULL;
+
+                /* This is all rather awkward. If we have an indirect reference to the Action
+                 * dictionary, then we need to find the stored dictionary and check it to see if we have
+                 * a Launch action, because that's barred in PDF/A.
+                 * Unfortunately we have turned the unique label into an object number back in pdfmark_process
+                 * so we have to look up the local (and potentially global) named resrouces to try and
+                 * find the actual Action dictionary....
+                 */
+                if (pdev->PDFA != 0) {
+                    if (find_named_object(pdev->local_named_objects, 5, &v) > 0) {
+                        pco = (cos_object_t *)v->contents.object;
+                    } else {
+                        if (find_named_object(pdev->global_named_objects, 5, &v) > 0) {
+                            pco = (cos_object_t *)v->contents.object;
+                        }
+                    }
+                    if (pco && cos_type(pco) == cos_type_dict) {
+                        const cos_value_t *v1 = NULL;
+
+                        v1 = cos_dict_find_c_key((const cos_dict_t *)pco, "/S");
+                        if (v1 != NULL) {
+                            if (v1->value_type == COS_VALUE_SCALAR || v1->value_type == COS_VALUE_CONST) {
+                                if (v1->contents.chars.size == 7 && strncmp((const char *)v1->contents.chars.data, "/Launch", 7) == 0) {
+                                    switch (pdev->PDFACompatibilityPolicy) {
+                                        /* Default behaviour matches Adobe Acrobat, warn and continue,
+                                         * output file will not be PDF/A compliant
+                                         */
+                                        case 0:
+                                            emprintf(pdev->memory,
+                                                     "Launch annotations not permitted in PDF/A, reverting to normal PDF output\n");
+                                            pdev->AbortPDFAX = true;
+                                            pdev->PDFA = 0;
+                                            break;
+                                            /* Since the annotation would break PDF/A compatibility, do not
+                                             * include it, but warn the user that it has been dropped.
+                                             */
+                                        case 1:
+                                            emprintf(pdev->memory,
+                                                     "Launch annotations not permitted in PDF/A,  cannot drop annotation, aborting conversion\n");
+                                            return_error (gs_error_typecheck);
+                                            break;
+                                        case 2:
+                                            emprintf(pdev->memory,
+                                                     "Launch annotations not permitted in PDF/A,  aborting conversion\n");
+                                            return_error (gs_error_typecheck);
+                                            break;
+                                        default:
+                                            emprintf(pdev->memory,
+                                                     "Launch annotations not permitted in PDF/A, unrecognised PDFACompatibilityLevel,\nreverting to normal PDF output\n");
+                                            pdev->AbortPDFAX = true;
+                                            pdev->PDFA = 0;
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
                 pdfmark_put_pair(pcd, Action);
+            }
         }
     }
     /*
