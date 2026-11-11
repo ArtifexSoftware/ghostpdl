@@ -948,6 +948,8 @@ lib_file_open_search_with_no_combine(gs_file_path_ptr  lib_path, const gs_memory
 
     if (iodev_os_open_file(iodev, (const char *)buffer, blen1,
                    (const char *)fmode, &s, (gs_memory_t *)mem) == 0) {
+       if (s == NULL)
+           return 1;
         *pclen = blen1;
         make_stream_file(pfile, s, "r");
         code = 0;
@@ -1012,6 +1014,8 @@ lib_file_open_search_with_combine(gs_file_path_ptr  lib_path, const gs_memory_t 
 
             if (iodev_os_open_file(iodev, (const char *)buffer, blen1,
                         (const char *)fmode, &s, (gs_memory_t *)mem) == 0) {
+               if (s == NULL)
+                   return 1;
                 *pclen = blen1;
                 make_stream_file(pfile, s, "r");
                 code = 0;
