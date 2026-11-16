@@ -14,6 +14,13 @@
 */
 
 
+//#define GP_FWRITE_SQUEEZING
+#ifdef GP_FWRITE_SQUEEZING
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#endif
+
 /* Miscellaneous support for platform facilities */
 
 #include "errno_.h"
@@ -515,12 +522,189 @@ gp_file_FILE_read(gp_file *file_, size_t size, unsigned int count, void *buf)
     return fread(buf, size, count, file->file);
 }
 
+#ifdef GP_FWRITE_SQUEEZING
+
+static int cls_inited = 0;
+#define CLS_UNLIMITED ((size_t)-1)
+static size_t cls_squeezeat = CLS_UNLIMITED;
+static size_t cls_total = 0;
+static int cls_dying = 0;
+static size_t cls_squeezestep = 0;
+
+#ifndef _WIN32
+#define GP_FWRITE_HAS_FORK
+#endif
+
+#ifdef GP_FWRITE_HAS_FORK
+#include <unistd.h>
+#include <sys/wait.h>
+#include <time.h>
+
+/* FIXME: Find some portable way of getting this */
+/* MacOSX has 10240, Ubuntu seems to have 256 */
+#ifndef OPEN_MAX
+#define OPEN_MAX 10240
+#endif
+
+/* stashed_map[j] = i means that file descriptor i-1 was duplicated to j */
+int stashed_map[OPEN_MAX];
+
+#include <signal.h>
+
+static void segv_signal(int sig)
+{
+    (void)sig;
+    fprintf(stderr, "SEGV!\n");
+    exit(1);
+}
+#endif
+
+#endif
+
 static int
 gp_file_FILE_write(gp_file *file_, size_t size, unsigned int count, const void *buf)
 {
     gp_file_FILE *file = (gp_file_FILE *)file_;
 
+#ifdef GP_FWRITE_SQUEEZING
+    size_t len = size * count;
+    size_t len2;
+    if (!cls_inited)
+    {
+        const char *env = getenv("GP_FWRITE_SQUEEZEAT");
+        if (env)
+            cls_squeezeat = (size_t)atoi(env);
+        cls_inited = 1;
+
+        env = getenv("GP_FWRITE_SQUEEZESTEP");
+        if (env)
+            cls_squeezestep = (size_t)atoi(env);
+        if (cls_squeezestep < 0)
+            cls_squeezestep = 1;
+    }
+ continue_squeezing:
+
+    if (cls_squeezeat != CLS_UNLIMITED)
+    {
+        if (cls_total > cls_squeezeat)
+            return 0;
+        if (cls_total + len > cls_squeezeat)
+        {
+            len2 = cls_squeezeat - cls_total;
+            if (len2 > 0)
+            {
+                size_t res = fwrite(buf, 1, len2, file->file);
+                assert(res == len2);
+                buf = (char *)buf + len2;
+                len -= len2;
+            }
+
+            /* Now we need to do the squeezing thing. */
+#ifdef GP_FWRITE_HAS_FORK
+            {
+                int i, pid;
+
+                /* If we've forked before and we're now in the process of failing,
+                 * just exit. */
+                if (cls_dying)
+                    return 0;
+
+                /* When we fork below, the child is going to snaffle all our file pointers
+                 * and potentially corrupt them. Let's make copies of all of them before
+                 * we fork, so we can restore them when we restart. */
+                for (i = 0; i < OPEN_MAX; i++) {
+                    if (stashed_map[i] == 0) {
+                        int j = dup(i);
+                        if (j >= 0) {
+                            stashed_map[j] = i+1;
+                        }
+                    }
+                }
+
+                pid = fork();
+                if (pid == 0) {
+                    fprintf(stderr, "gp_fwrite squeezing: forking at %d\n", (int)cls_total);
+                    /* Child */
+                    cls_dying = 1;
+                    /* Catch any segv and exit neatly */
+                    signal(SIGSEGV, segv_signal);
+                    /* Close the dup-licated fds to avoid them getting corrupted by faulty
+                     * code. */
+                    for (i = 0; i < OPEN_MAX; i++) {
+                        if (stashed_map[i] != 0) {
+                            /* We close duplicated fds, just in case child has some bad
+                             * code that modifies/closes random fds. */
+                            close(i);
+                        }
+                    }
+                    /* In the child, we fail. */
+                    cls_total += len2;
+                    return len2;
+                }
+
+                 /* When do we want it to fail again? */
+                 if (cls_squeezestep > 0)
+                     cls_squeezeat += cls_squeezestep;
+                 else if (cls_squeezestep == 0)
+                     cls_squeezeat += len;
+
+                /* Wait for pid to finish, with a timeout. */
+                {
+                    struct timespec tm = { 0, 10 * 1000 * 1000 }; /* 10ms = 100th sec */
+                    int timeout = 30 * 1000 * 1000; /* time out in microseconds! */
+                    int status;
+                    while (waitpid(pid, &status, WNOHANG) == 0) {
+                        nanosleep(&tm, NULL);
+                        timeout -= (int)(tm.tv_nsec/1000);
+                        tm.tv_nsec *= 2;
+                        if (tm.tv_nsec > 999999999)
+                            tm.tv_nsec = 999999999;
+                        if (timeout <= 0) {
+                           char text[32];
+                            fprintf(stderr, "Child is taking a long time to die. Killing it.\n");
+                            snprintf(text, sizeof(text), "kill %d", pid);
+                            system(text);
+                            break;
+                       }
+                    }
+
+                    if (status != 0) {
+                        fprintf(stderr, "Child status=%d\n", status);
+                    }
+                }
+
+                /* Put the files back */
+                for (i = 0; i < OPEN_MAX; i++) {
+                    if (stashed_map[i] != 0) {
+                        dup2(i, stashed_map[i]-1);
+                        close(i);
+                        stashed_map[i] = 0;
+                    }
+                }
+                fprintf(stderr, "============================================\n");
+                goto continue_squeezing;
+            }
+#else
+            fprintf(stderr, "gp_fwrite squeezing at %d\n", (int)cls_total);
+            {
+#ifdef _WIN32
+                fprintf(stderr, "Continue with GP_FWRITE_SQUEEZEAT=%d\n", (int)cls_total+1);
+#else
+                char val[32];
+                snprintf(val, sizeof(val), "%d", );
+                setenv("GP_FWRITE_SQUEEZEAT", val, 1);
+#endif
+            }
+            cls_total += len2;
+            return len2;
+#endif
+        }
+        cls_total += len;
+    }
+    return fwrite(buf, 1, len, file->file);
+#else
     return fwrite(buf, size, count, file->file);
+#endif
 }
 
 static int
