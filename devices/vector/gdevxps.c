@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -473,6 +473,7 @@ zip_append_data(gs_memory_t *mem, gx_device_xps_zinfo_t *info, byte *data, uint 
     count = gp_fwrite(data, 1, len, info->data.fp);
     if (count != len) {
         gp_fclose(info->data.fp);
+        info->data.fp = NULL;
         return -1;
     }
     /* probably unnecessary but makes debugging easier */
@@ -772,6 +773,7 @@ zip_close_archive_file(gx_device_xps *xps_dev, const char *filename)
                 put_bytes(f, buf, nread);
         }
         gp_fclose(fp);
+        info->data.fp = NULL;
     }
     put_bytes(f, 0, 0); /* extra field */
 
@@ -1023,8 +1025,7 @@ close_page_relationship(gx_device_xps *xps)
     if (code < 0)
         return gs_rethrow_code(code);
 
-    write_str_to_zip_file(xps, buf, "</Relationships>");
-    return 0;
+    return write_str_to_zip_file(xps, buf, "</Relationships>");
 }
 
 static int
@@ -1041,7 +1042,9 @@ write_page_relationship(gx_device_xps* xps)
     if (code < 0)
         return gs_rethrow_code(code);
 
-    write_str_to_zip_file(xps, buf, rels_header);
+    code = write_str_to_zip_file(xps, buf, rels_header);
+    if (code < 0)
+        return gs_rethrow_code(code);
     fmt = "<Relationship Target = \"/%s\" Id = \"R%d\" Type = %s/>\n";
 
     while (rel) {
@@ -1086,7 +1089,9 @@ xps_output_page(gx_device *dev, int num_copies, int flush)
         (*vdev_proc(vdev, beginpage)) (vdev);
         vdev->in_page = true;
     }
-    write_str_to_current_page(xps, "</Canvas></FixedPage>");
+    code = write_str_to_current_page(xps, "</Canvas></FixedPage>");
+    if (code < 0)
+        return gs_rethrow_code(code);
 
     if (xps->relations_head)
     {
@@ -1151,6 +1156,8 @@ xps_release_achive_file_names(gx_device* dev)
     while (f2i) {
         curr = f2i;
         f2i = f2i->next;
+        if (curr->info->data.fp)
+            gp_fclose(curr->info->data.fp);
         gs_free_object(curr->memory, curr->info, "xps_release_achive_file_names(info)");
         gs_free_object(curr->memory, curr->filename, "xps_release_achive_file_names(filename)");
         gs_free_object(curr->memory, curr, "xps_release_achive_file_names(f2i)");
@@ -1163,19 +1170,20 @@ static int
 xps_close_device(gx_device *dev)
 {
     gx_device_xps *xps = (gx_device_xps*)dev;
-    int code;
+    int code = 0;
+    int code2;
 
     /* closing for the FixedDocument */
     code = write_str_to_zip_file(xps, "Documents/1/FixedDocument.fdoc", "</FixedDocument>");
-    if (code < 0)
-        return gs_rethrow_code(code);
 
     if (gp_ferror(xps->file))
-      return gs_throw_code(gs_error_ioerror);
+      code2 = gs_note_error(gs_error_ioerror);
+    if (code == 0)
+        code = code2;
 
-    code = zip_close_archive(xps);
-    if (code < 0)
-        return gs_rethrow_code(code);
+    code2 = zip_close_archive(xps);
+    if (code == 0)
+        code = gs_note_error(code2);
 
     /* Release the icc info */
     xps_release_icc_info(dev);
@@ -1183,7 +1191,11 @@ xps_close_device(gx_device *dev)
     /* Release the archive file names */
     xps_release_achive_file_names(dev);
 
-    code = gdev_vector_close_file((gx_device_vector*)dev);
+    release_relationship(xps);
+
+    code2 = gdev_vector_close_file((gx_device_vector*)dev);
+    if (code == 0)
+        code = code2;
     if (code < 0)
         return gs_rethrow_code(code);
 
@@ -1502,41 +1514,58 @@ drawing_path(gx_path_type_t path_type, xps_brush_t brush_type)
         (path_type & gx_path_type_clip) || image_brush_fill(path_type, brush_type));
 }
 
-static void
+static int
 xps_finish_image_path(gx_device_vector *vdev)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[300];
     const char *fmt;
     gs_matrix matrix;
+    int code;
 
     /* If an error occurs during an image, we can get here after the enumerator
      * has been freed - if that's the case, just bail out immediately
      */
     if (xps->xps_pie == NULL)
-        return;
+        return 0;
     /* Path is started.  Do the image brush image brush and close the path */
-    write_str_to_current_page(xps, "\t<Path.Fill>\n");
-    write_str_to_current_page(xps, "\t\t<ImageBrush ");
+    code = write_str_to_current_page(xps, "\t<Path.Fill>\n");
+    if (code < 0)
+        return gs_rethrow_code(code);
+    code = write_str_to_current_page(xps, "\t\t<ImageBrush ");
+    if (code < 0)
+        return gs_rethrow_code(code);
     fmt = "ImageSource = \"{ColorConvertedBitmap /%s /%s}\" Viewbox=\"%d, %d, %d, %d\" ViewboxUnits = \"Absolute\" Viewport = \"%d, %d, %d, %d\" ViewportUnits = \"Absolute\" TileMode = \"None\" >\n";
     gs_snprintf(line, sizeof(line), fmt, xps->xps_pie->file_name, xps->xps_pie->icc_name,
         0, 0, xps->xps_pie->width, xps->xps_pie->height, 0, 0,
         xps->xps_pie->width, xps->xps_pie->height);
-    write_str_to_current_page(xps, line);
+    code = write_str_to_current_page(xps, line);
+    if (code < 0)
+        return gs_rethrow_code(code);
 
     /* Now the render transform.  This is applied to the image brush. Path
     is already transformed */
-    write_str_to_current_page(xps, "\t\t\t<ImageBrush.Transform>\n");
+    code = write_str_to_current_page(xps, "\t\t\t<ImageBrush.Transform>\n");
+    if (code < 0)
+        return gs_rethrow_code(code);
     fmt = "\t\t\t\t<MatrixTransform Matrix = \"%g,%g,%g,%g,%g,%g\" />\n";
     matrix = xps->xps_pie->mat;
     gs_snprintf(line, sizeof(line), fmt,
         matrix.xx, matrix.xy, matrix.yx, matrix.yy, matrix.tx, matrix.ty);
-    write_str_to_current_page(xps, line);
-    write_str_to_current_page(xps, "\t\t\t</ImageBrush.Transform>\n");
-    write_str_to_current_page(xps, "\t\t</ImageBrush>\n");
-    write_str_to_current_page(xps, "\t</Path.Fill>\n");
+    code = write_str_to_current_page(xps, line);
+    if (code < 0)
+        return gs_rethrow_code(code);
+    code = write_str_to_current_page(xps, "\t\t\t</ImageBrush.Transform>\n");
+    if (code < 0)
+        return gs_rethrow_code(code);
+    code = write_str_to_current_page(xps, "\t\t</ImageBrush>\n");
+    if (code < 0)
+        return gs_rethrow_code(code);
+    code = write_str_to_current_page(xps, "\t</Path.Fill>\n");
+    if (code < 0)
+        return gs_rethrow_code(code);
     /* End this path */
-    write_str_to_current_page(xps, "</Path>\n");
+    return write_str_to_current_page(xps, "</Path>\n");
 }
 
 static int
@@ -1547,6 +1576,7 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
     char line[300];
     const char *fmt;
     uint32_t c;
+    int code;
 
     (void)gdev_vector_stream((gx_device_vector*)xps);
 
@@ -1573,20 +1603,26 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
                    fixed2float(x0), fixed2float(y0),
                    fixed2float(y1), fixed2float(x1),
                    fixed2float(y0));
-        write_str_to_current_page(xps, line);
+        code = write_str_to_current_page(xps, line);
+        if (code < 0)
+            return gs_rethrow_code(code);
         xps->clip_written = true;
         return 0;
     }
 
     if (xps->in_path && image_brush_fill(type, xps->filltype)) {
-        write_str_to_current_page(xps, "/>\n");
+        code = write_str_to_current_page(xps, "/>\n");
+        if (code < 0)
+            return gs_rethrow_code(code);
         xps->in_path = false;
         xps->in_clip = false;
         xps->clip_written = false;
     }
 
     if (xps->in_path && xps->rect_written) {
-        write_str_to_current_page(xps, "/>\n");
+        code = write_str_to_current_page(xps, "/>\n");
+        if (code < 0)
+            return gs_rethrow_code(code);
         xps->in_path = false;
         xps->in_clip = false;
         xps->clip_written = false;
@@ -1605,13 +1641,21 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
             fixed2float(x0), fixed2float(y1),
             fixed2float(x1), fixed2float(y1),
             fixed2float(x1), fixed2float(y0));
-        write_str_to_current_page(xps, line);
+        code = write_str_to_current_page(xps, line);
+        if (code < 0)
+            return gs_rethrow_code(code);
         /* And now the rest of the details */
-        xps_finish_image_path(vdev);
+        code = xps_finish_image_path(vdev);
+        if (code < 0)
+            return gs_rethrow_code(code);
     } else if (type & gx_path_type_fill) {
         /* Solid fill */
         if (!xps->in_path)
-            write_str_to_current_page(xps, "<Path ");
+        {
+            code = write_str_to_current_page(xps, "<Path ");
+            if (code < 0)
+                return gs_rethrow_code(code);
+        }
         /* NB - F0 should be changed for a different winding type */
         fmt = "Fill=\"#%06X\" Data=\"M %g,%g V %g H %g V %g Z\" ";
         c = xps->fillcolor & 0xffffffL;
@@ -1619,32 +1663,45 @@ xps_dorect(gx_device_vector *vdev, fixed x0, fixed y0,
                    fixed2float(x0), fixed2float(y0),
                    fixed2float(y1), fixed2float(x1),
                    fixed2float(y0));
-        write_str_to_current_page(xps, line);
-        if (!xps->in_path)
-            write_str_to_current_page(xps, "/>\n");
-        else
+        code = write_str_to_current_page(xps, line);
+        if (code < 0)
+            return gs_rethrow_code(code);
+        if (!xps->in_path) {
+            code = write_str_to_current_page(xps, "/>\n");
+            if (code < 0)
+                return gs_rethrow_code(code);
+        } else
             xps->rect_written = true;
     } else {
         /* Solid stroke */
-        if (!xps->in_path)
-            write_str_to_current_page(xps, "<Path ");
+        if (!xps->in_path) {
+            code = write_str_to_current_page(xps, "<Path ");
+            if (code < 0)
+                return gs_rethrow_code(code);
+        }
         fmt = "Stroke=\"#%06X\" Data=\"M %g,%g V %g H %g V %g Z\" ";
         c = xps->strokecolor & 0xffffffL;
         gs_snprintf(line, sizeof(line), fmt, c,
                    fixed2float(x0), fixed2float(y0),
                    fixed2float(y1), fixed2float(x1),
                    fixed2float(y0));
-        write_str_to_current_page(xps, line);
+        code = write_str_to_current_page(xps, line);
+        if (code < 0)
+            return gs_rethrow_code(code);
 
         if (type & gx_path_type_stroke) {
             /* NB format width. */
             fmt = "StrokeThickness=\"%g\" ";
             gs_snprintf(line, sizeof(line), fmt, xps->linewidth);
-            write_str_to_current_page(xps, line);
+            code = write_str_to_current_page(xps, line);
+            if (code < 0)
+                return gs_rethrow_code(code);
         }
-        if (!xps->in_path)
-            write_str_to_current_page(xps, "/>\n");
-        else
+        if (!xps->in_path) {
+            code = write_str_to_current_page(xps, "/>\n");
+            if (code < 0)
+                return gs_rethrow_code(code);
+        } else
             xps->rect_written = true;
     }
     /* end and close NB \n not necessary. */
@@ -1663,19 +1720,28 @@ gdev_xps_fill_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
         return 0;
     }
 
-    (void)gdev_vector_stream((gx_device_vector*)xps);
+    if (gdev_vector_stream((gx_device_vector*)xps) == NULL)
+        return gs_error_unknownerror;
 
     if (xps->in_path) {
-        write_str_to_current_page(xps, "/>\n");
+        code = write_str_to_current_page(xps, "/>\n");
+        if (code < 0)
+            return gs_rethrow_code(code);
         xps->in_clip = false;
     }
 
     xps->clip_path_id = xps->no_clip_path_id;
-    write_str_to_current_page(xps, "<Path ");
+    code = write_str_to_current_page(xps, "<Path ");
+    if (code < 0)
+        return gs_rethrow_code(code);
     xps->in_path = true;
     code = gdev_vector_fill_path(dev, pgs, ppath, params, pdcolor, pcpath);
+    if (code < 0)
+        return gs_rethrow_code(code);
     if (xps->in_path) {
-        write_str_to_current_page(xps, "/>\n");
+        code = write_str_to_current_page(xps, "/>\n");
+        if (code < 0)
+            return gs_rethrow_code(code);
         xps->in_path = false;
     }
     xps->clip_written = false;
@@ -1698,12 +1764,16 @@ gdev_xps_stroke_path(gx_device * dev, const gs_gstate * pgs, gx_path * ppath,
     (void)gdev_vector_stream((gx_device_vector*)xps);
 
     if (xps->in_path) {
-        write_str_to_current_page(xps, "/>\n");
+        code = write_str_to_current_page(xps, "/>\n");
+        if (code < 0)
+            return gs_rethrow_code(code);
         xps->in_clip = false;
     }
 
     xps->clip_path_id = xps->no_clip_path_id;
-    write_str_to_current_page(xps, "<Path ");
+    code = write_str_to_current_page(xps, "<Path ");
+    if (code < 0)
+        return gs_rethrow_code(code);
     xps->in_path = true;
     code = gdev_vector_stroke_path(dev, pgs, ppath, params, pdcolor, pcpath);
     if (xps->in_path) {
@@ -1723,6 +1793,7 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
     gx_device_xps *xps = (gx_device_xps *)vdev;
     uint32_t c;
     const char *fmt;
+    int code;
 
     (void)gdev_vector_stream((gx_device_vector*)xps);
 
@@ -1743,7 +1814,9 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
     */
     if (type & gx_path_type_clip && !image_brush_fill(type, xps->filltype)) {
         if (xps->in_path == true && xps->clip_written == false) {
-            write_str_to_current_page(xps, " Clip=\"");
+            code = write_str_to_current_page(xps, " Clip=\"");
+            if (code < 0)
+                return gs_rethrow_code(code);
             xps->in_clip = true;
         }
         goto exit;
@@ -1760,13 +1833,17 @@ xps_beginpath(gx_device_vector *vdev, gx_path_type_t type)
             fmt = "Stroke=\"#%06X\" Data=\"";
         }
         gs_snprintf(line, sizeof(line), fmt, c);
-        write_str_to_current_page(xps, line);
+        code = write_str_to_current_page(xps, line);
+        if (code < 0)
+            return gs_rethrow_code(code);
     }
     else {
         if ( image_brush_fill(type, xps->filltype))
-            write_str_to_current_page(xps, "<Path Data=\"");
+            code = write_str_to_current_page(xps, "<Path Data=\"");
         else
-            write_str_to_current_page(xps, " Data=\"");
+            code = write_str_to_current_page(xps, " Data=\"");
+        if (code < 0)
+            return gs_rethrow_code(code);
     }
 
 exit:
@@ -1781,6 +1858,7 @@ xps_moveto(gx_device_vector *vdev, double x0, double y0,
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[300];
+    int code;
 
     if_debug2m('_', xps->memory, "xps_moveto %g %g\n", x, y);
 
@@ -1799,9 +1877,9 @@ xps_moveto(gx_device_vector *vdev, double x0, double y0,
             return 0;
     }
     gs_snprintf(line, sizeof(line), " M %g,%g", x, y);
-    write_str_to_current_page(xps, line);
+    code = write_str_to_current_page(xps, line);
     if_debug1m('_', xps->memory, "xps_moveto %s", line);
-    return 0;
+    return code;
 }
 
 static int
@@ -1810,6 +1888,7 @@ xps_lineto(gx_device_vector *vdev, double x0, double y0,
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[200];
+    int code;
 
     if_debug2m('_', xps->memory, "xps_lineto %g %g\n", x, y);
 
@@ -1829,9 +1908,9 @@ xps_lineto(gx_device_vector *vdev, double x0, double y0,
     }
 
     gs_snprintf(line, sizeof(line), " L %g,%g", x, y);
-    write_str_to_current_page(xps, line);
+    code = write_str_to_current_page(xps, line);
     if_debug1m('_', xps->memory, "xps_lineto %s\n", line);
-    return 0;
+    return code;
 }
 
 static int
@@ -1841,6 +1920,7 @@ xps_curveto(gx_device_vector *vdev, double x0, double y0,
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[200];
+    int code;
 
     /* skip non-drawing paths for now */
     if (!drawing_path(type, xps->filltype)) {
@@ -1859,10 +1939,10 @@ xps_curveto(gx_device_vector *vdev, double x0, double y0,
 
     gs_snprintf(line, sizeof(line), " C %g,%g %g,%g %g,%g", x1, y1,
             x2,y2,x3,y3);
-    write_str_to_current_page(xps,line);
+    code = write_str_to_current_page(xps,line);
     if_debug1m('_', xps->memory, "xps_curveto %s\n", line);
 
-    return 0;
+    return code;
 }
 
 static int
@@ -1870,6 +1950,7 @@ xps_closepath(gx_device_vector *vdev, double x, double y,
               double x_start, double y_start, gx_path_type_t type)
 {
     gx_device_xps *xps = (gx_device_xps *)vdev;
+    int code;
 
     /* skip non-drawing paths for now */
     if (!drawing_path(type, xps->filltype)) {
@@ -1886,10 +1967,10 @@ xps_closepath(gx_device_vector *vdev, double x, double y,
             return 0;
     }
 
-    write_str_to_current_page(xps, " Z");
+    code = write_str_to_current_page(xps, " Z");
     if_debug0m('_', xps->memory, "xps_closepath");
 
-    return 0;
+    return code;
 }
 
 static int
@@ -1898,6 +1979,7 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
     gx_device_xps *xps = (gx_device_xps *)vdev;
     char line[200];
     const char *fmt;
+    int code = 0;
 
     if (xps->in_clip) {
         xps->in_clip = false;
@@ -1916,7 +1998,9 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
     if (image_brush_fill(type, xps->filltype)) {
         write_str_to_current_page(xps, "\" >\n");
         /* And now the rest of the details */
-        xps_finish_image_path(vdev);
+        code = xps_finish_image_path(vdev);
+        if (code < 0)
+            return gs_rethrow_code(code);
     } else if (type & gx_path_type_stroke) {
         /* NB format width. */
         fmt = "\" StrokeThickness=\"%g\" ";
@@ -1925,15 +2009,15 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
         switch(xps->linecap) {
             case gs_cap_round:
                 gs_snprintf(line, sizeof(line), "StrokeStartLineCap=\"Round\" StrokeEndLineCap=\"Round\" ");
-                write_str_to_current_page(xps, line);
+                code = write_str_to_current_page(xps, line);
                 break;
             case gs_cap_square:
                 gs_snprintf(line, sizeof(line), "StrokeStartLineCap=\"Square\" StrokeEndLineCap=\"Square\" ");
-                write_str_to_current_page(xps, line);
+                code = write_str_to_current_page(xps, line);
                 break;
             case gs_cap_triangle:
                 gs_snprintf(line, sizeof(line), "StrokeStartLineCap=\"Triangle\" StrokeEndLineCap=\"Triangle\" ");
-                write_str_to_current_page(xps, line);
+                code = write_str_to_current_page(xps, line);
                 break;
             case gs_cap_butt:
             case gs_cap_unknown:
@@ -1943,17 +2027,19 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
         switch(xps->linejoin) {
             case gs_join_round:
                 gs_snprintf(line, sizeof(line), "StrokeLineJoin=\"Round\" ");
-                write_str_to_current_page(xps, line);
+                code = write_str_to_current_page(xps, line);
                 break;
             case gs_join_miter:
                 gs_snprintf(line, sizeof(line), "StrokeLineJoin=\"Miter\" ");
-                write_str_to_current_page(xps, line);
+                code = write_str_to_current_page(xps, line);
+                if (code < 0)
+                    return gs_rethrow_code(code);
                 gs_snprintf(line, sizeof(line), "StrokeMiterLimit=\"%g\" ", xps->miterlimit);
-                write_str_to_current_page(xps, line);
+                code = write_str_to_current_page(xps, line);
                 break;
             case gs_join_bevel:
                 gs_snprintf(line, sizeof(line), "StrokeLineJoin=\"Bevel\" ");
-                write_str_to_current_page(xps, line);
+                code = write_str_to_current_page(xps, line);
                 break;
             case gs_join_none:
             case gs_join_triangle:
@@ -1963,10 +2049,10 @@ xps_endpath(gx_device_vector *vdev, gx_path_type_t type)
         }
     } else { /* fill */
         /* close the path data attribute */
-        write_str_to_current_page(xps, " Z\" ");
+        code = write_str_to_current_page(xps, " Z\" ");
     }
 
-    return 0;
+    return code;
 }
 
 /* Image handling */
@@ -2538,6 +2624,7 @@ xps_add_tiff_image(xps_image_enum_t *pie)
 
     code = add_file_to_zip_file(xdev, pie->file_name, pie->fid);
     gp_fclose(pie->fid);
+    pie->fid = NULL;
     return code;
 }
 
@@ -2552,6 +2639,8 @@ xps_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
     code = TIFFWriteDirectory(pie->tif);
     xps_tiff_cleanup(pie);
+    if (code < 0)
+        goto exit;
 
     /* Stuff the image into the zip archive and close the file */
     code = xps_add_tiff_image(pie);
@@ -2650,6 +2739,7 @@ xps_tifsWriteProc(thandle_t fd, void* buf, size_t size)
     count = gp_fwrite(buf, 1, size, fid);
     if (count != size) {
         gp_fclose(fid);
+        tiffio->fid = NULL;
         return gs_rethrow_code(-1);
     }
     gp_fflush(fid);

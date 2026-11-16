@@ -264,6 +264,8 @@ s_file_write_process(stream_state * st, stream_cursor_read * pr,
             written = 0;
         pr->ptr += written;
         process_interrupts(st->memory);
+        if (written != count)
+            return ERRC;
         return (gp_ferror(file) ? ERRC : 0);
     } else {
         process_interrupts(st->memory);

@@ -358,8 +358,11 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 stream *
 gdev_vector_stream(gx_device_vector * vdev)
 {
+    int code;
     if (!vdev->in_page) {
-        (*vdev_proc(vdev, beginpage)) (vdev);
+        code = (*vdev_proc(vdev, beginpage)) (vdev);
+        if (code < 0)
+            return NULL;
         vdev->in_page = true;
     }
     return vdev->strm;
@@ -855,6 +858,7 @@ gdev_vector_close_file(gx_device_vector * vdev)
 
     if (vdev->strm) {
         sclose(vdev->strm);
+        vdev->strm->file = 0; /* This is horrible, but exactly in keeping. */
         gs_free_object(vdev->v_memory, vdev->strm, "vector_close(strm)");
         vdev->strm = 0;
         gs_free_object(vdev->v_memory, vdev->strmbuf, "vector_close(strmbuf)");
