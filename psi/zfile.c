@@ -940,7 +940,6 @@ lib_file_open_search_with_no_combine(gs_file_path_ptr  lib_path, const gs_memory
 {
     stream *s;
     uint blen1 = blen;
-    struct stat fstat;
     int code = 1;
 
     if (gp_file_name_reduce(fname, flen, buffer, &blen1) != gp_combine_success)
