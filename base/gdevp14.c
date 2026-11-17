@@ -11000,6 +11000,7 @@ static int
 pdf14_update_spot_equivalent_colors(gx_device *dev, const gs_gstate *pgs, const gs_color_space *pcs)
 {
     pdf14_device *pdev = (pdf14_device *)dev;
+    gx_device *tdev = pdev->target;
     int code;
 
     /* Make sure we are not All or None */
@@ -11009,6 +11010,8 @@ pdf14_update_spot_equivalent_colors(gx_device *dev, const gs_gstate *pgs, const 
 
     code = update_spot_equivalent_cmyk_colors(dev, pgs, pcs, &pdev->devn_params,
         &pdev->op_pequiv_cmyk_colors);
+    if (code >= 0 && tdev != NULL)
+        code = dev_proc(tdev, update_spot_equivalent_colors)(tdev, pgs, pcs);
     return code;
 }
 
