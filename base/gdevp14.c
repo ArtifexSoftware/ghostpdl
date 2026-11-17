@@ -887,6 +887,26 @@ resolve_matte(pdf14_buf *maskbuf, byte *src_data, intptr_t src_planestride, intp
     }
 }
 
+/* A target that answers gxdso_supports_devn but is additive and has no component beyond its
+ * standard colorants (and tags), e.g. psdrgb with -dMaxSpots=0, has nowhere to put spot colours:
+ * treat it as not supporting DeviceN, so the compositor converts the blended result itself. */
+static int
+target_supports_spots(gx_device *target)
+{
+    int supports = dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0);
+    int has_tags = device_encodes_tags(target);
+
+    if (supports > 0 && target->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE) {
+        gs_devn_params *devn = dev_proc(target, ret_devn_params)(target);
+
+        if (devn != NULL &&
+            target->color_info.num_components - has_tags <=
+            devn->num_std_colorant_names)
+            return 0;
+    }
+    return supports;
+}
+
 /* Transform of color data and copy noncolor data.  Used in
    group pop and during the pdf14 put image calls when the blend color space
    is different than the target device color space.  The function will try do
@@ -3151,7 +3171,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
     gx_image_plane_t planes[GS_IMAGE_MAX_COMPONENTS];
     pdf14_buf *cm_result = NULL;
     bool did_alloc;
-    bool target_sep_device = (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0);
+    bool target_sep_device = target_supports_spots(target);
     bool has_spots = pdev->ctx->num_spots > 0;
     bool blend_spots = !target_sep_device && has_spots;
     bool lose_channels = false;
@@ -3478,7 +3498,7 @@ pdf14_put_blended_image_cmykspot(gx_device* dev, gx_device* target,
      * DevN device space with colors names taken from the devn_params, and
      * use that instead. */
     if (des_profile->num_comps != target->color_info.num_components &&
-        dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0)
+        target_supports_spots(target))
     {
         int num_std;
         gs_devn_params *devn_params =  dev_proc(target, ret_devn_params)(target);
@@ -9318,7 +9338,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
     /* if the device has separations already defined (by SeparationOrderNames) */
     /* we need to copy them (allocating new names) so the colorants are in the */
     /* same order as the target device.                                        */
-    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0) {
+    if (target_supports_spots(target)) {
         code = devn_copy_params(target, (gx_device *)p14dev);
         if (code < 0) {
             *pdev = NULL;
@@ -9419,7 +9439,7 @@ gs_pdf14_device_push(gs_memory_t *mem, gs_gstate * pgs,
         /* if the device has separations already defined (by SeparationOrderNames) */
         /* we need to copy them (allocating new names) so the colorants are in the */
         /* same order as the target device.                                        */
-        if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0) {
+        if (target_supports_spots(target)) {
             code = devn_copy_params(target, (gx_device *)*pdev);
             if (code < 0)
                 return code;
@@ -10781,7 +10801,7 @@ pdf14_create_clist_device(gs_memory_t *mem, gs_gstate * pgs,
     /* if the device has separations already defined (by SeparationOrderNames) */
     /* we need to copy them (allocating new names) so the colorants are in the */
     /* same order as the target device.                                        */
-    if (dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) > 0) {
+    if (target_supports_spots(target)) {
         code = devn_copy_params(target, (gx_device *)pdev);
         if (code < 0)
             return code;
@@ -11334,8 +11354,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
         /* As long as we don't have spot colors, we can use ICC colorspace, but spot
          * colors do require devn support
          */
-        if (tdev->color_info.num_components <= 4 ||
-             dev_proc(target, dev_spec_op)(target, gxdso_supports_devn, NULL, 0) <= 0) {
+        if (tdev->color_info.num_components <= 4 || target_supports_spots(target)) {
             /*
              * Set color space in preparation for sending an image.
              */
