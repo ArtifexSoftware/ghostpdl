@@ -657,14 +657,15 @@ update_overprint_params(
 
     /* check if overprint is to be turned off */
     if (!pparams->retain_any_comps || pparams->idle) {
+        gx_color_index all_comps =
+            opdev->color_info.num_components >= (int)(sizeof(gx_color_index) * 8) ? ~(gx_color_index)0 :
+            ((gx_color_index)1 << (opdev->color_info.num_components)) - (gx_color_index)1;
         if (pparams->is_fill_color) {
             opdev->retain_none_fill = true;
-            opdev->drawn_comps_fill =
-                ((gx_color_index)1 << (opdev->color_info.num_components)) - (gx_color_index)1;
+            opdev->drawn_comps_fill = all_comps;
         } else {
             opdev->retain_none_stroke = true;
-            opdev->drawn_comps_stroke =
-                ((gx_color_index)1 << (opdev->color_info.num_components)) - (gx_color_index)1;
+            opdev->drawn_comps_stroke = all_comps;
         }
 
         /* Set to forward only if both stroke and fill are not retaining any

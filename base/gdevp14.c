@@ -6452,7 +6452,10 @@ pdf14_composite(gx_device * dev, gx_device * * pcdev,
                     } else {
                         /* Draw everything. If this parameter was not set, clist does
                            not fill it in.  */
-                        drawn_comps = ((gx_color_index)1 << (p14dev->color_info.num_components)) - (gx_color_index)1;
+                        if (p14dev->color_info.num_components == sizeof(gx_color_index)*8)
+                            drawn_comps = ~(gx_color_index)0;
+                        else
+                            drawn_comps = ((gx_color_index)1 << (p14dev->color_info.num_components)) - (gx_color_index)1;
                     }
 
                     if (op_pct->params.is_fill_color) {
