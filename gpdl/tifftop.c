@@ -868,6 +868,8 @@ do_tiff_decode(tiff_interp_instance_t *tiff)
     default:
         emprintf(tiff->memory, "Unsupported TIFF\n");
         tiff->state = ii_state_flush;
+        code = gs_error_unknownerror;
+        goto fail_decode;
         break;
     }
     switch(tiff->num_comps) {
