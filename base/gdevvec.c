@@ -1059,14 +1059,11 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
                 /* The new name is the same as the old name.  Do nothing. */
                 ofns.data = 0;
                 break;
-            } else if (dev->LockSafetyParams) {
-                    ecode = gs_error_invalidaccess;
-                    goto ofe;
             }
             break;
         default:
             ecode = code;
-ofe:        param_signal_error(plist, param_name, ecode);
+            param_signal_error(plist, param_name, ecode);
             /* fall through */
         case 1:
             ofns.data = 0;

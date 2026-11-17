@@ -777,7 +777,6 @@ typedef struct gdev_pagelist_s {
         int NumCopies_set;\
         bool IgnoreNumCopies;		/* if true, force num_copies = 1 */\
         bool UseCIEColor;		/* for PS LL3 */\
-        bool LockSafetyParams;		/* If true, prevent unsafe changes */\
         long band_offset_x;		/* offsets of clist band base to (mem device) buffer */\
         long band_offset_y;		/* for rendering that is phase sensitive (old wtsimdi) */\
         bool BLS_force_memory;\

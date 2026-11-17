@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -23,8 +23,6 @@
  *
  * WARNING: The ijs server can be selected on the gs command line
  * which is a security risk, since any program can be run.
- * You should use -dSAFER which sets .LockSafetyParams to true
- * before opening this device.
  *
  * 11/26/03 David Suffield (gdevijs-krgb-1.0.patch)
  * (c) 2003-2004 Copyright Hewlett-Packard Development Company, LP

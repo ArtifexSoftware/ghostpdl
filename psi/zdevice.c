@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -657,10 +657,6 @@ zsetdevice(i_ctx_t *i_ctx_p)
     if (code < 0)
         return code;
 
-    if (odev->LockSafetyParams) {	  /* do additional checking if locked  */
-        if(ndev != odev) 	  /* don't allow a different device    */
-            return_error(gs_error_invalidaccess);
-    }
     code = zsetdevice_no_safer(i_ctx_p, op->value.pdevice->device);
     make_bool(op, code != 0);	/* erase page if 1 */
     return code;

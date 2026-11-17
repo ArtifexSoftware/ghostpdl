@@ -1607,7 +1607,6 @@ int gx_update_from_subclass(gx_device *dev)
     dev->NumCopies_set = dev->child->NumCopies_set;
     dev->IgnoreNumCopies = dev->child->IgnoreNumCopies;
     dev->UseCIEColor = dev->child->UseCIEColor;
-    dev->LockSafetyParams= dev->child->LockSafetyParams;
     dev->band_offset_x = dev->child->band_offset_y;
     dev->sgr = dev->child->sgr;
     dev->MaxPatternBitmap = dev->child->MaxPatternBitmap;

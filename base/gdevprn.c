@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -783,13 +783,7 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
         case 0:
-            if (pdev->LockSafetyParams &&
-                    bytes_compare(ofs.data, ofs.size,
-                        (const byte *)ppdev->fname, strlen(ppdev->fname))) {
-                code = gs_error_invalidaccess;
-            }
-            else
-                code = validate_output_file(&ofs, pdev->memory);
+            code = validate_output_file(&ofs, pdev->memory);
             if (code >= 0)
                 break;
             /* fall through */

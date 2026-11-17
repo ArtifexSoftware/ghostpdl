@@ -2346,10 +2346,9 @@ readonly def
 /.locksafe {
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
-  % properties and pagedevice .LockSafetyParams in agreement even
+  % properties and pagedevice in agreement even
   % after a restore that changes the value to false.
   currentglobal currentpagedevice gcheck setglobal % use correct VM space
-  << /.LockSafetyParams //true >> setpagedevice
   setglobal
 } .forcebind odef
 
@@ -2372,10 +2371,10 @@ readonly def
   systemdict /getenv {pop //false} put
   % setpagedevice has the side effect of clearing the page, but
   % we will just document that. Using setpagedevice keeps the device
-  % properties and pagedevice .LockSafetyParams in agreement even
+  % properties and pagedevice in agreement even
   % after a restore that changes the value to false.
   currentglobal currentpagedevice gcheck setglobal % use correct VM space
-  << /.LockSafetyParams //true
+  <<
     /..StartupGlobal //true
   >> setpagedevice
   setglobal

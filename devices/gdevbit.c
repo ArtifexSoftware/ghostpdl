@@ -246,7 +246,6 @@ const gx_device_bit gs_bitrgbtags_device =
         0,  /*NumCopiesSet*/
         0,  /*IgnoreNumCopies*/
         0,  /*UseCIEColor*/
-        0,  /*LockSafetyParams*/
         0,  /*band_offset_x*/
         0,  /*band_offset_y*/
         false, /*BLS_force_memory*/

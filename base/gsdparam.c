@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2025 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -271,9 +271,6 @@ int gx_default_get_param(gx_device *dev, char *Param, void *list)
     if (strcmp(Param, "AntidropoutDownscaler") == 0) {
         return param_write_bool(plist, "AntidropoutDownscaler",
                                 &dev->color_info.use_antidropout_downscaler);
-    }
-    if (strcmp(Param, ".LockSafetyParams") == 0) {
-        return param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams);
     }
     if (strcmp(Param, "MaxPatternBitmap") == 0) {
         return param_write_size_t(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap);
@@ -826,7 +823,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
                                 &dev->color_info.anti_alias.graphics_bits)) < 0 ||
         (code = param_write_bool(plist, "AntidropoutDownscaler",
                                 &dev->color_info.use_antidropout_downscaler)) < 0 ||
-        (code = param_write_bool(plist, ".LockSafetyParams", &dev->LockSafetyParams)) < 0 ||
         (code = param_write_size_t(plist, "MaxPatternBitmap", &dev->MaxPatternBitmap)) < 0 ||
         (code = param_write_bool(plist, "PageUsesTransparency", &dev->page_uses_transparency)) < 0 ||
         (code = param_write_bool(plist, "PageUsesOverprint", &dev->page_uses_overprint)) < 0 ||
@@ -1663,7 +1659,6 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool ignc = dev->IgnoreNumCopies;
     bool ucc = dev->UseCIEColor;
     gs_param_string icc_pro;
-    bool locksafe = dev->LockSafetyParams;
     gs_param_float_array ibba;
     bool ibbnull = false;
     int colors = dev->color_info.num_components;
@@ -2161,18 +2156,6 @@ label:\
     }
 
 
-    switch (code = param_read_bool(plist, (param_name = ".LockSafetyParams"), &locksafe)) {
-        case 0:
-            if (dev->LockSafetyParams && !locksafe)
-                code = gs_note_error(gs_error_invalidaccess);
-            else
-                break;
-        default:
-            ecode = code;
-            param_signal_error(plist, param_name, ecode);
-        case 1:
-            break;
-    }
     /* Ignore parameters that only have meaning for printers. */
 #define IGNORE_INT_PARAM(pname)\
   { int igni;\
@@ -2386,17 +2369,9 @@ label:\
     /* even if there were errors. */
     code = param_commit(plist);
     if (ecode < 0) {
-        /* restore_page_device (zdevice2.c) will turn off LockSafetyParams, and relies on putparams
-         * to put it back if we are restoring a device. The locksafe value is picked up above from the
-         * device we are restoring to, and we *must* make sure it is preserved, even if setting the
-         * params failed. Otherwise an attacker can use a failed grestore to reset LockSafetyParams.
-         * See bug #699687.
-         */
-        dev->LockSafetyParams = locksafe;
         return ecode;
     }
     if (code < 0) {
-        dev->LockSafetyParams = locksafe;
         return code;
     }
 
@@ -2476,7 +2451,6 @@ label:\
         dev->color_info.anti_alias.graphics_bits =
                 param_normalize_anti_alias_bits(max(dev->color_info.max_gray,
                         dev->color_info.max_color), gab);
-    dev->LockSafetyParams = locksafe;
     dev->MaxPatternBitmap = mpbm;
     dev->interpolate_control = ic;
     dev->space_params = sp;

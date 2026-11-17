@@ -529,12 +529,6 @@ docxwrite_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
         case 0:
-            if (dev->LockSafetyParams &&
-                    bytes_compare(ofs.data, ofs.size,
-                        (const byte *)tdev->fname, strlen(tdev->fname))) {
-                ecode = gs_note_error(gs_error_invalidaccess);
-                goto ofe;
-            }
             if (ofs.size >= gp_file_name_sizeof)
                 ecode = gs_error_limitcheck;
             else

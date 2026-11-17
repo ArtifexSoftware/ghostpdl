@@ -1371,7 +1371,6 @@ clist_make_accum_device(gs_memory_t *mem, gx_device *target, const char *dname, 
         cwdev->icc_cache_cl = NULL;
         cwdev->icc_table = NULL;
         cwdev->UseCIEColor = target->UseCIEColor;
-        cwdev->LockSafetyParams = true;
         cwdev->initialize_device_procs((gx_device *)cwdev);
         gx_device_fill_in_procs((gx_device *)cwdev);
         gx_device_copy_color_params((gx_device *)cwdev, target);
