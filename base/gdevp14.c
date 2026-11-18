@@ -369,7 +369,7 @@ static void pdf14_pop_color_model(gx_device* dev, pdf14_group_color_t* group_col
 /* Alter clist writer device color model based upon group or softmask. Data
    stored in the device color model stack */
 static int pdf14_clist_push_color_model(gx_device* dev, gx_device* cdev, gs_gstate* pgs,
-    const gs_pdf14trans_t* pdf14pct, gs_memory_t* mem, bool is_mask);
+    const gs_pdf14trans_t* pdf14pct, gs_memory_t* mem, bool is_mask, int *drop_icc);
 static int pdf14_clist_pop_color_model(gx_device* dev, gs_gstate* pgs);
 
 /* Used for cleaning up the stack if things go wrong */
@@ -7562,7 +7562,7 @@ pdf14_push_color_model(gx_device *dev, gs_transparency_color_t group_color_type,
 static int
 pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
                              const gs_pdf14trans_t *pdf14pct, gs_memory_t* mem,
-                             bool is_mask)
+                             bool is_mask, int *drop_icc)
 {
     pdf14_device* pdev = (pdf14_device*)dev;
     pdf14_group_color_t* new_group_color;
@@ -7636,8 +7636,29 @@ pdf14_clist_push_color_model(gx_device *dev, gx_device* cdev, gs_gstate *pgs,
     memset(comp_bits, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
     memset(comp_shift, 0, GX_DEVICE_COLOR_MAX_COMPONENTS);
 
-    if (group_color_type == ICC && new_profile == NULL)
-        return gs_throw(gs_error_undefinedresult, "Missing ICC data");
+    if (group_color_type == ICC) {
+        if (new_profile == NULL && cdev != NULL) {
+            /* The profile hasn't been supplied. We are expected to fetch it from the
+               clist device, given its hash. */
+            gx_device_clist_reader *pcrdev = (gx_device_clist_reader *)cdev;
+            new_profile = gsicc_read_serial_icc((gx_device *) pcrdev,
+                                                pdf14pct->params.icc_hash);
+            if (new_profile == NULL)
+                return_error(gs_error_VMerror);
+            new_profile->dev = cdev;
+            /* Unfortunately, in cases where this is a clist reader (say, a pattern-clist
+             * being played back) going into a clist writer (the usual page clist) this
+             * same param block gets passed onwards into the writer, where it doesn't have
+             * the ability to resolve the icc profile from the hash. We therefore cannot
+             * get away with passing just a hash code on. We do something very hacky here
+             * and break const to put the new_profile into params block. */
+            ((gs_pdf14trans_t *)pdf14pct)->params.iccprofile = new_profile;
+            /* And we need to drop this again later. */
+            *drop_icc = 1;
+        }
+        if (new_profile == NULL)
+            return gs_throw(gs_error_undefinedresult, "Missing ICC data");
+    }
     if_debug0m('v', cldev->memory, "[v]pdf14_clist_push_color_model\n");
     /* Check if we need to alter the device procs at this stage.  Many of the procs
        are based upon the color space of the device.  We want to remain in the
@@ -9576,7 +9597,7 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
         default:			/* Should not occur. */
             break;
         case PDF14_PUSH_DEVICE:
-            trans_group_level = 0;
+            trans_group_level++;
             cdev->pdf14_smask_level = 0;
             cdev->page_pdf14_needed = false;
             put_value(pbuf, pparams->num_spot_colors);
@@ -9603,8 +9624,13 @@ c_pdf14trans_write(const gs_composite_t	* pct, byte * data, uint * psize,
             }
             break;
         case PDF14_POP_DEVICE:
-            pdf14_needed = false;		/* reset pdf14_needed */
-            trans_group_level = -1;		/* reset so we need to PUSH_DEVICE next */
+            /* Most of the time we should drop back to 0 here, but in some cases
+             * (see bug 710053 for an example), such as where playing back a
+             * pattern-clist into a real clist, we might get multiple nested push/pops.
+             */
+            trans_group_level--;		/* reset so we need to PUSH_DEVICE next */
+            if (trans_group_level == 0)
+                pdf14_needed = false;		/* reset pdf14_needed */
             smask_level = 0;
             put_value(pbuf, pparams->is_pattern);
             break;
@@ -11101,6 +11127,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
     int code, is_pdf14_compositor;
     const gs_pdf14trans_t * pdf14pct = (const gs_pdf14trans_t *) pct;
     bool deep = device_is_deep(dev);
+    int drop_icc = 0;
 
     /* We only handle a few PDF 1.4 transparency operations */
     if ((is_pdf14_compositor = gs_is_pdf14trans_compositor(pct)) != 0) {
@@ -11233,7 +11260,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
                    the group color space. This ensures the proper color data is
                    written out to the device. For simplicity, the list item is
                    created even if the color space did not change */
-                code = pdf14_clist_push_color_model(dev, cdev, pgs, pdf14pct, mem, false);
+                code = pdf14_clist_push_color_model(dev, cdev, pgs, pdf14pct, mem, false, &drop_icc);
                 if (code < 0)
                     return code;
 
@@ -11247,7 +11274,7 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
                     break;
 
                 /* Update the color settings of the clist writer.  Store information in stack */
-                code = pdf14_clist_push_color_model(dev, cdev, pgs, pdf14pct, mem, true);
+                code = pdf14_clist_push_color_model(dev, cdev, pgs, pdf14pct, mem, true, &drop_icc);
                 if (code < 0)
                     return code;
 
@@ -11328,6 +11355,12 @@ pdf14_clist_composite(gx_device	* dev, gx_device ** pcdev,
     }
     code = dev_proc(pdev->target, composite)
                         (pdev->target, pcdev, pct, pgs, mem, cdev);
+    if (drop_icc) {
+        /* Undo the horrible hack we did earlier. */
+        cmm_profile_t *new_profile = ((gs_pdf14trans_t *)pdf14pct)->params.iccprofile;
+        ((gs_pdf14trans_t *)pdf14pct)->params.iccprofile = NULL;
+        gsicc_adjust_profile_rc(new_profile, -1, "pdf14_clist_push_color_model");
+    }
     /* If we were accumulating into a pdf14-clist-accum device, */
     /* we now have to render the page into it's target device */
     if (is_pdf14_compositor && pdf14pct->params.pdf14_op == PDF14_POP_DEVICE &&
