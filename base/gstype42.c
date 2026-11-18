@@ -779,7 +779,7 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
             }
             else if (!memcmp(ver, ver20, 4)) {
                 byte val[2];
-                unsigned short gind;
+                uint16_t gind;
                 READ_SFNTS(pfont, pfont->data.post_offset + 34 + glyph * 2, 2, val);
                 gind = U16(val);
                 if (gind < 258) {
@@ -790,7 +790,7 @@ gs_type42_find_post_name(gs_font_type42 * pfont, gs_glyph glyph, gs_string *gnam
                 else {
                     int i;
                     byte val[2];
-                    short numglyphs;
+                    uint16_t numglyphs;
                     uint offs;
 
                     READ_SFNTS(pfont, pfont->data.post_offset + 32, 2, val);
