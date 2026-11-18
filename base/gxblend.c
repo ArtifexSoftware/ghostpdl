@@ -2085,7 +2085,7 @@ art_pdf_composite_pixel_alpha_16_fast_mono(uint16_t *gs_restrict dst, const uint
                                            const pdf14_nonseparable_blending_procs_t * pblend_procs,
                                            intptr_t stride, pdf14_device *p14dev)
 {
-    uint16_t a_b, a_s;
+    int a_b, a_s;
     unsigned int a_r;
     int tmp;
     int src_scale;
