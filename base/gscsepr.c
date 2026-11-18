@@ -530,6 +530,19 @@ check_Separation_component_name(const gs_color_space * pcs, gs_gstate * pgs)
     }
     else
         pcolor_component_map->use_alt_cspace = true;
+
+    /* While a soft mask is being constructed, a spot colour must use the
+       alternate colour space: the mask takes the luminosity (or alpha) of
+       the group's process colours only, so a spot colour kept as a
+       separation adds nothing to it and the mask stays fully opaque.
+       By using the alternate colorspace, we get the correct results.
+       Process colorants (Cyan, Magenta, Yellow, Black) keep their direct
+       mapping. */
+    if (!pcolor_component_map->use_alt_cspace &&
+        gx_check_process_names_Separation((gs_color_space *)pcs, pgs) != SEP_PURE_CMYK &&
+        dev_proc(dev, dev_spec_op)(dev, gxdso_in_smask_construction, NULL, 0) > 0)
+        pcolor_component_map->use_alt_cspace = true;
+
     return 0;
 }
 

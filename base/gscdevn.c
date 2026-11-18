@@ -560,6 +560,54 @@ gx_remap_concrete_DeviceN(const gs_color_space * pcs, const frac * pconc,
     }
 }
 
+/* Check if the colorants are all process colorants and of the same type */
+static separation_colors
+gx_check_process_names_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
+{
+    int i, num_comp, num_spots = 0, num_rgb_process = 0;
+    int num_cmyk_process = 0;
+    char **names;
+    const char *pname;
+    uint name_size;
+
+    names = pcs->params.device_n.names;
+    num_comp = pcs->params.device_n.num_components;
+
+    /* Step through the color space colorants */
+    for (i = 0; i < num_comp; i++) {
+        pname = names[i];
+        if (pname == NULL)
+            pname = "";
+        name_size = strlen(pname);
+
+        /* Classify */
+        if (strncmp(pname, "None", name_size) == 0) {
+            continue;
+        } else {
+            if (strncmp(pname, "Cyan", name_size) == 0 ||
+                strncmp(pname, "Magenta", name_size) == 0 ||
+                strncmp(pname, "Yellow", name_size) == 0 ||
+                strncmp(pname, "Black", name_size) == 0) {
+                num_cmyk_process++;
+            } else if (strncmp(pname, "Red", name_size) == 0 ||
+                strncmp(pname, "Green", name_size) == 0 ||
+                strncmp(pname, "Blue", name_size) == 0) {
+                num_rgb_process++;
+            } else {
+                num_spots++;
+            }
+        }
+    }
+
+    if (num_cmyk_process > 0 && num_rgb_process == 0 && num_spots == 0)
+        return SEP_PURE_CMYK;
+    if (num_rgb_process > 0 && num_cmyk_process == 0 && num_spots == 0)
+        return SEP_PURE_RGB;
+    if (num_spots > 0 && num_cmyk_process == 0 && num_rgb_process == 0)
+        return SEP_PURE_SPOT;
+    return SEP_MIX;
+}
+
 /*
  * Check that the color component names for a DeviceN color space
  * match the device colorant names.  Also build a gs_devicen_color_map
@@ -669,58 +717,19 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_gstate * pgs)
     }
     pcolor_component_map->use_alt_cspace = non_match;
 
+    /* While a soft mask is being constructed, a DeviceN space with spot
+       colorants must use the alternate colour space (see
+       check_Separation_component_name). Only process colorants (Cyan,
+       Magenta, Yellow, Black) keep their direct mapping. */
+    if (!non_match && none_count < num_comp &&
+        gx_check_process_names_DeviceN((gs_color_space *)pcs, pgs) != SEP_PURE_CMYK &&
+        dev_proc(dev, dev_spec_op)(dev, gxdso_in_smask_construction, NULL, 0) > 0)
+        pcolor_component_map->use_alt_cspace = true;
+
     if (none_count == num_comp)
         return 1;
 
     return 0;
-}
-
-/* Check if the colorants are all process colorants and of the same type */
-static separation_colors
-gx_check_process_names_DeviceN(gs_color_space * pcs, gs_gstate * pgs)
-{
-    int i, num_comp, num_spots = 0, num_rgb_process = 0;
-    int num_cmyk_process = 0;
-    char **names;
-    const char *pname;
-    uint name_size;
-
-    names = pcs->params.device_n.names;
-    num_comp = pcs->params.device_n.num_components;
-
-    /* Step through the color space colorants */
-    for (i = 0; i < num_comp; i++) {
-        pname = names[i];
-        if (pname == NULL)
-            pname = "";
-        name_size = strlen(pname);
-
-        /* Classify */
-        if (strncmp(pname, "None", name_size) == 0) {
-            continue;
-        } else {
-            if (strncmp(pname, "Cyan", name_size) == 0 ||
-                strncmp(pname, "Magenta", name_size) == 0 ||
-                strncmp(pname, "Yellow", name_size) == 0 ||
-                strncmp(pname, "Black", name_size) == 0) {
-                num_cmyk_process++;
-            } else if (strncmp(pname, "Red", name_size) == 0 ||
-                strncmp(pname, "Green", name_size) == 0 ||
-                strncmp(pname, "Blue", name_size) == 0) {
-                num_rgb_process++;
-            } else {
-                num_spots++;
-            }
-        }
-    }
-
-    if (num_cmyk_process > 0 && num_rgb_process == 0 && num_spots == 0)
-        return SEP_PURE_CMYK;
-    if (num_rgb_process > 0 && num_cmyk_process == 0 && num_spots == 0)
-        return SEP_PURE_RGB;
-    if (num_spots > 0 && num_cmyk_process == 0 && num_rgb_process == 0)
-        return SEP_PURE_SPOT;
-    return SEP_MIX;
 }
 
 /* Install a DeviceN color space. */
