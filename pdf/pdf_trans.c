@@ -72,7 +72,7 @@ pdfi_set_GrayBackground(gs_transparency_mask_params_t *params)
                                   0.11 * params->Background[2]);
         break;
     case 4:
-        /* CMYK: currentgray = 1.0 – min (1.0, .3*C + .59*M + .11*Y + K)
+        /* CMYK: currentgray = 1.0 - min (1.0, .3*C + .59*M + .11*Y + K)
         */
         num = 0.3*params->Background[0] + 0.59*params->Background[1] +
             0.11*params->Background[2] + params->Background[3];
