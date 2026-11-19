@@ -575,7 +575,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
          */
         else if (pdf_key_eq(pair, "/Contents")) {
             byte *cstr;
-            uint csize = pair[1].size;
+            uint csize;
             cos_value_t *pcv;
             uint i, j;
 
@@ -588,6 +588,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
             if (pcv == NULL)
                 return_error(gs_error_ioerror); /* shouldn't be possible */
             cstr = pcv->contents.chars.data;
+            csize = pcv->contents.chars.size;
             /* Loop invariant: j <= i < csize. */
             for (i = j = 0; i < csize;)
                 if (csize - i >= 2 && !memcmp(cstr + i, "\\n", 2) &&
