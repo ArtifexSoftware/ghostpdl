@@ -744,7 +744,6 @@ gs_nulldevice(gs_gstate * pgs)
 
         if (code < 0)
             return code;
-        if (gs_currentdevice_inline(pgs) != NULL)
         /*
          * Internal devices have a reference count of 0, not 1,
          * aside from references from graphics states.
