@@ -113,7 +113,7 @@ pdfi_name_is(const pdf_name *n, const char *s)
 }
 
 bool
-pdfi_name_or_string_is(const pdf_obj *n, char *s)
+pdfi_name_or_string_is(const pdf_obj *n, const char *s)
 {
     if (pdfi_type_of(n) == PDF_NAME)
         return(pdfi_name_is((const pdf_name *)n, s));
