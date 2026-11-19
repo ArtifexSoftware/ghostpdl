@@ -1177,9 +1177,11 @@ xps_close_device(gx_device *dev)
     code = write_str_to_zip_file(xps, "Documents/1/FixedDocument.fdoc", "</FixedDocument>");
 
     if (gp_ferror(xps->file))
+    {
       code2 = gs_note_error(gs_error_ioerror);
-    if (code == 0)
+      if (code == 0)
         code = code2;
+    }
 
     code2 = zip_close_archive(xps);
     if (code == 0)
