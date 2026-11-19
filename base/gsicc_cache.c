@@ -36,6 +36,7 @@
 #include "gzstate.h"
 #include "stdint_.h"
 #include "assert_.h"
+#include "gxdevsop.h"
         /*
          *  Note that the the external memory used to maintain
          *  links in the CMS is generally not visible to GS.
@@ -761,9 +762,12 @@ gsicc_get_link(const gs_gstate *pgs, gx_device *dev,
              * and object type. The problem is that the profile data_cs is not what we'd expect
              * for CIEBased input, so we need to check an additional member. See Bug #706789.
              */
-            if ((gs_input_profile->data_cs == gsRGB
-                || gs_input_profile->data_cs == gsCMYK
-                || gs_input_profile->data_cs == gsGRAY) && gs_input_profile->default_match < CIE_A) {
+            if ((   gs_input_profile->data_cs == gsRGB
+                 || gs_input_profile->data_cs == gsCMYK
+                 || gs_input_profile->data_cs == gsGRAY)
+                && gs_input_profile->default_match < CIE_A
+                /* Bug 710051: Never replace the profiles if we are in smask construction. */
+                && dev_proc(dev, dev_spec_op)(dev, gxdso_in_smask_construction, NULL, 0) <= 0) {
                 gsicc_get_srcprofile(gs_input_profile->data_cs,
                                       dev->graphics_type_tag,
                                       pgs->icc_manager->srcgtag_profile,
