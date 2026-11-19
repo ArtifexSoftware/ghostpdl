@@ -487,6 +487,11 @@ static int decode_image(stream_jpxd_state * const state)
             } else if (numprimcomp == 4) {
                 dmprintf1(state->memory, "openjpeg warning: unspec CS. %d components so assuming CMYK.\n", numprimcomp);
                 state->colorspace = gs_jpx_cs_cmyk;
+            } else if (numprimcomp == 2) {
+                dmprintf1(state->memory, "openjpeg warning: unspec CS. %d component so assuming gray+alpha.\n", numprimcomp);
+                state->colorspace = gs_jpx_cs_gray;
+                alpha_comp = 1;
+                numprimcomp = 1;
             } else {
                 /* Note, numprimcomp > 4 possible here. Bug 694909.
                    Trust that it is RGB though.  Do not set numprimcomp */
