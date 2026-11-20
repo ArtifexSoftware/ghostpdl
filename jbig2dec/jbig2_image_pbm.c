@@ -93,7 +93,7 @@ jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
     int done;
     Jbig2Image *image;
     int c;
-    char buf[32];
+    char buf[33];
 
     /* look for 'P4' magic */
     while ((c = fgetc(in)) != 'P') {
@@ -128,7 +128,7 @@ jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
         if (isdigit(c)) {
             buf[i++] = c;
             while (isdigit(c = fgetc(in))) {
-                if (i >= 32) {
+                if (i >= sizeof(buf)-1) {
                     fprintf(stderr, "pbm parsing error\n");
                     return NULL;
                 }
