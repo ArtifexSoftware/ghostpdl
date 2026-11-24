@@ -1,4 +1,4 @@
-/* Copyright (C) 2001-2023 Artifex Software, Inc.
+/* Copyright (C) 2001-2026 Artifex Software, Inc.
    All Rights Reserved.
 
    This software is provided AS-IS with no warranty, either express or
@@ -84,6 +84,8 @@ gp_defaultpapersize(char *ptr, int *plen)
             std_free((void *)paper);
         return rc;
     }
+
+    paperdone();
 #endif
 
     /* No default paper size */
