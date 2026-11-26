@@ -1358,6 +1358,8 @@ hpgl_process_buffer(hpgl_state_t * pgls, gs_point * offset)
                                                         font_selected];
                             hpgl_real_t label_advance;
 
+                            if (!pfs->font)
+                                return_error(gs_error_undefined);
                             /* Handle size. */
                             if (pgls->g.character.size_mode ==
                                 hpgl_size_not_set) {
