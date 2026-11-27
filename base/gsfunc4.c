@@ -535,6 +535,8 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
             i = vsp->value.i;
             if (n < 0 || n > vsp - vstack - 2)
                 return_error(gs_error_rangecheck);
+            if (i >= n)
+                i %= n;
             /* We don't bother to do this efficiently. */
             for (; i > 0; i--) {
                 memmove(vsp - n, vsp - (n + 1), n * sizeof(*vsp));
